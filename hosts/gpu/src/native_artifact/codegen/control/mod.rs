@@ -241,6 +241,8 @@ struct CfgDeclarations<'plan> {
     #[cfg(feature = "canonical-native-program")]
     packed_functions: Vec<(usize, FuncId, u64, u64)>,
     #[cfg(feature = "canonical-native-program")]
+    numeric_functions: Vec<(usize, FuncId, u64, u64)>,
+    #[cfg(feature = "canonical-native-program")]
     bound_call_shim: Option<crate::native_artifact::program::codegen::bound_shim::Definition>,
 }
 struct CfgPrologue {
@@ -389,6 +391,17 @@ impl<'plan> CfgDefinition<'plan> {
                 limits,
                 report,
             )?;
+        #[cfg(feature = "canonical-native-program")]
+        let numeric_functions =
+            crate::native_artifact::program::codegen::readonly_numeric::outlined::define_functions(
+                &controls,
+                module,
+                entry_symbol,
+                plan,
+                &closed,
+                limits,
+                report,
+            )?;
         let mut signature_entry = module.make_signature();
         signature_entry.params.push(AbiParam::new(types::I64));
         signature_entry.returns.push(AbiParam::new(types::I64));
@@ -413,6 +426,8 @@ impl<'plan> CfgDefinition<'plan> {
             joined_maps,
             #[cfg(feature = "canonical-native-program")]
             packed_functions,
+            #[cfg(feature = "canonical-native-program")]
+            numeric_functions,
             #[cfg(feature = "canonical-native-program")]
             bound_call_shim,
         })
@@ -679,6 +694,8 @@ impl<'plan> CfgDefinition<'plan> {
         let joined_maps = &declarations.joined_maps;
         #[cfg(feature = "canonical-native-program")]
         let packed_functions = &declarations.packed_functions;
+        #[cfg(feature = "canonical-native-program")]
+        let numeric_functions = &declarations.numeric_functions;
         #[cfg(not(feature = "canonical-native-program"))]
         let _ = declarations;
         let mut reachable = vec![false; plan.blocks().len()];
@@ -823,8 +840,23 @@ impl<'plan> CfgDefinition<'plan> {
                     error,
                     report,
                 )?;
+                let numeric_function = numeric_functions
+                    .iter()
+                    .find(|(site, _, _, _)| *site == index)
+                    .map(|(_, function, _, _)| module.declare_func_in_func(*function, b.func));
                 crate::native_artifact::program::codegen::readonly_numeric::emit_entry(
-                    &controls, b, frame, locals, plan, &closed, index, hooks, &blocks, error,
+                    &controls,
+                    b,
+                    frame,
+                    locals,
+                    user_context,
+                    numeric_function,
+                    plan,
+                    &closed,
+                    index,
+                    hooks,
+                    &blocks,
+                    error,
                     report,
                 )?;
                 let outlined = packed_functions
@@ -1685,6 +1717,8 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let packed_functions = declarations.packed_functions;
         #[cfg(feature = "canonical-native-program")]
+        let numeric_functions = declarations.numeric_functions;
+        #[cfg(feature = "canonical-native-program")]
         let bound_call_shim = declarations.bound_call_shim;
         #[cfg(feature = "canonical-native-program")]
         if controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BitCounts) {
@@ -1737,6 +1771,7 @@ impl<'plan> CfgDefinition<'plan> {
                         .chain(map_functions.iter().map(|(_, _, stack, _)| *stack))
                         .chain(joined_functions.iter().map(|(_, _, stack, _)| *stack))
                         .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack))
+                        .chain(numeric_functions.iter().map(|(_, _, stack, _)| *stack))
                         .max()
                         .unwrap_or(0),
                 )
@@ -1747,6 +1782,7 @@ impl<'plan> CfgDefinition<'plan> {
                 .chain(map_functions.iter().map(|(_, _, _, code)| *code))
                 .chain(joined_functions.iter().map(|(_, _, _, code)| *code))
                 .chain(packed_functions.iter().map(|(_, _, _, code)| *code))
+                .chain(numeric_functions.iter().map(|(_, _, _, code)| *code))
                 .try_fold(
                     code + bound_call_shim.map_or(0, |shim| shim.code),
                     |total, code| total.checked_add(code),

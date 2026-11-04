@@ -20,6 +20,8 @@ use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMatchA
 use std::collections::{BTreeMap, BTreeSet};
 #[path = "numeric_boundary.rs"]
 mod boundary;
+#[path = "numeric_outlined.rs"]
+pub(in crate::native_artifact) mod outlined;
 
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct Report {
@@ -66,6 +68,8 @@ pub(in crate::native_artifact) fn emit_entry(
     b: &mut FunctionBuilder<'_>,
     frame: Value,
     locals: Value,
+    user_context: Value,
+    outlined_function: Option<cranelift_codegen::ir::FuncRef>,
     code: CodePlan<'_>,
     closed: &Layout,
     site: usize,
@@ -102,6 +106,21 @@ pub(in crate::native_artifact) fn emit_entry(
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     b.ins().brif(ready, selected, &[], ordinary, &[]);
     b.switch_to_block(selected);
+    if let Some(function) = outlined_function {
+        outlined::call(
+            b,
+            function,
+            frame,
+            locals,
+            user_context,
+            region,
+            ordinary_blocks,
+            ordinary,
+            error,
+        )?;
+        b.switch_to_block(ordinary);
+        return Ok(());
+    }
     let shadow = region
         .shadow
         .ok_or_else(|| backend("numeric region lacks scratch home"))?;

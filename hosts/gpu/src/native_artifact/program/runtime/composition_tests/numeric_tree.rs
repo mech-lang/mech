@@ -115,6 +115,90 @@ fn numeric_tree_private_liveness_ablation_keeps_outputs_errors_and_retry() {
 }
 
 #[test]
+fn numeric_tree_outlining_ablation_keeps_outputs_errors_and_retry() {
+    check_emission_ablation(OptimizationPass::NumericOutlining);
+}
+
+#[test]
+fn numeric_tree_outlining_admits_total_stack_code_and_boundary_templates() {
+    for artifact in artifacts(SOURCE) {
+        let catalog = mech_stdlib::source_catalog();
+        let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+        let metadata = object.metadata();
+        let functions = metadata["compiled_numeric_functions"].as_array().unwrap();
+        assert!(!functions.is_empty(), "exercise actual native callees");
+        let stack = metadata["stack_bytes"].as_u64().unwrap();
+        let code = metadata["code_bytes"].as_u64().unwrap();
+        assert!(
+            functions
+                .iter()
+                .map(|row| row["code_bytes"].as_u64().unwrap())
+                .sum::<u64>()
+                < code
+        );
+        for row in functions {
+            assert!(row["stack_bytes"].as_u64().unwrap() < stack);
+            let header = row["header"].as_u64().unwrap() as usize;
+            let regions = &object.descriptor().metadata().closed_tails;
+            let proof = regions
+                .regions
+                .iter()
+                .find(|region| region.tail.header() as usize == header)
+                .unwrap()
+                .numeric
+                .as_ref()
+                .unwrap();
+            let receipt = metadata["compiled_numeric_write_loops"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .chain(
+                    metadata["compiled_readonly_numeric_loops"]
+                        .as_array()
+                        .unwrap()
+                        .iter(),
+                )
+                .find(|receipt| receipt["header"] == row["header"])
+                .unwrap();
+            assert!(
+                receipt["fixed_template_instructions"].as_u64().unwrap() <= proof.boundary_work
+            );
+            assert_eq!(receipt["successful_backedge_helpers"], 0);
+        }
+        let mut limits = crate::native_artifact::NativeCompileLimits::default();
+        limits.max_stack_bytes = stack;
+        limits.max_code_bytes = code;
+        assert!(
+            crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits)
+                .is_ok()
+        );
+        limits.max_stack_bytes = stack - 1;
+        assert!(
+            crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits)
+                .is_err()
+        );
+        limits.max_stack_bytes = stack;
+        limits.max_code_bytes = code - 1;
+        assert!(
+            crate::native_artifact::emit_program_object_with_limits(&artifact, &catalog, limits)
+                .is_err()
+        );
+        let inline = crate::native_artifact::program::compiler::emit_program_object_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::NumericOutlining,
+        )
+        .unwrap();
+        assert!(
+            inline.metadata()["compiled_numeric_functions"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+    }
+}
+
+#[test]
 fn numeric_tree_boolean_branch_ablation_keeps_reports_errors_and_retry() {
     check_emission_ablation(OptimizationPass::BooleanBranches);
 }
@@ -459,6 +543,11 @@ fn numeric_tree_finite_fuel_reconstructs_each_live_loop_before_continuing() {
 #[test]
 fn numeric_tree_private_liveness_finite_fuel_matches_conservative_reconciliation() {
     check_numeric_tree_finite_fuel(Some(OptimizationPass::PrivateLiveness));
+}
+
+#[test]
+fn numeric_tree_outlining_finite_fuel_keeps_each_ordinary_continuation() {
+    check_numeric_tree_finite_fuel(Some(OptimizationPass::NumericOutlining));
 }
 
 fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {
