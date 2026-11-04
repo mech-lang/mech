@@ -265,6 +265,7 @@ pub(super) fn derive(
             to,
             frames: Vec::new(),
             aliases: Vec::new(),
+            values: live.iter().copied().collect(),
             retire_carrier: (!forest.prepaid_sites.is_empty() || forest.checked_children)
                 && !live.contains(&tail.carrier().get()),
             kind,
@@ -294,6 +295,22 @@ pub(super) fn derive(
         exits.push(export);
     }
     Ok(exits)
+}
+
+pub(super) fn boundary_values(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    facts: &NativeProgramFacts<'_>,
+) -> Result<super::super::numeric_plan::BoundaryValues, &'static str> {
+    let known = BTreeMap::new();
+    Ok(super::super::numeric_plan::BoundaryValues {
+        header: live_before(plan, tail, facts, tail.header() as usize, &known)?
+            .into_iter()
+            .collect(),
+        exit: live_before(plan, tail, facts, tail.exit() as usize, &known)?
+            .into_iter()
+            .collect(),
+    })
 }
 
 /// Only lexical local values dead at entry and wholly defined/read in this

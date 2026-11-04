@@ -22,6 +22,8 @@ use std::collections::{BTreeMap, BTreeSet};
 mod boundary;
 #[path = "numeric_child_fuel.rs"]
 mod child_fuel;
+#[path = "numeric_snapshots.rs"]
+mod snapshots;
 
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct Report {
@@ -39,6 +41,7 @@ pub(in crate::native_artifact) struct Report {
     pub register_words: usize,
     pub fresh_traversal_words: usize,
     pub bounds_error_spill_words: Vec<(usize, usize)>,
+    pub boundary_spill_words: Vec<(&'static str, usize, usize)>,
     pub successful_backedge_helpers: usize,
     pub maximum_source_instructions: usize,
     pub fixed_template_instructions: usize,
@@ -121,7 +124,7 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     }
     fresh.retain(|slot| slots.contains(slot));
-    let words = Words::new_with_regions(b, locals, code, slots, |slot| {
+    let words = Words::new_with_regions(b, locals, code, slots.clone(), |slot| {
         if (region.words..region.words + 3).contains(&slot)
             || (shadow..shadow + proof.words).contains(&slot)
         {
@@ -169,6 +172,7 @@ pub(in crate::native_artifact) fn emit_entry(
         register_words,
         fresh_traversal_words: fresh.len(),
         bounds_error_spill_words: Vec::new(),
+        boundary_spill_words: Vec::new(),
         successful_backedge_helpers: 0,
         maximum_source_instructions: 0,
         fixed_template_instructions: 0,
@@ -177,16 +181,33 @@ pub(in crate::native_artifact) fn emit_entry(
         b.switch_to_block(target(site as u32));
         if matches!(proof.action(site), Some(Operation::Fallback)) {
             boundaries.insert(target(site as u32));
-            words.spill_all(b, locals)?;
+            let continuation = proof
+                .exits
+                .iter()
+                .find(|exit| exit.to == site)
+                .ok_or_else(|| backend("ordinary numeric snapshot lacks its exact exit"))?;
+            let count = snapshots::spill(
+                b,
+                &words,
+                locals,
+                code,
+                region,
+                6,
+                Some(site),
+                &continuation.values,
+                &slots,
+            )?;
+            report.boundary_spill_words.push(("ordinary", site, count));
             set_origin(b, frame, site as u64);
             let origin = b.ins().iconst(types::I64, site as i64);
-            tail::leave(
+            tail::leave_at(
                 controls.options(),
                 b,
                 locals,
                 region,
                 origin,
                 6,
+                Some(site),
                 hooks,
                 error,
             )?;
@@ -219,10 +240,12 @@ pub(in crate::native_artifact) fn emit_entry(
                 words.write(b, slot, zero);
             }
         }
-        child_fuel::emit(
+        if let Some(count) = child_fuel::emit(
             b,
             controls.options(),
             &words,
+            code,
+            &slots,
             region,
             proof,
             site,
@@ -232,7 +255,9 @@ pub(in crate::native_artifact) fn emit_entry(
             ordinary_blocks,
             error,
             &mut boundaries,
-        )?;
+        )? {
+            report.boundary_spill_words.push(("child", site, count));
+        }
         if site == region.tail.header() as usize {
             let compute = words.read(b, region.words + 1);
             let comparison = words.read(b, region.words + 2);
@@ -574,7 +599,20 @@ pub(in crate::native_artifact) fn emit_entry(
     }
     let boundary = b.func.dfg.num_insts();
     b.switch_to_block(bailout);
-    words.spill_all(b, locals)?;
+    let count = snapshots::spill(
+        b,
+        &words,
+        locals,
+        code,
+        region,
+        1,
+        None,
+        &proof.boundary_values.header,
+        &slots,
+    )?;
+    report
+        .boundary_spill_words
+        .push(("header", region.tail.header() as usize, count));
     let header = b.ins().iconst(types::I64, region.tail.header() as i64);
     tail::leave(
         controls.options(),
@@ -588,12 +626,30 @@ pub(in crate::native_artifact) fn emit_entry(
     )?;
     b.ins().jump(ordinary, &[]);
     b.switch_to_block(exit);
-    words.spill_all(b, locals)?;
+    let count = snapshots::spill(
+        b,
+        &words,
+        locals,
+        code,
+        region,
+        0,
+        None,
+        &proof.boundary_values.exit,
+        &slots,
+    )?;
+    report
+        .boundary_spill_words
+        .push(("exit", region.tail.exit() as usize, count));
     b.ins()
         .jump(ordinary_blocks[region.tail.exit() as usize].unwrap(), &[]);
     b.switch_to_block(failed);
     let status = b.block_params(failed)[0];
-    words.spill_all(b, locals)?;
+    // The common error arm settles/finalizes and terminates; it cannot resume
+    // ordinary source code. Preserve exactly its existing abort consumers.
+    let count = snapshots::spill(b, &words, locals, code, region, 3, None, &[], &slots)?;
+    report
+        .boundary_spill_words
+        .push(("failure", region.tail.header() as usize, count));
     b.ins().jump(error, &[status.into()]);
     report.fixed_template_instructions = setup_work + b.func.dfg.num_insts() - boundary;
     if report.fixed_template_instructions

@@ -701,6 +701,7 @@ fn derive_with_children(
     };
     let fresh_values =
         exits::fresh_values(plan, tail, frames, aggregates, &forest, provenance.facts)?;
+    let boundary_values = exits::boundary_values(plan, tail, provenance.facts)?;
     Ok(Proof {
         arrays,
         frames: frame_words,
@@ -713,5 +714,6 @@ fn derive_with_children(
         phase,
         exits,
         fresh_values,
+        boundary_values,
     })
 }
