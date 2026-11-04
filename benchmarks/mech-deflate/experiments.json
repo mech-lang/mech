@@ -12918,6 +12918,28 @@
         "scope": "Historical original/decoded source qualification retained. New native code built from canonically round-tripped variant MBC. No full-scale timing, hosted CI or compiler change.",
         "decision": "Retain separately labeled source option: random improves9.789603%, repeated regresses2.341870%; pinned source remains the compiler baseline."
       }
+    },
+    "127": {
+      "base": "ee0285ef06",
+      "production": "6c1cb798e35da3e056d8043381d3488253d319f1",
+      "compiler_source": "6c1cb798e35da3e056d8043381d3488253d319f1",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "closure",
+          "source_revision": "6c1cb798e35da3e056d8043381d3488253d319f1",
+          "asset": "r127-closure-829fc2e3d43f.tar.gz",
+          "sha256": "829fc2e3d43fa69be5444f9657a65b5c34f2c275e2886777327e3398e14094bb",
+          "manifest_sha256": "00323df3db36d41a20198db114b3a48afe2235989526cb2d2cc73de2efe1660f",
+          "bytes": 4685867,
+          "files": 204,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-mutable-children-round127-20261104/archives/r127-closure-829fc2e3d43f.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
