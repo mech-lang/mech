@@ -172,7 +172,7 @@ fn unit_dimension_addresses_emit_no_division_and_keep_general_geometry() {
                 .map(|inst| function.dfg.insts[inst].opcode())
                 .collect::<Vec<_>>();
             assert_eq!(opcodes.contains(&Opcode::Udiv), !vector, "{schema:?}");
-            assert_eq!(opcodes.contains(&Opcode::Urem), !vector, "{schema:?}");
+            assert!(!opcodes.contains(&Opcode::Urem), "{schema:?}");
         }
     }
 }

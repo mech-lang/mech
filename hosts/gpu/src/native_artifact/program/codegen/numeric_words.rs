@@ -180,8 +180,12 @@ pub(super) fn linear_address(
     let physical = if vector {
         ordinal
     } else {
-        let row = b.ins().urem(ordinal, rows);
         let column = b.ins().udiv(ordinal, rows);
+        // Bounds on the admitted view prove rows > 0. Reuse the quotient:
+        // column * rows <= ordinal, so this internal remainder cannot overflow.
+        // Separate urem/udiv lower to duplicate machine divisions on AArch64.
+        let consumed = b.ins().imul(column, rows);
+        let row = b.ins().isub(ordinal, consumed);
         let row = b.ins().imul(row, columns);
         b.ins().iadd(row, column)
     };
