@@ -9,6 +9,9 @@ use super::{
 use mech_core::{IntegerWidth, SchemaBody, ValueData};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
+#[path = "map_write_predicates.rs"]
+mod predicates;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 enum Step {
     Tuple(u32),
@@ -389,15 +392,22 @@ impl Plan {
             let Some(iteration) = self.blocks()[site].iteration() else {
                 continue;
             };
-            let (carrier, latch) = match &self.iterations()[iteration as usize] {
-                NativeControlLoop::Tail(loop_) => (loop_.carrier(), loop_.latch()),
-                NativeControlLoop::Iteration(loop_) => (loop_.carrier(), loop_.latch()),
+            let (carrier, body, latch) = match &self.iterations()[iteration as usize] {
+                NativeControlLoop::Tail(loop_) => (loop_.carrier(), loop_.body(), loop_.latch()),
+                NativeControlLoop::Iteration(loop_) => {
+                    (loop_.carrier(), loop_.body(), loop_.latch())
+                }
                 _ => continue,
             };
             let root = roots[base_leaf];
             let carrier_derived = fields.by_value[carrier.get() as usize]
                 .values()
                 .any(|&leaf| roots[leaf] == root);
+            let excluded = if carrier_derived {
+                predicates::implied_edges(self, iteration, body, latch, site)
+            } else {
+                BTreeSet::new()
+            };
             let mut initial = roots
                 .iter()
                 .map(|&candidate| candidate == root)
@@ -408,6 +418,9 @@ impl Plan {
             let mut inputs = vec![None::<Vec<bool>>; self.blocks().len()];
             let mut queue = VecDeque::new();
             for next in successors(self, site) {
+                if excluded.contains(&(site, next)) {
+                    continue;
+                }
                 inputs[next] = Some(initial.clone());
                 queue.push_back(next);
             }
@@ -438,6 +451,9 @@ impl Plan {
                     }
                 }
                 for next in successors(self, at) {
+                    if excluded.contains(&(at, next)) {
+                        continue;
+                    }
                     let mut changed = false;
                     match &mut inputs[next] {
                         Some(current) => {

@@ -57,7 +57,11 @@ impl OwnedStringMap {
         limits: Limits,
         memory: mech_core::ManagedMemoryBudget,
     ) -> Result<Self, Error> {
-        Self::with_hasher_memory_fn(work, limits, memory, DefaultHashBuilder::default)
+        #[cfg(test)]
+        let hasher = tests::publication_hasher;
+        #[cfg(not(test))]
+        let hasher = DefaultHashBuilder::default;
+        Self::with_hasher_memory_fn(work, limits, memory, hasher)
     }
 }
 impl<S: BuildHasher> OwnedStringMap<S> {
@@ -263,3 +267,5 @@ impl<S: BuildHasher> OwnedStringMap<S> {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+pub(in crate::native_artifact) use tests::with_fixed_publication_hash_seed;

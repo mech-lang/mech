@@ -430,6 +430,43 @@ fn an_old_map_record_alias_blocks_private_mutation() {
 }
 
 #[test]
+fn recursive_map_reads_respect_one_exact_current_visit_predicate() {
+    let source = r#"
++> map
+walk(at<u64>, end<u64>, other-end<u64>, index<{string:u64}>) => (out<{string:u64}>) :=
+  more := at < end
+  next := (more? | true => map/insert(index, "needle", at) | false => index)
+  again := more
+  out := (again? | true => walk(at + 1u64, end, other-end, next) | false => index).
+walk(0u64, end<u64>, other-end<u64>, initial<{string:u64}>)
+"#;
+    for plan in plans(source) {
+        let writes = plan.map_write_uses().unwrap();
+        assert_eq!(writes.len(), 1);
+        assert!(
+            writes[0].late_reads().is_empty(),
+            "contradictory repeat test: {writes:?}"
+        );
+        assert_eq!(plan.map_owner_words().unwrap().regions().len(), 1);
+    }
+    for different in [
+        "at < other-end",
+        "((at < other-end)? | true => more | false => false)",
+        "at + 1u64 < end",
+    ] {
+        for plan in plans(&source.replace("again := more", &format!("again := {different}"))) {
+            let writes = plan.map_write_uses().unwrap();
+            assert_eq!(writes.len(), 1);
+            assert!(
+                !writes[0].late_reads().is_empty(),
+                "distinct/phi predicate: {different}"
+            );
+            assert!(plan.map_owner_words().unwrap().regions().is_empty());
+        }
+    }
+}
+
+#[test]
 fn record_payload_binding_keeps_its_required_structural_draft_witness() {
     let source = r#"
 +> map

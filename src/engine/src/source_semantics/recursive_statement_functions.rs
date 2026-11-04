@@ -3,6 +3,9 @@
 //! lexical frame, just as they do in a source pattern-body function.
 use super::*;
 
+#[path = "recursive_invariants.rs"]
+mod invariants;
+
 impl SemanticBuilder {
     pub(super) fn inline_recursive_statement_function_body(
         &mut self,
@@ -122,7 +125,7 @@ impl SemanticBuilder {
                 }
             }
         }
-        let scrutinee = if capture_arguments {
+        let mut scrutinee = if capture_arguments {
             self.constant(BuiltinSchema::Bool, ValueDataDraft::Bool(true))
         } else if let [argument] = arguments {
             *argument
@@ -184,7 +187,7 @@ impl SemanticBuilder {
                 fields.push(crate::CollectionPattern::Bind { local, schema });
             }
         }
-        let pattern = if capture_arguments {
+        let mut pattern = if capture_arguments {
             crate::MatchPattern::Wildcard
         } else {
             crate::MatchPattern::Structural(if fields.len() == 1 {
@@ -246,7 +249,19 @@ impl SemanticBuilder {
         if self.control_depth == 0 {
             self.next_control_block = saved_next;
         }
-        let (block, schema) = result?;
+        let (mut block, schema) = result?;
+        if recursive {
+            self.promote_map_invariant_arguments(
+                arguments,
+                &mut scrutinee,
+                &mut pattern,
+                &mut block,
+                &schema,
+                &mut inputs,
+                &mut captures,
+                call,
+            )?;
+        }
         let index = self.nodes.len() as u32;
         self.nodes.push(PendingNode {
             body: PendingNodeBody::Match(PendingMatch {
