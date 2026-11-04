@@ -214,16 +214,24 @@ impl Invocation<'_, '_, '_> {
         // A stale previous physical definition must be retired by its original
         // path, rather than silently overwritten by a virtual frame.
         for frame in &frames.frames {
-            if !frames.inputs.contains(&frame.value)
-                && metadata
-                    .buffer_frames
-                    .fields_at(frame.value as usize)
-                    .is_some_and(|f| {
-                        f.iter()
-                            .any(|f| self.state.buffer_frames.current_leaf(*f).is_some())
-                    })
-            {
-                return Ok(Some(0));
+            if !frames.inputs.contains(&frame.value) {
+                // Private words do not erase a canonical definition from a
+                // prior path. Prove its slot empty before omitting cleanup.
+                if self
+                    .state
+                    .arena
+                    .native_entry_preview(frame.value, &self.state.control.work)?
+                    .is_some()
+                    || metadata
+                        .buffer_frames
+                        .fields_at(frame.value as usize)
+                        .is_some_and(|f| {
+                            f.iter()
+                                .any(|f| self.state.buffer_frames.current_leaf(*f).is_some())
+                        })
+                {
+                    return Ok(Some(0));
+                }
             }
         }
         for (_, values) in &frames.retirements {
@@ -570,13 +578,30 @@ impl Invocation<'_, '_, '_> {
         let descriptor = self.descriptor;
         let metadata = descriptor.metadata();
         let flags = frames.scalar_words + proof.views.len() * 4;
-        for (at, (_site, values)) in frames.retirements.iter().enumerate() {
+        for (at, (_site, _values)) in frames.retirements.iter().enumerate() {
             match self.read_borrowed_word(flags + at)? {
                 0 => continue,
                 1 => {}
                 _ => return Err(invalid("parent retirement flag is not Boolean")),
             }
-            for &value in values {
+            for effect in &proof.retirement_effects[at] {
+                use crate::native_artifact::program::prepare::composition::numeric::Retirement;
+                let value = match *effect {
+                    Retirement::Pay(price) => {
+                        // The current entry proved no physical owner exists;
+                        // execution used only native words/bindings, and all
+                        // exports follow this cleanup. Keep each original
+                        // charge in its exact source order and granularity.
+                        self.state
+                            .control
+                            .work
+                            .charge(crate::native_artifact::NativeExecutionPhase::Setup, price)?;
+                        #[cfg(all(test, feature = "canonical-native-program"))]
+                        super::super::composition_tests::observe::virtual_retirement(*_site);
+                        continue;
+                    }
+                    Retirement::Current(value) => value,
+                };
                 #[cfg(all(test, feature = "canonical-native-program"))]
                 super::super::composition_tests::observe::segment_retirement(*_site, value);
                 if !self.state.buffer_frames.retire(

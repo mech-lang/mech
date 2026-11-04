@@ -17,6 +17,13 @@ pub(in crate::native_artifact) struct View {
     pub width: u8,
     pub witness: usize,
 }
+/// Physical cleanup follows the chosen representation. Virtual temporaries
+/// retain their original ordered charge but have no storage to retire.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+pub(in crate::native_artifact) enum Retirement {
+    Pay(u64),
+    Current(u32),
+}
 #[derive(Debug, Eq, PartialEq, serde::Serialize)]
 pub(in crate::native_artifact) struct Layout {
     pub views: Vec<View>,
@@ -27,6 +34,7 @@ pub(in crate::native_artifact) struct Layout {
     pub source_work: u64,
     /// Reserved separately; only reached lexical retirement actions spend it.
     pub retirement_work: u64,
+    pub retirement_effects: Vec<Vec<Retirement>>,
 }
 impl Layout {
     /// The exit consumer reads reached-retirement flags on every path, and
@@ -223,16 +231,36 @@ impl Layout {
             .checked_add(spill)
             .ok_or("parent total native price overflows")?;
         let mut retirement_work = 0u64;
+        let private_frames = frames
+            .frames
+            .iter()
+            .filter(|frame| !frames.inputs.contains(&frame.value))
+            .map(|frame| frame.value)
+            .collect::<std::collections::BTreeSet<_>>();
+        let private_aliases = frames
+            .aliases
+            .iter()
+            .map(|alias| alias.value.get())
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut retirement_effects = Vec::with_capacity(frames.retirements.len());
         for (_, values) in &frames.retirements {
+            let mut effects = Vec::with_capacity(values.len());
             for &value in values {
+                let price = retirements
+                    .get(value as usize)
+                    .map_or(32, |(price, _)| price);
                 retirement_work = retirement_work
-                    .checked_add(
-                        retirements
-                            .get(value as usize)
-                            .map_or(32, |(price, _)| price),
-                    )
+                    .checked_add(price)
                     .ok_or("parent retirement price overflows")?;
+                effects.push(
+                    if private_frames.contains(&value) || private_aliases.contains(&value) {
+                        Retirement::Pay(price)
+                    } else {
+                        Retirement::Current(value)
+                    },
+                );
             }
+            retirement_effects.push(effects);
         }
         Ok(Self {
             views,
@@ -241,6 +269,7 @@ impl Layout {
             compute,
             source_work,
             retirement_work,
+            retirement_effects,
         })
     }
 }
