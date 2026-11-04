@@ -100,6 +100,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     // it is neither serialized authority nor another preparation pipeline.
     pub(in crate::native_artifact) uniform_word_collections:
         Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
+    pub(in crate::native_artifact) word_collections: Box<[word_collections::Region]>,
     pub(in crate::native_artifact) window_regions:
         Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(in crate::native_artifact) string_map_regions:
@@ -343,6 +344,8 @@ impl PreparedNativeProgram {
             &map_admission,
         )?;
         let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
+        let word_collections =
+            word_collections::derive(&plan, &visits, &map_admission).into_boxed_slice();
         let window_regions = plan.window_regions().into_boxed_slice();
         let occupied_frame =
             frame_prefix_words(&plan, &scalar_aggregates, &borrowed_strings, &closed_tails)
@@ -403,7 +406,8 @@ impl PreparedNativeProgram {
             } else {
                 4
             })
-            .max(compositions.argument_words());
+            .max(compositions.argument_words())
+            .max(if word_collections.is_empty() { 0 } else { 3 });
         let types: Box<[_]> = plan
             .values()
             .iter()
@@ -463,6 +467,7 @@ impl PreparedNativeProgram {
             max_library_inputs,
             max_call_values,
             uniform_word_collections,
+            word_collections,
             unsigned_buffer_calls,
             buffer_frames,
             frame_retirements,
@@ -606,5 +611,6 @@ pub(in crate::native_artifact) mod prefix;
 pub(in crate::native_artifact) mod selected_join;
 pub(in crate::native_artifact) mod tail;
 pub(in crate::native_artifact) mod window_histogram;
+pub(in crate::native_artifact) mod word_collections;
 
 pub(in crate::native_artifact) mod query_stages;

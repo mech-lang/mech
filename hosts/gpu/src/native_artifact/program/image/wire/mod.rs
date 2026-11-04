@@ -115,6 +115,7 @@ struct Descriptor<'a> {
     scalar_bytes: u64,
     observation_schema_bytes: u64,
     max_library_inputs: usize,
+    word_collections: Box<[native::program::prepare::word_collections::Region]>,
     #[serde(deserialize_with = "proof")]
     window_regions: Box<[NativeWindowRegion]>,
     #[serde(deserialize_with = "proof")]
@@ -233,6 +234,14 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     if admission != w.map_admission {
         return Err("native path admission differs from its source frontiers".into());
     }
+    let word_collections =
+        native::program::prepare::word_collections::derive(&plan, &visits, &admission)
+            .into_boxed_slice();
+    if word_collections != w.word_collections
+        || (!word_collections.is_empty() && w.max_library_inputs < 3)
+    {
+        return Err("word collection proof differs from its total scalar source CFG".into());
+    }
     let frozen_maps = w
         .map_owner_words
         .as_ref()
@@ -316,6 +325,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             max_library_inputs: w.max_library_inputs,
             max_call_values,
             uniform_word_collections,
+            word_collections,
             unsigned_buffer_calls,
             buffer_frames,
             frame_retirements,

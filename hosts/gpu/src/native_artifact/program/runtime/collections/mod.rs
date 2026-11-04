@@ -29,6 +29,7 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
 }
 mod data;
 mod uniform_words;
+mod word_collections;
 pub(in crate::native_artifact::program::runtime) fn source_count(
     value: &Value,
 ) -> Result<u64, Error> {
