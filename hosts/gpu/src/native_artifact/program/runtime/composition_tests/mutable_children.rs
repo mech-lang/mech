@@ -1,7 +1,8 @@
 //! Generic witness for the fixed-size mutable children used by header loops.
 use super::*;
 
-const SOURCE: &str = include_str!("../../../../../tests/fixtures/native/numeric-mutable-children.mec");
+const SOURCE: &str =
+    include_str!("../../../../../tests/fixtures/native/numeric-mutable-children.mec");
 
 #[test]
 fn fixed_size_mutable_children_keep_current_owners_through_nested_calls() {
@@ -14,6 +15,28 @@ fn fixed_size_mutable_children_keep_current_owners_through_nested_calls() {
         )
         .unwrap();
         let metadata = jit.descriptor().metadata();
+        let reasons = metadata
+            .plan
+            .iterations()
+            .iter()
+            .filter_map(|loop_| {
+                let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = loop_ else {
+                    return None;
+                };
+                tail.parent().is_none().then(|| {
+                    crate::native_artifact::program::prepare::readonly_numeric::derive(
+                        &metadata.plan,
+                        tail,
+                        &metadata.buffer_frames,
+                        &metadata.scalar_aggregates,
+                        &metadata.calls,
+                        &metadata.visits,
+                    )
+                    .map(|_| ())
+                    .err()
+                })
+            })
+            .collect::<Vec<_>>();
         assert!(
             metadata.closed_tails.regions.iter().any(|region| {
                 region.tail.parent().is_none()
@@ -26,10 +49,10 @@ fn fixed_size_mutable_children_keep_current_owners_through_nested_calls() {
                     })
             }),
             "a parent must include the child's actual stores and array result: {:?}",
-            metadata.closed_tails,
+            reasons,
         );
         let memory = mode.memory_budget();
-        for prime in [false, true] {
+        for (prime, restored) in [(false, false), (true, false), (false, true), (true, true)] {
             let mut output = vec![None; artifact.outputs().len()];
             let mut prior = None;
             for reject in [u64::MAX, 2, u64::MAX] {
@@ -47,7 +70,11 @@ fn fixed_size_mutable_children_keep_current_owners_through_nested_calls() {
                 let aliases = args.clone();
                 let original = contents(&args);
                 let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
-                let (result, counts) = observe::run(&jit, &args, &mut output, mode.execution(), &memory);
+                let (result, counts) = if restored {
+                    observe::run_restored(&jit, &args, &mut output, mode.execution(), &memory)
+                } else {
+                    observe::run(&jit, &args, &mut output, mode.execution(), &memory)
+                };
                 if reject == u64::MAX {
                     result.unwrap();
                     let answer = output.last().unwrap().as_ref().unwrap();
@@ -60,17 +87,33 @@ fn fixed_size_mutable_children_keep_current_owners_through_nested_calls() {
                 } else {
                     let error = format!("{:?}", result.unwrap_err());
                     assert!(error.contains("Integrity"), "{error}");
-                    assert!(output.last().unwrap().as_ref().unwrap().shares_frozen_storage(prior.as_ref().unwrap()));
-                    assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), retained);
+                    assert!(
+                        output
+                            .last()
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(prior.as_ref().unwrap())
+                    );
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        retained
+                    );
                 }
                 for (actual, alias) in args.iter().zip(&aliases) {
                     assert!(actual.shares_frozen_storage(alias));
-                    assert_eq!(actual.canonical_data_draft().unwrap(), alias.canonical_data_draft().unwrap());
+                    assert_eq!(
+                        actual.canonical_data_draft().unwrap(),
+                        alias.canonical_data_draft().unwrap()
+                    );
                 }
                 assert_eq!(contents(&args), original);
             }
             drop((output, prior));
         }
-        assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
     }
 }

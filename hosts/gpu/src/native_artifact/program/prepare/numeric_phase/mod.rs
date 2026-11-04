@@ -205,7 +205,8 @@ impl Forest {
 
     /// This is an effect inventory, not permission to borrow a view. The
     /// enclosing numeric proof must still establish every array's provenance
-    /// and current version. Descendants may read; mutations remain in the root.
+    /// and current version. Fixed-size descendant writes use the same checked
+    /// operation vocabulary and first-change factory as root writes.
     pub(in crate::native_artifact) fn validate_child_actions(
         &self,
         plan: &Plan,
@@ -233,7 +234,9 @@ impl Forest {
                             .ok_or("numeric child lacks its exact selected factory")?;
                         if call.supports_unsigned_matrix_element() {
                             reads += 1;
-                        } else if !call.supports_unsigned_matrix_length() {
+                        } else if !call.supports_unsigned_matrix_length()
+                            && !call.supports_unsigned_matrix_replace()
+                        {
                             return Err("numeric child has a mutation or unsupported effect");
                         }
                     }
@@ -438,14 +441,13 @@ impl Forest {
     }
 }
 
-/// The first-change bridge may spend account credit. Initially, mutations are
-/// supported only after all children in a root traversal have returned. Thus no
-/// not-yet-debited child can depend on pre-bridge funding after that cold call.
-pub(in crate::native_artifact) fn validate_mutation_order(
+/// A replacement before more child work needs a first-change funding envelope.
+/// Growing children still decline: their capacity contract is separate.
+pub(in crate::native_artifact) fn mutation_needs_funding(
     plan: &Plan,
     forest: &Forest,
     actions: &[(usize, super::numeric_plan::Operation)],
-) -> Result<(), &'static str> {
+) -> Result<bool, &'static str> {
     use super::numeric_plan::Operation;
     let latches = forest
         .loops
@@ -458,18 +460,25 @@ pub(in crate::native_artifact) fn validate_mutation_order(
         .skip(1)
         .map(|l| l.initialize)
         .collect::<BTreeSet<_>>();
+    let mut funding = false;
     for &(site, ref action) in actions {
         if !matches!(action, Operation::Write { .. } | Operation::Append { .. }) {
             continue;
         }
         if plan.blocks()[site].iteration() != Some(forest.loops[0].iteration) {
-            return Err("phase child mutates a buffer");
+            if matches!(action, Operation::Append { .. }) {
+                return Err("phase child grows a buffer");
+            }
+            funding = true;
         }
         let mut seen = BTreeSet::new();
         let mut pending = vec![site];
         while let Some(at) = pending.pop() {
             if child_entries.contains(&at) {
-                return Err("phase child follows a fallible mutation bridge");
+                if matches!(action, Operation::Append { .. }) {
+                    return Err("phase child follows a growing mutation bridge");
+                }
+                funding = true;
             }
             if !seen.insert(at) || latches.contains(&at) {
                 continue;
@@ -483,5 +492,5 @@ pub(in crate::native_artifact) fn validate_mutation_order(
             );
         }
     }
-    Ok(())
+    Ok(funding)
 }

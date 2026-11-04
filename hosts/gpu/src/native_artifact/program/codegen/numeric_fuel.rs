@@ -49,6 +49,14 @@ pub(super) fn envelope(
                 .ok_or_else(|| backend("phase admission lacks its proved array binding"))?;
             words.read(b, shadow + proof.view(array) + 1)
         }
+        Bound::BufferLength(field) => {
+            let array = proof
+                .arrays
+                .iter()
+                .position(|array| array.field == *field)
+                .ok_or_else(|| backend("mutation funding lacks its current root buffer"))?;
+            words.read(b, shadow + proof.view(array) + 1)
+        }
         Bound::Add(a, c) | Bound::Multiply(a, c) | Bound::Maximum(a, c) => {
             let (a, a_valid) = envelope(b, words, code, proof, shadow, root, a)?;
             let (c, c_valid) = envelope(b, words, code, proof, shadow, root, c)?;
