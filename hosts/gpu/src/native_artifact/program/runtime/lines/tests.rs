@@ -78,6 +78,7 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
             for (offset, preceding) in [
                 (16, 163),
                 (16, 164),
+                (16, 165),
                 (16, 162),
                 (24, 38),
                 // Reject the separately published map compiler and assertion stack.
