@@ -13215,6 +13215,17 @@
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-failure-snapshot-round131-20261104/archives/r131-random-primary-794549f65024.tar.gz"
+        },
+        {
+          "event": "repeated-primary",
+          "source_revision": "e79a6272aff4a06ebf5fb3fa3dc8f78be23c363a",
+          "asset": "r131-repeated-primary-8f230abd94d4.tar.gz",
+          "sha256": "8f230abd94d4bca657610e11fb3bbd71a95e2183f30974b463d27a64fdfeffa8",
+          "manifest_sha256": "0c5d26d1803314dc14fee1d5955b4c396027c3b7be014cc4bf4f5c91824923f9",
+          "bytes": 64252,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-failure-snapshot-round131-20261104/archives/r131-repeated-primary-8f230abd94d4.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
