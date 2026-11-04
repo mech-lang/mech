@@ -396,12 +396,35 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.ins().brif(valid, good, &[], bad, &[]);
                 b.switch_to_block(bad);
                 set_origin(b, frame, site as u64);
-                report.bounds_error_spill_words.push((site, register_words));
-                words.spill_all(b, locals)?;
-                tail::failure(controls.options(), b, locals, closed, site, hooks, error)?;
                 let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
                     return Err(backend("numeric read lost selected call"));
                 };
+                if closed.sites.get(site).copied().flatten() != Some(id) {
+                    return Err(backend(
+                        "numeric bounds exit differs from its active region",
+                    ));
+                }
+                // This edge settles the current loan and invokes the original
+                // selected operation, then terminates. No ordinary instruction
+                // resumes. Managed operands come from the synchronized arena;
+                // only exact settlement inputs and current scalar operands
+                // need their local homes here.
+                let live = (region.words..region.words + 3)
+                    .chain(
+                        tail::numeric_exit_words(region, 2, None)?
+                            .into_iter()
+                            .map(|word| shadow + word),
+                    )
+                    .chain(
+                        operands
+                            .iter()
+                            .filter(|value| code.kind(**value).is_some())
+                            .map(|value| value.get() as usize),
+                    )
+                    .collect::<BTreeSet<_>>();
+                words.spill_live(b, locals, &live)?;
+                report.bounds_error_spill_words.push((site, live.len()));
+                tail::failure(controls.options(), b, locals, closed, site, hooks, error)?;
                 hooks.library(b, site, operands, locals, |v| code.kind(v).is_some(), error)?;
                 let status = b.ins().iconst(types::I64, STATUS_ABI as i64);
                 b.ins().jump(error, &[status.into()]);
