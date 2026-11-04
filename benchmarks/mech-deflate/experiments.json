@@ -13130,6 +13130,28 @@
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
       "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+    },
+    "130": {
+      "base": "1f91efb8fa39b77183903c1f58421bc35ce8f0d4",
+      "production": "11f0ea49d2ba577bf18b563a566f325ac7957c7f",
+      "compiler_source": "11f0ea49d2ba577bf18b563a566f325ac7957c7f",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "eight-primary",
+          "source_revision": "11f0ea49d2ba577bf18b563a566f325ac7957c7f",
+          "asset": "r130-eight-primary-8a5716e065d6.tar.gz",
+          "sha256": "8a5716e065d668c7c87a23891e7427a970c86b30e4333bb003c1acbd12b5702c",
+          "manifest_sha256": "276045db519372c179eb9dd01b63e967cb46bd8a7556f0422456c7ab99e34313",
+          "bytes": 252692,
+          "files": 78,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-handoff-round130-20261104/archives/r130-eight-primary-8a5716e065d6.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
