@@ -13810,6 +13810,17 @@
           "files": 51,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-prepaid-membership-round133-20261104/archives/r133-history-profile-repeated-52777752d8d9.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "9d23729e5f48466f5b606bb00cec3a19be106469",
+          "asset": "r133-closure-5edc28648c30.tar.gz",
+          "sha256": "5edc28648c30d2c08de075875cf2c0affaa0676e6127942cdb9d42c67e2bc01a",
+          "manifest_sha256": "6dadf0feed62a3424b310a3bbd5766e87a8c2d14830a3443b9e61127757e5e3c",
+          "bytes": 4770491,
+          "files": 304,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-prepaid-membership-round133-20261104/archives/r133-closure-5edc28648c30.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
