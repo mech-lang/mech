@@ -13,6 +13,7 @@ mod collection_lifetime;
 mod exit_transport;
 mod failure_transport;
 mod fresh_traversals;
+mod physical_exits;
 mod hybrid_intervals;
 mod managed_carriers;
 mod managed_projections;
