@@ -174,7 +174,29 @@ fn child_fuel_images_reconstruct_funding_homes_and_exact_exit_scope() {
                 region.pointer("/numeric/phase/checked_children") == Some(&serde_json::json!(true))
             })
             .unwrap();
+        let sites = regions[index]
+            .pointer("/numeric/sites")
+            .unwrap()
+            .as_array()
+            .unwrap();
+        assert!(sites.len() > 2);
+        assert!(
+            sites
+                .windows(2)
+                .all(|pair| pair[0].as_u64() < pair[1].as_u64())
+        );
+        assert_eq!(
+            regions[index].pointer("/numeric/prepaid_sites"),
+            Some(&serde_json::json!([]))
+        );
+        let mut reordered = sites.clone();
+        reordered.swap(0, 1);
+        let mut duplicate = sites.clone();
+        duplicate.insert(1, sites[0].clone());
         for (suffix, replacement) in [
+            ("sites", serde_json::json!(reordered)),
+            ("sites", serde_json::json!(duplicate)),
+            ("sites", serde_json::json!(&sites[1..])),
             ("phase/checked_children", serde_json::json!(false)),
             ("phase/loops/1/first_visit", serde_json::Value::Null),
             ("phase/loops/1/compute", serde_json::json!(0)),

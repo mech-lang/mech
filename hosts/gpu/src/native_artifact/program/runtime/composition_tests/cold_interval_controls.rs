@@ -222,8 +222,25 @@ fn numeric_interval_images_reconstruct_native_cuts_and_prepaid_membership() {
             .as_array()
             .unwrap()
             .clone();
+        assert!(
+            outside
+                .windows(2)
+                .all(|pair| pair[0].as_u64() < pair[1].as_u64())
+        );
+        let mut reordered = outside.clone();
+        reordered.swap(0, 1);
+        let mut duplicate = outside.clone();
+        duplicate.insert(1, outside[0].clone());
         outside.insert(0, serde_json::json!(0));
         for (path, replacement) in [
+            (
+                "/descriptor/closed_tails/regions/0/numeric/prepaid_sites",
+                serde_json::json!(reordered),
+            ),
+            (
+                "/descriptor/closed_tails/regions/0/numeric/prepaid_sites",
+                serde_json::json!(duplicate),
+            ),
             (
                 "/descriptor/closed_tails/regions/0/numeric/prepaid_sites",
                 serde_json::json!(outside),
