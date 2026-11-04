@@ -11,6 +11,7 @@ mod cold_child;
 mod cold_intervals;
 mod collection_lifetime;
 mod exit_transport;
+mod hybrid_intervals;
 mod managed_carriers;
 mod managed_projections;
 mod multiple_children;
