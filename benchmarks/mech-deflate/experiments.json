@@ -14388,6 +14388,28 @@
         "Separate authorized source variants",
         "Parity with reference"
       ]
+    },
+    "136": {
+      "base": "3f372480e28b477f33d720bcc2d7d8ffa52c42d1",
+      "production": "1acbb2388a20c9b177c43afea0c01ba529856950",
+      "compiler_source": "1acbb2388a20c9b177c43afea0c01ba529856950",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "eight-primary",
+          "source_revision": "1acbb2388a20c9b177c43afea0c01ba529856950",
+          "asset": "r136-eight-primary-4153887d1c72.tar.gz",
+          "sha256": "4153887d1c72af4183c6294fa9a91a551b5324f5a6fe97c10d0abe16898886d2",
+          "manifest_sha256": "220863ab79de981bcc4569339aeaa27e4aa0c07bfefea88c940357db0ee08d22",
+          "bytes": 192878,
+          "files": 55,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-eight-primary-4153887d1c72.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
