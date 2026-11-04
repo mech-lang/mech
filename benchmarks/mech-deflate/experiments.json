@@ -15596,6 +15596,17 @@
           "files": 30,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-repeated-1024-primary-dd69b14f6878.tar.gz"
+        },
+        {
+          "event": "case-320-overlap-primary",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-case-320-overlap-primary-98ad8a3010f6.tar.gz",
+          "sha256": "98ad8a3010f64ba711927e12dbcb1f5c2ff0dadd5ef7475142a4c4e80a50a592",
+          "manifest_sha256": "b1cb0921fd5c7d936cea707dca92d2f29e941b40178bf439fdf91b8b92757992",
+          "bytes": 167059,
+          "files": 30,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-320-overlap-primary-98ad8a3010f6.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
