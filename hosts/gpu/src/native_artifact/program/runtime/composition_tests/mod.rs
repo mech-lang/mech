@@ -5,6 +5,7 @@ use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;
 mod admission_overlap;
 mod bit_counts;
+mod scalar_selects;
 mod borrowed_record_map;
 mod bounds_retry;
 mod captured_numeric;

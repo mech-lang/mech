@@ -302,7 +302,7 @@ fn selected_template(
 // IR158 proves immutable conditional joins available before uniform construction.
 // IR159 folds repeated tests of native-produced Booleans on unchanged CFG edges.
 // IR160 lowers exact unsigned SWAR population-count idioms to native popcount.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 160;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 161;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

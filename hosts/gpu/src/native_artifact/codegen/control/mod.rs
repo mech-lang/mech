@@ -1704,6 +1704,19 @@ impl<'plan> CfgDefinition<'plan> {
         if controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BitCounts) {
             crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
         }
+        #[cfg(feature = "canonical-native-program")]
+        if controls
+            .enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarSelects)
+        {
+            let selected = crate::native_artifact::codegen::common::scalar_selects::optimize(
+                &mut context.func,
+            );
+            if selected > 0 {
+                // Raw CFG edits invalidate cached predecessor/dominance facts.
+                context.compute_cfg();
+                context.compute_domtree();
+            }
+        }
         module
             .define_function(function, &mut context)
             .map_err(backend)?;

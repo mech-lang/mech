@@ -4,6 +4,8 @@ pub(in crate::native_artifact) mod aggregates;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod bit_counts;
 #[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod scalar_selects;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod boolean_branches;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod ssa_words;
