@@ -364,6 +364,92 @@ fn uniform_fill_finite_caps_keep_publication_contents_aliases_and_retry() {
         arguments(artifact, memory, 7, 23, Data::U64(519))
     });
 }
+
+fn merged_source() -> &'static str {
+    "first := start<u64>\nlast0 := end<u64>\nvalue0 := word<u64>\n\
+     last := ((first < last0)? | true => last0 | false => first)\n\
+     value := ((first < last0)? | true => value0 | false => value0 + 1u64)\n\
+     result := [value | i <- first..=last]\n(result, value)\n"
+}
+
+#[test]
+fn uniform_fill_conditional_extent_and_word_use_native_stores_on_both_arms() {
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(merged_source()) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let native =
+            JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+                .unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::UniformWords,
+        )
+        .unwrap();
+        assert_eq!(
+            native
+                .descriptor()
+                .metadata()
+                .uniform_word_collections
+                .len(),
+            1
+        );
+        let proof = &native.descriptor().metadata().uniform_word_collections[0];
+        let sites: Vec<_> = native
+            .descriptor()
+            .plan()
+            .blocks()
+            .iter()
+            .enumerate()
+            .filter(|(site, block)| {
+                block.iteration() == Some(proof.iteration()) && *site != proof.header() as usize
+            })
+            .map(|(site, _)| site as u64)
+            .collect();
+        for restored in [false, true] {
+            let memory = mode.memory_budget();
+            for (start, end, count, value) in [(7, 23, 17, 519), (23, 7, 1, 520), (5, 5, 1, 520)] {
+                let args = arguments(&artifact, &memory, start, end, Data::U64(519));
+                let aliases = args.clone();
+                let before = contents(&args);
+                let expected = Data::Tuple(
+                    vec![
+                        Data::Matrix(vec![Data::U64(value); count].into()),
+                        Data::U64(value),
+                    ]
+                    .into(),
+                );
+                for (jit, selected) in [(&native, true), (&ordinary, false)] {
+                    let mut output = vec![None; artifact.outputs().len()];
+                    let (result, counts) =
+                        run(jit, &args, &mut output, &memory, restored, Flags::default());
+                    result.unwrap();
+                    assert_eq!(last(&output), expected);
+                    if selected {
+                        assert_eq!((counts.selected, counts.complete), (1, 1));
+                        assert!(
+                            counts.helpers.keys().all(|(site, _)| !sites.contains(site)),
+                            "{counts:?}"
+                        );
+                    }
+                }
+                assert_eq!(contents(&args), before);
+                assert_eq!(contents(&aliases), before);
+            }
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+
+#[test]
+fn uniform_fill_conditional_extent_preserves_all_finite_boundaries() {
+    resources::finite_boundaries(merged_source(), |artifact, memory| {
+        arguments(artifact, memory, 7, 23, Data::U64(519))
+    });
+}
 #[test]
 fn uniform_fill_keeps_selected_range_errors_before_construction() {
     let catalog = mech_stdlib::source_catalog();

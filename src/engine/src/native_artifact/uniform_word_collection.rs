@@ -3,8 +3,8 @@ use super::{NativeProgramFacts, NativeProgramProducerRole as Role, NativeProgram
 use crate::native_artifact::{
     NativeCollectionResult, NativeCollectionSource, NativeControlLoop,
     NativeIterationAction as Action, NativeIterationTerminator as Terminator,
-    NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
-    NativeProgramArtifactPlan as Plan, NativeScalarKind, NativeScalarOp,
+    NativeIterationValueScope, NativeMatchAction as Scalar, NativeMatchTerminator as Term,
+    NativeMatchValue as Value, NativeProgramArtifactPlan as Plan, NativeScalarKind, NativeScalarOp,
 };
 use std::collections::BTreeSet;
 
@@ -267,13 +267,78 @@ impl NativeProgramFacts<'_> {
     }
 
     fn available_before(&self, value: Value, frontier: u32) -> bool {
-        let Ok([definition]) = self.definition_sites(value.get()) else {
+        let Ok(definitions) = self.definition_sites(value.get()) else {
             return false;
         };
-        match definition.site() {
-            None => matches!(definition.role(), Role::Input | Role::Constant),
-            Some(site) => self.strictly_dominates(site, frontier).unwrap_or(false),
+        if let [definition] = definitions {
+            return match definition.site() {
+                None => matches!(definition.role(), Role::Input | Role::Constant),
+                Some(site) => self.strictly_dominates(site, frontier).unwrap_or(false),
+            };
         }
+        // A conditional result has one Copy definition on each arm. No single
+        // arm dominates the consumer, but the complete set can cover every
+        // path. Only immutable, same-scope Copy joins qualify; carriers and
+        // generator elements must keep their current-visit protocols.
+        let plan = self.plan();
+        let Some(NativeIterationValueScope::Immutable { iteration: scope }) =
+            plan.value_scopes().get(value.get() as usize)
+        else {
+            return false;
+        };
+        let Some(block) = plan.blocks().get(frontier as usize) else {
+            return false;
+        };
+        if definitions.is_empty()
+            || !self.lexical_ancestor(*scope, block.iteration())
+            || !self.is_reachable(frontier).unwrap_or(false)
+        {
+            return false;
+        }
+        let mut writes = BTreeSet::new();
+        for definition in definitions {
+            let Some(site) = definition.site() else {
+                return false;
+            };
+            if definition.role() != Role::Scalar
+                || definition.iteration() != *scope
+                || !matches!(plan.blocks()[site as usize].action(),
+                    Action::Scalar(Scalar::Copy { output, .. }) if *output == value)
+            {
+                return false;
+            }
+            writes.insert(site);
+        }
+        // Start each lexical visit afresh. A write from a previous iteration
+        // cannot establish availability for the current one.
+        let entry = match scope {
+            None => plan.entry(),
+            Some(iteration) => match &plan.iterations()[*iteration as usize] {
+                NativeControlLoop::Collection(loop_) => loop_.header(),
+                NativeControlLoop::Iteration(loop_) => loop_.header(),
+                NativeControlLoop::Tail(loop_) => loop_.header(),
+            },
+        };
+        if scope.is_some() && !self.strictly_dominates(entry, frontier).unwrap_or(false) {
+            return false;
+        }
+        let mut seen = vec![false; plan.blocks().len()];
+        let mut pending = vec![entry];
+        while let Some(site) = pending.pop() {
+            // Check the consumer before its action: a write at the consumer
+            // itself cannot establish prior availability.
+            if site == frontier {
+                return false;
+            }
+            if writes.contains(&site) || core::mem::replace(&mut seen[site as usize], true) {
+                continue;
+            }
+            let Ok(next) = self.successors(site) else {
+                return false;
+            };
+            pending.extend(next.into_iter().flatten());
+        }
+        true
     }
 }
 

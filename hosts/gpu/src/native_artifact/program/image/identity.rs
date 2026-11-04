@@ -298,7 +298,9 @@ fn selected_template(
 // IR155 pins closed String-matrix/immutable-Map lookup collections, explicit
 // pinned byte-table geometry and atomic private-output preflight/commit.
 // IR156 emits complete uniform unsigned range collections with checked private banks.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 157;
+// IR157 retains only live ordinary source homes at numeric cold boundaries.
+// IR158 proves immutable conditional joins available before uniform construction.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 158;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
