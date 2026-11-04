@@ -165,12 +165,13 @@ fn numeric_results_select_generic_and_unchanged_assign_leaf_or_fused_parent() {
             let phases = metadata["compiled_readonly_numeric_loops"]
                 .as_array()
                 .unwrap();
-            let fused = phases.iter().any(|emitted| {
+            let fused = regions.iter().chain(phases).any(|emitted| {
                 !emitted["typed_stores"].as_array().unwrap().is_empty()
                     && metadata["readonly_numeric_regions"]
                         .as_array()
                         .unwrap()
                         .iter()
+                        .chain(metadata["numeric_write_regions"].as_array().unwrap())
                         .any(|region| {
                             region["header"] == emitted["header"]
                                 && region
