@@ -257,16 +257,9 @@ fn derive_with_children(
         else {
             unreachable!()
         };
-        if plan.values()[child_tail.returned().get() as usize]
-            .scalar_kind()
-            .is_none()
-            && aggregates.slot(child_tail.returned()).is_none()
-            && !frames
-                .fields(child_tail.returned())
-                .is_some_and(|f| f.iter().all(|f| matches!(f.lane(), Lane::Scalar { .. })))
-        {
-            return Err("numeric child exposes a managed result");
-        }
+        // Current buffer returns are bindings, not managed values produced at
+        // the call boundary. Every action/result below still proves its exact
+        // root, schema and functional version, including the zero-trip edge.
         if let Some(child_fields) = frames.fields(child_tail.carrier()) {
             for (ordinal, field) in child_fields.iter().enumerate() {
                 if matches!(field.lane(), Lane::Managed { .. }) {
@@ -614,7 +607,7 @@ fn derive_with_children(
                 .and_then(|n| n.checked_add(usize::from(!exits.is_empty())))
                 .ok_or("phase counter size overflows")?,
         )?;
-        let schedule = super::numeric_phase::Schedule::derive(
+        let mut schedule = super::numeric_phase::Schedule::derive(
             &forest,
             trips,
             visits,
@@ -623,7 +616,36 @@ fn derive_with_children(
             words,
             boundary_work,
         )?;
-        super::numeric_phase::validate_mutation_order(plan, &forest, &actions)?;
+        if super::numeric_phase::mutation_needs_funding(plan, &forest, &actions)? {
+            use super::numeric_phase::Bound;
+            for (array, definition) in arrays.iter().enumerate() {
+                let mut base = None::<u64>;
+                let mut element = 0;
+                for &(site, ref action) in &actions {
+                    if !matches!(action, Operation::Write { array: at, .. } if *at == array) {
+                        continue;
+                    }
+                    let (fixed, per_element) = calls[site]
+                        .as_ref()
+                        .and_then(|call| call.unsigned_matrix_replace_private_work_bound())
+                        .ok_or("mutable child lacks first-change funding")?;
+                    base = Some(base.map_or(fixed, |old| old.max(fixed)));
+                    element = element.max(per_element);
+                }
+                if let Some(base) = base {
+                    let bridge = Bound::add(
+                        Bound::Constant(base),
+                        Bound::multiply(
+                            Bound::BufferLength(definition.field),
+                            Bound::Constant(element),
+                        ),
+                    );
+                    schedule.compute_bound = Bound::add(schedule.compute_bound, bridge);
+                    schedule.comparison_bound =
+                        Bound::add(schedule.comparison_bound, Bound::Constant(1));
+                }
+            }
+        }
         words = words
             .checked_add(schedule.loops.len())
             .ok_or("phase counter size overflows")?;

@@ -11,6 +11,8 @@ struct Traversal {
     header: usize,
     order: Vec<usize>,
     next: BTreeMap<usize, Vec<usize>>,
+    summaries: BTreeSet<usize>,
+    local: bool,
 }
 impl Traversal {
     fn new(
@@ -40,6 +42,62 @@ impl Traversal {
             header: tail.header() as usize,
             order,
             next,
+            summaries: BTreeSet::new(),
+            local: false,
+        })
+    }
+    fn composed(
+        plan: &Plan,
+        tail: &NativeTailLoop,
+        forest: &super::super::numeric_phase::Forest,
+    ) -> Result<Self, &'static str> {
+        let iteration = forest
+            .loops
+            .iter()
+            .find(|loop_| loop_.header == tail.header() as usize)
+            .ok_or("version traversal lacks its exact loop")?
+            .iteration;
+        let children = forest
+            .loops
+            .iter()
+            .filter(|loop_| loop_.parent == Some(iteration))
+            .map(|loop_| (loop_.initialize, loop_.exit))
+            .collect::<BTreeMap<_, _>>();
+        let mut pending = vec![tail.header() as usize];
+        let mut next = BTreeMap::new();
+        while let Some(site) = pending.pop() {
+            if site == tail.exit() as usize || next.contains_key(&site) {
+                continue;
+            }
+            let successors = if site == tail.latch() as usize || site == tail.finish() as usize {
+                Vec::new()
+            } else if let Some(&exit) = children.get(&site) {
+                vec![exit]
+            } else {
+                forest
+                    .successors(plan, site)
+                    .into_iter()
+                    .filter(|next| forest.sites.contains(next))
+                    .collect()
+            };
+            pending.extend(&successors);
+            next.insert(site, successors);
+        }
+        let order = forest
+            .order
+            .iter()
+            .copied()
+            .filter(|site| next.contains_key(site))
+            .collect::<Vec<_>>();
+        if order.len() != next.len() {
+            return Err("composed version traversal lacks source order");
+        }
+        Ok(Self {
+            header: tail.header() as usize,
+            order,
+            next,
+            summaries: children.into_keys().collect(),
+            local: true,
         })
     }
     // Current-traversal availability, excluding the latch backedge. Whole-plan
@@ -126,25 +184,65 @@ pub(super) fn validate(
     forest: &super::super::numeric_phase::Forest,
     exits: &[super::super::numeric_plan::Exit],
 ) -> Result<(), &'static str> {
+    if actions.iter().any(|(site, operation)| {
+        matches!(operation, Operation::Write { .. })
+            && plan.blocks()[*site].iteration() != Some(forest.loops[0].iteration)
+    }) {
+        // Prove each call's carried/returned versions locally, then use that
+        // exact summary at its caller. Independent loop guards do not require
+        // a cross-product of truth assignments across nested invocations.
+        for loop_ in forest.loops.iter().rev() {
+            let NativeControlLoop::Tail(current) = &plan.iterations()[loop_.iteration as usize]
+            else {
+                unreachable!("numeric Tail tree");
+            };
+            let traversal = Traversal::composed(plan, current, forest)?;
+            validate_traversal(
+                plan, current, frames, provenance, &traversal, actions, arrays, result, forest,
+                exits,
+            )?;
+        }
+        return Ok(());
+    }
     // Check the complete graph before any conditional edge can be excluded.
     let traversal = Traversal::new(plan, tail, sites, forest)?;
+    validate_traversal(
+        plan, tail, frames, provenance, &traversal, actions, arrays, result, forest, exits,
+    )
+}
+
+fn validate_traversal(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    provenance: &mut Provenance<'_, '_>,
+    traversal: &Traversal,
+    actions: &[(usize, Operation)],
+    arrays: &[Array],
+    result: &ResultRecipe,
+    forest: &super::super::numeric_phase::Forest,
+    exits: &[super::super::numeric_plan::Exit],
+) -> Result<(), &'static str> {
     let original = pass(
         plan,
         tail,
         frames,
         provenance,
-        &traversal,
+        traversal,
         actions,
         arrays,
         result,
         &[],
         exits,
+        forest,
     );
     if !matches!(
         original,
         Err("content use reads an older array version"
             | "recursive edge discards or forwards an older array version"
-            | "leaf returns an older array version")
+            | "leaf returns an older array version"
+            | "child argument reads an older array version"
+            | "child returns an older array version")
     ) {
         return original;
     }
@@ -154,11 +252,12 @@ pub(super) fn validate(
         let no = edges.iter().map(|&(s, (n, _))| (s, n)).collect::<Vec<_>>();
         let yes = edges.iter().map(|&(s, (_, y))| (s, y)).collect::<Vec<_>>();
         if pass(
-            plan, tail, frames, provenance, &traversal, actions, arrays, result, &no, exits,
+            plan, tail, frames, provenance, traversal, actions, arrays, result, &no, exits, forest,
         )
         .is_ok()
             && pass(
-                plan, tail, frames, provenance, &traversal, actions, arrays, result, &yes, exits,
+                plan, tail, frames, provenance, traversal, actions, arrays, result, &yes, exits,
+                forest,
             )
             .is_ok()
         {
@@ -166,6 +265,26 @@ pub(super) fn validate(
         }
     }
     original
+}
+
+fn managed_keys(
+    frames: &NativeBufferFrames,
+    provenance: &mut Provenance<'_, '_>,
+    value: u32,
+) -> Vec<Key> {
+    if let Some(fields) = frames.fields_at(value as usize) {
+        fields
+            .iter()
+            .enumerate()
+            .filter_map(|(ordinal, field)| {
+                matches!(field.lane(), Lane::Managed { .. }).then_some((value, Some(ordinal)))
+            })
+            .collect()
+    } else if provenance.array(value, None).is_some() {
+        vec![(value, None)]
+    } else {
+        Vec::new()
+    }
 }
 
 fn pass(
@@ -179,13 +298,54 @@ fn pass(
     result: &ResultRecipe,
     selected: &[(usize, usize)],
     exits: &[super::super::numeric_plan::Exit],
+    forest: &super::super::numeric_phase::Forest,
 ) -> Result<(), &'static str> {
+    // A child's zero-trip return alone cannot describe the effects of its
+    // arbitrary recursive visits. Latches establish the current carried
+    // versions inductively; a return invalidates older caller bindings for
+    // every root that any visit may change. Only current returned bindings
+    // survive that summary. Observable older versions therefore decline.
+    let mut child_effects = Vec::new();
+    for child in forest.loops.iter().skip(1) {
+        let mut descendants = BTreeSet::from([child.iteration]);
+        loop {
+            let previous = descendants.len();
+            for nested in &forest.loops {
+                if nested
+                    .parent
+                    .is_some_and(|parent| descendants.contains(&parent))
+                {
+                    descendants.insert(nested.iteration);
+                }
+            }
+            if descendants.len() == previous {
+                break;
+            }
+        }
+        let changed = actions
+            .iter()
+            .filter_map(|(site, operation)| {
+                let Operation::Write { array, .. } = operation else {
+                    return None;
+                };
+                plan.blocks()[*site]
+                    .iteration()
+                    .is_some_and(|iteration| descendants.contains(&iteration))
+                    .then_some(arrays[*array].field)
+            })
+            .collect::<BTreeSet<_>>();
+        let NativeControlLoop::Tail(child_tail) = &plan.iterations()[child.iteration as usize]
+        else {
+            unreachable!("numeric Tail child");
+        };
+        child_effects.push((child_tail, changed));
+    }
     let mut states = BTreeMap::<usize, State>::new();
     states.insert(
         tail.header() as usize,
-        arrays
-            .iter()
-            .map(|a| ((tail.carrier().get(), Some(a.field)), true))
+        managed_keys(frames, provenance, tail.carrier().get())
+            .into_iter()
+            .map(|key| (key, true))
             .collect(),
     );
     for &site in &traversal.order {
@@ -299,6 +459,36 @@ fn pass(
             }
             _ => {}
         }
+        if let Some((child, changed)) = child_effects.iter().find(|(child, _)| {
+            if traversal.local {
+                traversal.summaries.contains(&site) && child.initialize() as usize == site
+            } else {
+                child.finish() as usize == site
+            }
+        }) {
+            let value = child.returned().get();
+            let returned = managed_keys(frames, provenance, value);
+            let required = if traversal.local {
+                managed_keys(frames, provenance, child.seed().get())
+            } else {
+                returned.clone()
+            };
+            if required.iter().any(|&key| !fresh(&state, key)) {
+                if traversal.local {
+                    return Err("child argument reads an older array version");
+                }
+                return Err("child returns an older array version");
+            }
+            for (&(value, field), current) in &mut state {
+                if provenance
+                    .array(value, field)
+                    .is_some_and(|root| changed.contains(&root))
+                {
+                    *current = false;
+                }
+            }
+            state.extend(returned.into_iter().map(|key| (key, true)));
+        }
         if let Some(child) = plan
             .iterations()
             .iter()
@@ -322,20 +512,26 @@ fn pass(
             }
         }
         if site == tail.latch() as usize {
-            for array in arrays {
-                if !fresh(&state, (tail.next().get(), Some(array.field))) {
+            for key in managed_keys(frames, provenance, tail.next().get()) {
+                if !fresh(&state, key) {
                     return Err("recursive edge discards or forwards an older array version");
                 }
             }
         }
         if site == tail.finish() as usize {
-            let current = match result {
-                ResultRecipe::Unreachable => false,
-                ResultRecipe::Scalar | ResultRecipe::Aggregate { .. } => true,
-                ResultRecipe::Array { .. } => fresh(&state, (tail.returned().get(), None)),
-                ResultRecipe::Frame { value, arrays } => arrays
+            let current = if traversal.local {
+                managed_keys(frames, provenance, tail.returned().get())
                     .iter()
-                    .all(|(ordinal, _)| fresh(&state, (*value, Some(*ordinal)))),
+                    .all(|&key| fresh(&state, key))
+            } else {
+                match result {
+                    ResultRecipe::Unreachable => false,
+                    ResultRecipe::Scalar | ResultRecipe::Aggregate { .. } => true,
+                    ResultRecipe::Array { .. } => fresh(&state, (tail.returned().get(), None)),
+                    ResultRecipe::Frame { value, arrays } => arrays
+                        .iter()
+                        .all(|(ordinal, _)| fresh(&state, (*value, Some(*ordinal)))),
+                }
             };
             if !current {
                 return Err("leaf returns an older array version");

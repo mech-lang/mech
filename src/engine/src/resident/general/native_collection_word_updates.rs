@@ -42,6 +42,25 @@ impl NativePreparedLibraryCall {
         self.unsigned_matrix_replace_width().is_some()
     }
 
+    fn unsigned_replacement_metadata_bytes(&self) -> Option<u64> {
+        self.binding_bytes
+            .checked_add(self.schemas.clone_allocation_bound_bytes()?)?
+            .checked_add(4096)
+    }
+
+    /// Conservative funding for one effective replacement before native work
+    /// continues. The variable term is initialized elements, not capacity.
+    /// This is an admission bound only; the original operation charges its
+    /// actual copy/consume path on the caller's existing account.
+    pub fn unsigned_matrix_replace_private_work_bound(&self) -> Option<(u64, u64)> {
+        let width = self.unsigned_matrix_replace_width()? as u64;
+        let base = self.lookup_work.checked_add(128 + 16 + 1024)?.checked_add(
+            self.unsigned_replacement_metadata_bytes()?
+                .checked_mul(16)?,
+        )?;
+        Some((base, width.checked_mul(8)?))
+    }
+
     /// Executes this original maintained leaf, with the caller's current source
     /// and scalar words. Last use and visit authority remain caller obligations.
     /// Actual frozen exclusivity is checked again before any physical mutation.
@@ -186,13 +205,7 @@ impl NativePreparedLibraryCall {
                     return Ok((finish(source, None)?, false));
                 }
                 let metadata = self
-                    .binding_bytes
-                    .checked_add(
-                        self.schemas
-                            .clone_allocation_bound_bytes()
-                            .ok_or(InvokeError::InvalidInput)?,
-                    )
-                    .and_then(|n| n.checked_add(4096))
+                    .unsigned_replacement_metadata_bytes()
                     .ok_or(InvokeError::InvalidInput)?;
                 context.check_capacity(
                     metadata,

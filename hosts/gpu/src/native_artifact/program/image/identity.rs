@@ -294,7 +294,9 @@ fn selected_template(
 // IR155 reconstructs ordinary parent pieces on a native interval's cold route.
 // Source-price coverage belongs to the exact current root continuation only.
 // Acyclic prefixes retain their existing parent pieces.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 155;
+// IR156 reconstructs fixed-size mutable child effects, current owner returns
+// and conservative first-change funding on the same invocation account.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 156;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
