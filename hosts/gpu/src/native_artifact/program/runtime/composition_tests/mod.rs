@@ -4,6 +4,7 @@ use crate::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;
 mod admission_overlap;
+mod bit_counts;
 mod borrowed_record_map;
 mod bounds_retry;
 mod captured_numeric;

@@ -1687,6 +1687,10 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let bound_call_shim = declarations.bound_call_shim;
         #[cfg(feature = "canonical-native-program")]
+        if controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BitCounts) {
+            crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
+        }
+        #[cfg(feature = "canonical-native-program")]
         if plan.is_program() {
             report.cfg_cleanup = Some(
                 crate::native_artifact::program::codegen::cfg_cleanup::optimize(
@@ -1695,6 +1699,10 @@ impl<'plan> CfgDefinition<'plan> {
                     module.isa(),
                 )?,
             );
+        }
+        #[cfg(feature = "canonical-native-program")]
+        if controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BitCounts) {
+            crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
         }
         module
             .define_function(function, &mut context)

@@ -34,6 +34,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     UniformWords,
     SourceLiveness,
     BooleanBranches,
+    BitCounts,
     DisjointState,
     NontrappingHomes,
 }
