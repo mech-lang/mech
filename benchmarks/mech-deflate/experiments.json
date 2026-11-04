@@ -13202,8 +13202,8 @@
           "manifest_sha256": "dfb2fe08f5c356b2d970dec9950219ad2b1da88d281cc5bcbf586e883562d33f",
           "bytes": 245643,
           "files": 59,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-failure-snapshot-round131-20261104/archives/r131-eight-primary-3a55ad0b629f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r131-eight-primary-3a55ad0b629f.tar.gz"
         },
         {
           "event": "random-primary",
@@ -13213,8 +13213,8 @@
           "manifest_sha256": "c193c048d565e584585f84feef7ab2f99db1e29984bff3ecfdf0cf32816655a1",
           "bytes": 62204,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-failure-snapshot-round131-20261104/archives/r131-random-primary-794549f65024.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r131-random-primary-794549f65024.tar.gz"
         },
         {
           "event": "repeated-primary",
@@ -13224,8 +13224,8 @@
           "manifest_sha256": "0c5d26d1803314dc14fee1d5955b4c396027c3b7be014cc4bf4f5c91824923f9",
           "bytes": 64252,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-failure-snapshot-round131-20261104/archives/r131-repeated-primary-8f230abd94d4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r131-repeated-primary-8f230abd94d4.tar.gz"
         },
         {
           "event": "closure",
@@ -13235,13 +13235,13 @@
           "manifest_sha256": "88cad32075f35aa223cdf1b640fc70218477982d52feef3113b3c61362e77a6c",
           "bytes": 5159110,
           "files": 215,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-failure-snapshot-round131-20261104/archives/r131-closure-6b2db439cabc.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r131-closure-6b2db439cabc.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": false,
       "primary": {
         "eight": {
