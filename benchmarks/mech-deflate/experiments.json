@@ -15640,6 +15640,17 @@
           "files": 30,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-random-64-primary-3aee381312b5.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-case-32-high-entropy-stored-primary-8c2187cdd0be.tar.gz",
+          "sha256": "8c2187cdd0bebf87c499051e7ba4443c6122c9118f58a5567c466f69601c7ff1",
+          "manifest_sha256": "99be3589341332809d6c47529d393108e3ff3ab43ee66f883431c1ace8b47b23",
+          "bytes": 167477,
+          "files": 30,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-32-high-entropy-stored-primary-8c2187cdd0be.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
