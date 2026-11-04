@@ -304,7 +304,8 @@ fn selected_template(
 // IR160 lowers exact unsigned SWAR population-count idioms to native popcount.
 // IR161 lowers pure scalar choices across empty source-edge chains to selects.
 // IR162 supports exact nested managed leaves in private numeric frames.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 162;
+// IR163 retains only exact private consumers at numeric cold boundaries.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 163;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

@@ -176,8 +176,6 @@ pub(in crate::native_artifact) fn emit_entry(
         .then(|| super::source_liveness::Liveness::derive(program, &source_homes))
         .transpose()
         .map_err(backend)?;
-    let mut reconciliation = BTreeSet::new();
-    reconciliation.extend(region.words..region.words + 3);
     let mut private_live = BTreeSet::new();
     private_live.extend(proof.scalar_inputs.iter().map(|binding| binding.word));
     private_live.extend(proof.scalar_outputs.iter().map(|binding| binding.word));
@@ -195,14 +193,37 @@ pub(in crate::native_artifact) fn emit_entry(
         );
     }
     private_live.extend(proof.scalar_words..proof.words);
-    reconciliation.extend(private_live.iter().map(|word| shadow + word));
+    let exact_private = if controls.enabled(OptimizationPass::PrivateLiveness) {
+        proof
+            .sites
+            .iter()
+            .copied()
+            .chain([region.tail.exit() as usize])
+            .map(|site| {
+                Ok((
+                    site,
+                    super::private_liveness::at(
+                        proof,
+                        region.numeric_tree.as_ref(),
+                        site,
+                        region.tail.exit() as usize,
+                    )?,
+                ))
+            })
+            .collect::<Result<BTreeMap<_, _>, NativeCompileError>>()?
+    } else {
+        BTreeMap::new()
+    };
     let live_at = |site| {
         let source = liveness
             .as_ref()
             .map_or(&source_homes, |live| live.at(site));
-        reconciliation
-            .union(source)
+        let private = exact_private.get(&site).unwrap_or(&private_live);
+        source
+            .iter()
             .copied()
+            .chain(region.words..region.words + 3)
+            .chain(private.iter().map(|word| shadow + word))
             .collect::<BTreeSet<_>>()
     };
     let setup_work = b.func.dfg.num_insts() - setup_start;
@@ -251,7 +272,11 @@ pub(in crate::native_artifact) fn emit_entry(
         scalar_input_loads: proof.scalar_inputs.len(),
         scalar_output_stores: (proof.scalar_inputs.len() + proof.scalar_outputs.len()) * 2,
         entry_shadow_argument_copies: 0,
-        private_boundary_words: private_live.len(),
+        private_boundary_words: exact_private
+            .values()
+            .map(BTreeSet::len)
+            .max()
+            .unwrap_or(private_live.len()),
         source_home_words: source_homes.len(),
         runtime_scalar_path_walks: 0,
         tree_nodes: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
@@ -392,8 +417,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.switch_to_block(materialize);
                 let index = b.ins().iadd_imm(length, 1);
                 boundary::materialize(
-                    b, &words, region, proof, *array, site, frame, locals, index, incoming, hooks,
-                    error,
+                    controls, b, &words, region, proof, *array, site, frame, locals, index,
+                    incoming, hooks, error,
                 )?;
                 b.ins().jump(done, &[]);
                 b.switch_to_block(store);
@@ -507,8 +532,8 @@ pub(in crate::native_artifact) fn emit_entry(
                         b.ins().brif(private, store, &[], materialize, &[]);
                         b.switch_to_block(materialize);
                         boundary::materialize(
-                            b, &words, region, proof, *array, site, frame, locals, index, incoming,
-                            hooks, error,
+                            controls, b, &words, region, proof, *array, site, frame, locals, index,
+                            incoming, hooks, error,
                         )?;
                         b.ins().jump(done, &[]);
                         b.switch_to_block(store);

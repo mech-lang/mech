@@ -33,6 +33,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Emission-only ablation retains the ordinary collection error path.
     UniformWords,
     SourceLiveness,
+    PrivateLiveness,
     BooleanBranches,
     BitCounts,
     ScalarSelects,

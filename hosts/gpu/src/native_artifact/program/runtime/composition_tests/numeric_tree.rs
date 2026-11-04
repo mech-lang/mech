@@ -110,6 +110,11 @@ fn numeric_tree_source_liveness_ablation_keeps_outputs_errors_and_retry() {
 }
 
 #[test]
+fn numeric_tree_private_liveness_ablation_keeps_outputs_errors_and_retry() {
+    check_emission_ablation(OptimizationPass::PrivateLiveness);
+}
+
+#[test]
 fn numeric_tree_boolean_branch_ablation_keeps_reports_errors_and_retry() {
     check_emission_ablation(OptimizationPass::BooleanBranches);
 }
@@ -162,6 +167,12 @@ fn check_emission_ablation(pass: OptimizationPass) {
             JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
                 .unwrap();
         let conservative = JitProgramArtifact::compile_for_test(&artifact, &catalog, pass).unwrap();
+        if pass == OptimizationPass::PrivateLiveness {
+            assert!(
+                native.descriptor().code_bytes() < conservative.descriptor().code_bytes(),
+                "precise private consumers must remove real emitted synchronization"
+            );
+        }
         if pass == OptimizationPass::BooleanBranches {
             assert!(
                 native.descriptor().code_bytes() < conservative.descriptor().code_bytes(),
@@ -442,13 +453,24 @@ fn numeric_tree_finite_boundaries_preserve_publication_and_retry() {
 
 #[test]
 fn numeric_tree_finite_fuel_reconstructs_each_live_loop_before_continuing() {
+    check_numeric_tree_finite_fuel(None);
+}
+
+#[test]
+fn numeric_tree_private_liveness_finite_fuel_matches_conservative_reconciliation() {
+    check_numeric_tree_finite_fuel(Some(OptimizationPass::PrivateLiveness));
+}
+
+fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
-        let jit = JitProgramArtifact::compile_with_limits(
-            &artifact,
-            &mech_stdlib::source_catalog(),
-            mode.compilation(),
-        )
+        let catalog = mech_stdlib::source_catalog();
+        let jit = match pass {
+            Some(pass) => JitProgramArtifact::compile_for_test(&artifact, &catalog, pass),
+            None => {
+                JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+            }
+        }
         .unwrap();
         let region = jit
             .descriptor()

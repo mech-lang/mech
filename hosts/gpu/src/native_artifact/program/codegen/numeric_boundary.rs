@@ -3,6 +3,7 @@ use super::*;
 use crate::native_artifact::program::prepare::tail::Region;
 
 pub(super) fn materialize(
+    controls: &CompilationControls,
     b: &mut FunctionBuilder<'_>,
     words: &Words,
     region: &Region,
@@ -35,8 +36,18 @@ pub(super) fn materialize(
             .store(MemFlags::new(), value, hooks.arguments, offset(2 + field)?);
     }
     if let Some(tree) = &region.numeric_tree {
+        let active = controls
+            .enabled(OptimizationPass::PrivateLiveness)
+            .then(|| super::super::private_liveness::carrier_words(tree, site))
+            .transpose()?;
         for node in &tree.nodes {
             for binding in &node.scalar_bindings {
+                if active
+                    .as_ref()
+                    .is_some_and(|words| !words.contains(&binding.word))
+                {
+                    continue;
+                }
                 let value = words.read(b, shadow + binding.word);
                 b.ins().store(
                     MemFlags::new(),
