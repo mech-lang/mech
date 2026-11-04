@@ -378,9 +378,11 @@ fn analyze_tree(
     }
     states.insert((traversal.header, 0), entry.clone());
     let mut pending = std::collections::VecDeque::from([(traversal.header, 0)]);
+    let mut queued = BTreeSet::from([(traversal.header, 0)]);
     let mut reachable = BTreeSet::new();
     let mut outputs = BTreeMap::new();
     while let Some((site, truth)) = pending.pop_front() {
+        queued.remove(&(site, truth));
         let mut state = states[&(site, truth)].clone();
         reachable.insert((site, truth));
         transfer(plan, frames, provenance, site, actions, arrays, &mut state)?;
@@ -421,7 +423,13 @@ fn analyze_tree(
                 changed |= value != *current;
                 *current = value;
             }
-            if changed || !reachable.contains(&(next, next_truth)) {
+            // Each pending visit reads the latest meet from `states`. Several
+            // predecessors can update that meet before it runs; queue it once
+            // rather than cloning/transferring the same state for every path.
+            // Removing it on pop still permits later fixed-point iterations.
+            if (changed || !reachable.contains(&(next, next_truth)))
+                && queued.insert((next, next_truth))
+            {
                 pending.push_back((next, next_truth));
             }
         }
