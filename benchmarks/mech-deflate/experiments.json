@@ -14019,6 +14019,17 @@
           "files": 122,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-history-map-round134-20261104/archives/r134-counters-d454783d7b4e.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "61b7d0b51a1ef17daf97992844c5f413b3203400",
+          "asset": "r134-closure-08fbaa4eebab.tar.gz",
+          "sha256": "08fbaa4eebab75553eba50edb67ab2bff4952d5bb0c207f9f048bca3783bba59",
+          "manifest_sha256": "213c5d2105d3df2920baf8feca3ad94780fa8a3b34f18f85f9c0ccb6c114577e",
+          "bytes": 6201390,
+          "files": 388,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-history-map-round134-20261104/archives/r134-closure-08fbaa4eebab.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
