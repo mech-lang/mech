@@ -187,13 +187,24 @@ fn live_before(
             }
         }
     }
+    let (mut live, _) = solve_liveness(&next, &reads, &definitions);
+    Ok(live.remove(&start).unwrap())
+}
+
+fn solve_liveness(
+    next: &BTreeMap<usize, Vec<usize>>,
+    reads: &BTreeMap<usize, BTreeSet<u32>>,
+    definitions: &BTreeMap<usize, BTreeSet<u32>>,
+) -> (BTreeMap<usize, BTreeSet<u32>>, usize) {
     let mut live = next
         .keys()
         .map(|&s| (s, BTreeSet::<u32>::new()))
         .collect::<BTreeMap<_, _>>();
+    let mut visits = 0;
     loop {
         let mut changed = false;
         for (&site, successors) in next.iter().rev() {
+            visits += 1;
             let mut values = successors
                 .iter()
                 .flat_map(|s| live[s].iter().copied())
@@ -209,8 +220,12 @@ fn live_before(
             break;
         }
     }
-    Ok(live.remove(&start).unwrap())
+    (live, visits)
 }
+
+#[cfg(test)]
+#[path = "numeric_liveness_tests.rs"]
+mod liveness_tests;
 
 pub(super) fn derive(
     plan: &Plan,
