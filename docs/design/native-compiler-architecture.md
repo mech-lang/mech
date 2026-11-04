@@ -72,6 +72,39 @@ enter map admission. Frame assignment retains scalar + iteration + aggregate +
 borrowed + closed words, then relocates owner words once. Unselected frontiers
 remain in the identity transcript.
 
+## Nested numeric regions with exact non-Tail exits
+
+R130 composes the existing current-funded Tail schedule with exact cold
+non-Tail boundaries. Static presence of a Collection no longer disqualifies
+the supported Tail descendants. Preparation cuts flow before the original
+Collection builder/initializer and retains the same checked operations, word
+homes and private owners on all supported paths. Complete/static/scalar-cold
+selection remains preferred; the existing single-root interval remains a fallback.
+Appending children and unsupported managed escapes still decline.
+
+Register the full child input-binding tree before checking recursive returns.
+A child's current return can depend on a deeper child's carrier. An incomplete
+binding inventory is not evidence of a changed root. The independent version
+analysis still proves each reached read, recursive edge and return current,
+including caller bindings required by a cold continuation.
+
+An unsupported edge inside a native child exports only its exact current live
+values, freezes private buffers and settles the same loan before ordinary code.
+Restore the source edge's active Tail and its actual ancestor chain. Unlike an
+unpaid child initializer/header, that active Tail's current traversal was paid;
+only it and its paid ancestors keep source credit. Latches/returns consume it.
+The ordinary Collection initializes its own hidden state after the exit. Image
+restoration rederives these edges, bindings, homes, counters and prices.
+
+Initial entry transports only carrier scalars, current views/capacities, private
+flags and counters. Internal scalar frame lanes are assigned by the selected
+source. The real collector copies 102 entry words from an admitted 1,080-word
+bank. Keep the full capacity, original finite charges and first-change transport;
+omitting irrelevant initial copies does not grant additional account authority.
+IR160 commits this lowering contract; work107/private ABI38/bytecode14 remain.
+The measured gains and increased generated text/stack are recorded separately in
+[the current status](native-compression-status.md#r130-retain-collector-state-through-nested-native-loops).
+
 ## Physical cleanup follows the selected representation
 
 R129 retains the original logical retirement inventory and reached flags for
