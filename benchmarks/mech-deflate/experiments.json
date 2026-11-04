@@ -15673,6 +15673,17 @@
           "files": 30,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-eight-overlap-primary-1c7046e87fb9.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-case-eight-literals-prefix-primary-c06a7a8a64fb.tar.gz",
+          "sha256": "c06a7a8a64fbe0e516af4855987d4d78901cc9a9fc1abb59339da015c11f62d7",
+          "manifest_sha256": "d488c6ffa60c73fd8e87b2592646c04ebc0d4fcdd0bd55ab7065cfb2103ec1c0",
+          "bytes": 167814,
+          "files": 30,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-eight-literals-prefix-primary-c06a7a8a64fb.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
