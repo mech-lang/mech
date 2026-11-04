@@ -250,7 +250,7 @@ fn numeric_interval_readonly_prefix_settles_before_its_first_write() {
 }
 
 #[test]
-fn numeric_interval_readonly_array_child_settles_without_first_change() {
+fn numeric_readonly_parent_keeps_its_array_child_native() {
     let source = format!(
         "{}\nheap-bridge(a<[u32]>, base<u64>, size<u64>, root<u64>, visits<u64>) => (out<[u32]>) :=\n  first<u64> := a[1u64]\n  valid! := first >= 0u64\n  out := ((visits != 0u64)? | true => heap-bridge(a, base, size, root, visits - 1u64) | false => huff-heap-build(a, base, size, root)).\nheap-bridge(a<[u32]>, base<u64>, size<u64>, root<u64>, visits<u64>)\n",
         include_str!("../../../../../tests/fixtures/native/deflate-huffman-level12.mec")
@@ -301,7 +301,8 @@ fn numeric_interval_readonly_array_child_settles_without_first_change() {
                 observe::run(&jit, &args, &mut out, mode.execution(), &memory)
             };
             result.unwrap();
-            assert_eq!(counts.cold_private_arrays, vec![0]);
+            assert_eq!(counts.phases, 1, "{counts:?}");
+            assert!(counts.cold_private_arrays.is_empty(), "{counts:?}");
             assert_eq!(
                 out.last()
                     .unwrap()
