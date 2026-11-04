@@ -349,11 +349,19 @@ pub(in crate::native_artifact::program::prepare) fn scalar_paths(
 // A key denotes either an array Value or one managed field in a private frame.
 // All definitions must agree. Cycles are rejected except the explicit carrier
 // roots, whose next-state identity is checked separately for every field.
+type Transfers = std::rc::Rc<[(numeric_fields::Key, numeric_fields::Key)]>;
 struct Provenance<'a, 'p> {
     facts: &'a NativeProgramFacts<'p>,
     frames: &'a NativeBufferFrames,
     tail: &'a NativeTailLoop,
     calls: &'a [Option<NativePreparedLibraryCall>],
+    // Exact untagged leaves already derived for this root. Rechecking a root
+    // identity must not rebuild the same recursive structural vector.
+    carrier_fields: &'a [mech_engine::native_artifact::NativeBufferFrameField],
+    // Structural copy recipes depend only on this immutable plan and its
+    // frame layouts. Cache the unfiltered recipe, never a freshness decision
+    // or a root assignment (child roots are installed independently below).
+    transfers: BTreeMap<usize, Result<Transfers, &'static str>>,
     cache: BTreeMap<(u32, Option<usize>), Option<usize>>,
     active: BTreeSet<(u32, Option<usize>)>,
     /// Child carrier fields are identity phis rooted through the exact seed.
@@ -362,6 +370,16 @@ struct Provenance<'a, 'p> {
     captures: BTreeMap<numeric_fields::Key, usize>,
 }
 impl Provenance<'_, '_> {
+    fn transfers(&mut self, site: usize) -> Result<Transfers, &'static str> {
+        if let Some(answer) = self.transfers.get(&site) {
+            return answer.clone();
+        }
+        let answer =
+            numeric_fields::transfers(self.facts.plan(), self.frames, site).map(std::rc::Rc::from);
+        self.transfers.insert(site, answer.clone());
+        answer
+    }
+
     fn array(&mut self, value: u32, field: Option<usize>) -> Option<usize> {
         let key = (value, field);
         if let Some(root) = self.captures.get(&key) {
@@ -375,7 +393,7 @@ impl Provenance<'_, '_> {
         if value == self.tail.carrier().get() {
             let ordinal = field?;
             return matches!(
-                numeric_fields::at(self.frames, value)?.get(ordinal)?.lane(),
+                self.carrier_fields.get(ordinal)?.lane(),
                 Lane::Managed { .. }
             )
             .then_some(ordinal);
@@ -548,6 +566,8 @@ fn derive_inner(
         frames,
         tail,
         calls,
+        carrier_fields: &fields,
+        transfers: BTreeMap::new(),
         cache: BTreeMap::new(),
         active: BTreeSet::new(),
         child_roots: BTreeMap::new(),

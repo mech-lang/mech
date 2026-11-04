@@ -779,7 +779,7 @@ fn cold_aliases(
 
 fn transfer(
     plan: &Plan,
-    frames: &NativeBufferFrames,
+    _frames: &NativeBufferFrames,
     provenance: &mut Provenance<'_, '_>,
     site: usize,
     actions: &[(usize, Operation)],
@@ -789,8 +789,10 @@ fn transfer(
     let fresh = |state: &State, key: Key| state.get(&key).unwrap_or(false);
     match actions.iter().find(|(s, _)| *s == site).map(|(_, a)| a) {
         Some(Operation::Frame) => {
-            let copied = numeric_fields::transfers(plan, frames, site)?
-                .into_iter()
+            let copied = provenance
+                .transfers(site)?
+                .iter()
+                .copied()
                 .filter(|(_, source)| provenance.array(source.0, source.1).is_some())
                 .map(|(target, source)| (target, fresh(state, source)))
                 .collect::<Vec<_>>();
@@ -820,7 +822,7 @@ fn transfer(
 fn pass(
     plan: &Plan,
     tail: &NativeTailLoop,
-    frames: &NativeBufferFrames,
+    _frames: &NativeBufferFrames,
     provenance: &mut Provenance<'_, '_>,
     traversal: &Traversal,
     actions: &[(usize, Operation)],
@@ -843,8 +845,10 @@ fn pass(
         let fresh = |state: &State, key: Key| state.get(&key).unwrap_or(false);
         match actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op) {
             Some(Operation::Frame) => {
-                let copied = numeric_fields::transfers(plan, frames, site)?
-                    .into_iter()
+                let copied = provenance
+                    .transfers(site)?
+                    .iter()
+                    .copied()
                     .filter(|(_, source)| provenance.array(source.0, source.1).is_some())
                     .map(|(target, source)| (target, fresh(&state, source)))
                     .collect::<Vec<_>>();
