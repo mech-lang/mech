@@ -25,6 +25,9 @@ impl Invocation<'_, '_, '_> {
             LibraryCallRoute::UnsignedMatrixElement => {
                 Ok(self.unsigned_matrix_element_call(site, words)?.map(Some))
             }
+            LibraryCallRoute::StringMatrixElement => Ok(self
+                .string_matrix_element_call(site, words)?
+                .then_some(None)),
             LibraryCallRoute::UnsignedMatrixReplace => Ok(self
                 .unsigned_matrix_replace_call(site, words)?
                 .then_some(None)),

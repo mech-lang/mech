@@ -22,6 +22,9 @@ fn variants(shape: &str) -> [ProgramArtifact; 2] {
     let source = format!(
         "words := input<{shape}>\nkey := words[position<u64>]\nindex := dictionary<{{string:u64}}>\n(index{{key}}, key ∈ index)\n"
     );
+    artifacts(&source)
+}
+fn artifacts(source: &str) -> [ProgramArtifact; 2] {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x534d4b59), Revision(0), source).unwrap(),
         ParseConfig::default(),
@@ -37,6 +40,44 @@ fn variants(shape: &str) -> [ProgramArtifact; 2] {
     )
     .unwrap();
     [artifact, decoded]
+}
+
+#[test]
+fn selected_string_projection_admits_the_complete_large_schema_owner() {
+    let fields = (0..256)
+        .map(|i| format!("field{i}<string>"))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let source = format!("words := input<[string]>\nwords[position<u64>]\npadding<{{{fields}}}>\n");
+    for artifact in artifacts(&source) {
+        assert!(artifact.schemas().clone_allocation_bound_bytes().unwrap() > 16_384);
+        let calls = prepared(&artifact);
+        let call = calls
+            .iter()
+            .find(|c| c.supports_string_matrix_element())
+            .unwrap();
+        let memory = ManagedMemoryBudget::new(64 << 20);
+        let work = NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &memory).unwrap();
+        let source = input_source(&artifact, call, &["é", "last"], 1, 2, &memory);
+        let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+        for index in [1, 2] {
+            let output = call
+                .string_matrix_element(&source, index, limits(), &work, ResourceDemand::default())
+                .unwrap()
+                .unwrap();
+            assert_eq!(string(&output), if index == 1 { "é" } else { "last" });
+            drop(output);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                before
+            );
+        }
+        drop((source, work));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
 }
 fn prepared(artifact: &ProgramArtifact) -> Vec<NativePreparedLibraryCall> {
     let catalog = catalog();
@@ -297,6 +338,157 @@ fn logical_string_output_and_clone_caps_match_maintained_scalar_kernel_exactly()
         drop((output, loan, source, work));
         assert_eq!(memory.used_bytes(), 0);
         assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}
+
+#[test]
+fn selected_string_projection_matches_canonical_values_bounds_and_logical_caps() {
+    let text = ["", "é", "a\0b", "🧑‍🚀", "e\u{301}\r\n", "last"];
+    for shape in ["[string]", "[string]:2,3"] {
+        for artifact in variants(shape) {
+            let calls = prepared(&artifact);
+            let call = calls
+                .iter()
+                .find(|c| c.supports_string_matrix_element())
+                .unwrap();
+            let memory = ManagedMemoryBudget::new(64 << 20);
+            let work = NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &memory).unwrap();
+            let rows = if shape == "[string]" { 1 } else { 2 };
+            let source = input_source(&artifact, call, &text, rows, 6 / rows, &memory);
+            let baseline_bytes = memory.used_bytes();
+            let baseline_nodes = memory.retained_snapshot_nodes();
+            let loan = call
+                .try_string_matrix_key_loan(&source, limits(), &work, ResourceDemand::default())
+                .unwrap()
+                .unwrap();
+            for index in 1..=6 {
+                let old = ordinary(&artifact, call, &source, index, limits(), &work).unwrap();
+                let new = call
+                    .string_matrix_element(
+                        &source,
+                        index,
+                        limits(),
+                        &work,
+                        ResourceDemand::default(),
+                    )
+                    .unwrap()
+                    .unwrap();
+                assert_eq!(string(&old), string(&new));
+                assert_eq!(old.schema_key(), new.schema_key());
+                assert_eq!(old.shape(), new.shape());
+                let ordinal = if rows == 1 {
+                    index as usize - 1
+                } else {
+                    ((index - 1) % rows * (6 / rows) + (index - 1) / rows) as usize
+                };
+                let cell = loan.cells[ordinal];
+                for (dimension, exact) in [
+                    ("OutputBytes", cell.logical_output_bytes),
+                    ("ClonedBytes", cell.logical_cloned_bytes),
+                ] {
+                    let mut l = limits();
+                    if dimension == "OutputBytes" {
+                        l.max_output_bytes = Some(exact);
+                    } else {
+                        l.max_cloned_bytes = Some(exact);
+                    }
+                    call.string_matrix_element(&source, index, l, &work, ResourceDemand::default())
+                        .unwrap()
+                        .unwrap();
+                    if dimension == "OutputBytes" {
+                        l.max_output_bytes = Some(exact - 1);
+                    } else {
+                        l.max_cloned_bytes = Some(exact - 1);
+                    }
+                    let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let old_error =
+                        ordinary(&artifact, call, &source, index, l, &work).unwrap_err();
+                    let new_error = call
+                        .string_matrix_element(&source, index, l, &work, ResourceDemand::default())
+                        .unwrap_err();
+                    assert!(
+                        format!("{old_error:?}").contains(dimension),
+                        "{old_error:?}"
+                    );
+                    assert!(
+                        format!("{new_error:?}").contains(dimension),
+                        "{new_error:?}"
+                    );
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        before
+                    );
+                }
+            }
+            for index in [0, 7, u64::MAX] {
+                let old = ordinary(&artifact, call, &source, index, limits(), &work).unwrap_err();
+                let new = call
+                    .string_matrix_element(
+                        &source,
+                        index,
+                        limits(),
+                        &work,
+                        ResourceDemand::default(),
+                    )
+                    .unwrap_err();
+                assert_eq!(format!("{old:?}"), format!("{new:?}"));
+            }
+            let mut l = limits();
+            l.max_output_elements = Some(0);
+            for index in [0, 1, 7, u64::MAX] {
+                let error = call
+                    .string_matrix_element(&source, index, l, &work, ResourceDemand::default())
+                    .unwrap_err();
+                assert!(format!("{error:?}").contains("OutputElements"), "{error:?}");
+            }
+            for l in [
+                MemoryBudgetLimits {
+                    max_compute_work: Some(0),
+                    ..limits()
+                },
+                MemoryBudgetLimits {
+                    max_temporary_bytes: Some(0),
+                    ..limits()
+                },
+                MemoryBudgetLimits {
+                    max_retained_nodes: Some(0),
+                    ..limits()
+                },
+            ] {
+                let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                assert!(
+                    call.string_matrix_element(&source, 1, l, &work, ResourceDemand::default(),)
+                        .is_err()
+                );
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    before
+                );
+            }
+            let foreign_memory = ManagedMemoryBudget::new(64 << 20);
+            let foreign_work =
+                NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &foreign_memory).unwrap();
+            assert!(matches!(
+                call.string_matrix_element(
+                    &source,
+                    1,
+                    limits(),
+                    &foreign_work,
+                    ResourceDemand::default(),
+                ),
+                Err(InvokeError::UnadmittedValue)
+            ));
+            drop(loan);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (baseline_bytes, baseline_nodes)
+            );
+            drop((source, work));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
     }
 }
 

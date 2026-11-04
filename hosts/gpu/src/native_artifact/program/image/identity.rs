@@ -311,7 +311,8 @@ fn selected_template(
 // IR175 retains immutable String-matrix leaves in private recursive frame lanes.
 // IR176 proves invariant recursive inputs outside changing native Map state.
 // IR177 also lifts immutable numeric matrices with independent changing axes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 177;
+// IR178 derives a selected String-matrix scalar projection route on restore.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 178;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -524,7 +525,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 177;
 // Policy108 funds nested managed-leaf synchronization and cold private-frame
 // reconciliation. Existing flat-frame prices retain their original formula.
 // Policy110 includes numeric worker receipts and shared native-fuel metadata.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 110;
+// Policy111 funds selected String projection/copy without generic call planning.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 111;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

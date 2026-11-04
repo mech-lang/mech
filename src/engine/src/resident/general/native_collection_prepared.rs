@@ -124,6 +124,9 @@ mod record_selector;
 mod record_words;
 #[path = "native_collection_string_map_entry.rs"]
 mod string_map_entry;
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_string_reads.rs"]
+mod string_reads;
 #[path = "native_collection_string_span.rs"]
 mod string_span;
 #[cfg(feature = "sequence_buffers")]

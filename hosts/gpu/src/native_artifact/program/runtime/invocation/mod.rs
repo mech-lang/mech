@@ -16,6 +16,7 @@ mod numeric_tree;
 mod numeric_writes;
 mod readonly_numeric;
 mod selected_calls;
+mod string_reads;
 mod uniform_fill;
 mod unsigned_buffers;
 mod utf8_read;
