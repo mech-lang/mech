@@ -72,6 +72,23 @@ enter map admission. Frame assignment retains scalar + iteration + aggregate +
 borrowed + closed words, then relocates owner words once. Unselected frontiers
 remain in the identity transcript.
 
+## Shared general numeric address quotient
+
+R137 preserves canonical column-major selection over row-major backing while
+emitting one exact quotient for each general numeric address. The shared native
+read/write/segment helper computes column=ordinal/rows, row=ordinal-column*rows,
+then row*columns+column. Current view admission and prior valid selection imply
+nonzero rows and quotient*rows<=ordinal; no new source error, arithmetic wrapping
+rule or permission is introduced. Schema-proved unit dimensions retain their
+existing division-free emission. All unsigned widths use the same helper.
+
+An independent actual JIT address oracle covers rectangles, vector orientations
+and large integers; ARM64 generated-code tests require exactly one UDIV for
+dynamic geometry. Original/decoded component tests retain changing shapes,
+invalid/empty selections, aliases, finite errors, publication and recovery.
+IR166 commits the changed lowering and rejects165; work107/private ABI39/MBC14
+remain. Image reconstruction and full admitted/physical exit inventories stay.
+
 ## Fresh temporary state at lexical numeric roots
 
 R135 derives a current-traversal freshness list from canonical value scopes,
