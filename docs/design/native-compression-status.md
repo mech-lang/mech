@@ -6,6 +6,41 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R126: source zero-trip guards rechecked on R125
+
+Compiler `914ab57fab23f831f6bb99e5f8a0e8419d2c3004`, libraries and versions
+155/107/38/14 remain unchanged. The existing R118 source variant skips empty
+match and skip children. Pinned source/MBC remain the compiler baseline; the
+variant stays a separately labeled option, with its contrary result retained.
+
+| Fresh source-only complete-call cohort | Pinned / Roc | Variant / Roc | Change |
+|---|---:|---:|---:|
+|8 bytes|7.072300×|6.977789×|1.336347% faster|
+|1KB random|60.156867×|54.267748×|9.789603% faster|
+|1KB repeated byte|34.087942×|34.886238×|2.341870% slower|
+
+Matched medians are 2.029750→2.0026255ms /18.2876875→16.4973955ms /
+11.249021→11.5124585ms, against fresh common references 0.287/0.304/0.330ms.
+All 3,968 primary/3,984 total eight-byte observations remain: four improving
+groups, 54 improving/10 adverse blocks. Each 1KB version has 128 observations;
+random improves in all eight blocks and repeated regresses in all eight.
+
+Separate 32-observation hardware cohorts show instructions
+22,609,326.5→22,378,913.5 /283,688,420→256,708,152 /
+172,687,317→172,350,115. Repeated-data cycles rise
+35,865,008→37,275,252 despite the slight instruction reduction. Separate
+four-observation heap counts are 3,741→3,733 /22,197→21,173 /11,948→11,946;
+incremental peak usable heap is unchanged for every input. Requested bytes are
+17,680,961→17,676,985 /19,033,866→18,225,218 /19,798,753→19,799,529.
+These independent cohorts are not factors to multiply.
+
+Exact raw bytes, independent inflation, input aliases, real scratch capacities,
+output capacity/clear/reuse and zero final managed bytes/nodes pass on every new
+call. The old original/decoded source qualification is retained; no new complete
+source-variant qualification, full-scale timing, hosted CI or compiler change is
+claimed here. Canonical revision-14 roundtrip and source/MBC pins are checked
+before native emission. Numerical reports reconstruct from raw retained rows.
+
 ## R125: collector intervals and paid native continuations
 
 Update base **`0baa0519a2725ed1387fa6bb0ba0648da29a5184`**; measured compiler
