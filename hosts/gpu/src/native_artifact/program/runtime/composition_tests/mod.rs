@@ -25,6 +25,7 @@ mod record_lookup;
 mod resources;
 mod scalar_child;
 mod schema_key;
+mod virtual_retirement;
 
 #[test]
 fn huffman_parent_cleanup_selects_funded_retirement_batches() {
