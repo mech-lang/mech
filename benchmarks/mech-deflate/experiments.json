@@ -14707,6 +14707,17 @@
           "files": 116,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-quotient-round137-20261104/archives/r137-counters-a577629a267b.tar.gz"
+        },
+        {
+          "event": "history-profile-random",
+          "source_revision": "f37ccd3eaa6a83417b9f5ad2d38ca7ae1a77e20e",
+          "asset": "r137-history-profile-random-3dba8bade77b.tar.gz",
+          "sha256": "3dba8bade77bcc28ed186d66287f6c0454d8214364c161b64cbb73e323f93418",
+          "manifest_sha256": "eb099afdc6c988855b0b79141207131867d1efa927bda1d6bbb108066e86d781",
+          "bytes": 161742,
+          "files": 53,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-quotient-round137-20261104/archives/r137-history-profile-random-3dba8bade77b.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
