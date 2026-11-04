@@ -30,6 +30,17 @@ pub(super) struct Counts {
     pub exit_modes: BTreeMap<u64, u64>,
     pub child_fuel_exits: Vec<(u64, bool)>,
     pub selected_sites: BTreeMap<u64, u64>,
+    pub segment_retirements: BTreeMap<(u32, u32), u64>,
+    pub virtual_retirements: BTreeMap<u32, u64>,
+}
+pub(in crate::native_artifact::program::runtime) fn segment_retirement(site: u32, value: u32) {
+    COUNTS.with(|counts| {
+        *counts
+            .borrow_mut()
+            .segment_retirements
+            .entry((site, value))
+            .or_default() += 1
+    });
 }
 thread_local! {
     static COUNTS: RefCell<Counts> = RefCell::new(Counts::default());

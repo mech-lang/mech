@@ -570,13 +570,15 @@ impl Invocation<'_, '_, '_> {
         let descriptor = self.descriptor;
         let metadata = descriptor.metadata();
         let flags = frames.scalar_words + proof.views.len() * 4;
-        for (at, (_, values)) in frames.retirements.iter().enumerate() {
+        for (at, (_site, values)) in frames.retirements.iter().enumerate() {
             match self.read_borrowed_word(flags + at)? {
                 0 => continue,
                 1 => {}
                 _ => return Err(invalid("parent retirement flag is not Boolean")),
             }
             for &value in values {
+                #[cfg(all(test, feature = "canonical-native-program"))]
+                super::super::composition_tests::observe::segment_retirement(*_site, value);
                 if !self.state.buffer_frames.retire(
                     &metadata.frame_retirements,
                     value,
