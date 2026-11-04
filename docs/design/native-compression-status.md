@@ -1,5 +1,148 @@
 # Native compression: current status
 
+## R130: retain collector state through nested native loops
+
+Update base: `1f91efb8fa39b77183903c1f58421bc35ce8f0d4`.
+Measured compiler: **`11f0ea49d2ba577bf18b563a566f325ac7957c7f`**; retained
+control compiler: `ccb9aab277081555385e37b02d824d0c5ef3db3b` (R129).
+Stack base remains `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+IR/work/ABI/MBC: **160/107/38/14**. Non-GPU dependencies remain frozen.
+
+The actual collector could select either nested Tail children or a partial
+interval ending at every child. Its cold Collection rebase prevented combining
+those capabilities. The compiler now selects synchronous Tail descendants with
+current-account fuel and exact exits before non-Tail work. The unchanged main
+collector has **26 included loops, 4,574 source sites and seven array bindings**;
+its two Collection boundaries remain ordinary, taken source edges. Eligible
+search/skip work and fixed-size stores stay in the same native region.
+
+All child input bindings are registered before recursive return bindings are
+checked. Otherwise an enclosing child's return could be rejected because the
+deeper child's carrier had not yet been registered. Existing current-version
+checks still reject older observable values. A nested cold exit freezes private
+cells and exports its exact live values before restoring the actual active Tail
+and its ancestors. Only those already-paid current traversals retain source
+credit. The original builder initializes after the exit; no native view or
+renewed allowance crosses it.
+
+Entry transport now copies only current carrier scalars, array views/capacities,
+private flags and phase counters. Internal frame lanes are defined by source
+actions. Copying the full 1,080-word collector bank was unnecessary and exceeded
+an existing ordinary instruction template in the real skip qualification. The
+smaller transport passes that same template; bank admission, logical prices and
+first-change transport remain unchanged. This adds no interpreter or separate
+operation vocabulary. Growing child buffers remain outside this extension.
+
+| Complete evaluate_into | R129 / Roc | R130 / Roc | Change |
+|---|---:|---:|---:|
+| 8 bytes | 5.865234× | 5.816840× | 0.825101% faster |
+| Random 1KB | 49.171092× | 11.843616× | 75.913457% faster |
+| Repeated 1KB | 33.860709× | 14.903710× | 55.985238% faster |
+
+Matched elapsed: **1.6891875→1.675250 ms /15.046354→3.6241465 ms /
+11.1063125→4.888417 ms**. Fresh references are 0.288/0.306/0.328 ms. The 8B
+cohort retains 3,968 primary observations, three improving pairs of four,
+45 improving and 19 adverse blocks. Each 1KB version has 128 primary observations,
+with eight improving blocks of eight. Each cohort was archived and committed
+immediately: `571b196aa6`, `18534a6ac2`, `8f1d8ba0f6`. Do not compound historical
+comparisons or combine them with the independent counters below.
+
+| Separate counter | R129 | R130 |
+|---|---:|---:|
+| 8B instructions | 17,692,873 | 17,294,323.5 |
+| Random instructions | 233,212,208.5 | 59,473,864 |
+| Repeated instructions | 170,308,639 | 83,569,207 |
+| 8B cycles | 5,246,697.5 | 5,203,203.5 |
+| Random cycles | 48,309,490 | 11,365,088.5 |
+| Repeated cycles | 35,494,259.5 | 15,506,526 |
+| Allocation requests, 8B/random/repeated | 3,425 /16,463 /11,632 | 3,350 /3,157 /3,392 |
+| Requested bytes, 8B/random/repeated | 17,577,513 /17,431,450 /19,694,087 | 17,639,393 /15,154,378 /17,646,983 |
+| Incremental peak usable heap, 8B/random/repeated | 15,206,024 /15,204,488 /15,208,608 | 15,279,752 /15,278,216 /15,282,336 |
+
+Hardware has 32 calls/version/input; heap has four, separately. **Peak heap grows
+73,728 bytes** in all three cases. Eight-byte requested bytes increase 61,880.
+Requested capacity is neither initialized copy volume nor live memory.
+Generated text grows **19,434,640→58,489,744 bytes** and machine entry stack
+**176,320→246,624 bytes**. Retain these costs. The observed full Object emission
+took 223.6 seconds outside performance cohorts; it is not a controlled compile
+time comparison. The larger generated body is the next important concern.
+
+| Complete-call diagnostic | 8B before→after | Random before→after | Repeated before→after |
+|---|---:|---:|---:|
+| Runtime callbacks | 4,348→3,886 | 73,441→2,880 | 32,850→4,001 |
+| Native segment exits | 217→125 | 13,397→102 | 4,265→127 |
+| Array aliases exported by segments | 277→149 | 16,516→132 | 2,277→149 |
+| Ordinary changed replacements finalized | 56→32 | 4,115→26 | 1,085→35 |
+| Private array finalizations | 140→142 | 134→131 | 1,170→153 |
+
+These are exact event counts, not CPU shares or payload-copy counts. All selected
+numeric regions report zero helpers on their successful interior/backedge paths.
+Source price formulas remain policy107; the selected physical execution removes
+many charged runtime transitions. Complete-call work is now
+18,067,825,665 /18,264,396,817 /25,477,511,424, versus
+24,338,249,385 /959,562,617,769 /474,303,448,072. These are resource-account units,
+not hardware instructions, and no allowance was increased.
+
+Fresh isolated two-second CPU samples show the bottleneck moving:
+
+| Exclusive context | Random before→after | Repeated before→after |
+|---|---:|---:|
+| Generated entry body | 8.77%→67.48% | 30.66%→71.10% |
+| Other callbacks | 75.89%→22.41% | 55.78%→19.06% |
+| Private-frame callbacks | 4.72%→3.88% | 5.68%→3.81% |
+| Tail cleanup | 9.11%→1.78% | 6.15%→1.61% |
+| Outside/unrecognized | 1.52%→4.45% | 1.74%→4.41% |
+
+Random has 1,186/1,236 sample weights; repeated 1,497/1,495. Each input has
+514 retained control and 1,026 candidate complete calls so the faster candidate
+outlives the sample window. These are CPU-time samples; do not multiply shares
+by the separate retired-instruction counts. Callbacks include useful algorithm
+work. The next target is the generated body's temporary-field transport,
+register pressure and repeated checks, while retaining the remaining callback
+costs in the ledger. The collector uses 3,590 SSA words. Static inspection also
+finds its cold mode6 emitter copying 256 frame words across all exit recipes
+although each actual Collection edge needs none of those additional frame lanes;
+this is an opportunity, not a measured saving.
+
+The retained reference binary was disassembled and hash-pinned. Its generated
+compression code contains direct typed stores and a vectorized U16 saturating
+subtraction/remainder loop. R130 adds control/ownership coverage, not SIMD.
+The archived assembly is static evidence, not a dynamic instruction ledger or
+a claim that every displayed path runs at level12.
+
+Passing qualification: **534** compatible GPU tests with the same seven inherited
+profile/registry exclusions; **109** native CI contracts both inventoried and
+executed; unchanged **236** components, **eight** connected cases and **one**
+structural path case; **132** workflow tests; **15** architecture/catalog checks;
+runtime-only metadata, formatting and warnings as errors. New controls exercise
+hot and taken root/nested Collection exits after writes, original/decoded/restored
+artifacts, fresh nested arguments, aliases, prior publication, assertion rejection,
+finite settlement denial, cleanup, retry and forged image edges/bindings.
+
+Failure disposition: the parent fails the committed coverage reproducer
+`82bab42456`; input-only transport fixes the introduced instruction-template
+failure. Earlier structural observers expected a cold boundary that is now
+native, and now check the expanded region and actual prepaid source visits.
+An initial test returned a public tuple without the existing private-use bridge;
+the corrected witness uses the same private-return boundary as the real caller.
+No public-escape proof was weakened. Diagnostic library naming/patch-needle
+errors were external tooling corrections. Linking initially failed with
+`write() failed, errno=28`; 2.34GB of completed builds were losslessly compressed
+and hash-verified, and only linking was retried. All comparison binaries remain.
+No introduced correctness failure remains.
+
+Source/MBC pins remain 331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9 /
+a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7. The algorithm,
+tables, depth300/nice258, near-EOF checks, source allocation sites, real tree/cache/
+path buffers, output capacity/clear/reuse, input aliases, allocator and timing
+boundary are unchanged. The largest timed input remains 1KB. Core/Engine/math/
+Runtime/Stdlib were not rebuilt; no fresh full/minimal/no_std dependency graph or
+linked40/frame8/scalar12 suite is claimed. Hosted CI is canceled under standing
+instruction; latest-head review is requested and the PR stays draft.
+
+Parity remains unachieved. Preserve this measured baseline and use the new
+native-body profile for the next compiler optimization.
+
 ## R129: eliminate cleanup for unmaterialized native segment values
 
 Update base: `9a3bc1b66340b70647f1824d6f91b48383af9b7b` (published R128).
