@@ -12755,7 +12755,7 @@
       "base": "7fe6b6e611e678e34ec141efd4aeebd3726bf54f",
       "production": "50751f9445356b9b33d16b89f636876e6014379f",
       "compiler_source": "914ab57fab23f831f6bb99e5f8a0e8419d2c3004",
-      "decision": "under measurement",
+      "decision": "Retain separately labeled source option: random1KB improves9.789603%, repeated1KB regresses2.341870%; pinned source remains compiler baseline.",
       "events": [
         {
           "event": "closure",
@@ -12765,13 +12765,159 @@
           "manifest_sha256": "bde4b812871318b43944507e2ac7bb30ecdb8d680a6be04380de1918aa8b6891",
           "bytes": 4660924,
           "files": 141,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-source-recheck-round126-20261104/archives/r126-closure-5cd6c81181bd.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r126-closure-5cd6c81181bd.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "retained": true,
+      "source_unchanged": false,
+      "compiler_unchanged": true,
+      "source_variant_revision": "50751f9445356b9b33d16b89f636876e6014379f",
+      "timing": {
+        "eight": {
+          "observations_per_source": 1984,
+          "seconds": {
+            "before": 0.00202975,
+            "after": 0.0020026255
+          },
+          "reference_seconds": 0.000287,
+          "multiples_of_reference": {
+            "before": 7.072299651567945,
+            "after": 6.9777891986062714
+          },
+          "change_percent": -1.3363468407439405,
+          "improving_groups": 4,
+          "improving_blocks": 54,
+          "adverse_blocks": 10,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 22609326.5,
+              "cycles": 6343343.5
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 22378913.5,
+              "cycles": 6355667.5
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 3741.0,
+              "requested_bytes": 17680961.0,
+              "incremental_peak_live_usable": 15206024.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 3733.0,
+              "requested_bytes": 17676985.0,
+              "incremental_peak_live_usable": 15206024.0
+            }
+          }
+        },
+        "random": {
+          "observations_per_source": 128,
+          "seconds": {
+            "before": 0.0182876875,
+            "after": 0.0164973955
+          },
+          "reference_seconds": 0.000304,
+          "multiples_of_reference": {
+            "before": 60.15686677631579,
+            "after": 54.26774835526316
+          },
+          "change_percent": -9.78960297741308,
+          "improving_groups": 1,
+          "improving_blocks": 8,
+          "adverse_blocks": 0,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 283688420.0,
+              "cycles": 59295837.0
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 256708152.0,
+              "cycles": 52806158.5
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 22197.0,
+              "requested_bytes": 19033866.0,
+              "incremental_peak_live_usable": 15204488.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 21173.0,
+              "requested_bytes": 18225218.0,
+              "incremental_peak_live_usable": 15204488.0
+            }
+          }
+        },
+        "repeated": {
+          "observations_per_source": 128,
+          "seconds": {
+            "before": 0.011249021,
+            "after": 0.0115124585
+          },
+          "reference_seconds": 0.00033,
+          "multiples_of_reference": {
+            "before": 34.08794242424242,
+            "after": 34.886237878787874
+          },
+          "change_percent": 2.3418704614383667,
+          "improving_groups": 0,
+          "improving_blocks": 0,
+          "adverse_blocks": 8,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 172687317.0,
+              "cycles": 35865008.0
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 172350115.0,
+              "cycles": 37275252.0
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 11948.0,
+              "requested_bytes": 19798753.0,
+              "incremental_peak_live_usable": 15208608.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 11946.0,
+              "requested_bytes": 19799529.0,
+              "incremental_peak_live_usable": 15208608.0
+            }
+          }
+        }
+      },
+      "validation_scope": {
+        "compiler_unchanged": true,
+        "source_and_mbc_pins": {
+          "baseline_source_sha256": "85fba4bc9f55796c8a83c7ff0533590d4bf5e97bd8be42d4dd56c5d448427b36",
+          "bytecode_bytes": 4146587,
+          "bytecode_revision": 14,
+          "bytecode_sha256": "5d9318ae144d5d42b3bee53dd23ff6e26955ef6652c5f93ef05eeadf69a9ca26",
+          "canonical_roundtrip": true,
+          "kind": "pinned unchanged program numeric-phase candidate",
+          "source_and_codec_seconds": 0.088956916,
+          "source_bytes": 161193,
+          "source_sha256": "85fba4bc9f55796c8a83c7ff0533590d4bf5e97bd8be42d4dd56c5d448427b36"
+        },
+        "exact_reference_and_inflate_every_call": true,
+        "all_workers_finish_zero_managed_bytes_and_nodes": true,
+        "new_complete_source_variant_qualification": false,
+        "maximum_timed_input_bytes": 1024,
+        "scope": "Historical original/decoded source qualification retained. New native code built from canonically round-tripped variant MBC. No full-scale timing, hosted CI or compiler change.",
+        "decision": "Retain separately labeled source option: random improves9.789603%, repeated regresses2.341870%; pinned source remains the compiler baseline."
+      }
     }
   },
   "repository": "mech-lang/mech",
