@@ -78,6 +78,8 @@ pub(in crate::native_artifact) struct Plan {
     pub result: ResultRecipe,
     pub phase: Option<super::numeric_phase::Schedule>,
     pub exits: Vec<Exit>,
+    /// Source-local values that cannot observe their previous root traversal.
+    pub fresh_values: Vec<u32>,
 }
 impl Plan {
     /// Only current input lanes cross an initial entry. Internal frame lanes

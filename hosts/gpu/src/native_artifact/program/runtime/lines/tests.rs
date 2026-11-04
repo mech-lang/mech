@@ -76,6 +76,7 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
                 crate::native_artifact::program::image::identity::NATIVE_PROGRAM_WORK_POLICY_VERSION
             );
             for (offset, preceding) in [
+                (16, 163),
                 (16, 162),
                 (24, 38),
                 // Reject the separately published map compiler and assertion stack.

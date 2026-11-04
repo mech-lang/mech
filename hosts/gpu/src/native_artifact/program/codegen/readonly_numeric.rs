@@ -37,6 +37,7 @@ pub(in crate::native_artifact) struct Report {
     pub capacity_guards: Vec<(usize, usize)>,
     pub scalar_operations: usize,
     pub register_words: usize,
+    pub fresh_traversal_words: usize,
     pub bounds_error_spill_words: Vec<(usize, usize)>,
     pub successful_backedge_helpers: usize,
     pub maximum_source_instructions: usize,
@@ -104,6 +105,22 @@ pub(in crate::native_artifact) fn emit_entry(
         .ok_or_else(|| backend("numeric region lacks scratch home"))?;
     let slots = slots(code, proof, region.words, shadow)?;
     let register_words = slots.len();
+    let mut fresh = BTreeSet::new();
+    for &value in &proof.fresh_values {
+        if program.metadata().plan.values()[value as usize]
+            .scalar_kind()
+            .is_some()
+        {
+            fresh.insert(value as usize);
+        }
+        if let Some(fields) = proof.fields(value) {
+            fresh.extend(fields.iter().flatten().map(|field| shadow + field));
+        }
+        if let Some((base, count)) = program.metadata().scalar_aggregates.slot_at(value as usize) {
+            fresh.extend(base..base + count);
+        }
+    }
+    fresh.retain(|slot| slots.contains(slot));
     let words = Words::new_with_regions(b, locals, code, slots, |slot| {
         if (region.words..region.words + 3).contains(&slot)
             || (shadow..shadow + proof.words).contains(&slot)
@@ -150,6 +167,7 @@ pub(in crate::native_artifact) fn emit_entry(
         capacity_guards: Vec::new(),
         scalar_operations: 0,
         register_words,
+        fresh_traversal_words: fresh.len(),
         bounds_error_spill_words: Vec::new(),
         successful_backedge_helpers: 0,
         maximum_source_instructions: 0,
@@ -191,6 +209,16 @@ pub(in crate::native_artifact) fn emit_entry(
         b.set_cold_block(fail);
         boundaries.insert(fail);
         let before = b.func.dfg.num_insts();
+        if site == region.tail.header() as usize {
+            // Canonical liveness proves no source read before redefinition in
+            // this new traversal. These private SSA definitions add no source
+            // operations or canonical writes and break historical loop-carried
+            // dependencies created solely by conservative exit snapshots.
+            let zero = b.ins().iconst(types::I64, 0);
+            for &slot in &fresh {
+                words.write(b, slot, zero);
+            }
+        }
         child_fuel::emit(
             b,
             controls.options(),
