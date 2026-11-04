@@ -14133,7 +14133,7 @@
       "base": "6f009e8db6b02c5aa5d4c182d009dfdb560b0bc2",
       "production": null,
       "compiler_source": "61b7d0b51a1ef17daf97992844c5f413b3203400",
-      "decision": "under measurement",
+      "decision": "retained: all five matched elapsed comparisons improve; instructions and cycles fall; heap unchanged",
       "events": [
         {
           "event": "time-profiler-mech-random",
@@ -14255,11 +14255,139 @@
           "files": 122,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-counters-b6ce9f4ea7fa.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "5a0d926a2ead208466bc8aa13a4dad301aaeb5ef",
+          "asset": "r135-closure-ac59645a8e53.tar.gz",
+          "sha256": "ac59645a8e537bac12fa937abf073ae476c8fe628c306d908a0540a82c450802",
+          "manifest_sha256": "2d327fc3f4be3f74e59aacb6d237ff43234fd335d60c9587c83005fb9dd7d8ee",
+          "bytes": 9876832,
+          "files": 555,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-closure-ac59645a8e53.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "before_compiler_source": "61b7d0b51a1ef17daf97992844c5f413b3203400",
+      "versions": {
+        "typed_ir": 164,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "primary": {
+        "eight": {
+          "reference_seconds": 0.000286,
+          "medians": {
+            "after": 0.0015669375,
+            "before": 0.0016710835
+          },
+          "multiples_of_reference": {
+            "after": 5.4788024475524475,
+            "before": 5.842949300699301
+          },
+          "after_over_before": 0.9376775606963984,
+          "primary_observations": 1984,
+          "improving_blocks": 32,
+          "adverse_blocks": 0
+        },
+        "random": {
+          "reference_seconds": 0.00031,
+          "medians": {
+            "after": 0.0029627710000000003,
+            "before": 0.0034781869999999998
+          },
+          "multiples_of_reference": {
+            "after": 9.557325806451614,
+            "before": 11.219958064516128
+          },
+          "after_over_before": 0.8518147529158152,
+          "primary_observations": 256,
+          "improving_blocks": 8,
+          "adverse_blocks": 0
+        },
+        "repeated": {
+          "reference_seconds": 0.0003205,
+          "medians": {
+            "after": 0.004056729,
+            "before": 0.005000271000000001
+          },
+          "multiples_of_reference": {
+            "after": 12.657500780031203,
+            "before": 15.601469578783155
+          },
+          "after_over_before": 0.8113018274409527,
+          "primary_observations": 256,
+          "improving_blocks": 8,
+          "adverse_blocks": 0
+        },
+        "history-random": {
+          "reference_seconds": 0.001049,
+          "medians": {
+            "after": 0.054861896,
+            "before": 0.0700845835
+          },
+          "multiples_of_reference": {
+            "after": 52.299233555767394,
+            "before": 66.81085176358437
+          },
+          "after_over_before": 0.7827954916789938,
+          "primary_observations": 32,
+          "improving_blocks": 8,
+          "adverse_blocks": 0
+        },
+        "history-repeated": {
+          "reference_seconds": 0.001327,
+          "medians": {
+            "after": 0.083071521,
+            "before": 0.1104644375
+          },
+          "multiples_of_reference": {
+            "after": 62.600995478522975,
+            "before": 83.24373587038433
+          },
+          "after_over_before": 0.7520204952838329,
+          "primary_observations": 32,
+          "improving_blocks": 8,
+          "adverse_blocks": 0
+        }
+      },
+      "generated_binary": {
+        "before": {
+          "code_bytes": 39089980,
+          "stack_bytes": 248400
+        },
+        "after": {
+          "code_bytes": 29384768,
+          "stack_bytes": 126720
+        },
+        "object_sha256": "f1ada5f63545dbd1ff94e58d9773bc0f565bd1d55ce0f7413f624ea6164ecbac",
+        "collector_header": 837,
+        "collector_registered_words": 3590,
+        "collector_fresh_traversal_words": 3004
+      },
+      "validation": {
+        "compatible_gpu_passed": 544,
+        "inherited_profile_exclusions": 7,
+        "executed_ci_native": 119,
+        "workflow_tests": 132,
+        "architecture_catalog_checks": 15,
+        "components": 236,
+        "connected": 8,
+        "path_mechanism": 1,
+        "focused": 3,
+        "clean_parent": "1 semantic control passes;2 structural/proof expectations fail as expected"
+      },
+      "source_unchanged": true,
+      "remaining": [
+        "Exact physical exit families beyond bounds",
+        "True entry inputs and lifetime-based word compaction",
+        "Separate authorized source variants",
+        "Parity with reference"
+      ]
     }
   },
   "repository": "mech-lang/mech",
