@@ -295,3 +295,61 @@ pub(super) fn derive(
     }
     Ok(exits)
 }
+
+/// Only lexical local values dead at entry and wholly defined/read in this
+/// selected traversal can lose their historical private SSA contents. This
+/// changes neither canonical values nor source definitions. A live capture,
+/// carrier, escaped output or partially selected definition is never freshened.
+pub(super) fn fresh_values(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    forest: &super::super::numeric_phase::Forest,
+    facts: &NativeProgramFacts<'_>,
+) -> Result<Vec<u32>, &'static str> {
+    use mech_engine::native_artifact::{
+        NativeIterationValueScope as Scope, NativeProgramReadRole as Read,
+    };
+    let live = live_before(plan, tail, facts, tail.header() as usize, &BTreeMap::new())?;
+    let scopes = forest
+        .loops
+        .iter()
+        .map(|loop_| loop_.iteration)
+        .collect::<BTreeSet<_>>();
+    let mut outputs = BTreeMap::new();
+    for block in plan.blocks() {
+        let output = match block.action() {
+            Action::Scalar(Scalar::Copy { output, .. } | Scalar::Primitive { output, .. })
+            | Action::Structural { output, .. }
+            | Action::LibraryCall { output, .. } => *output,
+            _ => continue,
+        };
+        outputs.insert(output.get(), output);
+    }
+    let mut fresh = Vec::new();
+    for (value, sealed) in outputs {
+        if live.contains(&value)
+            || !matches!(plan.value_scopes()[value as usize], Scope::Immutable { iteration: Some(owner) } if scopes.contains(&owner))
+            || !(plan.values()[value as usize].scalar_kind().is_some()
+                || frames.fields_at(value as usize).is_some()
+                || aggregates.slot_at(value as usize).is_some())
+        {
+            continue;
+        }
+        let definitions = facts.definition_sites(value)?;
+        if definitions.is_empty()
+            || definitions.iter().any(|d| {
+                !d.site()
+                    .is_some_and(|site| forest.sites.contains(&(site as usize)))
+            })
+        {
+            continue;
+        }
+        if facts.read_roles(sealed)?.iter().any(|role| !matches!(role, Read::Action(site) | Read::Terminator(site) if forest.sites.contains(&(*site as usize)))) {
+            continue;
+        }
+        fresh.push(value);
+    }
+    Ok(fresh)
+}

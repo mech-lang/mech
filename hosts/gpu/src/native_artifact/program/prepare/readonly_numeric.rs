@@ -699,6 +699,8 @@ fn derive_with_children(
     } else {
         None
     };
+    let fresh_values =
+        exits::fresh_values(plan, tail, frames, aggregates, &forest, provenance.facts)?;
     Ok(Proof {
         arrays,
         frames: frame_words,
@@ -710,5 +712,6 @@ fn derive_with_children(
         result,
         phase,
         exits,
+        fresh_values,
     })
 }
