@@ -107,27 +107,31 @@ impl Layout {
             // Its own body must still contain no child loop; the parent is
             // suspended until this private owner publishes at the Tail exit.
             let mut numeric_tree = None;
-            let mut numeric =
-                if map.is_none() && frames.action(tail.initialize() as usize).is_some() {
-                    if let Ok(tree) = discovery.discover(tail) {
-                        match super::readonly_numeric::derive_tree(
-                            plan, tail, frames, aggregates, calls, &tree,
-                        ) {
-                            Ok(proof) => {
-                                numeric_tree = Some(tree);
-                                Some(proof)
-                            }
-                            Err(_) => super::readonly_numeric::derive(
-                                plan, tail, frames, aggregates, calls,
-                            )
-                            .ok(),
+            // Hoisting immutable matrix arguments can leave a scalar-only
+            // carrier. The numeric proof also owns such trees: requiring a
+            // managed-frame initializer here would strand their array reads
+            // on the ordinary callback path. The proof itself rejects loops
+            // without arrays, preserving the established scalar-only entry.
+            let mut numeric = if map.is_none() {
+                if let Ok(tree) = discovery.discover(tail) {
+                    match super::readonly_numeric::derive_tree(
+                        plan, tail, frames, aggregates, calls, &tree,
+                    ) {
+                        Ok(proof) => {
+                            numeric_tree = Some(tree);
+                            Some(proof)
                         }
-                    } else {
-                        super::readonly_numeric::derive(plan, tail, frames, aggregates, calls).ok()
+                        Err(_) => {
+                            super::readonly_numeric::derive(plan, tail, frames, aggregates, calls)
+                                .ok()
+                        }
                     }
                 } else {
-                    None
-                };
+                    super::readonly_numeric::derive(plan, tail, frames, aggregates, calls).ok()
+                }
+            } else {
+                None
+            };
             let captures = if map.is_none()
                 && numeric.is_none()
                 && aggregates.slot(tail.carrier()).is_some()
@@ -287,10 +291,11 @@ impl Layout {
                         .ok_or("captured length comparison work overflow")?;
                 }
             }
-            if let Some(proof) = &numeric {
-                let carrier = proof
+            if let Some((proof, carrier)) = numeric.as_ref().and_then(|proof| {
+                proof
                     .frame(tail.carrier().get())
-                    .ok_or("numeric carrier words missing")?;
+                    .map(|carrier| (proof, carrier))
+            }) {
                 if carrier.scalar_paths.iter().any(|(path, _)| path.len() > 1) {
                     let steps = carrier
                         .scalar_paths

@@ -77,8 +77,8 @@ pub(in crate::native_artifact) fn leave(
             .flat_map(|frame| frame.scalar_slots());
         for slot in proof
             .frame(region.tail.carrier().get())
-            .unwrap()
-            .scalar_slots()
+            .into_iter()
+            .flat_map(|frame| frame.scalar_slots())
             .chain(terminal)
             .filter(|_| mode != 0)
         {

@@ -56,7 +56,7 @@ pub(super) fn validate(
             if let Some(Operation::Write { array, .. } | Operation::Append { array, .. }) =
                 actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op)
             {
-                writes.insert(arrays[*array].field);
+                writes.insert(arrays[*array].root);
             }
         }
         let returns = keys_for(&roots, tree.nodes[node].tail.returned().get());
@@ -99,6 +99,9 @@ pub(super) fn validate(
         let mut entry = empty.clone();
         for key in keys_for(&roots, tail.carrier().get()) {
             entry.insert(key, true);
+        }
+        for array in arrays {
+            entry.insert(array.entry_key(tail), true);
         }
         entry
     })]);

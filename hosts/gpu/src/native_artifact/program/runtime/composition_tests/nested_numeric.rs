@@ -363,10 +363,15 @@ fn nested_numeric_owner_bindings_and_shape_caps_are_rederived_from_images() {
                     .is_some_and(|a| a.len() >= 4)
             })
             .unwrap();
-        for field in ["field", "physical", "schema", "width", "witness"] {
+        for field in ["root", "field", "physical", "schema", "width", "witness"] {
             let mut changed = image.clone();
-            let word = &mut changed["descriptor"]["closed_tails"]["regions"][at]["numeric"]["arrays"]
-                [0][field];
+            let array =
+                &mut changed["descriptor"]["closed_tails"]["regions"][at]["numeric"]["arrays"][0];
+            let word = if matches!(field, "field" | "physical") {
+                &mut array["storage"]["Carrier"][field]
+            } else {
+                &mut array[field]
+            };
             *word = word.as_u64().unwrap().wrapping_add(1).into();
             // SAFETY: wire-only negative; a forged image is never invoked.
             assert!(

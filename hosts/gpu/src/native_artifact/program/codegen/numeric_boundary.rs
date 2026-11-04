@@ -28,8 +28,8 @@ pub(super) fn materialize(
     hooks.require_argument_words(b, proof.words + 4, error);
     for field in proof
         .frame(region.tail.carrier().get())
-        .unwrap()
-        .scalar_slots()
+        .into_iter()
+        .flat_map(|frame| frame.scalar_slots())
     {
         let value = words.read(b, shadow + field);
         b.ins()

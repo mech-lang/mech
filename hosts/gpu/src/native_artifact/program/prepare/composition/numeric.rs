@@ -8,7 +8,8 @@ use crate::native_artifact::program::prepare::{
 };
 use mech_engine::native_artifact::{
     NativeBufferFrames, NativeIterationAction as Action, NativePreparedLibraryCall,
-    NativeProgramArtifactPlan as Plan, NativeProgramFacts, NativeScalarKind,
+    NativeProgramArtifactPlan as Plan, NativeProgramFacts, NativeScalarAggregates,
+    NativeScalarKind,
 };
 
 #[derive(Debug, Eq, PartialEq, serde::Serialize)]
@@ -50,6 +51,7 @@ impl Layout {
         plan: &Plan,
         facts: &NativeProgramFacts<'_>,
         frame_layout: &NativeBufferFrames,
+        aggregates: &NativeScalarAggregates,
         calls: &[Option<NativePreparedLibraryCall>],
         visits: &[NativeIterationVisit],
         retirements: &FrameRetirements,
@@ -73,6 +75,8 @@ impl Layout {
             let action = if frame_layout.action(at).is_some() {
                 // Frame proof above already checked every pack/copy/project.
                 Operation::Frame
+            } else if aggregates.action(at).is_some() {
+                Operation::Aggregate
             } else if let Action::LibraryCall {
                 operands,
                 output,

@@ -1,4 +1,4 @@
-//! Lift proved immutable arguments out of a changing native Map tail state.
+//! Lift proved immutable arguments out of changing native tail state.
 //! The proof uses resolved control values, never variable spelling. A whole
 //! initial argument pack remains the evaluation fence for the call's inputs.
 use super::*;
@@ -193,31 +193,84 @@ fn map_payload(schema: &SchemaDraft) -> bool {
     }
 }
 
+fn numeric_body(body: &SchemaBody, depth: usize) -> bool {
+    if depth > 16 {
+        return false;
+    }
+    match body {
+        SchemaBody::Bool => true,
+        body if word(body) => true,
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => word(element) && dimensions.len() == 2,
+        SchemaBody::Tuple(fields) => {
+            !fields.is_empty()
+                && fields.len() <= 32
+                && fields.iter().all(|field| numeric_body(field, depth + 1))
+        }
+        SchemaBody::Record(fields) => {
+            !fields.is_empty()
+                && fields.len() <= 32
+                && fields
+                    .iter()
+                    .all(|field| numeric_body(&field.schema, depth + 1))
+        }
+        _ => false,
+    }
+}
+
+fn has_numeric_matrix(body: &SchemaBody) -> bool {
+    match body {
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => word(element) && dimensions.len() == 2,
+        SchemaBody::Tuple(fields) => fields.iter().any(has_numeric_matrix),
+        SchemaBody::Record(fields) => fields.iter().any(|field| has_numeric_matrix(&field.schema)),
+        _ => false,
+    }
+}
+
+// Use the ordinary function argument policy for each new standalone field.
+// Free Turn axes get local first-use identities; bounds and other lifetimes
+// keep their declarations. Unused free dimensions do not belong to a child.
+fn local_schema(schema: &SchemaDraft, anchor: SourceSemanticAnchor) -> Option<SchemaDraft> {
+    let mut dimensions = Vec::new();
+    let body = function_argument_shape::embed(schema, &mut dimensions, anchor).ok()?;
+    let local = SchemaDraft {
+        dimension_parameters: dimensions.into(),
+        body,
+    };
+    structural_component_schema_draft(&local, &local.body)
+}
+
 fn validate_packs(
     block: &PendingControlBlock,
     edits: &[PackEdit],
     kept: &[usize],
-    fields: &[SchemaBody],
-    constants: &[PendingConstant],
+    schemas: &[SchemaDraft],
+    anchor: SourceSemanticAnchor,
 ) -> bool {
     for edit in edits.iter().filter(|edit| edit.block == block.id) {
         let operation = &block.operations[edit.operation];
-        for (&argument, expected) in kept.iter().zip(fields) {
-            let schema = match operation.inputs[argument] {
-                PendingControlValue::Constant(index) => {
-                    constants.get(index).map(|value| &value.schema)
-                }
-                PendingControlValue::Parameter(index) => {
-                    block.parameters.get(index as usize).map(|value| &value.1)
-                }
-                PendingControlValue::Local(index) => block
-                    .operations
-                    .get(index as usize)
-                    .map(|value| &value.schema),
+        let SchemaBody::Tuple(fields) = &operation.schema.body else {
+            return false;
+        };
+        if fields.len() != schemas.len() {
+            return false;
+        }
+        for &argument in kept {
+            // The existing checked pack, rather than a possibly less precise
+            // projected operand, declares each recursive argument's shape.
+            // Retain exactly those checks for every remaining field. A tuple
+            // result may expose a free row axis even when this constructor
+            // correctly checks that the recursive row has extent one.
+            let schema = SchemaDraft {
+                dimension_parameters: operation.schema.dimension_parameters.clone(),
+                body: fields[argument].clone(),
             };
-            if !schema.is_some_and(|schema| {
-                schema.dimension_parameters.is_empty() && &schema.body == expected
-            }) {
+            if local_schema(&schema, anchor).as_ref() != Some(&schemas[argument]) {
                 return false;
             }
         }
@@ -229,8 +282,8 @@ fn validate_packs(
             PendingControlOperationBody::Match(control) => control.arms.iter().all(|arm| {
                 arm.guard
                     .as_ref()
-                    .is_none_or(|guard| validate_packs(guard, edits, kept, fields, constants))
-                    && validate_packs(&arm.body, edits, kept, fields, constants)
+                    .is_none_or(|guard| validate_packs(guard, edits, kept, schemas, anchor))
+                    && validate_packs(&arm.body, edits, kept, schemas, anchor)
             }),
             _ => true,
         })
@@ -268,7 +321,7 @@ fn rewrite(
 }
 
 impl SemanticBuilder {
-    pub(super) fn promote_map_invariant_arguments(
+    pub(super) fn promote_invariant_arguments(
         &mut self,
         arguments: &[PendingValue],
         scrutinee: &mut PendingValue,
@@ -279,7 +332,9 @@ impl SemanticBuilder {
         captures: &mut Vec<(u16, SchemaDraft, bool)>,
         call: &SyntaxNode,
     ) -> Result<(), SourceSemanticError> {
-        if arguments.len() < 2 || !map_payload(result) {
+        let map_result = map_payload(result);
+        let numeric_result = numeric_body(&result.body, 0);
+        if arguments.len() < 2 || !(map_result || numeric_result) {
             return Ok(());
         }
         let crate::MatchPattern::Structural(crate::CollectionPattern::Tuple(bindings)) = pattern
@@ -310,18 +365,29 @@ impl SemanticBuilder {
         if !proof.valid || proof.packs.is_empty() {
             return Ok(());
         }
-        let schemas = arguments
+        let actual_schemas = arguments
             .iter()
             .map(|value| self.schema_draft_of(*value))
             .collect::<Result<Vec<_>, _>>()?;
+        let anchor = SourceSemanticAnchor::for_node(call);
+        let Some(schemas) = actual_schemas
+            .iter()
+            .map(|schema| local_schema(schema, anchor))
+            .collect::<Option<Vec<_>>>()
+        else {
+            return Ok(());
+        };
         for (index, schema) in schemas.iter().enumerate() {
-            // U64 fields already have native word transport. Scalar-only
-            // functions and existing numeric-array trees are unaffected.
-            proof.invariant[index] &= !word(&schema.body)
-                && schema
-                    .clone()
-                    .finalize()
-                    .is_ok_and(|schema| crate::is_control_capture_schema(&schema));
+            // Scalar-only calls retain their existing word transport. Numeric
+            // calls only lift arguments containing immutable U64 matrices.
+            proof.invariant[index] &= (if map_result {
+                !word(&schema.body)
+            } else {
+                numeric_body(&schema.body, 0) && has_numeric_matrix(&schema.body)
+            }) && actual_schemas[index]
+                .clone()
+                .finalize()
+                .is_ok_and(|schema| crate::is_control_capture_schema(&schema));
         }
         let kept = proof
             .invariant
@@ -345,19 +411,29 @@ impl SemanticBuilder {
         {
             return Ok(());
         }
-        let fields = kept
+        let mut dimensions = Vec::new();
+        let Some(fields) = kept
             .iter()
-            .map(|index| schemas[*index].body.clone())
-            .collect::<Vec<_>>();
-        let state = SchemaDraft {
-            dimension_parameters: Box::new([]),
-            body: SchemaBody::Tuple(fields.clone().into()),
+            .map(|index| {
+                function_argument_shape::embed(&schemas[*index], &mut dimensions, anchor).ok()
+            })
+            .collect::<Option<Vec<_>>>()
+        else {
+            return Ok(());
         };
-        if kept
-            .iter()
-            .any(|index| !schemas[*index].dimension_parameters.is_empty())
-            || !map_payload(&state)
-            || !validate_packs(block, &proof.packs, &kept, &fields, &self.constants)
+        let state = SchemaDraft {
+            dimension_parameters: dimensions.into(),
+            body: SchemaBody::Tuple(fields.into()),
+        };
+        if !(if map_result {
+            map_payload(&state)
+        } else {
+            numeric_body(&state.body, 0)
+                && state
+                    .clone()
+                    .finalize()
+                    .is_ok_and(|schema| crate::is_control_pattern_schema(&schema))
+        }) || !validate_packs(block, &proof.packs, &kept, &schemas, anchor)
         {
             return Ok(());
         }
@@ -393,7 +469,7 @@ impl SemanticBuilder {
                 Some(capture) if !new_captures[capture].2 => return Ok(()),
                 Some(capture) => capture,
                 None => {
-                    new_captures.push((input, schemas[index].clone(), true));
+                    new_captures.push((input, actual_schemas[index].clone(), true));
                     new_captures.len() - 1
                 }
             };
@@ -459,5 +535,80 @@ impl SemanticBuilder {
         *captures = new_captures;
         *scrutinee = next_scrutinee;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn anchor() -> SourceSemanticAnchor {
+        SourceSemanticAnchor {
+            document: DocumentId(1),
+            revision: Revision(1),
+            range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
+        }
+    }
+    fn projected(body: SchemaBody) -> SchemaDraft {
+        SchemaDraft {
+            dimension_parameters: (0..3)
+                .map(|i| DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(i),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                })
+                .collect(),
+            body,
+        }
+    }
+    #[test]
+    fn projected_argument_normalization_drops_unused_free_axes_and_keeps_repeated_axes() {
+        let scalar = local_schema(
+            &projected(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+            anchor(),
+        )
+        .unwrap();
+        assert!(scalar.dimension_parameters.is_empty());
+        let matrix = projected(SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+            dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(2)); 2].into(),
+        });
+        let normalized = local_schema(&matrix, anchor()).unwrap();
+        assert_eq!(normalized.dimension_parameters.len(), 1);
+        let SchemaBody::Matrix { dimensions, .. } = &normalized.body else {
+            panic!()
+        };
+        assert_eq!(
+            dimensions.as_ref(),
+            &[
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+            ]
+        );
+        assert_eq!(local_schema(&normalized, anchor()).unwrap(), normalized);
+    }
+    #[test]
+    fn projected_argument_normalization_preserves_bounds_and_lifetimes() {
+        for lifetime in [DimensionLifetime::Turn, DimensionLifetime::Activation] {
+            let mut matrix = projected(SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                dimensions: vec![
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Parameter(DimensionParameterId::new(2)),
+                ]
+                .into(),
+            });
+            matrix.dimension_parameters[2].lifetime = lifetime;
+            matrix.dimension_parameters[2].lower_bound = DimensionExpr::Constant(2);
+            matrix.dimension_parameters[2].upper_bound = Some(DimensionExpr::Constant(9));
+            let normalized = local_schema(&matrix, anchor()).unwrap();
+            assert_eq!(normalized.dimension_parameters.len(), 1);
+            let declaration = &normalized.dimension_parameters[0];
+            assert_eq!(declaration.lifetime, lifetime);
+            assert_eq!(declaration.lower_bound, DimensionExpr::Constant(2));
+            assert_eq!(declaration.upper_bound, Some(DimensionExpr::Constant(9)));
+        }
     }
 }

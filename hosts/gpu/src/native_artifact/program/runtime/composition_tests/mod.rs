@@ -12,6 +12,7 @@ mod child_cleanup;
 mod collection_lifetime;
 mod deep_nested_scalar;
 mod exit_transport;
+mod invariant_numeric;
 mod managed_carriers;
 mod managed_projections;
 mod mixed_string_map;

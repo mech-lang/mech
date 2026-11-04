@@ -6,7 +6,6 @@ use super::{Error, Invocation, invalid};
 use crate::native_artifact::iteration_abi::Progress;
 use crate::native_artifact::program::prepare::numeric_tree::Proof as Tree;
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
-use crate::native_artifact::program::runtime::buffer_frames::Field;
 use mech_engine::native_artifact::NativeIterationAction as Action;
 
 /// Checked independently of raw fuel. Overflow never becomes renewed credit.
@@ -334,9 +333,7 @@ impl Invocation<'_, '_, '_> {
                 for &(physical, array) in bindings {
                     let root = &proof.arrays[array];
                     let owner = self
-                        .state
-                        .buffer_frames
-                        .numeric_owner(root.physical, root.schema)
+                        .numeric_array_owner(root)?
                         .ok_or_else(|| invalid("numeric cold frame lost its current root owner"))?
                         .clone();
                     self.state.buffer_frames.synchronize_numeric_owner(
@@ -357,12 +354,7 @@ impl Invocation<'_, '_, '_> {
                             })?
                             .take(base + index, alias.value)?;
                         let owner = self
-                            .state
-                            .buffer_frames
-                            .numeric_owner(
-                                proof.arrays[alias.array].physical,
-                                proof.arrays[alias.array].schema,
-                            )
+                            .numeric_array_owner(&proof.arrays[alias.array])?
                             .ok_or_else(|| {
                                 invalid("numeric cold continuation lost its frozen current owner")
                             })?
@@ -407,9 +399,7 @@ impl Invocation<'_, '_, '_> {
                 for &(physical, array) in &frame.array_bindings {
                     {
                         let owner = self
-                            .state
-                            .buffer_frames
-                            .numeric_owner(proof.arrays[array].physical, proof.arrays[array].schema)
+                            .numeric_array_owner(&proof.arrays[array])?
                             .ok_or_else(|| {
                                 invalid("numeric tree child lost its current root owner")
                             })?
@@ -436,14 +426,7 @@ impl Invocation<'_, '_, '_> {
                     "numeric tree bounds exit lost its original selected call",
                 ));
             };
-            let Field::Managed(owner) = self.state.buffer_frames.project_numeric_owner(
-                proof.arrays[*array].physical,
-                proof.arrays[*array].schema,
-                &mut self.state.control.work,
-            )?
-            else {
-                return Err(invalid("numeric tree bounds exit lost its current array"));
-            };
+            let owner = self.project_numeric_array_owner(&proof.arrays[*array])?;
             self.state
                 .arena
                 .put(operands[0].get(), &owner, &mut self.state.control.work)?;

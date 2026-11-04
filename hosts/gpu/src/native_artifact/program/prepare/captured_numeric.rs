@@ -6,6 +6,46 @@ use mech_engine::native_artifact::{
     NativeProgramArtifactPlan as Plan, NativeScalarKind, NativeTailLoop,
 };
 
+/// Shared same-plan ancestor check. Storage/view consumers still establish
+/// availability, exact factory/schema, finite admission and owner retention.
+pub(super) fn immutable_source(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    source: mech_engine::native_artifact::NativeMatchValue,
+) -> Result<(), &'static str> {
+    immutable_source_id(plan, tail, source.get())
+}
+
+pub(super) fn immutable_source_id(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    source: u32,
+) -> Result<(), &'static str> {
+    let iteration = plan
+        .iterations()
+        .iter()
+        .position(|control| control.as_ref().header() == tail.header())
+        .ok_or("missing capture Tail iteration")? as u32;
+    let Some(Scope::Immutable { iteration: scope }) =
+        plan.value_scopes().get(source as usize).copied()
+    else {
+        return Err("capture source is not immutable");
+    };
+    if !plan.facts().lexical_ancestor(scope, tail.parent()) {
+        return Err("capture is not from a strict ancestor");
+    }
+    if plan
+        .facts()
+        .definition_sites(source)
+        .map_err(|_| "capture definitions unavailable")?
+        .iter()
+        .any(|definition| definition.iteration() == Some(iteration))
+    {
+        return Err("capture source is defined in the scalar body");
+    }
+    Ok(())
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Capture {

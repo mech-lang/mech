@@ -57,10 +57,12 @@ impl Invocation<'_, '_, '_> {
             .control
             .work
             .charge(crate::native_artifact::NativeExecutionPhase::Setup, 64)?;
-        let source = self
-            .state
-            .buffer_frames
-            .take_numeric_owner(proof.arrays[*array].physical, proof.arrays[*array].schema)?;
+        let source = self.state.buffer_frames.take_numeric_owner(
+            proof.arrays[*array]
+                .physical()
+                .ok_or_else(|| invalid("captured array cannot receive a mutable owner"))?,
+            proof.arrays[*array].schema,
+        )?;
         let coexistence = self.selected_join_coexistence(None)?;
         let result = if matches!(operation, Operation::Append { .. }) {
             call.unsigned_matrix_append_private(

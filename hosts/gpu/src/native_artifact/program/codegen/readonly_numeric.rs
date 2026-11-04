@@ -131,7 +131,10 @@ pub(in crate::native_artifact) fn emit_entry(
             "numeric backend homes exceed independent boundary inventory",
         ));
     }
-    let bank = if proof.scalar_inputs.is_empty() && region.numeric_tree.is_none() {
+    let bank = if proof.scalar_inputs.is_empty()
+        && proof.scalar_captures.is_empty()
+        && region.numeric_tree.is_none()
+    {
         b.ins().iconst(types::I64, 0)
     } else {
         b.ins()
@@ -153,6 +156,7 @@ pub(in crate::native_artifact) fn emit_entry(
         if let Some(binding) = proof
             .scalar_inputs
             .iter()
+            .chain(&proof.scalar_captures)
             .find(|binding| binding.word == relative)
         {
             let at = binding
@@ -288,7 +292,7 @@ pub(in crate::native_artifact) fn emit_entry(
         successful_backedge_helpers: 0,
         maximum_source_instructions: 0,
         fixed_template_instructions: 0,
-        scalar_input_loads: proof.scalar_inputs.len(),
+        scalar_input_loads: proof.scalar_inputs.len() + proof.scalar_captures.len(),
         scalar_output_stores: (proof.scalar_inputs.len() + proof.scalar_outputs.len()) * 2,
         entry_shadow_argument_copies: 0,
         private_boundary_words: exact_private

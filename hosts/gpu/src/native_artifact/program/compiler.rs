@@ -278,7 +278,6 @@ impl NativeProgramObject {
         let prepared = self.descriptor.metadata();
         metadata["readonly_numeric_candidates"] = serde_json::json!(prepared.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
             let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
-            if prepared.buffer_frames.fields(tail.carrier()).is_none() { return None }
             let result = crate::native_artifact::program::prepare::readonly_numeric::derive(&prepared.plan, tail, &prepared.buffer_frames, &prepared.scalar_aggregates, &prepared.calls);
             Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"origin":tail.origin(),"proof_eligible":result.is_ok(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize == iteration && region.numeric.is_some()),"rejection":result.err()}))
         }).collect::<Vec<_>>());
@@ -291,7 +290,6 @@ impl NativeProgramObject {
             crate::native_artifact::program::prepare::numeric_tree::Discovery::new(&prepared.plan);
         metadata["numeric_tree_candidates"] = serde_json::json!(prepared.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
             let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
-            if prepared.buffer_frames.fields(tail.carrier()).is_none() { return None }
             let result = tree_discovery.as_ref().map_err(|error| *error).and_then(|discovery| discovery.discover(tail))
                 .and_then(|tree| crate::native_artifact::program::prepare::readonly_numeric::derive_tree(&prepared.plan,tail,&prepared.buffer_frames,&prepared.scalar_aggregates,&prepared.calls,&tree).map(|_|tree.nodes.len()));
             Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"proof_eligible":result.is_ok(),"nodes":result.as_ref().ok(),"rejection":result.err(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize==iteration && region.numeric_tree.is_some())}))

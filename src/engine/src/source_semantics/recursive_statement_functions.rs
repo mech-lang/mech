@@ -251,7 +251,7 @@ impl SemanticBuilder {
         }
         let (mut block, schema) = result?;
         if recursive {
-            self.promote_map_invariant_arguments(
+            self.promote_invariant_arguments(
                 arguments,
                 &mut scrutinee,
                 &mut pattern,

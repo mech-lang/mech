@@ -472,6 +472,19 @@ fn captured_child_of_scalar_parent_refreshes_its_ancestor_array() {
         )
         .unwrap();
         let sites = capture_sites(&artifact, &jit, 8);
+        for region in &jit.descriptor().metadata().closed_tails.regions {
+            if region.numeric_tree.is_some() {
+                let proof = region.numeric.as_ref().unwrap();
+                assert!(
+                    proof
+                        .arrays
+                        .iter()
+                        .enumerate()
+                        .all(|(array, _)| proof.view(array) > 0),
+                    "tree entry bank transport must not overwrite its first array view"
+                );
+            }
+        }
         assert!(
             jit.descriptor()
                 .metadata()

@@ -253,16 +253,26 @@ impl BufferFrames {
         layout: &Layout,
     ) -> Result<u64, NativeProgramExecutionError> {
         let expected = Self::word_count(layout)?;
-        let inner = self
-            .inner
-            .as_mut()
-            .ok_or_else(|| invalid("numeric scalar bank missing"))?;
+        let Some(inner) = self.inner.as_mut() else {
+            // Scalar-state numeric trees can use only ordinary scalar homes
+            // and immutable arrays. Their derived frame bank has zero lanes;
+            // generated code carries this unused sentinel without reading it.
+            return if expected == 0 {
+                Ok(0)
+            } else {
+                Err(invalid("numeric scalar bank missing"))
+            };
+        };
         if inner.words.values().len() != expected {
             return Err(invalid(
                 "numeric scalar bank extent differs from its derived layout",
             ));
         }
-        Ok(inner.words.values_mut().as_mut_ptr() as u64)
+        Ok(if expected == 0 {
+            0
+        } else {
+            inner.words.values_mut().as_mut_ptr() as u64
+        })
     }
     pub(super) fn current_scalar_binding(
         &self,

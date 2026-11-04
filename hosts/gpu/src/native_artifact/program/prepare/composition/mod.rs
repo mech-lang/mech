@@ -136,13 +136,14 @@ impl Layout {
             if children.is_empty() {
                 continue;
             }
-            if !frames.fields(parent.carrier()).is_some_and(|f| {
+            if !(frames.fields(parent.carrier()).is_some_and(|f| {
                 f.iter().all(|f| {
                     !matches!(f.lane(), Lane::Tagged { .. })
                         && (!matches!(f.lane(), Lane::Composite { .. })
                             || super::readonly_numeric::scalar_children(frames, *f))
                 })
-            }) {
+            }) || aggregates.slot(parent.carrier()).is_some())
+            {
                 continue;
             }
             let mut child_boundaries = Vec::with_capacity(children.len());
@@ -162,13 +163,24 @@ impl Layout {
                 let returned_arrays = if let Some(proof) = proof
                     && let ResultRecipe::Frame { arrays, .. } = &proof.result
                 {
+                    // Parent-piece forwarding names child carrier homes. An
+                    // immutable capture has no such home; the child's own
+                    // numeric proof remains independently usable.
+                    if arrays.iter().any(|&(_, array)| {
+                        proof
+                            .arrays
+                            .get(array)
+                            .is_some_and(|a| a.physical().is_none())
+                    }) {
+                        break;
+                    }
                     arrays
                         .iter()
                         .map(|&(field, array)| {
                             proof
                                 .arrays
                                 .get(array)
-                                .map(|a| (field, a.field))
+                                .map(|a| (field, a.root))
                                 .ok_or("composition child result array is outside its proof")
                         })
                         .collect::<Result<Vec<_>, _>>()?
@@ -214,7 +226,7 @@ impl Layout {
                         })
                         && plan.activation_boundary() != Some(site as u32)
                         && matches!(block.terminator(), Term::Scalar(_))
-                        && eligible(plan, frames, calls, site))
+                        && eligible(plan, frames, aggregates, calls, site))
                     .then_some(site as u32)
                 })
                 .collect::<BTreeSet<_>>();
@@ -301,6 +313,7 @@ impl Layout {
                             plan,
                             &facts,
                             frames,
+                            aggregates,
                             calls,
                             visits,
                             retirements,
@@ -459,10 +472,14 @@ fn scalar_child_tree(
 fn eligible(
     plan: &Plan,
     frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
     calls: &[Option<NativePreparedLibraryCall>],
     site: usize,
 ) -> bool {
     let action = plan.blocks()[site].action();
+    if aggregates.action(site).is_some() {
+        return true;
+    }
     if let Some(frame) = frames.action(site) {
         let native_frame = |value| {
             frames.fields(value).is_some_and(|fields| {

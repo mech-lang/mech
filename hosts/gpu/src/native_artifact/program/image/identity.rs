@@ -310,7 +310,8 @@ fn selected_template(
 // IR174 admits String-matrix carriers with independent closed canonical fields.
 // IR175 retains immutable String-matrix leaves in private recursive frame lanes.
 // IR176 proves invariant recursive inputs outside changing native Map state.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 176;
+// IR177 also lifts immutable numeric matrices with independent changing axes.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 177;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

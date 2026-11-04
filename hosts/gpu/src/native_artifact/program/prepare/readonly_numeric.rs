@@ -24,17 +24,52 @@ pub(super) use results::scalar_aggregate;
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(in crate::native_artifact) enum ArrayStorage {
+    Carrier {
+        field: usize,
+        physical: usize,
+    },
+    /// Exact immutable ancestor value; never a mutable carrier or body result.
+    Capture {
+        value: u32,
+    },
+    /// A managed leaf of an exact immutable ancestor tuple/record. The field
+    /// is a structural leaf ordinal; physical is its current private home.
+    FrameCapture {
+        value: u32,
+        field: usize,
+        physical: usize,
+    },
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Array {
-    /// Flattened structural leaf in the exact root carrier.
-    pub field: usize,
-    /// Same-plan current owner slot; never supplied by source or caller.
-    pub physical: usize,
+    /// Proof-local identity. Carrier roots use their structural leaf ordinal;
+    /// immutable captures receive disjoint identities after those leaves.
+    pub root: usize,
+    pub storage: ArrayStorage,
     pub schema: mech_core::SchemaId,
     pub width: u8,
     /// Exact selected site whose original factory validates the entry view.
     pub witness: usize,
     pub writable: bool,
     pub appends: bool,
+}
+impl Array {
+    pub fn physical(&self) -> Option<usize> {
+        match self.storage {
+            ArrayStorage::Carrier { physical, .. } => Some(physical),
+            ArrayStorage::Capture { .. } | ArrayStorage::FrameCapture { .. } => None,
+        }
+    }
+    pub fn entry_key(&self, tail: &NativeTailLoop) -> (u32, Option<usize>) {
+        match self.storage {
+            ArrayStorage::Carrier { field, .. } => (tail.carrier().get(), Some(field)),
+            ArrayStorage::Capture { value } => (value, None),
+            ArrayStorage::FrameCapture { value, field, .. } => (value, Some(field)),
+        }
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -186,6 +221,9 @@ pub(in crate::native_artifact) struct Proof {
     pub sites: Vec<usize>,
     pub scalar_words: usize,
     pub scalar_inputs: Vec<ScalarBinding>,
+    /// Read-only entry imports. They never participate in carrier restoration
+    /// or successful export: the ancestor's physical lanes remain unchanged.
+    pub scalar_captures: Vec<ScalarBinding>,
     pub scalar_outputs: Vec<ScalarBinding>,
     pub words: usize,
     /// Independently bounded source and shadow homes for entry/exit emission.
@@ -321,10 +359,14 @@ struct Provenance<'a, 'p> {
     /// Child carrier fields are identity phis rooted through the exact seed.
     /// Their next/return values are independently checked before selection.
     child_roots: BTreeMap<(u32, usize), usize>,
+    captures: BTreeMap<numeric_fields::Key, usize>,
 }
 impl Provenance<'_, '_> {
     fn array(&mut self, value: u32, field: Option<usize>) -> Option<usize> {
         let key = (value, field);
+        if let Some(root) = self.captures.get(&key) {
+            return Some(*root);
+        }
         if let Some(ordinal) = field {
             if let Some(root) = self.child_roots.get(&(value, ordinal)) {
                 return Some(*root);
@@ -457,8 +499,17 @@ fn derive_inner(
     calls: &[Option<NativePreparedLibraryCall>],
     tree: Option<&super::numeric_tree::Proof>,
 ) -> Result<Proof, &'static str> {
-    let fields = numeric_fields::at(frames, tail.carrier().get())
-        .ok_or("numeric carrier lacks exact untagged leaves")?;
+    let fields = match numeric_fields::at(frames, tail.carrier().get()) {
+        Some(fields) => fields,
+        None if aggregates.slot(tail.carrier()).is_some()
+            || plan.values()[tail.carrier().get() as usize]
+                .scalar_kind()
+                .is_some() =>
+        {
+            Vec::new()
+        }
+        None => return Err("numeric carrier lacks exact untagged leaves"),
+    };
     let iteration = plan
         .iterations()
         .iter()
@@ -500,7 +551,66 @@ fn derive_inner(
         cache: BTreeMap::new(),
         active: BTreeSet::new(),
         child_roots: BTreeMap::new(),
+        captures: BTreeMap::new(),
     };
+    let mut captured = Vec::new();
+    for &site in &sites {
+        let mut sources = match plan.blocks()[site].action() {
+            Action::LibraryCall { operands, .. } => operands.to_vec(),
+            _ => Vec::new(),
+        };
+        if let Some(Frame::Copy { source, .. } | Frame::Project { source, .. }) =
+            frames.action(site).map(|a| a.operation())
+        {
+            sources.push(*source);
+        }
+        for source in &sources {
+            if super::captured_numeric::immutable_source(plan, tail, *source).is_err() {
+                continue;
+            }
+            let mut candidates = Vec::new();
+            if width(plan.values()[source.get() as usize].definition().body()).is_some() {
+                candidates.push((
+                    None,
+                    ArrayStorage::Capture {
+                        value: source.get(),
+                    },
+                    plan.values()[source.get() as usize].schema(),
+                ));
+            } else if let Some(leaves) = numeric_fields::at(frames, source.get()) {
+                for (field, leaf) in leaves.iter().enumerate() {
+                    if let Lane::Managed { at: physical } = leaf.lane() {
+                        candidates.push((
+                            Some(field),
+                            ArrayStorage::FrameCapture {
+                                value: source.get(),
+                                field,
+                                physical,
+                            },
+                            leaf.schema(),
+                        ));
+                    }
+                }
+            }
+            for (field, storage, schema) in candidates {
+                let key = (source.get(), field);
+                if provenance.captures.contains_key(&key) {
+                    continue;
+                }
+                let root = fields.len() + captured.len();
+                provenance.captures.insert(key, root);
+                captured.push(Array {
+                    root,
+                    storage,
+                    schema,
+                    width: 0,
+                    witness: usize::MAX,
+                    writable: false,
+                    appends: false,
+                });
+            }
+        }
+    }
     if let Some(tree) = tree {
         for node in tree.nodes.iter().skip(1) {
             if let Some(fields) = numeric_fields::at(frames, node.tail.carrier().get()) {
@@ -533,10 +643,13 @@ fn derive_inner(
                 return Err("array field changes, swaps, or has unknown recursive forwarding");
             }
             arrays.push(Array {
-                field: ordinal,
-                physical: match field.lane() {
-                    Lane::Managed { at } => at,
-                    _ => unreachable!(),
+                root: ordinal,
+                storage: ArrayStorage::Carrier {
+                    field: ordinal,
+                    physical: match field.lane() {
+                        Lane::Managed { at } => at,
+                        _ => unreachable!(),
+                    },
                 },
                 schema: field.schema(),
                 width: 0,
@@ -546,6 +659,7 @@ fn derive_inner(
             });
         }
     }
+    arrays.extend(captured);
     if arrays.is_empty() {
         return Err("no invariant numeric arrays");
     }
@@ -559,7 +673,10 @@ fn derive_inner(
         &mut provenance,
     )?;
     let mut actions = Vec::new();
-    let mut frame_values = BTreeSet::from([tail.carrier().get()]);
+    let mut frame_values = BTreeSet::new();
+    if numeric_fields::at(frames, tail.carrier().get()).is_some() {
+        frame_values.insert(tail.carrier().get());
+    }
     if let Some(value) = result.frame() {
         frame_values.insert(value);
     }
@@ -583,7 +700,7 @@ fn derive_inner(
                         let origin = provenance.array(value, Some(ordinal));
                         let array = arrays
                             .iter()
-                            .find(|a| origin == Some(a.field))
+                            .find(|a| origin == Some(a.root))
                             .ok_or("frame has an unknown managed field")?;
                         // A physical owner binding forwards this exact Value;
                         // schema rebinding requires the ordinary constructor.
@@ -667,13 +784,18 @@ fn derive_inner(
             let field = provenance
                 .array(source.get(), None)
                 .ok_or("array read is not an invariant carrier field")?;
-            if plan.values()[source.get() as usize].schema() != fields[field].schema() {
-                return Err("array field schema differs from its selected use");
-            }
             let at = arrays
                 .iter()
-                .position(|a| a.field == field)
+                .position(|a| a.root == field)
                 .ok_or("array outside carrier")?;
+            if plan.values()[source.get() as usize].schema() != arrays[at].schema {
+                return Err("array root schema differs from its selected use");
+            }
+            if !matches!(arrays[at].storage, ArrayStorage::Carrier { .. })
+                && (is_write || is_append)
+            {
+                return Err("immutable captured array cannot be written");
+            }
             let w =
                 width(template.inputs()[0].body()).ok_or("unsupported numeric shape or width")?;
             if arrays[at].width != 0 && arrays[at].width != w {
@@ -759,8 +881,11 @@ fn derive_inner(
     // A retained leaf with no selected content operation remains an opaque
     // immutable owner. It grants no native pointer/view and cannot be written.
     // Current-version proof still covers every structural forwarding edge.
-    if arrays.iter().any(|array| array.witness == usize::MAX)
-        && !numeric_fields::has_nested_managed(frames, frames.fields(tail.carrier()).unwrap())
+    if arrays.iter().any(|array| {
+        array.witness == usize::MAX && matches!(array.storage, ArrayStorage::Carrier { .. })
+    }) && !frames
+        .fields(tail.carrier())
+        .is_some_and(|fields| numeric_fields::has_nested_managed(frames, fields))
     {
         // Opaque retention belongs to the new recursive managed-frame proof.
         // Keep the established flat-frame eligibility and callback controls.
@@ -848,7 +973,7 @@ fn derive_inner(
                 .map(|(ordinal, field)| {
                     if matches!(field.lane(), Lane::Managed { .. }) {
                         let origin = provenance.array(value, Some(ordinal)).unwrap();
-                        Some(arrays.iter().position(|a| a.field == origin).unwrap())
+                        Some(arrays.iter().position(|a| a.root == origin).unwrap())
                     } else {
                         None
                     }
@@ -879,6 +1004,13 @@ fn derive_inner(
             }
         })
         .collect();
+    // Tree entries pass their scalar-bank pointer in argument word two.
+    // A frame-free scalar tree has no scalar lanes to occupy that word, so
+    // reserve its transport slot before placing the first array view there.
+    // No frame allocation or access authority is implied by this padding.
+    if tree.is_some() && scalar_words == 0 {
+        scalar_words = 1;
+    }
     let words = scalar_words
         .checked_add(
             arrays
@@ -909,22 +1041,27 @@ fn derive_inner(
         // Keep the original flat-frame price and its exact regression receipts.
         let carrier = frame_words
             .iter()
-            .find(|frame| frame.value == tail.carrier().get())
-            .ok_or("numeric boundary carrier frame missing")?;
+            .find(|frame| frame.value == tail.carrier().get());
         (boundary_words as u64)
             .checked_mul(4)
-            .and_then(|n| n.checked_add(carrier.scalar_paths.len() as u64 * 2))
+            .and_then(|n| {
+                n.checked_add(carrier.map_or(0, |carrier| carrier.scalar_paths.len() as u64 * 2))
+            })
             .and_then(|n| n.checked_add(128))
             .ok_or("numeric boundary work overflows")?
             .max(super::tail::FIXED_OVERHEAD)
     } else {
         super::tail::FIXED_OVERHEAD
     };
-    let carrier = frame_words
-        .iter()
-        .find(|frame| frame.value == tail.carrier().get())
-        .ok_or("numeric scalar carrier recipe missing")?;
-    let scalar_inputs = scalar_bindings(frames, carrier.value, &carrier.scalar_paths)?;
+    let mut scalar_inputs = Vec::new();
+    let mut scalar_captures = Vec::new();
+    for frame in &frame_words {
+        if frame.value == tail.carrier().get() {
+            scalar_inputs.extend(scalar_bindings(frames, frame.value, &frame.scalar_paths)?);
+        } else if super::captured_numeric::immutable_source_id(plan, tail, frame.value).is_ok() {
+            scalar_captures.extend(scalar_bindings(frames, frame.value, &frame.scalar_paths)?);
+        }
+    }
     let scalar_outputs = if let Some(value) = result.frame() {
         let returned = frame_words
             .iter()
@@ -965,6 +1102,7 @@ fn derive_inner(
         sites: sites.into_iter().collect(),
         scalar_words,
         scalar_inputs,
+        scalar_captures,
         scalar_outputs,
         words,
         boundary_words,

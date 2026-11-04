@@ -1119,11 +1119,7 @@ unsafe extern "C" fn observe_numeric_fuel(
                 && proof.writes()
             {
                 for array in &proof.arrays {
-                    let owner = ctx
-                        .state
-                        .buffer_frames
-                        .numeric_owner(array.physical, array.schema)
-                        .unwrap();
+                    let owner = ctx.numeric_array_owner(array).unwrap().unwrap();
                     let ValueData::Matrix(matrix) = owner.data() else {
                         panic!("numeric fuel owner is not a matrix")
                     };

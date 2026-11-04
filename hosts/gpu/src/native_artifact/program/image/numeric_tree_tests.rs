@@ -173,23 +173,8 @@ fn numeric_induction_object_identity_rejects_ir153_images() {
     }
 }
 
-const APPEND_CAPTURE_TREE: &str = r#"+> sequence
-capture-inner(data<[u64]>, ids<[u64]>, a<u64>, b<u64>, c<u64>, end<u64>) => (out<[u64]>) :=
-  more := c < end
-  word := (more? | true => (ids[a + 1u64] * end + ids[b + 1u64]) * end + ids[c + 1u64] | false => 0u64)
-  next := (more? | true => sequence/append(data, word) | false => data)
-  out := (more? | true => capture-inner(next, ids, a, b, c + 1u64, end) | false => data).
-capture-middle(data<[u64]>, ids<[u64]>, a<u64>, b<u64>, end<u64>) => (out<[u64]>) :=
-  more := b + 1u64 < end
-  next := (more? | true => capture-inner(data, ids, a, b, b + 1u64, end) | false => data)
-  out := (more? | true => capture-middle(next, ids, a, b + 1u64, end) | false => data).
-capture-outer(data<[u64]>, ids<[u64]>, a<u64>, end<u64>) => (out<[u64]>) :=
-  more := a + 2u64 < end
-  next := (more? | true => capture-middle(data, ids, a, a + 1u64, end) | false => data)
-  out := (more? | true => capture-outer(next, ids, a + 1u64, end) | false => data).
-buffer := sequence/with-capacity(0u64, capacity<u64>)
-capture-outer(buffer, ids<[u64]>, 0u64, end<u64>)
-"#;
+const APPEND_CAPTURE_TREE: &str =
+    include_str!("../../../../tests/fixtures/native/numeric-changing-capture-tree.mec");
 
 #[test]
 fn numeric_tree_images_rederive_exact_cold_alias_roots_values_and_header_availability() {

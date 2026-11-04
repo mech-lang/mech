@@ -366,7 +366,7 @@ fn analyze_tree(
         .map(|key| {
             (
                 *key,
-                key.0 == tail.carrier().get() && arrays.iter().any(|a| key.1 == Some(a.field)),
+                arrays.iter().any(|array| array.entry_key(tail) == *key),
             )
         })
         .collect::<State>();
@@ -552,7 +552,7 @@ fn verify_tree(
 /// the current root version, and managed Frame intermediates still decline.
 fn cold_aliases(
     plan: &Plan,
-    tail: &NativeTailLoop,
+    _tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     provenance: &mut Provenance<'_, '_>,
     arrays: &[Array],
@@ -572,8 +572,6 @@ fn cold_aliases(
         }
         false
     };
-    let root_fields = numeric_fields::at(frames, tail.carrier().get())
-        .ok_or("cold alias root lost its fields")?;
     let mut recipes = ColdHomes::default();
     let mut count = 0usize;
     let bound = plan
@@ -769,14 +767,14 @@ fn cold_aliases(
             let root = root.ok_or("cold alias loses its logical array root")?;
             let array = arrays
                 .iter()
-                .position(|array| array.field == root)
+                .position(|array| array.root == root)
                 .ok_or("cold alias loses its logical array root")?;
             if !state.get(&(value, None)).copied().unwrap_or(false) {
                 return Err(
                     "numeric tree cold continuation requires an older or unavailable array alias",
                 );
             }
-            if plan.values()[value as usize].schema() != root_fields[root].schema() {
+            if plan.values()[value as usize].schema() != arrays[array].schema {
                 return Err("numeric tree cold alias requires unsupported schema rebinding");
             }
             aliases.push(ColdAlias { value, array });
@@ -822,7 +820,7 @@ fn transfer(
             let Action::LibraryCall { output, .. } = plan.blocks()[site].action() else {
                 return Err("tree write lost output");
             };
-            let root = arrays[*array].field;
+            let root = arrays[*array].root;
             for (&(value, field), current) in state.iter_mut() {
                 if provenance.array(value, field) == Some(root) {
                     *current = false;
@@ -849,10 +847,7 @@ fn pass(
     let mut states = BTreeMap::<usize, State>::new();
     states.insert(
         tail.header() as usize,
-        arrays
-            .iter()
-            .map(|a| ((tail.carrier().get(), Some(a.field)), true))
-            .collect(),
+        arrays.iter().map(|a| (a.entry_key(tail), true)).collect(),
     );
     for &site in &traversal.order {
         let Some(mut state) = states.remove(&site) else {
@@ -900,7 +895,7 @@ fn pass(
                     operation,
                     Operation::Write { .. } | Operation::Append { .. }
                 ) {
-                    let root = arrays[*array].field;
+                    let root = arrays[*array].root;
                     for (&(value, field), current) in &mut state {
                         if provenance.array(value, field) == Some(root) {
                             *current = false;
@@ -913,7 +908,12 @@ fn pass(
         }
         if site == tail.latch() as usize {
             for array in arrays {
-                if !fresh(&state, (tail.next().get(), Some(array.field))) {
+                let key = match array.storage {
+                    super::ArrayStorage::Carrier { field, .. } => (tail.next().get(), Some(field)),
+                    super::ArrayStorage::Capture { value } => (value, None),
+                    super::ArrayStorage::FrameCapture { value, field, .. } => (value, Some(field)),
+                };
+                if !fresh(&state, key) {
                     return Err("recursive edge discards or forwards an older array version");
                 }
             }

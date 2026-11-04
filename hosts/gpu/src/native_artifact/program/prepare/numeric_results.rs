@@ -75,7 +75,7 @@ pub(super) fn derive(
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
-    carrier: &[NativeBufferFrameField],
+    _carrier: &[NativeBufferFrameField],
     arrays: &[Array],
     provenance: &mut Provenance<'_, '_>,
 ) -> Result<ResultRecipe, &'static str> {
@@ -91,13 +91,14 @@ pub(super) fn derive(
         let field = provenance
             .array(value.get(), ordinal)
             .ok_or("leaf result lacks a numeric carrier root")?;
-        if schema != carrier[field].schema() {
+        let at = arrays
+            .iter()
+            .position(|a| a.root == field)
+            .ok_or("returned array outside proved roots")?;
+        if schema != arrays[at].schema {
             return Err("returned array requires a different schema binding");
         }
-        arrays
-            .iter()
-            .position(|a| a.field == field)
-            .ok_or("returned array outside carrier")
+        Ok(at)
     };
     if matches!(ty.definition().body(), SchemaBody::Matrix { .. }) {
         return Ok(ResultRecipe::Array {
@@ -120,9 +121,9 @@ pub(super) fn derive(
         .enumerate()
         .filter(|(_, f)| matches!(f.lane(), Lane::Managed { .. }))
         .collect::<Vec<_>>();
-    if managed.is_empty() {
-        return Err("numeric result frame requires an array owner");
-    }
+    // A lifted immutable array may leave only nested scalar spans in the
+    // result. The exact private-frame recipe also represents that empty set
+    // of owner transfers; scalar lanes still use their ordinary exit stores.
     let arrays = managed
         .into_iter()
         .map(|(ordinal, field)| Ok((ordinal, root(Some(ordinal), field.schema())?)))

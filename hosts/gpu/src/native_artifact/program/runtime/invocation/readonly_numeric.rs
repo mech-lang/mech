@@ -1,13 +1,59 @@
 //! Invocation-current views. The admitted carrier owns every borrowed backing;
 //! no ordinary helper can run while the same closed-tail loan is outstanding.
 use super::{Error, Invocation, invalid};
-use crate::native_artifact::program::prepare::readonly_numeric::Operation;
+use crate::native_artifact::program::prepare::readonly_numeric::{Array, ArrayStorage, Operation};
 use crate::native_artifact::program::runtime::amount;
 use crate::native_artifact::program::runtime::buffer_frames::BufferFrames;
 use crate::native_artifact::program::runtime::buffer_frames::Field;
 use mech_engine::native_artifact::NativeIterationAction as Action;
 
 impl Invocation<'_, '_, '_> {
+    /// A descriptor-proved immutable capture stays in its current arena slot
+    /// for the whole synchronous loan. Mutable roots retain private lanes.
+    pub(in crate::native_artifact::program::runtime) fn numeric_array_owner(
+        &self,
+        array: &Array,
+    ) -> Result<Option<&mech_core::Value>, Error> {
+        match array.storage {
+            ArrayStorage::Carrier { physical, .. } => Ok(self
+                .state
+                .buffer_frames
+                .numeric_owner(physical, array.schema)),
+            ArrayStorage::FrameCapture { physical, .. } => Ok(self
+                .state
+                .buffer_frames
+                .numeric_owner(physical, array.schema)),
+            ArrayStorage::Capture { value } => Ok(self
+                .state
+                .arena
+                .native_entry_preview(value, &self.state.control.work)?),
+        }
+    }
+
+    pub(super) fn project_numeric_array_owner(
+        &mut self,
+        array: &Array,
+    ) -> Result<mech_core::Value, Error> {
+        match array.storage {
+            ArrayStorage::Carrier { physical, .. }
+            | ArrayStorage::FrameCapture { physical, .. } => {
+                let Field::Managed(owner) = self.state.buffer_frames.project_numeric_owner(
+                    physical,
+                    array.schema,
+                    &mut self.state.control.work,
+                )?
+                else {
+                    return Err(invalid("numeric view has scalar owner"));
+                };
+                Ok(owner)
+            }
+            ArrayStorage::Capture { value } => Ok(self
+                .state
+                .arena
+                .copy_current(value, &mut self.state.control.work)?),
+        }
+    }
+
     pub(super) fn begin_numeric_views(&mut self, region: usize) -> Result<bool, Error> {
         let descriptor = self.descriptor;
         let metadata = descriptor.metadata();
@@ -27,12 +73,8 @@ impl Invocation<'_, '_, '_> {
             .checked_mul(proof.arrays.len() as u64 * 8)
             .and_then(|n| n.checked_add(proof.words as u64 * 128 + 2048));
         for array in &proof.arrays {
-            let Some(owner) = self
-                .state
-                .buffer_frames
-                .numeric_owner(array.physical, array.schema)
-            else {
-                return Err(invalid("numeric entry lost current owner"));
+            let Some(owner) = self.numeric_array_owner(array)? else {
+                return Ok(false);
             };
             let Some(retained) = owner.memory_budget_retained_bytes(&memory) else {
                 return Ok(false);
@@ -60,7 +102,7 @@ impl Invocation<'_, '_, '_> {
         for (_, bindings) in &proof.cold_frames {
             for &(physical, array) in bindings {
                 let root = &proof.arrays[array];
-                if physical != root.physical
+                if Some(physical) != root.physical()
                     && !self.state.buffer_frames.empty_numeric_owner(physical)
                 {
                     return Ok(false);
@@ -87,9 +129,7 @@ impl Invocation<'_, '_, '_> {
             return Ok(false);
         };
         let mut publication_work = if let Some(array) = proof.result.direct_array() {
-            self.state
-                .buffer_frames
-                .numeric_owner(proof.arrays[array].physical, proof.arrays[array].schema)
+            self.numeric_array_owner(&proof.arrays[array])?
                 .and_then(|v| v.memory_budget_retained_bytes(&memory))
                 .and_then(|n| n.checked_mul(4))
                 .and_then(|n| n.checked_add(64))
@@ -104,11 +144,7 @@ impl Invocation<'_, '_, '_> {
                 let Some(array) = proof.arrays.get(alias.array) else {
                     return Err(invalid("numeric cold alias has a foreign array"));
                 };
-                let Some(owner) = self
-                    .state
-                    .buffer_frames
-                    .numeric_owner(array.physical, array.schema)
-                else {
+                let Some(owner) = self.numeric_array_owner(array)? else {
                     return Err(invalid("numeric cold alias lost its current owner"));
                 };
                 let Some(work) = self.state.arena.native_alias_put_work(
@@ -146,9 +182,7 @@ impl Invocation<'_, '_, '_> {
         };
         for (at, array) in proof.arrays.iter().enumerate() {
             let owner = self
-                .state
-                .buffer_frames
-                .numeric_owner(array.physical, array.schema)
+                .numeric_array_owner(array)?
                 .ok_or_else(|| invalid("numeric entry lost current owner"))?;
             let Ok(footprint) = owner.retained_footprint(&metadata.schemas) else {
                 return Ok(false);
@@ -195,14 +229,7 @@ impl Invocation<'_, '_, '_> {
                 }
                 continue;
             }
-            let Field::Managed(owner) = self.state.buffer_frames.project_numeric_owner(
-                array.physical,
-                array.schema,
-                &mut self.state.control.work,
-            )?
-            else {
-                return Err(invalid("numeric view has scalar owner"));
-            };
+            let owner = self.project_numeric_array_owner(array)?;
             let call = metadata.calls[array.witness]
                 .as_ref()
                 .ok_or_else(|| invalid("numeric view lost factory"))?;
@@ -242,7 +269,7 @@ impl Invocation<'_, '_, '_> {
                 self.write_borrowed_word(2 + proof.view(at) + index, word)?;
             }
         }
-        for binding in &proof.scalar_inputs {
+        for binding in proof.scalar_inputs.iter().chain(&proof.scalar_captures) {
             self.state.control.work.charge(
                 crate::native_artifact::NativeExecutionPhase::Setup,
                 amount(binding.steps, 64, 0)?,
@@ -258,13 +285,12 @@ impl Invocation<'_, '_, '_> {
         if proof.writes() || proof.result.direct_array().is_some() || cold_alias_count != 0 {
             let publication = if let Some(array) = proof.result.direct_array() {
                 let owner = self
-                    .state
-                    .buffer_frames
-                    .numeric_owner(proof.arrays[array].physical, proof.arrays[array].schema)
-                    .ok_or_else(|| invalid("numeric result lost owner"))?;
+                    .numeric_array_owner(&proof.arrays[array])?
+                    .ok_or_else(|| invalid("numeric result lost owner"))?
+                    .clone();
                 Some(self.state.arena.prepare_put(
                     region.tail.returned().get(),
-                    owner,
+                    &owner,
                     &mut self.state.control.work,
                 )?)
             } else {
@@ -284,9 +310,7 @@ impl Invocation<'_, '_, '_> {
             }
             for (at, array) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
                 let owner = self
-                    .state
-                    .buffer_frames
-                    .numeric_owner(array.physical, array.schema)
+                    .numeric_array_owner(array)?
                     .ok_or_else(|| invalid("append preparation lost current owner"))?;
                 let Ok(Some(preparation)) = owner.prepare_private_unsigned_appends(&memory) else {
                     drop(self.state.buffer_frames.finish_private(id)?);
@@ -301,16 +325,12 @@ impl Invocation<'_, '_, '_> {
                 .enumerate()
             {
                 let owner = self
-                    .state
-                    .buffer_frames
-                    .numeric_owner(
-                        proof.arrays[alias.array].physical,
-                        proof.arrays[alias.array].schema,
-                    )
-                    .ok_or_else(|| invalid("numeric cold alias lost its admitted owner"))?;
+                    .numeric_array_owner(&proof.arrays[alias.array])?
+                    .ok_or_else(|| invalid("numeric cold alias lost its admitted owner"))?
+                    .clone();
                 let ticket = self.state.arena.prepare_put(
                     alias.value,
-                    owner,
+                    &owner,
                     &mut self.state.control.work,
                 )?;
                 self.state
@@ -318,7 +338,10 @@ impl Invocation<'_, '_, '_> {
                     .set_private_alias(id, index, alias.value, ticket)?;
             }
         }
-        if !proof.scalar_inputs.is_empty() || region.numeric_tree.is_some() {
+        if !proof.scalar_inputs.is_empty()
+            || !proof.scalar_captures.is_empty()
+            || region.numeric_tree.is_some()
+        {
             let bank = self
                 .state
                 .buffer_frames
@@ -373,7 +396,9 @@ impl Invocation<'_, '_, '_> {
                     };
                     let owner = Self::finish_numeric_array(private, length)?;
                     self.state.buffer_frames.synchronize_numeric_owner(
-                        array.physical,
+                        array.physical().ok_or_else(|| {
+                            invalid("captured array cannot receive a mutable owner")
+                        })?,
                         array.schema,
                         owner,
                     )?;
@@ -383,9 +408,7 @@ impl Invocation<'_, '_, '_> {
             if mode == 0 {
                 if let Some(array) = proof.result.direct_array() {
                     let owner = self
-                        .state
-                        .buffer_frames
-                        .numeric_owner(proof.arrays[array].physical, proof.arrays[array].schema)
+                        .numeric_array_owner(&proof.arrays[array])?
                         .ok_or_else(|| invalid("numeric result lost final owner"))?
                         .clone();
                     self.state.arena.put_prepared(
@@ -412,9 +435,7 @@ impl Invocation<'_, '_, '_> {
                         // Clone only after private cells have frozen. No extra
                         // entry pin can defeat the consuming first-write handoff.
                         let owner = self
-                            .state
-                            .buffer_frames
-                            .numeric_owner(proof.arrays[array].physical, proof.arrays[array].schema)
+                            .numeric_array_owner(&proof.arrays[array])?
                             .ok_or_else(|| invalid("numeric result lost current array owner"))?
                             .clone();
                         self.state.buffer_frames.synchronize_numeric_owner(
@@ -437,14 +458,7 @@ impl Invocation<'_, '_, '_> {
             let Action::LibraryCall { operands, .. } = metadata.plan.blocks()[site].action() else {
                 return Err(invalid("numeric bounds lost call"));
             };
-            let Field::Managed(owner) = self.state.buffer_frames.project_numeric_owner(
-                proof.arrays[*array].physical,
-                proof.arrays[*array].schema,
-                &mut self.state.control.work,
-            )?
-            else {
-                return Err(invalid("numeric bounds lost owner"));
-            };
+            let owner = self.project_numeric_array_owner(&proof.arrays[*array])?;
             self.state
                 .arena
                 .put(operands[0].get(), &owner, &mut self.state.control.work)?;
