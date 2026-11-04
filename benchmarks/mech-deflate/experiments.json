@@ -13370,7 +13370,7 @@
       "base": "b4e6e1601349c694eb0a6a9ffca2d190e06126b0",
       "production": "f6f47a06a98c0aeb97cd596250676209897e9648",
       "compiler_source": "f6f47a06a98c0aeb97cd596250676209897e9648",
-      "decision": "retain for 33.16% text reduction and 8B/random gains; preserve repeated1KB elapsed +1.127799% and instruction +0.684129% regressions",
+      "decision": "retain for 33.16% text reduction and 8B/random gains; preserve repeated1KB elapsed +1.127799% and instruction +0.684287% regressions",
       "events": [
         {
           "event": "eight-primary",
@@ -13626,7 +13626,8 @@
         "architecture_catalog_checks": 15,
         "runtime_only_metadata": true,
         "warnings_as_errors": true
-      }
+      },
+      "decision_metadata_correction": "Correct repeated instruction prose from +0.684129% to +0.684287%; raw before/after medians in every packet and scorecard are unchanged."
     }
   },
   "repository": "mech-lang/mech",
