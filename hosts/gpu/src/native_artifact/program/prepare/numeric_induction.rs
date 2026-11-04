@@ -377,7 +377,6 @@ fn pass(
                     state.insert(*key, valid);
                 }
             }
-            outputs.insert((site, truth), state.clone());
             for &next in &traversal.next[&site] {
                 let mut next_truth = truth;
                 if let Some((_, (no, yes))) =
@@ -403,6 +402,7 @@ fn pass(
                     inputs.insert((next, next_truth), state.clone());
                 }
             }
+            outputs.insert((site, truth), state);
         }
     }
     let known = partition

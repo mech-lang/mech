@@ -364,13 +364,7 @@ fn analyze_tree(
     let top = keys.into_iter().map(|key| (key, true)).collect::<State>();
     let mut entry = top.clone();
     entry.clear_where(|key| !arrays.iter().any(|array| array.entry_key(tail) == *key));
-    let mut states = BTreeMap::new();
-    for &site in &traversal.order {
-        for truth in 0..if partition.is_some() { 3 } else { 1 } {
-            states.insert((site, truth), top.clone());
-        }
-    }
-    states.insert((traversal.header, 0), entry.clone());
+    let mut states = BTreeMap::from([((traversal.header, 0), entry)]);
     let mut pending = std::collections::VecDeque::from([(traversal.header, 0)]);
     let mut queued = BTreeSet::from([(traversal.header, 0)]);
     let mut reachable = BTreeSet::new();
@@ -380,7 +374,6 @@ fn analyze_tree(
         let mut state = states[&(site, truth)].clone();
         reachable.insert((site, truth));
         transfer(plan, frames, provenance, site, actions, arrays, &mut state)?;
-        outputs.insert((site, truth), state.clone());
         for &next in &traversal.next[&site] {
             let mut next_truth = truth;
             if let Some(partition) = partition {
@@ -408,9 +401,19 @@ fn analyze_tree(
                     next_truth = 0;
                 }
             }
-            let merged = states
-                .get_mut(&(next, next_truth))
-                .ok_or("numeric tree freshness edge leaves graph")?;
+            let merged = match states.entry((next, next_truth)) {
+                std::collections::btree_map::Entry::Occupied(entry) => entry.into_mut(),
+                std::collections::btree_map::Entry::Vacant(entry) => {
+                    if !traversal.next.contains_key(&next) {
+                        return Err("numeric tree freshness edge leaves graph");
+                    }
+                    // First arrival still meets the complete TOP domain.
+                    // Copying its incoming state directly could import keys
+                    // absent from that domain and change must-availability.
+                    // Unreachable contexts need neither a state nor a copy.
+                    entry.insert(top.clone())
+                }
+            };
             let changed = merged.meet(&state);
             // Each pending visit reads the latest meet from `states`. Several
             // predecessors can update that meet before it runs; queue it once
@@ -422,6 +425,9 @@ fn analyze_tree(
                 pending.push_back((next, next_truth));
             }
         }
+        // Successor meets only borrow the completed state. Retain that same
+        // owned state as the output after its final use instead of cloning it.
+        outputs.insert((site, truth), state);
     }
     let collapse = |bank: BTreeMap<(usize, u8), State>| {
         let mut result = BTreeMap::<usize, State>::new();
@@ -916,7 +922,8 @@ fn pass(
                 return Err("leaf returns an older array version");
             }
         }
-        for &next in &traversal.next[&site] {
+        let successors = &traversal.next[&site];
+        for (index, &next) in successors.iter().enumerate() {
             if selected
                 .iter()
                 .any(|&(branch, allowed)| branch == site && allowed != next)
@@ -927,6 +934,10 @@ fn pass(
                 // Definitions remain current only on every reachable incoming
                 // path of this pass. A root match does not refresh old aliases.
                 merged.meet(&state);
+            } else if index + 1 == successors.len() {
+                // No later edge or output retains this removed input state.
+                states.insert(next, state);
+                break;
             } else {
                 states.insert(next, state.clone());
             }
