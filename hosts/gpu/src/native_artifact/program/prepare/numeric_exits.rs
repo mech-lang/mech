@@ -199,6 +199,7 @@ fn solve_liveness(
     // Seed each local read, then propagate only newly live facts through the
     // same graph. Definitions kill incoming successor facts, never local reads.
     let mut live = reads.clone();
+    let mut differences = reads.clone();
     let mut predecessors = next
         .keys()
         .map(|&site| (site, Vec::new()))
@@ -219,15 +220,16 @@ fn solve_liveness(
     while let Some(site) = pending.pop_front() {
         queued.remove(&site);
         visits = visits.saturating_add(1);
-        let values = live[&site].clone();
+        let values = std::mem::take(differences.get_mut(&site).unwrap());
         propagated_facts = propagated_facts.saturating_add(values.len());
         for &predecessor in &predecessors[&site] {
             let kills = definitions.get(&predecessor);
             let destination = live.get_mut(&predecessor).unwrap();
             let mut changed = false;
             for &value in &values {
-                if !kills.is_some_and(|kills| kills.contains(&value)) {
-                    changed |= destination.insert(value);
+                if !kills.is_some_and(|kills| kills.contains(&value)) && destination.insert(value) {
+                    differences.get_mut(&predecessor).unwrap().insert(value);
+                    changed = true;
                 }
             }
             if changed && queued.insert(predecessor) {
