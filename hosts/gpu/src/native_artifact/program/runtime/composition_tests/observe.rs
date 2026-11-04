@@ -42,6 +42,15 @@ pub(in crate::native_artifact::program::runtime) fn segment_retirement(site: u32
             .or_default() += 1
     });
 }
+pub(in crate::native_artifact::program::runtime) fn virtual_retirement(site: u32) {
+    COUNTS.with(|counts| {
+        *counts
+            .borrow_mut()
+            .virtual_retirements
+            .entry(site)
+            .or_default() += 1
+    });
+}
 thread_local! {
     static COUNTS: RefCell<Counts> = RefCell::new(Counts::default());
     static POISON_UNUSED_EXIT: Cell<bool> = const { Cell::new(false) };

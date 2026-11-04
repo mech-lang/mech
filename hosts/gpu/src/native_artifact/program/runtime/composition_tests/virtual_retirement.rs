@@ -75,7 +75,11 @@ fn private_segment_temporaries_keep_prices_publication_errors_and_retry_without_
                 assert!(counts.selected > 0);
                 if allowed {
                     let report = result.unwrap();
-                    assert_eq!(report.work, [197_450_724, 197_467_056][successes], "retain the original charge for this publication state");
+                    assert_eq!(
+                        report.work,
+                        [197_450_724, 197_467_056][successes],
+                        "retain the original charge for this publication state"
+                    );
                     successes += 1;
                     assert_eq!(
                         published
@@ -131,4 +135,65 @@ fn private_segment_temporaries_keep_prices_publication_errors_and_retry_without_
         omitted > 0,
         "the witness must actually reach the prepared virtual cleanup"
     );
+}
+
+#[test]
+fn private_segment_cleanup_keeps_finite_denial_prefixes_and_retry() {
+    resources::finite_boundaries(multiple_children::SOURCE, |artifact, memory| {
+        inputs(
+            artifact,
+            &[
+                ("words", Data::Matrix(vec![Data::U64(7)].into())),
+                ("steps", Data::U64(3)),
+                ("flag", Data::Bool(false)),
+                ("first-allowed", Data::Bool(true)),
+                ("second-allowed", Data::Bool(true)),
+                ("divisor", Data::U64(1)),
+            ],
+            memory,
+        )
+    });
+}
+
+#[test]
+fn private_segment_cleanup_is_rederived_and_cannot_be_supplied_as_image_authority() {
+    for artifact in artifacts(multiple_children::SOURCE) {
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let image: serde_json::Value =
+            serde_json::from_slice(&jit.descriptor().encode_build_owned_image().unwrap()).unwrap();
+        assert!(
+            image["descriptor"].get("compositions").is_none(),
+            "physical cleanup is a derived cache, not wire authority"
+        );
+        let mut recipe = serde_json::to_value(&jit.descriptor().metadata().compositions).unwrap();
+        let mut changed = false;
+        for parent in recipe["parents"].as_array_mut().unwrap() {
+            for segment in parent["segments"].as_array_mut().unwrap() {
+                if let Some(groups) = segment
+                    .pointer_mut("/numeric/retirement_effects")
+                    .and_then(|groups| groups.as_array_mut())
+                {
+                    for group in groups {
+                        for step in group.as_array_mut().unwrap() {
+                            if step.get("Pay").is_some() {
+                                *step = serde_json::json!({"Pay":0});
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assert!(changed, "the witness must have actual virtual cleanup");
+        let mut bad = image;
+        bad["descriptor"]["compositions"] = recipe;
+        assert!(super::super::tests::rejects_malformed_helper_image(
+            &serde_json::to_vec(&bad).unwrap()
+        ));
+    }
 }

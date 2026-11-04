@@ -298,7 +298,9 @@ fn selected_template(
 // and conservative first-change funding on the same invocation account.
 // IR157 reconstructs checked child-visit funding, exact nested continuations
 // and already-paid ancestor traversal membership. Static paths retain prices.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 157;
+// IR158 reconstructs physical cleanup from native segment representations;
+// unmaterialized frames/aliases retain ordered original charges, not drops.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 158;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
