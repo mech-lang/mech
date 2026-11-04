@@ -15,7 +15,7 @@ mutable-child(values<[u32]>, at<u64>, end<u64>, amount<u32>, reject<u64>) => (ou
 
 mutable-parent(values<[u32]>, at<u64>, end<u64>, amount<u32>, prime<bool>, reject<u64>) => (out<[u32]>) :=
   more := at < end
-  primed := ((more && prime)? | true => mutable-store(values, 0u64, amount) | false => values)
+  primed := (more? | true => (prime? | true => mutable-store(values, 0u64, amount) | false => values) | false => values)
   next := (more? | true => mutable-child(primed, 0u64, sequence/length(values), amount, reject) | false => values)
   out := (more? | true => mutable-parent(next, at + 1u64, end, amount, prime, reject) | false => values).
 
