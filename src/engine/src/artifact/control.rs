@@ -1743,7 +1743,81 @@ pub(crate) fn is_control_fixed_aggregate_element(body: &mech_core::SchemaBody) -
     }
 }
 
-/// A turn-shaped unsigned or fixed-aggregate matrix carries its live dimensions
+// Closed canonical components keep their own construction authority inside a
+// turn-shaped carrier. In particular, an ordinary Map does not acquire the
+// sibling Matrix's dimension parameters. Parameterized child containers still
+// require a separate shape witness and cannot enter through this check.
+fn is_control_closed_component(body: &mech_core::SchemaBody) -> bool {
+    use mech_core::{CardinalitySpec, DimensionExpr as D, SchemaBody as B};
+    fn closed_dimension(dimension: &D) -> bool {
+        match dimension {
+            D::Constant(_) => true,
+            D::Add(items) | D::Multiply(items) | D::Min(items) | D::Max(items) => {
+                items.iter().all(closed_dimension)
+            }
+            D::Hole | D::Parameter(_) => false,
+        }
+    }
+    fn closed_extent(extent: &CardinalitySpec) -> bool {
+        match extent {
+            CardinalitySpec::Exact(dimension) => closed_dimension(dimension),
+            CardinalitySpec::Dynamic { upper_bound } => {
+                upper_bound.as_ref().is_none_or(closed_dimension)
+            }
+        }
+    }
+    match body {
+        B::Dynamic => false,
+        B::Matrix {
+            element,
+            dimensions,
+        } => dimensions.iter().all(closed_dimension) && is_control_closed_component(element),
+        B::Tuple(items) => items.iter().all(is_control_closed_component),
+        B::Record(fields) => fields
+            .iter()
+            .all(|field| is_control_closed_component(&field.schema)),
+        B::Option(item) => is_control_closed_component(item),
+        B::Set {
+            element,
+            cardinality,
+        } => closed_extent(cardinality) && is_control_closed_component(element),
+        B::Map {
+            key,
+            value,
+            cardinality,
+        } => {
+            closed_extent(cardinality)
+                && is_control_closed_component(key)
+                && is_control_closed_component(value)
+        }
+        B::Table { columns, rows } => {
+            closed_extent(rows)
+                && columns
+                    .iter()
+                    .all(|field| is_control_closed_component(&field.schema))
+        }
+        B::Enum { variants, .. } => variants.iter().all(|variant| {
+            variant
+                .payload
+                .as_ref()
+                .is_none_or(is_control_closed_component)
+        }),
+        B::Bool
+        | B::Id
+        | B::Index
+        | B::Atom(_)
+        | B::String
+        | B::UnsignedInteger(_)
+        | B::SignedInteger(_)
+        | B::IntegerInterval(_)
+        | B::FloatingPoint(_)
+        | B::Complex(_)
+        | B::Rational64
+        | B::ReifiedType => true,
+    }
+}
+
+/// A turn-shaped unsigned, String or fixed-aggregate matrix carries its dimensions
 /// in a canonical snapshot. This is structural-pattern authority; closed-value,
 /// literal and capture eligibility remain separate predicates.
 pub(crate) fn is_control_pattern_schema(schema: &mech_core::Schema) -> bool {
@@ -1754,7 +1828,7 @@ pub(crate) fn is_control_pattern_schema(schema: &mech_core::Schema) -> bool {
                 element,
                 dimensions,
             } if dimensions.len() == 2
-                && (matches!(element.as_ref(), B::UnsignedInteger(_))
+                && (matches!(element.as_ref(), B::UnsignedInteger(_) | B::String)
                     || is_control_fixed_aggregate_element(element)) =>
             {
                 Some(true)
@@ -1770,6 +1844,7 @@ pub(crate) fn is_control_pattern_schema(schema: &mech_core::Schema) -> bool {
             | B::UnsignedInteger(_)
             | B::SignedInteger(_)
             | B::FloatingPoint(_) => Some(false),
+            body if is_control_closed_component(body) => Some(false),
             _ => None,
         }
     }
@@ -1864,6 +1939,7 @@ pub(crate) fn is_control_capture_schema(schema: &mech_core::Schema) -> bool {
             {
                 Some(false)
             }
+            body if is_control_closed_component(body) => Some(false),
             _ => None,
         }
     }
@@ -2200,6 +2276,74 @@ mod tests {
         let value = schema(child, DimensionLifetime::Turn);
         assert!(!is_control_pattern_schema(&value));
         assert!(!is_control_capture_schema(&value));
+    }
+
+    #[test]
+    fn string_matrix_carriers_keep_closed_map_fields_and_reject_borrowed_shapes() {
+        use mech_core::{
+            CardinalitySpec, DimensionLifetime, DimensionParameterDeclaration,
+            DimensionParameterId, DimensionParameterOrigin, IntegerWidth,
+        };
+        let parameter = DimensionExpr::Parameter(DimensionParameterId::new(0));
+        let matrix = |element| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![DimensionExpr::Constant(1), parameter.clone()].into(),
+        };
+        let map = |value, cardinality| SchemaBody::Map {
+            key: Box::new(SchemaBody::String),
+            value: Box::new(value),
+            cardinality,
+        };
+        let schema = |field, lifetime| {
+            SchemaDraft {
+                body: SchemaBody::Tuple(vec![matrix(SchemaBody::String), field].into()),
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                }]
+                .into(),
+            }
+            .finalize()
+            .unwrap()
+        };
+        let word = SchemaBody::UnsignedInteger(IntegerWidth::W64);
+        let closed = map(word.clone(), CardinalitySpec::Dynamic { upper_bound: None });
+        for lifetime in [DimensionLifetime::Turn, DimensionLifetime::Activation] {
+            let value = schema(closed.clone(), lifetime);
+            assert_eq!(
+                is_control_pattern_schema(&value),
+                lifetime == DimensionLifetime::Turn
+            );
+            assert_eq!(
+                is_control_capture_schema(&value),
+                lifetime == DimensionLifetime::Turn
+            );
+            assert!(!is_control_value_schema(&value));
+        }
+        for field in [
+            map(
+                matrix(word.clone()),
+                CardinalitySpec::Dynamic { upper_bound: None },
+            ),
+            map(word.clone(), CardinalitySpec::Exact(parameter.clone())),
+            map(
+                word,
+                CardinalitySpec::Dynamic {
+                    upper_bound: Some(parameter.clone()),
+                },
+            ),
+            map(
+                SchemaBody::Dynamic,
+                CardinalitySpec::Dynamic { upper_bound: None },
+            ),
+        ] {
+            let value = schema(field, DimensionLifetime::Turn);
+            assert!(!is_control_pattern_schema(&value));
+            assert!(!is_control_capture_schema(&value));
+        }
     }
 
     #[test]

@@ -14,6 +14,7 @@ mod deep_nested_scalar;
 mod exit_transport;
 mod managed_carriers;
 mod managed_projections;
+mod mixed_string_map;
 mod multiple_children;
 mod named_managed_projections;
 mod nested_numeric;
