@@ -13145,8 +13145,8 @@
           "manifest_sha256": "276045db519372c179eb9dd01b63e967cb46bd8a7556f0422456c7ab99e34313",
           "bytes": 252692,
           "files": 78,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-phase-handoff-round130-20261104/archives/r130-eight-primary-8a5716e065d6.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r130-eight-primary-8a5716e065d6.tar.gz"
         },
         {
           "event": "random-primary",
@@ -13156,8 +13156,8 @@
           "manifest_sha256": "6922448cb9d69515c0542210f7245a88a4499acbdc31e9e44e42486389dd19e4",
           "bytes": 68383,
           "files": 65,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-phase-handoff-round130-20261104/archives/r130-random-primary-01101aee3804.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r130-random-primary-01101aee3804.tar.gz"
         },
         {
           "event": "repeated-primary",
@@ -13167,8 +13167,8 @@
           "manifest_sha256": "d634489f6c8f490c573e5c5779ffa919798e4e3be2189c52c0213c4e5a65ea4c",
           "bytes": 70397,
           "files": 67,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-phase-handoff-round130-20261104/archives/r130-repeated-primary-d8ba7c3d497c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r130-repeated-primary-d8ba7c3d497c.tar.gz"
         },
         {
           "event": "closure",
@@ -13178,13 +13178,13 @@
           "manifest_sha256": "0186b8bde472e698720ed3ea9679cf9d149e51d77d9b82caad1d51236002d59a",
           "bytes": 7502975,
           "files": 354,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-phase-handoff-round130-20261104/archives/r130-closure-e9b56040de00.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r130-closure-e9b56040de00.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
     }
   },
   "repository": "mech-lang/mech",
