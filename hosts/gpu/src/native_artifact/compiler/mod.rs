@@ -602,12 +602,21 @@ pub(in crate::native_artifact) fn primitive(
             guard(b, valid, error, STATUS_ARITHMETIC);
             b.ins().isub(a, c)
         }
-        U64Add | U64Sub | U64Mul => {
-            let (value, overflow) = match op {
-                U64Add => b.ins().uadd_overflow(a, c),
-                U64Sub => b.ins().usub_overflow(a, c),
-                _ => b.ins().umul_overflow(a, c),
-            };
+        U64Add => {
+            let value = b.ins().iadd(a, c);
+            // The word sum wraps exactly when it is smaller than either input.
+            // Branch on the word comparison, without materializing a carry bit.
+            let valid = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, value, a);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            value
+        }
+        U64Sub => {
+            let valid = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, a, c);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            b.ins().isub(a, c)
+        }
+        U64Mul => {
+            let (value, overflow) = b.ins().umul_overflow(a, c);
             let valid = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
             guard(b, valid, error, STATUS_ARITHMETIC);
             value

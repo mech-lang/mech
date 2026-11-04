@@ -9,8 +9,21 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
-fn assembly(op: NativeScalarOp) -> String {
-    let mut module = super::codegen_backend::jit(super::codegen_backend::SCALAR_FLAGS).unwrap();
+fn assembly(op: NativeScalarOp, optimization: &'static str) -> String {
+    let flags = super::codegen_backend::SCALAR_FLAGS
+        .iter()
+        .map(|&(key, value)| {
+            (
+                key,
+                if key == "opt_level" {
+                    optimization
+                } else {
+                    value
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+    let mut module = super::codegen_backend::jit(&flags).unwrap();
     let mut context = module.make_context();
     context.func.signature.params = vec![AbiParam::new(types::I64); 2];
     context.func.signature.returns = vec![AbiParam::new(types::I64)];
@@ -41,13 +54,15 @@ fn assembly(op: NativeScalarOp) -> String {
 
 #[test]
 fn checked_unsigned_branches_do_not_materialize_carry_or_borrow_booleans() {
-    for op in [NativeScalarOp::U64Add, NativeScalarOp::U64Sub] {
-        let assembly = assembly(op);
-        if cfg!(target_arch = "aarch64") {
-            assert!(
-                !assembly.lines().any(|line| line.contains("cset ")),
-                "{op:?} still materializes a carry/borrow Boolean:\n{assembly}"
-            );
+    for optimization in ["speed", "none"] {
+        for op in [NativeScalarOp::U64Add, NativeScalarOp::U64Sub] {
+            let assembly = assembly(op, optimization);
+            if cfg!(target_arch = "aarch64") {
+                assert!(
+                    !assembly.lines().any(|line| line.contains("cset ")),
+                    "{op:?}/{optimization} still materializes a carry/borrow Boolean:\n{assembly}"
+                );
+            }
         }
     }
 }
