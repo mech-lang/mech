@@ -1,5 +1,118 @@
 # Native compression: current status
 
+## R135: retire historical temporary state at each lexical traversal
+
+Update base: `6f009e8db6b02c5aa5d4c182d009dfdb560b0bc2`.
+Control runtime: `61b7d0b51a1ef17daf97992844c5f413b3203400` (R134).
+Measured compiler: **`5a0d926a2ead208466bc8aa13a4dad301aaeb5ef`**.
+Test-first witness: `dfb9a1cd1e`. IR/work/ABI/MBC: **164/107/39/14**.
+Stack base remains `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+
+The historical roughly11× random1KB result and558–674× first32,769B results
+used different inputs. The larger case crosses the first32KiB history boundary
+and exposed additional compiler costs. Those figures were not a same-input
+regression. Preserve both input size and data pattern beside every multiple.
+
+Fresh instruction-address profiles of the real R134 binary found2188/2535
+timer samples at stack memory instructions and191 at stack-offset constants;
+only2 sampled divisions. The real collector registers3590 SSA words. Complete
+boundary snapshots kept historical local temporaries live across root visits,
+even when the selected source defines those values afresh before any read.
+
+Preparation now reuses canonical current-traversal liveness. A candidate must
+have an immutable scope owned by a selected loop, all sealed definitions inside
+the selected region, all read roles inside that region, and no live input at the
+root header. Only proved scalar, private-frame scalar and scalar-aggregate lanes
+receive a fresh SSA constant at each root header. Current carriers, captures,
+arrays, private ownership, fuel and counters retain their existing transport.
+No canonical data or buffer is zero-filled; source operations and their original
+checks/charges still execute. Images independently reconstruct and compare the
+list; old IR163 is rejected. Public bytecode remains revision14.
+
+The collector proves **3004 of3590 words** fresh. Generated text falls
+**39,089,980→29,384,768B** and entry stack **248,400→126,720B**. Object SHA256:
+`f1ada5f63545dbd1ff94e58d9773bc0f565bd1d55ce0f7413f624ea6164ecbac`.
+This is not complete exit-state narrowing or physical word-bank compaction.
+The earlier R131 terminal-failure-only experiment remains rejected; this patch
+changes the repeated SSA dependencies instead of replaying that experiment.
+
+| Complete evaluate_into | R134 control | R135 | Control→current / Roc |
+|---|---:|---:|---:|
+|8B|1.6710835 ms|1.5669375 ms|5.842949×→5.478802×|
+|Random1KB|3.478187 ms|2.962771 ms|11.219958×→9.557326×|
+|Repeated1KB|5.000271 ms|4.056729 ms|15.601470×→12.657501×|
+|Random32,769B|70.0845835 ms|54.861896 ms|66.810852×→52.299234×|
+|Repeated32,769B|110.4644375 ms|83.071521 ms|83.243736×→62.600995×|
+
+Fresh reference medians are0.286 /0.310 /0.3205 /1.049 /1.327ms. Elapsed improves
+**6.232244% /14.818525% /18.869817% /21.720451% /24.797950%**. Every paired block
+improves:32/32 at8B across2 prepared pairs,8/8 for each other case. Counts/version
+are992 at8B,128 at each1KB and16 at each32,769B. Individual raw observations are
+retained; improving blocks do not imply every observation wins. Each primary
+cohort was committed immediately. Do not compound independent rounds.
+
+| Separate hardware cohort | R134 instructions | R135 instructions | R134 cycles | R135 cycles |
+|---|---:|---:|---:|---:|
+|8B|16,941,035.5|15,800,852|5,347,441|4,927,631|
+|Random1KB|58,743,876.5|37,665,902|11,081,454|9,259,969.5|
+|Repeated1KB|84,217,912.5|62,561,263.5|15,839,959|12,744,920|
+|Random32,769B|1,454,127,249|814,977,088.5|226,114,265.5|174,928,244|
+|Repeated32,769B|2,258,279,496.5|1,617,196,133|352,322,997|266,563,954|
+
+Hardware uses32 calls/version small and4 large. Large instructions fall
+**43.954211% /28.388132%**, cycles **22.637237% /24.341029%**. Small instructions
+fall6.730306% /35.881143% /25.715015%. Separate heap cohorts use4 calls/version
+small and2 large. All five allocation counts, requested bytes, reallocations and
+incremental live usable peaks are unchanged. Large peaks stay
+**15,314,280 /15,313,264B**. Smaller machine stack is not a measured heap saving.
+
+Fresh2-second actual-executable samples put **94.740796% /94.506949%** of CPU
+time in generated code. A separate raw-PC capture finds2158/2494 timer samples
+at stack memory instructions and145 at stack-offset constants;1 at division.
+The optimized nondebug reference diagnostic finds245/2356 at stack instructions
+and1419 at other memory instructions. These are time-based sampled opcodes,
+not retired-instruction partitions; the remaining Mech stack traffic is still
+the next evidence-backed target. The diagnostic reference wrapper runs4096
+complete calls instead of256, preserving all14 compressor sources. Two inspected
+function opcode streams agree with the actual primary reference binary; no
+whole-binary identity claim is made. Earlier debug-wrapper profiles remain as
+historical evidence and are superseded for this comparison. Primary timings
+always use the original retained optimized reference executables.
+
+Validation: **544** compatible GPU tests with the same7 inherited exclusions;
+**119** native CI contracts inventoried and executed; unchanged **236** components,
+**8** connected and **1** path case; **132** workflow tests; **15** architecture/
+catalog checks, runtime-only metadata, formatting and warnings as errors. GPU
+opt3 and unit-root opt1 use nightly2026-03-03 aarch64 macOS and frozen dependency
+libraries. New controls cover current Boolean/numeric arguments, nested/repeated
+visits, private writes, finite errors, unselected invalid children, unchanged
+publication and aliases, cleanup/retry and forged/reordered/missing image proof.
+The clean parent passes the semantic control and fails the2 physical/proof
+expectations; all3 focused tests pass after the patch. No fresh full/minimal/
+no_std dependency or linked40/scalar12/frame8 suite is claimed.
+
+The initial worker link failed with environmental errno28 after successful
+image emission. Verified lossless compression of completed historical builds
+freed3.54GB; the link-only retry passes all5 exact complete-call witnesses.
+Current controls and libraries were retained. Initial diagnostic cache permission
+failures were corrected with authorized execution; all failed receipts remain.
+No introduced correctness failure remains. Hosted CI is cancelled by standing
+instruction, with no green hosted-CI claim; latest-head review remains pending.
+
+Pinned source/bytecode, algorithm/tables, depth300/nice258, near-EOF rules, source
+allocation sites,262144U16/1500513U32/305257U64 scratch, allocator, input aliases,
+output13/1029/32804 clear/reuse and evaluate_into boundaries are unchanged.
+All cases match exact pinned raw bytes and independently inflate. Large logical
+work stays129,288,746,789 /270,676,915,001; final managed bytes/nodes are zero.
+No full-corpus timing was attempted. Parity, broader exit/entry liveness,
+physical compaction and separate source variants remain unfinished.
+
+Reproduction commands, raw counters/timings/profiles, source requirements,
+clean-parent failures, qualification and failure dispositions are indexed in
+`benchmarks/mech-deflate/experiments.json`, round135. Diagnostic archives exclude
+native binaries, libraries, Objects and bytecode. All **12** packets
+(13,342,925B) and their receipts are published with server SHA256 verification.
+
 ## R134: keep total unsigned collection bodies in native code
 
 Update base: `3b22758fe95e36cc58882077c926efd88b28ec7b`.
