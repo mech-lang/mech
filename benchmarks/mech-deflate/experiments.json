@@ -15284,6 +15284,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-time-profiler-mech-current-repeated-363f42a0c932.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r138-closure-16763c043df5.tar.gz",
+          "sha256": "16763c043df58294cf50d5505d3767de45aea9f092ac25de6048d08c3e248a94",
+          "manifest_sha256": "62589da23afa47dba85cd03efb02b9d0a4a7a5def218c87083fd4bf263734d71",
+          "bytes": 9886753,
+          "files": 484,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-closure-16763c043df5.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
