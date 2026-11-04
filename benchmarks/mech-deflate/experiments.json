@@ -15152,6 +15152,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-history-random-primary-1d6f716bc74a.tar.gz"
+        },
+        {
+          "event": "random-primary",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r138-random-primary-2e476de343e0.tar.gz",
+          "sha256": "2e476de343e0f5412e64c465117976e29bcf3517f88621d057f8654132b6091d",
+          "manifest_sha256": "ba578ef4a84cba96f572ab53699705fa997324e3253fd97699de05df95d384bc",
+          "bytes": 70342,
+          "files": 56,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-random-primary-2e476de343e0.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
