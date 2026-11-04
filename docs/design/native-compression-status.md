@@ -1,5 +1,122 @@
 # Native compression: current status
 
+## R129: eliminate cleanup for unmaterialized native segment values
+
+Update base: `9a3bc1b66340b70647f1824d6f91b48383af9b7b` (published R128).
+Measured compiler: **`ccb9aab277`**; initial experiment: `aadf0447f8`.
+IR/work/ABI/MBC: **159/107/38/14**. Stack base remains
+`eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`. All non-GPU dependencies remain frozen.
+
+Native pieces already represent intermediate frames and array projections as
+words and bindings, yet their lexical retirements still cleared empty storage.
+The compiler now derives physical cleanup from that representation. A virtual
+step pays its original per-value charge in its original order and granularity;
+current input frames and actual owners keep their existing retirement. Existing
+current admission proves aliases empty; omitted frame retirements additionally
+check canonical emptiness. Native execution creates neither kind of owner, and
+actual escaping values are installed after cleanup. This adds no batching layer,
+permission cache, owner scan, source rewrite or runtime dispatcher.
+
+Unchanged groups retain their original loop. Additional slot checks apply only
+to frames whose retirement is actually omitted. This refinement removes the
+first version's unnecessary checks and per-value dispatch on unaffected groups.
+The cleanup cache is not serialized authority: image restoration rederives it
+from the canonical plan, and rejects attempts to supply a forged cache.
+
+| Complete evaluate_into | R128 / Roc | R129 / Roc | Change |
+|---|---:|---:|---:|
+| 8 bytes | 5.775431× | 5.811066× | 0.617001% slower |
+| Random 1KB | 49.951618× | 49.416324× | 1.071626% faster |
+| Repeated 1KB | 34.444147× | 34.324387× | 0.347695% faster |
+
+Times are 1.674875→1.685209 ms /15.185292→15.0225625 ms /
+11.228792→11.18975 ms. Fresh references are 0.290/0.304/0.326 ms. All 3,968
+primary/3,984 total eight-byte observations remain, with 0/4 improving pairs,
+18 improving and 46 adverse blocks. Each 1KB version has 128 primary observations;
+random improves 8/8 blocks, repeated 7/8. These comparisons are separate from
+R128's 17% gain and are not compounded into a combined timing claim.
+
+| Separate counter | R128 | R129 |
+|---|---:|---:|
+| 8B instructions | 17,714,267 | 17,693,350 |
+| Random instructions | 234,392,369 | 233,262,675.5 |
+| Repeated instructions | 170,816,949.5 | 170,664,987.5 |
+| 8B cycles | 5,215,137.5 | 5,257,834 |
+| Random cycles | 48,384,517.5 | 48,387,026 |
+| Repeated cycles | 35,510,933.5 | 36,030,820.5 |
+
+Retain all adverse cycles, particularly repeated-input +1.464020%, despite the
+separate primary elapsed gain. Hardware has 32 calls/version/case; heap has four,
+separately. Requests stay 3,425 /16,463 /11,632; requested bytes stay
+17,577,513 /17,431,450 /19,694,087. Incremental peak usable heap stays
+15,206,024 /15,204,488 /15,208,608 bytes; reallocations remain 68. Requested
+capacity is not copied or live bytes.
+
+The complete generated text is **byte-identical** to R128: 19,434,640 bytes,
+SHA-256 `7f6f67312884e2f0bc69a255d6e626543363a13d9d8974a073ff5f515b860e30`.
+Machine entry stack stays 176,320 bytes; native region coverage is unchanged.
+The runtime implementation and immutable cleanup cache change. No generated-code
+size or peak-memory reduction is claimed.
+
+A separate complete-call census proves the disappearing family directly:
+
+| Input | Empty physical retirements before→after | Necessary retirements | Runtime callbacks |
+|---|---:|---:|---:|
+| 8B | 330→0 | 400 unchanged | 4,348 unchanged |
+| Random 1KB | 12,482→0 | 21,693 unchanged | 73,441 unchanged |
+| Repeated 1KB | 6,393→0 | 7,461 unchanged | 32,850 unchanged |
+
+Each removed physical effect retains its original price. Complete-call logical
+work stays 24,338,249,385 /959,562,617,769 /474,303,448,072, identically before and
+after. These are resource-account units, not retired instructions. The generic
+witness removes 24 reached effects across original/decoded/restored success,
+rejection and retry, retaining exact empty/prior-publication receipts of
+197,450,724 /197,467,056, aliases, prior output, cleanup and finite error prefixes.
+
+Fresh isolated profiles cover 514 complete calls/version/input. Random has
+1,289/1,161 exclusive sample weights before/after; repeated has 1,499/1,505.
+Current random shares: generated 8.53%, other callbacks 76.92%, frame 5.51%, Tail
+cleanup 7.75%, outside 1.29%. Repeated: generated 31.03%, other callbacks 56.35%,
+frame 4.58%, Tail cleanup 5.91%, outside 2.13%. Thus runtime work remains about
+90.18% /66.84% respectively. These are CPU samples, not function instruction
+counts. Callbacks include algorithm work. The Tail-cleanup bucket excludes
+cleanup in native-segment callbacks; do not assign its entire share to this patch.
+Entry/exit bookkeeping, ordinary visits, current frame lookup and work accounting
+remain prominent. The next substantial target is longer continuous native
+regions and fewer handoffs around already supported work.
+
+Passing: 530 compatible GPU tests with the same seven inherited profile/registry
+exclusions; 105 inventoried and executed CI contracts; unchanged 236 components,
+eight connected cases and one structural path case; 132 workflow tests;
+15 architecture/catalog checks; runtime-only metadata; formatting and warnings
+as errors. Core, math, Engine, Runtime and Stdlib remain frozen. No fresh full
+feature/minimal/no_std graph or linked40/frame8/scalar12 performance suite is
+claimed. Hosted CI is canceled under standing instruction; no green CI or clean
+new-head review is claimed, and the PR stays draft.
+
+The initial cleanup version is retained as adverse evidence: eight-byte/random
+elapsed +0.563209/+0.599436%, repeated −0.047660%, with fewer instructions but
+adverse cycles. Its binaries/Objects have verified lossless local backups and
+are not uploaded. The first proposed scalar-guard cleanup was already handled
+by existing retirement tables, so no production change was made for it. The
+first witness incorrectly assumed equal work with/without prior publication;
+clean-parent observations establish the two exact receipts preserved above.
+No component output or allowance is changed and no unresolved correctness
+failure remains.
+
+Source/MBC pins remain 331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9 /
+a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7.
+Algorithm, tables, depth 300, nice 258, near-EOF limits, source allocation sites,
+real tree/cache/path capacities, output clear/reuse capacities, input aliases,
+allocator and timing boundaries stay fixed. Largest timed input remains 1KB.
+
+All four bounded implementation stages in the current brief are now qualified:
+cold Huffman paths, collector intervals/terminal forwarding, fixed-size mutable
+children/current-account fuel, and representation-based cleanup. This does not
+mean all collector paths are native or performance work is exhausted. Preserve
+this checkpoint for review before the next compiler capability.
+
+
 ## R128: native child visits with exact current-account fuel
 
 Compiler: **`2fbb199e2bc1c684f987ad6e4f0d468c2fb17dcb`**. Published parent:
