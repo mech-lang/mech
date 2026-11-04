@@ -13,7 +13,7 @@ fn liveness_agrees_with_read_before_definition_paths_through_cycles_and_branches
             .filter(|site| (site + seed) % 3 == 0)
             .map(|site| (site, BTreeSet::from([((site + seed) % 6) as u32])))
             .collect::<BTreeMap<_, _>>();
-        let (live, _) = solve_liveness(&next, &reads, &definitions);
+        let (live, _, _) = solve_liveness(&next, &reads, &definitions);
         for start in 0..9 {
             for value in 0..6 {
                 let mut pending = vec![start];
@@ -59,10 +59,36 @@ fn reverse_numbered_liveness_cycle_does_not_require_quadratic_full_sweeps() {
             )
         })
         .collect::<BTreeMap<_, _>>();
-    let (live, visits) = solve_liveness(&next, &reads, &BTreeMap::new());
+    let (live, visits, _) = solve_liveness(&next, &reads, &BTreeMap::new());
     assert!(live.values().all(|values| values == &BTreeSet::from([5])));
     assert!(
         visits <= 4 * nodes,
         "{visits} block visits for {nodes} blocks: full resweeps must not scale quadratically"
+    );
+}
+
+#[test]
+fn each_live_fact_is_propagated_once_per_control_edge() {
+    let nodes = 100;
+    let next = (0..nodes)
+        .map(|site| (site, vec![(site + nodes - 1) % nodes]))
+        .collect::<BTreeMap<_, _>>();
+    let reads = (0..nodes)
+        .map(|site| {
+            (
+                site,
+                if site % 5 == 0 {
+                    BTreeSet::from([(site / 5) as u32])
+                } else {
+                    BTreeSet::new()
+                },
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let (live, _, facts) = solve_liveness(&next, &reads, &BTreeMap::new());
+    assert!(live.values().all(|values| values.len() == nodes / 5));
+    assert!(
+        facts <= nodes * (nodes / 5),
+        "{facts} propagated facts exceed one pass of each live fact per edge"
     );
 }
