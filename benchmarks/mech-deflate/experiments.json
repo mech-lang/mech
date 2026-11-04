@@ -14403,8 +14403,8 @@
           "manifest_sha256": "220863ab79de981bcc4569339aeaa27e4aa0c07bfefea88c940357db0ee08d22",
           "bytes": 192878,
           "files": 55,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-eight-primary-4153887d1c72.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-eight-primary-4153887d1c72.tar.gz"
         },
         {
           "event": "history-random-primary",
@@ -14414,8 +14414,8 @@
           "manifest_sha256": "8b106afc2c3ab8978dec8cf8d1507ec99d34f30294bcc2b60797851b3efbdadd",
           "bytes": 58335,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-history-random-primary-9e7e00a64667.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-history-random-primary-9e7e00a64667.tar.gz"
         },
         {
           "event": "history-repeated-primary",
@@ -14425,8 +14425,8 @@
           "manifest_sha256": "036d95490979047e128dd4e2b6f6d9fa91ef311464e0a57debf82548a3428c5a",
           "bytes": 59402,
           "files": 55,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-history-repeated-primary-d619d3ba3fcc.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-history-repeated-primary-d619d3ba3fcc.tar.gz"
         },
         {
           "event": "random-primary",
@@ -14436,8 +14436,8 @@
           "manifest_sha256": "5f817a54de3c6d3dcd12d35037c74b5ead241ffb1647180d5b755a81c1260c6d",
           "bytes": 67616,
           "files": 57,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-random-primary-d06da40a2b95.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-random-primary-d06da40a2b95.tar.gz"
         },
         {
           "event": "repeated-primary",
@@ -14447,8 +14447,8 @@
           "manifest_sha256": "d2777b732969ec53710fdd23501070643deeffacf604f4a3d7fe952736b5000f",
           "bytes": 69508,
           "files": 59,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-repeated-primary-233402f2d807.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-repeated-primary-233402f2d807.tar.gz"
         },
         {
           "event": "counters",
@@ -14458,8 +14458,8 @@
           "manifest_sha256": "e909840fbf186e1369d0b4d40d196e46b16276ded81bbe4a6b682ab27e09396b",
           "bytes": 93335,
           "files": 122,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-counters-a7fadd206831.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-counters-a7fadd206831.tar.gz"
         },
         {
           "event": "history-profile-random",
@@ -14469,8 +14469,8 @@
           "manifest_sha256": "cd2e8ec475bf15f01c157a0f7d3e8bdde2beb050e02f893a38df403770e98929",
           "bytes": 178305,
           "files": 60,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-history-profile-random-6c7f6b274008.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-history-profile-random-6c7f6b274008.tar.gz"
         },
         {
           "event": "history-profile-repeated",
@@ -14480,8 +14480,8 @@
           "manifest_sha256": "ececae8f29f32b0d6d7df21eaf1fbd11bec85ef9b9a3881ce968f843d18f90fb",
           "bytes": 130252,
           "files": 60,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-history-profile-repeated-5252e52e97ae.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-history-profile-repeated-5252e52e97ae.tar.gz"
         },
         {
           "event": "qualification",
@@ -14491,8 +14491,8 @@
           "manifest_sha256": "a69c5245b00e9ba7e68d3df9444ed078aeb16f52bffff84d5e13d64107989eb8",
           "bytes": 131479,
           "files": 70,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-qualification-531474067e6f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-qualification-531474067e6f.tar.gz"
         },
         {
           "event": "time-profiler-mech-current-random",
@@ -14502,8 +14502,8 @@
           "manifest_sha256": "156ec4ccebccbcfe005542fcb6af7fb424d05294698101646df381ceea67008b",
           "bytes": 2492845,
           "files": 71,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-time-profiler-mech-current-random-753024c15db5.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-time-profiler-mech-current-random-753024c15db5.tar.gz"
         },
         {
           "event": "time-profiler-mech-current-repeated",
@@ -14513,8 +14513,8 @@
           "manifest_sha256": "61cae4b7f1f16a9a31c4cde9cf8cc64e0721f797741000cb61e5f48975fe2d04",
           "bytes": 2409936,
           "files": 71,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-time-profiler-mech-current-repeated-cd10741e6c70.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-time-profiler-mech-current-repeated-cd10741e6c70.tar.gz"
         },
         {
           "event": "closure",
@@ -14524,13 +14524,13 @@
           "manifest_sha256": "be770dd71fe5449f1acb4557ca5e12e0530192f28a35b7e1387b328ee3d2ae56",
           "bytes": 11631695,
           "files": 619,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-closure-1d7375f62b71.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r136-closure-1d7375f62b71.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "versions": {
         "typed_ir": 165,
         "work_policy": 107,
