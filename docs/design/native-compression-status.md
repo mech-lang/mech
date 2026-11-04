@@ -1,5 +1,143 @@
 # Native compression: current status
 
+## R134: keep total unsigned collection bodies in native code
+
+Update base: `3b22758fe95e36cc58882077c926efd88b28ec7b`.
+Retained control runtime: `9d23729e5f48466f5b606bb00cec3a19be106469` (R133).
+Measured compiler: **`61b7d0b51a1ef17daf97992844c5f413b3203400`**.
+Test-first witness: `2dcca9a5eaece0303f2e2c031bea5e2c2064b8d7`;
+exact unsafe-boundary audit contracts: `6c8719573a`.
+IR/work/ABI/MBC: **163/107/39/14**. Stack base remains
+`eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+
+The earlier roughly11× random1KB result and558–674× first32,769B results were
+**different inputs**. The larger input reaches the original32KiB history slide,
+which runs a pointwise function over262,144 U16 entries. R133 removed a linear
+source-membership scan. This patch removes per-element host boundaries in that
+map. Neither comparison is a same-input regression from11× to500×.
+
+A separate exact callback census established1,310,721 ordinary source visits and
+524,288 element/push helpers in this one rebase. Its scalar arithmetic was already
+native. The generic compiler now derives an acyclic, total unsigned scalar CFG
+from the canonical collection, captures, definitions, external uses and existing
+scalar admission group. Unsigned ranges and selected comparison edges establish
+checked subtraction and narrowing; redefinitions kill dependent facts and joins
+intersect them. Bodies with reachable failure or unsupported operations retain
+the ordinary path. No source function name, field name or compressor site is a
+selection rule. Existing shared scalar instructions, SSA words and terminators
+emit the body; checked machine operations remain as defense.
+
+At the original completed initializer, current source ownership, full original
+work, component limits, memory/nodes and exact output geometry are checked once.
+Insufficient funding declines before changes and keeps ordinary error precedence.
+One allocation replaces geometric physical growth, preserving its final capacity,
+source allocation site, original conservative peak and original logical debits.
+The immutable source stays owned; the unique unsigned sink has length zero until
+the synchronous total kernel succeeds. The ordinary final header, collection
+finish, shape checks and canonical publication remain. Current captures reload
+for each fresh invocation; no permission or argument cache crosses visits.
+The image independently reconstructs and compares the complete proof. OldIR162
+and ABI38 identities remain rejected. Public bytecode stays revision14.
+
+| Complete evaluate_into | R133 control | R134 | Control→current / Roc |
+|---|---:|---:|---:|
+|8B|1.666250 ms|1.683312 ms|5.725945×→5.784577×|
+|Random1KB|3.501771 ms|3.497042 ms|11.314284×→11.299005×|
+|Repeated1KB|5.0222085 ms|4.9931875 ms|15.596921×→15.506793×|
+|Random32,769B|175.503479 ms|71.0640625 ms|167.305509×→67.744578×|
+|Repeated32,769B|213.886229 ms|110.3121875 ms|160.937719×→83.003903×|
+
+Fresh reference medians are0.291 /0.3095 /0.322 /1.049 /1.329ms. Large random
+improves **59.508459%**, repeated **48.424829%**, with16 observations/version and
+8/8 improving paired blocks each. Each1KB version has128 observations; random
+improves6 blocks with2 adverse and repeated7 with1 adverse. The eight-byte control
+has992 observations/version across2 pairs: **1.023976% slower**, with25 adverse
+and7 improving blocks. All adverse data remain. Every primary cohort was committed
+immediately. Fresh reference variation changes reported multiples even where Mech
+time barely moves; independent cohorts are not compounded.
+
+| Separate hardware cohort | R133 instructions | R134 instructions | R133 cycles | R134 cycles |
+|---|---:|---:|---:|---:|
+|8B|16,808,015.5|16,940,821|5,272,424.5|5,217,365.5|
+|Random1KB|58,608,768.5|58,745,051|11,152,852.5|11,131,206|
+|Repeated1KB|84,141,946.5|84,217,093|15,813,304|15,756,970.5|
+|Random32,769B|3,346,383,215|1,453,970,149.5|560,741,793.5|226,231,835.5|
+|Repeated32,769B|4,152,832,313|2,258,330,693|683,870,299.5|352,947,516.5|
+
+Hardware uses32 calls/version small and4 large. Large instructions fall
+**56.550997% /45.619507%**, cycles **59.654900% /48.389700%**. Small instructions
+increase0.790132% /0.232529% /0.089309%; cycles improve1.044282% /0.194089% /
+0.356241%. The eight-byte elapsed and cycle observations disagree; its cause is
+not established. No per-function instruction partition or fresh large reference
+instruction/heap cohort is claimed.
+
+Separate heap cohorts use4 calls/version small and2 large. Small requests,
+requested bytes and live peak are unchanged. Large requests fall5263→5247 and
+3428→3412; requested bytes fall16,547,794→16,023,514 and16,245,514→15,721,234.
+That is16 requests and524,280 requested bytes saved in each. Peak live usable heap
+stays **15,314,280 /15,313,264B**. Capacity requests are not copied/live byte counts.
+
+The isolated exact after-census confirms **zero** per-element element/push helpers:
+random visits1,322,760→12,040 and total helpers530,220→5,934; repeated visits
+1,336,935→26,215 and helpers538,070→13,784. Prepare and finish each execute once.
+Each diagnostic uses2 agreeing complete calls; its instrumented elapsed, heap and
+hardware results are excluded. Actual ARM64 Object inspection finds2 source-map
+kernels with36 static instructions each and **no calls**. Generated text is
+39,089,980B (−5,088); entry stack248,400B (−288). Object SHA256:
+`8dfac0c1600c6f9297c569e4b6c04722d2338aa2c1f89869877bd30a2634b139`.
+
+Fresh isolated2-second actual-executable samples put **95.030120% /96.029120%**
+in generated code, including the new named kernels. Remaining callback/cleanup
+subtrees total4.743976% /3.772336%; outside/unrecognized samples are0.225904% /
+0.198544%. These are disjoint CPU-time weights, not retired-instruction shares.
+This shifts the next investigation toward the remaining generated entry's state
+transport and repeated instructions; it does not establish a function instruction
+ledger or complete the broader physical-state brief.
+
+All source/bytecode pins remain
+`331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9` /
+`a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
+Algorithms, tables, depth300/nice258, near-EOF limits, source allocation sites,
+262144U16/1500513U32/305257U64 capacities, input aliases, pinned mimalloc2.1.7,
+output capacities13/1029/32804 with clear/reuse and evaluate_into boundaries stay
+fixed. Exact pinned raw bytes and independent inflate pass at8B/1KB/32,769B.
+Large logical work remains129,288,746,789 /270,676,915,001. Final managed bytes/nodes
+are zero. No full-corpus or full Reymont timing was attempted.
+
+Validation: **541** compatible GPU tests with the same7 inherited profile
+exclusions; **116** native CI contracts inventoried and actually executed;
+unchanged **236** components, **8** connected cases and **1** path mechanism;
+**132** workflow tests; **15** architecture/catalog checks, runtime-only metadata,
+formatting and warnings as errors. GPU/runtime opt3 and unit-root opt1 use
+nightly2026-03-03 aarch64 macOS and frozen Core/Engine/stdlib dependencies. No new
+full/minimal/no_std dependency or linked40/scalar12/frame8 suite is claimed.
+The new5 tests cover all unsigned widths, empty/power-of-two/odd extents, changing
+numeric/Boolean captures, original/decoded/restored images, ordinary work equality,
+fallible subtraction/narrowing, live aliases, publication preservation, finite
+boundary denial and recovery, and forged/missing proof rejection. The clean
+parent completes the value check then fails the structural witness with6 element
+callbacks instead of0. The compiler candidate passes it.
+
+All introduced implementation/build issues are corrected. The first draft
+witness incorrectly requested unsupported mixed-argument automatic lifting;
+its valid explicit comprehension replaces only the test. Sealed-value and offset
+import compile errors are archived. The architecture audit caught2 missing exact
+sink-boundary entries; the narrow contracts were added without weakening it.
+A copied linked harness still included the old descriptor; strict rejection
+caught it, and only that path was corrected. Old inventory/config assumptions
+in local scripts were fixed before their dependent timings. Failed attempts and
+all actual reruns are retained. No introduced correctness failure remains; the
+small elapsed/instruction costs above remain explicit performance limitations.
+Ordinary hosted CI cancellation is required by standing user direction; no hosted
+success or clean latest-head review is claimed. Final external status belongs to
+the publication receipt. The PR remains draft.
+
+Raw diagnostics are hash-listed external release assets; native binaries,
+libraries, Objects and bytecode stay local. The accepted broader exit/entry
+liveness, storage compaction, separate source variants and allocation-lifetime
+brief remains unfinished. This checkpoint completes the measured generic unsigned
+map path; it is not a parity claim.
+
 ## R133: remove a linear scan at every cold source visit
 
 Update base: `6dcab422ee0ea364ec713060147a3e45686a9d9d`.
