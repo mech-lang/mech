@@ -308,7 +308,8 @@ fn selected_template(
 // IR169 retains radix frame admission while eliding single-bucket index moves.
 // IR173 admits recursive numeric workers and their private field transport.
 // IR174 admits String-matrix carriers with independent closed canonical fields.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 174;
+// IR175 retains immutable String-matrix leaves in private recursive frame lanes.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 175;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

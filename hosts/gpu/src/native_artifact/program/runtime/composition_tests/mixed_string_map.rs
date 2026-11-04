@@ -5,6 +5,28 @@ use mech_core::snapshot::MapEntryDraft;
 const SOURCE: &str =
     include_str!("../../../../../tests/fixtures/native/mixed-string-map-carrier.mec");
 
+fn assert_private_string_carrier(jit: &JitProgramArtifact) {
+    use mech_engine::native_artifact::NativeBufferFrameLane;
+    let plan = jit.descriptor().plan();
+    let frames = plan.facts().buffer_frames();
+    assert!(
+        plan.values().iter().enumerate().any(|(slot, ty)| {
+            let mech_core::SchemaBody::Tuple(fields) = ty.definition().body() else {
+                return false;
+            };
+            matches!(fields.first(), Some(mech_core::SchemaBody::Matrix { element, .. })
+            if matches!(element.as_ref(), mech_core::SchemaBody::String))
+                && frames.fields_at(slot).is_some_and(|fields| {
+                    matches!(
+                        fields.first().map(|field| field.lane()),
+                        Some(NativeBufferFrameLane::Managed { .. })
+                    )
+                })
+        }),
+        "the real recursive String-matrix carrier must retain a private managed lane"
+    );
+}
+
 fn seed() -> Data {
     Data::Map(
         [("old", 91), ("shared", 99)]
@@ -74,6 +96,7 @@ fn string_map_recursion_keeps_empty_unicode_duplicate_shapes_aliases_and_restora
             mode.compilation(),
         )
         .unwrap();
+        assert_private_string_carrier(&jit);
         for restored in [false, true] {
             let memory = mode.memory_budget();
             let long = "x".repeat(65);

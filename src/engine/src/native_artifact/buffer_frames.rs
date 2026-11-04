@@ -306,6 +306,15 @@ fn field_shape(plan: &Plan, value: Value) -> Option<(usize, bool)> {
             {
                 eligible = true
             }
+            // Immutable Strings retain their canonical typed owner. They do
+            // not enter the unsigned packed bank, but an invariant String
+            // matrix must not force its whole recursive frame to be rebuilt.
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2 && matches!(element.as_ref(), SchemaBody::String) => {
+                eligible = true
+            }
             body if tagged::opaque_map(body) => eligible = true,
             // Candidate compound siblings may remain opaque canonical Values.
             // The complete shape/use proof below selects structural spans only
