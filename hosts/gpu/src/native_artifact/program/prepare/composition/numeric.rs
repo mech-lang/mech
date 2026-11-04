@@ -34,7 +34,10 @@ pub(in crate::native_artifact) struct Layout {
     pub source_work: u64,
     /// Reserved separately; only reached lexical retirement actions spend it.
     pub retirement_work: u64,
-    pub retirement_effects: Vec<Vec<Retirement>>,
+    /// None retains the original loop when the reached group has no virtual
+    /// values. Do not add per-value dispatch to unchanged physical cleanup.
+    pub retirement_effects: Vec<Option<Vec<Retirement>>>,
+    pub virtual_frames: Vec<u32>,
 }
 impl Layout {
     /// The exit consumer reads reached-retirement flags on every path, and
@@ -243,8 +246,12 @@ impl Layout {
             .map(|alias| alias.value.get())
             .collect::<std::collections::BTreeSet<_>>();
         let mut retirement_effects = Vec::with_capacity(frames.retirements.len());
+        let mut virtual_frames = std::collections::BTreeSet::new();
         for (_, values) in &frames.retirements {
-            let mut effects = Vec::with_capacity(values.len());
+            let virtual_group = values
+                .iter()
+                .any(|value| private_frames.contains(value) || private_aliases.contains(value));
+            let mut effects = virtual_group.then(|| Vec::with_capacity(values.len()));
             for &value in values {
                 let price = retirements
                     .get(value as usize)
@@ -252,13 +259,18 @@ impl Layout {
                 retirement_work = retirement_work
                     .checked_add(price)
                     .ok_or("parent retirement price overflows")?;
-                effects.push(
-                    if private_frames.contains(&value) || private_aliases.contains(&value) {
-                        Retirement::Pay(price)
-                    } else {
-                        Retirement::Current(value)
-                    },
-                );
+                if let Some(effects) = &mut effects {
+                    effects.push(
+                        if private_frames.contains(&value) || private_aliases.contains(&value) {
+                            if private_frames.contains(&value) {
+                                virtual_frames.insert(value);
+                            }
+                            Retirement::Pay(price)
+                        } else {
+                            Retirement::Current(value)
+                        },
+                    );
+                }
             }
             retirement_effects.push(effects);
         }
@@ -270,6 +282,7 @@ impl Layout {
             source_work,
             retirement_work,
             retirement_effects,
+            virtual_frames: virtual_frames.into_iter().collect(),
         })
     }
 }

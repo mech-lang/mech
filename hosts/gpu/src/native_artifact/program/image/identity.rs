@@ -300,7 +300,9 @@ fn selected_template(
 // and already-paid ancestor traversal membership. Static paths retain prices.
 // IR158 reconstructs physical cleanup from native segment representations;
 // unmaterialized frames/aliases retain ordered original charges, not drops.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 158;
+// IR159 keeps unchanged cleanup groups on their original route and checks
+// canonical emptiness only for the frame retirements actually omitted.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 159;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

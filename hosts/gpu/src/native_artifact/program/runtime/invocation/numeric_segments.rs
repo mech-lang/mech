@@ -215,23 +215,28 @@ impl Invocation<'_, '_, '_> {
         // path, rather than silently overwritten by a virtual frame.
         for frame in &frames.frames {
             if !frames.inputs.contains(&frame.value) {
-                // Private words do not erase a canonical definition from a
-                // prior path. Prove its slot empty before omitting cleanup.
-                if self
-                    .state
-                    .arena
-                    .native_entry_preview(frame.value, &self.state.control.work)?
-                    .is_some()
-                    || metadata
-                        .buffer_frames
-                        .fields_at(frame.value as usize)
-                        .is_some_and(|f| {
-                            f.iter()
-                                .any(|f| self.state.buffer_frames.current_leaf(*f).is_some())
-                        })
+                if metadata
+                    .buffer_frames
+                    .fields_at(frame.value as usize)
+                    .is_some_and(|f| {
+                        f.iter()
+                            .any(|f| self.state.buffer_frames.current_leaf(*f).is_some())
+                    })
                 {
                     return Ok(Some(0));
                 }
+            }
+        }
+        // Only an omitted frame retirement needs this additional canonical
+        // empty-slot proof. Other private frames keep the existing route.
+        for &value in &proof.virtual_frames {
+            if self
+                .state
+                .arena
+                .native_entry_preview(value, &self.state.control.work)?
+                .is_some()
+            {
+                return Ok(Some(0));
             }
         }
         for (_, values) in &frames.retirements {
@@ -575,16 +580,20 @@ impl Invocation<'_, '_, '_> {
         frames: &FrameLayout,
         proof: &NumericLayout,
     ) -> Result<(), Error> {
-        let descriptor = self.descriptor;
-        let metadata = descriptor.metadata();
         let flags = frames.scalar_words + proof.views.len() * 4;
-        for (at, (_site, _values)) in frames.retirements.iter().enumerate() {
+        for (at, (site, values)) in frames.retirements.iter().enumerate() {
             match self.read_borrowed_word(flags + at)? {
                 0 => continue,
                 1 => {}
                 _ => return Err(invalid("parent retirement flag is not Boolean")),
             }
-            for effect in &proof.retirement_effects[at] {
+            let Some(effects) = &proof.retirement_effects[at] else {
+                for &value in values {
+                    self.retire_segment_value(*site, value)?;
+                }
+                continue;
+            };
+            for effect in effects {
                 use crate::native_artifact::program::prepare::composition::numeric::Retirement;
                 let value = match *effect {
                     Retirement::Pay(price) => {
@@ -597,23 +606,29 @@ impl Invocation<'_, '_, '_> {
                             .work
                             .charge(crate::native_artifact::NativeExecutionPhase::Setup, price)?;
                         #[cfg(all(test, feature = "canonical-native-program"))]
-                        super::super::composition_tests::observe::virtual_retirement(*_site);
+                        super::super::composition_tests::observe::virtual_retirement(*site);
                         continue;
                     }
                     Retirement::Current(value) => value,
                 };
-                #[cfg(all(test, feature = "canonical-native-program"))]
-                super::super::composition_tests::observe::segment_retirement(*_site, value);
-                if !self.state.buffer_frames.retire(
-                    &metadata.frame_retirements,
-                    value,
-                    &mut self.state.control.work,
-                )? {
-                    self.state
-                        .arena
-                        .retire_current(value, &mut self.state.control.work)?;
-                }
+                self.retire_segment_value(*site, value)?;
             }
+        }
+        Ok(())
+    }
+
+    #[inline(always)]
+    fn retire_segment_value(&mut self, _site: u32, value: u32) -> Result<(), Error> {
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        super::super::composition_tests::observe::segment_retirement(_site, value);
+        if !self.state.buffer_frames.retire(
+            &self.descriptor.metadata().frame_retirements,
+            value,
+            &mut self.state.control.work,
+        )? {
+            self.state
+                .arena
+                .retire_current(value, &mut self.state.control.work)?;
         }
         Ok(())
     }
