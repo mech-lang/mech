@@ -1,5 +1,129 @@
 # Native compression: current status
 
+## R137: reuse the exact quotient in general numeric matrix addresses
+
+Update base: `c7a8b7c2caf039830e6a0cb7a30fcd4648d9744b`.
+Control compiler: `1acbb2388a20c9b177c43afea0c01ba529856950` (R136).
+Measured compiler: **`f37ccd3eaa6a83417b9f5ad2d38ca7ae1a77e20e`**.
+Test-first: `4c1a4b50c1`; separate CI scheduling: `499b26dad6`; exact test-only
+call-boundary audit entry: `d86dec8bb2`. IR/work/ABI/MBC: **166/107/39/14**.
+Stack base remains `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+
+The actual repeated-input executable computed the same integer quotient twice
+for every general matrix address: once to obtain the remainder and once for the
+column. The shared native address emitter now computes `column=ordinal/rows`,
+`row=ordinal-column*rows`, then the unchanged `row*columns+column`. Current view
+admission and valid one-based selection establish nonzero rows; the internal
+product is at most ordinal, so its subtraction cannot overflow. Existing
+schema-proved vector addressing remains division-free. No new branch, host
+callback, source edit, weaker schema or alternate scalar instruction path.
+
+This applies through the maintained shared numeric read/write/segment emitter
+at widths1/2/4/8. The test-first actual ARM64 witness fails on the clean parent
+with two UDIVs; the current code has one. An independent compiled address oracle
+checks rectangular matrices, both vector orientations and arithmetic beyond
+floating-point integer precision. Existing original/decoded component controls
+retain current shapes, zero extents/invalid indices, finite errors, aliases,
+unchanged publication and recovery. Native IR165 is rejected; work/ABI/MBC stay.
+
+| Complete evaluate_into | R136 matched control | R137 | Control→current / Roc | Elapsed change |
+|---|---:|---:|---:|---:|
+|8B|1.3423755 ms|1.3303750 ms|4.710089×→4.667982×|-0.893975%|
+|Random64B|1.2653125 ms|1.2807295 ms|4.393446×→4.446977×|+1.218434%|
+|Random256B|1.3267495 ms|1.3390420 ms|4.512753×→4.554565×|+0.926513%|
+|Random1KB|1.2726250 ms|1.2819165 ms|4.186266×→4.216831×|+0.730105%|
+|Repeated1KB|2.3086880 ms|2.1022295 ms|7.147641×→6.508450×|-8.942677%|
+|Random32,769B|8.3353335 ms|8.2215630 ms|7.923321×→7.815174×|-1.364918%|
+|Repeated32,769B|34.6275835 ms|27.8150415 ms|25.957709×→20.850856×|-19.673744%|
+
+The first five-case pass runs the largest repeated case first, not eight-byte
+tuning. The user's clarified scope is all compression inputs and sizes. A
+historical inventory restores64/256B random controls using their exact retained
+fixtures/reference executables and the same current before/after workers.
+All seven primary results remain, including adverse small-input results.
+Eight bytes has992 observations/version and24/32 improving blocks. Each other
+small case has128/version; large cases16/version. Blocks within one prepared
+pair are descriptive, not independent trials. Every primary timing is sealed
+and committed immediately.
+
+The original random1KB result is **0.730105% slower**,2/8 improving blocks.
+A separately retained confirmation over two fresh pairs and512 observations
+per version is **1.324317% faster**,25/32 improving
+blocks,1.277375→1.2604585ms. Its reference is0.321ms versus0.304ms in the original
+cohort; retain both and do not replace the primary ratio with the better-looking
+confirmation. Small random latency is mixed, not a uniform speedup.
+The separate64/256B confirmations use two fresh pairs and512 observations per
+version: **0.257804% /0.028152% faster**,17/32 and21/32 improving blocks,
+4.464816×→4.453306× /4.464064×→4.462807×. These are approximately neutral small
+effects, not a replacement for the initial adverse cohorts.
+
+| Separate hardware cohort | Retired instructions | Instruction change | Cycle change |
+|---|---:|---:|---:|
+|8B|12,546,296.5→12,544,909.5|-0.011055%|+0.684959%|
+|Random1KB|12,848,356.5→12,827,233.5|-0.164402%|+1.989723%|
+|Repeated1KB|29,843,318.0→28,632,590.5|-4.056947%|-8.223283%|
+|Random32,769B|115,918,672.0→114,981,562.0|-0.808420%|-1.887758%|
+|Repeated32,769B|653,545,080.0→609,399,817.5|-6.754739%|-18.757006%|
+
+Hardware/heap cover the original five inputs:32/4 calls per version for small,
+4/2 for large. The restored64/256B controls are elapsed/correctness coverage;
+no new hardware/heap cohort is claimed for them. The adverse eight-byte and
+random1KB cycle medians remain visible. All five measured request counts,
+requested bytes, reallocations and incremental peak live usable bytes are
+unchanged. Large repeated instructions fall44,145,262.5 per call. Logical work
+is unchanged and is not a hardware instruction count.
+
+Generated text falls7,879,164→7,816,196B; machine entry stack7,200→7,136B.
+Static whole-Object UDIVs fall503→286;
+these static counts include cold paths and are not dynamic visits. Object SHA256:
+`64fe68d3833fb25d314c6abe14d2bd577af1d6c1e1b690bbebe7d47dbb3fbe7d`.
+Registered3590/fresh3004 words and every physical exit inventory remain equal.
+
+Fresh actual-executable CPU samples put67.769898% /85.714286% in generated code
+for random/repeated32,769B. Separate raw-PC captures retain837/2494 and1044/2479
+timer observations at stack memory instructions; sampled division PCs are2/1.
+The repeated case's remaining stack traffic and byte assembly are concrete next
+compiler targets. These are CPU-time samples, not retired-instruction partitions.
+The optimized nondebug reference sample is retained fromR135; current repeated
+reference assembly is archived with exact binary identity. No new C/Rust result.
+
+Passing: **553** compatible GPU tests (same7 inherited profile exclusions),
+**128** guarded native CI tests inventoried/executed, unchanged **236** components,
+**8** connected and **1** path case, **132** workflow tests, **15** architecture/
+catalog checks, runtime-only metadata, formatting and warnings as errors. All3
+address tests pass. Optimized GPU opt3/test root opt1, nightly2026-03-03 aarch64
+macOS, frozen Core/Engine/Stdlib/math dependencies. No expected value or resource
+allowance is increased. No fresh full/minimal/no_std dependency or linked40/
+scalar12/frame8 rerun is claimed.
+
+The new test's initially missing call-boundary audit entry was an introduced
+failure, fixed separately in`d86dec8bb2`; the strict final audit passes. A Git
+index permission denial during counter archival was environmental; the identical
+packet was committed without rerunning measurements. The image-validation
+startup regression inherited fromR136 remains unresolved, outside evaluate_into.
+Image emission120.709s overlapped qualification and is not a compiler-speed
+comparison. No current correctness failure remains. Hosted CI is cancelled by
+standing instruction; latest-head review remains pending and the PR stays draft.
+
+Pinned source/MBC SHA256 remain
+`331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9` /
+`a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
+Algorithms, tables, depth300/nice258, near-EOF rules, real262144U16/1500513U32/
+305257U64 capacities, source allocation sites, allocator, aliases and evaluate_into
+timing boundaries remain. Exact raw bytes, independent inflation, retained output
+capacity/clear/reuse and zero final managed bytes/nodes pass. Largest input remains
+32,769B; no full-corpus timing or source-variant timing is claimed in this round.
+The separate ten-workload suite is outside the clarified regression scope.
+
+Reproduction commands, feature profiles, all observations, parent receipts,
+profiles, disassembly and failure dispositions are archived through round137
+in`benchmarks/mech-deflate/experiments.json`. Diagnostic evidence excludes native
+binaries/libraries/Objects, Instruments stores and bytecode. All **18** archives
+(16,657,496B) and their sidecar receipts are published with server SHA256
+verification. Retain this change for
+the substantial repeated-input win, with the mixed small-input effects explicit.
+Parity, further native lifetime/read lowering and image preparation remain open.
+
 ## R136: preserve only the physical words consumed at numeric exits
 
 Update base: `3f372480e28b477f33d720bcc2d7d8ffa52c42d1`.
