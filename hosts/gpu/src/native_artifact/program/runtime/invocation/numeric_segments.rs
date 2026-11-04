@@ -60,15 +60,27 @@ impl Invocation<'_, '_, '_> {
             .numeric
             .as_ref()
             .ok_or_else(|| invalid("parent numeric proof missing"))?;
-        let compute =
-            if self.numeric_prepaid.is_some() && self.numeric_prepaid == segment.prepaid_region {
-                proof
-                    .compute
-                    .checked_sub(proof.source_work)
-                    .ok_or_else(|| invalid("parent prepaid source price exceeds its total"))?
-            } else {
-                proof.compute
-            };
+        if self.numeric_prepaid.is_some()
+            && self.numeric_prepaid_region() != segment.prepaid_region
+            && segment
+                .sites
+                .iter()
+                .any(|&site| self.numeric_source_prepaid(site as usize))
+        {
+            // Ancestor traversal credit does not authorize a segment whose
+            // prepared recipe lacks that same source-price coverage.
+            return Ok(Some(0));
+        }
+        let compute = if self.numeric_prepaid.is_some()
+            && self.numeric_prepaid_region() == segment.prepaid_region
+        {
+            proof
+                .compute
+                .checked_sub(proof.source_work)
+                .ok_or_else(|| invalid("parent prepaid source price exceeds its total"))?
+        } else {
+            proof.compute
+        };
         if args != [0; 3]
             || self.closed_tail.is_some()
             || (self.worker.is_none()
@@ -348,7 +360,8 @@ impl Invocation<'_, '_, '_> {
             }
         }
         #[cfg(all(test, feature = "canonical-native-program"))]
-        if self.numeric_prepaid.is_some() && self.numeric_prepaid == segment.prepaid_region {
+        if self.numeric_prepaid.is_some() && self.numeric_prepaid_region() == segment.prepaid_region
+        {
             super::super::composition_tests::observe::prepaid_segment_entry_work(entry);
         }
         self.state

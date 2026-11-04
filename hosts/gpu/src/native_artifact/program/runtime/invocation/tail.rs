@@ -1,6 +1,7 @@
 //! Reconcile a closed generated Tail to the SAME invocation account.
 //! The generated body consumes finite native fuel; this never executes a loop.
 use crate::native_artifact::NativeExecutionPhase;
+use crate::native_artifact::program::prepare::numeric_plan::ExitKind;
 use crate::native_artifact::program::runtime::invocation::Invocation;
 use crate::native_artifact::program::runtime::{
     NativeProgramExecutionError as Error, amount, invalid,
@@ -246,9 +247,13 @@ impl Invocation<'_, '_, '_> {
                 crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. }
                 | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. })) => site as u32,
             6 if (traversals > 0 || state.partial) && self.numeric_prepaid.is_none() => proof.numeric.as_ref()
-                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site))
+                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && matches!(exit.kind, ExitKind::Unsupported)))
                 .map(|exit| exit.from as u32)
                 .ok_or_else(|| invalid("numeric cold exit is outside its exact source edge"))?,
+            7 if (traversals > 0 || state.partial) && self.numeric_prepaid.is_none() => proof.numeric.as_ref()
+                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && !matches!(exit.kind, ExitKind::Unsupported)))
+                .map(|exit| exit.from as u32)
+                .ok_or_else(|| invalid("numeric fuel exit is outside its exact source edge"))?,
             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
         };
         self.synchronize_numeric_carrier(region, site, args[2])?;
@@ -263,7 +268,65 @@ impl Invocation<'_, '_, '_> {
         // visits. The report counts the remaining actual admitted CFG visits.
         self.state.control.previous = Some(previous);
         if args[2] == 6 {
-            self.numeric_prepaid = Some(region);
+            self.numeric_prepaid = Some(super::NumericPrepaid {
+                region,
+                deepest: proof.iteration,
+            });
+            self.state.scalar_path = None;
+        }
+        if args[2] == 7 {
+            let exit = proof
+                .numeric
+                .as_ref()
+                .unwrap()
+                .exits
+                .iter()
+                .find(|exit| exit.to == site)
+                .unwrap();
+            let (iteration, header) = match exit.kind {
+                ExitKind::ChildInitialize { iteration } => (iteration, false),
+                ExitKind::ChildHeader { iteration } => (iteration, true),
+                ExitKind::Unsupported => return Err(invalid("fuel continuation lost its kind")),
+            };
+            let parent = descriptor.metadata().plan.iterations()[iteration as usize]
+                .as_ref()
+                .parent()
+                .ok_or_else(|| invalid("fuel continuation lacks its paid parent"))?;
+            let active = if header { iteration } else { parent };
+            // Native synchronous Tail children have no hidden counted-loop or
+            // collection state. Export/finalization and all fallible charges
+            // finish before restoring their exact lexical activation chain.
+            for child in proof
+                .numeric
+                .as_ref()
+                .unwrap()
+                .phase
+                .as_ref()
+                .unwrap()
+                .loops
+                .iter()
+                .skip(1)
+            {
+                if self.progress[child.iteration as usize * 2..][..2] != [0, 0] {
+                    return Err(invalid("fuel continuation found an active ordinary child"));
+                }
+            }
+            let mut at = active;
+            loop {
+                self.progress[at as usize * 2..][..2].copy_from_slice(&[0, 1]);
+                if at == proof.iteration {
+                    break;
+                }
+                at = descriptor.metadata().plan.iterations()[at as usize]
+                    .as_ref()
+                    .parent()
+                    .ok_or_else(|| invalid("fuel continuation escapes its native root"))?;
+            }
+            self.state.control.current = Some(active);
+            self.numeric_prepaid = Some(super::NumericPrepaid {
+                region,
+                deepest: parent,
+            });
             self.state.scalar_path = None;
         }
         if proof.map.is_some() && args[2] == 0 {

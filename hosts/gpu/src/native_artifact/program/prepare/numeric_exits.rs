@@ -2,7 +2,7 @@
 //! A repeated immutable predicate keeps its established truth until the root
 //! latch. This prunes only impossible liveness edges, never generated branches.
 use super::*;
-use crate::native_artifact::program::prepare::numeric_plan::Exit;
+use crate::native_artifact::program::prepare::numeric_plan::{Exit, ExitKind};
 
 fn identity(
     facts: &NativeProgramFacts<'_>,
@@ -221,16 +221,40 @@ pub(super) fn derive(
     arrays: &[Array],
 ) -> Result<Vec<Exit>, &'static str> {
     let mut exits = Vec::new();
-    for to in forest
+    let mut boundaries = forest
         .cold
         .iter()
         .map(|child| child.initialize)
         .chain(forest.stops.iter().copied())
-    {
-        let [from] = provenance.facts.predecessors(to as u32)? else {
-            return Err("cold initializer lacks a unique exact predecessor");
+        .map(|to| (to, None, ExitKind::Unsupported))
+        .collect::<Vec<_>>();
+    if forest.checked_children {
+        for child in forest.loops.iter().skip(1) {
+            boundaries.push((
+                child.initialize,
+                None,
+                ExitKind::ChildInitialize {
+                    iteration: child.iteration,
+                },
+            ));
+            boundaries.push((
+                child.header,
+                Some(child.latch),
+                ExitKind::ChildHeader {
+                    iteration: child.iteration,
+                },
+            ));
+        }
+    }
+    for (to, from, kind) in boundaries {
+        let from = if let Some(from) = from {
+            from
+        } else {
+            let [from] = provenance.facts.predecessors(to as u32)? else {
+                return Err("cold initializer lacks a unique exact predecessor");
+            };
+            *from as usize
         };
-        let from = *from as usize;
         if !forest.sites.contains(&from) || !reaches(plan, forest, from, None) {
             return Err("cold predecessor is outside the native traversal");
         }
@@ -241,8 +265,9 @@ pub(super) fn derive(
             to,
             frames: Vec::new(),
             aliases: Vec::new(),
-            retire_carrier: !forest.prepaid_sites.is_empty()
+            retire_carrier: (!forest.prepaid_sites.is_empty() || forest.checked_children)
                 && !live.contains(&tail.carrier().get()),
+            kind,
         };
         for value in live {
             if plan.values()[value as usize].scalar_kind().is_some()

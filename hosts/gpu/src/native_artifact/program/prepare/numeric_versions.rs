@@ -7,6 +7,91 @@ use mech_engine::native_artifact::{NativeIterationValueScope as Scope, NativeMat
 type Key = (u32, Option<usize>);
 type State = BTreeMap<Key, bool>;
 
+struct Summary<'a> {
+    tail: &'a NativeTailLoop,
+    changed: BTreeSet<usize>,
+    outer: BTreeSet<Key>,
+}
+
+fn summaries<'a>(
+    plan: &'a Plan,
+    frames: &NativeBufferFrames,
+    provenance: &mut Provenance<'_, '_>,
+    forest: &super::super::numeric_phase::Forest,
+    actions: &[(usize, Operation)],
+    arrays: &[Array],
+    exits: &[super::super::numeric_plan::Exit],
+) -> Vec<Summary<'a>> {
+    forest
+        .loops
+        .iter()
+        .map(|loop_| {
+            let mut descendants = BTreeSet::from([loop_.iteration]);
+            loop {
+                let previous = descendants.len();
+                for nested in &forest.loops {
+                    if nested
+                        .parent
+                        .is_some_and(|parent| descendants.contains(&parent))
+                    {
+                        descendants.insert(nested.iteration);
+                    }
+                }
+                if descendants.len() == previous {
+                    break;
+                }
+            }
+            let changed = actions
+                .iter()
+                .filter_map(|(site, operation)| {
+                    let Operation::Write { array, .. } = operation else {
+                        return None;
+                    };
+                    plan.blocks()[*site]
+                        .iteration()
+                        .is_some_and(|iteration| descendants.contains(&iteration))
+                        .then_some(arrays[*array].field)
+                })
+                .collect();
+            // A cold continuation inside a child can also need a caller's still-
+            // live bindings. Treat these as explicit entry preconditions, proved
+            // by the caller before summarizing the child. They are invalidated by
+            // writes just like carried bindings; root identity never refreshes an
+            // older functional version.
+            let outer = exits
+                .iter()
+                .filter(|exit| {
+                    plan.blocks()[exit.from]
+                        .iteration()
+                        .is_some_and(|iteration| descendants.contains(&iteration))
+                })
+                .flat_map(|exit| {
+                    exit.frames
+                        .iter()
+                        .flat_map(|&value| managed_keys(frames, provenance, value))
+                        .chain(exit.aliases.iter().map(|&(value, _)| (value, None)))
+                        .collect::<Vec<_>>()
+                })
+                .filter(|&(value, _)| {
+                    let owner = match plan.value_scopes()[value as usize] {
+                        Scope::Carrier { iteration } => Some(iteration),
+                        Scope::Immutable { iteration } => iteration,
+                    };
+                    owner.is_some_and(|iteration| !descendants.contains(&iteration))
+                })
+                .collect();
+            let NativeControlLoop::Tail(tail) = &plan.iterations()[loop_.iteration as usize] else {
+                unreachable!("numeric Tail tree");
+            };
+            Summary {
+                tail,
+                changed,
+                outer,
+            }
+        })
+        .collect()
+}
+
 struct Traversal {
     header: usize,
     order: Vec<usize>,
@@ -184,6 +269,7 @@ pub(super) fn validate(
     forest: &super::super::numeric_phase::Forest,
     exits: &[super::super::numeric_plan::Exit],
 ) -> Result<(), &'static str> {
+    let summaries = summaries(plan, frames, provenance, forest, actions, arrays, exits);
     if actions.iter().any(|(site, operation)| {
         matches!(operation, Operation::Write { .. })
             && plan.blocks()[*site].iteration() != Some(forest.loops[0].iteration)
@@ -198,8 +284,8 @@ pub(super) fn validate(
             };
             let traversal = Traversal::composed(plan, current, forest)?;
             validate_traversal(
-                plan, current, frames, provenance, &traversal, actions, arrays, result, forest,
-                exits,
+                plan, current, frames, provenance, &traversal, actions, arrays, result, exits,
+                &summaries,
             )?;
         }
         return Ok(());
@@ -207,7 +293,7 @@ pub(super) fn validate(
     // Check the complete graph before any conditional edge can be excluded.
     let traversal = Traversal::new(plan, tail, sites, forest)?;
     validate_traversal(
-        plan, tail, frames, provenance, &traversal, actions, arrays, result, forest, exits,
+        plan, tail, frames, provenance, &traversal, actions, arrays, result, exits, &summaries,
     )
 }
 
@@ -220,8 +306,8 @@ fn validate_traversal(
     actions: &[(usize, Operation)],
     arrays: &[Array],
     result: &ResultRecipe,
-    forest: &super::super::numeric_phase::Forest,
     exits: &[super::super::numeric_plan::Exit],
+    summaries: &[Summary<'_>],
 ) -> Result<(), &'static str> {
     let original = pass(
         plan,
@@ -234,7 +320,7 @@ fn validate_traversal(
         result,
         &[],
         exits,
-        forest,
+        summaries,
     );
     if !matches!(
         original,
@@ -252,12 +338,13 @@ fn validate_traversal(
         let no = edges.iter().map(|&(s, (n, _))| (s, n)).collect::<Vec<_>>();
         let yes = edges.iter().map(|&(s, (_, y))| (s, y)).collect::<Vec<_>>();
         if pass(
-            plan, tail, frames, provenance, traversal, actions, arrays, result, &no, exits, forest,
+            plan, tail, frames, provenance, traversal, actions, arrays, result, &no, exits,
+            summaries,
         )
         .is_ok()
             && pass(
                 plan, tail, frames, provenance, traversal, actions, arrays, result, &yes, exits,
-                forest,
+                summaries,
             )
             .is_ok()
         {
@@ -298,53 +385,23 @@ fn pass(
     result: &ResultRecipe,
     selected: &[(usize, usize)],
     exits: &[super::super::numeric_plan::Exit],
-    forest: &super::super::numeric_phase::Forest,
+    summaries: &[Summary<'_>],
 ) -> Result<(), &'static str> {
     // A child's zero-trip return alone cannot describe the effects of its
     // arbitrary recursive visits. Latches establish the current carried
     // versions inductively; a return invalidates older caller bindings for
     // every root that any visit may change. Only current returned bindings
     // survive that summary. Observable older versions therefore decline.
-    let mut child_effects = Vec::new();
-    for child in forest.loops.iter().skip(1) {
-        let mut descendants = BTreeSet::from([child.iteration]);
-        loop {
-            let previous = descendants.len();
-            for nested in &forest.loops {
-                if nested
-                    .parent
-                    .is_some_and(|parent| descendants.contains(&parent))
-                {
-                    descendants.insert(nested.iteration);
-                }
-            }
-            if descendants.len() == previous {
-                break;
-            }
-        }
-        let changed = actions
-            .iter()
-            .filter_map(|(site, operation)| {
-                let Operation::Write { array, .. } = operation else {
-                    return None;
-                };
-                plan.blocks()[*site]
-                    .iteration()
-                    .is_some_and(|iteration| descendants.contains(&iteration))
-                    .then_some(arrays[*array].field)
-            })
-            .collect::<BTreeSet<_>>();
-        let NativeControlLoop::Tail(child_tail) = &plan.iterations()[child.iteration as usize]
-        else {
-            unreachable!("numeric Tail child");
-        };
-        child_effects.push((child_tail, changed));
-    }
+    let outer = summaries
+        .iter()
+        .find(|summary| summary.tail.header() == tail.header())
+        .ok_or("version traversal lacks its entry preconditions")?;
     let mut states = BTreeMap::<usize, State>::new();
     states.insert(
         tail.header() as usize,
         managed_keys(frames, provenance, tail.carrier().get())
             .into_iter()
+            .chain(outer.outer.iter().copied().filter(|_| traversal.local))
             .map(|key| (key, true))
             .collect(),
     );
@@ -371,12 +428,10 @@ fn pass(
                     }
                 }
             }
-            if exit
-                .aliases
-                .iter()
-                .any(|&(value, _)| !fresh(&state, (value, None)))
-            {
-                return Err("cold continuation requires an older array version");
+            for &(value, _) in &exit.aliases {
+                if !fresh(&state, (value, None)) {
+                    return Err("cold continuation requires an older array version");
+                }
             }
         }
         match actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op) {
@@ -459,17 +514,22 @@ fn pass(
             }
             _ => {}
         }
-        if let Some((child, changed)) = child_effects.iter().find(|(child, _)| {
+        if let Some(summary) = summaries.iter().skip(1).find(|summary| {
+            let child = summary.tail;
             if traversal.local {
                 traversal.summaries.contains(&site) && child.initialize() as usize == site
             } else {
                 child.finish() as usize == site
             }
         }) {
+            let child = summary.tail;
             let value = child.returned().get();
             let returned = managed_keys(frames, provenance, value);
             let required = if traversal.local {
                 managed_keys(frames, provenance, child.seed().get())
+                    .into_iter()
+                    .chain(summary.outer.iter().copied())
+                    .collect()
             } else {
                 returned.clone()
             };
@@ -482,7 +542,7 @@ fn pass(
             for (&(value, field), current) in &mut state {
                 if provenance
                     .array(value, field)
-                    .is_some_and(|root| changed.contains(&root))
+                    .is_some_and(|root| summary.changed.contains(&root))
                 {
                     *current = false;
                 }

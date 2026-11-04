@@ -157,6 +157,13 @@ impl<'borrow, 'state, 'visit, 'plan> MapExecution<'borrow, 'state, 'visit, 'plan
     }
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct NumericPrepaid {
+    region: usize,
+    /// Deepest active traversal already paid before an exact cold edge.
+    deepest: u32,
+}
+
 pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visit, 'plan> {
     pub(in crate::native_artifact::program::runtime) state: &'state mut ExecutionState<'plan>,
     pub(in crate::native_artifact::program::runtime) descriptor: &'plan NativeProgramDescriptor,
@@ -165,7 +172,7 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
     pub(in crate::native_artifact::program::runtime) borrowed_strings: Option<borrowed::State>,
     pub(in crate::native_artifact::program::runtime) closed_tail:
         Option<crate::native_artifact::program::runtime::invocation::tail::State>,
-    pub(super) numeric_prepaid: Option<usize>,
+    pub(super) numeric_prepaid: Option<NumericPrepaid>,
     // Scalar edge identity only; all owners remain in the inventoried frame/arena banks.
     pub(in crate::native_artifact::program::runtime) parent_continuation: continuation::Pending,
     pub(in crate::native_artifact::program::runtime) selected_join:
@@ -189,6 +196,44 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
         Option<&'visit mech_engine::native_artifact::NativeTextLineWindow<'visit>>,
 }
 impl Invocation<'_, '_, '_> {
+    pub(in crate::native_artifact::program::runtime) fn numeric_prepaid_region(
+        &self,
+    ) -> Option<usize> {
+        self.numeric_prepaid.map(|route| route.region)
+    }
+
+    fn numeric_source_prepaid(&self, site: usize) -> bool {
+        let Some(route) = self.numeric_prepaid else {
+            return false;
+        };
+        let metadata = self.descriptor.metadata();
+        let region = &metadata.closed_tails.regions[route.region];
+        let Some(proof) = &region.numeric else {
+            return false;
+        };
+        if if proof.prepaid_sites.is_empty() {
+            !proof.sites.contains(&site)
+        } else {
+            proof.prepaid_sites.binary_search(&site).is_err()
+        } {
+            return false;
+        }
+        let wanted = metadata.plan.blocks()[site].iteration();
+        let mut at = route.deepest;
+        loop {
+            if wanted == Some(at) {
+                return true;
+            }
+            if at == region.iteration {
+                return false;
+            }
+            let Some(parent) = metadata.plan.iterations()[at as usize].as_ref().parent() else {
+                return false;
+            };
+            at = parent;
+        }
+    }
+
     pub(in crate::native_artifact::program::runtime) fn control(
         &mut self,
     ) -> Control<'_, '_, NativeProgramDescriptor> {
@@ -686,17 +731,7 @@ impl Invocation<'_, '_, '_> {
         if let Some(state) = &self.state.collections {
             state.validate_span_boundary(block.action())?;
         }
-        let prepaid = self.numeric_prepaid.is_some_and(|region| {
-            let region = &self.descriptor.metadata().closed_tails.regions[region];
-            block.iteration() == Some(region.iteration)
-                && region.numeric.as_ref().is_some_and(|proof| {
-                    if proof.prepaid_sites.is_empty() {
-                        proof.sites.contains(&index)
-                    } else {
-                        proof.prepaid_sites.binary_search(&index).is_ok()
-                    }
-                })
-        });
+        let prepaid = self.numeric_source_prepaid(index);
         let group = self
             .descriptor
             .metadata()
@@ -763,10 +798,25 @@ impl Invocation<'_, '_, '_> {
             .filter(|group| group.owner.is_none())
             .map(|group| group.start());
         self.state.map_owners.closed_exit = None;
-        if let Some(region) = self.numeric_prepaid {
-            let tail = &self.descriptor.metadata().closed_tails.regions[region].tail;
+        if let Some(route) = self.numeric_prepaid {
+            let metadata = self.descriptor.metadata();
+            let mech_engine::native_artifact::NativeControlLoop::Tail(tail) =
+                &metadata.plan.iterations()[route.deepest as usize]
+            else {
+                return Err(invalid("prepaid continuation lost its Tail"));
+            };
             if index == tail.latch() as usize || index == tail.finish() as usize {
-                self.numeric_prepaid = None;
+                self.numeric_prepaid =
+                    if route.deepest == metadata.closed_tails.regions[route.region].iteration {
+                        None
+                    } else {
+                        Some(NumericPrepaid {
+                            region: route.region,
+                            deepest: tail
+                                .parent()
+                                .ok_or_else(|| invalid("prepaid continuation lost its ancestor"))?,
+                        })
+                    };
             }
         }
         let descriptor = self.descriptor;

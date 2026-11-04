@@ -160,7 +160,7 @@ fn nested_numeric_phase_settles_nonempty_prefix_before_ordinary_retry() {
     fn bound(expr: &Bound, length: u64) -> u64 {
         match expr {
             Bound::Constant(n) => *n,
-            Bound::Length(_) | Bound::BufferLength(_) => length,
+            Bound::Length(_) => length,
             Bound::Add(a, b) => bound(a, length).checked_add(bound(b, length)).unwrap(),
             Bound::Multiply(a, b) => bound(a, length).checked_mul(bound(b, length)).unwrap(),
             Bound::Maximum(a, b) => bound(a, length).max(bound(b, length)),

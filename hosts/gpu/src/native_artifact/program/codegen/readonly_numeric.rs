@@ -20,6 +20,8 @@ use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMatchA
 use std::collections::{BTreeMap, BTreeSet};
 #[path = "numeric_boundary.rs"]
 mod boundary;
+#[path = "numeric_child_fuel.rs"]
+mod child_fuel;
 
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct Report {
@@ -187,6 +189,20 @@ pub(in crate::native_artifact) fn emit_entry(
         b.set_cold_block(fail);
         boundaries.insert(fail);
         let before = b.func.dfg.num_insts();
+        child_fuel::emit(
+            b,
+            controls.options(),
+            &words,
+            region,
+            proof,
+            site,
+            frame,
+            locals,
+            hooks,
+            ordinary_blocks,
+            error,
+            &mut boundaries,
+        )?;
         if site == region.tail.header() as usize {
             let compute = words.read(b, region.words + 1);
             let comparison = words.read(b, region.words + 2);
@@ -261,11 +277,12 @@ pub(in crate::native_artifact) fn emit_entry(
             words.write(b, region.words + 1, compute);
             words.write(b, region.words + 2, comparison);
         }
-        if let Some(debit) = proof
-            .phase
-            .as_ref()
-            .and_then(|phase| phase.loops.iter().find(|loop_| loop_.header == site))
-        {
+        if let Some(debit) = proof.phase.as_ref().and_then(|phase| {
+            phase.loops.iter().find(|loop_| {
+                loop_.header == site
+                    && (!phase.checked_children || loop_.header == region.tail.header() as usize)
+            })
+        }) {
             if site != region.tail.header() as usize {
                 let compute = words.read(b, region.words + 1);
                 let comparison = words.read(b, region.words + 2);

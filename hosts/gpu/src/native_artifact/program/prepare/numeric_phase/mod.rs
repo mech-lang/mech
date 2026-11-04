@@ -28,6 +28,7 @@ pub(in crate::native_artifact) enum Coverage {
     Complete,
     ScalarCold,
     Intervals,
+    Fueled,
 }
 
 /// Candidate source comparison. A bounded-trip proof must additionally prove
@@ -70,6 +71,7 @@ pub(in crate::native_artifact) struct Forest {
     pub stops: BTreeSet<usize>,
     /// The complete root traversal paid before a partial interval starts.
     pub prepaid_sites: BTreeSet<usize>,
+    pub checked_children: bool,
 }
 
 impl Forest {
@@ -268,6 +270,13 @@ impl Forest {
         Self::derive_inventory(plan, root, Coverage::Intervals)
     }
 
+    pub(in crate::native_artifact) fn fueled(
+        plan: &Plan,
+        root: &NativeTailLoop,
+    ) -> Result<Self, &'static str> {
+        Self::derive_inventory(plan, root, Coverage::Fueled)
+    }
+
     pub fn successors(&self, plan: &Plan, site: usize) -> Vec<usize> {
         if self.stops.contains(&site) {
             Vec::new()
@@ -306,7 +315,7 @@ impl Forest {
                 cold::successors(&cold, plan, site)
             }
         };
-        while mode == Coverage::Complete {
+        while matches!(mode, Coverage::Complete | Coverage::Fueled) {
             let before = members.len();
             for (id, loop_) in plan.iterations().iter().enumerate() {
                 if loop_
@@ -437,6 +446,7 @@ impl Forest {
             order,
             stops,
             prepaid_sites,
+            checked_children: mode == Coverage::Fueled,
         })
     }
 }

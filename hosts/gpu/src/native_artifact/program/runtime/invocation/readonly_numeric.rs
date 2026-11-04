@@ -242,6 +242,9 @@ impl Invocation<'_, '_, '_> {
         if let Some(phase) = &proof.phase {
             for debit in &phase.loops {
                 self.write_borrowed_word(2 + debit.counter, 0)?;
+                if let Some(word) = debit.first_visit {
+                    self.write_borrowed_word(2 + word, 0)?;
+                }
             }
         }
         if proof.writes() {
@@ -369,7 +372,7 @@ impl Invocation<'_, '_, '_> {
                 }
             }
         }
-        if mode == 6 {
+        if matches!(mode, 6 | 7) {
             self.export_numeric_continuation(id, site)?;
         }
         if mode == 2 {

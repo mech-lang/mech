@@ -51,6 +51,20 @@ pub(in crate::native_artifact) fn leave(
     hooks: &Hooks,
     error: Block,
 ) -> Result<(), NativeCompileError> {
+    leave_at(options, b, locals, region, site, mode, None, hooks, error)
+}
+
+pub(in crate::native_artifact) fn leave_at(
+    options: OptimizationOptions,
+    b: &mut FunctionBuilder,
+    locals: Value,
+    region: &Region,
+    site: Value,
+    mode: i64,
+    continuation: Option<usize>,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<(), NativeCompileError> {
     let ready = load(options, b, locals, region, region.words)?;
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     let finish = b.create_block();
@@ -83,10 +97,15 @@ pub(in crate::native_artifact) fn leave(
             b.ins()
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
-        if mode == 6 {
+        if matches!(mode, 6 | 7) {
             // Only reached cold paths need ordinary continuation frame lanes.
             // The exact edge recipe is checked again by the runtime consumer.
-            for value in proof.exits.iter().flat_map(|exit| &exit.frames) {
+            for value in proof
+                .exits
+                .iter()
+                .filter(|exit| continuation.is_none_or(|site| exit.to == site))
+                .flat_map(|exit| &exit.frames)
+            {
                 for slot in proof
                     .fields(*value)
                     .ok_or_else(|| backend("cold frame lacks scalar lanes"))?

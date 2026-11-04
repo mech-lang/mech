@@ -28,6 +28,7 @@ pub(super) struct Counts {
     pub poisoned_private_homes: usize,
     pub checked_private_homes: usize,
     pub exit_modes: BTreeMap<u64, u64>,
+    pub child_fuel_exits: Vec<(u64, bool)>,
     pub selected_sites: BTreeMap<u64, u64>,
 }
 thread_local! {
@@ -73,6 +74,26 @@ unsafe extern "C" fn helper(
         COUNTS.with(|v| *v.borrow_mut().admits.entry(site).or_default() += 1);
     }
     COUNTS.with(|v| *v.borrow_mut().helpers.entry((site, op)).or_default() += 1);
+    if op == GlobalHelper::ClosedTailEnd.raw() && c == 7 {
+        // SAFETY: inspect only the current immutable recipe, then delegate
+        // this exact synchronous callback without retaining any native view.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        let id = metadata.closed_tails.sites[site as usize].unwrap();
+        let exit = metadata.closed_tails.regions[id]
+            .numeric
+            .as_ref()
+            .unwrap()
+            .exits
+            .iter()
+            .find(|exit| exit.to == site as usize)
+            .unwrap();
+        let header = matches!(
+            exit.kind,
+            crate::native_artifact::program::prepare::numeric_plan::ExitKind::ChildHeader { .. }
+        );
+        COUNTS.with(|v| v.borrow_mut().child_fuel_exits.push((site, header)));
+    }
     if op == GlobalHelper::NumericSegmentEnd.raw() && POISON_UNUSED_EXIT.with(Cell::get) {
         // SAFETY: the synchronous checked entry retains this same Invocation;
         // no reference crosses the delegated helper or generated continuation.
@@ -179,16 +200,16 @@ unsafe extern "C" fn helper(
         let layout = &ctx.descriptor.metadata().compositions;
         layout.entry(site as usize).and_then(|id| {
             let (_, segment) = layout.region(id)?;
-            (ctx.numeric_prepaid.is_some() && ctx.numeric_prepaid == segment.prepaid_region).then(
-                || {
+            (ctx.numeric_prepaid.is_some()
+                && ctx.numeric_prepaid_region() == segment.prepaid_region)
+                .then(|| {
                     let proof = segment.numeric.as_ref().unwrap();
                     assert!(proof.source_work > 0);
                     (
                         ctx.state.library.used().0,
                         proof.compute - proof.source_work,
                     )
-                },
-            )
+                })
         })
     } else {
         None
