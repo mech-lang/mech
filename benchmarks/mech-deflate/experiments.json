@@ -13101,13 +13101,13 @@
           "manifest_sha256": "3341cf6fb7965f94db443e5653457c52283c4d5addb325c415ac1169d3f0e9ff",
           "bytes": 5488832,
           "files": 362,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-child-fuel-round128-20261104/archives/r128-closure-5ac1cf5a1aa2.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r128-closure-5ac1cf5a1aa2.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
     }
   },
   "repository": "mech-lang/mech",
