@@ -1,5 +1,118 @@
 # Native compression: current status
 
+## R128: native child visits with exact current-account fuel
+
+Compiler: **`2fbb199e2bc1c684f987ad6e4f0d468c2fb17dcb`**. Published parent:
+`7fe6b6e611e678e34ec141efd4aeebd3726bf54f`; stack base
+`eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`. IR/work/ABI/MBC:
+**157/107/38/14**. Engine, Core, Syntax, Stdlib, Runtime, Compute and math
+libraries use the retained R125 graph. The held R127 first-change envelope and
+its Engine API are superseded; its adverse evidence remains retained.
+
+Ordinary fixed-size mutable children now retain current phase-owned buffers.
+Native code funds one reached child visit against the same current account,
+before its initializer or recursive header. A static whole-child trip count is
+optional. A cold fuel miss exports the exact live state, settles actual counters,
+restores the source activation chain and continues at that initializer/header.
+Already-paid ancestors retain their current traversal credit only. No source
+replay, allowance renewal, per-iteration helper, or new dispatcher is introduced.
+A first mutation may precede another child because later visits check the
+post-mutation account. Appending child buffers remains outside this extension.
+
+Version proofs compose loop-local current returns. Cold continuations' outer
+buffer bindings are explicit child-entry preconditions checked by the caller;
+a write invalidates every older binding to that root. Compound guards still
+keep their conservative fallback. Images reconstruct funding homes, edge scope,
+prices and versions, and reject altered recipes and older revisions.
+
+The actual unchanged header loop passes all22 pinned cases with real19-entry U32
+frequencies and320-entry U32 items, including untouched tails. Original/decoded
+and restored-image controls exercise rejection after earlier writes, finite
+initializer and recursive-header misses, aliases, unchanged prior publication,
+zero final managed bytes/nodes and successful retry. The complete executable has
+**63 numeric phases /137 included loops**, versus21/44 before;42 phases now use
+checked child visits. It retains the pinned full level12 computation.
+
+| Complete evaluate_into | R125 / Roc | R128 / Roc | Change |
+|---|---:|---:|---:|
+|8B|6.950100×|5.757588×|17.158200% faster|
+|Random1KB|60.160589×|49.870151×|17.104949% faster|
+|Repeated1KB|34.355126×|34.603400×|0.722671% slower|
+
+Times are2.022479→1.675458ms /18.3489795→15.210396ms /
+11.199771→11.2807085ms. References are0.291/0.305/0.326ms, fresh per case.
+All3,968 primary/3,984 total8B observations remain, with4/4 improving pairs and
+64/64 improving blocks. Each1KB version has128 primary observations: random
+improves8/8 blocks; repeated improves2/8 and regresses6/8. The earlier8B cohort
+and a clean-tree preflight stop during test-only editing remain separate;
+production binaries did not change. No historical cohorts are pooled.
+
+| Separate measured counter | R125 | R128 |
+|---|---:|---:|
+|8B instructions|22,608,589|17,716,541|
+|Random instructions|283,628,006|234,201,012|
+|Repeated instructions|172,685,983.5|170,813,427|
+|8B cycles|6,415,757.5|5,302,077|
+|Random cycles|58,679,246|48,182,471.5|
+|Repeated cycles|35,836,913|35,554,370|
+|8B requests, including reallocations|3,741|3,425|
+|Random requests|22,197|16,463|
+|Repeated requests|11,948|11,632|
+|8B requested bytes|17,680,961|17,577,513|
+|Random requested bytes|19,033,866|17,431,450|
+|Repeated requested bytes|19,798,753|19,694,087|
+
+Hardware has32 calls/version/case; heap has4, separately. Peak live usable heap
+stays15,206,024 /15,204,488 /15,208,608 bytes. Reallocations stay68. Generated
+text grows17,335,388→19,434,640B; entry stack158,144→176,320B. Retain those costs
+and the adverse repeated-input elapsed result. No hardware/sample/heap cohorts
+are multiplied together, and requested capacity is not copied or live bytes.
+
+Executed callbacks, including admission, fall6,732→4,348 /93,457→73,441 /
+35,228→32,850. Ordinary changed-update finalizations fall64→56 /4,243→4,115 /
+1,085→1,085; private finalizations fall188→140 /1,295→134 /1,224→1,170.
+Fresh isolated repeated-input profiles cover514 full calls/version and1,359/1,307
+exclusive weights. Before/after shares: generated29.65/28.54%, other callbacks
+57.54/56.69%, frame5.37/6.04%, cleanup5.81/6.66%, outside1.62/2.07%. These are CPU
+samples, not per-function retired instructions. Remaining runtime work is real.
+
+Passing current validation:527 compatible GPU tests (7 inherited profile/registry
+exclusions),102 inventoried and executed CI contracts,236 components /8 connected
+/1 structural path case,63 focused composition tests,132 workflow tests,15
+architecture/catalog checks, runtime-only metadata, formatting and warnings as
+errors. Output goldens and component allowances remain fixed. Shape observers
+now recognize the fused parent instead of demanding callbacks or isolated child
+regions. The old cleanup unit's protocol-work receipt changes88,531,834→41,515,530
+because broader native selection omits ordinary boundary/materialization work;
+policy107 price formulas and its output are unchanged. Current-version, prior
+publication, error ordering, finite funding and retry controls all pass.
+
+The temporary source-derived test wrapper had been deleted; it was regenerated
+from the maintained integration harness, omitting the unused linked-project
+module whose build library is absent from this frozen graph. Its component
+bodies and allowances are untouched. The temporary Python environment also lost
+its source files; restoring cached PyYAML6.0.3 repairs the workflow tests. Initial
+metadata-observer failures and the intentionally stopped obsolete run are retained
+with their disposition. No unresolved correctness failure remains.
+
+Source SHA331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9
+and MBC SHAa2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7
+stay fixed, as do the262144-entry U16 tree,1500513-word U32 cache,305257 U64 path
+capacity, depth300, nice258, near-EOF limits, tables, source allocation sites,
+input aliases, output capacity13/1029 clear/reuse, allocator and timing boundary.
+Largest timed input is1024B. No fresh full-feature/Core/no_std/minimal-graph build,
+linked40/frame8/scalar12 performance suite, complete source-variant qualification,
+full-scale timing, hosted green CI or clean review is claimed.
+
+Retain this checkpoint. Brief stages1–3 now execute in the real program, with
+native fuel addressing the demonstrated trip-proof restriction. Stage4—cleanup
+for values that never materialize—remains the next bounded compiler change. The
+repeated-input profile still spends69.40% in runtime callbacks/cleanup. Derive
+remaining cleanup from actual representation while retaining original ordered
+charges and owner cleanup; do not add another batching layer. Full parity and
+complete collector lowering remain unestablished.
+
+
 Raw observations, diagnostic drivers, full censuses and rejected experiments stay
 outside source. The maintained harness and [compact evidence index](../../benchmarks/mech-deflate/experiments.json)
 retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/973)

@@ -72,6 +72,32 @@ enter map admission. Frame assignment retains scalar + iteration + aggregate +
 borrowed + closed words, then relocates owner words once. Unselected frontiers
 remain in the identity transcript.
 
+## Current-account child visits and current buffer results
+
+R128 keeps the existing numeric plan and shared scalar/SSA emission while
+composing fixed-size mutable Tail children. Children return bindings to current
+phase owners and native scalar fields. Local induction proves their recursive
+and terminal versions. A caller must additionally prove every outer binding
+needed by a child cold continuation current at entry; later writes invalidate
+those bindings. No root-identity shortcut grants permission to reuse older data.
+
+Existing static/scalar-cold schedules remain preferred. When a whole-child trip
+bound is unavailable, generated initializer and recursive-header checks fund one
+visit against the same current compute/comparison account. The first header uses
+the initializer's debit exactly once. Counters report actual reached visits,
+including post-first-change execution; a later child cannot rely on pre-mutation
+credit. Successful internal edges have no runtime callback.
+
+A failed check uses an independently reconstructed initializer/header exit.
+Export current scalar/frame/buffer state, freeze private cells, settle the same
+loan, then restore the exact lexical Tail chain. Only already-paid current
+ancestors retain source-price credit; the target child visit is unpaid. An
+ordinary latch/finish consumes that ancestor's credit, preventing replay or
+renewal. Cold exports and all fallible admission precede publication. Existing
+bounds/arithmetic/assertion errors keep their source positions. Child appends,
+non-Tail descendants, older observable versions and unproved guards retain the
+ordinary path. IR157 binds these homes, scopes and prices to image identity.
+
 ## Complete synchronous numeric phases
 
 R119 extends numeric lowering over the existing canonical CFG. The common
