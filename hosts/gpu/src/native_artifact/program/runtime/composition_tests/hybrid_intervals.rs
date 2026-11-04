@@ -197,3 +197,163 @@ fn nested_cold_edges_preserve_current_buffers_publication_and_recovery() {
         );
     }
 }
+
+#[test]
+fn nested_cold_settlement_keeps_finite_denial_atomic_and_recovers() {
+    let source = include_str!("../../../../../tests/fixtures/native/numeric-nested-rebase.mec");
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        for restored in [false, true] {
+            let memory = mode.memory_budget();
+            let args = inputs(
+                &artifact,
+                &[
+                    (
+                        "nodes",
+                        Data::Matrix([32768, 32769, 0].map(Data::U16).into()),
+                    ),
+                    ("cache", Data::Matrix([0, 0].map(Data::U32).into())),
+                    ("steps", Data::U64(3)),
+                    ("checkpoint", Data::U64(u64::MAX)),
+                    ("child-checkpoint", Data::U64(0)),
+                    ("reject", Data::U64(u64::MAX)),
+                    ("child-reject", Data::U64(u64::MAX)),
+                ],
+                &memory,
+            );
+            let aliases = args.clone();
+            let before = contents(&args);
+            let mut output = vec![None; artifact.outputs().len()];
+            let run = |output: &mut [Option<Value>], policy| {
+                if restored {
+                    observe::run_restored(&jit, &args, output, policy, &memory)
+                } else {
+                    observe::run(&jit, &args, output, policy, &memory)
+                }
+            };
+            run(&mut output, mode.execution()).0.unwrap();
+            // Match the same prior-publication state when deriving the exact
+            // reached cold settlement's remaining current-account fuel.
+            let (result, counts) = run(&mut output, mode.execution());
+            result.unwrap();
+            let remaining = counts
+                .phase_settlements
+                .iter()
+                .find(|row| row.0 == 6)
+                .unwrap()
+                .3;
+            let mut policy = mode.execution();
+            policy.execution.max_work = (u64::MAX - remaining) + 1;
+            let prior = output.clone();
+            let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+            let (result, counts) = run(&mut output, policy);
+            let error = format!("{:?}", result.unwrap_err());
+            assert!(
+                error.contains("Work") && !error.contains("InvalidProgram"),
+                "{error}"
+            );
+            assert!(
+                counts.phase_settlements.iter().any(|row| row.0 == 6),
+                "{counts:?}"
+            );
+            assert!(
+                counts.cold_private_arrays.iter().any(|count| *count > 0),
+                "{counts:?}"
+            );
+            for (actual, old) in output.iter().zip(&prior) {
+                assert!(
+                    actual
+                        .as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(old.as_ref().unwrap())
+                );
+            }
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                retained
+            );
+            run(&mut output, mode.execution()).0.unwrap();
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                expected(3, u64::MAX, 0)
+            );
+            assert_eq!(contents(&args), before);
+            assert_eq!(contents(&aliases), before);
+            drop((args, aliases, output, prior));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+
+#[test]
+fn nested_cold_images_reconstruct_exact_edges_and_buffer_bindings() {
+    let source = include_str!("../../../../../tests/fixtures/native/numeric-nested-rebase.mec");
+    for artifact in artifacts(source) {
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let mut image: serde_json::Value =
+            serde_json::from_slice(&jit.descriptor().encode_build_owned_image().unwrap()).unwrap();
+        let regions = image
+            .pointer("/descriptor/closed_tails/regions")
+            .unwrap()
+            .as_array()
+            .unwrap();
+        let index = regions
+            .iter()
+            .position(|region| region.pointer("/tail/parent") == Some(&serde_json::Value::Null))
+            .unwrap();
+        let exits = regions[index]
+            .pointer("/numeric/exits")
+            .unwrap()
+            .as_array()
+            .unwrap();
+        let exit = exits
+            .iter()
+            .position(|exit| exit["kind"] == "Unsupported")
+            .unwrap();
+        for (suffix, replacement) in [
+            (
+                "phase/checked_children".to_owned(),
+                serde_json::json!(false),
+            ),
+            (
+                "phase/loops/1/parent".to_owned(),
+                serde_json::json!(u32::MAX),
+            ),
+            ("arrays/0/field".to_owned(), serde_json::json!(u32::MAX)),
+            (format!("exits/{exit}/from"), serde_json::json!(u32::MAX)),
+            (format!("exits/{exit}/to"), serde_json::json!(0)),
+        ] {
+            let path = format!("/descriptor/closed_tails/regions/{index}/numeric/{suffix}");
+            let old = image.pointer_mut(&path).unwrap();
+            assert_ne!(*old, replacement);
+            let original = core::mem::replace(old, replacement);
+            assert!(
+                super::super::tests::rejects_malformed_helper_image(
+                    &serde_json::to_vec(&image).unwrap()
+                ),
+                "{path}"
+            );
+            *image.pointer_mut(&path).unwrap() = original;
+        }
+    }
+}
