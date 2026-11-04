@@ -13919,7 +13919,7 @@
       "base": "3b22758fe95e36cc58882077c926efd88b28ec7b",
       "production": "61b7d0b51a1ef17daf97992844c5f413b3203400",
       "compiler_source": "61b7d0b51a1ef17daf97992844c5f413b3203400",
-      "decision": "under measurement",
+      "decision": "retain for complete history-boundary gains; keep eight-byte elapsed/instruction cost explicit",
       "events": [
         {
           "event": "history-random-primary",
@@ -13997,11 +13997,115 @@
           "files": 59,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-history-map-round134-20261104/archives/r134-history-profile-repeated-b9140063fd53.tar.gz"
+        },
+        {
+          "event": "clean-parent",
+          "source_revision": "61b7d0b51a1ef17daf97992844c5f413b3203400",
+          "asset": "r134-clean-parent-1984b969e235.tar.gz",
+          "sha256": "1984b969e23502830066b5817b41cb5429f5d104ca815939be79e35ddeecde63",
+          "manifest_sha256": "85a9a16cb05b7d8b6ed078d44ecf21bdb5871885ade931d812153275f6e79c02",
+          "bytes": 61034,
+          "files": 60,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-history-map-round134-20261104/archives/r134-clean-parent-1984b969e235.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "versions": {
+        "typed_ir": 163,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "primary": {
+        "eight": {
+          "medians": {
+            "after": 0.001683312,
+            "before": 0.00166625
+          },
+          "multiples_of_reference": {
+            "after": 5.784577319587628,
+            "before": 5.72594501718213
+          },
+          "after_over_before": 1.010239759939985,
+          "primary_observations": 1984,
+          "improving_blocks": 7,
+          "adverse_blocks": 25
+        },
+        "random": {
+          "medians": {
+            "after": 0.0034970419999999997,
+            "before": 0.003501771
+          },
+          "multiples_of_reference": {
+            "after": 11.299004846526655,
+            "before": 11.314284329563813
+          },
+          "after_over_before": 0.9986495404753766,
+          "primary_observations": 256,
+          "improving_blocks": 6,
+          "adverse_blocks": 2
+        },
+        "repeated": {
+          "medians": {
+            "after": 0.0049931875,
+            "before": 0.0050222085
+          },
+          "multiples_of_reference": {
+            "after": 15.50679347826087,
+            "before": 15.596920807453415
+          },
+          "after_over_before": 0.9942214665121929,
+          "primary_observations": 256,
+          "improving_blocks": 7,
+          "adverse_blocks": 1
+        },
+        "history-random": {
+          "medians": {
+            "after": 0.0710640625,
+            "before": 0.175503479
+          },
+          "multiples_of_reference": {
+            "after": 67.74457816968541,
+            "before": 167.30550905624403
+          },
+          "after_over_before": 0.4049154062638268,
+          "primary_observations": 32,
+          "improving_blocks": 8,
+          "adverse_blocks": 0
+        },
+        "history-repeated": {
+          "medians": {
+            "after": 0.11031218749999999,
+            "before": 0.21388622899999998
+          },
+          "multiples_of_reference": {
+            "after": 83.00390331075995,
+            "before": 160.937719337848
+          },
+          "after_over_before": 0.5157517060156314,
+          "primary_observations": 32,
+          "improving_blocks": 8,
+          "adverse_blocks": 0
+        }
+      },
+      "object_sha256": "8dfac0c1600c6f9297c569e4b6c04722d2338aa2c1f89869877bd30a2634b139",
+      "callback_census": {
+        "random": {
+          "visits_before": 1322760,
+          "visits_after": 12040,
+          "helpers_before": 530220,
+          "helpers_after": 5934
+        },
+        "repeated": {
+          "visits_before": 1336935,
+          "visits_after": 26215,
+          "helpers_before": 538070,
+          "helpers_after": 13784
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
