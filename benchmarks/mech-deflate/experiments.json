@@ -13108,6 +13108,28 @@
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
       "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+    },
+    "129": {
+      "base": "9a3bc1b66340b70647f1824d6f91b48383af9b7b",
+      "production": "ccb9aab277081555385e37b02d824d0c5ef3db3b",
+      "compiler_source": "ccb9aab277081555385e37b02d824d0c5ef3db3b",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "closure",
+          "source_revision": "ccb9aab277081555385e37b02d824d0c5ef3db3b",
+          "asset": "r129-closure-7d5056903915.tar.gz",
+          "sha256": "7d5056903915e439459458eade8ce2fd0c200880d2e4f5de83e08b7c1e6f3bd7",
+          "manifest_sha256": "2acf5e490b09a1e76b3942cd35f5ff820e985e2b8e9ebbf59f4b35866965a3da",
+          "bytes": 10245473,
+          "files": 454,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-word-cleanup-round129-20261104/archives/r129-closure-7d5056903915.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
