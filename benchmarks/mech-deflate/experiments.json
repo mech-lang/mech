@@ -15618,6 +15618,17 @@
           "files": 30,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-random-256-primary-9458a454d0e2.tar.gz"
+        },
+        {
+          "event": "case-128-biased-dynamic-primary",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-case-128-biased-dynamic-primary-af8f81cee15e.tar.gz",
+          "sha256": "af8f81cee15e9e86735919f16325def0cdc4dda20f642f4aa8be82fdb4615532",
+          "manifest_sha256": "c296c1a9965eae5735e6bd111dda37e96b7d876745915ab8fd20c0ccfd0143f0",
+          "bytes": 167295,
+          "files": 30,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-128-biased-dynamic-primary-af8f81cee15e.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
