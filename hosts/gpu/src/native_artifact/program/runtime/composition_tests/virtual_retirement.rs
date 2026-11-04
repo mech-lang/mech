@@ -179,7 +179,10 @@ fn private_segment_cleanup_is_rederived_and_cannot_be_supplied_as_image_authorit
                     .and_then(|groups| groups.as_array_mut())
                 {
                     for group in groups {
-                        for step in group.as_array_mut().unwrap() {
+                        let Some(steps) = group.as_array_mut() else {
+                            continue;
+                        };
+                        for step in steps {
                             if step.get("Pay").is_some() {
                                 *step = serde_json::json!({"Pay":0});
                                 changed = true;
