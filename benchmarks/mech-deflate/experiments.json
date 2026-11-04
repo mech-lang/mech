@@ -14751,6 +14751,17 @@
           "files": 66,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-quotient-round137-20261104/archives/r137-time-profiler-mech-current-repeated-84a64c44a861.tar.gz"
+        },
+        {
+          "event": "random-64-primary",
+          "source_revision": "f37ccd3eaa6a83417b9f5ad2d38ca7ae1a77e20e",
+          "asset": "r137-random-64-primary-cb99cb893859.tar.gz",
+          "sha256": "cb99cb893859fb96e25da9adbdc3b861ef03ac537f75aa3bc0ab20b0efd52b73",
+          "manifest_sha256": "f66bf0537ebfb1514353280ade5a083c762d0931f6ddd37d0b04648b34e12d78",
+          "bytes": 100317,
+          "files": 68,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-quotient-round137-20261104/archives/r137-random-64-primary-cb99cb893859.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
