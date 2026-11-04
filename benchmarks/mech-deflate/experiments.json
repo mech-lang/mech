@@ -13705,6 +13705,28 @@
         "warnings_as_errors": true
       },
       "decision_metadata_correction": "Correct repeated instruction prose from +0.684129% to +0.684287%; raw before/after medians in every packet and scorecard are unchanged."
+    },
+    "133": {
+      "base": "6dcab422ee0ea364ec713060147a3e45686a9d9d",
+      "production": "9d23729e5f48466f5b606bb00cec3a19be106469",
+      "compiler_source": "9d23729e5f48466f5b606bb00cec3a19be106469",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "9d23729e5f48466f5b606bb00cec3a19be106469",
+          "asset": "r133-initial-7b82805ba3b1.tar.gz",
+          "sha256": "7b82805ba3b153953b879e90519a9dcc54be852f226594752c1cda3355b69db6",
+          "manifest_sha256": "21943259d6fc000809e32857f3a0a060e6352e75839ed967171c6b151d8f887a",
+          "bytes": 4338164,
+          "files": 56,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-prepaid-membership-round133-20261104/archives/r133-initial-7b82805ba3b1.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
