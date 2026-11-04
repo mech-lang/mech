@@ -1,5 +1,22 @@
 # Native compression: current status
 
+## R131 prospective experiment: terminal failure transport
+
+Before measurement, base `27e7cc4c4c51370d5beb6473a2a9ff6a39df1b0b`: R130's
+generated body now dominates both 1KB CPU profiles. Its collector has 3,590 SSA
+words; the shared terminal failure sink saves them all although the consumer
+reads only current carrier fields, append lengths, counters and loan state.
+The existing growing-buffer witness confirms the full 108-word snapshot.
+
+Factor the existing exit-word inventory, preserve its order/content, and use
+the existing SSA subset spill only at terminal numeric failure. Keep success,
+bailout, bounds retry, first-change and child-fuel paths unchanged. Require
+original/decoded/restored error-after-append, ordinary-path error/origin agreement,
+assertion/load/arithmetic precedence, previous publication, aliases, cleanup,
+finite denial and retry. Retain component expectations/allowances. Compare all
+three small workloads to the retained R130 binaries; commit each timing and
+then collect separate counters/profiles. No result is claimed yet.
+
 ## R130: retain collector state through nested native loops
 
 Update base: `1f91efb8fa39b77183903c1f58421bc35ce8f0d4`.
