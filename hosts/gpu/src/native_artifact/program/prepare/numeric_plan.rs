@@ -70,6 +70,8 @@ pub(in crate::native_artifact) struct Exit {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct BoundaryValues {
+    /// Superset of every source word that this region can register or modify.
+    pub candidates: Vec<u32>,
     pub header: Vec<u32>,
     pub exit: Vec<u32>,
 }
