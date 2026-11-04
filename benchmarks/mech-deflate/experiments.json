@@ -14128,6 +14128,28 @@
           "helpers_after": 13784
         }
       }
+    },
+    "135": {
+      "base": "6f009e8db6b02c5aa5d4c182d009dfdb560b0bc2",
+      "production": null,
+      "compiler_source": "61b7d0b51a1ef17daf97992844c5f413b3203400",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "time-profiler-mech-random",
+          "source_revision": "61b7d0b51a1ef17daf97992844c5f413b3203400",
+          "asset": "r135-time-profiler-mech-random-cc2afa8ccdb5.tar.gz",
+          "sha256": "cc2afa8ccdb5d31b1dd79db83085768997e047fd82273610f674fa7f967a54f3",
+          "manifest_sha256": "a7c414acecbb3317b6d9f14f6982c0480f27a65251be3e7d886a3541c7006806",
+          "bytes": 2396165,
+          "files": 67,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-time-profiler-mech-random-cc2afa8ccdb5.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
