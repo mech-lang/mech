@@ -212,7 +212,11 @@ impl Invocation<'_, '_, '_> {
             return false;
         };
         if if proof.prepaid_sites.is_empty() {
-            !proof.sites.contains(&site)
+            // Both inventories come from ordered sets and are independently
+            // reconstructed on image load. Cold continuations can visit every
+            // element of a large collection; do not scan the entire native
+            // source inventory again at each ordinary source visit.
+            proof.sites.binary_search(&site).is_err()
         } else {
             proof.prepaid_sites.binary_search(&site).is_err()
         } {
