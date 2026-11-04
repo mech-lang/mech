@@ -14393,7 +14393,7 @@
       "base": "3f372480e28b477f33d720bcc2d7d8ffa52c42d1",
       "production": "1acbb2388a20c9b177c43afea0c01ba529856950",
       "compiler_source": "1acbb2388a20c9b177c43afea0c01ba529856950",
-      "decision": "under measurement",
+      "decision": "retained for the measured compression cohort: all five cases improve; hardware corroboration and heap controls retained; broader program/size execution remains pending",
       "events": [
         {
           "event": "eight-primary",
@@ -14515,11 +14515,104 @@
           "files": 71,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-time-profiler-mech-current-repeated-cd10741e6c70.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "1acbb2388a20c9b177c43afea0c01ba529856950",
+          "asset": "r136-closure-1d7375f62b71.tar.gz",
+          "sha256": "1d7375f62b71c9825691f8ab0a57ea07ba1d80e81040efd20431a84bed80913b",
+          "manifest_sha256": "be770dd71fe5449f1acb4557ca5e12e0530192f28a35b7e1387b328ee3d2ae56",
+          "bytes": 11631695,
+          "files": 619,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-closure-1d7375f62b71.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "versions": {
+        "typed_ir": 165,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "before_compiler_source": "5a0d926a2ead208466bc8aa13a4dad301aaeb5ef",
+      "validation": {
+        "compatible_gpu_passed": 551,
+        "inherited_profile_exclusions": 7,
+        "executed_ci_native": 126,
+        "workflow_tests": 132,
+        "architecture_catalog_checks": 15,
+        "components": 236,
+        "connected": 8,
+        "path_mechanism": 1,
+        "focused": 7,
+        "clean_parent": "one semantic finite-admission control passes; two physical/proof tests fail as expected; old solvers fail their structural complexity expectations; projection oracle agrees"
+      },
+      "regression_policy": "All programs and defined input sizes are controls; eight bytes is one row. Only the five compression cases have current timing coverage; wider catalog execution is pending.",
+      "primary": {
+        "eight": {
+          "medians": {
+            "after": 0.0013368540000000002,
+            "before": 0.001577229
+          },
+          "multiples_of_reference": {
+            "after": 4.6580278745644605,
+            "before": 5.495571428571429
+          },
+          "after_over_before": 0.8475966394226838,
+          "observations": 1984
+        },
+        "random": {
+          "medians": {
+            "after": 0.001264416,
+            "before": 0.002940458
+          },
+          "multiples_of_reference": {
+            "after": 4.132078431372549,
+            "before": 9.609339869281046
+          },
+          "after_over_before": 0.4300064819834189,
+          "observations": 256
+        },
+        "repeated": {
+          "medians": {
+            "after": 0.0022870620000000003,
+            "before": 0.0040407295
+          },
+          "multiples_of_reference": {
+            "after": 7.124803738317758,
+            "before": 12.587942367601245
+          },
+          "after_over_before": 0.5660022528110333,
+          "observations": 256
+        },
+        "history-random": {
+          "medians": {
+            "after": 0.0083323755,
+            "before": 0.055266895999999996
+          },
+          "multiples_of_reference": {
+            "after": 7.92050903041825,
+            "before": 52.53507224334601
+          },
+          "after_over_before": 0.15076612046386684,
+          "observations": 32
+        },
+        "history-repeated": {
+          "medians": {
+            "after": 0.0346210205,
+            "before": 0.08336625
+          },
+          "multiples_of_reference": {
+            "after": 25.952788980509748,
+            "before": 62.493440779610204
+          },
+          "after_over_before": 0.41528820715817255,
+          "observations": 32
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
