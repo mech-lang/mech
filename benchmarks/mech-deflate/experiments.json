@@ -15229,6 +15229,17 @@
           "files": 127,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-counters-a1c6091e2836.tar.gz"
+        },
+        {
+          "event": "reference-kernels",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r138-reference-kernels-e388790a8773.tar.gz",
+          "sha256": "e388790a8773be8e0c9a32f4479ac4d709af0e4a62c54d62690857dbd011a3d2",
+          "manifest_sha256": "7f8227c6908c012f9112f6c97c9e0846067c89432fc9e4d473cca66652c30bd3",
+          "bytes": 74772,
+          "files": 80,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-reference-kernels-e388790a8773.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
