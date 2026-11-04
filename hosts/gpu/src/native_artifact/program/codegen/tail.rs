@@ -54,6 +54,58 @@ pub(in crate::native_artifact) fn leave(
     leave_at(options, b, locals, region, site, mode, None, hooks, error)
 }
 
+/// Exact relative argument-bank inputs consumed by numeric synchronization.
+/// Preserve store order and duplicates: this also describes existing success
+/// and ordinary-continuation transport, which is not narrowed here.
+pub(in crate::native_artifact) fn numeric_exit_words(
+    region: &Region,
+    mode: i64,
+    continuation: Option<usize>,
+) -> Result<Vec<usize>, NativeCompileError> {
+    let proof = region
+        .numeric
+        .as_ref()
+        .ok_or_else(|| backend("numeric exit inventory lacks its proof"))?;
+    let terminal = proof
+        .result
+        .frame()
+        .filter(|_| mode == 0)
+        .and_then(|value| proof.fields(value))
+        .unwrap_or(&[]);
+    let mut words = proof
+        .fields(region.tail.carrier().get())
+        .unwrap()
+        .iter()
+        .chain(terminal.iter())
+        .flatten()
+        .copied()
+        .collect::<Vec<_>>();
+    if matches!(mode, 6 | 7) {
+        for value in proof
+            .exits
+            .iter()
+            .filter(|exit| continuation.is_none_or(|site| exit.to == site))
+            .flat_map(|exit| &exit.frames)
+        {
+            words.extend(
+                proof
+                    .fields(*value)
+                    .ok_or_else(|| backend("cold frame lacks scalar lanes"))?
+                    .iter()
+                    .flatten()
+                    .copied(),
+            );
+        }
+    }
+    if let Some(phase) = &proof.phase {
+        words.extend(phase.loops.iter().map(|debit| debit.counter));
+    }
+    for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
+        words.push(proof.view(array) + 1);
+    }
+    Ok(words)
+}
+
 pub(in crate::native_artifact) fn leave_at(
     options: OptimizationOptions,
     b: &mut FunctionBuilder,
@@ -80,57 +132,7 @@ pub(in crate::native_artifact) fn leave_at(
             .shadow
             .ok_or_else(|| backend("numeric exit lacks scratch home"))?;
         hooks.require_argument_words(b, proof.words + 2, error);
-        let terminal = proof
-            .result
-            .frame()
-            .filter(|_| mode == 0)
-            .and_then(|value| proof.fields(value))
-            .unwrap_or(&[]);
-        for slot in proof
-            .fields(region.tail.carrier().get())
-            .unwrap()
-            .iter()
-            .chain(terminal.iter())
-            .flatten()
-        {
-            let value = load(options, b, locals, region, shadow + slot)?;
-            b.ins()
-                .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
-        }
-        if matches!(mode, 6 | 7) {
-            // Only reached cold paths need ordinary continuation frame lanes.
-            // The exact edge recipe is checked again by the runtime consumer.
-            for value in proof
-                .exits
-                .iter()
-                .filter(|exit| continuation.is_none_or(|site| exit.to == site))
-                .flat_map(|exit| &exit.frames)
-            {
-                for slot in proof
-                    .fields(*value)
-                    .ok_or_else(|| backend("cold frame lacks scalar lanes"))?
-                    .iter()
-                    .flatten()
-                {
-                    let value = load(options, b, locals, region, shadow + slot)?;
-                    b.ins()
-                        .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
-                }
-            }
-        }
-        if let Some(phase) = &proof.phase {
-            for debit in &phase.loops {
-                let value = load(options, b, locals, region, shadow + debit.counter)?;
-                b.ins().store(
-                    MemFlags::new(),
-                    value,
-                    hooks.arguments,
-                    offset(2 + debit.counter)?,
-                );
-            }
-        }
-        for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
-            let slot = proof.view(array) + 1;
+        for slot in numeric_exit_words(region, mode, continuation)? {
             let value = load(options, b, locals, region, shadow + slot)?;
             b.ins()
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
