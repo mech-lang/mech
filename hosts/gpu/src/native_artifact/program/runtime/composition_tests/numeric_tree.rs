@@ -105,6 +105,77 @@ fn expected(bytes: &[u8], rounds: usize, width: usize, marker: u64) -> Data {
 }
 
 #[test]
+fn numeric_tree_source_liveness_ablation_keeps_outputs_errors_and_retry() {
+    for artifact in artifacts(SOURCE) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let catalog = mech_stdlib::source_catalog();
+        let native =
+            JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+                .unwrap();
+        let conservative = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::SourceLiveness,
+        )
+        .unwrap();
+        for restored in [false, true] {
+            let memory = mode.memory_budget();
+            let mut outputs = [
+                vec![None; artifact.outputs().len()],
+                vec![None; artifact.outputs().len()],
+            ];
+            for (rounds, width, marker, fails) in [
+                (0, 0, 17, false),
+                (2, 2, 11, false),
+                (2, 3, 11, true),
+                (1, 2, u64::MAX, true),
+                (1, 4, 23, false),
+            ] {
+                let args = arguments(&artifact, &memory, &[7, 12, 31, 2], rounds, width, marker);
+                let aliases = args.clone();
+                let before = contents(&args);
+                let mut results = Vec::new();
+                for (jit, output) in [&native, &conservative].into_iter().zip(&mut outputs) {
+                    let prior = output.clone();
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let result = if restored {
+                        observe::run_restored(jit, &args, output, mode.execution(), &memory).0
+                    } else {
+                        observe::run(jit, &args, output, mode.execution(), &memory).0
+                    };
+                    if fails {
+                        results.push(format!("{:?}", result.unwrap_err()));
+                        assert!(output.iter().zip(prior).all(|(now, old)| {
+                            now.as_ref()
+                                .unwrap()
+                                .shares_frozen_storage(old.as_ref().unwrap())
+                        }));
+                        assert_eq!(
+                            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                            retained
+                        );
+                    } else {
+                        results.push(format!("{:?}", result.unwrap()));
+                        assert_eq!(
+                            last(output),
+                            expected(&[7, 12, 31, 2], rounds as usize, width as usize, marker)
+                        );
+                    }
+                }
+                assert_eq!(results[0], results[1]);
+                assert_eq!(contents(&args), before);
+                assert_eq!(contents(&aliases), before);
+            }
+            drop(outputs);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+
+#[test]
 fn numeric_tree_nested_read_then_write_uses_current_cells_and_nested_scalars() {
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;

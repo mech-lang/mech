@@ -171,8 +171,13 @@ pub(in crate::native_artifact) fn emit_entry(
         &proof.actions,
         core::iter::empty(),
     )?;
-    let mut live = source_homes.clone();
-    live.extend(region.words..region.words + 3);
+    let liveness = controls
+        .enabled(OptimizationPass::SourceLiveness)
+        .then(|| super::source_liveness::Liveness::derive(program, &source_homes))
+        .transpose()
+        .map_err(backend)?;
+    let mut reconciliation = BTreeSet::new();
+    reconciliation.extend(region.words..region.words + 3);
     let mut private_live = BTreeSet::new();
     private_live.extend(proof.scalar_inputs.iter().map(|binding| binding.word));
     private_live.extend(proof.scalar_outputs.iter().map(|binding| binding.word));
@@ -190,7 +195,16 @@ pub(in crate::native_artifact) fn emit_entry(
         );
     }
     private_live.extend(proof.scalar_words..proof.words);
-    live.extend(private_live.iter().map(|word| shadow + word));
+    reconciliation.extend(private_live.iter().map(|word| shadow + word));
+    let live_at = |site| {
+        let source = liveness
+            .as_ref()
+            .map_or(&source_homes, |live| live.at(site));
+        reconciliation
+            .union(source)
+            .copied()
+            .collect::<BTreeSet<_>>()
+    };
     let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
     let bailouts = if let Some(tree) = &region.numeric_tree {
@@ -427,7 +441,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.ins().brif(valid, good, &[], bad, &[]);
                 b.switch_to_block(bad);
                 set_origin(b, frame, site as u64);
-                words.spill_live(b, locals, &live)?;
+                words.spill_live(b, locals, &live_at(site))?;
                 // Ordinary source sites retain their deepest independent leaf
                 // proof for a declined outer tree. This generated path owns
                 // the known root loan, so reconcile that exact region instead
@@ -549,6 +563,7 @@ pub(in crate::native_artifact) fn emit_entry(
         b.switch_to_block(fail);
         let status = b.block_params(fail)[0];
         set_origin(b, frame, site as u64);
+        words.spill_live(b, locals, &live_at(site))?;
         b.ins().jump(failed, &[status.into()]);
         let instructions = b.func.dfg.num_insts() - before;
         report.maximum_source_instructions = report.maximum_source_instructions.max(instructions);
@@ -560,7 +575,7 @@ pub(in crate::native_artifact) fn emit_entry(
     let boundary = b.func.dfg.num_insts();
     for (&site, &bailout) in &bailouts {
         b.switch_to_block(bailout);
-        words.spill_live(b, locals, &live)?;
+        words.spill_live(b, locals, &live_at(site))?;
         let header = b.ins().iconst(types::I64, site as i64);
         tail::leave(
             controls.options(),
@@ -583,12 +598,12 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     }
     b.switch_to_block(exit);
-    words.spill_live(b, locals, &live)?;
+    words.spill_live(b, locals, &live_at(region.tail.exit() as usize))?;
     b.ins()
         .jump(ordinary_blocks[region.tail.exit() as usize].unwrap(), &[]);
     b.switch_to_block(failed);
     let status = b.block_params(failed)[0];
-    words.spill_live(b, locals, &live)?;
+    // Each source-specific failure already synchronized its exact live homes.
     b.ins().jump(error, &[status.into()]);
     report.fixed_template_instructions = setup_work + b.func.dfg.num_insts() - boundary;
     if report.fixed_template_instructions as u64 > proof.boundary_work {

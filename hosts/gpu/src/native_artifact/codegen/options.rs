@@ -32,6 +32,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericTrees,
     /// Emission-only ablation retains the ordinary collection error path.
     UniformWords,
+    SourceLiveness,
     DisjointState,
     NontrappingHomes,
 }

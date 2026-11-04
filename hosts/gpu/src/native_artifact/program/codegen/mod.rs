@@ -45,6 +45,7 @@ pub(in crate::native_artifact) mod numeric_words;
 pub(in crate::native_artifact) mod ordinary_helpers;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod readonly_numeric;
+mod source_liveness;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod utf8_lookup;
