@@ -13147,6 +13147,17 @@
           "files": 78,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-handoff-round130-20261104/archives/r130-eight-primary-8a5716e065d6.tar.gz"
+        },
+        {
+          "event": "random-primary",
+          "source_revision": "11f0ea49d2ba577bf18b563a566f325ac7957c7f",
+          "asset": "r130-random-primary-01101aee3804.tar.gz",
+          "sha256": "01101aee3804ee442a616df0736aae1d3aca724684da5eb4574980e0982a0888",
+          "manifest_sha256": "6922448cb9d69515c0542210f7245a88a4499acbdc31e9e44e42486389dd19e4",
+          "bytes": 68383,
+          "files": 65,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-handoff-round130-20261104/archives/r130-random-primary-01101aee3804.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
