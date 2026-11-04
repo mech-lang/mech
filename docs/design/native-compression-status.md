@@ -1,5 +1,22 @@
 # Native compression: current status
 
+## R132 prospective experiment: exact bounds-error transport
+
+The retained R130 collector has 293 typed-load bounds edges, each saving its
+3,590-word SSA bank. Trace the existing mode2 consumer and original selected
+call. Save only their current inputs: root carrier scalars, append lengths,
+traversal counters, loan state and exact scalar operands. Keep the source origin,
+original reader/replacement call, finite charges and error precedence. The
+rejected R131 shared terminal-failure narrowing remains disabled; success,
+bailout, first-change, child fuel and ordinary continuations remain unchanged.
+
+Commit a failing original/decoded Object witness before the implementation.
+Run retained ordinary/native/restored post-append error controls and full
+compatible qualification. Compare all three small workloads to actual R130
+binaries, commit each timing and collect separate counters/profiles. Preserve
+source/bytecode/tables/buffers/allocator/clear-reuse and timing boundaries. This
+is a prospective experiment, not a claimed gain.
+
 ## R131: rejected terminal-error snapshot experiment
 
 Update base: `27e7cc4c4c51370d5beb6473a2a9ff6a39df1b0b`.
