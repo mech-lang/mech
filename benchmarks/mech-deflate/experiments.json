@@ -15684,6 +15684,17 @@
           "files": 30,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-eight-literals-prefix-primary-c06a7a8a64fb.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-case-seven-stored-prefix-primary-c1f64bc8c1f3.tar.gz",
+          "sha256": "c1f64bc8c1f3091f676844dba830be8f02047a5a9df2e38cd786ce2b15fa0907",
+          "manifest_sha256": "ef090913455629fb27d18dc9933433de1cfc986339fbdef1e36ed9bba354e139",
+          "bytes": 167330,
+          "files": 30,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-seven-stored-prefix-primary-c1f64bc8c1f3.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
