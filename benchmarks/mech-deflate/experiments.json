@@ -13123,13 +13123,13 @@
           "manifest_sha256": "2acf5e490b09a1e76b3942cd35f5ff820e985e2b8e9ebbf59f4b35866965a3da",
           "bytes": 10245473,
           "files": 454,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-word-cleanup-round129-20261104/archives/r129-closure-7d5056903915.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r129-closure-7d5056903915.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
     }
   },
   "repository": "mech-lang/mech",
