@@ -5,7 +5,9 @@
 use super::*;
 use mech_engine::native_artifact::{NativeIterationValueScope as Scope, NativeMatchValue as Value};
 type Key = (u32, Option<usize>);
-type State = BTreeMap<Key, bool>;
+#[path = "numeric_freshness_state.rs"]
+mod state;
+use state::State;
 #[path = "numeric_induction.rs"]
 mod induction;
 #[derive(Default)]
@@ -325,9 +327,7 @@ impl Analysis {
                 let Some(proven) = other.get(site) else {
                     return false;
                 };
-                for (key, fresh) in state {
-                    *fresh |= proven.get(key).copied().unwrap_or(false);
-                }
+                state.strengthen(proven);
                 true
             });
         }
@@ -348,28 +348,22 @@ fn analyze_tree(
 ) -> Result<Analysis, &'static str> {
     // A key is immutable SSA identity, never just the root number. A store
     // invalidates every earlier identity even when backing storage is shared.
-    let mut top = State::new();
+    let mut keys = Vec::new();
     for value in 0..plan.values().len() as u32 {
         if provenance.array(value, None).is_some() {
-            top.insert((value, None), true);
+            keys.push((value, None));
         }
         if let Some(fields) = numeric_fields::at(frames, value) {
             for ordinal in 0..fields.len() {
                 if provenance.array(value, Some(ordinal)).is_some() {
-                    top.insert((value, Some(ordinal)), true);
+                    keys.push((value, Some(ordinal)));
                 }
             }
         }
     }
-    let entry = top
-        .keys()
-        .map(|key| {
-            (
-                *key,
-                arrays.iter().any(|array| array.entry_key(tail) == *key),
-            )
-        })
-        .collect::<State>();
+    let top = keys.into_iter().map(|key| (key, true)).collect::<State>();
+    let mut entry = top.clone();
+    entry.clear_where(|key| !arrays.iter().any(|array| array.entry_key(tail) == *key));
     let mut states = BTreeMap::new();
     for &site in &traversal.order {
         for truth in 0..if partition.is_some() { 3 } else { 1 } {
@@ -417,12 +411,7 @@ fn analyze_tree(
             let merged = states
                 .get_mut(&(next, next_truth))
                 .ok_or("numeric tree freshness edge leaves graph")?;
-            let mut changed = false;
-            for (key, current) in merged.iter_mut() {
-                let value = *current && state.get(key).copied().unwrap_or(false);
-                changed |= value != *current;
-                *current = value;
-            }
+            let changed = merged.meet(&state);
             // Each pending visit reads the latest meet from `states`. Several
             // predecessors can update that meet before it runs; queue it once
             // rather than cloning/transferring the same state for every path.
@@ -441,9 +430,7 @@ fn analyze_tree(
                 continue;
             }
             if let Some(current) = result.get_mut(&site) {
-                for (key, fresh) in current {
-                    *fresh &= state.get(key).copied().unwrap_or(false);
-                }
+                current.meet(&state);
             } else {
                 result.insert(site, state);
             }
@@ -499,10 +486,7 @@ fn verify_tree(
                 return Err("tree array action lost operands");
             };
             if (!matches!(operation, Operation::Length { .. }) || arrays[*array].appends)
-                && !state
-                    .get(&(operands[0].get(), None))
-                    .copied()
-                    .unwrap_or(false)
+                && !state.get(&(operands[0].get(), None)).unwrap_or(false)
             {
                 return Err("numeric tree content use reads an older array version");
             }
@@ -515,7 +499,6 @@ fn verify_tree(
                         if matches!(field.lane(), Lane::Managed { .. })
                             && !state
                                 .get(&(node.tail.next().get(), Some(ordinal)))
-                                .copied()
                                 .unwrap_or(false)
                         {
                             return Err(
@@ -528,10 +511,7 @@ fn verify_tree(
             if site == node.tail.finish() as usize {
                 let returned = node.tail.returned().get();
                 let keys = state.keys().filter(|(value, _)| *value == returned);
-                if keys
-                    .into_iter()
-                    .any(|key| !state.get(key).copied().unwrap_or(false))
-                {
+                if keys.into_iter().any(|key| !state.get(key).unwrap_or(false)) {
                     return Err("numeric tree child returns an older array version");
                 }
             }
@@ -539,7 +519,7 @@ fn verify_tree(
     }
     // Result recipe is checked independently against the root's terminal edge.
     if let Some(state) = analysis.outputs.get(&(tail.finish() as usize)) {
-        let fresh = |key| state.get(&key).copied().unwrap_or(false);
+        let fresh = |key| state.get(&key).unwrap_or(false);
         let current = match result {
             ResultRecipe::Scalar | ResultRecipe::Aggregate { .. } => true,
             ResultRecipe::Array { .. } => fresh((tail.returned().get(), None)),
@@ -733,7 +713,7 @@ fn cold_aliases(
                 for (ordinal, field) in fields.iter().enumerate() {
                     if matches!(field.lane(), Lane::Managed { .. }) {
                         if provenance.array(value, Some(ordinal)).is_none()
-                            || !state.get(&(value, Some(ordinal))).copied().unwrap_or(false)
+                            || !state.get(&(value, Some(ordinal))).unwrap_or(false)
                         {
                             return Err(
                                 "numeric cold frame requires an older or unavailable managed leaf",
@@ -777,7 +757,7 @@ fn cold_aliases(
                 .iter()
                 .position(|array| array.root == root)
                 .ok_or("cold alias loses its logical array root")?;
-            if !state.get(&(value, None)).copied().unwrap_or(false) {
+            if !state.get(&(value, None)).unwrap_or(false) {
                 return Err(
                     "numeric tree cold continuation requires an older or unavailable array alias",
                 );
@@ -806,7 +786,7 @@ fn transfer(
     arrays: &[Array],
     state: &mut State,
 ) -> Result<(), &'static str> {
-    let fresh = |state: &State, key: Key| state.get(&key).copied().unwrap_or(false);
+    let fresh = |state: &State, key: Key| state.get(&key).unwrap_or(false);
     match actions.iter().find(|(s, _)| *s == site).map(|(_, a)| a) {
         Some(Operation::Frame) => {
             let copied = numeric_fields::transfers(plan, frames, site)?
@@ -829,11 +809,7 @@ fn transfer(
                 return Err("tree write lost output");
             };
             let root = arrays[*array].root;
-            for (&(value, field), current) in state.iter_mut() {
-                if provenance.array(value, field) == Some(root) {
-                    *current = false;
-                }
-            }
+            state.clear_where(|&(value, field)| provenance.array(value, field) == Some(root));
             state.insert((output.get(), None), true);
         }
         _ => {}
@@ -864,7 +840,7 @@ fn pass(
             }
             continue;
         };
-        let fresh = |state: &State, key: Key| state.get(&key).copied().unwrap_or(false);
+        let fresh = |state: &State, key: Key| state.get(&key).unwrap_or(false);
         match actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op) {
             Some(Operation::Frame) => {
                 let copied = numeric_fields::transfers(plan, frames, site)?
@@ -904,11 +880,9 @@ fn pass(
                     Operation::Write { .. } | Operation::Append { .. }
                 ) {
                     let root = arrays[*array].root;
-                    for (&(value, field), current) in &mut state {
-                        if provenance.array(value, field) == Some(root) {
-                            *current = false;
-                        }
-                    }
+                    state.clear_where(|&(value, field)| {
+                        provenance.array(value, field) == Some(root)
+                    });
                     state.insert((output.get(), None), true);
                 }
             }
@@ -948,10 +922,7 @@ fn pass(
             if let Some(merged) = states.get_mut(&next) {
                 // Definitions remain current only on every reachable incoming
                 // path of this pass. A root match does not refresh old aliases.
-                merged.retain(|key, current| {
-                    *current &= state.get(key).copied().unwrap_or(false);
-                    true
-                });
+                merged.meet(&state);
             } else {
                 states.insert(next, state.clone());
             }

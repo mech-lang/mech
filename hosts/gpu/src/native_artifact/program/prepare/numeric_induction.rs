@@ -200,16 +200,10 @@ fn keys_for(roots: &BTreeMap<Key, usize>, value: u32) -> BTreeSet<Key> {
     roots.keys().filter(|key| key.0 == value).copied().collect()
 }
 fn current(state: &State, requires: &BTreeSet<Key>) -> bool {
-    requires
-        .iter()
-        .all(|key| state.get(key).copied().unwrap_or(false))
+    requires.iter().all(|key| state.get(key).unwrap_or(false))
 }
 fn invalidate(state: &mut State, roots: &BTreeMap<Key, usize>, writes: &BTreeSet<usize>) {
-    for (key, fresh) in state {
-        if writes.contains(&roots[key]) {
-            *fresh = false;
-        }
-    }
+    state.clear_where(|key| writes.contains(&roots[key]));
 }
 fn child_at(
     tree: &super::super::super::numeric_tree::Proof,
@@ -404,9 +398,7 @@ fn pass(
                     }
                 }
                 if let Some(merged) = inputs.get_mut(&(next, next_truth)) {
-                    for (key, fresh) in merged {
-                        *fresh &= state.get(key).copied().unwrap_or(false);
-                    }
+                    merged.meet(&state);
                 } else {
                     inputs.insert((next, next_truth), state.clone());
                 }
@@ -437,9 +429,7 @@ fn pass(
         let mut result = BTreeMap::<usize, State>::new();
         for ((site, _), state) in bank {
             if let Some(current) = result.get_mut(&site) {
-                for (key, fresh) in current {
-                    *fresh &= state.get(key).copied().unwrap_or(false);
-                }
+                current.meet(&state);
             } else {
                 result.insert(site, state);
             }
