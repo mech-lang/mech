@@ -8,6 +8,101 @@ use mech_core::ValueDataDraft;
 #[path = "canonical_program_composition_cases.rs"]
 mod cases;
 
+fn fused_parent(metadata: &serde_json::Value) -> Option<&serde_json::Value> {
+    metadata["numeric_write_regions"]
+        .as_array()?
+        .iter()
+        .chain(metadata["readonly_numeric_regions"].as_array()?)
+        .find(|region| {
+            region["iteration"] == 0
+                && region.pointer("/proof/phase/checked_children") == Some(&serde_json::json!(true))
+        })
+        .map(|region| &region["proof"])
+}
+
+fn check_fused_child_mapping(
+    metadata: &serde_json::Value,
+    plan: &mech_engine::native_artifact::NativeProgramArtifactPlan,
+    returned_ordinal: usize,
+) -> Option<serde_json::Value> {
+    let proof = fused_parent(metadata)?;
+    let mech_engine::native_artifact::NativeControlLoop::Tail(root) = &plan.iterations()[0] else {
+        panic!()
+    };
+    let mech_engine::native_artifact::NativeControlLoop::Tail(child) = &plan.iterations()[1] else {
+        panic!()
+    };
+    let loops = proof["phase"]["loops"].as_array().unwrap();
+    assert_eq!(loops.len(), 2);
+    for (index, tail) in [root, child].into_iter().enumerate() {
+        let debit = &loops[index];
+        assert_eq!(debit["iteration"], index);
+        for (key, site) in [
+            ("initialize", tail.initialize()),
+            ("header", tail.header()),
+            ("latch", tail.latch()),
+            ("finish", tail.finish()),
+            ("exit", tail.exit()),
+        ] {
+            assert_eq!(debit[key], site);
+        }
+    }
+    assert_eq!(loops[1]["parent"], 0);
+    let array = proof["arrays"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .position(|array| array["field"] == 1)
+        .unwrap();
+    let fields = proof["frames"].as_array().unwrap();
+    for (value, ordinal) in [
+        (child.returned().get(), returned_ordinal),
+        (root.next().get(), 1),
+    ] {
+        let frame = fields.iter().find(|frame| frame["value"] == value).unwrap();
+        assert_eq!(
+            frame["arrays"][ordinal], array,
+            "must forward the child's current root"
+        );
+    }
+    assert_eq!(proof["result"]["Array"]["array"], array);
+    let sites = proof["sites"].as_array().unwrap();
+    assert!(sites.contains(&serde_json::json!(child.header())));
+    assert!(sites.contains(&serde_json::json!(child.latch())));
+    let exits = proof["exits"].as_array().unwrap();
+    assert_eq!(exits.len(), 2);
+    let entry = exits
+        .iter()
+        .find(|exit| exit["to"] == child.initialize())
+        .unwrap();
+    assert_eq!(
+        entry["kind"],
+        serde_json::json!({"ChildInitialize":{"iteration":1}})
+    );
+    assert_eq!(
+        plan.facts().predecessors(child.initialize()).unwrap(),
+        [entry["from"].as_u64().unwrap() as u32]
+    );
+    let header = exits
+        .iter()
+        .find(|exit| exit["to"] == child.header())
+        .unwrap();
+    assert_eq!(header["from"], child.latch());
+    assert_eq!(
+        header["kind"],
+        serde_json::json!({"ChildHeader":{"iteration":1}})
+    );
+    let emission = metadata["compiled_numeric_write_loops"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|region| region["header"] == root.header())
+        .unwrap();
+    assert!(!emission["typed_stores"].as_array().unwrap().is_empty());
+    assert_eq!(emission["successful_backedge_helpers"], 0);
+    Some(proof.clone())
+}
+
 #[test]
 fn child_results_keep_current_arrays_indices_publication_and_recovery() {
     use mech_core::ValueDataDraft as Data;
@@ -204,6 +299,9 @@ fn parent_segments_are_emitted_around_the_selected_native_child() {
             })
         );
         let metadata = object.metadata();
+        if check_fused_child_mapping(&metadata, plan, 0).is_some() {
+            continue;
+        }
         let segments = metadata["compiled_numeric_segments"].as_array();
         assert!(
             segments.is_some_and(|s| !s.is_empty()),
@@ -220,6 +318,13 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
     for artifact in artifacts(source).0 {
         let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let metadata = object.metadata();
+        if let Some(proof) = check_fused_child_mapping(&metadata, object.descriptor().plan(), 0) {
+            if let Some(prior) = &prior {
+                assert_eq!(prior, &proof);
+            }
+            prior = Some(proof);
+            continue;
+        }
         let parents = metadata["numeric_parent_partitions"]["parents"]
             .as_array()
             .unwrap();
@@ -384,11 +489,13 @@ fn parent_partition_follows_reordered_child_results() {
         let parents = metadata["numeric_parent_partitions"]["parents"]
             .as_array()
             .unwrap();
-        assert_eq!(parents.len(), 1);
-        assert_eq!(
-            parents[0]["children"][0]["returned_arrays"],
-            serde_json::json!([[1, 1]])
-        );
+        if check_fused_child_mapping(&metadata, object.descriptor().plan(), 1).is_none() {
+            assert_eq!(parents.len(), 1);
+            assert_eq!(
+                parents[0]["children"][0]["returned_arrays"],
+                serde_json::json!([[1, 1]])
+            );
+        }
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let args = inputs(
             &artifact,
