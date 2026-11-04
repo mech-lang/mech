@@ -14167,6 +14167,17 @@
           "files": 50,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-history-random-primary-7a8f5729a9bc.tar.gz"
+        },
+        {
+          "event": "history-repeated-primary",
+          "source_revision": "5a0d926a2ead208466bc8aa13a4dad301aaeb5ef",
+          "asset": "r135-history-repeated-primary-5c4dc37a788e.tar.gz",
+          "sha256": "5c4dc37a788e154ad8bb72790b8ab8d784b05b4be88d4a53e705a8035f2a453e",
+          "manifest_sha256": "890e875e94c74c540ecb9c9de52f8e7d02887f5a2fb235b7616f1eff1f448d96",
+          "bytes": 68630,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-history-repeated-primary-5c4dc37a788e.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
