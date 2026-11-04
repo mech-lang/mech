@@ -14244,6 +14244,17 @@
           "files": 60,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-clean-parent-7b2feb17c7a2.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "5a0d926a2ead208466bc8aa13a4dad301aaeb5ef",
+          "asset": "r135-counters-b6ce9f4ea7fa.tar.gz",
+          "sha256": "b6ce9f4ea7fab812f54c34606afa93bb8d0bc0a6144922e8f7aecb45e04b9ddc",
+          "manifest_sha256": "2828cee6bfffe0d1e46b391c6bbd389a71c4da52e0d498da71179eb77aae927c",
+          "bytes": 109074,
+          "files": 122,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-counters-b6ce9f4ea7fa.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
