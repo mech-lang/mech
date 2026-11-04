@@ -13,6 +13,7 @@ mod exit_transport;
 mod managed_carriers;
 mod managed_projections;
 mod multiple_children;
+mod mutable_children;
 mod named_managed_projections;
 mod nested_phase;
 mod nested_phase_growing;
