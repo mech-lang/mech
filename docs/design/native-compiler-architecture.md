@@ -72,6 +72,27 @@ enter map admission. Frame assignment retains scalar + iteration + aggregate +
 borrowed + closed words, then relocates owner words once. Unselected frontiers
 remain in the identity transcript.
 
+## Physical cleanup follows the selected representation
+
+R129 retains the original logical retirement inventory and reached flags for
+native parent pieces. A separately derived physical recipe replaces only
+unmaterialized private frames/projections with their original ordered per-value
+charges. Current input owners keep their existing retirement. This is neither
+another batch nor a new instruction language; it specializes existing cleanup.
+
+All native-word-only definitions are already absent from ordinary arena retirement
+tables. For eligible parent pieces, existing entry checks prove private field
+lanes empty and aliases have no canonical slot. Only omitted frame retirements
+need an additional current canonical-slot emptiness check. No owner is created
+during native execution; actual escapes materialize after ordered cleanup. Groups
+without omitted effects stay on the original loop. Finite funding, price/order,
+failed admission, unchanged publication and retry retain their existing paths.
+
+The physical cache is never trusted from the image: restoration rederives it
+from the canonical plan and selected implementations. IR159 preserves strict
+rejection of prior experiment images. Work policy107 and private ABI38 stay
+unchanged. The generated compressor text is byte-identical to the R128 control.
+
 ## Current-account child visits and current buffer results
 
 R128 keeps the existing numeric plan and shared scalar/SSA emission while
