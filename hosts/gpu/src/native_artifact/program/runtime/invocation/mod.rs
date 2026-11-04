@@ -16,6 +16,7 @@ mod numeric_writes;
 mod readonly_numeric;
 mod selected_calls;
 mod unsigned_buffers;
+mod word_collections;
 mod word_reads;
 mod word_updates;
 
@@ -556,6 +557,10 @@ impl Invocation<'_, '_, '_> {
             self.prepare_string_map_region(site, args)
         } else if tag == GlobalHelper::StringMapFinish {
             self.finish_string_map_region(site, args)
+        } else if tag == GlobalHelper::WordCollectionPrepare {
+            self.prepare_word_collection(site, args)
+        } else if tag == GlobalHelper::WordCollectionFinish {
+            self.finish_word_collection(site, args)
         } else if tag == GlobalHelper::JoinMapPrepare {
             self.prepare_join_map_chunk(site, args)
         } else if tag == GlobalHelper::JoinMapFinish {
@@ -1127,6 +1132,11 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn retirements(&self) -> &'visit [u64] {
         self.invocation.retirements
+    }
+    pub(in crate::native_artifact::program::runtime) fn frozen_retirement_work(
+        &self,
+    ) -> Result<u64, Error> {
+        self.invocation.frozen_retirement_work()
     }
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn worker(&self) -> &Option<parallel::Worker> {

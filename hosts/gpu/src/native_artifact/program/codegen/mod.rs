@@ -32,6 +32,8 @@ pub(in crate::native_artifact) mod tag_threading;
 pub(in crate::native_artifact) mod tail;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod window;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod word_collections;
 
 mod numeric_fuel;
 #[cfg(feature = "canonical-native-program")]

@@ -306,7 +306,8 @@ fn selected_template(
 // restoring the reached active Tail and only its paid ancestor traversal credit.
 // IR161 was a rejected terminal-error transport experiment. IR162 narrows only
 // bounds-error snapshots to exact settlement inputs and current call operands.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 162;
+// IR163 binds total unsigned pointwise CFGs to admitted collection views.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 163;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

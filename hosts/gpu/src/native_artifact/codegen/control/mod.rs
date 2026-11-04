@@ -235,6 +235,13 @@ struct CfgDeclarations<'plan> {
         u64,
     )>,
     #[cfg(feature = "canonical-native-program")]
+    word_functions: Vec<(
+        &'plan crate::native_artifact::program::prepare::word_collections::Region,
+        FuncId,
+        u64,
+        u64,
+    )>,
+    #[cfg(feature = "canonical-native-program")]
     joined_functions: Vec<(u32, FuncId, u64, u64)>,
     #[cfg(feature = "canonical-native-program")]
     joined_maps: Vec<(u32, FuncId)>,
@@ -319,6 +326,30 @@ impl<'plan> CfgDefinition<'plan> {
             } else {
                 Vec::new()
             };
+        #[cfg(feature = "canonical-native-program")]
+        let word_functions = if controls
+            .enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
+        {
+            if let crate::native_artifact::codegen::control::plan::CodePlan::Program(program) = plan
+            {
+                program
+                    .metadata()
+                    .word_collections
+                    .iter()
+                    .map(|region| {
+                        let (function, stack, code) =
+                            crate::native_artifact::program::codegen::word_collections::define(
+                                module, plan, region,
+                            )?;
+                        Ok((region, function, stack, code))
+                    })
+                    .collect::<Result<Vec<_>, NativeCompileError>>()?
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
         #[cfg(feature = "canonical-native-program")]
         let joined_functions =
             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(program) = plan
@@ -407,6 +438,8 @@ impl<'plan> CfgDefinition<'plan> {
             window_functions,
             #[cfg(feature = "canonical-native-program")]
             map_functions,
+            #[cfg(feature = "canonical-native-program")]
+            word_functions,
             #[cfg(feature = "canonical-native-program")]
             joined_functions,
             #[cfg(feature = "canonical-native-program")]
@@ -671,6 +704,8 @@ impl<'plan> CfgDefinition<'plan> {
         let window_functions = &declarations.window_functions;
         #[cfg(feature = "canonical-native-program")]
         let map_functions = &declarations.map_functions;
+        #[cfg(feature = "canonical-native-program")]
+        let word_functions = &declarations.word_functions;
         #[cfg(feature = "canonical-native-program")]
         let joined_maps = &declarations.joined_maps;
         #[cfg(feature = "canonical-native-program")]
@@ -1429,6 +1464,27 @@ impl<'plan> CfgDefinition<'plan> {
                 }
             }
             #[cfg(feature = "canonical-native-program")]
+            if let NativeIterationAction::Initialize { iteration } = block.action()
+                && let Some((region, function, _, _)) = word_functions
+                    .iter()
+                    .find(|(region, ..)| region.iteration == *iteration)
+            {
+                let function = module.declare_func_in_func(*function, b.func);
+                hooks
+                    .as_ref()
+                    .ok_or_else(|| backend("word collection has no owner hooks"))?
+                    .word_collection(
+                        b,
+                        index,
+                        region,
+                        function,
+                        locals,
+                        plan.value_count() + *iteration as usize,
+                        blocks[region.header as usize].expect("reachable collection header"),
+                        error,
+                    )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
             if let Some(joined) = owner_join {
                 b.ins().jump(joined, &[]);
                 b.switch_to_block(joined);
@@ -1604,6 +1660,8 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let map_functions = declarations.map_functions;
         #[cfg(feature = "canonical-native-program")]
+        let word_functions = declarations.word_functions;
+        #[cfg(feature = "canonical-native-program")]
         let joined_functions = declarations.joined_functions;
         #[cfg(feature = "canonical-native-program")]
         let packed_functions = declarations.packed_functions;
@@ -1637,6 +1695,7 @@ impl<'plan> CfgDefinition<'plan> {
                         .iter()
                         .map(|(_, _, stack, _)| *stack)
                         .chain(map_functions.iter().map(|(_, _, stack, _)| *stack))
+                        .chain(word_functions.iter().map(|(_, _, stack, _)| *stack))
                         .chain(joined_functions.iter().map(|(_, _, stack, _)| *stack))
                         .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack))
                         .max()
@@ -1647,6 +1706,7 @@ impl<'plan> CfgDefinition<'plan> {
                 .iter()
                 .map(|(_, _, _, code)| *code)
                 .chain(map_functions.iter().map(|(_, _, _, code)| *code))
+                .chain(word_functions.iter().map(|(_, _, _, code)| *code))
                 .chain(joined_functions.iter().map(|(_, _, _, code)| *code))
                 .chain(packed_functions.iter().map(|(_, _, _, code)| *code))
                 .try_fold(

@@ -20,7 +20,8 @@ use crate::native_artifact::program::protocol::GlobalHelper;
 use core::ffi::c_void;
 // ABI38 composes an ordinary admission and zero-word helper in one callback.
 // The frozen scalar prefix and frame layout remain unchanged.
-pub(in crate::native_artifact) const VERSION: u64 = 38;
+// ABI39 adds paired exact-header loans for total unsigned collection kernels.
+pub(in crate::native_artifact) const VERSION: u64 = 39;
 pub(in crate::native_artifact) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
 pub(in crate::native_artifact) const PHASE_ACTIVATION: u64 = 0;
 pub(in crate::native_artifact) const PHASE_TURN: u64 = 1;
