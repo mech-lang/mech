@@ -72,6 +72,24 @@ enter map admission. Frame assignment retains scalar + iteration + aggregate +
 borrowed + closed words, then relocates owner words once. Unselected frontiers
 remain in the identity transcript.
 
+## Fresh temporary state at lexical numeric roots
+
+R135 derives a current-traversal freshness list from canonical value scopes,
+sealed definitions, all read roles and root-header liveness. Only immutable
+scalar, private-frame scalar or scalar-aggregate values owned wholly by selected
+loops can qualify. Captures, carriers, constants, values read before definition,
+external reads and partially selected definitions retain their existing state.
+Image restoration independently reconstructs the complete list; IR164 commits
+this lowering contract with work107/private ABI39/bytecode14 unchanged.
+
+At each selected root header, codegen assigns only these private SSA lanes a
+fresh constant. This removes dependencies on unobservable previous-visit
+temporaries. It neither initializes source buffers nor replaces a source
+operation. Current array/view state, ownership, finite charges, error origins,
+boundary synchronization and publication remain authoritative. Shared scalar
+instructions and SSA emission remain the only scalar vocabulary. This is not
+physical word-bank compaction or complete exit-family narrowing.
+
 ## Nested numeric regions with exact non-Tail exits
 
 R130 composes the existing current-funded Tail schedule with exact cold
