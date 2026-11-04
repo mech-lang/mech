@@ -90,6 +90,35 @@ boundary synchronization and publication remain authoritative. Shared scalar
 instructions and SSA emission remain the only scalar vocabulary. This is not
 physical word-bank compaction or complete exit-family narrowing.
 
+## Exact physical numeric boundary consumers
+
+R136 retains the existing canonical graph, lexical latch/finish cuts and
+current-predicate facts, then derives the ordinary continuation's live values
+for each cold edge and the root header/success boundaries. Shared scalar,
+private-frame and scalar-aggregate layouts expand those values into physical
+words. Existing loan, view, fuel and settlement consumers are mandatory in
+addition to source liveness. The shared terminal-error arm keeps abort consumers
+and cannot resume source execution. Bounds and first-change bridges retain
+their existing behavior. Mode6 restores the exact source edge's active frames.
+
+Only these consumers require a physical snapshot. Eliminating synthetic uses
+of historical temporaries lets the shared SSA backend shorten their lifetimes;
+it changes neither source operations nor the admitted word capacity. Original
+charges, error origins, ownership, aliases, atomic publication and recovery stay
+on the maintained paths. The earlier rejected terminal-error-only experiment
+does not establish this all-family result.
+
+Liveness uses predecessor-driven delta propagation with the same least fixed
+point. Normal-exit queries project onto a canonical candidate superset derived
+from selected reads, definitions, terminators and all frame recipes. Codegen
+requires its expanded candidates to cover every registered source word before
+using that projection; settlement consumers remain independent. Path-reachability
+and projection oracles, cyclic complexity controls, original/decoded/restored
+programs and independent image reconstruction check this contract. Missing or
+forged proof lists are rejected. Native IR165 commits the change; work107,
+private ABI39 and bytecode14 remain. Independent image reconstruction still has
+a measurable startup cost outside the compression timer.
+
 ## Nested numeric regions with exact non-Tail exits
 
 R130 composes the existing current-funded Tail schedule with exact cold
