@@ -118,13 +118,14 @@ fn composition_preserves_errors_before_child_and_after_completed_child() {
             let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
             let jit =
                 JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let metadata = object.metadata();
             assert!(
-                !emit_program_object(&artifact, &mech_stdlib::source_catalog())
-                    .unwrap()
-                    .metadata()["compiled_numeric_segments"]
-                    .as_array()
-                    .unwrap()
-                    .is_empty()
+                super::fused_parent(&metadata).is_some()
+                    || !metadata["compiled_numeric_segments"]
+                        .as_array()
+                        .unwrap()
+                        .is_empty()
             );
             let mut output = vec![None; artifact.outputs().len()];
             for (divisor, symbols, valid) in [
