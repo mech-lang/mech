@@ -117,3 +117,67 @@ fn fixed_size_mutable_children_keep_current_owners_through_nested_calls() {
         );
     }
 }
+
+#[test]
+fn fixed_size_child_compound_guard_keeps_conservative_fallback() {
+    let source = SOURCE.replace(
+        "(more? | true => (prime? | true => mutable-store(values, 0u64, amount) | false => values) | false => values)",
+        "((more && prime)? | true => mutable-store(values, 0u64, amount) | false => values)",
+    );
+    assert_ne!(source, SOURCE);
+    for artifact in artifacts(&source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        assert!(
+            !jit.descriptor()
+                .metadata()
+                .closed_tails
+                .regions
+                .iter()
+                .any(|region| region.tail.parent().is_none()
+                    && region
+                        .numeric
+                        .as_ref()
+                        .is_some_and(|proof| proof.phase.is_some()))
+        );
+        let memory = mode.memory_budget();
+        for prime in [false, true] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("values", Data::Matrix([4, 8, 12].map(Data::U32).into())),
+                    ("rounds", Data::U64(2)),
+                    ("amount", Data::U32(1)),
+                    ("prime", Data::Bool(prime)),
+                    ("reject", Data::U64(u64::MAX)),
+                ],
+                &memory,
+            );
+            let before = contents(&args);
+            let mut output = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut output, mode.execution(), &memory)
+                .unwrap();
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix([if prime { 8 } else { 6 }, 10, 14].map(Data::U32).into())
+            );
+            assert_eq!(contents(&args), before);
+            drop((args, output));
+        }
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
