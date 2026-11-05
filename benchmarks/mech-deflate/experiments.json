@@ -19166,6 +19166,17 @@
           "files": 36,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-random-64-primary-96c6468efe30.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-case-32-high-entropy-stored-primary-f2560dfab6dc.tar.gz",
+          "sha256": "f2560dfab6dcdd0beff09d296034d69e25424ddf4e163d68ca0c6940fa0a0a10",
+          "manifest_sha256": "56d0d9917c5003235500d87e2bbcff131b376e4ad8bef420dae50b5738548109",
+          "bytes": 124672,
+          "files": 36,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-32-high-entropy-stored-primary-f2560dfab6dc.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
