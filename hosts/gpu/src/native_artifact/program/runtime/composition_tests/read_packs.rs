@@ -56,7 +56,7 @@ fn arguments(
                 "seed" => Data::U64(u64::from(nonce)),
                 _ => panic!("unexpected input {name}"),
             };
-            let shape_values = if matches!(data, Data::Matrix(_)) {
+            let shape_values: Box<[u64]> = if matches!(data, Data::Matrix(_)) {
                 mech_core::shape_for_resolved_extents(
                     artifact.schemas().get(port.schema).unwrap(),
                     &dimensions,
