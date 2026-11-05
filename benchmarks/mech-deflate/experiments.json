@@ -19111,6 +19111,17 @@
           "files": 36,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-repeated-1024-primary-b92bc87427ef.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-1024-primary",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-case-reymont-prefix-1024-primary-ceba30b18373.tar.gz",
+          "sha256": "ceba30b18373c23c4c690565c4185f4e2645867df4b93a8840c50d95e830b3f5",
+          "manifest_sha256": "e917b7a525e1a479c7b080b8549ff5c8043af4efd007300319a17f8d52ae0000",
+          "bytes": 123888,
+          "files": 36,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-reymont-prefix-1024-primary-ceba30b18373.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
