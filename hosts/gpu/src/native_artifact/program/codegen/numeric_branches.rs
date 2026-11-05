@@ -113,3 +113,7 @@ pub(super) fn derive(facts: &NativeProgramFacts<'_>, proof: &Proof) -> BTreeMap<
     }
     successors
 }
+
+#[cfg(test)]
+#[path = "numeric_branches_tests.rs"]
+mod tests;
