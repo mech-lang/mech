@@ -563,28 +563,37 @@ pub(in crate::native_artifact) fn emit_entry(
                     template.inputs()[0].body(),
                     |b| words.read(b, view),
                 )?;
-                let value = b.ins().load(ty, MemFlags::new(), address, 0);
-                let value = if width < 8 {
-                    b.ins().uextend(types::I64, value)
-                } else {
-                    value
+                let load = |b: &mut FunctionBuilder<'_>| {
+                    let value = b.ins().load(ty, MemFlags::new(), address, 0);
+                    if width < 8 {
+                        b.ins().uextend(types::I64, value)
+                    } else {
+                        value
+                    }
                 };
                 report.typed_loads.push((site, width));
                 match operation {
-                    Operation::Read { output, .. } => words.write(b, *output as usize, value),
+                    Operation::Read { output, .. } => {
+                        let value = load(b);
+                        words.write(b, *output as usize, value);
+                    }
                     Operation::Write { incoming, .. } => {
                         let incoming = words.read(b, *incoming as usize);
-                        let changed = b.ins().icmp(IntCC::NotEqual, value, incoming);
-                        let update = b.create_block();
-                        let done = b.create_block();
-                        b.ins().brif(changed, update, &[], done, &[]);
-                        b.switch_to_block(update);
                         let private = words.read(b, shadow + proof.private_flag(*array));
                         let store = b.create_block();
+                        let compare = b.create_block();
                         let materialize = b.create_block();
+                        let done = b.create_block();
                         b.set_cold_block(materialize);
                         boundaries.insert(materialize);
-                        b.ins().brif(private, store, &[], materialize, &[]);
+                        // A current exclusive owner needs neither old-cell
+                        // identity testing nor another first-change boundary.
+                        // Canonical backing must still preserve no-op identity.
+                        b.ins().brif(private, store, &[], compare, &[]);
+                        b.switch_to_block(compare);
+                        let value = load(b);
+                        let changed = b.ins().icmp(IntCC::NotEqual, value, incoming);
+                        b.ins().brif(changed, materialize, &[], done, &[]);
                         b.switch_to_block(materialize);
                         boundary::materialize(
                             b,
