@@ -124,12 +124,12 @@ fn delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry()
         if interleaved {
             source = source
                 .replace(
-                    "old-a + 1u32",
-                    "((i % 2u64 == 0u64)? | true => old-a | false => old-a + 1u32)",
+                    "value-a := ((i < 3u64)? | true => old-a | false => old-a + 1u32)",
+                    "value-a<u32> := ((i < 3u64)? | true => wide-a | false => ((i == 4u64)? | true => wide-a | false => ((i == 6u64)? | true => wide-a | false => wide-a + 1u64)))",
                 )
                 .replace(
-                    "old-b + 2u32",
-                    "((i % 2u64 == 0u64)? | true => old-b | false => old-b + 2u32)",
+                    "value-b := ((i < 5u64)? | true => old-b | false => old-b + 2u32)",
+                    "value-b<u32> := ((i < 5u64)? | true => wide-b | false => ((i == 6u64)? | true => wide-b | false => wide-b + 2u64))",
                 );
         }
         source = source.replace("u32", kind);
@@ -151,7 +151,7 @@ fn delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry()
                 &artifact,
                 &mech_stdlib::source_catalog(),
             )
-            .unwrap();
+            .unwrap_or_else(|error| panic!("{kind}, interleaved={interleaved}: {error:?}"));
             assert!(
                 jit.descriptor()
                     .metadata()
