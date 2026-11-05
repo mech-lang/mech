@@ -62,6 +62,12 @@ impl Invocation<'_, '_, '_> {
             .ok_or_else(|| invalid("parent numeric proof missing"))?;
         if self.numeric_prepaid.is_some()
             && self.numeric_prepaid_region() != segment.prepaid_region
+            // Preparation and image reconstruction keep every segment site
+            // in its parent's iteration. Unpaid ancestry rules out all overlap;
+            // paid ancestry still needs the exact source inventory below.
+            && self
+                .numeric_prepaid
+                .is_some_and(|route| route.includes_iteration(metadata, Some(parent.iteration)))
             && segment
                 .sites
                 .iter()

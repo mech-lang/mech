@@ -1,6 +1,7 @@
 //! Synchronous invocation borrows, dispatch and narrowly lent helper views.
 use super::{NativeProgramExecutionError as Error, *};
 use crate::native_artifact::iteration_runtime::ControlState;
+use crate::native_artifact::program::prepare::ProgramMetadata;
 use crate::native_artifact::program::runtime::maps::string::PublicationGeometry;
 use crate::native_artifact::program::runtime::session::CallCacheLane;
 use crate::native_artifact::{NativeValueHandle, NativeWorkMeter};
@@ -13,6 +14,8 @@ mod helper_fallbacks;
 mod numeric_exits;
 mod numeric_segments;
 mod numeric_writes;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod paid_iterations;
 mod readonly_numeric;
 mod selected_calls;
 mod unsigned_buffers;
@@ -164,6 +167,24 @@ pub(super) struct NumericPrepaid {
     /// Deepest active traversal already paid before an exact cold edge.
     deepest: u32,
 }
+impl NumericPrepaid {
+    fn includes_iteration(self, metadata: &ProgramMetadata, wanted: Option<u32>) -> bool {
+        let root = metadata.closed_tails.regions[self.region].iteration;
+        let mut at = self.deepest;
+        loop {
+            if wanted == Some(at) {
+                return true;
+            }
+            if at == root {
+                return false;
+            }
+            let Some(parent) = metadata.plan.iterations()[at as usize].as_ref().parent() else {
+                return false;
+            };
+            at = parent;
+        }
+    }
+}
 
 pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visit, 'plan> {
     pub(in crate::native_artifact::program::runtime) state: &'state mut ExecutionState<'plan>,
@@ -223,20 +244,7 @@ impl Invocation<'_, '_, '_> {
         } {
             return false;
         }
-        let wanted = metadata.plan.blocks()[site].iteration();
-        let mut at = route.deepest;
-        loop {
-            if wanted == Some(at) {
-                return true;
-            }
-            if at == region.iteration {
-                return false;
-            }
-            let Some(parent) = metadata.plan.iterations()[at as usize].as_ref().parent() else {
-                return false;
-            };
-            at = parent;
-        }
+        route.includes_iteration(metadata, metadata.plan.blocks()[site].iteration())
     }
 
     pub(in crate::native_artifact::program::runtime) fn control(
