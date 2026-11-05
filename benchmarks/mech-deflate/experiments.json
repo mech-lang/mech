@@ -22605,6 +22605,17 @@
           "files": 59,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-screen-eight-literals-primary-37f75a28663a.tar.gz"
+        },
+        {
+          "event": "screen-repeated-32769-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-screen-repeated-32769-primary-66309e2cb59a.tar.gz",
+          "sha256": "66309e2cb59a9a39152565f36990ffc854f71a76f0d691a8b6f62a3b8b1412c6",
+          "manifest_sha256": "71a5849509e274acba324e524755c45783a833c804953933147661b3f78dd5b3",
+          "bytes": 99448,
+          "files": 59,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-screen-repeated-32769-primary-66309e2cb59a.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
