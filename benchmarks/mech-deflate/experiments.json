@@ -15783,6 +15783,17 @@
           "files": 36,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-corpus-prefix-inputs-a5f7d9e49ddd.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-1024-primary",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-case-reymont-prefix-1024-primary-c9ec2d3e7b3e.tar.gz",
+          "sha256": "c9ec2d3e7b3e400565c2d5b7eb58bf67c310bff3e9cd159bf2b16bff1df0cf52",
+          "manifest_sha256": "b200326ec4f9d8ecf84340df2fdc43816326664c9c7044c75dbccb8f814eb017",
+          "bytes": 221752,
+          "files": 42,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-reymont-prefix-1024-primary-c9ec2d3e7b3e.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
