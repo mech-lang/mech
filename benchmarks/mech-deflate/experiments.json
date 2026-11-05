@@ -19686,6 +19686,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-eight-literals-prefix-primary-74a9e8e2c3b1.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-seven-stored-prefix-primary-e019396818cf.tar.gz",
+          "sha256": "e019396818cf90f133da49164390e079c4fd18dfdde103e0050327c2f8e8f50e",
+          "manifest_sha256": "7e85f1c7c208218c8d1c0cbd6f4b4f42b39f1f79b08b53138fbbbbea898a32e9",
+          "bytes": 888673,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-seven-stored-prefix-primary-e019396818cf.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
