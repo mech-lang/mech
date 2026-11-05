@@ -18548,6 +18548,17 @@
           "files": 75,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-eight-literals-primary-171b93876ee5.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-case-16384-distribution-change-primary-70ceeb4a08c8.tar.gz",
+          "sha256": "70ceeb4a08c85d1d1fb9c4afc848fa28201fd98fa80b1edc805b09340aa4203c",
+          "manifest_sha256": "6975596decc01034a4ad3247e673de82024575c83a93bd94108612e8c7cfb24b",
+          "bytes": 254914,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-16384-distribution-change-primary-70ceeb4a08c8.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
