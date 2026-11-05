@@ -19985,6 +19985,35 @@
         "audit_packet_verified_separately": true,
         "explicit_input_output_replay_arguments_verified": true
       }
+    },
+    "149": {
+      "base": "89f2449cab6fd5b22e57f95c7d2f4006e2677453",
+      "production": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+      "compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "pc-profile-33027-periodic-window",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r149-pc-profile-33027-periodic-window-f001c89c50c4.tar.gz",
+          "sha256": "f001c89c50c4ede8a2985f53bd723f2d85717f71e0646202680f12413a547c5b",
+          "manifest_sha256": "cc32f61a146e5a4e3a21dffa2c8a7fc34d6414cb5f3ec4fd90e680718085f0f0",
+          "bytes": 59670,
+          "files": 18,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-profile-33027-periodic-window-f001c89c50c4.tar.gz"
+        }
+      ],
+      "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+      "versions": {
+        "typed_ir": 173,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
