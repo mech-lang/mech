@@ -1,6 +1,6 @@
 # Native compression: current status
 
-**The native capability milestone through R140 is closed for review. R142 is a separate startup follow-up. R143 is closed: its private-store experiment was rejected, production restored exactly, and useful tests retained.**
+**The native capability milestone through R140 and R143 are closed for review. R144 is the sole active experiment: use current unit-dimension geometry in the shared numeric address helper. Published #973/#976/#977 stay frozen.**
 
 | Current checkpoint | Value |
 |---|---|
@@ -8,7 +8,8 @@
 | Reviewed follow-up / R143 base | [#976](https://github.com/mech-lang/mech/pull/976), draft at `f120b81e01cb868ace9ca7af474dd9081776fa32` |
 | Retained compiler | `05102440a85c233069b3968f1e6a92c27461258c` |
 | IR/work/ABI/bytecode | **168/107/39/14**, unchanged |
-| Current increment | Two test files plus evidence/status; no production change from the R143 base |
+| R144 base / candidate | Reviewed `d441153985d861d5fe6a4a838fb4b04e1e7c367d` / `0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc` (IR171, work107/ABI39/MBC14) |
+| Current increment | Current rows or columns equal to one bypass division; original general-matrix formula and all bounds/ownership checks remain |
 
 ## Work board and decisions
 
@@ -18,7 +19,8 @@
 | Closed: retained for review | R142 exact header-query reuse; startup gain with adverse compression timings |
 | Closed: rejected | R143 current-private direct stores; 20-case primary criterion failed, implementation removed |
 | Closed | R130 recommendations reconciled; capability scope frozen; history archived |
-| Next | Review/integrate the bounded increments; no active implementation task |
+| Active | R144:29 focused checks pass; full Object preserves facts/prices; four-case development screen next |
+| Next | One all20 qualification and retain/reject/defer decision; other optimization work stays deferred |
 
 Known introduced costs remain explicit: R140’s 8B literals regressed **+1.322924%** in its original cohort. R141 saved four requests and0.1039% instructions but elapsed worsened0.200298%; it was rejected. Efficient ordinary fallback grouping needs a separate finite/error-prefix proof. R136 increased image admission from roughly17s to35–37s; R142 reduces its three-pair median35.081146958s→34.580817458s (−1.426206%), with byte-identical generated artifacts. Residual startup stays open.
 
@@ -63,4 +65,4 @@ The restored compiler passes **562 compatible GPU tests**, with the same 7 inher
 
 The rejected candidate passed22 focused checks plus identity rejection before timing. Broad candidate component/scalar/frame qualification was intentionally skipped after primary failure. The unchanged retained production already has R142 qualification:236 components,8 composition,1 real-capacity path,12 scalar and8 frame controls. R143 does not claim those were rerun. Corrected fixture, identity and diagnostic include/selector failures remain archived; no unresolved introduced compiler failure. One read-only reviewer found no blocker in the final test-only diff.
 
-Ordered follow-ups remain residual startup analysis and ordinary fallback grouping; further source, ownership and lowering campaigns stay deferred. Review follows the [current architecture](native-compiler-architecture.md). Historical evidence stays outside the source tree. Hosted ordinary CI remains cancelled, review jobs/#929 untouched. **All increments stay draft pending green CI and clean review; local qualification is distinct from merge readiness.**
+Beyond the sole R144 experiment, ordered follow-ups remain residual startup analysis and ordinary fallback grouping; further source, ownership and lowering campaigns stay deferred. Review follows the [current architecture](native-compiler-architecture.md). Historical evidence stays outside the source tree. Hosted ordinary CI remains cancelled, review jobs/#929 untouched. **All increments stay draft pending green CI and clean review; local qualification is distinct from merge readiness.**
