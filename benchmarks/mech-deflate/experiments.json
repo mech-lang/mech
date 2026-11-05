@@ -22261,6 +22261,17 @@
           "files": 120,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-i64-0-decoded-c8e8623900c9.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-f64-0-original",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-scalar-case-scalar-f64-0-original-006953eef418.tar.gz",
+          "sha256": "006953eef4189e118d3ac6a655e3411f8492ee6fe7c175d73bd47f507fdf1d9e",
+          "manifest_sha256": "ea1ece2b365314aacca51f92c71209e55f4d04b6141819951e71115dfc275be7",
+          "bytes": 215049,
+          "files": 120,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-f64-0-original-006953eef418.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
