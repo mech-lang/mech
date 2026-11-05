@@ -21316,6 +21316,17 @@
           "files": 45,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-screen-repeated-32769-primary-72bd142f45d7.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-eight-literals-primary-1a9b04b4036d.tar.gz",
+          "sha256": "1a9b04b4036d2d127159cb9811e48438b1ef92ce9cffc9b0fc11c43c88d5c5b2",
+          "manifest_sha256": "65ecfd37a82de3daf69e00541ba7a013b67870392e10b5da51b39930dbe7fd32",
+          "bytes": 81653,
+          "files": 47,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-eight-literals-primary-1a9b04b4036d.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
