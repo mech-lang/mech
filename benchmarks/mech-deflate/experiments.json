@@ -20494,6 +20494,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-eight-overlap-primary-921b99603540.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-case-eight-literals-prefix-primary-4687a31236d1.tar.gz",
+          "sha256": "4687a31236d19e4383e8e355508554973771bf1e31f08ef0a1fe4855da835bf6",
+          "manifest_sha256": "12f1b79e9cb150edba1e82364796239ba11a1a91a13740f961c3a38e8b23c85a",
+          "bytes": 108807,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-eight-literals-prefix-primary-4687a31236d1.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
