@@ -20571,6 +20571,17 @@
           "files": 97,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-u64-0-original-4a2fc802f947.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-u64-0-decoded",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-scalar-case-scalar-u64-0-decoded-225bb1f908a2.tar.gz",
+          "sha256": "225bb1f908a2997ff774e9abf3aeeb72dc365615c0c121bbea1f22b891801b29",
+          "manifest_sha256": "9f77e6d05a7d3e1e188a30017d34d1796b5b1b04a0dbd8d2cf1fe4d5ce910c41",
+          "bytes": 108249,
+          "files": 97,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-u64-0-decoded-225bb1f908a2.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
