@@ -19697,6 +19697,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-seven-stored-prefix-primary-e019396818cf.tar.gz"
+        },
+        {
+          "event": "case-one-stored-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-one-stored-primary-c1a7ac9362ab.tar.gz",
+          "sha256": "c1a7ac9362abaebb8deb895e9b11efbaa3ee99696b969e814f8501c8cadc51cd",
+          "manifest_sha256": "e83147235b179cb1ce37ea136599906c665b67f43588e36413076167a86ff033",
+          "bytes": 888614,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-one-stored-primary-c1a7ac9362ab.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
