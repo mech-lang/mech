@@ -22349,6 +22349,17 @@
           "files": 87,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-machine-comparison-c2e1c6d25285.tar.gz"
+        },
+        {
+          "event": "qualified",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-qualified-af445bd666dc.tar.gz",
+          "sha256": "af445bd666dce1e334e8db1a5f8b99030fba7cb4ec60926173810625f2027841",
+          "manifest_sha256": "66a4d0c7faaf07f9d0b6afaaf07e948f4e32c40f05ec4f2e9d9ac6af80d676a6",
+          "bytes": 280047,
+          "files": 142,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-qualified-af445bd666dc.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
