@@ -23552,6 +23552,17 @@
           "files": 18,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-setup-20b6131693e7.tar.gz"
+        },
+        {
+          "event": "pc-profile-33027-periodic-window",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r158-pc-profile-33027-periodic-window-1a1aabc0f805.tar.gz",
+          "sha256": "1a1aabc0f80552531aa3a6831f905414b5ac859efe3ee3356e92b96c6be78f26",
+          "manifest_sha256": "2619f186ad81aa0554826525dccc738a596e44fb8f9502fc86ded5948b5dd614",
+          "bytes": 89786,
+          "files": 21,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-pc-profile-33027-periodic-window-1a1aabc0f805.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
