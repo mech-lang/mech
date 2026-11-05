@@ -24612,6 +24612,17 @@
           "files": 120,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-scalar-case-scalar-loop-64-decoded-d795bdfb8b86.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+          "asset": "r160-profiles-current-bda644f31eb3.tar.gz",
+          "sha256": "bda644f31eb3f67652cfc8cbaa4fd34146fb1f272df782802c71e223b66b570a",
+          "manifest_sha256": "9a8a931a8844c0dd82ae4e18395ef2f4b907695969ce178a045dc348faf71072",
+          "bytes": 857955,
+          "files": 97,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-profiles-current-bda644f31eb3.tar.gz"
         }
       ],
       "production": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
