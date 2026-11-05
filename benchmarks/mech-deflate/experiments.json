@@ -18746,6 +18746,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-one-stored-primary-6074c670b40f.tar.gz"
+        },
+        {
+          "event": "case-empty-primary",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-case-empty-primary-df9bdf736855.tar.gz",
+          "sha256": "df9bdf7368552763f067a5247562a77ff5dad5e6498164ee7321a3195374ec32",
+          "manifest_sha256": "416b48a7acec2494a20d8a79eca7e7659ba4f9f18d5c7bd6726dd7ef4fe7acd0",
+          "bytes": 259464,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-empty-primary-df9bdf736855.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
