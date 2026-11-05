@@ -11,6 +11,9 @@ pub(in crate::native_artifact) struct Array {
     pub witness: usize,
     pub writable: bool,
     pub appends: bool,
+    /// Source-derived maximum growth in one funded traversal; no current value
+    /// or permission is retained. Reconstructed when the image is admitted.
+    pub append_bound: usize,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -113,9 +116,7 @@ impl Plan {
     /// Conservative bound for one funded traversal, shared by the current
     /// entry refusal and emitted header guard. It grants no owner authority.
     pub fn maximum_append(&self, array: usize) -> Option<usize> {
-        self.actions.iter().try_fold(0usize, |count, (_, op)| {
-            count.checked_add(op.maximum_append(array))
-        })
+        self.arrays.get(array).map(|array| array.append_bound)
     }
 
     /// Only current input lanes cross an initial entry. Internal frame lanes
