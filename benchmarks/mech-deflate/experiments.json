@@ -22217,6 +22217,17 @@
           "files": 120,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-bool-0-decoded-30ab86a5dfe4.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-u64-0-original",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-scalar-case-scalar-u64-0-original-6e476a963447.tar.gz",
+          "sha256": "6e476a963447b3fc065cbd51c03d68c1268ea89e494cdad7f13ef7030b0cfa20",
+          "manifest_sha256": "bfc83289ccee2d4bbd8a3c0c52b4de59e6e2997f38f4fcff4f5c9a85e346ecfc",
+          "bytes": 213736,
+          "files": 120,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-u64-0-original-6e476a963447.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
