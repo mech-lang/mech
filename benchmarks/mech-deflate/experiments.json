@@ -17639,6 +17639,17 @@
           "files": 50,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-screen-16384-distribution-change-primary-0120c1c57619.tar.gz"
+        },
+        {
+          "event": "screen-33027-periodic-window-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-screen-33027-periodic-window-primary-01e610230a31.tar.gz",
+          "sha256": "01e610230a316a961ad15ade79eb54d033d82769805c8dc70a9e9f557596a00b",
+          "manifest_sha256": "27c86cd1bad0e396a5ee1a66456ff1523e5e856f845e93995225fbc11cfb256b",
+          "bytes": 223825,
+          "files": 50,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-screen-33027-periodic-window-primary-01e610230a31.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
