@@ -21829,6 +21829,36 @@
         "read_only_review": "Both final loan-settlement and rejected-first-change controls closed; no further blocker found. Broad qualification separately passes.",
         "data_archive_count": 49
       }
+    },
+    "154": {
+      "base": "5b77cb413648ac5fb245d64c62eaf7cb489cbf03",
+      "events": [
+        {
+          "event": "pc-profile-33027-periodic-window",
+          "source_revision": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+          "asset": "r154-pc-profile-33027-periodic-window-e8e90317b1e9.tar.gz",
+          "sha256": "e8e90317b1e91658b0fdb8b8478cb6e39b7a7f356f27583044117d4816d6be28",
+          "manifest_sha256": "321cd52ce711e6921c0f9d6037e9b1a6d4e9ab5b677c8d517fc67b1377a69056",
+          "bytes": 77290,
+          "files": 17,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-profile-33027-periodic-window-e8e90317b1e9.tar.gz"
+        }
+      ],
+      "production": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+      "compiler_source": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+      "before_compiler_source": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+      "versions": {
+        "typed_ir": 177,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Fresh exact-PC diagnosis; no compiler change or new elapsed claim yet",
+      "retained": false,
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local evidence; publication pending"
     }
   },
   "repository": "mech-lang/mech",
