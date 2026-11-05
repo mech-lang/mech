@@ -22836,6 +22836,17 @@
           "files": 73,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-one-stored-primary-23ed48dcac5b.tar.gz"
+        },
+        {
+          "event": "case-empty-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-case-empty-primary-414ec20b78a2.tar.gz",
+          "sha256": "414ec20b78a2551c83e59ce7429d2164b9f472d063451b271bb5346b47f66521",
+          "manifest_sha256": "4007e004502cfb5198d19781ca0de4c6e0159d26fc7a23ec37b36a2d4e63fdda",
+          "bytes": 191018,
+          "files": 73,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-empty-primary-414ec20b78a2.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
