@@ -18147,6 +18147,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-repeated-1024-primary-dc01f0dbe732.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-1024-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-reymont-prefix-1024-primary-308914985cf5.tar.gz",
+          "sha256": "308914985cf5410517d7e51f7c3bc52775524efb5c094f8c856dbe7d9a02a96d",
+          "manifest_sha256": "301141c91e684b0bbefe61083635393fe8aac20a6c1be5a87434217368222622",
+          "bytes": 241605,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-reymont-prefix-1024-primary-308914985cf5.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
