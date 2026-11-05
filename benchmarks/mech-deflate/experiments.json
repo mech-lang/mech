@@ -18224,6 +18224,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-eight-overlap-primary-882fd59ca4ab.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-eight-literals-prefix-primary-74d5715ed742.tar.gz",
+          "sha256": "74d5715ed7429e5ef67104273d1c49766e60e8e3d295c26c24fcb2df76076c3e",
+          "manifest_sha256": "f1d1f0cddf62e2314ee5afba3d71bf533c376d176e4097c4bdaf37a6b2433bfa",
+          "bytes": 242686,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-eight-literals-prefix-primary-74d5715ed742.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
