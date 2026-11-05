@@ -22096,6 +22096,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-32-high-entropy-stored-primary-3531047e7440.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-eight-overlap-primary-baf7a86d7582.tar.gz",
+          "sha256": "baf7a86d75828f8407f3ee61562f0b4a4675135c712cb3ae72fd122b1e8cf76d",
+          "manifest_sha256": "639d4c71135ec2a2455c4093ac811df28a361e7c16c8700dedba37add715be51",
+          "bytes": 167182,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-eight-overlap-primary-baf7a86d7582.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
