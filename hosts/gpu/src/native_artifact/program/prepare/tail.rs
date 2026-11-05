@@ -81,13 +81,24 @@ impl Layout {
             .and_then(|n| n.checked_add(aggregates.words()))
             .and_then(|n| n.checked_add(borrowed.words))
             .ok_or("Tail word count overflow")?;
+        let mut secondary_sites = vec![false; plan.blocks().len()];
         for (iteration, control) in plan.iterations().iter().enumerate() {
             let NativeControlLoop::Tail(tail) = control else {
                 continue;
             };
-            // Select outer numeric candidates before their descendants. Each
-            // included source site has one execution owner and one loan.
-            if layout.sites[tail.header() as usize].is_some() {
+            // Primary source ownership remains outermost. A complete child
+            // may additionally enter after its partial parent exported a cold
+            // continuation; never select overlapping secondary children.
+            let primary = layout.sites[tail.header() as usize];
+            if secondary_sites[tail.header() as usize]
+                || primary.is_some_and(|id| {
+                    !layout.regions[id].numeric.as_ref().is_some_and(|proof| {
+                        proof.exits.iter().any(|exit| {
+                            matches!(exit.kind, super::numeric_plan::ExitKind::Unsupported)
+                        })
+                    })
+                })
+            {
                 continue;
             }
             let map = owners
@@ -116,6 +127,23 @@ impl Layout {
             } else {
                 None
             };
+            if let Some(owner) = primary {
+                let parent = layout.regions[owner].numeric.as_ref().unwrap();
+                if map.is_some()
+                    || layout.initializers[tail.initialize() as usize].is_some()
+                    || layout.exits[tail.exit() as usize].is_some()
+                    || !numeric.as_ref().is_some_and(|proof| {
+                        proof.exits.is_empty()
+                            && proof.prepaid_sites.is_empty()
+                            && proof
+                                .sites
+                                .iter()
+                                .all(|site| parent.sites.binary_search(site).is_ok())
+                    })
+                {
+                    continue;
+                }
+            }
             let successors = |site: usize| {
                 if numeric.as_ref().is_some_and(|proof| {
                     proof.exits.iter().any(|exit| {
@@ -298,7 +326,11 @@ impl Layout {
             }
             let index = layout.regions.len();
             for site in sites {
-                layout.sites[site as usize] = Some(index);
+                if primary.is_some() {
+                    secondary_sites[site as usize] = true;
+                } else {
+                    layout.sites[site as usize] = Some(index);
+                }
             }
             layout.initializers[tail.initialize() as usize] = Some(index);
             layout.exits[tail.exit() as usize] = Some(index);
@@ -362,6 +394,13 @@ impl Layout {
             .checked_add(maximum)
             .ok_or("numeric shadow size overflows")?;
         Ok(layout)
+    }
+    /// Native entries may share primary source membership, but each Tail
+    /// header has one independently reconstructed entry and one readiness home.
+    pub fn header(&self, site: usize) -> Option<usize> {
+        self.regions
+            .iter()
+            .position(|region| region.tail.header() as usize == site)
     }
     pub fn extra_work(&self, site: usize) -> u64 {
         if self.sites.get(site).copied().flatten().is_some()

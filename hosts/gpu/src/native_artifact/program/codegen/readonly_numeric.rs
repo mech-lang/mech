@@ -80,7 +80,7 @@ pub(in crate::native_artifact) fn emit_entry(
     if !controls.enabled(OptimizationPass::ScalarLoops) {
         return Ok(());
     }
-    let Some(id) = closed.sites.get(site).copied().flatten() else {
+    let Some(id) = closed.header(site) else {
         return Ok(());
     };
     let region = &closed.regions[id];

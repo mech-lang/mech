@@ -206,6 +206,26 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
         Option<&'visit mech_engine::native_artifact::NativeTextLineWindow<'visit>>,
 }
 impl Invocation<'_, '_, '_> {
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn active_numeric_tail(
+        &self,
+    ) -> Option<usize> {
+        self.closed_tail
+            .as_ref()
+            .and_then(|state| match state.region {
+                tail::Region::Tail(id) => Some(id),
+                tail::Region::Segment(_) => None,
+            })
+    }
+
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn numeric_prepaid_cursor(
+        &self,
+    ) -> Option<(usize, u32)> {
+        self.numeric_prepaid
+            .map(|route| (route.region, route.deepest))
+    }
+
     pub(in crate::native_artifact::program::runtime) fn numeric_prepaid_region(
         &self,
     ) -> Option<usize> {

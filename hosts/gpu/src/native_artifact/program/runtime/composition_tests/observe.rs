@@ -7,8 +7,18 @@ use std::{
     ffi::c_void,
 };
 type Admit = unsafe extern "C" fn(*mut c_void, u64) -> u64;
+type TailBoundary = (
+    u64,
+    u64,
+    u64,
+    Option<(usize, u32)>,
+    Option<(usize, u32)>,
+    u64,
+);
 #[derive(Default, Debug)]
 pub(super) struct Counts {
+    pub tail_entries: Vec<(u64, usize, Option<(usize, u32)>)>,
+    pub tail_boundaries: Vec<TailBoundary>,
     // Admission attempts include visits composed inside zero-word helpers.
     pub admits: BTreeMap<u64, u64>,
     pub helpers: BTreeMap<(u64, u64), u64>,
@@ -139,6 +149,13 @@ unsafe extern "C" fn helper(
         COUNTS.with(|v| *v.borrow_mut().admits.entry(site).or_default() += 1);
     }
     COUNTS.with(|v| *v.borrow_mut().helpers.entry((site, op)).or_default() += 1);
+    // A secondary entry shares source membership with its primary parent.
+    // Observe the actual loan, never infer it from that primary mapping.
+    let (active_tail, prior_route) = {
+        // SAFETY: this checked callback suspends the same synchronous entry.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        (ctx.active_numeric_tail(), ctx.numeric_prepaid_cursor())
+    };
     if op == GlobalHelper::ClosedTailEnd.raw() && c == 7 {
         // SAFETY: inspect only the current immutable recipe, then delegate
         // this exact synchronous callback without retaining any native view.
@@ -208,8 +225,7 @@ unsafe extern "C" fn helper(
         // Read the admitted generated counters before settlement consumes them.
         let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
         let metadata = ctx.descriptor.metadata();
-        if let Some(id) = metadata.closed_tails.sites[site as usize]
-            .or(metadata.closed_tails.exits[site as usize])
+        if let Some(id) = active_tail
             && let Some(phase) = metadata.closed_tails.regions[id]
                 .numeric
                 .as_ref()
@@ -346,7 +362,7 @@ unsafe extern "C" fn helper(
         // helper. Only an address is retained across the original callback.
         let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
         let metadata = ctx.descriptor.metadata();
-        let id = metadata.closed_tails.sites[site as usize].unwrap();
+        let id = active_tail.unwrap();
         let region = &metadata.closed_tails.regions[id];
         let proof = region.numeric.as_ref().unwrap();
         use crate::native_artifact::program::prepare::readonly_numeric::Operation;
@@ -384,6 +400,28 @@ unsafe extern "C" fn helper(
     };
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    if matches!(
+        GlobalHelper::decode(op),
+        GlobalHelper::ClosedTailEnd | GlobalHelper::NumericWritePrepare
+    ) {
+        // SAFETY: the original callback returned; observe its current cursor.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        let mode = if op == GlobalHelper::NumericWritePrepare.raw() {
+            5
+        } else {
+            c
+        };
+        COUNTS.with(|v| {
+            v.borrow_mut().tail_boundaries.push((
+                site,
+                op,
+                mode,
+                prior_route,
+                ctx.numeric_prepaid_cursor(),
+                status,
+            ))
+        });
+    }
     if status == 0
         && let Some((id, pointers)) = terminal
     {
@@ -453,6 +491,11 @@ unsafe extern "C" fn helper(
             let id = metadata.closed_tails.initializers[site as usize]
                 .or(metadata.closed_tails.sites[site as usize])
                 .unwrap();
+            COUNTS.with(|v| {
+                v.borrow_mut()
+                    .tail_entries
+                    .push((site, id, ctx.numeric_prepaid_cursor()))
+            });
             if metadata.closed_tails.regions[id]
                 .numeric
                 .as_ref()
@@ -472,7 +515,7 @@ unsafe extern "C" fn helper(
     if op == GlobalHelper::NumericWritePrepare.raw() && status == 0 {
         let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
         let metadata = ctx.descriptor.metadata();
-        if metadata.closed_tails.sites[site as usize].is_some_and(|id| {
+        if active_tail.is_some_and(|id| {
             metadata.closed_tails.regions[id]
                 .numeric
                 .as_ref()
