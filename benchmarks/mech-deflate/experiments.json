@@ -20002,6 +20002,17 @@
           "files": 18,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-profile-33027-periodic-window-f001c89c50c4.tar.gz"
+        },
+        {
+          "event": "pc-profile-16384-distribution-change",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r149-pc-profile-16384-distribution-change-b79d79bc2802.tar.gz",
+          "sha256": "b79d79bc28020f0cd14b9065e4301d07fa4a2f10f382842d4ecc0549f4c0be2a",
+          "manifest_sha256": "6c5878cdeeea9ff9adf8491111d7ebb6d04eca188407438af3404c043b96c8ce",
+          "bytes": 74576,
+          "files": 18,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-profile-16384-distribution-change-b79d79bc2802.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
