@@ -22433,6 +22433,36 @@
         "data_archive_count": 49,
         "publication_helper_disposition": "An introduced report helper initially used worktree cwd instead of the evidence root and could not open public-replay/replay.json. Corrected to the absolute evidence root; all raw measurements and reproduced output hashes remain unchanged."
       }
+    },
+    "155": {
+      "base": "ede060a777109403306b411446687b41a44f7ffe",
+      "events": [
+        {
+          "event": "source-map-build",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r155-source-map-build-e93d9027711d.tar.gz",
+          "sha256": "e93d9027711d0fdb605ca3ee79fedf5acf84cf472f6dc2d2c52b16a213498770",
+          "manifest_sha256": "30fd3a92b342913ca102a52d89cc49160be82d564f1b12a421e48176cd84374a",
+          "bytes": 6225932,
+          "files": 30,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-source-map-build-e93d9027711d.tar.gz"
+        }
+      ],
+      "production": null,
+      "compiler_source": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+      "before_compiler_source": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+      "versions": {
+        "typed_ir": 178,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Research only: establish exact current loop cost before selecting a bounded-loop safety/accounting change.",
+      "retained": false,
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local evidence; publication pending"
     }
   },
   "repository": "mech-lang/mech",
