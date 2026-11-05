@@ -18004,6 +18004,17 @@
           "files": 124,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-emitted-evidence-d443a3a9b5d3.tar.gz"
+        },
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-screen-eight-literals-primary-26d3cd6831cf.tar.gz",
+          "sha256": "26d3cd6831cf260ee1da4183b045920a26c11a423bf5f5251b0155b30de6a84f",
+          "manifest_sha256": "a4e43b39f17505cf2df0108cd684a62e3ba5d4e0ec2707f7c59fa67e9bf0c28a",
+          "bytes": 238408,
+          "files": 69,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-screen-eight-literals-primary-26d3cd6831cf.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
