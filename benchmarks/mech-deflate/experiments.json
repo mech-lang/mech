@@ -21283,6 +21283,17 @@
           "files": 44,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-screen-33027-periodic-window-primary-e6a5ada37a4b.tar.gz"
+        },
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-screen-eight-literals-primary-6ebac4fe8f17.tar.gz",
+          "sha256": "6ebac4fe8f1743a0feec9e5710bfc2610f41f1a47b00849798852fed3fa28d4d",
+          "manifest_sha256": "0eaa9393fc6f4121e2ad6939adb4990845c08581f0654872a7494a9a7edbb3f5",
+          "bytes": 77193,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-screen-eight-literals-primary-6ebac4fe8f17.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
