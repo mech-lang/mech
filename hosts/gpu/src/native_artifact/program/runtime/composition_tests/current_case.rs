@@ -43,7 +43,10 @@ fn numeric_current_case_reuses_the_selected_tag_for_payload_projections() {
         .into_iter()
         .flat_map(|name| metadata[name].as_array().unwrap())
         .collect::<Vec<_>>();
-        assert!(!numeric.is_empty(), "the witness must reach numeric lowering: {metadata}");
+        assert!(
+            !numeric.is_empty(),
+            "the witness must reach numeric lowering: {metadata}"
+        );
         let guards = numeric
             .iter()
             .flat_map(|region| {
@@ -53,11 +56,21 @@ fn numeric_current_case_reuses_the_selected_tag_for_payload_projections() {
                     .into_iter()
                     .flatten()
             })
-            .count();
+            .collect::<Vec<_>>();
         assert!(
-            guards >= 6,
-            "three-field Try/Done payloads need current proofs: {guards}"
+            guards.len() >= 6,
+            "three-field Try/Done payloads need current proofs: {guards:?}"
         );
+        for ordinal in [0, 1] {
+            assert!(
+                guards
+                    .iter()
+                    .filter(|row| row[3].as_u64() == Some(ordinal))
+                    .count()
+                    >= 3,
+                "both selected variants need their own payload proofs: {guards:?}"
+            );
+        }
     }
 }
 

@@ -324,7 +324,9 @@ fn selected_template(
 // handoff, retaining primary source ownership and one invocation-current loan.
 // IR178 reuses a freshly executed source window check for confined packed
 // reads. Current geometry and the original lexical checks remain required.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 178;
+// IR179 rederives current-traversal aggregate guard facts for numeric regions
+// with the same fact engine as packed maps. No fact crosses a source latch.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 179;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

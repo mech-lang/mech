@@ -1,4 +1,4 @@
-use crate::native_artifact::program::codegen::packed_loop::edge_facts::*;
+use super::*;
 
 #[test]
 fn unsigned_bounds_use_exact_current_values_and_successful_difference() {
