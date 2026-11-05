@@ -16743,7 +16743,7 @@
       "base": "b511c718c5c30cca5ac35812429c3e22198be7db",
       "production": "beee5a3fc3f0dff11612c863429711718b6d655b",
       "compiler_source": "beee5a3fc3f0dff11612c863429711718b6d655b",
-      "decision": "under measurement",
+      "decision": "Retain the bounded rejected-entry resource reduction; no established elapsed improvement. The R140 small-input ordinary-fallback regression is still open.",
       "events": [
         {
           "event": "parent-corrected",
@@ -17008,11 +17008,30 @@
           "files": 71,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-profiles-current-14a9adf614ce.tar.gz"
+        },
+        {
+          "event": "periodic-census",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-periodic-census-f209c6470ebb.tar.gz",
+          "sha256": "f209c6470ebbbb7f550242633875efa1e365086b408ef671dd437b74cdb96310",
+          "manifest_sha256": "4005f336b8f41a9dfc465c68764921a133591371f8bd583c5d061e7e92878f55",
+          "bytes": 275272,
+          "files": 46,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-periodic-census-f209c6470ebb.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "primary_observations": 3968,
+      "cases": 20,
+      "versions": {
+        "typed_ir": 169,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      }
     }
   },
   "repository": "mech-lang/mech",
