@@ -21054,6 +21054,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-empty-primary-1347c2d4ec8e.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-matrix-counters-f262dcd6da4b.tar.gz",
+          "sha256": "f262dcd6da4badcd60b4c4d81a402d9b69f9b9140160c47d39a53ee9869b5236",
+          "manifest_sha256": "0b14790f4137d09cd52ad63920851ef8f79ab7ded014277f5e07b0e259b732ea",
+          "bytes": 135825,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-matrix-counters-f262dcd6da4b.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
