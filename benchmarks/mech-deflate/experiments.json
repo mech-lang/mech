@@ -16601,6 +16601,17 @@
           "files": 44,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-eight-literals-prefix-primary-4915a05bab7e.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "58f75827e5c44187731df5253b3a058d2e9cd417",
+          "asset": "r140-case-seven-stored-prefix-primary-1ac2eb7e0897.tar.gz",
+          "sha256": "1ac2eb7e08977ecb931126ef182e4f0caba80f56a3cfc9610c91a6bb4803403e",
+          "manifest_sha256": "02ec204f69687bdfc7d0c6190709457dbdd195a516469d2a866b603e90813d0b",
+          "bytes": 161017,
+          "files": 44,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-seven-stored-prefix-primary-1ac2eb7e0897.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
