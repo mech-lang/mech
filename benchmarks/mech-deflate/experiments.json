@@ -17549,7 +17549,7 @@
     "143": {
       "base": "f120b81e01cb868ace9ca7af474dd9081776fa32",
       "production": null,
-      "compiler_source": "b76120874cb59b23054a471336f5cc658ed651de",
+      "compiler_source": "0105efe616f815e3986e08a7b196fa03f556560f",
       "decision": "under measurement",
       "events": [
         {
@@ -17573,6 +17573,17 @@
           "files": 21,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-test-first-unsupported-u16-fc9f564770a9.tar.gz"
+        },
+        {
+          "event": "test-first",
+          "source_revision": "0105efe616f815e3986e08a7b196fa03f556560f",
+          "asset": "r143-test-first-60e3f7cf9422.tar.gz",
+          "sha256": "60e3f7cf9422defb3bd6abcafe517fde5f076deea1c6560c2a3cc59776fe970e",
+          "manifest_sha256": "d3f500fcc44980623ef4997ce8d0f922dd84e52bd57933002bf5b5b69e379a4d",
+          "bytes": 189427,
+          "files": 22,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-test-first-60e3f7cf9422.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
