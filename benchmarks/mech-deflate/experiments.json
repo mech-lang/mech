@@ -15772,6 +15772,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-bulk-append-reproducer-d43d3e3e2c97.tar.gz"
+        },
+        {
+          "event": "corpus-prefix-inputs",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-corpus-prefix-inputs-a5f7d9e49ddd.tar.gz",
+          "sha256": "a5f7d9e49ddd2847617dcc12d5d2622ae04a6f6a14cfba36d058c1646c21f465",
+          "manifest_sha256": "1f571c0ee11168d927504bea4bf17d9e9826a1d63e87fd1840f2d96f00274268",
+          "bytes": 216394,
+          "files": 36,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-corpus-prefix-inputs-a5f7d9e49ddd.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
