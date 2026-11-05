@@ -20483,6 +20483,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-32-high-entropy-stored-primary-b7e6124a4908.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-case-eight-overlap-primary-921b99603540.tar.gz",
+          "sha256": "921b996035407f30a642ace4aa44fe4650ccc07544f508aa391b113ee0e64a1a",
+          "manifest_sha256": "b7e03268667a388ecf0d56ab83c079f592efa9f18fb2fdb01f053f859e46c318",
+          "bytes": 108584,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-eight-overlap-primary-921b99603540.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
