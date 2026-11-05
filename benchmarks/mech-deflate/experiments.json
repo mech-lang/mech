@@ -24667,6 +24667,26 @@
           "results.json": "b3ec642d3e0b2b3f21070c78f4e136c0bb37555e8fa7a68aeded3aa064420d9c",
           "REPORT.md": "b27bd59e1ab7bbb0538f51ae1f3b1b6e2c618dfca32cadee7b2c770a1b27b559"
         }
+      },
+      "fresh_public_replay": {
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "paths_with_multiple_preserved_versions": 15,
+        "round": 160,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 1001,
+        "verified_archives": 43,
+        "verified_file_occurrences": 4699,
+        "receipt_sha256": "34ec1d1d3c0325fc3f808da36e8c7fb3788952d4e07d67e09020e831cae61fbc"
+      },
+      "publication_verification": {
+        "archives": 43,
+        "server_digests": 86,
+        "native_binaries": false,
+        "bytecode": false,
+        "receipt_sha256": "8fd9177b43e8adca5c7c557edcfde5bd170b6475cb3a13bee3ddb926152e1cc8"
       }
     }
   },
