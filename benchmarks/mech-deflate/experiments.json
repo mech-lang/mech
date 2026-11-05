@@ -23119,6 +23119,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-16384-distribution-change-primary-5969839fea2e.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-case-33027-periodic-window-primary-08515e905135.tar.gz",
+          "sha256": "08515e9051358e7bbf10c3f2762c5a210f7715e5df1f9f223c1de636abbe9443",
+          "manifest_sha256": "f7c21790563a97f20e65f8dcdcf6e92570ea513df3f1ebfe1d7f650322851631",
+          "bytes": 3438906,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-33027-periodic-window-primary-08515e905135.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
