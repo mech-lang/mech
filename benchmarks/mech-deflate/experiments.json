@@ -18081,6 +18081,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-33027-periodic-window-primary-c70b1af47422.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-random-32769-primary-cb728da271a4.tar.gz",
+          "sha256": "cb728da271a459a697fb58303c6a11f6b9b7f8f0859c06ab271a4f6f3e413223",
+          "manifest_sha256": "38b4f02ddcc4ee6ae2bdfe87924b485a7772a055b59bb06b14601184c6269305",
+          "bytes": 237979,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-random-32769-primary-cb728da271a4.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
