@@ -21010,6 +21010,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-eight-overlap-primary-c3c351256b00.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-eight-literals-prefix-primary-6c1e45eb0dd8.tar.gz",
+          "sha256": "6c1e45eb0dd8cdc40a1a8bb1d5a86bac3dcd225cf685979d09fa5ffdcaca5780",
+          "manifest_sha256": "56b52a1b316b2608339b735f0a22008bac39baf9ea400165ddfff8370f114e83",
+          "bytes": 93204,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-eight-literals-prefix-primary-6c1e45eb0dd8.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
