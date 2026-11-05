@@ -23763,6 +23763,17 @@
           "files": 74,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-case-16384-distribution-change-primary-e7a074e6b649.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-case-33027-periodic-window-primary-41e2088d35ec.tar.gz",
+          "sha256": "41e2088d35ec7d05b729446179a4f9849c29397745ac51994483dbb52faec63b",
+          "manifest_sha256": "ebf7babefedb4c2b18eb60a28c19b70baddeb66c70f9da19472bb697bef4fb47",
+          "bytes": 114747,
+          "files": 74,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-case-33027-periodic-window-primary-41e2088d35ec.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
