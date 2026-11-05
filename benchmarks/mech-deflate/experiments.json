@@ -18702,6 +18702,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-32-high-entropy-stored-primary-2ba0148ee1d8.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-case-eight-overlap-primary-1ab10e0e29b2.tar.gz",
+          "sha256": "1ab10e0e29b2aacb5be588b734c8675145f4806e0c496ef55a5c98ec4c393b6b",
+          "manifest_sha256": "ccdd8117f3d5c26fc0d24e895551f6665a9edb77975968f503f7a8246703c7e3",
+          "bytes": 259850,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-eight-overlap-primary-1ab10e0e29b2.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
