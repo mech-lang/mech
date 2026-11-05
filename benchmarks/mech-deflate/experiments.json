@@ -20900,6 +20900,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-reymont-prefix-32769-primary-03bf049219c5.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-16384-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-reymont-prefix-16384-primary-afe40e8233ba.tar.gz",
+          "sha256": "afe40e8233ba12b1973d1637eb702e4b802b7cd18ca3a3160a253e8a03a6500a",
+          "manifest_sha256": "497ff8c1b45d170a1b06d8c2eec3301ff0944edeedcb8518933bacf5a8434ba8",
+          "bytes": 88941,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-reymont-prefix-16384-primary-afe40e8233ba.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
