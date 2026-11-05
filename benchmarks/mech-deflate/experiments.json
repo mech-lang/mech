@@ -17306,6 +17306,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-random-64-primary-3d25869e3574.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-case-32-high-entropy-stored-primary-9af8f904e7da.tar.gz",
+          "sha256": "9af8f904e7da0e3b701564f0bb5680c5b1c42864c2070af3f42f8d95fd96f6c7",
+          "manifest_sha256": "2a516c9577aac58e67e5071d424a70034ece533542d71e1e65eec490e30d5f72",
+          "bytes": 227930,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-32-high-entropy-stored-primary-9af8f904e7da.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
