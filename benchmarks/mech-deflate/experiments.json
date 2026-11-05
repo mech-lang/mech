@@ -16986,6 +16986,17 @@
           "files": 53,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-callback-census-ec0f399f5b49.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-matrix-counters-fe3253ec4e5c.tar.gz",
+          "sha256": "fe3253ec4e5c459acaec3587dc86b7bed0dabc70e4dcaba965e93074df27573d",
+          "manifest_sha256": "5fe2ed16a6cc3b58693fe893cfe58b3bc3e12da861106ba7256287115e4430c6",
+          "bytes": 263017,
+          "files": 50,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-matrix-counters-fe3253ec4e5c.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
