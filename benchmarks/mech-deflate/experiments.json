@@ -19906,6 +19906,17 @@
           "files": 88,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-profiles-current-503142a30881.tar.gz"
+        },
+        {
+          "event": "query-diagnostic",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-query-diagnostic-862ccc5b84d9.tar.gz",
+          "sha256": "862ccc5b84d9ca9bb3487624f61030c595a6250d26441b7c5faff31c519e5505",
+          "manifest_sha256": "50a6e03e80d170700b323f7cc91940ec7f76d801d38591eca7a3018c821aaa0d",
+          "bytes": 1000818,
+          "files": 92,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-query-diagnostic-862ccc5b84d9.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
