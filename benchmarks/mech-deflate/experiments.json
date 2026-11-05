@@ -22085,6 +22085,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-random-64-primary-0c6d0f911ad9.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-32-high-entropy-stored-primary-3531047e7440.tar.gz",
+          "sha256": "3531047e7440d53d0f7e59a086cf93b9586b54276c3b43b5acc6a716bc902dec",
+          "manifest_sha256": "807975cde0584a91cd1a252c118bbba8cf7bb406370fd2d96f9553a379c782d4",
+          "bytes": 163949,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-32-high-entropy-stored-primary-3531047e7440.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
