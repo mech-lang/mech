@@ -21920,6 +21920,17 @@
           "files": 54,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-screen-16384-distribution-change-primary-3f273eeb9bb8.tar.gz"
+        },
+        {
+          "event": "screen-repeated-32769-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-screen-repeated-32769-primary-0aaaa7183132.tar.gz",
+          "sha256": "0aaaa7183132024a21c6c993df2206b2485f4db30ffdf66dfa6b10071879e084",
+          "manifest_sha256": "8aef4550322cf70c8627ca0fb8842200cbc4fd5012388c6c9248fee77ae24c8b",
+          "bytes": 118208,
+          "files": 54,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-screen-repeated-32769-primary-0aaaa7183132.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
