@@ -21087,6 +21087,17 @@
           "files": 53,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-unit-3a6622506a4b.tar.gz"
+        },
+        {
+          "event": "expanded-parent",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r152-expanded-parent-8f06bb22cb90.tar.gz",
+          "sha256": "8f06bb22cb90eff476959b6d0dece60a7f8e4236f35274e972dd3fd28acd1a53",
+          "manifest_sha256": "2dee5aa2c918797528394b5844bee413ac3c842027e6f5df9dd405dfeb67f60a",
+          "bytes": 111370,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-expanded-parent-8f06bb22cb90.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
