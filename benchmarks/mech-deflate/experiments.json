@@ -17545,6 +17545,35 @@
         "frame_controls": 8
       },
       "milestone_scope_frozen": true
+    },
+    "143": {
+      "base": "f120b81e01cb868ace9ca7af474dd9081776fa32",
+      "production": null,
+      "compiler_source": "f120b81e01cb868ace9ca7af474dd9081776fa32",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "f120b81e01cb868ace9ca7af474dd9081776fa32",
+          "asset": "r143-initial-c58c25d6f900.tar.gz",
+          "sha256": "c58c25d6f9007340142711f428acef48086a1ad05307c9f5835534d7d1a47dfe",
+          "manifest_sha256": "31c16013775ed57b1ddcbfadde97caaf76997ada81414f491dfaa149d4e4287c",
+          "bytes": 185054,
+          "files": 12,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-initial-c58c25d6f900.tar.gz"
+        }
+      ],
+      "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
+      "versions": {
+        "typed_ir": 169,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
