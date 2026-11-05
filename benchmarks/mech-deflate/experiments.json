@@ -19388,7 +19388,7 @@
       "base": "2d9d5671ada86d846a33c9620515062280381799",
       "production": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
       "compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
-      "decision": "under measurement",
+      "decision": "retain for draft review; constant-time necessary-only guard; all predeclared gates pass; bounded task closed",
       "events": [
         {
           "event": "initial",
@@ -19939,7 +19939,39 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "retained_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+      "final_closure_event": "closure",
+      "frozen_prior_heads_unchanged": true,
+      "primary_result": {
+        "geometric_after_before": 0.991778937517978,
+        "cases": 20,
+        "primary_observations": 3968,
+        "periodic_after_before": 0.8161173036723834,
+        "adverse_medians": 13,
+        "unchanged_1_05_guards": true
+      },
+      "analysis": {
+        "script": "analyze.py",
+        "expected_outputs": {
+          "results.json": "346bf6e36dadc7da2e59e34c6de7595ea6e09da2bc52a1ff508a887e949d7d87",
+          "REPORT.md": "e8d8231399961d60507ad8cb92a8d05ab158fd307c44c3cb43885ea71357fb20"
+        }
+      },
+      "publication_audit": {
+        "archives_verified": 49,
+        "all_file_hashes_modes_and_git_blobs_verified": true,
+        "downloaded_closure_sha256": "5d2dbf89ccde681f25661957eb18d99ddc07cecee4f7c70da4b96dfbead3b885",
+        "downloaded_closure_report_and_results_replay_byte_identically": true,
+        "analysis_outputs": {
+          "results.json": "346bf6e36dadc7da2e59e34c6de7595ea6e09da2bc52a1ff508a887e949d7d87",
+          "REPORT.md": "e8d8231399961d60507ad8cb92a8d05ab158fd307c44c3cb43885ea71357fb20"
+        },
+        "native_binaries_and_bytecode_excluded": true,
+        "benchmark_or_compiler_executed": false,
+        "read_only_closure_review": "No correctness, accounting or publication blocker; all adverse results disclosed",
+        "final_closure_download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r148-closure-5d2dbf89ccde.tar.gz"
+      }
     }
   },
   "repository": "mech-lang/mech",
