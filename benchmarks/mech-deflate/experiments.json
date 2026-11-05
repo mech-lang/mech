@@ -18471,6 +18471,17 @@
           "files": 70,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-expanded-parent-3cca52e8e711.tar.gz"
+        },
+        {
+          "event": "unit",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-unit-d9e7aaed77be.tar.gz",
+          "sha256": "d9e7aaed77be409884b6907769c4a28b4488e27f5a279f47513377be44a82772",
+          "manifest_sha256": "e58f3409eb1f8c14d9e7ed4dfc8445a07ee1341f7e41be8b60d701468f5c5dec",
+          "bytes": 250106,
+          "files": 86,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-unit-d9e7aaed77be.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
