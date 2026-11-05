@@ -20395,6 +20395,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-reymont-prefix-16384-primary-accbb6940056.tar.gz"
+        },
+        {
+          "event": "case-random-1024-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-case-random-1024-primary-766884f7b235.tar.gz",
+          "sha256": "766884f7b2352820ce2d9ac03ffa7209f50499a0adaf5d80aeb0305f26eb99c6",
+          "manifest_sha256": "16fd7709365e183e7cef0bc961b7a8a4510c3c0e004d626f21e88bb66b202906",
+          "bytes": 107482,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-random-1024-primary-766884f7b235.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
