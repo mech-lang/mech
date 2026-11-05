@@ -21942,6 +21942,17 @@
           "files": 59,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-eight-literals-primary-24c9eb0f567f.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-16384-distribution-change-primary-be64deaae0d1.tar.gz",
+          "sha256": "be64deaae0d181b703054dcde344aa756b7f5d79ed900f961d330e7ca0359502",
+          "manifest_sha256": "2acab62e2568132873c01bcd2f33212cc79402a9f1c7ffaf05e30f90dd4dab6e",
+          "bytes": 125286,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-16384-distribution-change-primary-be64deaae0d1.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
