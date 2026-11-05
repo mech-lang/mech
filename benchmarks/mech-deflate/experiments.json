@@ -18334,6 +18334,17 @@
           "files": 80,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-guard-repeat-random-64-primary-c9765d9fb3d8.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-matrix-counters-d093b9732e7c.tar.gz",
+          "sha256": "d093b9732e7ce5119435c2fd45a5973734fb941391f2a5d81466903abcd0334a",
+          "manifest_sha256": "ee99853bb3d1596e8f257785bce92e17eae5981023d25a9997509ffff99f2159",
+          "bytes": 294109,
+          "files": 86,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-matrix-counters-d093b9732e7c.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
