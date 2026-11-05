@@ -19287,6 +19287,17 @@
           "files": 90,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-frame-allocation-c3aafd91228d.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-matrix-counters-f10209d241cd.tar.gz",
+          "sha256": "f10209d241cdc446fbf176d0d61963f955824219fef0c05dbedba43a8a7e2ee8",
+          "manifest_sha256": "a466e3f39550802f3e21e8c2268e3869fc77e5cd5b72f6a0abf26091fb32de4d",
+          "bytes": 980829,
+          "files": 67,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-matrix-counters-f10209d241cd.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
