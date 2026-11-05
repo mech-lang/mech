@@ -17091,6 +17091,28 @@
         "bytecode": 14
       },
       "scope": "Closed stabilization checkpoint: early-refusal candidate rejected, retained R140 production plus one semantic test and CI137 guard. Cold-validation remedy explicitly deferred."
+    },
+    "142": {
+      "base": "23d152cbfc5d32e829f36d8000f0d61dd64c026a",
+      "production": null,
+      "compiler_source": "23d152cbfc5d32e829f36d8000f0d61dd64c026a",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "23d152cbfc5d32e829f36d8000f0d61dd64c026a",
+          "asset": "r142-initial-6ecad23f9a49.tar.gz",
+          "sha256": "6ecad23f9a49dd497e06d88c0bb32c2ef6aa2f57cbf1fa8031349f21c983ab01",
+          "manifest_sha256": "3c0414c34bdc06ec3d57b8daf68642cc4917fa4ad5bddefed515ce1b62771727",
+          "bytes": 4677065,
+          "files": 15,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-initial-6ecad23f9a49.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
