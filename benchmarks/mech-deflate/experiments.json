@@ -17968,8 +17968,8 @@
     },
     "144": {
       "base": "d441153985d861d5fe6a4a838fb4b04e1e7c367d",
-      "production": null,
-      "compiler_source": "700b9f06e22f6b9d5cec643527154137e2b64062",
+      "production": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+      "compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
       "decision": "under measurement",
       "events": [
         {
@@ -17993,6 +17993,17 @@
           "files": 53,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-test-first-67c42fd4bd9c.tar.gz"
+        },
+        {
+          "event": "emitted-evidence",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-emitted-evidence-d443a3a9b5d3.tar.gz",
+          "sha256": "d443a3a9b5d39c302c66ba7400e7d0e8aa85d0cc6413988a6d7e5bc321b78749",
+          "manifest_sha256": "79a400d9517d3b140780426bfd8d7ff975293eb276a59871e4927253c7df275d",
+          "bytes": 260213,
+          "files": 124,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-emitted-evidence-d443a3a9b5d3.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
