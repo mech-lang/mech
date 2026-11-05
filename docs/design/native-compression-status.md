@@ -1,6 +1,6 @@
 # Native compression: current status
 
-**R144 is closed, retained for review. No further optimization is active. The earlier capability milestone and published #973/#976/#977 stay frozen.**
+**R144 is closed with clean external review. R145 is the sole active experiment: a guarded whole-word load for a confined native byte pack. Published #973/#976/#977/#978 stay frozen.**
 
 | Checkpoint | Value |
 |---|---|
@@ -10,6 +10,9 @@
 | Retained compiler | `0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc` |
 | IR/work/ABI/bytecode | **171/107/39/14**; rejected IR169/170 remain reserved |
 | Bounded change | Shared numeric addressing uses current unit dimensions directly; general matrix formula and bounds remain |
+| R145 base / candidate | Reviewed `65c8f37c58a19d1e39eed833395b98ab87d7bf65` / `c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd` (IR172; other versions fixed) |
+| Hypothesis / fixed conditions | Replace confined byte/shift/OR work by one safe current-window load; retain original source fallback, prices, owners, algorithm and timing |
+| Completion criterion | One candidate: all20 elapsed geometric ratio below1, periodic/repeated improve, unchanged scalar/frame/1.05 guards and heap/work controls |
 
 ## Work board
 
@@ -18,7 +21,8 @@
 | Closed | R130 recommendations reconciled; native capabilities through R140 frozen |
 | Closed: rejected | R141 early refusal; R143 private direct stores; tests and contrary evidence retained |
 | Closed: retained for review | R142 exact header-query reuse; R144 current vector geometry |
-| Next | Review this bounded increment before further semantic or performance changes |
+| Active | R145: semantic-first2pass;264 before/after work/error-origin receipts match; final zero-index/refusal controls and full Object pending before timing |
+| Next | Four-case development screen, then one all20 qualification and retain/reject/defer decision |
 | Deferred | Residual startup, ordinary fallback grouping; source/ownership/allocation/wider-load work stays in backlog |
 
 Known costs stay explicit: R140 introduced **8B+1.322924%**; R141 saved four requests/0.1039% instructions but elapsed worsened0.200298%, so it was rejected. Ordinary fallback grouping needs a separate finite/error-prefix proof. R136 image admission rose from roughly17s to35–37s; R142 reduced its three-pair median35.081146958s→34.580817458s (−1.426206%) with byte-identical generated artifacts. R142 also had17/20 adverse compression medians and an adverse guard repeat; no runtime neutrality is claimed. Residual startup remains open, not freshly measured in R144.
