@@ -17471,6 +17471,17 @@
           "files": 56,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-replication-eight-literals-primary-a3153c83a900.tar.gz"
+        },
+        {
+          "event": "analysis-final",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-analysis-final-b64c0557b6d4.tar.gz",
+          "sha256": "b64c0557b6d4ab9f5dc20f55266eba6631d9926e9b04d315ebb899f1dcae755f",
+          "manifest_sha256": "9528946d2e7178b18ca836aa8f151cffe5467e96f0c8cc63845e12d4fc5d6673",
+          "bytes": 296069,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-analysis-final-b64c0557b6d4.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
