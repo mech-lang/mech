@@ -23829,6 +23829,17 @@
           "files": 74,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-case-random-1024-primary-9141579a9dba.tar.gz"
+        },
+        {
+          "event": "case-repeated-1024-primary",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-case-repeated-1024-primary-5cc2b2cad08b.tar.gz",
+          "sha256": "5cc2b2cad08b53193868f8a7fb15484a37ad377c818fc4833c65f2594a14002f",
+          "manifest_sha256": "b30915abc2a2e750995106ecf020b972cba13a05df9407b637f7433936023f68",
+          "bytes": 129631,
+          "files": 74,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-case-repeated-1024-primary-5cc2b2cad08b.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
