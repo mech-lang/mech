@@ -22480,6 +22480,17 @@
           "files": 29,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-profile-reymont-prefix-32769-d6956db10c56.tar.gz"
+        },
+        {
+          "event": "pc-tables-33027-periodic-window",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r155-pc-tables-33027-periodic-window-23597b6ac539.tar.gz",
+          "sha256": "23597b6ac539bbc1bdcad2ce94849ea552ae1616ffa3f05c5b13ba6dcbea49ec",
+          "manifest_sha256": "12d56cec5e41aee1a79561659c51a9b6892428a56c98567a26ebdc7aeef26d9f",
+          "bytes": 3701442,
+          "files": 37,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-tables-33027-periodic-window-23597b6ac539.tar.gz"
         }
       ],
       "production": null,
