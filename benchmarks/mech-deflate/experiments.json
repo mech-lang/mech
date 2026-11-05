@@ -17617,6 +17617,17 @@
           "files": 97,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-emitted-evidence-181d4d0ffbf5.tar.gz"
+        },
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-screen-eight-literals-primary-f1e5c33e3a4a.tar.gz",
+          "sha256": "f1e5c33e3a4a0f6eb117c5e410910a57d8cc271693267ceab996d503fc867e70",
+          "manifest_sha256": "488be96ed4db09ccb63b7fefc055bab8996d04a5ec679e691e25741cd40efc25",
+          "bytes": 226165,
+          "files": 49,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-screen-eight-literals-primary-f1e5c33e3a4a.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
