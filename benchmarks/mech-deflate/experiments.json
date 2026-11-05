@@ -21591,6 +21591,17 @@
           "files": 79,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-profiles-current-1d972ea7cbbd.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-bool-0-original",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-scalar-case-scalar-bool-0-original-f03f4dc41198.tar.gz",
+          "sha256": "f03f4dc41198a744bab42d4653d4226eef7c476b2850441004b1a68eb0e00fa1",
+          "manifest_sha256": "1d301644693e746983750f8eb7390a149db5e7f5f68660b6503b059243326922",
+          "bytes": 108246,
+          "files": 108,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-bool-0-original-f03f4dc41198.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
