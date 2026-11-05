@@ -19199,6 +19199,17 @@
           "files": 36,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-eight-literals-prefix-primary-3091eb5c1a19.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-case-seven-stored-prefix-primary-7d85bdf2a293.tar.gz",
+          "sha256": "7d85bdf2a2931e1ba642c2e16bb1875249ff142ad23b91646838b7e6cc29ff18",
+          "manifest_sha256": "0c9a572914310954e49a2f479d9cff8b7fbdd742e9ade523bd7404d16c9e302b",
+          "bytes": 124524,
+          "files": 36,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-seven-stored-prefix-primary-7d85bdf2a293.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
