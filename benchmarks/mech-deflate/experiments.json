@@ -24282,6 +24282,17 @@
           "files": 74,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-case-33027-periodic-window-primary-29e7fd5029f0.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+          "asset": "r160-case-random-32769-primary-bf1fd3b2bedd.tar.gz",
+          "sha256": "bf1fd3b2bedd063ff257e101a5a63da08e05b19428cee193ce0bf53501e16e89",
+          "manifest_sha256": "c348715bf6a89beb15c3a7f2b481c25bcf1f6672c7d45ae030d058ddac9d0b7d",
+          "bytes": 117119,
+          "files": 74,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-case-random-32769-primary-bf1fd3b2bedd.tar.gz"
         }
       ],
       "production": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
