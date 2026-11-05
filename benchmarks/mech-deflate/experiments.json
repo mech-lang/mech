@@ -22360,6 +22360,17 @@
           "files": 142,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-qualified-af445bd666dc.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-closure-7e3a1b651218.tar.gz",
+          "sha256": "7e3a1b651218c67c8dbb76c761a6eb6dd925727592f637268fab208c33c32018",
+          "manifest_sha256": "a53d20981f5b208a0583ecb3ecf5013db4bd8c42fbdfa6446cc22ca37f070002",
+          "bytes": 6409088,
+          "files": 1033,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-closure-7e3a1b651218.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
