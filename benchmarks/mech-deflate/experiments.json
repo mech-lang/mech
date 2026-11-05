@@ -16436,6 +16436,17 @@
           "files": 44,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-33027-periodic-window-primary-e79c3a0fd8d6.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "58f75827e5c44187731df5253b3a058d2e9cd417",
+          "asset": "r140-case-random-32769-primary-45ebdf0dac00.tar.gz",
+          "sha256": "45ebdf0dac003971b72a97f452edbef7af7cb384f8cac11427aa8dbb24401918",
+          "manifest_sha256": "aed8921ef491d8f98790c59941baab8e6cda1fb19b72d02beff5c0eff340bea7",
+          "bytes": 155862,
+          "files": 44,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-random-32769-primary-45ebdf0dac00.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
