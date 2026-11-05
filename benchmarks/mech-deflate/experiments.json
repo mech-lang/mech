@@ -18037,6 +18037,17 @@
           "files": 70,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-screen-33027-periodic-window-primary-d078e4518fb4.tar.gz"
+        },
+        {
+          "event": "screen-repeated-32769-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-screen-repeated-32769-primary-a0c5b41f1d76.tar.gz",
+          "sha256": "a0c5b41f1d76272fdbfe276c7d17e307800c550556652fc70325441019309bdb",
+          "manifest_sha256": "09a8acf3b5a2a495fe26f3aa3ae6dcdfea2fc11c6a8615fa7b19f0f3875f729f",
+          "bytes": 236096,
+          "files": 70,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-screen-repeated-32769-primary-a0c5b41f1d76.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
