@@ -21327,6 +21327,17 @@
           "files": 47,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-eight-literals-primary-1a9b04b4036d.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-16384-distribution-change-primary-484eee2c5cce.tar.gz",
+          "sha256": "484eee2c5ccef0c17a8fba881d28fa0e185e7763b0660489d1c1dc51f42d65cf",
+          "manifest_sha256": "073521690f13662d032a13012f9795995fdf05fec3220fbd04b7cee690880c66",
+          "bytes": 79179,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-16384-distribution-change-primary-484eee2c5cce.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
