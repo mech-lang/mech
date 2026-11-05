@@ -19188,6 +19188,17 @@
           "files": 36,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-eight-overlap-primary-131126ae6b04.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-case-eight-literals-prefix-primary-3091eb5c1a19.tar.gz",
+          "sha256": "3091eb5c1a195dd968dff8ba9c067593a641bc8875bf0d89e36b030fe67effd7",
+          "manifest_sha256": "6940cfa7558451795e15ddaf842c238e38edef946d7e8c3cd9913d25775e2a02",
+          "bytes": 125026,
+          "files": 36,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-eight-literals-prefix-primary-3091eb5c1a19.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
