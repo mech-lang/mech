@@ -19917,6 +19917,17 @@
           "files": 92,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-query-diagnostic-862ccc5b84d9.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-closure-5d2dbf89ccde.tar.gz",
+          "sha256": "5d2dbf89ccde681f25661957eb18d99ddc07cecee4f7c70da4b96dfbead3b885",
+          "manifest_sha256": "07e0c94fcaa36a78bbe74df9f58b3040fe80c640a98452cef457bde87babe7f5",
+          "bytes": 6657234,
+          "files": 1082,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-closure-5d2dbf89ccde.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
