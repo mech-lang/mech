@@ -22990,6 +22990,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-matrix-counters-b8dcaaeaca80.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-profiles-current-d8c21bd32810.tar.gz",
+          "sha256": "d8c21bd32810a19eb1fb85579ffb14e53a38886adc25caaf707035a26af84877",
+          "manifest_sha256": "81ecb7195b3e7c9c3d9ec6afa9aac00dbb1eb5c18b9e0421c4b4267c521bb1eb",
+          "bytes": 855155,
+          "files": 95,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-profiles-current-d8c21bd32810.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
