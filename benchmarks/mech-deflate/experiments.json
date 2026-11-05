@@ -19383,6 +19383,35 @@
         "read_only_closure_review": "no blocking correctness, architecture or claim findings after receipt correction",
         "freed_superseded_temporary_file_bytes": 680886200
       }
+    },
+    "148": {
+      "base": "2d9d5671ada86d846a33c9620515062280381799",
+      "production": "cdd551dbbef71fdb8b6123ff48186541c680ca1d",
+      "compiler_source": "cdd551dbbef71fdb8b6123ff48186541c680ca1d",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "cdd551dbbef71fdb8b6123ff48186541c680ca1d",
+          "asset": "r148-initial-7be145e124ae.tar.gz",
+          "sha256": "7be145e124ae4a76a30bcfd283fc7e3536d249e05f009bdbc84ac6f1e68b7308",
+          "manifest_sha256": "9b11d10f8f817c3bef7dcfdde86cce8f6e646670f67829bfd48bdcce4857d9d7",
+          "bytes": 4605843,
+          "files": 27,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-initial-7be145e124ae.tar.gz"
+        }
+      ],
+      "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+      "versions": {
+        "typed_ir": 173,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
