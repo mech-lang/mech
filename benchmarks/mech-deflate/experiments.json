@@ -21734,6 +21734,17 @@
           "files": 91,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-frame-allocation-ee11275220de.tar.gz"
+        },
+        {
+          "event": "qualified",
+          "source_revision": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+          "asset": "r153-qualified-ba5ffc82315f.tar.gz",
+          "sha256": "ba5ffc82315fa602952f5f4e8b3a10536367aa0959dfceb628b07b4c93b4a338",
+          "manifest_sha256": "c316b36135bd8266aac9b36bba6c1a9847c8de17c7f6021d0956f7474a3254d9",
+          "bytes": 4860661,
+          "files": 154,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-qualified-ba5ffc82315f.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
