@@ -21426,6 +21426,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-reymont-prefix-1024-primary-ee2b11da7645.tar.gz"
+        },
+        {
+          "event": "case-320-overlap-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-320-overlap-primary-a6561308519b.tar.gz",
+          "sha256": "a6561308519ba53e0d45f5de0f11b1ad5c67090752b93e400fbfe01761f33754",
+          "manifest_sha256": "7a490784a1a76cde7f2ce2de376ffba07390e70508740ffdc63768ce71cb8a93",
+          "bytes": 83216,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-320-overlap-primary-a6561308519b.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
