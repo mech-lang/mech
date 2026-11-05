@@ -24634,6 +24634,17 @@
           "files": 158,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-qualified-2cb55c08d118.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+          "asset": "r160-closure-3e3c87c477c6.tar.gz",
+          "sha256": "3e3c87c477c6e2a84f93f211d12daa4fa6342881bbd72091df686f96861f8ae5",
+          "manifest_sha256": "0437a6c6290b5d267db47d2eb0c5cb94c7d275c32d36a52d23f9dd4d121b7dd5",
+          "bytes": 16697349,
+          "files": 1001,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-closure-3e3c87c477c6.tar.gz"
         }
       ],
       "production": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
