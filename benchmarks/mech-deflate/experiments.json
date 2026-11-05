@@ -22294,6 +22294,17 @@
           "files": 120,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-loop-0-original-db2ca7f14abc.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-loop-0-decoded",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-scalar-case-scalar-loop-0-decoded-372d3a5bef20.tar.gz",
+          "sha256": "372d3a5bef200fee2ca95fc38b34aac7b70a7daa5d33e658e01b22437616b336",
+          "manifest_sha256": "0b6a56a3c6b06b8754e5bb45e7b8058f476a4fe6df8a63db666418cf85b3bd9f",
+          "bytes": 216317,
+          "files": 120,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-loop-0-decoded-372d3a5bef20.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
