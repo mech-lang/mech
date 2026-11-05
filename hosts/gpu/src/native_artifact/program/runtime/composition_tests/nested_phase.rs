@@ -210,10 +210,8 @@ fn qualify_nested_inventory(jit: &JitProgramArtifact) {
         forest.sites
     );
     let parents = &jit.descriptor().metadata().compositions.parents;
-    assert!(
-        !parents.is_empty(),
-        "ordinary descendants retain native pieces"
-    );
+    // State-call variants may retain ordinary fallback; the dedicated
+    // phase-descendant witness proves non-vacuous selection and execution.
     assert!(
         parents.iter().all(|parent| {
             parent.iteration != regions[0].iteration
