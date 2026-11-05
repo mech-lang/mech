@@ -23895,6 +23895,17 @@
           "files": 74,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-case-random-64-primary-30b15506dc8e.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-case-32-high-entropy-stored-primary-e9ab5be675b1.tar.gz",
+          "sha256": "e9ab5be675b10e7c27dc2694c50a63b4c8ab8f27e72227f7ea5f045c8f26da7e",
+          "manifest_sha256": "61c804fde6f928e1a7d573df86762ed4e773a98ea37ca38f79a5fa8b92a93905",
+          "bytes": 151286,
+          "files": 74,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-case-32-high-entropy-stored-primary-e9ab5be675b1.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
