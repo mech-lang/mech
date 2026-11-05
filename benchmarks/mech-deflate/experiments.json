@@ -19587,6 +19587,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-random-1024-primary-d0d2d7c20462.tar.gz"
+        },
+        {
+          "event": "case-repeated-1024-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-repeated-1024-primary-e80187e2a27e.tar.gz",
+          "sha256": "e80187e2a27e8764e1e3a9a722d98cd6747ac2180ef53d3ad08c5c2fb1c36eff",
+          "manifest_sha256": "d9be5ed19194b204ad42521a6187991c3f72be01e57c13c4432094453c2169d9",
+          "bytes": 887978,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-repeated-1024-primary-e80187e2a27e.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
