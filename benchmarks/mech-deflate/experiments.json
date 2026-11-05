@@ -19400,6 +19400,17 @@
           "files": 27,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-initial-7be145e124ae.tar.gz"
+        },
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "cdd551dbbef71fdb8b6123ff48186541c680ca1d",
+          "asset": "r148-screen-eight-literals-primary-4954fd37bb3a.tar.gz",
+          "sha256": "4954fd37bb3a870b81fd60c4a285cdf5f50806bc8a7d4f756ecdc183c8cd4fd3",
+          "manifest_sha256": "bd9133296e54af11d51f1818b0ba8831cf9858803a7b5453bde82ec8ce09bc22",
+          "bytes": 81190,
+          "files": 39,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-screen-eight-literals-primary-4954fd37bb3a.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
