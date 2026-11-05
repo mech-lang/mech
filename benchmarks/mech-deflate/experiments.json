@@ -18367,6 +18367,17 @@
           "files": 110,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-frame-allocation-36ffb918bc29.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-profiles-current-6cc3eb82f7ac.tar.gz",
+          "sha256": "6cc3eb82f7aca8f081a28ede02ff944f91fdafe27bdbd6d05df5f16883db3096",
+          "manifest_sha256": "0bf32334da45c4eeff14403d10faf0b80c7584e8a844573d672fe1eaca9792f5",
+          "bytes": 667811,
+          "files": 108,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-profiles-current-6cc3eb82f7ac.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
