@@ -22524,6 +22524,17 @@
           "files": 42,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-analysis-704a8d6989dc.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r155-closure-1a6647c55b4e.tar.gz",
+          "sha256": "1a6647c55b4e87caf2d187216b6b08234b258436679e87042c3f645dda019511",
+          "manifest_sha256": "cdebb553fe71d3cebf3ec6da5c96d9cd067baa391c768eae1b2ae37c8d5a7f5f",
+          "bytes": 12371948,
+          "files": 123,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-closure-1a6647c55b4e.tar.gz"
         }
       ],
       "production": null,
