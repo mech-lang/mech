@@ -23023,6 +23023,17 @@
           "files": 137,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-qualified-794055ee2f2a.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-closure-e17a648494b6.tar.gz",
+          "sha256": "e17a648494b6b6bd9e00a9a04722589aa38d2499b7e5651e56f2fca1624ea030",
+          "manifest_sha256": "b67b1731c5da5f6b7c230a40a8a7f8e0a2c5ccd14fc73bff7fab1f1cb873541b",
+          "bytes": 5889359,
+          "files": 956,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-closure-e17a648494b6.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
