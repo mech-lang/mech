@@ -3,6 +3,10 @@ use super::*;
 use mech_engine::native_artifact::NativeControlLoop;
 #[path = "resumed_child_failure.rs"]
 mod failure;
+#[path = "resumed_child_fuel.rs"]
+mod fuel;
+#[path = "resumed_child_handoff.rs"]
+mod handoff;
 #[path = "resumed_child_image.rs"]
 mod image;
 

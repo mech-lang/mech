@@ -83,7 +83,7 @@ fn resumed_child_images_reconstruct_entries_ownership_offsets_and_prices() {
         let identity = crate::native_artifact::program::image::identity::NativeProgramObjectIdentity::from_descriptor(native.descriptor()).unwrap();
         assert_eq!(
             u64::from_le_bytes(identity.bytes()[16..24].try_into().unwrap()),
-            177
+            crate::native_artifact::NATIVE_PROGRAM_TYPED_IR_VERSION
         );
         for old_revision in [175u64, 176] {
             let mut old = *identity.bytes();

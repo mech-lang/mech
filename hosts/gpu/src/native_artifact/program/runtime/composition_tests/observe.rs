@@ -18,6 +18,9 @@ type TailBoundary = (
 #[derive(Default, Debug)]
 pub(super) struct Counts {
     pub tail_entries: Vec<(u64, usize, Option<(usize, u32)>)>,
+    pub tail_funding: Vec<(usize, u64, bool, u64)>,
+    pub tail_bailouts: Vec<(usize, bool, Option<(usize, u32)>)>,
+    pub settled_copy_rejections: Vec<usize>,
     pub tail_boundaries: Vec<TailBoundary>,
     // Admission attempts include visits composed inside zero-word helpers.
     pub admits: BTreeMap<u64, u64>,
@@ -82,6 +85,7 @@ thread_local! {
     static ADMIT: Cell<Option<Admit>> = const { Cell::new(None) };
     static HELPER: Cell<Option<Helper>> = const { Cell::new(None) };
     static FIRST_CHANGE_COPY_LIMIT: Cell<Option<u64>> = const { Cell::new(None) };
+    static FIRST_CHANGE_COPY_TARGET: Cell<Option<usize>> = const { Cell::new(None) };
 }
 pub(in crate::native_artifact::program::runtime) fn prepaid_segment_entry_work(entry: u64) {
     COUNTS.with(|v| v.borrow_mut().prepaid_segment_entry_work = Some(entry));
@@ -156,6 +160,17 @@ unsafe extern "C" fn helper(
         let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
         (ctx.active_numeric_tail(), ctx.numeric_prepaid_cursor())
     };
+    if op == GlobalHelper::ClosedTailEnd.raw() && c == 1 {
+        // SAFETY: inspect only the active loan in this suspended callback.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        COUNTS.with(|v| {
+            v.borrow_mut().tail_bailouts.push((
+                active_tail.unwrap(),
+                ctx.numeric_tail_partial(),
+                prior_route,
+            ))
+        });
+    }
     if op == GlobalHelper::ClosedTailEnd.raw() && c == 7 {
         // SAFETY: inspect only the current immutable recipe, then delegate
         // this exact synchronous callback without retaining any native view.
@@ -388,8 +403,35 @@ unsafe extern "C" fn helper(
     } else {
         None
     };
-    let old_copy_limit = if first_change.is_some()
-        && let Some(limit) = FIRST_CHANGE_COPY_LIMIT.with(|v| v.replace(None))
+    // An explicit alias control retains the CURRENT immutable backing across
+    // the selected secondary's factory call. Normal observations add no pin.
+    let retained_alias = first_change.and_then(|(id, array, _)| {
+        (FIRST_CHANGE_COPY_TARGET.with(Cell::get) == Some(id)).then(|| {
+            // SAFETY: the checked helper is suspended; only an owned Value
+            // clone, never a frame borrow, survives the original callback.
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+            let metadata = ctx.descriptor.metadata();
+            let region = &metadata.closed_tails.regions[id];
+            let owner = ctx
+                .state
+                .buffer_frames
+                .managed_owner(
+                    &metadata.buffer_frames,
+                    region.tail.carrier(),
+                    region.numeric.as_ref().unwrap().arrays[array].field,
+                )
+                .unwrap()
+                .clone();
+            let before = owner.canonical_data_draft().unwrap();
+            (id, owner, before)
+        })
+    });
+    let old_copy_limit = if first_change.is_some_and(|(id, _, _)| {
+        FIRST_CHANGE_COPY_TARGET
+            .with(Cell::get)
+            .is_none_or(|target| target == id)
+    }) && let Some(limit) =
+        FIRST_CHANGE_COPY_LIMIT.with(|v| v.replace(None))
     {
         // SAFETY: the owning helper is suspended. Deny only its original copy
         // admission; earlier source setup and generated fuel remain intact.
@@ -400,6 +442,14 @@ unsafe extern "C" fn helper(
     };
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    if let Some((id, owner, before)) = retained_alias {
+        assert_eq!(owner.canonical_data_draft().unwrap(), before);
+        // SAFETY: the owning helper returned; no generated code is running.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        if status != 0 && ctx.active_numeric_tail().is_none() {
+            COUNTS.with(|v| v.borrow_mut().settled_copy_rejections.push(id));
+        }
+    }
     if matches!(
         GlobalHelper::decode(op),
         GlobalHelper::ClosedTailEnd | GlobalHelper::NumericWritePrepare
@@ -496,6 +546,14 @@ unsafe extern "C" fn helper(
                     .tail_entries
                     .push((site, id, ctx.numeric_prepaid_cursor()))
             });
+            COUNTS.with(|v| {
+                v.borrow_mut().tail_funding.push((
+                    id,
+                    site,
+                    false,
+                    ctx.read_borrowed_word(0).unwrap(),
+                ))
+            });
             if metadata.closed_tails.regions[id]
                 .numeric
                 .as_ref()
@@ -515,6 +573,14 @@ unsafe extern "C" fn helper(
     if op == GlobalHelper::NumericWritePrepare.raw() && status == 0 {
         let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
         let metadata = ctx.descriptor.metadata();
+        COUNTS.with(|v| {
+            v.borrow_mut().tail_funding.push((
+                active_tail.unwrap(),
+                site,
+                true,
+                ctx.read_borrowed_word(0).unwrap(),
+            ))
+        });
         if active_tail.is_some_and(|id| {
             metadata.closed_tails.regions[id]
                 .numeric
@@ -638,6 +704,26 @@ pub(super) fn run_with_first_change_copy_limit(
         run(jit, args, outputs, policy, memory)
     };
     assert!(FIRST_CHANGE_COPY_LIMIT.with(|v| v.get()).is_none());
+    result
+}
+
+pub(super) fn run_with_secondary_copy_limit(
+    jit: &JitProgramArtifact,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    policy: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+    restored: bool,
+    region: usize,
+) -> (
+    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
+    Counts,
+) {
+    FIRST_CHANGE_COPY_TARGET.with(|v| {
+        assert!(v.replace(Some(region)).is_none());
+    });
+    let result = run_with_first_change_copy_limit(jit, args, outputs, policy, memory, restored, 0);
+    FIRST_CHANGE_COPY_TARGET.with(|v| v.set(None));
     result
 }
 

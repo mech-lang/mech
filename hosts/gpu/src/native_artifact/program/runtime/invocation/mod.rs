@@ -219,6 +219,11 @@ impl Invocation<'_, '_, '_> {
     }
 
     #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn numeric_tail_partial(&self) -> bool {
+        self.closed_tail.as_ref().is_some_and(|state| state.partial)
+    }
+
+    #[cfg(all(test, feature = "canonical-native-program"))]
     pub(in crate::native_artifact::program::runtime) fn numeric_prepaid_cursor(
         &self,
     ) -> Option<(usize, u32)> {
