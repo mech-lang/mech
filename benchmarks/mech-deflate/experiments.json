@@ -19862,6 +19862,17 @@
           "files": 106,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-scalar-case-scalar-loop-64-decoded-ef857448a7fd.tar.gz"
+        },
+        {
+          "event": "scalar-balanced",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-scalar-balanced-78719fe5dc87.tar.gz",
+          "sha256": "78719fe5dc87a38bbd6dca197190823c70f4dc3a192c76ec09fa22b1f301c40a",
+          "manifest_sha256": "916f7c9ba42e72eebd94ff1ab17eeead601ed53cd0f2b4f5594ee91541677b9e",
+          "bytes": 957899,
+          "files": 635,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-scalar-balanced-78719fe5dc87.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
