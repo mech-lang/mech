@@ -18881,6 +18881,35 @@
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
       "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd"
+    },
+    "146": {
+      "base": "befca3db05e25363e7df1efac66bf148082bf327",
+      "production": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+      "compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "credit-diagnostic",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r146-credit-diagnostic-569ef5df1819.tar.gz",
+          "sha256": "569ef5df181976dea2df748a279447ac64f6f9823c97521c23face30de5cf036",
+          "manifest_sha256": "7d9f7185ec425ad257543980c5a3498b8abc0c6a6c81bea2a4e56db51e248ad5",
+          "bytes": 114099,
+          "files": 23,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-fallback-pieces-round146-20261105/archives/r146-credit-diagnostic-569ef5df1819.tar.gz"
+        }
+      ],
+      "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+      "versions": {
+        "typed_ir": 172,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
