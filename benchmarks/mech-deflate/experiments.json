@@ -17826,6 +17826,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-32-high-entropy-stored-primary-1a934e5652e4.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-case-eight-overlap-primary-ac554e9a9f0f.tar.gz",
+          "sha256": "ac554e9a9f0fd79e6ae42e72c9348064255f6d7c17f967bf38b42030561e81b7",
+          "manifest_sha256": "5ea8d6ea66e942e6ce76768830012472131ae2f80ddc8d89a31735fe9190afc7",
+          "bytes": 232249,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-eight-overlap-primary-ac554e9a9f0f.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
