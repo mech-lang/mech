@@ -19232,6 +19232,17 @@
           "files": 36,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-empty-primary-d5c9ad92e781.tar.gz"
+        },
+        {
+          "event": "qualification-initial-selection-assertions",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-qualification-initial-selection-assertions-d24c59aa8326.tar.gz",
+          "sha256": "d24c59aa832611e35eabdc4a37e796038dfc65d3078ac405e5b7e39d47c9e6f5",
+          "manifest_sha256": "1ab2a2f3a67107e390443f2076cdf16e9f38fe0907fb47e0405d9de731c22b9f",
+          "bytes": 162295,
+          "files": 57,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-qualification-initial-selection-assertions-d24c59aa8326.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
