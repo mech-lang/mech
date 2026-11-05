@@ -21305,6 +21305,17 @@
           "files": 45,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-screen-16384-distribution-change-primary-6e7a46e3cb4f.tar.gz"
+        },
+        {
+          "event": "screen-repeated-32769-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-screen-repeated-32769-primary-72bd142f45d7.tar.gz",
+          "sha256": "72bd142f45d70e8a7c19b5d4e712c82430721e49b4cfbaa322082acd75909263",
+          "manifest_sha256": "d20b4779358bb3702d499313e71846d1a341aa9bed93e9c13c06ba43a7d8cc2d",
+          "bytes": 74625,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-screen-repeated-32769-primary-72bd142f45d7.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
