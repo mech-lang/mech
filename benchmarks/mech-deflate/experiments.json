@@ -20725,6 +20725,17 @@
           "files": 971,
           "publication": "published; server SHA-256 verified",
           "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-closure-6a72b40196e2.tar.gz"
+        },
+        {
+          "event": "publication-audit",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-publication-audit-fbb8182a1d50.tar.gz",
+          "sha256": "fbb8182a1d509063458a3e0889ba888960cfbfbe8a4d4b07d2526e68b8e650a3",
+          "manifest_sha256": "bdba9e3e58331d518009a4eb79c49922e78642c6d9338c9dcbfea95a758b09ce",
+          "bytes": 118336,
+          "files": 55,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-publication-audit-fbb8182a1d50.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
@@ -20736,7 +20747,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "archive_publication": "local-only at measurement; external publication pending",
       "retained": true,
       "retained_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
       "qualified_test_revision": "5da7d244be992c9d192369820c3bdc1ac803a898",
@@ -20756,6 +20767,22 @@
           "results.json": "2ed7fa337d198196414ce5e25d8d35bc289d7746a3cf4b35441b9eeae9e5ca9d",
           "REPORT.md": "ab9d952827201b87f7a96f4c863de0be2d66f284524a3251dc4692cb6cfe76b7"
         }
+      },
+      "publication_audit": {
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "paths_with_multiple_preserved_versions": 15,
+        "round": 151,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 971,
+        "verified_archives": 44,
+        "verified_file_occurrences": 3821,
+        "all_public_archive_server_digests_verified": true,
+        "native_binaries_and_bytecode_excluded": true,
+        "read_only_review": "No material closure blocker; selected-region and image-provenance wording findings fixed.",
+        "data_archive_count": 44
       }
     }
   },
