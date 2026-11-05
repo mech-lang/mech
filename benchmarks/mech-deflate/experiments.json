@@ -16788,6 +16788,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-33027-periodic-window-primary-a9dc36106f4d.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-case-random-32769-primary-fec7063b9c19.tar.gz",
+          "sha256": "fec7063b9c19795ce7d577a7e6d385ab2cd55b532fcd6d849fcca6d94973fdc8",
+          "manifest_sha256": "77deaa3928b879a8a24208b45cca01329b1fc07435b922d89a256fef8fdeeb5b",
+          "bytes": 218399,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-random-32769-primary-fec7063b9c19.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
