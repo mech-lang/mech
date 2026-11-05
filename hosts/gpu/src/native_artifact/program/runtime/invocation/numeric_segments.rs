@@ -69,6 +69,8 @@ impl Invocation<'_, '_, '_> {
         {
             // Ancestor traversal credit does not authorize a segment whose
             // prepared recipe lacks that same source-price coverage.
+            #[cfg(all(test, feature = "canonical-native-program"))]
+            super::super::composition_tests::observe::paid_segment_decline(site);
             return Ok(Some(0));
         }
         let compute = if self.numeric_prepaid.is_some()
@@ -373,10 +375,7 @@ impl Invocation<'_, '_, '_> {
             }
         }
         #[cfg(all(test, feature = "canonical-native-program"))]
-        if self.numeric_prepaid.is_some() && self.numeric_prepaid_region() == segment.prepaid_region
-        {
-            super::super::composition_tests::observe::prepaid_segment_entry_work(entry);
-        }
+        super::super::composition_tests::observe::prepaid_segment_entry_work(entry);
         self.state
             .control
             .work

@@ -318,8 +318,9 @@ impl Invocation<'_, '_, '_> {
                     return Err(invalid("fuel continuation found an active ordinary child"));
                 }
             }
-            let continuation =
-                self.native_parent_continuation(proof.iteration, active, exit.from, exit.to)?;
+            let continuation = self.native_parent_continuation(region, active)?;
+            #[cfg(all(test, feature = "canonical-native-program"))]
+            let previous_marker = self.parent_continuation.current();
             let mut at = active;
             loop {
                 self.progress[at as usize * 2..][..2].copy_from_slice(&[0, 1]);
@@ -335,6 +336,14 @@ impl Invocation<'_, '_, '_> {
             if let Some(continuation) = continuation {
                 self.parent_continuation = continuation;
             }
+            #[cfg(all(test, feature = "canonical-native-program"))]
+            super::super::composition_tests::observe::parent_marker_handoff(
+                proof.iteration,
+                active,
+                previous_marker,
+                self.parent_continuation.current(),
+                args[2],
+            );
             self.numeric_prepaid = Some(super::NumericPrepaid { region, deepest });
             self.state.scalar_path = None;
         }

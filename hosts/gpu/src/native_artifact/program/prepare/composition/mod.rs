@@ -60,10 +60,16 @@ pub(in crate::native_artifact) struct Layout {
     regions: Vec<(usize, usize)>,
     #[serde(skip)]
     boundaries: Vec<(usize, usize)>,
+    /// Nearest tracked edge at each native root, derived once from ancestry.
+    #[serde(skip)]
+    native_contexts: Box<[Option<u32>]>,
     #[serde(skip)]
     pub words: usize,
 }
 impl Layout {
+    pub(in crate::native_artifact) fn native_context(&self, region: usize) -> Option<Option<u32>> {
+        self.native_contexts.get(region).copied()
+    }
     pub(in crate::native_artifact) fn entry(&self, site: usize) -> Option<usize> {
         let encoded = self.entries.get(site)?.map(|v| v.get() - 1)?;
         (encoded % 4 == 0).then_some(encoded / 4)
@@ -140,6 +146,12 @@ impl Layout {
         let reachable = (0..plan.blocks().len())
             .map(|site| facts.is_reachable(site as u32))
             .collect::<Result<Vec<_>, _>>()?;
+        let cold_predecessors = closed
+            .regions
+            .iter()
+            .filter_map(|region| region.numeric.as_ref().filter(|p| p.phase.is_some()))
+            .flat_map(|proof| proof.exits.iter().map(|exit| exit.from))
+            .collect::<BTreeSet<_>>();
         let mut parents = Vec::new();
         for (iteration, control) in plan.iterations().iter().enumerate() {
             let Loop::Tail(parent) = control else {
@@ -244,6 +256,14 @@ impl Layout {
                 });
             }
             if child_boundaries.len() != children.len() {
+                continue;
+            }
+            // Keep the original ordinary completion when a native cut could
+            // land after a child's exit but before its successor consumes it.
+            if child_boundaries
+                .iter()
+                .any(|child| cold_predecessors.contains(&(child.child_exit as usize)))
+            {
                 continue;
             }
             // Every lifecycle transition and managed scalar handoff stays an
@@ -470,21 +490,30 @@ impl Layout {
         };
         // Determine the expected outer marker once, using immutable ancestry.
         // Child calls and piece entry must not walk the graph on every visit.
-        for parent in &mut parents {
-            let mut current = Some(parent.iteration);
+        let suspended_child = |iteration| {
+            let mut current = Some(iteration);
             while let Some(id) = current {
                 if tracked_children[id as usize] {
-                    parent.suspended_child = Some(id);
-                    break;
+                    return Some(id);
                 }
                 current = plan.iterations()[id as usize].as_ref().parent();
             }
+            None
+        };
+        for parent in &mut parents {
+            parent.suspended_child = suspended_child(parent.iteration);
         }
+        let native_contexts = closed
+            .regions
+            .iter()
+            .map(|region| suspended_child(region.iteration))
+            .collect();
         Ok(Self {
             parents,
             entries,
             regions,
             boundaries,
+            native_contexts,
             words,
         })
     }

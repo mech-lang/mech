@@ -66,15 +66,19 @@ impl Invocation<'_, '_, '_> {
     /// All fallible validation precedes publication of the restored control.
     pub(super) fn native_parent_continuation(
         &self,
-        root: u32,
+        region: usize,
         active: u32,
-        previous: usize,
-        successor: usize,
     ) -> Result<Option<Pending>, Error> {
         if self.worker.is_some() {
             return Ok(None);
         }
         let metadata = self.descriptor.metadata();
+        let root = metadata.closed_tails.regions[region].iteration;
+        let expected = metadata
+            .compositions
+            .native_context(region)
+            .ok_or_else(|| invalid("native parent root context is outside its inventory"))?
+            .map(|child| child as usize);
         let tracked = |iteration: u32| -> Result<Option<usize>, Error> {
             let control = metadata
                 .plan
@@ -104,16 +108,6 @@ impl Invocation<'_, '_, '_> {
                 .as_ref()
                 .parent()
         };
-        // The previous marker belongs to the ordinary context at native entry.
-        let mut at = Some(root);
-        let mut expected = None;
-        while let Some(iteration) = at {
-            if let Some(child) = tracked(iteration)? {
-                expected = Some(child);
-                break;
-            }
-            at = parent(iteration);
-        }
         // Find the innermost tracked ACTIVE child and prove it lies under the
         // same native root, even if a nearer marker has already been found.
         let mut at = active;
@@ -128,21 +122,7 @@ impl Invocation<'_, '_, '_> {
             at =
                 parent(at).ok_or_else(|| invalid("native parent continuation escapes its root"))?;
         }
-        let mut next = next.or(expected);
-        if let Some((boundary, false)) = metadata.compositions.boundary(previous) {
-            let (parent, child) = metadata
-                .compositions
-                .child_boundary(boundary)
-                .ok_or_else(|| invalid("native parent completion lacks its child edge"))?;
-            if parent.iteration != active || child.child_successor as usize != successor {
-                return Err(invalid(
-                    "native parent completion differs from its exact edge",
-                ));
-            }
-            // The first ordinary visit still has to consume this completed
-            // child's return edge. Do not pop it during the native handoff.
-            next = Some(child.child as usize);
-        }
+        let next = next.or(expected);
         self.parent_continuation.prepared(expected, next).map(Some)
     }
 
