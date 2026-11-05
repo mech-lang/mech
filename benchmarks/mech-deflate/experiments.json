@@ -16738,6 +16738,28 @@
         "Clock-limited0/1/7B reference ratios"
       ],
       "release_capacity_recovery": "Prior endpoint refused HTTP422 at1000 assets; new evidence-only prerelease3 verified, no old assets deleted."
+    },
+    "141": {
+      "base": "b511c718c5c30cca5ac35812429c3e22198be7db",
+      "production": "beee5a3fc3f0dff11612c863429711718b6d655b",
+      "compiler_source": "beee5a3fc3f0dff11612c863429711718b6d655b",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "parent-corrected",
+          "source_revision": "9864c8b67de1dc17b4b816869160f07a9dd27af5",
+          "asset": "r141-parent-corrected-d57bda33d00c.tar.gz",
+          "sha256": "d57bda33d00cfdcddda49bee4bf8cc8bf08b4ce73fbe93f0a695fea160e58df1",
+          "manifest_sha256": "1e42c1a6aa76515c73b0efe11f1cf5266b289acb830618033fefb76c1ef06e05",
+          "bytes": 41264,
+          "files": 30,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-parent-corrected-d57bda33d00c.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
