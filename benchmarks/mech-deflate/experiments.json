@@ -21233,6 +21233,35 @@
           "heap_equality": "Only the seven fields named by results.json/heap_fields_compared are compared; CPU and OS-memory measurements are separate."
         }
       }
+    },
+    "153": {
+      "base": "6741fccacd5241f02c9b5379f2754c2f0ea1bf67",
+      "production": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+      "compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "census",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r153-census-4263742665a1.tar.gz",
+          "sha256": "4263742665a125acd420ef093b5bfc5928573c4d690a0a0492dcae2c3f91db31",
+          "manifest_sha256": "745a6cc3f0ec5e35e56b184ddd40e5db744561e3c53fa35d57daa338fc65cb56",
+          "bytes": 1243585,
+          "files": 21,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-census-4263742665a1.tar.gz"
+        }
+      ],
+      "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+      "versions": {
+        "typed_ir": 175,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
