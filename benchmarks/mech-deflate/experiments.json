@@ -22935,6 +22935,17 @@
           "files": 118,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-scalar-case-scalar-f64-0-decoded-b1c04ef131a6.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-loop-0-original",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-scalar-case-scalar-loop-0-original-0396de2c90b4.tar.gz",
+          "sha256": "0396de2c90b4fe5dabf594880aec590e3bb2f2b772d408c1eacfcf81c3a4859a",
+          "manifest_sha256": "731ff2f731fe7a579f1e1eb13ba2616e28d8c0d148a7abe0a3deb5eaca45abf9",
+          "bytes": 193504,
+          "files": 118,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-scalar-case-scalar-loop-0-original-0396de2c90b4.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
