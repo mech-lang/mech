@@ -11,20 +11,20 @@ use std::sync::Arc;
 // This trait is inaccessible outside the native implementation. In particular,
 // the engine proof types still do NOT implement public Deserialize.
 pub(in crate::native_artifact) trait ProofImage: Sized {
-    fn read(image: Json) -> Result<Self, String>;
+    fn read<'de, D: Deserializer<'de>>(image: D) -> Result<Self, D::Error>;
 }
 pub(in crate::native_artifact) fn proof<'de, T: ProofImage, D: Deserializer<'de>>(
     d: D,
 ) -> Result<T, D::Error> {
-    T::read(Json::deserialize(d)?).map_err(serde::de::Error::custom)
+    T::read(d)
 }
 macro_rules! engine_proofs {
     ($($ty:ty),* $(,)?) => { $(impl ProofImage for $ty {
-        fn read(image: Json) -> Result<Self, String> {
+        fn read<'de, D: Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
             // SAFETY: this private wire reader is reachable only through the
             // enclosing unsafe descriptor loader, which confines all results
             // until their unchanged checked Object provenance is established.
-            unsafe { <$ty>::from_build_owned_image(&image) }
+            unsafe { <$ty>::from_build_owned_image_reader(image) }
         }
     })* };
 }
@@ -40,25 +40,64 @@ engine_proofs!(
     NativeTextLineMatrixRegion,
     NativeTextLineRetentionFrontier,
 );
+// Only this private adapter implements Deserialize. Constructor-private engine
+// proofs remain reachable exclusively through the confined unsafe image loader.
+struct ReadProof<T>(T);
+impl<'de, T: ProofImage> Deserialize<'de> for ReadProof<T> {
+    fn deserialize<D: Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
+        T::read(image).map(Self)
+    }
+}
 impl<T: ProofImage> ProofImage for Vec<T> {
-    fn read(image: Json) -> Result<Self, String> {
-        let Json::Array(values) = image else {
-            return Err("proof image expected an array".into());
-        };
-        values.into_iter().map(T::read).collect()
+    fn read<'de, D: Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
+        Vec::<ReadProof<T>>::deserialize(image)
+            .map(|values| values.into_iter().map(|value| value.0).collect())
     }
 }
 impl<T: ProofImage> ProofImage for Box<[T]> {
-    fn read(image: Json) -> Result<Self, String> {
+    fn read<'de, D: Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
         Vec::<T>::read(image).map(Vec::into_boxed_slice)
     }
 }
 impl<T: ProofImage> ProofImage for Option<T> {
-    fn read(image: Json) -> Result<Self, String> {
-        if image.is_null() {
-            Ok(None)
-        } else {
-            T::read(image).map(Some)
+    fn read<'de, D: Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
+        Option::<ReadProof<T>>::deserialize(image).map(|value| value.map(|value| value.0))
+    }
+}
+
+#[cfg(test)]
+mod streaming_tests {
+    use super::*;
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Nested {
+        #[serde(deserialize_with = "proof")]
+        origins: Option<Box<[NativeMatchOrigin]>>,
+    }
+
+    #[test]
+    fn nested_proof_readers_preserve_fields_and_reject_duplicate_wire_keys() {
+        // Wire-only origins; none can reach an executable descriptor here.
+        for text in [
+            r#"{"origins":null}"#,
+            r#"{"origins":[]}"#,
+            r#"{"origins":[{"node":4294967295,"block":null,"local":3}]}"#,
+        ] {
+            let loaded: Nested = serde_json::from_str(text).unwrap();
+            assert_eq!(
+                serde_json::to_value(loaded.origins).unwrap(),
+                serde_json::from_str::<Json>(text).unwrap()["origins"]
+            );
+        }
+        for text in [
+            r#"{"origins":[{"node":0,"node":1,"block":null,"local":null}]}"#,
+            r#"{"origins":[{"node":4294967296,"block":null,"local":null}]}"#,
+            r#"{"origins":[{"node":0,"block":null,"local":null,"extra":0}]}"#,
+            r#"{"origins":[{"block":null,"local":null}]}"#,
+            r#"{"origins":{}}"#,
+        ] {
+            assert!(serde_json::from_str::<Nested>(text).is_err(), "{text}");
         }
     }
 }

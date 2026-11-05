@@ -89,8 +89,9 @@ pub unsafe fn decode_build_owned_native_plan_value(
 }
 
 /// Restore the plan body borrowed directly from an enclosing checked image.
-/// Only one record's temporary JSON tree is materialized at a time; neither
-/// the plan nor the completed descriptor borrows the image buffer.
+/// Records stream directly into private typed wire readers. Only nested fields
+/// which still require a value-based validator materialize temporary JSON;
+/// neither the plan nor the completed descriptor borrows the image buffer.
 ///
 /// # Safety
 /// The enclosing descriptor must validate its format and version and preserve
@@ -107,13 +108,17 @@ pub unsafe fn decode_build_owned_native_plan_body(
 
 fn records<T>(
     images: Vec<&RawValue>,
-    mut restore: impl FnMut(&Json) -> Result<T, String>,
+    mut restore: impl for<'image> FnMut(
+        &mut serde_json::Deserializer<serde_json::de::StrRead<'image>>,
+    ) -> Result<T, String>,
 ) -> Result<Box<[T]>, String> {
     images
         .into_iter()
         .map(|image| {
-            let value = serde_json::from_str(image.get()).map_err(|e| e.to_string())?;
-            restore(&value)
+            let mut reader = serde_json::Deserializer::from_str(image.get());
+            let value = restore(&mut reader)?;
+            reader.end().map_err(|error| error.to_string())?;
+            Ok(value)
         })
         .collect()
 }
@@ -123,7 +128,7 @@ fn restore(
     schemas: &SchemaTable,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, String> {
-    let resource_requirements = records(w.resource_requirements, nodes::request)?;
+    let resource_requirements = records(w.resource_requirements, |reader| nodes::request(reader))?;
     let inputs = records(w.inputs, |v| nodes::input(v, schemas))?;
     let observations = records(w.observations, |v| nodes::observation(v, schemas))?;
     let effects = records(w.effects, |v| nodes::effect(v, schemas))?;
@@ -135,7 +140,7 @@ fn restore(
         .map(|v| nodes::constant(v, schemas))
         .collect::<Result<_, _>>()?;
     let values = records(w.values, |v| nodes::program_type(v, schemas))?;
-    let value_scopes = records(w.value_scopes, loops::scope)?;
+    let value_scopes = records(w.value_scopes, |reader| loops::scope(reader))?;
     let outputs = records(w.outputs, |v| nodes::output(v, schemas))?;
     // SAFETY: each private reader inherits the enclosing build-owned contract.
     let blocks = records(w.blocks, |v| unsafe {
@@ -197,13 +202,45 @@ mod tests {
             let address = block.get().as_ptr() as usize;
             assert!(address >= start && address + block.get().len() <= end);
         }
-        let records = records(plan.blocks, |value| Ok(value.clone())).unwrap();
+        let records = records(plan.blocks, |reader| {
+            Json::deserialize(reader).map_err(|error| error.to_string())
+        })
+        .unwrap();
         assert_eq!(records.as_ref(), image["blocks"].as_array().unwrap());
 
         let mut changed = image;
         changed["unexpected"] = true.into();
         let bytes = serde_json::to_vec(&changed).unwrap();
         assert!(serde_json::from_slice::<Plan<'_>>(&bytes).is_err());
+    }
+
+    #[test]
+    fn streamed_records_reject_duplicate_fields_and_invalid_typed_payloads() {
+        // These are wire-only scopes, never executable loop proofs. In
+        // particular duplicate fields must not be lost in an intermediate map.
+        for text in [
+            r#"{"Immutable":{"iteration":null}}"#,
+            r#"{"Carrier":{"iteration":4294967295}}"#,
+        ] {
+            let image: Box<RawValue> = serde_json::from_str(text).unwrap();
+            let loaded = records(vec![&image], |reader| loops::scope(reader)).unwrap();
+            assert_eq!(serde_json::to_string(&loaded[0]).unwrap(), text);
+        }
+        for text in [
+            r#"{"Immutable":{"iteration":0,"iteration":1}}"#,
+            r#"{"Carrier":{"iteration":4294967296}}"#,
+            r#"{"Carrier":{"iteration":-1}}"#,
+            r#"{"Carrier":{"iteration":0,"unknown":true}}"#,
+            r#"{"Immutable":{"iteration":null},"Carrier":{"iteration":0}}"#,
+            "null",
+            "[]",
+        ] {
+            let image: Box<RawValue> = serde_json::from_str(text).unwrap();
+            assert!(
+                records(vec![&image], |reader| loops::scope(reader)).is_err(),
+                "{text}"
+            );
+        }
     }
 
     #[test]

@@ -2,7 +2,7 @@
 use super::{WireOrigin, library};
 use crate::native_artifact::*;
 use mech_core::{FunctionCatalog, SchemaTable};
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use serde_json::Value as Json;
 
 #[path = "program_image_sinks.rs"]
@@ -67,8 +67,8 @@ struct Collection {
 /// # Safety
 /// Keep all reconstructed collection proofs confined until the enclosing image
 /// has unchanged compiler/Object provenance. Parsing is not escape analysis.
-pub(super) unsafe fn collection(
-    image: &Json,
+pub(super) unsafe fn collection<'de, D: Deserializer<'de>>(
+    image: D,
     catalog: &FunctionCatalog,
     schemas: &SchemaTable,
 ) -> Result<NativeProgramCollection, String> {

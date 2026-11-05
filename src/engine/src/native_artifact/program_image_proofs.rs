@@ -51,6 +51,21 @@ macro_rules! image_struct {
                 <Self as $crate::native_artifact::program_image_proofs::ImageRead>::read(image)
                     .map_err(|error| error.to_string())
             }
+
+            /// Restore compiler-owned metadata directly from a typed reader,
+            /// without first constructing an owned JSON tree.
+            ///
+            /// # Safety
+            /// The reader must describe unchanged output from the SAME checked
+            /// compiler build and linked Object. Keep the result confined until
+            /// that association is established. Reading fields neither proves
+            /// source semantics nor authenticates caller-supplied metadata.
+            /// Runtime admission and current-owner checks remain mandatory.
+            pub unsafe fn from_build_owned_image_reader<'de, D: serde::Deserializer<'de>>(
+                image: D,
+            ) -> Result<Self, D::Error> {
+                <Self as $crate::native_artifact::program_image_proofs::ImageRead>::read(image)
+            }
         }
     };
 }
@@ -147,7 +162,8 @@ mod tests {
     fn direct_proof_fields_preserve_nested_options_tuples_and_full_width_words() {
         let bytes = serde_json::to_vec(&image()).unwrap();
         let mut reader = serde_json::Deserializer::from_slice(&bytes);
-        let loaded = WireFixture::read(&mut reader).unwrap();
+        // SAFETY: this fixture never reaches a native descriptor or execution.
+        let loaded = unsafe { WireFixture::from_build_owned_image_reader(&mut reader) }.unwrap();
         reader.end().unwrap();
         assert_eq!(loaded.origin.node.get(), 7);
         assert_eq!(loaded.origin.block, None);

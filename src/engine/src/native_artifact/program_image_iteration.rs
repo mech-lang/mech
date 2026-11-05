@@ -2,7 +2,7 @@
 use super::{WireAction, WireOrigin, WireTerminator, action, library, terminator};
 use crate::native_artifact::*;
 use mech_core::{FunctionCatalog, SchemaTable};
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use serde_json::Value as Json;
 
 #[derive(Deserialize)]
@@ -102,8 +102,8 @@ struct Block {
 /// # Safety
 /// Returned metadata must stay confined until the enclosing loader establishes
 /// unchanged compiler/Object provenance, including all loop and value indices.
-pub(super) unsafe fn block(
-    image: &Json,
+pub(super) unsafe fn block<'de, D: Deserializer<'de>>(
+    image: D,
     catalog: &FunctionCatalog,
     schemas: &SchemaTable,
 ) -> Result<NativeIterationBlock, String> {

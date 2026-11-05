@@ -3,10 +3,10 @@
 use super::values;
 use crate::native_artifact::*;
 use mech_core::*;
-use serde::{Deserialize, de::DeserializeOwned};
+use serde::{Deserialize, Deserializer};
 use serde_json::Value as Json;
 
-fn wire<T: DeserializeOwned>(image: &Json) -> Result<T, String> {
+fn wire<'de, T: Deserialize<'de>, D: Deserializer<'de>>(image: D) -> Result<T, String> {
     T::deserialize(image).map_err(|e| e.to_string())
 }
 
@@ -26,8 +26,8 @@ struct Type {
     scalar: Option<Scalar>,
 }
 
-pub(super) fn program_type(
-    image: &Json,
+pub(super) fn program_type<'de, D: Deserializer<'de>>(
+    image: D,
     schemas: &SchemaTable,
 ) -> Result<NativeProgramType, String> {
     let image: Type = wire(image)?;
@@ -81,7 +81,9 @@ struct Request {
     intent: ResourceIntent,
     delivery: ResourceDelivery,
 }
-pub(super) fn request(image: &Json) -> Result<ExecutionResourceRequest, String> {
+pub(super) fn request<'de, D: Deserializer<'de>>(
+    image: D,
+) -> Result<ExecutionResourceRequest, String> {
     let r: Request = wire(image)?;
     Ok(ExecutionResourceRequest {
         base_uri: r.base_uri,
@@ -102,7 +104,10 @@ struct Input {
     ty: Json,
     value: u32,
 }
-pub(super) fn input(image: &Json, schemas: &SchemaTable) -> Result<NativeProgramInput, String> {
+pub(super) fn input<'de, D: Deserializer<'de>>(
+    image: D,
+    schemas: &SchemaTable,
+) -> Result<NativeProgramInput, String> {
     let r: Input = wire(image)?;
     Ok(NativeProgramInput {
         input: r.input,
@@ -140,8 +145,8 @@ struct Observation {
     value: u32,
     ordinal: u32,
 }
-pub(super) fn observation(
-    image: &Json,
+pub(super) fn observation<'de, D: Deserializer<'de>>(
+    image: D,
     schemas: &SchemaTable,
 ) -> Result<NativeProgramObservation, String> {
     let r: Observation = wire(image)?;
@@ -180,7 +185,10 @@ struct Effect {
     value: u32,
     ordinal: u32,
 }
-pub(super) fn effect(image: &Json, schemas: &SchemaTable) -> Result<NativeProgramEffect, String> {
+pub(super) fn effect<'de, D: Deserializer<'de>>(
+    image: D,
+    schemas: &SchemaTable,
+) -> Result<NativeProgramEffect, String> {
     let r: Effect = wire(image)?;
     Ok(NativeProgramEffect {
         node: r.node,
@@ -210,7 +218,10 @@ struct Output {
     value: u32,
     ty: Json,
 }
-pub(super) fn output(image: &Json, schemas: &SchemaTable) -> Result<NativeProgramOutput, String> {
+pub(super) fn output<'de, D: Deserializer<'de>>(
+    image: D,
+    schemas: &SchemaTable,
+) -> Result<NativeProgramOutput, String> {
     let r: Output = wire(image)?;
     Ok(NativeProgramOutput {
         output: r.output,

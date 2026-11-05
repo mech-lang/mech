@@ -2,7 +2,7 @@
 use super::{WireOrigin, library};
 use crate::native_artifact::*;
 use mech_core::{FunctionCatalog, SchemaTable};
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use serde_json::Value as Json;
 
 #[derive(Deserialize)]
@@ -86,7 +86,9 @@ fn origin(wire: WireOrigin) -> NativeMatchOrigin {
         local: wire.local,
     }
 }
-pub(super) fn scope(image: &Json) -> Result<NativeIterationValueScope, String> {
+pub(super) fn scope<'de, D: Deserializer<'de>>(
+    image: D,
+) -> Result<NativeIterationValueScope, String> {
     Ok(
         match Scope::deserialize(image).map_err(|e| e.to_string())? {
             Scope::Immutable { iteration } => NativeIterationValueScope::Immutable { iteration },
@@ -98,8 +100,8 @@ pub(super) fn scope(image: &Json) -> Result<NativeIterationValueScope, String> {
 /// # Safety
 /// Keep decoded indices/loop ownership confined until the enclosing loader has
 /// established unchanged compiler/Object provenance. Parsing is not CFG proof.
-pub(super) unsafe fn control_loop(
-    image: &Json,
+pub(super) unsafe fn control_loop<'de, D: Deserializer<'de>>(
+    image: D,
     catalog: &FunctionCatalog,
     schemas: &SchemaTable,
 ) -> Result<NativeControlLoop, String> {
