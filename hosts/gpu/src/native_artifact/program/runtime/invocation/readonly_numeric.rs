@@ -365,9 +365,10 @@ impl Invocation<'_, '_, '_> {
         let Some(proof) = &region.numeric else {
             return Ok(());
         };
-        if mode != 0 {
-            // Cold error/fuel/first-write boundaries preserve their original
-            // scalar reification and ordering, using prepared physical leaves.
+        if mode != 0 && mode != 3 {
+            // Resumable fuel/bounds/first-write boundaries restore current
+            // scalar fields. Terminal mode3 cannot publish or resume a scalar
+            // consumer; owner/shape/fuel reconciliation below remains intact.
             for binding in &proof.scalar_inputs {
                 let bits = self.read_borrowed_word(2 + binding.word)?;
                 self.state.buffer_frames.synchronize_scalar_binding(

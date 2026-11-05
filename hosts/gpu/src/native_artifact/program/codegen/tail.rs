@@ -80,7 +80,7 @@ pub(in crate::native_artifact) fn leave(
             .into_iter()
             .flat_map(|frame| frame.scalar_slots())
             .chain(terminal)
-            .filter(|_| mode != 0)
+            .filter(|_| mode != 0 && mode != 3)
         {
             let value = load(options, b, locals, region, shadow + slot)?;
             b.ins()
@@ -130,15 +130,17 @@ pub(in crate::native_artifact) fn leave(
             // Every cold boundary carries the sealed generated ancestry and
             // exact per-node debits. Inactive carrier words grant no authority;
             // runtime reifies only the checked active path.
-            for node in &tree.nodes {
-                for binding in &node.scalar_bindings {
-                    let value = load(options, b, locals, region, shadow + binding.word)?;
-                    b.ins().store(
-                        MemFlags::new(),
-                        value,
-                        hooks.arguments,
-                        offset(2 + binding.word)?,
-                    );
+            if mode != 3 {
+                for node in &tree.nodes {
+                    for binding in &node.scalar_bindings {
+                        let value = load(options, b, locals, region, shadow + binding.word)?;
+                        b.ins().store(
+                            MemFlags::new(),
+                            value,
+                            hooks.arguments,
+                            offset(2 + binding.word)?,
+                        );
+                    }
                 }
             }
             for slot in tree.counters..tree.bank() {

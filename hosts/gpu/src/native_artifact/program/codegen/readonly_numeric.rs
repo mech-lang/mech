@@ -44,9 +44,60 @@ pub(in crate::native_artifact) struct Report {
     pub entry_shadow_argument_copies: usize,
     pub private_boundary_words: usize,
     pub source_home_words: usize,
+    pub terminal_scalar_words_omitted: usize,
     pub runtime_scalar_path_walks: usize,
     pub tree_nodes: Vec<usize>,
     pub direct_child_edges: Vec<(usize, usize, usize)>,
+}
+
+/// A terminal error never resumes a source consumer. Mode3 still reconciles
+/// every owner/view, active-path flag and independent debit, but does not export
+/// private scalar payload. Derive payload homes from actual typed bindings,
+/// rather than treating an arbitrary scratch-word range as discardable.
+fn terminal_scalars(
+    proof: &Proof,
+    tree: Option<&crate::native_artifact::program::prepare::numeric_tree::Proof>,
+) -> Result<BTreeSet<usize>, NativeCompileError> {
+    let mut words = proof
+        .frames
+        .iter()
+        .flat_map(|frame| frame.scalar_slots())
+        .collect::<BTreeSet<_>>();
+    words.extend(
+        proof
+            .scalar_inputs
+            .iter()
+            .chain(&proof.scalar_outputs)
+            .chain(&proof.scalar_captures)
+            .map(|binding| binding.word),
+    );
+    words.extend(
+        proof
+            .cold_scalars
+            .iter()
+            .flat_map(|(_, bindings)| bindings.iter().map(|binding| binding.word)),
+    );
+    if let Some(tree) = tree {
+        words.extend(
+            tree.nodes
+                .iter()
+                .flat_map(|node| node.scalar_bindings.iter().map(|binding| binding.word)),
+        );
+        if words
+            .iter()
+            .any(|word| (tree.counters..=tree.bank()).contains(word))
+        {
+            return Err(backend(
+                "terminal scalar payload overlaps numeric tree accounting",
+            ));
+        }
+    }
+    if words.iter().any(|word| *word >= proof.words) {
+        return Err(backend(
+            "terminal scalar payload exceeds its checked private bank",
+        ));
+    }
+    Ok(words)
 }
 
 fn slots(
@@ -249,6 +300,11 @@ pub(in crate::native_artifact) fn emit_entry(
             .chain(private.iter().map(|word| shadow + word))
             .collect::<BTreeSet<_>>()
     };
+    let terminal_scalars = if controls.enabled(OptimizationPass::PrivateLiveness) {
+        terminal_scalars(proof, region.numeric_tree.as_ref())?
+    } else {
+        BTreeSet::new()
+    };
     let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
     let bailouts = if let Some(tree) = &region.numeric_tree {
@@ -301,6 +357,7 @@ pub(in crate::native_artifact) fn emit_entry(
             .max()
             .unwrap_or(private_live.len()),
         source_home_words: source_homes.len(),
+        terminal_scalar_words_omitted: 0,
         runtime_scalar_path_walks: 0,
         tree_nodes: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
             tree.nodes
@@ -613,7 +670,15 @@ pub(in crate::native_artifact) fn emit_entry(
         b.switch_to_block(fail);
         let status = b.block_params(fail)[0];
         set_origin(b, frame, site as u64);
-        words.spill_live(b, locals, &live_at(site))?;
+        let mut live = live_at(site);
+        let live_before = live.len();
+        for word in &terminal_scalars {
+            live.remove(&(shadow + word));
+        }
+        report.terminal_scalar_words_omitted = report
+            .terminal_scalar_words_omitted
+            .max(live_before - live.len());
+        words.spill_live(b, locals, &live)?;
         b.ins().jump(failed, &[status.into()]);
         let instructions = b.func.dfg.num_insts() - before;
         report.maximum_source_instructions = report.maximum_source_instructions.max(instructions);

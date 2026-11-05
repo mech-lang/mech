@@ -2,7 +2,7 @@
 //! Private reconciliation words remain independently retained by its proof.
 use super::super::prepare::PreparedNativeProgram;
 use mech_engine::native_artifact::{
-    NativeIterationAction as Action, NativeMatchAction as Scalar, NativeProgramReadRole as Read,
+    NativeIterationAction as Action, NativeMatchAction as Scalar, NativeProgramFacts,
 };
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -58,13 +58,13 @@ impl Liveness {
             }
             known.extend(&homes);
             for role in facts.read_roles(value)? {
-                match *role {
-                    Read::Action(site) => action[site as usize].extend(&homes),
-                    Read::Terminator(site) => terminal[site as usize].extend(&homes),
-                    // Loop recipes, effects and outputs retain the previous
-                    // conservative contract at every boundary. Narrowing those
-                    // lifetimes requires a separate reconciliation proof.
-                    _ => pinned.extend(&homes),
+                match NativeProgramFacts::control_read_site(plan, *role) {
+                    Some((site, false)) => action[site as usize].extend(&homes),
+                    Some((site, true)) => terminal[site as usize].extend(&homes),
+                    // Only source-home reads with an exact original visit join
+                    // this dataflow. Owner/effect/publication frontiers and
+                    // unknown producers keep their conservative pinned homes.
+                    None => pinned.extend(&homes),
                 }
             }
             for definition in facts.definition_sites(index)? {
@@ -130,6 +130,77 @@ mod tests {
     use super::*;
     fn set(values: &[usize]) -> BTreeSet<usize> {
         values.iter().copied().collect()
+    }
+
+    #[test]
+    fn actual_loop_next_homes_are_live_at_the_latch_but_not_before_their_definition() {
+        use mech_engine::CanonicalSourceFrontend;
+        use mech_engine::native_artifact::{
+            NativeControlLoop, lower_native_program_artifact_with_definition_table_limit,
+        };
+        use mech_syntax::document::{
+            AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+            parse_canonical_document,
+        };
+        let text = "advance(remaining<u64>, value<u64>) => (out<u64>) :=\n  more := remaining > 0u64\n  out := (more? | true => advance(remaining - 1u64, value + 3u64) | false => value).\nadvance(limit<u64>, seed<u64>)\n";
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x4c4f4f504c495645), Revision(1), text).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let catalog = mech_stdlib::source_catalog();
+        let artifact = CanonicalSourceFrontend
+            .compile_document_with_catalog(
+                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+                catalog.clone(),
+            )
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        for artifact in [artifact, decoded] {
+            let plan = lower_native_program_artifact_with_definition_table_limit(
+                &artifact,
+                &catalog,
+                crate::native_artifact::NativeCompileLimits::default().max_definition_table_bytes,
+            )
+            .unwrap();
+            let prepared = PreparedNativeProgram::prepare(&artifact, &catalog, plan).unwrap();
+            let plan = prepared.plan();
+            let facts = plan.facts();
+            let mut witnesses = 0;
+            for control in plan.iterations() {
+                let NativeControlLoop::Tail(tail) = control else {
+                    continue;
+                };
+                let Some((base, count)) = prepared.metadata().scalar_aggregates.slot(tail.next())
+                else {
+                    continue;
+                };
+                let homes = (base..base + count).collect::<BTreeSet<_>>();
+                if homes.is_empty() {
+                    continue;
+                }
+                let live = Liveness::derive(&prepared, &homes).unwrap();
+                assert!(live.at(tail.latch() as usize).is_superset(&homes));
+                for definition in facts.definition_sites(tail.next().get()).unwrap() {
+                    if let Some(site) = definition.site() {
+                        assert!(
+                            live.at(site as usize).is_disjoint(&homes),
+                            "new next-carrier words cannot require the previous visit's contents before their producer"
+                        );
+                        witnesses += 1;
+                    }
+                }
+            }
+            assert!(
+                witnesses > 0,
+                "the actual original/decoded fixture must exercise loop-next scalar homes"
+            );
+        }
     }
     #[test]
     fn source_liveness_keeps_loop_carried_reads_and_old_values_before_overwrite() {

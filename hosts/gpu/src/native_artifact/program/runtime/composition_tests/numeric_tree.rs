@@ -252,6 +252,28 @@ fn check_emission_ablation(pass: OptimizationPass) {
                 .unwrap();
         let conservative = JitProgramArtifact::compile_for_test(&artifact, &catalog, pass).unwrap();
         if pass == OptimizationPass::PrivateLiveness {
+            let optimized = crate::native_artifact::emit_program_object(&artifact, &catalog)
+                .unwrap()
+                .metadata();
+            let unoptimized =
+                crate::native_artifact::program::compiler::emit_program_object_for_test(
+                    &artifact, &catalog, pass,
+                )
+                .unwrap()
+                .metadata();
+            let omitted = |metadata: &serde_json::Value| {
+                metadata["compiled_numeric_write_loops"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|row| row["terminal_scalar_words_omitted"].as_u64().unwrap())
+                    .sum::<u64>()
+            };
+            assert!(
+                omitted(&optimized) > 0,
+                "exercise emitted terminal scalar discard"
+            );
+            assert_eq!(omitted(&unoptimized), 0);
             assert!(
                 native.descriptor().code_bytes() < conservative.descriptor().code_bytes(),
                 "precise private consumers must remove real emitted synchronization"

@@ -309,7 +309,17 @@ impl Invocation<'_, '_, '_> {
         // The existing root reconciliation owns freezing/publication and its
         // prepared root scalar fields. A bounds retry is materialized below
         // after all active child carriers have regained their current owners.
-        self.synchronize_numeric_carrier(id, site, if mode == 5 { 5 } else { 1 })?;
+        self.synchronize_numeric_carrier(
+            id,
+            site,
+            if mode == 5 {
+                5
+            } else if mode == 3 {
+                3
+            } else {
+                1
+            },
+        )?;
         if mode == 1 {
             for (_, bindings) in proof
                 .cold_scalars
@@ -371,13 +381,15 @@ impl Invocation<'_, '_, '_> {
             if !on_path(current, index, tree.nodes.len(), |at| tree.nodes[at].parent) {
                 continue;
             }
-            for binding in &node.scalar_bindings {
-                let bits = self.read_borrowed_word(2 + binding.word)?;
-                self.state.buffer_frames.synchronize_scalar_binding(
-                    binding.physical,
-                    binding.kind,
-                    bits,
-                )?;
+            if mode != 3 {
+                for binding in &node.scalar_bindings {
+                    let bits = self.read_borrowed_word(2 + binding.word)?;
+                    self.state.buffer_frames.synchronize_scalar_binding(
+                        binding.physical,
+                        binding.kind,
+                        bits,
+                    )?;
+                }
             }
             if mode != 5 {
                 let Some(frame) = proof.frame(node.tail.carrier().get()) else {
