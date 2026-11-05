@@ -16667,6 +16667,17 @@
           "files": 108,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-scalar-first-a7098171c853.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "58f75827e5c44187731df5253b3a058d2e9cd417",
+          "asset": "r140-profiles-current-0b8cf60fe346.tar.gz",
+          "sha256": "0b8cf60fe34637ce86e46810a14514b15c93a3041ea9ecb518ed0b3013fb981e",
+          "manifest_sha256": "3a150b54dd3bc7040cef1ea68c1bf6bf094d9f79cff37f3661abc7efcbf4dc85",
+          "bytes": 584043,
+          "files": 82,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-profiles-current-0b8cf60fe346.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
