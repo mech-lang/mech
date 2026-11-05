@@ -21032,6 +21032,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-seven-stored-prefix-primary-d169e1ea5d42.tar.gz"
+        },
+        {
+          "event": "case-one-stored-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-one-stored-primary-d9cf1c8f0646.tar.gz",
+          "sha256": "d9cf1c8f0646ba035b884dee8aafc9d78801d6cd47267e00265c0e6d3fef238f",
+          "manifest_sha256": "846037c8f16db5c3836767338c99653f175c7c4981cd5dbb7389492c301185c6",
+          "bytes": 92506,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-one-stored-primary-d9cf1c8f0646.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
