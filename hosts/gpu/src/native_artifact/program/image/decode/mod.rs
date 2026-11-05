@@ -62,6 +62,7 @@ impl NativeProgramDescriptor {
     /// Emit the same checked descriptor with canonical type-reference and
     /// prepared-binding rows. V3 changes data representation only: Object
     /// provenance and independent source/layout validation remain unchanged.
+    #[cfg(feature = "canonical-native-program")]
     pub(in crate::native_artifact) fn encode_build_owned_table_image(
         &self,
     ) -> Result<Vec<u8>, serde_json::Error> {

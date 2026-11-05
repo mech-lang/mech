@@ -207,7 +207,9 @@ impl serde::Serialize for TableCalls<'_> {
         s.collect_seq(self.0.iter().map(|call| call.as_ref().map(TableBinding)))
     }
 }
+#[cfg(feature = "canonical-native-program")]
 struct TableDescriptor<'a>(&'a NativeProgramDescriptor);
+#[cfg(feature = "canonical-native-program")]
 impl serde::Serialize for TableDescriptor<'_> {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         self.0.serialize_image_fields::<S, true>(s)
