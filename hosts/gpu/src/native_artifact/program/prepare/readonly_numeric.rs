@@ -87,9 +87,11 @@ pub(in crate::native_artifact) struct FrameWords {
     pub scalar_node_count: usize,
 }
 impl FrameWords {
+    #[cfg(feature = "canonical-native-program")]
     pub fn scalar_slots(&self) -> impl Iterator<Item = usize> + '_ {
         self.scalar_paths.iter().map(|(_, slot)| *slot)
     }
+    #[cfg(feature = "canonical-native-program")]
     pub fn field_slots(&self, ordinal: usize) -> impl Iterator<Item = usize> + '_ {
         self.scalar_paths
             .iter()
@@ -275,6 +277,7 @@ impl Proof {
                 + self.arrays[..array].iter().filter(|a| a.appends).count()
         })
     }
+    #[cfg(feature = "canonical-native-program")]
     pub fn append_limit(&self, header: usize, array: usize) -> Option<usize> {
         self.append_limits
             .iter()

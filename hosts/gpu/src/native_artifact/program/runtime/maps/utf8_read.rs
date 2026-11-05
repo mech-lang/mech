@@ -51,6 +51,9 @@ pub(in crate::native_artifact) struct Frame {
 
 pub(in crate::native_artifact) const HASH_OFFSET: u64 = 0xcbf29ce484222325;
 pub(in crate::native_artifact) const HASH_PRIME: u64 = 0x100000001b3;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) const COMPLETE: u64 = 0;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) const COLD: u64 = 1;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) const MISSING: u64 = 2;

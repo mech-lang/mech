@@ -68,6 +68,7 @@ pub(in crate::native_artifact) enum Operation {
     },
 }
 impl Operation {
+    #[cfg(feature = "canonical-native-program")]
     pub fn output(&self) -> u32 {
         match *self {
             Self::Read { output, .. } | Self::Length { output, .. } => output,

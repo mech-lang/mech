@@ -1,6 +1,8 @@
 //! Exact descriptor-byte integrity relative to one trusted checked native Object.
 //! A digest supplied by a caller cannot authenticate arbitrary native code.
-use super::identity::{NATIVE_PROGRAM_LINK_IDENTITY_BYTES, NativeProgramObjectIdentity};
+use super::identity::NATIVE_PROGRAM_LINK_IDENTITY_BYTES;
+#[cfg(feature = "canonical-native-program")]
+use super::identity::NativeProgramObjectIdentity;
 use sha2::{Digest, Sha256};
 
 pub const NATIVE_PROGRAM_IMAGE_BINDING_BYTES: usize = 64;
@@ -13,6 +15,7 @@ pub struct NativeProgramImageBinding {
     bytes: [u8; NATIVE_PROGRAM_IMAGE_BINDING_BYTES],
     symbol: String,
 }
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) fn symbol(identity_symbol: &str) -> String {
     format!("{identity_symbol}_descriptor_binding_v1")
 }

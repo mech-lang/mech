@@ -31,6 +31,7 @@ use mech_engine::native_artifact::{
 use std::ffi::c_void;
 
 mod collections;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) use collections::uniform_words::Frame as NativeUniformFillFrame;
 
 mod lines;

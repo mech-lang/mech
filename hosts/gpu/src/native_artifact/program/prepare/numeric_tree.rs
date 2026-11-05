@@ -42,6 +42,7 @@ impl Proof {
         self.nodes.len() * NODE_WORDS + 1
     }
     /// Refreshed after cold Rust mutation; never deserialized access authority.
+    #[cfg(feature = "canonical-native-program")]
     pub fn bank(&self) -> usize {
         self.counters + self.nodes.len() * NODE_WORDS
     }
