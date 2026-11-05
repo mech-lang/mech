@@ -18779,6 +18779,17 @@
           "files": 83,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-matrix-counters-d89b62d9bdf1.tar.gz"
+        },
+        {
+          "event": "scalar-balanced",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-scalar-balanced-d07722c02b1d.tar.gz",
+          "sha256": "d07722c02b1ddc988567e19bec000d2e43fad3b54cee6db4dec3ff48711ff641",
+          "manifest_sha256": "910837a415fa934aea45fd67d4c4dd38e08e18430d250de20e6e470038f83a9b",
+          "bytes": 308692,
+          "files": 652,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-scalar-balanced-d07722c02b1d.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
