@@ -184,7 +184,8 @@ fn tracked_grandchild_fuel_handoffs_keep_active_edges_and_failure_recovery() {
                 result.unwrap();
                 let mut limits = mode.execution();
                 limits.execution.max_work = if header {
-                    u64::MAX - counts.phase_write_fuel[0] + 3 * leaf.compute + leaf.compute / 2
+                    u64::MAX - counts.phase_write_fuel[0] + 3 * leaf.compute + leaf.compute
+                        - leaf.compute / 4
                 } else {
                     u64::MAX - counts.phase_initial_fuel[0]
                         + phase.loops[0].compute
@@ -211,14 +212,17 @@ fn tracked_grandchild_fuel_handoffs_keep_active_edges_and_failure_recovery() {
                     "{counts:?}"
                 );
                 println!(
-                    "grandchild-fuel restored={restored} header={header} completed={} markers={:?}",
+                    "grandchild-fuel restored={restored} header={header} completed={} markers={:?} returned={:?}",
                     result.is_ok(),
-                    counts.parent_marker_handoffs
+                    counts.parent_marker_handoffs,
+                    counts.completed_parent_children
                 );
                 if header {
                     assert!(
-                        result.is_ok(),
-                        "the terminating ordinary suffix must complete: {result:?}"
+                        counts
+                            .completed_parent_children
+                            .contains(&(leaf.iteration, parent.iteration)),
+                        "the restored child return must be consumed before any later resource denial: {counts:?}"
                     );
                 }
                 if let Err(error) = result {

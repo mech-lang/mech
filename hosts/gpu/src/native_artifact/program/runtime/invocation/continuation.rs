@@ -180,6 +180,11 @@ impl Invocation<'_, '_, '_> {
             let outer = parent.suspended_child.map(|child| child as usize);
             self.parent_continuation
                 .complete(child.child as usize, outer)?;
+            #[cfg(all(test, feature = "canonical-native-program"))]
+            super::super::composition_tests::observe::parent_child_completed(
+                child.child,
+                parent.iteration,
+            );
         }
         if self.state.control.completed && self.parent_continuation.is_pending() {
             return Err(invalid("completion with pending parent child edge"));

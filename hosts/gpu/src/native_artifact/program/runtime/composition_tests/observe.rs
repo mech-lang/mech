@@ -24,6 +24,7 @@ pub(super) struct Counts {
     pub segment_charges: Vec<(u64, u64, u64, bool, bool)>,
     pub paid_segment_declines: BTreeMap<usize, u64>,
     pub parent_marker_handoffs: Vec<(u32, u32, Option<usize>, Option<usize>, u64)>,
+    pub completed_parent_children: Vec<(u32, u32)>,
     prepaid_segment_entry_work: Option<u64>,
     pub phase_settlements: Vec<(u64, u64, u64, u64)>,
     pub cold_private_arrays: Vec<usize>,
@@ -94,6 +95,16 @@ pub(in crate::native_artifact::program::runtime) fn parent_marker_handoff(
         v.borrow_mut()
             .parent_marker_handoffs
             .push((root, active, old, next, mode))
+    });
+}
+pub(in crate::native_artifact::program::runtime) fn parent_child_completed(
+    child: u32,
+    parent: u32,
+) {
+    COUNTS.with(|v| {
+        v.borrow_mut()
+            .completed_parent_children
+            .push((child, parent))
     });
 }
 fn private_homes(
