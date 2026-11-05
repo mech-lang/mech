@@ -23064,6 +23064,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-screen-33027-periodic-window-primary-3ab7a7decd79.tar.gz"
+        },
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-screen-eight-literals-primary-9b73dd3b06ff.tar.gz",
+          "sha256": "9b73dd3b06ff6834d27634aee044ac98f4b3c0fed9ea429a248f4814c568e3b2",
+          "manifest_sha256": "9b4078b81331784bb24cd9379696f4956e11b7d49b9a9440b12d450f47dc1d81",
+          "bytes": 92794,
+          "files": 61,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-screen-eight-literals-primary-9b73dd3b06ff.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
