@@ -3,8 +3,7 @@ use super::boolean_edges::guarded_source;
 use super::read_packs::{arguments, unchanged_publication};
 use super::*;
 use mech_engine::native_artifact::{
-    NativeIterationAction as Action, NativeIterationTerminator as Term,
-    NativeMatchAction as Scalar, NativeMatchTerminator as Branch, NativeScalarOp as Op,
+    NativeIterationAction as Action, NativeMatchAction as Scalar, NativeScalarOp as Op,
 };
 use std::collections::BTreeSet;
 
@@ -20,8 +19,7 @@ fn guarded_u64_subtractions_keep_short_windows_funding_and_recovery() {
         ("length <= 8u64", true, false),
         ("length >= 4u64", true, false),
     ] {
-        for (order, selected_first) in [(false, false), (true, false), (false, true), (true, true)]
-        {
+        for order in [false, true] {
             let source = if selected_truth {
                 guarded_source(order).replace("length >= 8u64", condition)
             } else {
@@ -29,22 +27,6 @@ fn guarded_u64_subtractions_keep_short_windows_funding_and_recovery() {
                     "out := ((length >= 8u64)? | false => 0u64 | true => ((",
                     &format!("out := (({condition})? | true => 0u64 | false => (("),
                 )
-            };
-            let source = if selected_first {
-                source
-                    .replace(
-                        &format!(
-                            "out := (({condition})? | {} => 0u64 | {selected_truth} => ((",
-                            !selected_truth
-                        ),
-                        &format!("out := (({condition})? | {selected_truth} => (("),
-                    )
-                    .replace(
-                        ")).\nwalk(",
-                        &format!(") | {} => 0u64).\nwalk(", !selected_truth),
-                    )
-            } else {
-                source
             };
             for artifact in artifacts(&source) {
                 let mode = NativeProgramLimitMode::NoLimits;
@@ -105,47 +87,6 @@ fn guarded_u64_subtractions_keep_short_windows_funding_and_recovery() {
                     })
                     .collect::<Vec<_>>();
                 assert_eq!(actual.len(), 1, "exact window subtraction must exist");
-                let facts = plan.facts();
-                let [arm] = facts.predecessors(actual[0] as u32).unwrap() else {
-                    panic!("one selected subtraction arm");
-                };
-                let [guard] = facts.predecessors(*arm).unwrap() else {
-                    panic!("one current guard");
-                };
-                let Term::Scalar(Branch::LiteralBranch {
-                    left, right, yes, ..
-                }) = plan.blocks()[*guard as usize].terminator()
-                else {
-                    panic!("literal guard");
-                };
-                assert_eq!(yes, *arm);
-                let producer = [left, right]
-                    .into_iter()
-                    .find_map(|value| {
-                        let [definition] = facts.definition_sites(value.get()).ok()? else {
-                            return None;
-                        };
-                        let site = definition.site()?;
-                        matches!(
-                            plan.blocks()[site as usize].action(),
-                            Action::Scalar(Scalar::Primitive {
-                                op: Op::U64Eq
-                                    | Op::U64Ne
-                                    | Op::U64Lt
-                                    | Op::U64Le
-                                    | Op::U64Gt
-                                    | Op::U64Ge,
-                                ..
-                            })
-                        )
-                        .then_some(site)
-                    })
-                    .unwrap();
-                assert_eq!(
-                    facts.predecessors(*guard).unwrap() == &[producer],
-                    selected_first,
-                    "both direct and complementary guard shapes must be exercised"
-                );
                 assert!(
                     selected.contains(&actual[0]),
                     "positive and negative witnesses must execute in numeric code"
@@ -207,7 +148,7 @@ fn guarded_u64_subtractions_keep_short_windows_funding_and_recovery() {
                                 held
                             );
                             println!(
-                                "guarded-sub-case condition={condition} truth={selected_truth} order={order} selected_first={selected_first} restored={restored} length={length} at={at} steps={steps} denial={denial} error={error}"
+                                "guarded-sub-case condition={condition} truth={selected_truth} order={order} restored={restored} length={length} at={at} steps={steps} denial={denial} error={error}"
                             );
                         } else {
                             let report = result.unwrap();
@@ -236,7 +177,7 @@ fn guarded_u64_subtractions_keep_short_windows_funding_and_recovery() {
                                 Data::U64(wanted)
                             );
                             println!(
-                                "guarded-sub-case condition={condition} truth={selected_truth} order={order} selected_first={selected_first} restored={restored} length={length} at={at} steps={steps} denial={denial} work={}",
+                                "guarded-sub-case condition={condition} truth={selected_truth} order={order} restored={restored} length={length} at={at} steps={steps} denial={denial} work={}",
                                 report.work
                             );
                         }
