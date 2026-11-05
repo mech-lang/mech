@@ -20977,6 +20977,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-128-biased-dynamic-primary-e096fbccbb0a.tar.gz"
+        },
+        {
+          "event": "case-random-64-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-random-64-primary-8ae3ba49e9b6.tar.gz",
+          "sha256": "8ae3ba49e9b6c102453018a8e95e4c780fa45f2d9f8060d971577267397e3b6f",
+          "manifest_sha256": "3d92bc6e10be69e3efd7210f15cddbb62e2dc6c191cad39c76cd691ca31d5464",
+          "bytes": 92665,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-random-64-primary-8ae3ba49e9b6.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
