@@ -18448,7 +18448,7 @@
       "base": "65c8f37c58a19d1e39eed833395b98ab87d7bf65",
       "production": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
       "compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
-      "decision": "under measurement",
+      "decision": "retained for review; full20 elapsed and unchanged semantic/resource/scalar/frame controls pass",
       "events": [
         {
           "event": "test-first",
@@ -18822,7 +18822,19 @@
           "bytes": 260676,
           "files": 75,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-emitted-evidence-complete-965fa4de8231.tar.gz"
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-emitted-evidence-complete-965fa4de8231.tar.gz",
+          "scope_note": "Root replay/summary snapshot; corrected assembly files are sealed in emitted-evidence-final and closure."
+        },
+        {
+          "event": "emitted-evidence-final",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-emitted-evidence-final-2ba06c321f3c.tar.gz",
+          "sha256": "2ba06c321f3c3faabc66342dccb58bfcc74367cb0b828f965adab010e85ca98f",
+          "manifest_sha256": "1de4f5c874fcf7ee2d2ce5ab7e842df2e12f7c44df941823fe63d0947144097b",
+          "bytes": 273537,
+          "files": 86,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-emitted-evidence-final-2ba06c321f3c.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
@@ -18834,7 +18846,8 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd"
     }
   },
   "repository": "mech-lang/mech",
