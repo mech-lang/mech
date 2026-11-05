@@ -23961,6 +23961,17 @@
           "files": 74,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-case-empty-primary-4cb353970d37.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-matrix-counters-9393c63d2a8e.tar.gz",
+          "sha256": "9393c63d2a8e7ee1539be32b195a1310db1fd9bfabb5aabf6c19090606717f9e",
+          "manifest_sha256": "a306ead7ca1bf3b86b36cd944a90b59417295ba57f8acd18142468e4de4ddbe1",
+          "bytes": 206553,
+          "files": 80,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-matrix-counters-9393c63d2a8e.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
