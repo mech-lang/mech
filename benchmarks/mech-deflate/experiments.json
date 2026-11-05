@@ -21876,6 +21876,17 @@
           "files": 27,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-tables-repeated-32769-fa5997655bd1.tar.gz"
+        },
+        {
+          "event": "parent-semantic",
+          "source_revision": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+          "asset": "r154-parent-semantic-a5d6f36aa8c3.tar.gz",
+          "sha256": "a5d6f36aa8c3ba38904ddb9229fad29f01a81df6bb3c5781dda1fb84ccfe7da2",
+          "manifest_sha256": "7de5265ae7bd573883905d80386e806d25850eb100ac2bb935e709b31b3cf859",
+          "bytes": 89101,
+          "files": 26,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-parent-semantic-a5d6f36aa8c3.tar.gz"
         }
       ],
       "production": "2d27e4cc44261a02c6858a232960d8999ac712eb",
