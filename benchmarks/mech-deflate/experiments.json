@@ -21238,7 +21238,7 @@
       "base": "6741fccacd5241f02c9b5379f2754c2f0ea1bf67",
       "production": "2d27e4cc44261a02c6858a232960d8999ac712eb",
       "compiler_source": "2d27e4cc44261a02c6858a232960d8999ac712eb",
-      "decision": "under measurement",
+      "decision": "retain: complete child reentry removes selected body helpers; periodic\u221210.933685%, all20geometric\u22121.874060%, all unchanged guards pass; introduced code/stack/startup/byte costs retained",
       "events": [
         {
           "event": "census",
@@ -21248,8 +21248,8 @@
           "manifest_sha256": "745a6cc3f0ec5e35e56b184ddd40e5db744561e3c53fa35d57daa338fc65cb56",
           "bytes": 1243585,
           "files": 21,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-census-4263742665a1.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-census-4263742665a1.tar.gz"
         },
         {
           "event": "development",
@@ -21259,8 +21259,8 @@
           "manifest_sha256": "8ab943b5bef1f0d213e642612dd6991365ca30340f22ef910c7eb880cfb604cc",
           "bytes": 71799,
           "files": 72,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-development-f408ef931e3a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-development-f408ef931e3a.tar.gz"
         },
         {
           "event": "initial",
@@ -21270,8 +21270,8 @@
           "manifest_sha256": "b4d9cde90ded75ad5e4f12769cbfc332216c58df877a0985888f0d89f52c48ad",
           "bytes": 4701404,
           "files": 61,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-initial-ec92c3c2d019.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-initial-ec92c3c2d019.tar.gz"
         },
         {
           "event": "screen-33027-periodic-window-primary",
@@ -21281,8 +21281,8 @@
           "manifest_sha256": "a923ba394f508320ac6b2012807c178f0a9506ebb22f54d7a1ac230892ce615d",
           "bytes": 73932,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-screen-33027-periodic-window-primary-e6a5ada37a4b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-screen-33027-periodic-window-primary-e6a5ada37a4b.tar.gz"
         },
         {
           "event": "screen-eight-literals-primary",
@@ -21292,8 +21292,8 @@
           "manifest_sha256": "0eaa9393fc6f4121e2ad6939adb4990845c08581f0654872a7494a9a7edbb3f5",
           "bytes": 77193,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-screen-eight-literals-primary-6ebac4fe8f17.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-screen-eight-literals-primary-6ebac4fe8f17.tar.gz"
         },
         {
           "event": "screen-16384-distribution-change-primary",
@@ -21303,8 +21303,8 @@
           "manifest_sha256": "139c4b3faa40a49262c074bd71d0801e2c593e7230f39e61ed2f773821b61209",
           "bytes": 74368,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-screen-16384-distribution-change-primary-6e7a46e3cb4f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-screen-16384-distribution-change-primary-6e7a46e3cb4f.tar.gz"
         },
         {
           "event": "screen-repeated-32769-primary",
@@ -21314,8 +21314,8 @@
           "manifest_sha256": "d20b4779358bb3702d499313e71846d1a341aa9bed93e9c13c06ba43a7d8cc2d",
           "bytes": 74625,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-screen-repeated-32769-primary-72bd142f45d7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-screen-repeated-32769-primary-72bd142f45d7.tar.gz"
         },
         {
           "event": "case-eight-literals-primary",
@@ -21325,8 +21325,8 @@
           "manifest_sha256": "65ecfd37a82de3daf69e00541ba7a013b67870392e10b5da51b39930dbe7fd32",
           "bytes": 81653,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-eight-literals-primary-1a9b04b4036d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-eight-literals-primary-1a9b04b4036d.tar.gz"
         },
         {
           "event": "case-16384-distribution-change-primary",
@@ -21336,8 +21336,8 @@
           "manifest_sha256": "073521690f13662d032a13012f9795995fdf05fec3220fbd04b7cee690880c66",
           "bytes": 79179,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-16384-distribution-change-primary-484eee2c5cce.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-16384-distribution-change-primary-484eee2c5cce.tar.gz"
         },
         {
           "event": "case-33027-periodic-window-primary",
@@ -21347,8 +21347,8 @@
           "manifest_sha256": "aa4f3ad1666918b70e69a57ba975ccf3ca5dd315cf306dc65b4dced24dad97fb",
           "bytes": 79455,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-33027-periodic-window-primary-25a225b2f29c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-33027-periodic-window-primary-25a225b2f29c.tar.gz"
         },
         {
           "event": "case-random-32769-primary",
@@ -21358,8 +21358,8 @@
           "manifest_sha256": "216f84ed1870632dab254e589750623fe532d41851c371cb3f28856d69c9b7dc",
           "bytes": 79520,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-random-32769-primary-622743005231.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-random-32769-primary-622743005231.tar.gz"
         },
         {
           "event": "case-repeated-32769-primary",
@@ -21369,8 +21369,8 @@
           "manifest_sha256": "51a4fbe4522e299884d0044af50f79188649fe48c0f637b94e40ec9eec675ec4",
           "bytes": 79612,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-repeated-32769-primary-d4104fa6db61.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-repeated-32769-primary-d4104fa6db61.tar.gz"
         },
         {
           "event": "case-reymont-prefix-32769-primary",
@@ -21380,8 +21380,8 @@
           "manifest_sha256": "fa6c474751977d000026841fb84fd54425996d18deee6b934b0569cf9cdf6b85",
           "bytes": 79885,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-reymont-prefix-32769-primary-0b06fab252e3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-reymont-prefix-32769-primary-0b06fab252e3.tar.gz"
         },
         {
           "event": "case-reymont-prefix-16384-primary",
@@ -21391,8 +21391,8 @@
           "manifest_sha256": "b9379a0b1a9a207d00b487df905b1bf67bf35783e4f77ad31ade1b38ab80afbe",
           "bytes": 80096,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-reymont-prefix-16384-primary-ee528720b02c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-reymont-prefix-16384-primary-ee528720b02c.tar.gz"
         },
         {
           "event": "case-random-1024-primary",
@@ -21402,8 +21402,8 @@
           "manifest_sha256": "c08b4ba8ffd406d6de0ffaf314b200ef909acbe1e905e0be43abdcbcfef9f0fc",
           "bytes": 82982,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-random-1024-primary-df1dd2cfdb94.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-random-1024-primary-df1dd2cfdb94.tar.gz"
         },
         {
           "event": "case-repeated-1024-primary",
@@ -21413,8 +21413,8 @@
           "manifest_sha256": "2f5ee9677069a3d3b117d66501e4f457c344184e451f357c5e104ea2fcae5b9a",
           "bytes": 83166,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-repeated-1024-primary-a6f708e42be9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-repeated-1024-primary-a6f708e42be9.tar.gz"
         },
         {
           "event": "case-reymont-prefix-1024-primary",
@@ -21424,8 +21424,8 @@
           "manifest_sha256": "9e959cbec4f3c1d7ea5414cb7e742c9366d7b4a14c6e848543f7a40c6332ad7b",
           "bytes": 83295,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-reymont-prefix-1024-primary-ee2b11da7645.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-reymont-prefix-1024-primary-ee2b11da7645.tar.gz"
         },
         {
           "event": "case-320-overlap-primary",
@@ -21435,8 +21435,8 @@
           "manifest_sha256": "7a490784a1a76cde7f2ce2de376ffba07390e70508740ffdc63768ce71cb8a93",
           "bytes": 83216,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-320-overlap-primary-a6561308519b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-320-overlap-primary-a6561308519b.tar.gz"
         },
         {
           "event": "case-random-256-primary",
@@ -21446,8 +21446,8 @@
           "manifest_sha256": "9b134e3d2b2ff46ab4982bb3ae63c35da4aa73bf495778df5edd786a3fec5bc0",
           "bytes": 83486,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-random-256-primary-a2d08a9f6096.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-random-256-primary-a2d08a9f6096.tar.gz"
         },
         {
           "event": "case-128-biased-dynamic-primary",
@@ -21457,8 +21457,8 @@
           "manifest_sha256": "4668ea12bda473dfb6216bbe02858537d7bbb8a7f65f6615656d3fedf4e016fc",
           "bytes": 83673,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-128-biased-dynamic-primary-d09862526dda.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-128-biased-dynamic-primary-d09862526dda.tar.gz"
         },
         {
           "event": "case-random-64-primary",
@@ -21468,8 +21468,8 @@
           "manifest_sha256": "c31b8d59611230b2ab9de5a18413897fc7d9df9df1da450f7eef0d705d4ee0a0",
           "bytes": 83519,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-random-64-primary-abaefda99649.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-random-64-primary-abaefda99649.tar.gz"
         },
         {
           "event": "case-32-high-entropy-stored-primary",
@@ -21479,8 +21479,8 @@
           "manifest_sha256": "3ed320dd35ac17ba49d13b3d48763880edcf9dcbd17f9a8cf6abddaa4fc0095f",
           "bytes": 83956,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-32-high-entropy-stored-primary-43ebf859f801.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-32-high-entropy-stored-primary-43ebf859f801.tar.gz"
         },
         {
           "event": "case-eight-overlap-primary",
@@ -21490,8 +21490,8 @@
           "manifest_sha256": "e912a6c357cb2f8a2074bccd4d2c66b8a75a116749f0476c255306e5917153ce",
           "bytes": 83957,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-eight-overlap-primary-fd83c23a6c93.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-eight-overlap-primary-fd83c23a6c93.tar.gz"
         },
         {
           "event": "case-eight-literals-prefix-primary",
@@ -21501,8 +21501,8 @@
           "manifest_sha256": "85eb2374d3ebbeb695e088efb3ce3093632c6955e9c1ae5a35eefc2d6497f31a",
           "bytes": 84250,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-eight-literals-prefix-primary-f4bb5927008e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-eight-literals-prefix-primary-f4bb5927008e.tar.gz"
         },
         {
           "event": "case-seven-stored-prefix-primary",
@@ -21512,8 +21512,8 @@
           "manifest_sha256": "768c9159a32a7bb06ae0b2dec6c2ddc9e3a024e1f5eba8141676dfac15cb340f",
           "bytes": 83817,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-seven-stored-prefix-primary-0a0c44b74214.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-seven-stored-prefix-primary-0a0c44b74214.tar.gz"
         },
         {
           "event": "case-one-stored-primary",
@@ -21523,8 +21523,8 @@
           "manifest_sha256": "711922cbbf7b03543780fd21795651c9bb8d18c511eabf1b89678ac85db3eb01",
           "bytes": 83759,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-one-stored-primary-7537554ac527.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-one-stored-primary-7537554ac527.tar.gz"
         },
         {
           "event": "case-empty-primary",
@@ -21534,8 +21534,8 @@
           "manifest_sha256": "de9d8b0fdfa6bb8dac537483cbbd88b5a057a9b901658b788191e168601d573f",
           "bytes": 83486,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-empty-primary-1655354313ec.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-case-empty-primary-1655354313ec.tar.gz"
         },
         {
           "event": "primary-label-audit",
@@ -21545,8 +21545,8 @@
           "manifest_sha256": "6862d3b9b54819189c1965aa112cb37f89981b3f999f58941f69c91b99035605",
           "bytes": 90096,
           "files": 68,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-primary-label-audit-747aa6bf0ecd.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-primary-label-audit-747aa6bf0ecd.tar.gz"
         },
         {
           "event": "matrix-counters",
@@ -21556,8 +21556,8 @@
           "manifest_sha256": "d410669e95b76d49fb05332054a7a83eb11fa96a0efd12295cc63f3913021f29",
           "bytes": 126951,
           "files": 56,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-matrix-counters-a802040ad37c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-matrix-counters-a802040ad37c.tar.gz"
         },
         {
           "event": "boundaries-before",
@@ -21567,8 +21567,8 @@
           "manifest_sha256": "a01c67fa0b75eb5f3228607c01dcc149c6fb2f546cebe0d4e8bbcb02772698f7",
           "bytes": 1375599,
           "files": 62,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-boundaries-before-f0bd98e128ce.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-boundaries-before-f0bd98e128ce.tar.gz"
         },
         {
           "event": "boundaries-after",
@@ -21578,8 +21578,8 @@
           "manifest_sha256": "18fe56a72535aa3e08335d426d3dc60676ead53918e718d6077e009648448bc2",
           "bytes": 1362747,
           "files": 62,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-boundaries-after-741d6e5346dc.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-boundaries-after-741d6e5346dc.tar.gz"
         },
         {
           "event": "profiles-current",
@@ -21589,8 +21589,8 @@
           "manifest_sha256": "55dc5b95110a2a5196ebbbeac21b15b1c560c88a1112f255a66336fc19b5d7b2",
           "bytes": 536227,
           "files": 79,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-profiles-current-1d972ea7cbbd.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-profiles-current-1d972ea7cbbd.tar.gz"
         },
         {
           "event": "scalar-case-scalar-bool-0-original",
@@ -21600,8 +21600,8 @@
           "manifest_sha256": "1d301644693e746983750f8eb7390a149db5e7f5f68660b6503b059243326922",
           "bytes": 108246,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-bool-0-original-f03f4dc41198.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-bool-0-original-f03f4dc41198.tar.gz"
         },
         {
           "event": "scalar-case-scalar-bool-0-decoded",
@@ -21611,8 +21611,8 @@
           "manifest_sha256": "c7ccc59a164a2e207ff3c7292ada46f0399f625a11dd98a2592c9ceb39bc3be4",
           "bytes": 108526,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-bool-0-decoded-ad64b681e4c3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-bool-0-decoded-ad64b681e4c3.tar.gz"
         },
         {
           "event": "scalar-case-scalar-u64-0-original",
@@ -21622,8 +21622,8 @@
           "manifest_sha256": "e490dd06aba3506bb17783c80e45d34e8b87123a853d55bf7e082fdd5919aba7",
           "bytes": 108958,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-u64-0-original-218e4a27cd5b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-u64-0-original-218e4a27cd5b.tar.gz"
         },
         {
           "event": "scalar-case-scalar-u64-0-decoded",
@@ -21633,8 +21633,8 @@
           "manifest_sha256": "db394430ab9a23107844c3bf18df501af69d61390109c937d477a0c9279cc41c",
           "bytes": 109209,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-u64-0-decoded-2eff8b639bee.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-u64-0-decoded-2eff8b639bee.tar.gz"
         },
         {
           "event": "scalar-case-scalar-i64-0-original",
@@ -21644,8 +21644,8 @@
           "manifest_sha256": "057ac1431b9a75d86297226565916f13149589a3924f2e930372c8dc91a6e1f3",
           "bytes": 109512,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-i64-0-original-830dd7393ecf.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-i64-0-original-830dd7393ecf.tar.gz"
         },
         {
           "event": "scalar-case-scalar-i64-0-decoded",
@@ -21655,8 +21655,8 @@
           "manifest_sha256": "c8256e45718d3774426ba1e943949e524031acfd1e0e0c59f9afa83537c15536",
           "bytes": 109780,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-i64-0-decoded-2786aa4f8739.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-i64-0-decoded-2786aa4f8739.tar.gz"
         },
         {
           "event": "scalar-case-scalar-f64-0-original",
@@ -21666,8 +21666,8 @@
           "manifest_sha256": "abc47d1762050ff5f4fb4be092569c7e3d74a4fa8571b0a37c479867679bb445",
           "bytes": 110196,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-f64-0-original-7478a8662128.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-f64-0-original-7478a8662128.tar.gz"
         },
         {
           "event": "scalar-case-scalar-f64-0-decoded",
@@ -21677,8 +21677,8 @@
           "manifest_sha256": "b2b393a8ecff3f2f725861da49df6fe8c2dbafafb9aef0815be00c07d27e0884",
           "bytes": 110501,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-f64-0-decoded-5976cafa0864.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-f64-0-decoded-5976cafa0864.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-0-original",
@@ -21688,8 +21688,8 @@
           "manifest_sha256": "197c54d605f904fb7ce6f4a111007b0c76cd0f4ec0921b3c260a4f61b1c7829f",
           "bytes": 111083,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-loop-0-original-8a478f6802b5.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-loop-0-original-8a478f6802b5.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-0-decoded",
@@ -21699,8 +21699,8 @@
           "manifest_sha256": "e944825252744f65205131d5347b89bd2da18824bb63da4fbe6e49e90fd62769",
           "bytes": 111384,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-loop-0-decoded-90f18c679996.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-loop-0-decoded-90f18c679996.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-64-original",
@@ -21710,8 +21710,8 @@
           "manifest_sha256": "4abac066622f45c7f84040adbf9335fa8e1f3aa94272964be4d82ec4343e1db2",
           "bytes": 111622,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-loop-64-original-be9285b4789d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-loop-64-original-be9285b4789d.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-64-decoded",
@@ -21721,8 +21721,8 @@
           "manifest_sha256": "b9d2288932341ea0b4b19ce28aaa2eb9ca20b2ffc68b67b0213a53c57460687f",
           "bytes": 112120,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-loop-64-decoded-df0e74e9d67e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-scalar-case-scalar-loop-64-decoded-df0e74e9d67e.tar.gz"
         },
         {
           "event": "frame-allocation",
@@ -21732,8 +21732,8 @@
           "manifest_sha256": "f8602446ae60e99aadd771a43d47a63cc2d6df4330218006c22f7de1133a2e8a",
           "bytes": 107884,
           "files": 91,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-frame-allocation-ee11275220de.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-frame-allocation-ee11275220de.tar.gz"
         },
         {
           "event": "qualified",
@@ -21743,8 +21743,8 @@
           "manifest_sha256": "c316b36135bd8266aac9b36bba6c1a9847c8de17c7f6021d0956f7474a3254d9",
           "bytes": 4860661,
           "files": 154,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-qualified-ba5ffc82315f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-qualified-ba5ffc82315f.tar.gz"
         },
         {
           "event": "analysis-final",
@@ -21754,8 +21754,8 @@
           "manifest_sha256": "8690cd32d7d42febc093c9e3de8854d909af9b58d1c08f126578f5499f08db67",
           "bytes": 124051,
           "files": 64,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-analysis-final-004f4db1303a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-analysis-final-004f4db1303a.tar.gz"
         },
         {
           "event": "closure",
@@ -21765,8 +21765,8 @@
           "manifest_sha256": "45bd73aeafba598eea3ad636ebc6082e004c97cc7cc8f82d80673dca72084457",
           "bytes": 14223093,
           "files": 1179,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-closure-6cf1ad55b379.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-closure-6cf1ad55b379.tar.gz"
         },
         {
           "event": "analysis",
@@ -21776,8 +21776,8 @@
           "manifest_sha256": "3b5f145b4324711c25cd4a4348422cf6c5c4be8a57ffc4f94514384e717a2fae",
           "bytes": 156513,
           "files": 69,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-analysis-b4bd046a991d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r153-analysis-b4bd046a991d.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
@@ -21789,7 +21789,46 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "retained": true,
+      "retained_compiler_source": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+      "measured_compiler_source": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+      "qualified_test_revision": "cfc684c329f843bb7f373b602664b2db5f2c158e",
+      "full_retention_qualification_run": true,
+      "native_lowering_coverage_added": true,
+      "primary_result": {
+        "cases": 20,
+        "primary_observations": 3968,
+        "total_complete_calls": 4048,
+        "geometric_after_before": 0.9812594042515206,
+        "adverse_medians": 8,
+        "unchanged_1_05_guards": true
+      },
+      "analysis": {
+        "script": "analyze.py",
+        "expected_outputs": {
+          "results.json": "5728c069d3acec44bcffef481829a308d219c2d9d1b8658e350eccddf57b0c34",
+          "REPORT.md": "c6a5387f10a68f1c918abd968fbc3146b5c9f298f65a5caec63cff8d60acae19"
+        }
+      },
+      "final_closure_event": "closure",
+      "publication_audit": {
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "paths_with_multiple_preserved_versions": 29,
+        "round": 153,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 1184,
+        "verified_archives": 49,
+        "verified_file_occurrences": 4472,
+        "all_public_archive_server_digests_verified": true,
+        "verified_server_files": 98,
+        "native_binaries_and_bytecode_excluded": true,
+        "read_only_review": "Both final loan-settlement and rejected-first-change controls closed; no further blocker found. Broad qualification separately passes.",
+        "data_archive_count": 49
+      }
     }
   },
   "repository": "mech-lang/mech",
