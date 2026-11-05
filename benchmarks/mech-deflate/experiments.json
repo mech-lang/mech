@@ -19422,6 +19422,17 @@
           "files": 40,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-screen-16384-distribution-change-primary-165246e340b4.tar.gz"
+        },
+        {
+          "event": "screen-33027-periodic-window-primary",
+          "source_revision": "cdd551dbbef71fdb8b6123ff48186541c680ca1d",
+          "asset": "r148-screen-33027-periodic-window-primary-5355585e284a.tar.gz",
+          "sha256": "5355585e284a4f390386764a4eeecbde7f5021dd2835c01556a38a2730b99a38",
+          "manifest_sha256": "a2fd3173d3795f22fb6bda2e5040daaf898f34c9cf62bb91656ea9c42420b0ba",
+          "bytes": 78800,
+          "files": 40,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-screen-33027-periodic-window-primary-5355585e284a.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
