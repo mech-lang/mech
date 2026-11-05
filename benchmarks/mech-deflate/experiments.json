@@ -24115,6 +24115,17 @@
           "files": 97,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-profiles-current-dbbb34348e16.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-closure-9424304a4fa2.tar.gz",
+          "sha256": "9424304a4fa220f15768be2de9aff7b09ea34c7e60e984ec2b1778a305d5afa6",
+          "manifest_sha256": "111c102a8347016e11440fd405aba55c653ec347c01173011369324731840284",
+          "bytes": 16723680,
+          "files": 949,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-closure-9424304a4fa2.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
@@ -24126,8 +24137,8 @@
         "private_abi": 39,
         "bytecode": 14
       },
-      "decision": "Fresh U32 comparison-domain candidate; no timing or retention decision yet.",
-      "retained": false,
+      "decision": "Retain: all unchanged gates pass, 18/20 elapsed medians improve and natural16/32KB improve about4%; preserve periodic/repeated regressions, code growth and contrary cohorts. Draft review and hosted CI remain separate.",
+      "retained": true,
       "release_tag": "evidence-native-compression-experiments-4",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
       "archive_publication": "local evidence; publication pending"
