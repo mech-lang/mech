@@ -20834,6 +20834,17 @@
           "files": 45,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-screen-repeated-32769-primary-e1fba2e12c11.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-eight-literals-primary-ae9a6fe6db71.tar.gz",
+          "sha256": "ae9a6fe6db7123a6c7d0c2eff52ecba6079604dd40e3afa790480f5c1b056676",
+          "manifest_sha256": "387c1ccf2514e31c70992f9687245a78a9780b5a1e58869ad34fa8467a687ce6",
+          "bytes": 90754,
+          "files": 47,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-eight-literals-primary-ae9a6fe6db71.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
