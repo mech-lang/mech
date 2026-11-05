@@ -10,6 +10,15 @@ pub(in crate::native_artifact::program::codegen) enum Step<'a> {
         parallel: bool,
     },
     Define(usize),
+    Length {
+        array: usize,
+        output: usize,
+    },
+    Read {
+        array: usize,
+        index: u32,
+        output: usize,
+    },
     Keep,
 }
 
@@ -155,6 +164,30 @@ pub(in crate::native_artifact::program::codegen) fn derive<'a>(
                     state.words.insert(output, value);
                 }
             }
+            Step::Length { array, output } => {
+                let length = terms.intern(Expr::ArrayLength(array))?;
+                for state in states.iter_mut().flatten() {
+                    state.words.insert(output, length);
+                }
+            }
+            Step::Read {
+                array,
+                index,
+                output,
+            } => {
+                let length = terms.intern(Expr::ArrayLength(array))?;
+                if states.iter().flatten().all(|state| {
+                    state
+                        .read(index as usize)
+                        .is_some_and(|index| state.readable(&terms, index, length))
+                }) {
+                    proof.reads.insert((site, array, index));
+                }
+                let value = terms.intern(Expr::Definition(site, output))?;
+                for state in states.iter_mut().flatten() {
+                    state.words.insert(output, value);
+                }
+            }
             Step::Keep => {}
         }
         if site == scope.latch {
@@ -186,16 +219,7 @@ pub(in crate::native_artifact::program::codegen) fn derive<'a>(
                                 state.read(left.get() as usize)?,
                                 state.read(right.get() as usize)?,
                             );
-                            state.assume(
-                                &terms,
-                                if branch == 0 {
-                                    Relation::Eq
-                                } else {
-                                    Relation::Ne
-                                },
-                                a,
-                                b,
-                            )?
+                            state.literal(&terms, a, b, branch == 0)?
                         }
                     }
                     _ => true,

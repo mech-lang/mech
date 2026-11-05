@@ -36,6 +36,7 @@ enum Arithmetic {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 enum Expr {
     Constant(u64),
+    ArrayLength(usize),
     Initial(usize),
     Definition(usize, usize),
     Phi(usize, usize),
@@ -88,6 +89,42 @@ struct State {
     successful: BTreeSet<(Arithmetic, Id, Id)>,
 }
 impl State {
+    fn literal(&mut self, terms: &Terms, a: Id, b: Id, equal: bool) -> Option<bool> {
+        if !self.assume(terms, if equal { Relation::Eq } else { Relation::Ne }, a, b)? {
+            return Some(false);
+        }
+        // Only a proven normalized predicate has an exhaustive 0/1 domain.
+        // An arbitrary raw Bool/tag may still be 2 or another invalid word.
+        let predicate = [(a, b), (b, a)].into_iter().find_map(|(value, literal)| {
+            terms
+                .boolean(value)
+                .then(|| terms.value(literal))
+                .flatten()
+                .filter(|v| *v <= 1)
+                .map(|literal| (value, literal != 0))
+        });
+        if let Some((value, selected)) = predicate {
+            self.condition(terms, value, selected == equal)
+        } else {
+            Some(true)
+        }
+    }
+
+    fn readable(&self, terms: &Terms, index: Id, length: Id) -> bool {
+        let Expr::Arithmetic(Arithmetic::Add, a, b) = terms.terms[index] else {
+            return false;
+        };
+        let base = if terms.value(a) == Some(1) {
+            b
+        } else if terms.value(b) == Some(1) {
+            a
+        } else {
+            return false;
+        };
+        // The expression is mathematical only after its checked operation
+        // succeeded or this visit proved its wrapping addition cannot wrap.
+        self.truth(terms, Relation::Lt, base, length) == Some(true)
+    }
     fn assign(&mut self, moves: &[(usize, usize)], parallel: bool) -> Option<()> {
         if parallel {
             let values = moves
@@ -295,11 +332,13 @@ impl State {
 pub(super) struct Proof {
     guards: BTreeSet<(usize, u32, usize, u32)>,
     arithmetic: BTreeMap<usize, (Op, Vec<NativeMatchValue>)>,
+    reads: BTreeSet<(usize, usize, u32)>,
 }
 impl Proof {
     pub(super) fn extend(&mut self, other: Self) {
         self.guards.extend(other.guards);
         self.arithmetic.extend(other.arithmetic);
+        self.reads.extend(other.reads);
     }
 
     pub fn guard(
@@ -315,6 +354,9 @@ impl Proof {
         self.arithmetic
             .get(&site)
             .is_some_and(|(proved, inputs)| *proved == op && inputs == operands)
+    }
+    pub fn read(&self, site: usize, array: usize, index: u32) -> bool {
+        self.reads.contains(&(site, array, index))
     }
 }
 
