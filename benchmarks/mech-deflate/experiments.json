@@ -21767,6 +21767,17 @@
           "files": 1179,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-closure-6cf1ad55b379.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+          "asset": "r153-analysis-b4bd046a991d.tar.gz",
+          "sha256": "b4bd046a991d493ed890cec53ca3c9f111a646071798a176c1cb82ce02e0a93a",
+          "manifest_sha256": "3b5f145b4324711c25cd4a4348422cf6c5c4be8a57ffc4f94514384e717a2fae",
+          "bytes": 156513,
+          "files": 69,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-analysis-b4bd046a991d.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
