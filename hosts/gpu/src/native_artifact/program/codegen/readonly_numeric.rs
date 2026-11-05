@@ -16,9 +16,7 @@ use crate::native_artifact::{NativeCompileError, abi::STATUS_ABI};
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
-use mech_engine::native_artifact::{
-    NativeIterationAction as Action, NativeMatchAction as Scalar, NativeScalarOp as Op,
-};
+use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMatchAction as Scalar};
 use std::collections::{BTreeMap, BTreeSet};
 #[path = "numeric_boundary.rs"]
 mod boundary;
@@ -35,7 +33,6 @@ pub(in crate::native_artifact) struct Report {
     pub typed_loads: Vec<(usize, u8)>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
-    pub proven_u64_subtractions: Vec<usize>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
@@ -173,7 +170,8 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     };
     let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
-    let branches = super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
+    let boolean_successors =
+        super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
@@ -181,12 +179,10 @@ pub(in crate::native_artifact) fn emit_entry(
         source_sites: proof.sites.clone(),
         typed_loads: Vec::new(),
         read_pack_sites: Vec::new(),
-        proven_boolean_successors: branches
-            .successors
+        proven_boolean_successors: boolean_successors
             .iter()
             .map(|(&site, &next)| (site, next))
             .collect(),
-        proven_u64_subtractions: branches.subtractions.iter().copied().collect(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
         cold_exits: proof
@@ -653,12 +649,7 @@ pub(in crate::native_artifact) fn emit_entry(
                         .iter()
                         .map(|v| words.read(b, v.get() as usize))
                         .collect::<Vec<_>>();
-                    let lowered = if *op == Op::U64Sub && branches.subtractions.contains(&site) {
-                        Op::U64WrappingSub
-                    } else {
-                        *op
-                    };
-                    let value = primitive(b, lowered, &args, fail);
+                    let value = primitive(b, *op, &args, fail);
                     words.write(b, output.get() as usize, value);
                     report.scalar_operations += 1;
                 }
@@ -669,8 +660,7 @@ pub(in crate::native_artifact) fn emit_entry(
             b,
             &words,
             code,
-            branches
-                .successors
+            boolean_successors
                 .get(&site)
                 .map_or(code.blocks()[site].terminator(), |&next| {
                     mech_engine::native_artifact::NativeIterationTerminator::Scalar(

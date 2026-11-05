@@ -35,9 +35,9 @@ fn complementary_cases_refuse_missing_members_and_region_frontiers() {
         .regions
         .iter()
         .filter_map(|region| region.numeric.as_ref())
-        .find(|proof| !derive(&facts, proof).successors.is_empty())
+        .find(|proof| !derive(&facts, proof).is_empty())
         .unwrap();
-    let (&site, _) = derive(&facts, proof).successors.iter().next().unwrap();
+    let (&site, _) = derive(&facts, proof).iter().next().unwrap();
     let &[previous] = facts.predecessors(site as u32).unwrap() else {
         panic!("sole predecessor");
     };
@@ -47,7 +47,7 @@ fn complementary_cases_refuse_missing_members_and_region_frontiers() {
     for member in [site, previous as usize, producer as usize] {
         let mut missing = proof.clone();
         missing.sites.retain(|&at| at != member);
-        assert!(!derive(&facts, &missing).successors.contains_key(&site));
+        assert!(!derive(&facts, &missing).contains_key(&site));
         for (from, to) in [(member, 0), (0, member)] {
             let mut frontier = proof.clone();
             frontier.exits.push(Exit {
@@ -59,7 +59,7 @@ fn complementary_cases_refuse_missing_members_and_region_frontiers() {
                 retire_carrier: false,
                 kind: ExitKind::Unsupported,
             });
-            assert!(!derive(&facts, &frontier).successors.contains_key(&site));
+            assert!(!derive(&facts, &frontier).contains_key(&site));
         }
         for field in ["header", "initialize", "latch", "finish", "exit"] {
             let mut phase = serde_json::json!({"loops": [{
@@ -71,7 +71,7 @@ fn complementary_cases_refuse_missing_members_and_region_frontiers() {
             phase["loops"][0][field] = serde_json::json!(member);
             let mut frontier = proof.clone();
             frontier.phase = Some(serde_json::from_value(phase).unwrap());
-            assert!(!derive(&facts, &frontier).successors.contains_key(&site));
+            assert!(!derive(&facts, &frontier).contains_key(&site));
         }
     }
 }

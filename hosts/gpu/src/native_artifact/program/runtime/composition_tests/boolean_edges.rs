@@ -21,7 +21,7 @@ fn folded_sites(metadata: &serde_json::Value) -> BTreeSet<usize> {
     .collect()
 }
 
-pub(super) fn guarded_source(true_first: bool) -> String {
+fn guarded_source(true_first: bool) -> String {
     let case = if true_first {
         "| true => pack(xs, at) | false => 0u64"
     } else {

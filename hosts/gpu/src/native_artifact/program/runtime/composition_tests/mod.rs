@@ -15,7 +15,6 @@ mod collection_lifetime;
 mod exit_transport;
 mod failure_transport;
 mod fresh_traversals;
-mod guarded_subtractions;
 mod hybrid_intervals;
 mod managed_carriers;
 mod managed_projections;
