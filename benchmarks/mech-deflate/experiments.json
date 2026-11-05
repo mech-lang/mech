@@ -18940,9 +18940,9 @@
     },
     "147": {
       "base": "ab8cfed2524c2183414c122531e122863c5a7c42",
-      "production": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+      "production": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
       "compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
-      "decision": "under measurement",
+      "decision": "retain for draft review; fully charged ordinary numeric phase descendants, exact cold markers, all predeclared gates pass; sole task closed",
       "events": [
         {
           "event": "semantic-parent",
@@ -19309,6 +19309,17 @@
           "files": 88,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-profiles-current-939e627fa89c.tar.gz"
+        },
+        {
+          "event": "analysis-final",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-analysis-final-9306c593346d.tar.gz",
+          "sha256": "9306c593346dbc31a285429c1c3e3b42f32b876201e246a2f5574a0191f423a2",
+          "manifest_sha256": "4c3b09a5b1cc58b0d5c51ff88a1ea2ad58222b46364db944b8c253786e085086",
+          "bytes": 958907,
+          "files": 62,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-analysis-final-9306c593346d.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
@@ -19320,7 +19331,17 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+      "primary_result": {
+        "geometric_after_before": 0.969855561035726,
+        "primary_observations": 3968,
+        "cases": 20,
+        "periodic_after_before": 0.602580536904799,
+        "adverse_medians": 5,
+        "unchanged_1_05_guards": true
+      },
+      "frozen_prior_heads_unchanged": true
     }
   },
   "repository": "mech-lang/mech",
