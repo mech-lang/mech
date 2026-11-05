@@ -24425,6 +24425,17 @@
           "files": 74,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-case-eight-overlap-primary-4161f43783d9.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+          "asset": "r160-case-eight-literals-prefix-primary-f75b99611f2b.tar.gz",
+          "sha256": "f75b99611f2b11c3ab60bfc68008a1f604e2f47e40778b904a0b4677d86aa7bf",
+          "manifest_sha256": "84c6b2edaea7e8f6d2be52cb37fe53f4d9000b6702505f3754acd9c5dd941027",
+          "bytes": 158401,
+          "files": 74,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-case-eight-literals-prefix-primary-f75b99611f2b.tar.gz"
         }
       ],
       "production": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
