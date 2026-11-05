@@ -20692,6 +20692,17 @@
           "files": 58,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-matrix-counters-c1d6c85d1c7a.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-profiles-current-dc7098e6156e.tar.gz",
+          "sha256": "dc7098e6156e72a5373f52abe686609b73dbec2708fb74da93355bae91e2203e",
+          "manifest_sha256": "030c429cd3877a983c9898c7731f41fd5da6af6c276e66cb1b036d7c1786e436",
+          "bytes": 595748,
+          "files": 79,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-profiles-current-dc7098e6156e.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
