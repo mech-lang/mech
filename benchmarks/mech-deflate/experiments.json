@@ -20789,7 +20789,7 @@
       "base": "9de07a5a339ef9044133fdd96b644f0279b91781",
       "production": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
       "compiler_source": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
-      "decision": "under measurement",
+      "decision": "reject and revert: final eight-literals1.0582156266631404 exceeds fixed1.05 guard; screen favors candidate, both retained",
       "events": [
         {
           "event": "screen-eight-literals-primary",
@@ -21076,6 +21076,17 @@
           "files": 75,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-profiles-current-761001c4a7de.tar.gz"
+        },
+        {
+          "event": "unit",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-unit-3a6622506a4b.tar.gz",
+          "sha256": "3a6622506a4b1459546806545ee02b9bf4d604cb78b08ed037fa6a1b8dca474d",
+          "manifest_sha256": "f390722cfd765b7348d1c3ba1e773a31ef38826e313e12bfc9b49d4e34080f21",
+          "bytes": 114806,
+          "files": 53,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-unit-3a6622506a4b.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
@@ -21087,7 +21098,56 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false,
+      "retained_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+      "retained_published_head": "9de07a5a339ef9044133fdd96b644f0279b91781",
+      "full_retention_qualification_run": false,
+      "native_lowering_coverage_added": false,
+      "runtime_reversion": {
+        "base": "9de07a5a339ef9044133fdd96b644f0279b91781",
+        "candidate_compiler_source": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+        "candidate_tests": "4854a38e747b052ebc7c6b3af5650cab50eb73d3",
+        "test_revert": "e8fa8bdb4a4bed5867aaac2685771ce7eb667e25",
+        "compiler_revert": "834c2b73bb36a376995a57c5de578d51ef85f9f2",
+        "production_tree_equals_base": true,
+        "command": [
+          "git",
+          "diff",
+          "--exit-code",
+          "9de07a5a339ef9044133fdd96b644f0279b91781",
+          "HEAD",
+          "--",
+          "hosts/gpu",
+          ".github/workflows/ci-full.yml",
+          "src/core",
+          "src/engine",
+          "src/stdlib"
+        ],
+        "exit": 0,
+        "frozen_libraries_rehashed": {
+          "serde": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998",
+          "serde_json": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b",
+          "mech_core": "6a1f9143afdf8f57f322be73f09d5b512e7ac3130b060e7ac2c0df1bb0e87d07",
+          "mech_syntax": "683da7d7033c231f91b2ba8c1df0022550b8e9cdbdb55c0dd99228192776bbbe",
+          "mech_engine": "aeac9352c3ecbf2aa4256965ab1cb4a8b9d88dfa223b5168742979c0a080cfeb",
+          "miniz_oxide": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3",
+          "mech_gpu": "b19fd51cdf6917e3f79f20325984c8d00daccfca76733418625c17763307a81c",
+          "mech_stdlib": "7fd017076cd6225b80c421dcfc7986aa5b68943bc88b623c74c1d511f308f888"
+        },
+        "retained_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+        "retained_published_head": "9de07a5a339ef9044133fdd96b644f0279b91781",
+        "retained_ir": 175,
+        "published_pr_heads_changed": false
+      },
+      "analysis": {
+        "script": "analyze.py",
+        "expected_outputs": {
+          "results.json": "c53d36547a4964964d408e86bae53af1e40af961cc333b00ded7c76c9f3b9e17",
+          "REPORT.md": "be9f3f7596351b6a70b7783631fb98073c7984faec921f1f6060677f62d5ea16"
+        }
+      },
+      "final_closure_event": "closure"
     }
   },
   "repository": "mech-lang/mech",
