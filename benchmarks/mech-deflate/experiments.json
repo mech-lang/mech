@@ -17174,6 +17174,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-16384-distribution-change-primary-9438412ed750.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-case-33027-periodic-window-primary-0487403fa1b4.tar.gz",
+          "sha256": "0487403fa1b453ce1036070b96708e86f249d88149b45cd58da12b2e4996becc",
+          "manifest_sha256": "2be81790b5971bd2a8931bb4959e49999512de2c0f9116bf545b1990c7147d61",
+          "bytes": 223324,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-33027-periodic-window-primary-0487403fa1b4.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
