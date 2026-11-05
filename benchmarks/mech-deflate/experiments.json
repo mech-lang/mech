@@ -17041,6 +17041,17 @@
           "files": 55,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-retained-startup-profile-653a10e8a933.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-analysis-b58ed331bfd5.tar.gz",
+          "sha256": "b58ed331bfd596b2128637ed3720e29b92d5c4c52d78445b803e53f82f2374c3",
+          "manifest_sha256": "2971364362c08411841213aa72d5bb0c2f10ffa332032ac3f61f77184f215be3",
+          "bytes": 249197,
+          "files": 47,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-analysis-b58ed331bfd5.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
