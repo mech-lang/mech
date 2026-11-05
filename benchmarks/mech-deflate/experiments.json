@@ -21953,6 +21953,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-16384-distribution-change-primary-be64deaae0d1.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-33027-periodic-window-primary-722f4b4dc228.tar.gz",
+          "sha256": "722f4b4dc228d12469b76a784ddb5e4a66d0c1aeaf247d708f2a452881e9598d",
+          "manifest_sha256": "da9453b61b790c520e2283f696d00a96d02aa368a45c102ec136fc3952e56115",
+          "bytes": 126869,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-33027-periodic-window-primary-722f4b4dc228.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
