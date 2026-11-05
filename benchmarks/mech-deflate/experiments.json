@@ -18941,7 +18941,7 @@
     "147": {
       "base": "ab8cfed2524c2183414c122531e122863c5a7c42",
       "production": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
-      "compiler_source": "0b3171712210050ab417e8468126655e633fe9db",
+      "compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
       "decision": "under measurement",
       "events": [
         {
@@ -18953,7 +18953,21 @@
           "bytes": 44838,
           "files": 22,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-semantic-parent-3b01dc9515ef.tar.gz"
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-semantic-parent-3b01dc9515ef.tar.gz",
+          "tested_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "test_source_revision": "d4073663a2",
+          "archive_revision_scope": "reference for retained packer/LICENSE blobs; compiled-parent provenance is inside semantic-parent/provenance.json"
+        },
+        {
+          "event": "unit",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-unit-db7436b1d977.tar.gz",
+          "sha256": "db7436b1d97789674a5c676860695f88ac1fb7f2808ff2b69311d55d7280ece3",
+          "manifest_sha256": "c4faab75a50374d741078e422dfafd453ee7161a4ec2d8c0a382353cb2a94f1b",
+          "bytes": 126203,
+          "files": 35,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-unit-db7436b1d977.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
