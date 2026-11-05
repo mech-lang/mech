@@ -24038,6 +24038,17 @@
           "files": 120,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-scalar-case-scalar-i64-0-decoded-85c14862a518.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-f64-0-original",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-scalar-case-scalar-f64-0-original-8d7a83376bce.tar.gz",
+          "sha256": "8d7a83376bce9d528534dc18cd3707719a1a569402b9b8bfcf1361440e9a094a",
+          "manifest_sha256": "3e77610e26d2afc2f8c3522c3ab50a20dd7431075b49ba89a7aa08a31b43b29b",
+          "bytes": 168822,
+          "files": 120,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-scalar-case-scalar-f64-0-original-8d7a83376bce.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
