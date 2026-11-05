@@ -20296,6 +20296,17 @@
           "files": 45,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-binary-inspection-7b4f15c024d7.tar.gz"
+        },
+        {
+          "event": "expanded-parent",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r151-expanded-parent-6669d74babc4.tar.gz",
+          "sha256": "6669d74babc4551a96cc19e60096511334130b23bdeb9364b46d19407ee68780",
+          "manifest_sha256": "7bf80a6f388a7d9239822036ad97136735de6db923942961bc14547f7785ad5a",
+          "bytes": 103050,
+          "files": 53,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-expanded-parent-6669d74babc4.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
