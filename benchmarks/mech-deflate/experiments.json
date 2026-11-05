@@ -20999,6 +20999,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-32-high-entropy-stored-primary-86c2074e5091.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-eight-overlap-primary-c3c351256b00.tar.gz",
+          "sha256": "c3c351256b00336a530f7b508a16b29b245782cc15ce0fc4797272dcad598d15",
+          "manifest_sha256": "73bebcb0f048f438169a332988b179bb35b1643a878c64aaea37f1a6f1c092e4",
+          "bytes": 92918,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-eight-overlap-primary-c3c351256b00.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
