@@ -17837,6 +17837,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-eight-overlap-primary-ac554e9a9f0f.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-case-eight-literals-prefix-primary-157fbd1bb83d.tar.gz",
+          "sha256": "157fbd1bb83d598f8229dd2ab223047f686c62322cd062b8055b40ce13b0dbdb",
+          "manifest_sha256": "8770804b7e97f578da426549aa5b60f49ba24f94f28b1eff3c16898eae5bd847",
+          "bytes": 232646,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-eight-literals-prefix-primary-157fbd1bb83d.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
