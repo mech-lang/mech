@@ -15739,6 +15739,17 @@
           "files": 41,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-callback-census-5b435edc2b0d.tar.gz"
+        },
+        {
+          "event": "reference-outlier",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-reference-outlier-45f0d894d29d.tar.gz",
+          "sha256": "45f0d894d29d32c462196ed5f2a558898341a0fc3116bb65108faa70b8747457",
+          "manifest_sha256": "debdc3ef7ce1224d7fc4aca0dabfca43af8d7606eb8e5d932a462401710de742",
+          "bytes": 209320,
+          "files": 38,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-reference-outlier-45f0d894d29d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
