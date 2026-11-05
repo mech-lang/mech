@@ -20801,6 +20801,17 @@
           "files": 44,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-screen-eight-literals-primary-b666cc733e5d.tar.gz"
+        },
+        {
+          "event": "screen-16384-distribution-change-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-screen-16384-distribution-change-primary-9d5e491439be.tar.gz",
+          "sha256": "9d5e491439be42c513dcac2f6cb4cf7bd547173228ff740dd5f1f56a0682da48",
+          "manifest_sha256": "461160323708992bb06c468dae8f36ed57879f41b1fd0616c34c6a5d9d25164b",
+          "bytes": 85023,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-screen-16384-distribution-change-primary-9d5e491439be.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
