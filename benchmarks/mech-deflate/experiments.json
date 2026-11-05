@@ -15518,7 +15518,7 @@
       "base": "cd13ae3ad786c82cd6fdeff65ec1422ab888a7f9",
       "production": "f04df6c76ac2a38506becf76a980533e7954b146",
       "compiler_source": "f04df6c76ac2a38506becf76a980533e7954b146",
-      "decision": "under measurement",
+      "decision": "Keep all expanded evidence. R139 is coverage/profile work on existing R137/R138 images, not a new optimization. Next compiler target is generic bulk little-endian byte append inside the existing private numeric recurrence; no compressor source rewrite.",
       "events": [
         {
           "event": "initial",
@@ -15827,11 +15827,565 @@
           "files": 45,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-profile-reymont-prefix-16384-75044a650a4c.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-closure-4c281bc7269a.tar.gz",
+          "sha256": "4c281bc7269a5e423eed5474940b74989773962dd7ec3123f2bfd0be2e379259",
+          "manifest_sha256": "82ca9069415eca1554630814f2cd12e360f3240aaec034577b3886126fbffa78",
+          "bytes": 854261,
+          "files": 298,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-closure-4c281bc7269a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "summary": {
+        "completed_cases": 20,
+        "matched_before_after_cases": 17,
+        "new_current_only_corpus_prefix_cases": 3,
+        "primary_observations": 3776,
+        "all_observations": 3850,
+        "ordinary_visit_census": {
+          "visits": 1052728,
+          "helpers": 676073,
+          "hot_iteration": 434,
+          "hot_header": 39373,
+          "hot_loop_visits": 1043480,
+          "hot_loop_share_percent": 99.12152046872507,
+          "bulk_append_visits": {
+            "39487": 16232,
+            "39661": 42
+          },
+          "overlap_warning": "Helper and visit counts overlap; do not add them as disjoint work."
+        },
+        "failure_dispositions": [
+          {
+            "failure": "initial generic worker build: Vec used instead of boxed empty matrix",
+            "classification": "introduced diagnostic harness",
+            "disposition": "Corrected with Into conversion; both matched workers and20cases pass; initial build receipt retained."
+          },
+          {
+            "failure": "initial pinned reference build PermissionDenied",
+            "classification": "environmental cache/filesystem access",
+            "disposition": "Same source/build succeeds with authorized ordinary compiler-cache writes; no compressor or compiler change."
+          },
+          {
+            "failure": "initial reproducer inspector borrowed temporary metadata JSON",
+            "classification": "introduced diagnostic harness",
+            "disposition": "Retain the metadata value before borrowing; original/decoded semantic execution now passes. Failed build retained."
+          },
+          {
+            "failure": "bulk-append recurrence native acceptance exits101",
+            "classification": "inherited compiler gap at unchanged R138",
+            "disposition": "Unresolved. Minimal original/decoded semantic controls pass but compiled numeric loop inventory remains empty. This is the next bounded compiler target."
+          },
+          {
+            "failure": "three reference medians zero at0/1/7input bytes",
+            "classification": "measurement resolution",
+            "disposition": "Retain all zero observations. Ratios unavailable, no invented denominator; higher-resolution separate cohort remains needed for precise parity claims on these cases."
+          },
+          {
+            "failure": "image-validation startup regression",
+            "classification": "inherited fromR136",
+            "disposition": "Unresolved and outside evaluate_into. Actual image startup durations remain in raw session/profile journals."
+          }
+        ],
+        "scope": "All9maintained small complete-stream fixtures, both block/window fixtures, six retained synthetic inputs/sizes, three bounded official-corpus prefixes. No full6627202B timing, no source variant or separate ten-workload suite claim. Small old7-case matrix alone did not establish this coverage."
+      },
+      "primary_cases": [
+        {
+          "name": "33027-periodic-window",
+          "input_bytes": 33027,
+          "prefix_bytes": 0,
+          "capacity": 33062,
+          "reference_seconds": 0.001253,
+          "medians": {
+            "before": 0.039991021,
+            "after": 0.0370503335
+          },
+          "multiples_of_reference": {
+            "before": 31.916217877094972,
+            "after": 29.569300478850757
+          },
+          "after_over_before": 0.9264663060240447,
+          "change_percent": -7.353369397595532,
+          "improving_blocks": 8,
+          "adverse_blocks": 0,
+          "primary_observations": 64,
+          "work": 313438380212,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "16384-distribution-change",
+          "input_bytes": 16384,
+          "prefix_bytes": 0,
+          "capacity": 16404,
+          "reference_seconds": 0.0007955,
+          "medians": {
+            "before": 0.1495992705,
+            "after": 0.1493931665
+          },
+          "multiples_of_reference": {
+            "before": 188.0569082338152,
+            "after": 187.79782086737902
+          },
+          "after_over_before": 0.998622292747076,
+          "change_percent": -0.13777072529239653,
+          "improving_blocks": 5,
+          "adverse_blocks": 3,
+          "primary_observations": 64,
+          "work": 2829568064279,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "random-32769",
+          "input_bytes": 32769,
+          "prefix_bytes": 0,
+          "capacity": 32804,
+          "reference_seconds": 0.0010575,
+          "medians": {
+            "before": 0.0080546665,
+            "after": 0.008031917
+          },
+          "multiples_of_reference": {
+            "before": 7.616705910165484,
+            "after": 7.595193380614656
+          },
+          "after_over_before": 0.9971756124229352,
+          "change_percent": -0.2824387577064824,
+          "improving_blocks": 5,
+          "adverse_blocks": 3,
+          "primary_observations": 64,
+          "work": 129288746789,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "repeated-32769",
+          "input_bytes": 32769,
+          "prefix_bytes": 0,
+          "capacity": 32804,
+          "reference_seconds": 0.001336,
+          "medians": {
+            "before": 0.027671688,
+            "after": 0.024760333
+          },
+          "multiples_of_reference": {
+            "before": 20.71234131736527,
+            "after": 18.53318338323353
+          },
+          "after_over_before": 0.8947893962955927,
+          "change_percent": -10.521060370440727,
+          "improving_blocks": 8,
+          "adverse_blocks": 0,
+          "primary_observations": 64,
+          "work": 270676915001,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "random-1024",
+          "input_bytes": 1024,
+          "prefix_bytes": 0,
+          "capacity": 1029,
+          "reference_seconds": 0.000302,
+          "medians": {
+            "before": 0.0012494795000000001,
+            "after": 0.001242521
+          },
+          "multiples_of_reference": {
+            "before": 4.137349337748344,
+            "after": 4.114307947019867
+          },
+          "after_over_before": 0.9944308810188561,
+          "change_percent": -0.5569118981143872,
+          "improving_blocks": 5,
+          "adverse_blocks": 3,
+          "primary_observations": 256,
+          "work": 18264396817,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "repeated-1024",
+          "input_bytes": 1024,
+          "prefix_bytes": 0,
+          "capacity": 1029,
+          "reference_seconds": 0.000327,
+          "medians": {
+            "before": 0.002085646,
+            "after": 0.001998771
+          },
+          "multiples_of_reference": {
+            "before": 6.378122324159022,
+            "after": 6.112449541284404
+          },
+          "after_over_before": 0.958346239007003,
+          "change_percent": -4.1653760992997,
+          "improving_blocks": 8,
+          "adverse_blocks": 0,
+          "primary_observations": 256,
+          "work": 25477511424,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "320-overlap",
+          "input_bytes": 320,
+          "prefix_bytes": 0,
+          "capacity": 325,
+          "reference_seconds": 0.000297,
+          "medians": {
+            "before": 0.001501896,
+            "after": 0.0014855835000000001
+          },
+          "multiples_of_reference": {
+            "before": 5.0568888888888885,
+            "after": 5.001964646464646
+          },
+          "after_over_before": 0.9891387286469903,
+          "change_percent": -1.0861271353009738,
+          "improving_blocks": 7,
+          "adverse_blocks": 1,
+          "primary_observations": 256,
+          "work": 19627386453,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "random-256",
+          "input_bytes": 256,
+          "prefix_bytes": 0,
+          "capacity": 261,
+          "reference_seconds": 0.000297,
+          "medians": {
+            "before": 0.001315979,
+            "after": 0.0013048545
+          },
+          "multiples_of_reference": {
+            "before": 4.430905723905724,
+            "after": 4.393449494949495
+          },
+          "after_over_before": 0.9915465976280776,
+          "change_percent": -0.845340237192238,
+          "improving_blocks": 5,
+          "adverse_blocks": 3,
+          "primary_observations": 256,
+          "work": 17972299228,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "128-biased-dynamic",
+          "input_bytes": 128,
+          "prefix_bytes": 0,
+          "capacity": 133,
+          "reference_seconds": 0.000297,
+          "medians": {
+            "before": 0.002355521,
+            "after": 0.002336313
+          },
+          "multiples_of_reference": {
+            "before": 7.931047138047139,
+            "after": 7.8663737373737375
+          },
+          "after_over_before": 0.9918455407529798,
+          "change_percent": -0.8154459247020185,
+          "improving_blocks": 7,
+          "adverse_blocks": 1,
+          "primary_observations": 256,
+          "work": 37792229945,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "random-64",
+          "input_bytes": 64,
+          "prefix_bytes": 0,
+          "capacity": 69,
+          "reference_seconds": 0.00029,
+          "medians": {
+            "before": 0.001255833,
+            "after": 0.001251271
+          },
+          "multiples_of_reference": {
+            "before": 4.330458620689655,
+            "after": 4.314727586206897
+          },
+          "after_over_before": 0.9963673513914668,
+          "change_percent": -0.36326486085331844,
+          "improving_blocks": 4,
+          "adverse_blocks": 4,
+          "primary_observations": 256,
+          "work": 17102504612,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "32-high-entropy-stored",
+          "input_bytes": 32,
+          "prefix_bytes": 0,
+          "capacity": 37,
+          "reference_seconds": 0.000286,
+          "medians": {
+            "before": 0.0012399379999999999,
+            "after": 0.001224667
+          },
+          "multiples_of_reference": {
+            "before": 4.335447552447552,
+            "after": 4.282052447552448
+          },
+          "after_over_before": 0.987684061622436,
+          "change_percent": -1.231593837756395,
+          "improving_blocks": 5,
+          "adverse_blocks": 3,
+          "primary_observations": 256,
+          "work": 16825950956,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "eight-literals",
+          "input_bytes": 8,
+          "prefix_bytes": 0,
+          "capacity": 13,
+          "reference_seconds": 0.0002905,
+          "medians": {
+            "before": 0.001334854,
+            "after": 0.0013225210000000001
+          },
+          "multiples_of_reference": {
+            "before": 4.595022375215145,
+            "after": 4.552567986230637
+          },
+          "after_over_before": 0.9907607873220593,
+          "change_percent": -0.92392126779407,
+          "improving_blocks": 6,
+          "adverse_blocks": 2,
+          "primary_observations": 256,
+          "work": 18067825665,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "eight-overlap",
+          "input_bytes": 8,
+          "prefix_bytes": 0,
+          "capacity": 13,
+          "reference_seconds": 0.000284,
+          "medians": {
+            "before": 0.001297896,
+            "after": 0.001289187
+          },
+          "multiples_of_reference": {
+            "before": 4.570056338028168,
+            "after": 4.539390845070423
+          },
+          "after_over_before": 0.9932899092069011,
+          "change_percent": -0.6710090793098922,
+          "improving_blocks": 6,
+          "adverse_blocks": 2,
+          "primary_observations": 256,
+          "work": 17104568031,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "eight-literals-prefix",
+          "input_bytes": 8,
+          "prefix_bytes": 2,
+          "capacity": 15,
+          "reference_seconds": 0.000287,
+          "medians": {
+            "before": 0.0013288745,
+            "after": 0.00132225
+          },
+          "multiples_of_reference": {
+            "before": 4.630224738675959,
+            "after": 4.607142857142858
+          },
+          "after_over_before": 0.9950149543843305,
+          "change_percent": -0.4985045615669481,
+          "improving_blocks": 5,
+          "adverse_blocks": 3,
+          "primary_observations": 256,
+          "work": 18067826113,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "seven-stored-prefix",
+          "input_bytes": 7,
+          "prefix_bytes": 2,
+          "capacity": 14,
+          "reference_seconds": 0.0,
+          "medians": {
+            "before": 0.0001206245,
+            "after": 0.000120166
+          },
+          "multiples_of_reference": {
+            "before": null,
+            "after": null
+          },
+          "after_over_before": 0.9961989479749139,
+          "change_percent": -0.38010520250860713,
+          "improving_blocks": 7,
+          "adverse_blocks": 1,
+          "primary_observations": 256,
+          "work": 582161638,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "one-stored",
+          "input_bytes": 1,
+          "prefix_bytes": 0,
+          "capacity": 6,
+          "reference_seconds": 0.0,
+          "medians": {
+            "before": 0.0001205415,
+            "after": 0.000120167
+          },
+          "multiples_of_reference": {
+            "before": null,
+            "after": null
+          },
+          "after_over_before": 0.9968931861641012,
+          "change_percent": -0.3106813835898836,
+          "improving_blocks": 6,
+          "adverse_blocks": 2,
+          "primary_observations": 256,
+          "work": 582161238,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "empty",
+          "input_bytes": 0,
+          "prefix_bytes": 0,
+          "capacity": 5,
+          "reference_seconds": 0.0,
+          "medians": {
+            "before": 0.0001172295,
+            "after": 0.00011629150000000001
+          },
+          "multiples_of_reference": {
+            "before": null,
+            "after": null
+          },
+          "after_over_before": 0.9919986010347225,
+          "change_percent": -0.8001398965277517,
+          "improving_blocks": 8,
+          "adverse_blocks": 0,
+          "primary_observations": 256,
+          "work": 506755219,
+          "scope": "One prepared before/after session, balanced blocks are descriptive not independent replications. All original source bytes, aliases, capacity and output-prefix checks retained. No production edit in R139; extends R138 matched controls."
+        },
+        {
+          "name": "reymont-prefix-1024",
+          "input_bytes": 1024,
+          "prefix_bytes": 0,
+          "capacity": 1029,
+          "reference_seconds": 0.000336,
+          "medians": {
+            "after": 0.0073482915
+          },
+          "multiples_of_reference": {
+            "after": 21.86991517857143
+          },
+          "primary_observations": 128,
+          "work": 120720766933,
+          "scope": "New bounded original-corpus prefix baseline on unchanged R138 compiler. No before/after optimization claim, no full-file timing. Same source, output-reservation/clear and evaluate_into boundary."
+        },
+        {
+          "name": "reymont-prefix-16384",
+          "input_bytes": 16384,
+          "prefix_bytes": 0,
+          "capacity": 16404,
+          "reference_seconds": 0.002129,
+          "medians": {
+            "after": 0.060096271
+          },
+          "multiples_of_reference": {
+            "after": 28.227464067637392
+          },
+          "primary_observations": 32,
+          "work": 914793522151,
+          "scope": "New bounded original-corpus prefix baseline on unchanged R138 compiler. No before/after optimization claim, no full-file timing. Same source, output-reservation/clear and evaluate_into boundary."
+        },
+        {
+          "name": "reymont-prefix-32769",
+          "input_bytes": 32769,
+          "prefix_bytes": 0,
+          "capacity": 32804,
+          "reference_seconds": 0.00437,
+          "medians": {
+            "after": 0.10919047949999999
+          },
+          "multiples_of_reference": {
+            "after": 24.986379748283753
+          },
+          "primary_observations": 32,
+          "work": 1621098090678,
+          "scope": "New bounded original-corpus prefix baseline on unchanged R138 compiler. No before/after optimization claim, no full-file timing. Same source, output-reservation/clear and evaluate_into boundary."
+        }
+      ],
+      "current_profiles": {
+        "16384-distribution-change": {
+          "outside generated entry or unrecognized context": {
+            "weights": 8,
+            "percent": 0.5873715124816447
+          },
+          "generated code exclusive": {
+            "weights": 59,
+            "percent": 4.33186490455213
+          },
+          "other callbacks under generated entry": {
+            "weights": 660,
+            "percent": 48.458149779735685
+          },
+          "private-frame callback subtree": {
+            "weights": 586,
+            "percent": 43.02496328928047
+          },
+          "tail cleanup subtree": {
+            "weights": 49,
+            "percent": 3.5976505139500734
+          }
+        },
+        "reymont-prefix-16384": {
+          "outside generated entry or unrecognized context": {
+            "weights": 4,
+            "percent": 0.2909090909090909
+          },
+          "generated code exclusive": {
+            "weights": 406,
+            "percent": 29.527272727272727
+          },
+          "other callbacks under generated entry": {
+            "weights": 576,
+            "percent": 41.89090909090909
+          },
+          "private-frame callback subtree": {
+            "weights": 357,
+            "percent": 25.963636363636365
+          },
+          "tail cleanup subtree": {
+            "weights": 32,
+            "percent": 2.327272727272727
+          }
+        }
+      },
+      "image_pins": {
+        "compiler_source": "f04df6c76ac2a38506becf76a980533e7954b146",
+        "worker_sha256": "6a7ec7d359478c833a42cb1ef4011a150ba01c224cec47da8362a91f6ef7507e",
+        "worker_source_sha256": "d1f8548ee43c13bdae472e26fd71c35ad17f53c036d3e71240d9431e7c22ff7d",
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "object_sha256": "978b3dde98e49e18db5c397d7447af6c952d198a4809f90c9875e32be69b4f75",
+        "descriptor_sha256": "107c50bafebfcd97561efa60537dee6253318730ba1bb38c40f29df5e1478ba5",
+        "allocator_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+        "only_harness_change": "Batch bounded complete-stream cases under the same linked image, with original prefix preparation, capacity and checks outside evaluate_into; no production/source edits."
+      },
+      "validation": {
+        "all_raw_bytes_and_independent_inflate": true,
+        "aliases_and_retained_output_capacity": true,
+        "all_case_managed_cleanup_zero": true,
+        "minimal_reproducer_original_decoded_semantics": true,
+        "native_reproducer_current_expected_failure": 101,
+        "fresh_large_dependency_or_component_test_rerun": false,
+        "production_test_checkpoint": "R138:555compatible/130nativeCI/236components/8composition/1path/132workflow/15architecture/12scalar/8frame, unchanged production revision."
+      }
     }
   },
   "repository": "mech-lang/mech",
