@@ -16997,6 +16997,17 @@
           "files": 50,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-matrix-counters-fe3253ec4e5c.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-profiles-current-14a9adf614ce.tar.gz",
+          "sha256": "14a9adf614ce5d89778888b63e08dd2f888f1f26d5985c93d979f4509cc6fe9c",
+          "manifest_sha256": "794c2c9b143937e163ee52eadd3591ea777a8e1188dd3596f5bf239e8cb3aad6",
+          "bytes": 634981,
+          "files": 71,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-profiles-current-14a9adf614ce.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
