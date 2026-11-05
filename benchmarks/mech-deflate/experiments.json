@@ -23449,6 +23449,17 @@
           "files": 123,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-scalar-case-scalar-loop-64-decoded-4cfbf2e8d796.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-matrix-counters-dcda65e5a288.tar.gz",
+          "sha256": "dcda65e5a288c186cb59f4f0927d55a1987d203cecf6f1cfaae7e152dda52403",
+          "manifest_sha256": "c20ba27db072e883d41792adf1e2b42250e597895575f4ad65b912eface51495",
+          "bytes": 3530348,
+          "files": 83,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-matrix-counters-dcda65e5a288.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
