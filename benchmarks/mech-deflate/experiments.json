@@ -21492,6 +21492,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-eight-overlap-primary-fd83c23a6c93.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-eight-literals-prefix-primary-f4bb5927008e.tar.gz",
+          "sha256": "f4bb5927008e622cf1b2b81d980b33acab4c0db2aaa0d5d7ce641bf2f9070ae8",
+          "manifest_sha256": "85eb2374d3ebbeb695e088efb3ce3093632c6955e9c1ae5a35eefc2d6497f31a",
+          "bytes": 84250,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-eight-literals-prefix-primary-f4bb5927008e.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
