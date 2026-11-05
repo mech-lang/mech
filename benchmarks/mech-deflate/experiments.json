@@ -17550,7 +17550,7 @@
       "base": "f120b81e01cb868ace9ca7af474dd9081776fa32",
       "production": "05102440a85c233069b3968f1e6a92c27461258c",
       "compiler_source": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
-      "decision": "under measurement",
+      "decision": "Reject: full20 primary geometric mean+0.369643%,14adverse medians. Preserve tests/evidence; production restored exactly to R142.",
       "events": [
         {
           "event": "initial",
@@ -17936,7 +17936,24 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false,
+      "retained_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
+      "retained_versions": {
+        "typed_ir": 168,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "candidate_versions": {
+        "typed_ir": 170,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "primary_observations": 3968,
+      "cases": 20,
+      "scope": "Closed bounded private-store task. Useful test-only increment; PR973/976 remain frozen. No further implementation active."
     }
   },
   "repository": "mech-lang/mech",
