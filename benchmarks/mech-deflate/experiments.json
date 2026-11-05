@@ -19609,6 +19609,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-reymont-prefix-1024-primary-b8e1aaec2671.tar.gz"
+        },
+        {
+          "event": "case-320-overlap-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-320-overlap-primary-fcc58314829a.tar.gz",
+          "sha256": "fcc58314829ab63fc2a70358d547f87bb1cb735e4c2af19d86de98194ae1121c",
+          "manifest_sha256": "9daa393b0680204d79223df82b8511ace3f4d0ea766cb29153a3730ec93232d6",
+          "bytes": 888276,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-320-overlap-primary-fcc58314829a.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
