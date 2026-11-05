@@ -20240,7 +20240,7 @@
       "base": "054f5a5f82622d83d1da23d4b8d35b64ac6b9d50",
       "production": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
       "compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
-      "decision": "under measurement",
+      "decision": "retain for small matched elapsed/code/stack improvements; mixed instruction effects disclosed",
       "events": [
         {
           "event": "screen-eight-literals-primary",
@@ -20703,6 +20703,17 @@
           "files": 79,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-profiles-current-dc7098e6156e.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-analysis-dbe306dfa531.tar.gz",
+          "sha256": "dbe306dfa5315d334b76795350854eea1e68e8808fa8a6257b3fdc8706960ace",
+          "manifest_sha256": "105ee0079dc7702c6c592b2d8a32450edf2720fea4c959b52388eb8a9e05ef32",
+          "bytes": 126335,
+          "files": 51,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-analysis-dbe306dfa531.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
@@ -20714,7 +20725,27 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": true,
+      "retained_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+      "qualified_test_revision": "5da7d244be992c9d192369820c3bdc1ac803a898",
+      "final_closure_event": "closure",
+      "full_retention_qualification_run": true,
+      "primary_result": {
+        "cases": 20,
+        "primary_observations": 3968,
+        "total_complete_calls": 4048,
+        "geometric_after_before": 0.9962677826076918,
+        "adverse_medians": 7,
+        "unchanged_1_05_guards": true
+      },
+      "analysis": {
+        "script": "analyze.py",
+        "expected_outputs": {
+          "results.json": "2ed7fa337d198196414ce5e25d8d35bc289d7746a3cf4b35441b9eeae9e5ca9d",
+          "REPORT.md": "ab9d952827201b87f7a96f4c863de0be2d66f284524a3251dc4692cb6cfe76b7"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
