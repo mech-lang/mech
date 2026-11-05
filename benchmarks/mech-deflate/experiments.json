@@ -18680,6 +18680,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-128-biased-dynamic-primary-cafca650f2ee.tar.gz"
+        },
+        {
+          "event": "case-random-64-primary",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-case-random-64-primary-134793c5a3f2.tar.gz",
+          "sha256": "134793c5a3f215abe21bd60dfad8dc75606ff383d17b9e2641553aded59eb4f3",
+          "manifest_sha256": "6964b3dd42572ece8a1c3391c2b0e1b54038dfff053c88393537bd3acdfc53d2",
+          "bytes": 259631,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-random-64-primary-134793c5a3f2.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
