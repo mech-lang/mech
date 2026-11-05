@@ -1,6 +1,6 @@
 # Native compression: current status
 
-**R148 is closed for draft review. Prior published heads and the R146 closure branch remain frozen. No implementation task is active.**
+**The retained compiler remains R148. R149 profiling is complete; R150's geometry-placement candidate was rejected and reverted. Prior published heads remain frozen.**
 
 | Checkpoint | Value |
 |---|---|
@@ -44,6 +44,10 @@ Direct isolated census: three periodic calls per side show predicate entries 231
 
 Current four-case CPU-time profiles show 52.25–72.01% generated-exclusive weights. Periodic is 69.84% generated / 28.00% host callbacks including frames and cleanup / 2.16% outside or unclassified. These are time samples, not operation or retired-instruction shares. This round removes host checks and adds no lowering coverage.
 
+R149 resolves individual generated PCs: 7,021/7,021 samples cross-check raw timer addresses. The periodic 0x6b300–0x6b400 interval has 584/3,554 time weights (16.43%), spanning source arithmetic and packed-read eligibility; that share is not a saving estimate. All 5,138 complete diagnostic calls preserve frozen work/capacity/backing observations, exact output and cleanup. Sanitized portable tables and replay are archived; raw traces and environment-bearing packets remain private.
+
+R150 tested computing immutable read-pack geometry in the current native entry. The speed backend produces **identical machine text, relocations and targets**; source placement does not constrain final pure-expression placement. The four-case screen's periodic target is 10.341083→10.342583 ms, 8.259651×→8.260849× (+0.014505%). Other small timing changes are retained without a mechanism claim. Reject at the emitted-code gate: all candidate code/tests and IR174 are reverted; retained versions remain 173/107/39/14. Existing 304 work/error observations agree with the parent. A new test-only window-count assumption and a missing diagnostic allocator file are preserved in the receipts. Full retention qualification was not entered. No new source PR or performance improvement is claimed.
+
 The original exact source-paid predicate is byte-identical. Every segment member shares its parent iteration; checked preparation requires parent IDs to decrease. A newer iteration therefore cannot be a paid ancestor. IDs passing the cheap comparison retain the full exact inventory/ancestry scan. Region matching, charges, current owners/arguments, admission, failure order/publication/cleanup/retry and finite fallback stay unchanged. No cache, authority bank, new emitter or source rewrite.
 
 Build-owned restoration preserves strict parent-ID order under the existing SAME unchanged checked-plan/Object provenance contract; it does not rerun the full Engine ordering validator. Selected composition membership remains independently reconstructed. Original/decoded/direct/restored tests require non-vacuous false positives, above-root/sibling/None cases and exact inventory holes; actual lifecycle/recovery controls remain.
@@ -54,10 +58,10 @@ R147 Object/descriptor/metadata/source/MBC are reused byte-identically; generate
 
 | Work board | Disposition |
 |---|---|
-| Completed | Prior finite milestone and reconciliation; R147 descendant pieces; R148 paid-source scan task |
-| Rejected/preserved | R131 snapshots, R141 early refusal, R143 stores; R148 ancestry-walk development candidate superseded |
-| Active | None; stop at the review checkpoint |
-| Next | Integration review; separately assigned image-validation usability follow-up |
+| Completed | Prior finite milestone/reconciliation; R147/R148 tasks; R149 exact-PC profiling |
+| Rejected/preserved | R131/R141/R143; R148 ancestry-walk candidate; R150 pure geometry placement |
+| Active | No implementation; R150 is closed with the retained baseline unchanged |
+| Next | Investigate repeated source checks using current-path facts; image-validation usability follow-up |
 | Deferred | Further lowering/instruction work, child funding, source rewrites, ownership/allocation/SIMD |
 
 Introduced test-only inventory-size and missing above-root assumptions are corrected. An attempted recursive-comprehension witness hit the inherited frozen Engine restriction and is excluded; no language expansion. All failures and sources remain archived. No unresolved introduced functional failure. Read-only implementation review found no correctness/accounting blocker.

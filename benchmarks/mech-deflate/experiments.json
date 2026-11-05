@@ -20000,7 +20000,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "withheld_local_events": [
         {
           "event": "pc-profile-33027-periodic-window",
@@ -20034,8 +20034,8 @@
           "manifest_sha256": "cff4642d97d0e59d352bc5807b2e547017d49f7db7f868435caf75e6fa1f38ec",
           "bytes": 338024,
           "files": 30,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-tables-33027-periodic-window-9b68666d0bc9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r149-pc-tables-33027-periodic-window-9b68666d0bc9.tar.gz"
         },
         {
           "event": "pc-tables-16384-distribution-change",
@@ -20045,8 +20045,8 @@
           "manifest_sha256": "277d1f7519330ceef37dd475b16860258154318b4a906e168cd329fa2a6954b3",
           "bytes": 421724,
           "files": 30,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-tables-16384-distribution-change-72c32c7e7b67.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r149-pc-tables-16384-distribution-change-72c32c7e7b67.tar.gz"
         },
         {
           "event": "pc-analysis",
@@ -20056,8 +20056,19 @@
           "manifest_sha256": "438db574ac83433051284910c04302bc045a4cfff8fb97b3eb22493b99aa8496",
           "bytes": 96139,
           "files": 73,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-analysis-7bb7ae4540c4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r149-pc-analysis-7bb7ae4540c4.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r149-closure-a38a1904c24f.tar.gz",
+          "sha256": "a38a1904c24f9e5a7a772da36668c86f615749086c5841146e8992955811f5ff",
+          "manifest_sha256": "24c4955a3c9183b67ecd9ffcc596bbb4555d41e0f343f2149fe4c9ad83424a82",
+          "bytes": 853192,
+          "files": 111,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r149-closure-a38a1904c24f.tar.gz"
         }
       ],
       "production_change": false,
@@ -20069,7 +20080,21 @@
       },
       "raw_environment_packets_withheld": true,
       "diagnostic_calls": 5138,
-      "exact_pc_cross_checks": 7021
+      "exact_pc_cross_checks": 7021,
+      "publication_audit": {
+        "byte_identical_outputs": [
+          "results.json"
+        ],
+        "paths_with_multiple_preserved_versions": 1,
+        "round": 149,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 111,
+        "verified_archives": 4,
+        "verified_file_occurrences": 244,
+        "all_public_archive_server_digests_verified": true,
+        "native_binaries_and_raw_traces_excluded": true
+      },
+      "final_closure_event": "closure"
     },
     "150": {
       "base": "48b78cd7f9719b8acc184d7b65976a863e955f3f",
@@ -20195,6 +20220,20 @@
           "results.json": "8b17687ce876c7d712c143e2ae0a6b5182984b3f2dd20cc86a26a03c8d793b29",
           "REPORT.md": "d34c0251c245d5614f9b4584b7099a5a1d9cdc410715afc0d9a3f60c1cacd0d6"
         }
+      },
+      "publication_audit": {
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "paths_with_multiple_preserved_versions": 2,
+        "round": 150,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 108,
+        "verified_archives": 8,
+        "verified_file_occurrences": 414,
+        "all_public_archive_server_digests_verified": true,
+        "native_binaries_and_raw_traces_excluded": true
       }
     }
   },
