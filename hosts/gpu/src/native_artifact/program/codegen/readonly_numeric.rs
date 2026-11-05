@@ -36,6 +36,7 @@ pub(in crate::native_artifact) struct Report {
     pub cold_exits: Vec<(usize, usize)>,
     pub length_sites: Vec<usize>,
     pub append_sites: Vec<(usize, u8)>,
+    pub bulk_append_sites: Vec<usize>,
     pub capacity_guards: Vec<(usize, usize)>,
     pub scalar_operations: usize,
     pub register_words: usize,
@@ -181,6 +182,7 @@ pub(in crate::native_artifact) fn emit_entry(
             .collect(),
         length_sites: Vec::new(),
         append_sites: Vec::new(),
+        bulk_append_sites: Vec::new(),
         capacity_guards: Vec::new(),
         scalar_operations: 0,
         register_words,
@@ -319,11 +321,10 @@ pub(in crate::native_artifact) fn emit_entry(
                 let count = proof
                     .actions
                     .iter()
-                    .filter(|(_, op)| {
-                        matches!(op,
-                    Operation::Append { array: at, .. } if *at == array)
+                    .try_fold(0usize, |count, (_, op)| {
+                        count.checked_add(op.maximum_append(array))
                     })
-                    .count();
+                    .ok_or_else(|| backend("numeric append capacity bound overflows"))?;
                 let length = words.read(b, shadow + proof.view(array) + 1);
                 let capacity = words.read(b, shadow + proof.capacity(array).unwrap());
                 let valid = b
@@ -447,6 +448,77 @@ pub(in crate::native_artifact) fn emit_entry(
                 report.append_sites.push((site, width));
                 report.first_change_boundaries.push(site);
             }
+            Some(Operation::AppendLeBytes {
+                array,
+                incoming,
+                count,
+            }) => {
+                let count = words.read(b, *count as usize);
+                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, count, 8);
+                let checked = b.create_block();
+                let bad = b.create_block();
+                let changed = b.create_block();
+                let store = b.create_block();
+                let materialize = b.create_block();
+                let done = b.create_block();
+                b.set_cold_block(bad);
+                b.set_cold_block(materialize);
+                boundaries.extend([bad, materialize]);
+                b.ins().brif(valid, checked, &[], bad, &[]);
+                b.switch_to_block(bad);
+                let spilled = boundary::source_failure(
+                    b, controls, &words, frame, locals, code, closed, id, site, hooks, error,
+                )?;
+                report.bounds_error_spill_words.push((site, spilled));
+                b.switch_to_block(checked);
+                // A zero-count append is the existing same-schema identity.
+                // It neither confines an owner nor initializes spare cells.
+                b.ins().brif(count, changed, &[], done, &[]);
+                b.switch_to_block(changed);
+                let incoming = words.read(b, *incoming as usize);
+                let private = words.read(b, shadow + proof.private_flag(*array));
+                b.ins().brif(private, store, &[], materialize, &[]);
+                b.switch_to_block(materialize);
+                boundary::materialize(
+                    b,
+                    controls.options(),
+                    &words,
+                    region,
+                    proof,
+                    *array,
+                    site,
+                    frame,
+                    locals,
+                    count,
+                    incoming,
+                    hooks,
+                    error,
+                )?;
+                b.ins().jump(done, &[]);
+                b.switch_to_block(store);
+                let view = shadow + proof.view(*array);
+                let base = words.read(b, view);
+                let length = words.read(b, view + 1);
+                let address = b.ins().iadd(base, length);
+                // The current traversal admits eight spare U8 cells per site.
+                // Match the selected leaf's whole-word store: only count bytes
+                // become visible, and the exclusive owner hides spare cells.
+                b.ins().store(
+                    MemFlags::new().with_endianness(cranelift_codegen::ir::Endianness::Little),
+                    incoming,
+                    address,
+                    0,
+                );
+                let length = b.ins().iadd(length, count);
+                words.write(b, view + 1, length);
+                words.write(b, view + 3, length);
+                b.ins().jump(done, &[]);
+                b.switch_to_block(done);
+                report.typed_stores.push((site, 8));
+                report.append_sites.push((site, 1));
+                report.bulk_append_sites.push(site);
+                report.first_change_boundaries.push(site);
+            }
             Some(
                 operation @ (Operation::Read { array, index, .. }
                 | Operation::Write { array, index, .. }),
@@ -462,39 +534,15 @@ pub(in crate::native_artifact) fn emit_entry(
                 boundaries.insert(bad);
                 b.ins().brif(valid, good, &[], bad, &[]);
                 b.switch_to_block(bad);
-                set_origin(b, frame, site as u64);
-                let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
-                    return Err(backend("numeric read lost selected call"));
-                };
-                if closed.sites.get(site).copied().flatten() != Some(id) {
-                    return Err(backend(
-                        "numeric bounds exit differs from its active region",
-                    ));
-                }
                 // This edge settles the current loan and invokes the original
                 // selected operation, then terminates. No ordinary instruction
                 // resumes. Managed operands come from the synchronized arena;
                 // only exact settlement inputs and current scalar operands
                 // need their local homes here.
-                let live = (region.words..region.words + 3)
-                    .chain(
-                        tail::numeric_exit_words(region, 2, None)?
-                            .into_iter()
-                            .map(|word| shadow + word),
-                    )
-                    .chain(
-                        operands
-                            .iter()
-                            .filter(|value| code.kind(**value).is_some())
-                            .map(|value| value.get() as usize),
-                    )
-                    .collect::<BTreeSet<_>>();
-                words.spill_live(b, locals, &live)?;
-                report.bounds_error_spill_words.push((site, live.len()));
-                tail::failure(controls.options(), b, locals, closed, site, hooks, error)?;
-                hooks.library(b, site, operands, locals, |v| code.kind(v).is_some(), error)?;
-                let status = b.ins().iconst(types::I64, STATUS_ABI as i64);
-                b.ins().jump(error, &[status.into()]);
+                let spilled = boundary::source_failure(
+                    b, controls, &words, frame, locals, code, closed, id, site, hooks, error,
+                )?;
+                report.bounds_error_spill_words.push((site, spilled));
                 b.switch_to_block(good);
                 // Canonical storage is row-major; source linear selection is
                 // one-based column-major. A valid ordinal proves rows > 0.

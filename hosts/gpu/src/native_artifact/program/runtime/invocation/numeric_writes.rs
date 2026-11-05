@@ -24,8 +24,11 @@ impl Invocation<'_, '_, '_> {
             .numeric
             .as_ref()
             .ok_or_else(|| invalid("numeric materialization lacks proof"))?;
-        let Some(operation @ (Operation::Write { array, .. } | Operation::Append { array, .. })) =
-            proof.action(site)
+        let Some(
+            operation @ (Operation::Write { array, .. }
+            | Operation::Append { array, .. }
+            | Operation::AppendLeBytes { array, .. }),
+        ) = proof.action(site)
         else {
             return Err(invalid("numeric materialization outside selected write"));
         };
@@ -38,6 +41,8 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("duplicate or malformed numeric materialization"));
         }
+        // The sealed operation selects this lane's meaning: replacement
+        // selector, ordinary append position, or positive bulk byte count.
         let index = self.read_borrowed_word(2 + proof.words)?;
         let incoming = self.read_borrowed_word(3 + proof.words)?;
         // Close the current loan before any fallible factory/account operation.
@@ -88,7 +93,17 @@ impl Invocation<'_, '_, '_> {
             )?;
         }
         let coexistence = self.selected_join_coexistence(None)?;
-        let result = if matches!(operation, Operation::Append { .. }) {
+        let result = if matches!(operation, Operation::AppendLeBytes { .. }) {
+            call.unsigned_matrix_append_le_bytes_private(
+                source,
+                incoming,
+                index,
+                true,
+                self.limits,
+                &self.state.library,
+                coexistence,
+            )
+        } else if matches!(operation, Operation::Append { .. }) {
             call.unsigned_matrix_append_private(
                 source,
                 incoming,

@@ -231,6 +231,7 @@ impl NativePreparedLibraryCall {
                 {
                     self.supports_unsigned_matrix_replace()
                         || self.supports_unsigned_matrix_append()
+                        || self.supports_unsigned_matrix_append_le_bytes()
                 }
                 #[cfg(not(feature = "sequence_buffers"))]
                 {
