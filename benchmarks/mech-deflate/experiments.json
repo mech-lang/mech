@@ -18356,6 +18356,17 @@
           "files": 655,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-scalar-balanced-052a9fc48083.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-frame-allocation-36ffb918bc29.tar.gz",
+          "sha256": "36ffb918bc2976f724b4de58731124e5852dfd7dd6165929a2cf241f871382cb",
+          "manifest_sha256": "7926eadd17302e413928f2744f920b16e052fcc650e1aa6cafa7b1cf8da46dd2",
+          "bytes": 254580,
+          "files": 110,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-frame-allocation-36ffb918bc29.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
