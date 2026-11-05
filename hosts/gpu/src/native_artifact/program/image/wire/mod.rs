@@ -150,20 +150,19 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     bytes: &[u8],
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
-    decode_inner(bytes, catalog, false)
+    decode_inner::<false>(bytes, catalog)
 }
 
 pub(in crate::native_artifact::program::image::decode) fn decode_verified(
     verified: &super::super::binding::VerifiedObjectImage<'_>,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
-    decode_inner(verified.bytes(), catalog, true)
+    decode_inner::<true>(verified.bytes(), catalog)
 }
 
-fn decode_inner(
+fn decode_inner<const OBJECT_BOUND: bool>(
     bytes: &[u8],
     catalog: &FunctionCatalog,
-    object_bound: bool,
 ) -> Result<NativeProgramDescriptor, String> {
     let image: Image<'_> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor" || image.version != 1 {
@@ -229,7 +228,7 @@ fn decode_inner(
         .buffer_frame_owner_layouts()
         .map_err(str::to_owned)?;
     native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
-    if !object_bound {
+    if !OBJECT_BOUND {
         native::program::prepare::tail::validate_image(
             &plan,
             &buffer_frames,
