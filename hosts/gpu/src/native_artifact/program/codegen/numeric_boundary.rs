@@ -2,6 +2,53 @@
 use super::*;
 use crate::native_artifact::program::prepare::tail::Region;
 
+/// Settle the loan and run the exact original rejecting selected operation.
+/// Only its scalar operands and the existing settlement inputs need spilling.
+pub(super) fn source_failure(
+    b: &mut FunctionBuilder<'_>,
+    controls: &CompilationControls,
+    words: &Words,
+    frame: Value,
+    locals: Value,
+    code: CodePlan<'_>,
+    closed: &Layout,
+    id: usize,
+    site: usize,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<usize, NativeCompileError> {
+    set_origin(b, frame, site as u64);
+    let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
+        return Err(backend("numeric rejection lost selected call"));
+    };
+    if closed.sites.get(site).copied().flatten() != Some(id) {
+        return Err(backend("numeric rejection differs from its active region"));
+    }
+    let region = &closed.regions[id];
+    let shadow = region
+        .shadow
+        .ok_or_else(|| backend("numeric rejection lacks scratch home"))?;
+    let live = (region.words..region.words + 3)
+        .chain(
+            tail::numeric_exit_words(region, 2, None)?
+                .into_iter()
+                .map(|word| shadow + word),
+        )
+        .chain(
+            operands
+                .iter()
+                .filter(|value| code.kind(**value).is_some())
+                .map(|value| value.get() as usize),
+        )
+        .collect::<BTreeSet<_>>();
+    words.spill_live(b, locals, &live)?;
+    tail::failure(controls.options(), b, locals, closed, site, hooks, error)?;
+    hooks.library(b, site, operands, locals, |v| code.kind(v).is_some(), error)?;
+    let status = b.ins().iconst(types::I64, STATUS_ABI as i64);
+    b.ins().jump(error, &[status.into()]);
+    Ok(live.len())
+}
+
 pub(super) fn materialize(
     b: &mut FunctionBuilder<'_>,
     options: crate::native_artifact::codegen::options::OptimizationOptions,

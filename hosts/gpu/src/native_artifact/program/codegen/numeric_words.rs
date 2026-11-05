@@ -53,6 +53,11 @@ pub(super) fn source_slots(
             Some(Operation::Append { incoming, .. }) => {
                 slots.insert(*incoming as usize);
             }
+            Some(Operation::AppendLeBytes {
+                incoming, count, ..
+            }) => {
+                slots.extend([*incoming as usize, *count as usize]);
+            }
             _ => {}
         }
         if let CodePlan::Program(program) = code {

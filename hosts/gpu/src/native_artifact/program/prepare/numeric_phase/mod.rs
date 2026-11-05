@@ -520,11 +520,11 @@ pub(in crate::native_artifact) fn mutation_needs_funding(
         .collect::<BTreeSet<_>>();
     let mut funding = false;
     for &(site, ref action) in actions {
-        if !matches!(action, Operation::Write { .. } | Operation::Append { .. }) {
+        if !matches!(action, Operation::Write { .. }) && !action.grows() {
             continue;
         }
         if plan.blocks()[site].iteration() != Some(forest.loops[0].iteration) {
-            if matches!(action, Operation::Append { .. }) {
+            if action.grows() {
                 return Err("phase child grows a buffer");
             }
             funding = true;
@@ -533,7 +533,7 @@ pub(in crate::native_artifact) fn mutation_needs_funding(
         let mut pending = vec![site];
         while let Some(at) = pending.pop() {
             if child_entries.contains(&at) {
-                if matches!(action, Operation::Append { .. }) {
+                if action.grows() {
                     return Err("phase child follows a growing mutation bridge");
                 }
                 funding = true;

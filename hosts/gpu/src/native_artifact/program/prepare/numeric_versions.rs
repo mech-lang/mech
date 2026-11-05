@@ -486,6 +486,7 @@ fn pass(
                 operation @ (Operation::Read { array, .. }
                 | Operation::Write { array, .. }
                 | Operation::Append { array, .. }
+                | Operation::AppendLeBytes { array, .. }
                 | Operation::Length { array, .. }),
             ) => {
                 let Action::LibraryCall {
@@ -501,7 +502,9 @@ fn pass(
                 }
                 if matches!(
                     operation,
-                    Operation::Write { .. } | Operation::Append { .. }
+                    Operation::Write { .. }
+                        | Operation::Append { .. }
+                        | Operation::AppendLeBytes { .. }
                 ) {
                     let root = arrays[*array].field;
                     for (&(value, field), current) in &mut state {

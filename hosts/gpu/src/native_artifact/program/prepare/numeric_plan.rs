@@ -46,6 +46,24 @@ pub(in crate::native_artifact) enum Operation {
         array: usize,
         incoming: u32,
     },
+    AppendLeBytes {
+        array: usize,
+        incoming: u32,
+        count: u32,
+    },
+}
+impl Operation {
+    pub fn grows(&self) -> bool {
+        matches!(self, Self::Append { .. } | Self::AppendLeBytes { .. })
+    }
+    #[cfg(feature = "canonical-native-program")]
+    pub fn maximum_append(&self, array: usize) -> usize {
+        match self {
+            Self::Append { array: at, .. } if *at == array => 1,
+            Self::AppendLeBytes { array: at, .. } if *at == array => 8,
+            _ => 0,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]

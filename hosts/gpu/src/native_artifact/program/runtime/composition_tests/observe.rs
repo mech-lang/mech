@@ -316,8 +316,9 @@ unsafe extern "C" fn helper(
         let region = &metadata.closed_tails.regions[id];
         let proof = region.numeric.as_ref().unwrap();
         use crate::native_artifact::program::prepare::readonly_numeric::Operation;
-        let (Operation::Write { array, .. } | Operation::Append { array, .. }) =
-            proof.action(site as usize).unwrap()
+        let (Operation::Write { array, .. }
+        | Operation::Append { array, .. }
+        | Operation::AppendLeBytes { array, .. }) = proof.action(site as usize).unwrap()
         else {
             panic!("first change requires a numeric store");
         };

@@ -245,7 +245,8 @@ impl Invocation<'_, '_, '_> {
             2 | 3 if layout.sites.get(site).copied().flatten() == Some(region) => site as u32,
             5 if proof.numeric.as_ref().and_then(|p| p.action(site)).is_some_and(|a| matches!(a,
                 crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. }
-                | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. })) => site as u32,
+                | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. }
+                | crate::native_artifact::program::prepare::readonly_numeric::Operation::AppendLeBytes { .. })) => site as u32,
             6 if (traversals > 0 || state.partial) && self.numeric_prepaid.is_none() => proof.numeric.as_ref()
                 .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && matches!(exit.kind, ExitKind::Unsupported)))
                 .map(|exit| exit.from as u32)

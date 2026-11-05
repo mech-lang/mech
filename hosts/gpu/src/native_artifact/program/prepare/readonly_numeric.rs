@@ -142,7 +142,8 @@ impl Provenance<'_, '_> {
                 let call = self.calls.get(site)?.as_ref()?;
                 if output.get() != value
                     || !(call.supports_unsigned_matrix_replace()
-                        || call.supports_unsigned_matrix_append())
+                        || call.supports_unsigned_matrix_append()
+                        || call.supports_unsigned_matrix_append_le_bytes())
                 {
                     return None;
                 }
@@ -482,7 +483,8 @@ fn derive_with_children(
             let is_read = call.supports_unsigned_matrix_element();
             let is_write = call.supports_unsigned_matrix_replace();
             let is_append = call.supports_unsigned_matrix_append();
-            if !(is_length || is_read || is_write || is_append) {
+            let is_bulk = call.supports_unsigned_matrix_append_le_bytes();
+            if !(is_length || is_read || is_write || is_append || is_bulk) {
                 return Err("unsupported selected library effect or operation");
             }
             let source = operands.first().ok_or("missing selected array")?;
@@ -503,12 +505,29 @@ fn derive_with_children(
             }
             arrays[at].width = w;
             arrays[at].witness = arrays[at].witness.min(site);
-            arrays[at].writable |= is_write || is_append;
-            arrays[at].appends |= is_append;
+            arrays[at].writable |= is_write || is_append || is_bulk;
+            arrays[at].appends |= is_append || is_bulk;
             if is_length {
                 Operation::Length {
                     array: at,
                     output: output.get(),
+                }
+            } else if is_bulk {
+                if w != 1
+                    || operands.len() != 3
+                    || plan.values()[operands[1].get() as usize].scalar_kind()
+                        != Some(NativeScalarKind::U64)
+                    || plan.values()[operands[2].get() as usize]
+                        .scalar_kind()
+                        .and_then(|kind| kind.unsigned_maximum())
+                        != Some(u8::MAX as u64)
+                {
+                    return Err("unsupported bulk append operands");
+                }
+                Operation::AppendLeBytes {
+                    array: at,
+                    incoming: operands[1].get(),
+                    count: operands[2].get(),
                 }
             } else if is_append {
                 if operands.len() != 2
