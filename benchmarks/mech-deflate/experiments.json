@@ -19928,6 +19928,17 @@
           "files": 1082,
           "publication": "published; server SHA-256 verified",
           "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r148-closure-5d2dbf89ccde.tar.gz"
+        },
+        {
+          "event": "archive-audit",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-archive-audit-1c5373bdc2c1.tar.gz",
+          "sha256": "1c5373bdc2c1a0b4a414a7c7ffcde2108ccd16959d514473842331e511ebdcc6",
+          "manifest_sha256": "dcc785de8b59e2c4eeef14851758169a0f31d053a7f111ab1bf93bf653a566f7",
+          "bytes": 914845,
+          "files": 66,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-archive-audit-1c5373bdc2c1.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
@@ -19939,7 +19950,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "archive_publication": "local-only at measurement; external publication pending",
       "retained_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
       "final_closure_event": "closure",
       "frozen_prior_heads_unchanged": true,
