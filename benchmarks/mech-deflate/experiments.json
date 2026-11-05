@@ -24546,6 +24546,17 @@
           "files": 120,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-scalar-case-scalar-i64-0-decoded-54d4238f03b0.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-f64-0-original",
+          "source_revision": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+          "asset": "r160-scalar-case-scalar-f64-0-original-f72069000772.tar.gz",
+          "sha256": "f720690007721372920edfd3333ec6d736068cd5b2e4c43eb1a959013d8f3734",
+          "manifest_sha256": "2aae857e8ea00f426ed4e26588186ae8111c505560c4e3de1f88fcbf5cf8b81c",
+          "bytes": 175961,
+          "files": 120,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-scalar-case-scalar-f64-0-original-f72069000772.tar.gz"
         }
       ],
       "production": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
