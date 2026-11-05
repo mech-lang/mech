@@ -23618,6 +23618,17 @@
           "files": 29,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-pc-tables-reymont-prefix-32769-ff2e48c15ea9.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r158-closure-eb366bf23816.tar.gz",
+          "sha256": "eb366bf2381653d1aaf50cb4d976a5f572a20b3e102a041be84448414eb84d5f",
+          "manifest_sha256": "82c563a650c10a4ae4ec1f06b8e70249bb6f98b738b34beaeffdfa32a5301679",
+          "bytes": 9027823,
+          "files": 105,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-closure-eb366bf23816.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
