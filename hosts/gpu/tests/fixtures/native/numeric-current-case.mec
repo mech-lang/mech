@@ -1,0 +1,21 @@
+// A read-only numeric recurrence with the same three-field variant projections
+// as a candidate-cost loop. Each invocation reaches both Try and Done.
++> sequence
+<choice> := <{best<u32> item<u64> k<u64>}>
+#Choice(xs<[u32]>, stop<u64>, start<u64>, best<u32>, item<u64>, fault<u64>) => <choice>
+  | :Try(k<u64>, best<u32>, item<u64>)
+  | :Done(k<u64>, best<u32>, item<u64>).
+#Choice(xs, stop, start, best, item, fault) -> :Try(start, best, item)
+  :Try(k, best, item)
+    | k < stop -> {
+        value := ((k < sequence/length(xs))? | true => xs[k + 1u64] | false => 0u32)
+        divisor := ((k == fault)? | true => 0u64 | false => 1u64)
+        checked := 10u64 / divisor
+        next-best := ((value < best)? | true => value | false => best)
+        next-item := ((value < best)? | true => k + checked | false => item)
+      } -> :Try(k + 1u64, next-best, next-item)
+    | * -> :Done(k, best, item)
+  :Done(k, best, item) => {best: best, item: item, k: k}.
+first := #Choice(values<[u32]>, stop<u64>, start<u64>, seed<u32>, nonce<u64>, fault<u64>)
+result := #Choice(values, stop, first.k, first.best, first.item, fault)
+(result.best, result.item, result.k)
