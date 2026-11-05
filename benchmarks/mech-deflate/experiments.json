@@ -18801,6 +18801,17 @@
           "files": 107,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-frame-allocation-e5b64296c82a.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-profiles-current-38df87002b83.tar.gz",
+          "sha256": "38df87002b83372e96ee1d8718e289bb4804519734fcfe5f55202fbbfac86442",
+          "manifest_sha256": "b5c5aa1a92f597f8ee0cd9f569b7a988adc7444453be730f913733b09a40e828",
+          "bytes": 791716,
+          "files": 106,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-profiles-current-38df87002b83.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
