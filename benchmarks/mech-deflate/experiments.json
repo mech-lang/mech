@@ -21065,6 +21065,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-matrix-counters-f262dcd6da4b.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-profiles-current-761001c4a7de.tar.gz",
+          "sha256": "761001c4a7de5c3bfbc098ebd64fcd208adc960357b37474d6b9b0c4f7f5ef48",
+          "manifest_sha256": "090466bb3c222c790f288f033101c922e272b3c8b01717ffc57ee5031546e488",
+          "bytes": 570304,
+          "files": 75,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-profiles-current-761001c4a7de.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
