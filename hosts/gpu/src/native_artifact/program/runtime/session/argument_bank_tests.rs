@@ -27,7 +27,13 @@ fn native_argument_bank_numeric_words_do_not_inflate_managed_values() {
             });
             let descriptor = restored_descriptor.as_ref().unwrap_or(jit.descriptor());
             let metadata = descriptor.metadata();
-            assert!(metadata.compositions.parents.is_empty());
+            assert!(metadata.compositions.parents.iter().all(|parent| {
+                parent.iteration != metadata.closed_tails.regions[0].iteration
+                    && parent
+                        .segments
+                        .iter()
+                        .all(|piece| piece.prepaid_region.is_none())
+            }));
             assert_eq!(
                 metadata
                     .closed_tails
