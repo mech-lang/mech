@@ -68,18 +68,179 @@ fn record_selector(
 // Schemas that reject it retain the ordinary live constructor and error order.
 fn descriptor_templates(
     template: &NativeProgramLibraryTemplate,
-) -> Option<Box<[mech_core::ResolvedValueDescriptor]>> {
-    template
-        .inputs()
+) -> Option<Arc<[mech_core::ResolvedValueDescriptor]>> {
+    descriptors_for_schemas(template.inputs(), template.output())
+}
+
+fn descriptors_for_schemas(
+    inputs: &[mech_core::Schema],
+    output: &mech_core::Schema,
+) -> Option<Arc<[mech_core::ResolvedValueDescriptor]>> {
+    inputs
         .iter()
-        .chain(core::iter::once(template.output()))
+        .chain(core::iter::once(output))
         .map(|schema| {
             let shape = schema
                 .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
                 .ok()?;
             mech_core::ResolvedValueDescriptor::from_schema(schema.clone(), shape).ok()
         })
-        .collect()
+        .collect::<Option<Box<[_]>>>()
+        .map(Arc::from)
+}
+
+/// Program-scoped sharing of immutable, safely constructed type descriptors.
+/// This contains no Values, live shapes, factory/visit authority or invocation
+/// cache. A schema-ID signature only selects candidates: every hit compares
+/// the complete canonical schemas, so reuse across different programs is safe.
+#[derive(Debug, Default)]
+pub struct NativeDescriptorTemplatePool {
+    entries: std::collections::HashMap<Vec<mech_core::SchemaId>, Vec<DescriptorTemplateEntry>>,
+}
+
+#[derive(Debug)]
+struct DescriptorTemplateEntry {
+    inputs: Box<[mech_core::Schema]>,
+    output: mech_core::Schema,
+    descriptors: Option<Arc<[mech_core::ResolvedValueDescriptor]>>,
+}
+
+impl NativeDescriptorTemplatePool {
+    fn for_template(
+        &mut self,
+        template: &NativeProgramLibraryTemplate,
+    ) -> Option<Arc<[mech_core::ResolvedValueDescriptor]>> {
+        let mech_core::ResolvedOperationContract::Declared(contract) = template.contract() else {
+            return descriptor_templates(template);
+        };
+        if contract.inputs.len() != template.inputs().len() || contract.outputs.len() != 1 {
+            return descriptor_templates(template);
+        }
+        let signature = contract
+            .inputs
+            .iter()
+            .map(|port| port.schema)
+            .chain(core::iter::once(contract.outputs[0].schema))
+            .collect();
+        self.for_schemas(signature, template.inputs(), template.output())
+    }
+
+    fn for_schemas(
+        &mut self,
+        signature: Vec<mech_core::SchemaId>,
+        inputs: &[mech_core::Schema],
+        output: &mech_core::Schema,
+    ) -> Option<Arc<[mech_core::ResolvedValueDescriptor]>> {
+        if let Some(entry) = self.entries.get(&signature).and_then(|entries| {
+            entries
+                .iter()
+                .find(|entry| entry.inputs.as_ref() == inputs && &entry.output == output)
+        }) {
+            return entry.descriptors.clone();
+        }
+        // Preserve the original neutral-shape constructor and its fallback.
+        // In particular, rejecting the neutral shape never rejects a live call.
+        let descriptors = descriptors_for_schemas(inputs, output);
+        self.entries
+            .entry(signature)
+            .or_default()
+            .push(DescriptorTemplateEntry {
+                inputs: inputs.into(),
+                output: output.clone(),
+                descriptors: descriptors.clone(),
+            });
+        descriptors
+    }
+}
+
+#[cfg(test)]
+mod descriptor_template_pool_tests {
+    use super::*;
+    use mech_core::{IntegerWidth, Schema, SchemaBody, SchemaDraft, SchemaId};
+
+    fn scalar(body: SchemaBody) -> Schema {
+        SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body,
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    #[test]
+    fn schema_id_collisions_cannot_reuse_a_different_type_contract() {
+        let unsigned = scalar(SchemaBody::UnsignedInteger(IntegerWidth::W64));
+        let signed = scalar(SchemaBody::SignedInteger(IntegerWidth::W64));
+        let ids = vec![SchemaId::new(0), SchemaId::new(1)];
+        let mut pool = NativeDescriptorTemplatePool::default();
+        let first = pool
+            .for_schemas(ids.clone(), std::slice::from_ref(&unsigned), &unsigned)
+            .unwrap();
+        let reused = pool
+            .for_schemas(ids.clone(), std::slice::from_ref(&unsigned), &unsigned)
+            .unwrap();
+        assert!(Arc::ptr_eq(&first, &reused));
+        // A second program can assign the same IDs to different schemas.
+        let other = pool
+            .for_schemas(ids.clone(), std::slice::from_ref(&signed), &signed)
+            .unwrap();
+        assert!(!Arc::ptr_eq(&first, &other));
+        assert_eq!(other[0].schema(), &signed);
+        assert_eq!(other[1].schema(), &signed);
+        let expected = descriptors_for_schemas(std::slice::from_ref(&signed), &signed).unwrap();
+        assert_eq!(other.as_ref(), expected.as_ref());
+        // The original valid contract remains independently reusable.
+        let again = pool
+            .for_schemas(ids, std::slice::from_ref(&unsigned), &unsigned)
+            .unwrap();
+        assert!(Arc::ptr_eq(&first, &again));
+        assert_eq!(first[0].schema(), &unsigned);
+    }
+
+    #[test]
+    fn rejected_neutral_shapes_do_not_suppress_other_schemas_or_live_bounds() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin,
+        };
+        let matrix = |lower| {
+            SchemaDraft {
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(lower),
+                    upper_bound: Some(DimensionExpr::Constant(4)),
+                }]
+                .into(),
+                body: SchemaBody::Matrix {
+                    element: SchemaBody::UnsignedInteger(IntegerWidth::W64).into(),
+                    dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(0))].into(),
+                },
+            }
+            .finalize()
+            .unwrap()
+        };
+        let rejected = matrix(1);
+        let accepted = matrix(0);
+        let output = scalar(SchemaBody::UnsignedInteger(IntegerWidth::W64));
+        let ids = vec![SchemaId::new(0), SchemaId::new(1)];
+        let mut pool = NativeDescriptorTemplatePool::default();
+        assert!(
+            pool.for_schemas(ids.clone(), std::slice::from_ref(&rejected), &output)
+                .is_none()
+        );
+        let descriptors = pool
+            .for_schemas(ids.clone(), std::slice::from_ref(&accepted), &output)
+            .unwrap();
+        assert_eq!(descriptors[0].schema(), &accepted);
+        assert!(
+            pool.for_schemas(ids, std::slice::from_ref(&rejected), &output)
+                .is_none()
+        );
+        assert!(rejected.instantiate_shape(vec![1].into()).is_ok());
+        assert!(accepted.instantiate_shape(vec![5].into()).is_err());
+    }
 }
 
 #[cfg(any(
@@ -175,7 +336,7 @@ pub struct NativePreparedLibraryCall {
     #[serde(skip)]
     factory: ResidentKernelFactory,
     #[serde(skip)]
-    descriptor_templates: Option<Box<[mech_core::ResolvedValueDescriptor]>>,
+    descriptor_templates: Option<Arc<[mech_core::ResolvedValueDescriptor]>>,
     binding_bytes: u64,
     binding_work: u64,
     binding_nodes: u64,
@@ -286,6 +447,22 @@ pub fn prepare_native_program_library_call(
     artifact: &ProgramArtifact,
     template: &NativeProgramLibraryTemplate,
     catalog: &FunctionCatalog,
+) -> Result<NativePreparedLibraryCall, Error> {
+    prepare_native_program_library_call_with_descriptors(
+        artifact,
+        template,
+        catalog,
+        &mut NativeDescriptorTemplatePool::default(),
+    )
+}
+
+/// Prepare the same selected call while sharing immutable descriptor metadata.
+/// Every source-site, factory, schema, capacity and binding check still runs.
+pub fn prepare_native_program_library_call_with_descriptors(
+    artifact: &ProgramArtifact,
+    template: &NativeProgramLibraryTemplate,
+    catalog: &FunctionCatalog,
+    descriptors: &mut NativeDescriptorTemplatePool,
 ) -> Result<NativePreparedLibraryCall, Error> {
     let template = current_template(artifact, template, catalog)?;
     let node = template.origin().node();
@@ -419,7 +596,7 @@ pub fn prepare_native_program_library_call(
         buffer_frames::FrameGeometry::derive(&template, artifact.schemas(), binding_bytes);
     #[cfg(feature = "sequence_buffers")]
     let record_selector = record_selector::RecordSelector::derive(&template);
-    let descriptor_templates = descriptor_templates(&template);
+    let descriptor_templates = descriptors.for_template(&template);
     let constructor_normalization =
         map_owner_constructors::normalization(&template, artifact.schemas());
     Ok(NativePreparedLibraryCall {

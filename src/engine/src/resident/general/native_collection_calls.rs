@@ -25,19 +25,20 @@ mod headroom;
 #[path = "native_collection_prepared.rs"]
 mod prepared;
 pub use prepared::{
-    NativePreparedLibraryCall, NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
-    prepare_native_program_library_call,
-};
-#[cfg(feature = "sequence_buffers")]
-pub use prepared::{
-    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
-    NativeStringMatrixKeyView,
+    NativeDescriptorTemplatePool, NativePreparedLibraryCall, NativePreparedLibraryCallCache,
+    NativeSelectedStringSpanSelector, prepare_native_program_library_call,
+    prepare_native_program_library_call_with_descriptors,
 };
 #[cfg(feature = "pure_text")]
 pub use prepared::{
     NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts,
     NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
     NativeTextLineMatrixChoice, NativeTextLineWindow,
+};
+#[cfg(feature = "sequence_buffers")]
+pub use prepared::{
+    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeStringMatrixKeyView,
 };
 
 /// A constructor-private binding of one actual artifact call at its current

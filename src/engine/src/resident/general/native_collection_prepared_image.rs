@@ -1,5 +1,7 @@
 //! Restore build-time binding bounds; never prepare or admit a runtime call.
-use super::{NativePreparedLibraryCall, NativeProgramLibraryTemplate};
+use super::{
+    NativeDescriptorTemplatePool, NativePreparedLibraryCall, NativeProgramLibraryTemplate,
+};
 use mech_core::{FunctionCatalog, SchemaKey, SchemaTable};
 use serde::Deserialize;
 use serde_json::Value as Json;
@@ -35,6 +37,28 @@ impl NativePreparedLibraryCall {
         schemas: Arc<SchemaTable>,
         catalog: &FunctionCatalog,
     ) -> Result<Self, String> {
+        // SAFETY: same unchanged-build confinement obligations.
+        unsafe {
+            Self::from_build_owned_record_with_descriptors(
+                image,
+                schemas,
+                catalog,
+                &mut NativeDescriptorTemplatePool::default(),
+            )
+        }
+    }
+
+    /// Restore the same selection with shared immutable type metadata.
+    ///
+    /// # Safety
+    /// All unchanged-build provenance, confinement and runtime-admission duties
+    /// of `from_build_owned_record` apply. The pool grants no proof authority.
+    pub unsafe fn from_build_owned_record_with_descriptors(
+        image: crate::native_artifact::BuildOwnedImageRecord<'_>,
+        schemas: Arc<SchemaTable>,
+        catalog: &FunctionCatalog,
+        descriptors: &mut NativeDescriptorTemplatePool,
+    ) -> Result<Self, String> {
         let wire: Call<crate::native_artifact::BuildOwnedImageRecord<'_>> =
             image.decode().map_err(|e| e.to_string())?;
         let template = unsafe {
@@ -44,7 +68,7 @@ impl NativePreparedLibraryCall {
                 &schemas,
             )?
         };
-        Self::restore_binding(wire, template, schemas, catalog)
+        Self::restore_binding(wire, template, schemas, catalog, descriptors)
     }
     /// Restore this build's frozen selection, with a fresh invocation-cache
     /// identity and the actual linked factory. No binding or execution occurs.
@@ -71,7 +95,13 @@ impl NativePreparedLibraryCall {
                 &schemas,
             )?
         };
-        Self::restore_binding(wire, template, schemas, catalog)
+        Self::restore_binding(
+            wire,
+            template,
+            schemas,
+            catalog,
+            &mut NativeDescriptorTemplatePool::default(),
+        )
     }
 
     /// Reuse the exact plan selection from the same verified Object image.
@@ -115,9 +145,35 @@ impl NativePreparedLibraryCall {
         schemas: Arc<SchemaTable>,
         catalog: &FunctionCatalog,
     ) -> Result<Self, String> {
+        // SAFETY: identical checked-Object and exact source-site association.
+        unsafe {
+            Self::from_object_bound_binding_record_with_descriptors(
+                image,
+                template,
+                schemas,
+                catalog,
+                &mut NativeDescriptorTemplatePool::default(),
+            )
+        }
+    }
+
+    /// Restore frozen binding bounds while sharing safely constructed types.
+    /// Each call still receives its own fresh invocation-cache identity.
+    ///
+    /// # Safety
+    /// All genuine Object provenance, exact plan/source-site association,
+    /// confinement and runtime-admission duties of
+    /// `from_object_bound_binding_record` apply. The pool grants no authority.
+    pub unsafe fn from_object_bound_binding_record_with_descriptors(
+        image: crate::native_artifact::BuildOwnedImageRecord<'_>,
+        template: NativeProgramLibraryTemplate,
+        schemas: Arc<SchemaTable>,
+        catalog: &FunctionCatalog,
+        descriptors: &mut NativeDescriptorTemplatePool,
+    ) -> Result<Self, String> {
         let wire: Call<crate::native_artifact::BuildOwnedImageRecord<'_>> =
             image.decode().map_err(|e| e.to_string())?;
-        Self::restore_binding(wire, template, schemas, catalog)
+        Self::restore_binding(wire, template, schemas, catalog, descriptors)
     }
 
     fn restore_binding<T>(
@@ -125,6 +181,7 @@ impl NativePreparedLibraryCall {
         template: NativeProgramLibraryTemplate,
         schemas: Arc<SchemaTable>,
         catalog: &FunctionCatalog,
+        descriptors: &mut NativeDescriptorTemplatePool,
     ) -> Result<Self, String> {
         if wire.output_parameters != template.output().dimension_parameters().len()
             || wire.input_keys.len() != template.inputs().len()
@@ -147,7 +204,7 @@ impl NativePreparedLibraryCall {
             super::buffer_frames::FrameGeometry::derive(&template, &schemas, wire.binding_bytes);
         #[cfg(feature = "sequence_buffers")]
         let record_selector = super::record_selector::RecordSelector::derive(&template);
-        let descriptor_templates = super::descriptor_templates(&template);
+        let descriptor_templates = descriptors.for_template(&template);
         let constructor_normalization =
             super::map_owner_constructors::normalization(&template, &schemas);
         let call = Self {

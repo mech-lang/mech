@@ -6,8 +6,9 @@ use crate::native_artifact::program::prepare::retirement::RetirementTables;
 use mech_core::{FunctionCatalog, SchemaTable, Value};
 use mech_engine::ProgramArtifact;
 use mech_engine::native_artifact::{
-    NativeIterationAction, NativePreparedLibraryCall, NativeProgramArtifactPlan,
-    NativeTextLineRetentionFrontier, prepare_native_program_library_call,
+    NativeDescriptorTemplatePool, NativeIterationAction, NativePreparedLibraryCall,
+    NativeProgramArtifactPlan, NativeTextLineRetentionFrontier,
+    prepare_native_program_library_call_with_descriptors,
 };
 use std::sync::Arc;
 
@@ -201,13 +202,19 @@ impl PreparedNativeProgram {
             |site| native::program::prepare::map_owner::extra_work(&map_owner_words, site),
             "map owner visit work overflow",
         )?;
+        let mut descriptor_templates = NativeDescriptorTemplatePool::default();
         let mut calls = (0..plan.blocks().len())
             .map(|site| {
                 plan.prepared_library_template(site)
                     .map_err(str::to_owned)?
                     .map(|template| {
-                        prepare_native_program_library_call(artifact, template, catalog)
-                            .map_err(|error| error.to_string())
+                        prepare_native_program_library_call_with_descriptors(
+                            artifact,
+                            template,
+                            catalog,
+                            &mut descriptor_templates,
+                        )
+                        .map_err(|error| error.to_string())
                     })
                     .transpose()
             })

@@ -234,6 +234,7 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     // SAFETY: only the enclosing unsafe descriptor loader reaches this private
     // reader; it retains all metadata until exact checked-build provenance holds.
     let plan = unsafe { decode_build_owned_native_plan_record(w.plan, &schemas, catalog)? };
+    let mut descriptor_templates = NativeDescriptorTemplatePool::default();
     let mut calls = w
         .calls
         .iter()
@@ -254,11 +255,12 @@ fn decode_inner<const OBJECT_BOUND: bool>(
                         // provenance; this is the exact plan site's selection,
                         // restored against these same schemas and catalog.
                         return unsafe {
-                            NativePreparedLibraryCall::from_object_bound_binding_record(
+                            NativePreparedLibraryCall::from_object_bound_binding_record_with_descriptors(
                                 *image,
                                 template.clone(),
                                 schemas.clone(),
                                 catalog,
+                                &mut descriptor_templates,
                             )
                         };
                     }
@@ -266,10 +268,11 @@ fn decode_inner<const OBJECT_BOUND: bool>(
                     // the others: these bytes borrow the immutable build image.
                     // SAFETY: same confined build image; factory witnesses are checked too.
                     unsafe {
-                        NativePreparedLibraryCall::from_build_owned_record(
+                        NativePreparedLibraryCall::from_build_owned_record_with_descriptors(
                             *image,
                             schemas.clone(),
                             catalog,
+                            &mut descriptor_templates,
                         )
                     }
                 })

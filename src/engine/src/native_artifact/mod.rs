@@ -185,10 +185,11 @@ pub use crate::resident::general::native_collection_templates::{
     feature = "sequence_buffers"
 ))]
 pub use crate::resident::general::native_collection_calls::{
-    NativeCollectionCall, NativeCollectionInvocationError, NativePreparedLibraryCall,
-    NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
+    NativeCollectionCall, NativeCollectionInvocationError, NativeDescriptorTemplatePool,
+    NativePreparedLibraryCall, NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
     bind_native_collection_lexical, bind_native_collection_operation,
     bind_native_program_library_call, prepare_native_program_library_call,
+    prepare_native_program_library_call_with_descriptors,
 };
 
 #[cfg(any(
