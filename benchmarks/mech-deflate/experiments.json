@@ -16390,8 +16390,8 @@
     "140": {
       "base": "46179dce3a88ab2f1a1c4c22359e833823eb9d47",
       "production": "79ee17c01933af2b7f5b509d510df0bfe69f1490",
-      "compiler_source": "79ee17c01933af2b7f5b509d510df0bfe69f1490",
-      "decision": "under measurement",
+      "compiler_source": "58f75827e5c44187731df5253b3a058d2e9cd417",
+      "decision": "Retain general native bulk-byte capability and measured large-input gains for draft review; eight-byte fallback regression is open and must be addressed. No parity or ready-to-merge claim.",
       "events": [
         {
           "event": "parent",
@@ -16715,7 +16715,29 @@
       ],
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "qualified_compiler": "58f75827e5c44187731df5253b3a058d2e9cd417",
+      "complete_compression_cases": 20,
+      "primary_observations": 3968,
+      "all_primary_with_warmup_final": 4048,
+      "validation": {
+        "compatible_gpu": 561,
+        "guarded_ci": 136,
+        "focused_bulk": 6,
+        "components": 236,
+        "numeric_composition": 8,
+        "path": 1,
+        "workflow": 132,
+        "architecture": 15,
+        "balanced_scalar": 12,
+        "frame": 8
+      },
+      "open_findings": [
+        "8B literal elapsed+1.322924%, instructions+1.846%, requests+4",
+        "Inherited cold image validation startup",
+        "Clock-limited0/1/7B reference ratios"
+      ],
+      "release_capacity_recovery": "Prior endpoint refused HTTP422 at1000 assets; new evidence-only prerelease3 verified, no old assets deleted."
     }
   },
   "repository": "mech-lang/mech",

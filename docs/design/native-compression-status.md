@@ -1,5 +1,69 @@
 # Native compression: current status
 
+## R140: native bulk-byte writing, qualified across all20 inputs
+
+Update base: `46179dce3a88ab2f1a1c4c22359e833823eb9d47`. Compiler **`58f75827e5c44187731df5253b3a058d2e9cd417`**, matched control `f04df6c76ac2a38506becf76a980533e7954b146`. IR/work/ABI/MBC **168/107/39/14**. Old native IR167 is strictly rejected; bytecode14 and the compressor source are unchanged.
+
+The existing numeric proof/emitter now supports the exact selected bulk little-endian byte append. Positive counts use the maintained Engine implementation at first change and existing private cells thereafter. Count0 keeps the original no-change route; count>8 reaches the original selected rejection at its source position. Per-visit capacity proof conservatively sums eight bytes per bulk site, checks before source operations, and one native little-endian U64 store finishes before logical length advances by the actual count. Current row geometry, schema/budget membership, aliases, fallback and final atomic publication remain checked. No compressor-specific recognition or source rewrite.
+
+The permanent path-write-at/literal/match/flush computations now have two additional native writer loops, three bulk sites, and zero successful-backedge general helpers. The real tree/cache/path capacities, search limits, tables, source allocation sites, output capacity/clear/reuse and allocator stay pinned. Mech performs the complete compression.
+
+All **20 cases** have fresh matched control/current/reference measurements: **3,968 primary observations /4,048 including warmup/final checks**. Every case timing was sealed and committed immediately. Exact raw bytes, independent inflate, immutable aliases, output prefixes, retained capacity and zero final managed bytes/nodes pass. These are complete evaluate_into timings, with setup/clear/validation outside the same boundary as before; the full6,627,202B file is not timed.
+
+| Complete input | Before | Current | Before / Roc | Current / Roc | Elapsed change |
+|---|---:|---:|---:|---:|---:|
+|16KiB distribution change|149.159583ms|6.344229ms|187.8584×|7.9902×|-95.7467%|
+|33,027B periodic window|37.071124ms|34.936688ms|29.6569×|27.9494×|-5.7577%|
+|Random32,769B|7.992854ms|7.993917ms|7.6050×|7.6060×|+0.0133%|
+|Repeated32,769B|24.778771ms|23.121396ms|18.4916×|17.2548×|-6.6887%|
+|Reymont prefix32,769B|109.390792ms|37.681750ms|25.1647×|8.6684×|-65.5531%|
+|Reymont prefix16KiB|60.534875ms|19.559021ms|27.4659×|8.8743×|-67.6897%|
+|Random1KiB|1.270479ms|1.257875ms|4.1792×|4.1377×|-0.9921%|
+|Repeated1KiB|2.001687ms|1.906500ms|6.2164×|5.9208×|-4.7553%|
+|Reymont prefix1KiB|7.325666ms|1.950416ms|21.6736×|5.7705×|-73.3756%|
+|320B overlap|1.488084ms|1.420792ms|4.9936×|4.7678×|-4.5220%|
+|Random256B|1.315583ms|1.316479ms|4.3999×|4.4029×|+0.0681%|
+|128B dynamic|2.348000ms|1.141438ms|8.1812×|3.9771×|-51.3868%|
+|Random64B|1.262333ms|1.259521ms|4.3231×|4.3134×|-0.2228%|
+|32B stored|1.237229ms|1.239480ms|4.2811×|4.2889×|+0.1819%|
+|8B literals|1.335375ms|1.353041ms|4.6047×|4.6657×|+1.3229%|
+|8B overlap|1.305584ms|1.310312ms|4.5020×|4.5183×|+0.3622%|
+|8B literals + output prefix|1.334542ms|1.347271ms|4.6826×|4.7273×|+0.9538%|
+|7B stored + output prefix|0.120542ms|0.119333ms|unavailable|unavailable|-1.0030%|
+|1B stored|0.120604ms|0.119896ms|unavailable|unavailable|-0.5870%|
+|Empty|0.116833ms|0.115875ms|unavailable|unavailable|-0.8200%|
+
+**The8B literal case regresses1.322924%**,1.335375→1.353041ms,7/8 adverse descriptive blocks. Its separate instructions rise12,487,432.5→12,717,950 (+1.846%); requests3350→3354, requested bytes+4224. Overlap/prefixed8B and the other small adverse medians remain in the table. No no-regression claim. The loop needs16 spare bytes under the current conservative proof but the pinned8B output capacity is13, so it enters the new path and falls back. Its writer ordinary visits rise540→899 (total2101→2460), with formerly fused admissions split on fallback. Cheap capacity refusal and efficient ordinary fallback are the next bounded targets; no source/capacity/allowance change is proposed.
+
+Separate CPU/heap cohorts cover all20 cases. For the16KiB outlier, retired instructions **2,479,167,395.5→79,465,355.5**, cycles479,697,582.5→20,296,974; requests **67,321→5,679**, requested bytes28,844,634→24,105,034. **Incremental peak live usable remains18,702,352B**; it starts above an approximately144.7MB retained diagnostic heap. Full heap peak is approximately163.4MB and sampled resident size approximately323.7MB. Zero final managed data does not mean the retained image/harness occupies no memory. Heap instrumentation counters are separate from the CPU cohort, and no new reference hardware/heap ratio is claimed.
+
+Same-Object diagnostic ordinary visits fall **1,052,728→3,834** and helpers676,073→4,669 on the16KiB outlier. These families overlap. The new Object SHA256 is `0f2eee4723d6f1b1da1650d09fd999e58e2ad4d037cb3ae6cc4f8752cd31149d`. Text7,815,044→7,870,320B (+55,276), entry stack7,216→7,744B (+528), static instructions1,953,761→1,967,580. Static inventory includes cold code and is not dynamic work.
+
+Fresh actual-executable profiles use a single restored image and actively drain output throughout sampling, preventing a faster worker from blocking on a full pipe. Exclusive CPU-time sample shares follow; they are not retired-instruction partitions.
+
+| Input | Generated | Other callbacks | Private-frame callbacks | Cleanup | Other |
+|---|---:|---:|---:|---:|---:|
+|16KiB distribution change|61.43%|28.96%|4.12%|1.98%|3.51%|
+|Reymont prefix16KiB|84.51%|11.50%|1.73%|1.13%|1.13%|
+|Repeated32,769B|90.01%|6.15%|2.45%|0.40%|0.99%|
+|33,027B periodic window|60.88%|34.43%|3.63%|0.66%|0.40%|
+
+The16KiB outlier moves from4.33% generated/43.02% frame samples in R139 to61.43%/4.12%. The natural16KiB prefix is now84.51% generated and repeated32,769B90.01%; periodic33,027B still has38.72% combined callbacks/cleanup. The retained R139 optimized reference profiles remain separate historical comparison cohorts; the primary reference timings here are fresh for every case.
+
+Internal conservative work totals now differ by admitted representation: e.g.2,829,568,064,279→113,035,213,583 on the outlier. Work-policy107, source visit prices, fuel/settlement formulas and account identities are unchanged; the new proof replaces repeated ordinary frame work with existing native prepaid traversal accounting. Work is not hardware instructions. A driver that wrongly required equality stopped after the first correct64-observation outlier pair; its149.3106245→6.349896ms result and raw failure remain, followed by the complete successful matrix. The final driver requires stable totals per binary, the exact historical control totals and unchanged source/bytecode/allocator pins.
+
+Validation: **561 compatible GPU tests** (same7 inherited feature/profile exclusions), **6 focused original/decoded/restored bulk tests**, **136 guarded CI tests**, **236 components**, **8 composition**, **1 real-capacity path**, **132 workflow tests**, **15 architecture/catalog checks**, runtime-only metadata, formatting and diff checks. The final test relocation was rebuilt and all6 focused cases rerun; the affected layout/format/diff guards pass without an exception. All **12 balanced scalar controls** pass the unchanged1.05 gate with equal allocation/byte controls, and **8 frame controls** retain request/byte/work bounds. The first scalar cohort contains an original-I64 gate failure1.060058; it remains archived. One predeclared8-block balanced replication, same binaries and gate with no trimming, does not reproduce that latency regression.
+
+The new controls cover counts0..8/9/255, changing current arguments, zero/unselected/unused calls, error-order pairs and assertions, fresh recursion, flat mixed results, non-row refusal, replacement before append with live aliases, tight/growing capacity, output limits, finite work/memory/node/transport boundaries, prior publication and recovery. The clean-parent test-first run passes semantic/finite controls but fails native selection. The missing selected rejection export was an introduced production omission fixed in58f75827e5. Two invalid fixed-schema test variants, one test-layout collision, a missing diagnostic C support link, and two diagnostic assumptions are corrected with failed receipts retained. The initial physical disk-full build is environmental; unchanged commands succeed after reclaiming only completed superseded builds and verified published archive copies. Core/math dependencies remain frozen; affected Engine reverse dependencies/GPU roots rebuild coherently.
+
+Open findings: the measured8B fallback regression; inherited approximately35s cold image validation outside evaluate_into; clock-limited0/1/7B reference medians with unavailable ratios. Keep the PR draft pending green CI and clean review. Hosted CI remains cancelled by standing instruction; local receipts do not imply green hosted CI. No full multi-megabyte, separate ten-workload suite or parity claim.
+
+Source/MBC/allocator SHA256 remain `331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9` / `a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7` / `38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874`. Code commits: test-first `ebd3792fbf8ddcba3bf041828d15d7047f48d9c1`, native lowering `79ee17c01933af2b7f5b509d510df0bfe69f1490`, rejection settlement `58f75827e5c44187731df5253b3a058d2e9cd417`; mixed/geometry controls `4d3ad51583` / `bb5c7c2f08`; canonical test layout `2d6a6798c8`; exact CI inventory repairs `cf2241454a` / `bb5c7c2f08`.
+
+Exact commands, profiles, failures, all20 inputs and raw observations are in the R140 packets indexed by [experiments.json](../../benchmarks/mech-deflate/experiments.json). Native executables/Objects/libraries/bytecode and raw trace stores remain local.
+
+R140 publication is complete: **29 archives (11,366,145B) and29 sidecars**, all server SHA256 digests verified, in [evidence prerelease3](https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3). The prior endpoint refused HTTP422 at its1,000-asset limit; all older and partial earlier assets remain intact. This is evidence storage, not a software release.
+
 ## R139: broader compression inputs expose a bulk-byte native gap
 
 Update base: `cd13ae3ad786c82cd6fdeff65ec1422ab888a7f9`.
