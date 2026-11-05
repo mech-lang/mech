@@ -1,71 +1,59 @@
 # Native compression: current status
 
-**The retained compiler remains R148. R149 profiling is complete; R150's geometry-placement candidate was rejected and reverted. Prior published heads remain frozen.**
+**R151 is retained for draft review. Prior published heads remain frozen; parity is not achieved.**
 
 | Checkpoint | Value |
 |---|---|
-| Base | #980 at `2d9d5671ada86d846a33c9620515062280381799` |
-| Before / retained runtime | `c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d` / `d9fd2855a2b3aef7a7f843f051466abd39f7ef25` |
-| Qualified test revision | `bec5df7ddb426e7c1692204f098527113d63ef69` |
-| IR/work/ABI/bytecode | **173/107/39/14**, unchanged |
-| Bounded change | Skip impossible paid-source scans using validated loop-ID ordering; exact positive checks remain |
-| Frozen prior PRs | #973 → #976 → #977 → #978 → #979; R146 closure; #980 |
+| Published base | #981 at `89f2449cab6fd5b22e57f95c7d2f4006e2677453` |
+| Evidence base | `054f5a5f82622d83d1da23d4b8d35b64ac6b9d50` (R149/R150 evidence only) |
+| Before / retained compiler | `d9fd2855a2b3aef7a7f843f051466abd39f7ef25` / `dd3253562ee9d33451a66f4ef9b9808577dc4c1e` |
+| Final focused test revision | `5da7d244be992c9d192369820c3bdc1ac803a898` |
+| IR / work / ABI / bytecode | **175 / 107 / 39 / 14**; old IR173/174 rejected |
+| Bounded change | Remove the second complementary case check after an exact current comparison chain |
 
-One final 20-case cohort: geometric after/before **0.991778937518 (-0.822106%)**; 7 improving / 13 adverse medians. All unchanged 1.05 guards pass. All 3,968 primary / 4,048 total complete calls retain exact bytes, independent inflate, input aliases, prefixes, capacities/clear-reuse and zero final managed data. Both development screens remain separate; no pooling or guard repeats.
+One final 20-case cohort improves **0.373222% geometrically**: 13 faster / 7 slower medians, worst +0.772157%; every unchanged 1.05 guard passes. All **3,968 primary / 4,048 total** complete calls preserve exact bytes, independent inflate, aliases, prefixes, capacities and zero final managed storage. The development screen remains separate.
 
 | Input | Current ms | Mech / Roc before→after | Change |
 |---|---:|---:|---:|
-|eight-literals|1.360687|4.7053×→4.7246×|+0.4105%|
-|16384-distribution-change|6.214937|7.9129×→7.8670×|-0.5806%|
-|33027-periodic-window|10.444499|10.1812×→8.3091×|-18.3883%|
-|random-32769|7.919292|7.5456×→7.4852×|-0.8009%|
-|repeated-32769|9.558958|7.1320×→7.1256×|-0.0895%|
-|reymont-prefix-32769|35.196521|8.0634×→8.0782×|+0.1831%|
-|reymont-prefix-16384|18.465375|8.6606×→8.6855×|+0.2879%|
-|random-1024|1.262729|4.0027×→4.0214×|+0.4674%|
-|repeated-1024|1.547187|4.7983×→4.8049×|+0.1388%|
-|reymont-prefix-1024|1.925625|5.8197×→5.8264×|+0.1148%|
-|320-overlap|1.354667|4.5576×→4.5999×|+0.9282%|
-|random-256|1.320021|4.4865×→4.4899×|+0.0742%|
-|128-biased-dynamic|1.154500|3.9851×→3.9948×|+0.2442%|
-|random-64|1.268708|4.3272×→4.3523×|+0.5813%|
-|32-high-entropy-stored|1.247188|4.3870×→4.3915×|+0.1021%|
-|eight-overlap|1.322375|4.4869×→4.4979×|+0.2448%|
-|eight-literals-prefix|1.352500|4.6565×→4.6318×|-0.5286%|
-|seven-stored-prefix|0.119834|clock-limited reference|-0.3629%|
-|one-stored|0.120125|clock-limited reference|-0.2769%|
-|empty|0.120958|clock-limited reference|+2.7249%|
+|eight-literals|1.416397|5.0900×→5.0950×|+0.0972%|
+|16384-distribution-change|6.271770|8.0253×→7.9895×|-0.4455%|
+|33027-periodic-window|10.378709|8.3764×→8.3096×|-0.7971%|
+|random-32769|7.935083|7.6979×→7.6593×|-0.5010%|
+|repeated-32769|9.560500|7.2785×→7.2100×|-0.9407%|
+|reymont-prefix-32769|35.147042|8.1868×→8.0928×|-1.1484%|
+|reymont-prefix-16384|18.362479|8.7229×→8.6534×|-0.7972%|
+|random-1024|1.246228|4.1867×→4.1541×|-0.7796%|
+|repeated-1024|1.551020|4.7069×→4.6859×|-0.4480%|
+|reymont-prefix-1024|1.904437|5.8889×→5.8240×|-1.1024%|
+|320-overlap|1.349583|4.6829×→4.6861×|+0.0664%|
+|random-256|1.324375|4.6659×→4.6551×|-0.2307%|
+|128-biased-dynamic|1.141854|4.1564×→4.1222×|-0.8215%|
+|random-64|1.323000|4.7015×→4.6749×|-0.5653%|
+|32-high-entropy-stored|1.287354|4.5567×→4.5813×|+0.5402%|
+|eight-overlap|1.405458|5.1396×→5.0556×|-1.6345%|
+|eight-literals-prefix|1.419334|4.9594×→4.9977×|+0.7722%|
+|seven-stored-prefix|0.125666|clock-limited reference|+0.7181%|
+|one-stored|0.123104|clock-limited reference|+0.5275%|
+|empty|0.120104|clock-limited reference|+0.0692%|
 
-All 13 adverse medians remain, including eight-byte literals +0.410479%, overlap320 +0.928209% and empty +2.724852%. Scalar controls are all adverse (maximum 1.011630886559) and pass the same 1.05 gate. No small-case neutrality claim or cause assigned to cross-cohort variation.
+Hardware counters are a separate cohort. Instructions: Reymont 32,769 B **−2.424060%**, distribution **−0.917999%**, periodic **+0.654508%**, repeated **+0.723585%**. Distribution cycles are +0.783660%; all contrary observations remain. The local branch removal is not a universal instruction reduction. All 20 raw heap distributions (requests, bytes, reallocations, copy upper bounds and incremental usable peaks) and logical work match exactly. OS footprint/RSS remain separate.
 
-Separate counters: periodic 225.347026M→187.398522M instructions (-16.840029%) and cycles -18.017667%. Eight-byte instructions -0.004822%. All 20 heap distributions—requests, requested bytes, reallocations, copy upper bounds and incremental usable peaks—and logical work match exactly. OS memory metrics remain separately archived; requested capacity is not initialized bytes copied.
+Fresh four-case CPU-time profiles show **58.31–82.53% generated code / 16.21–37.97% host callbacks**; periodic is 73.56% / 24.32%, with 2.12% outside. These are time samples, not operation coverage or instruction attribution. This patch adds no lowering coverage.
 
-Direct isolated census: three periodic calls per side show predicate entries 231,382→13,055, inventory searches 229,966→11,639, and segment queries 218,334→7. All saved counts reconcile to 218,327/call; successful admissions and compute charges are identical. This counts actual function entries, not ordinary visit events, and makes no diagnostic timing claim.
+The compiler proves a fresh comparison→empty literal case→empty complementary case chain, using existing descriptive Bool polarity facts plus its own current-visit proof. Only the second test becomes its existing success edge. Unknown input/joined predicates, actions and entry/exit/debit boundaries keep checks. Source sites, charges, checked arithmetic, errors, owners, aliases, publication and recovery remain. No new runtime cache or serialized permission.
 
-Current four-case CPU-time profiles show 52.25–72.01% generated-exclusive weights. Periodic is 69.84% generated / 28.00% host callbacks including frames and cleanup / 2.16% outside or unclassified. These are time samples, not operation or retired-instruction shares. This round removes host checks and adds no lowering coverage.
+Actual Object: three profiled duplicate branches disappear; the corresponding interval is **45→37 static instructions**. Across selected regions 1,305 cases fold statically, not a dynamic visit count. Generated code **8,848,408→8,726,056 B**; entry stack **12,544→12,192 B**. Source/MBC, algorithm/tables/depth/nice/EOF, real scratch sizes, source allocation sites, output capacity 13 with clear/reuse, allocator and complete evaluate_into timing remain pinned.
 
-R149 resolves individual generated PCs: 7,021/7,021 samples cross-check raw timer addresses. The periodic 0x6b300–0x6b400 interval has 584/3,554 time weights (16.43%), spanning source arithmetic and packed-read eligibility; that share is not a saving estimate. All 5,138 complete diagnostic calls preserve frozen work/capacity/backing observations, exact output and cleanup. Sanitized portable tables and replay are archived; raw traces and environment-bearing packets remain private.
+Qualification: **574 GPU pass / 7 same exclusions**; final focused 6 pass; 149 CI tests listed/equality-guarded/executed; workflow 132, architecture 15, runtime-only and formatting pass. Unchanged 236 components / 8 composition / 1 real-capacity path pass. All 138 GPU and 2 Core support sources match the parent. Scalar 12 pass (max 1.004688, 5 adverse medians); frame 8 pass. Nightly 2026-03-03/aarch64, warnings denied, library opt3 and unit/component roots opt1; Core/Engine/math/dependencies frozen and rehashed.
 
-R150 tested computing immutable read-pack geometry in the current native entry. The speed backend produces **identical machine text, relocations and targets**; source placement does not constrain final pure-expression placement. The four-case screen's periodic target is 10.341083→10.342583 ms, 8.259651×→8.260849× (+0.014505%). Other small timing changes are retained without a mechanism claim. Reject at the emitted-code gate: all candidate code/tests and IR174 are reverted; retained versions remain 173/107/39/14. Existing 304 work/error observations agree with the parent. A new test-only window-count assumption and a missing diagnostic allocator file are preserved in the receipts. Full retention qualification was not entered. No new source PR or performance improvement is claimed.
-
-The original exact source-paid predicate is byte-identical. Every segment member shares its parent iteration; checked preparation requires parent IDs to decrease. A newer iteration therefore cannot be a paid ancestor. IDs passing the cheap comparison retain the full exact inventory/ancestry scan. Region matching, charges, current owners/arguments, admission, failure order/publication/cleanup/retry and finite fallback stay unchanged. No cache, authority bank, new emitter or source rewrite.
-
-Build-owned restoration preserves strict parent-ID order under the existing SAME unchanged checked-plan/Object provenance contract; it does not rerun the full Engine ordering validator. Selected composition membership remains independently reconstructed. Original/decoded/direct/restored tests require non-vacuous false positives, above-root/sibling/None cases and exact inventory holes; actual lifecycle/recovery controls remain.
-
-GPU 571 pass / 7 same exclusions; CI 146 listed, guarded and executed; workflow 132, architecture 15, runtime-only and formatting pass. Focused 6 pass; 24 existing handoff/funding controls pass within the broader GPU run. Unchanged source-derived 236 components / 8 composition / 1 real-capacity path pass; all 138 support sources match. Scalar 12 and frame 8 pass. Nightly 2026-03-03/aarch64/edition2024; warnings denied; library opt3, unit/component roots opt1. Core/Engine/math/dependencies remain frozen and rehashed.
-
-R147 Object/descriptor/metadata/source/MBC are reused byte-identically; generated text 8,848,408 B and machine entry stack 12,544 B stay unchanged. New runtime binary is linked and pinned separately. Algorithm/tables/depth/nice/EOF, real scratch capacities, source allocation sites, output13 clear/reuse, input aliases, allocator and complete evaluate_into timing remain pinned.
+Exact **560 parent work/error observations** match: 304 existing reads + 256 Boolean cases. Coverage includes both literal orders, checked-add overflow before the branch, changing recursive arguments/windows, input/carried and merged predicates inside actual generated regions, original/decoded/direct/restored artifacts, finite denial, aliases, prior publication, cleanup and retry. Proof-only frontier mutations are not executable handoff claims. The broad suite ran at 8d758ae; the final metadata-only non-vacuity assertion passes the final focused run at 5da7d244be, with no execution change.
 
 | Work board | Disposition |
 |---|---|
-| Completed | Prior finite milestone/reconciliation; R147/R148 tasks; R149 exact-PC profiling |
-| Rejected/preserved | R131/R141/R143; R148 ancestry-walk candidate; R150 pure geometry placement |
-| Active | No implementation; R150 is closed with the retained baseline unchanged |
-| Next | Investigate repeated source checks using current-path facts; image-validation usability follow-up |
-| Deferred | Further lowering/instruction work, child funding, source rewrites, ownership/allocation/SIMD |
+| R151 comparison-case proof | Retained; local qualification complete, draft publication/review checkpoint |
+| R149 exact-PC diagnosis / R150 geometry placement | Closed; R150 rejected and reverted because machine text did not change |
+| Next compiler task | Select one causal runtime or generated-code cost from the fresh profile after review |
+| Cold image validation | Inherited residual near 35 s remains open; no new matched startup cohort |
+| Historical R140 eight-byte +1.322924% | Disposition retained; cross-round timing changes have no established cause |
 
-Introduced test-only inventory-size and missing above-root assumptions are corrected. An attempted recursive-comprehension witness hit the inherited frozen Engine restriction and is excluded; no language expansion. All failures and sources remain archived. No unresolved introduced functional failure. Read-only implementation review found no correctness/accounting blocker.
-
-Known limitations remain explicit: R140 eight-byte +1.322924% is a dispositioned historical regression. R136 cold image admission rose roughly17 s→35–37 s; R142 improved its matched median1.426206% to34.580817458 s, leaving a separate usability cost. No new matched startup cohort. Finite grandchild coverage proves marker restoration and ordinary return before later Work denial; no whole-program finite-success claim.
-
-Same seven profile exclusions, full dependency/all-features graph, multi-MB timing and separate ten-workload coverage remain skipped. Ordinary hosted CI is cancelled under standing instruction; **draft until green hosted CI and clean external review**. Exact commands, revisions, source/native pins, raw receipts, rejected attempts and replay are external in [R148 evidence](../../benchmarks/mech-deflate/experiments.json). The architecture describes the maintained system; no further implementation begins in this increment. Performance parity remains the longer-term objective.
+The initial test-only borrow error is fixed and archived; no unresolved introduced functional failure. Same seven profile exclusions, full dependency/all-features rebuild, multi-MB timing and separate ten-workload suite remain skipped. Ordinary hosted CI is cancelled under standing instruction; **draft until green hosted CI and clean external review**. Exact commands, revisions, raw observations, failures and replay material are in the [experiment index](../../benchmarks/mech-deflate/experiments.json). No next implementation begins in this increment.
