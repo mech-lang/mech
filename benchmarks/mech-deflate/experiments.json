@@ -17606,6 +17606,17 @@
           "files": 49,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-unit-revision-rejection-70f52db30720.tar.gz"
+        },
+        {
+          "event": "emitted-evidence",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-emitted-evidence-181d4d0ffbf5.tar.gz",
+          "sha256": "181d4d0ffbf5dd726cef1797cfd8ac083ae246e6c96dbf950be12540ad923fab",
+          "manifest_sha256": "838d86a3ad107c868aed3d3edbcef275e9fe709b6ea6bc91f396952321518ed2",
+          "bytes": 505309,
+          "files": 97,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-emitted-evidence-181d4d0ffbf5.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
