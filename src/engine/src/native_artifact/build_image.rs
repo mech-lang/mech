@@ -218,12 +218,27 @@ struct Fields<'a> {
     pending_key: bool,
     depth: usize,
     canonical: bool,
-    known_keys: Option<&'static [&'static str]>,
+    known_keys: Option<StructKeys>,
+}
+
+enum StructKeys {
+    Ordered(&'static [&'static str]),
+    // Canonical struct names come from the deserializing type, never from an
+    // image flag. A bounded set checks presence and duplicates as we consume
+    // each field, without reparsing the entire record for every declared name.
+    Canonical {
+        names: &'static [&'static str],
+        seen: u64,
+    },
 }
 impl<'a> Fields<'a> {
     fn end(&self) -> Result<(), Error> {
         if self.remaining != 0 || self.pending_key || !self.bytes.is_empty() {
             Err(error("native metadata collection has trailing fields"))
+        } else if let Some(StructKeys::Canonical { names, seen }) = &self.known_keys
+            && seen.count_ones() as usize != names.len()
+        {
+            Err(error("canonical native metadata fields differ"))
         } else {
             Ok(())
         }
@@ -299,14 +314,36 @@ impl<'de> MapAccess<'de> for &mut Fields<'de> {
         if self.remaining == 0 {
             return Ok(None);
         }
-        let key = if let Some(names) = self.known_keys {
-            let expected = names[names.len() - self.remaining];
+        let key = if self.known_keys.is_some() {
+            let bytes = self.key_bytes()?;
+            match self.known_keys.as_mut().unwrap() {
+                StructKeys::Ordered(names) => {
+                    let expected = names[names.len() - self.remaining];
+                    if bytes != expected.as_bytes() {
+                        return Err(error("native metadata field order differs"));
+                    }
+                    expected
+                }
+                StructKeys::Canonical { names, seen } => {
+                    let ordered = names.len() - self.remaining;
+                    let position = if bytes == names[ordered].as_bytes() {
+                        ordered
+                    } else {
+                        names
+                            .iter()
+                            .position(|name| bytes == name.as_bytes())
+                            .ok_or_else(|| error("canonical native metadata fields differ"))?
+                    };
+                    let bit = 1u64 << position;
+                    if *seen & bit != 0 {
+                        return Err(error("canonical native metadata fields differ"));
+                    }
+                    *seen |= bit;
+                    names[position]
+                }
+            }
             // Equality to a static UTF8 field name proves these exact bytes;
             // no unchecked string conversion or caller-controlled flag is used.
-            if self.key_bytes()? != expected.as_bytes() {
-                return Err(error("native metadata field order differs"));
-            }
-            expected
         } else {
             self.key()?
         };
@@ -460,6 +497,20 @@ impl<'de> Deserializer<'de> for Node<'de> {
         visitor: V,
     ) -> Result<V::Value, Error> {
         let mut fields = self.fields(OBJECT)?;
+        if self.canonical {
+            if fields.remaining != expected.len() {
+                return Err(error("canonical native metadata field count differs"));
+            }
+            if expected.len() <= u64::BITS as usize {
+                fields.known_keys = Some(StructKeys::Canonical {
+                    names: expected,
+                    seen: 0,
+                });
+                let value = visitor.visit_map(&mut fields)?;
+                fields.end()?;
+                return Ok(value);
+            }
+        }
         if fields.remaining == expected.len() {
             let mut probe = self.fields(OBJECT)?;
             let mut ordered = true;
@@ -473,7 +524,7 @@ impl<'de> Deserializer<'de> for Node<'de> {
             }
             if ordered {
                 probe.end()?;
-                fields.known_keys = Some(expected);
+                fields.known_keys = Some(StructKeys::Ordered(expected));
                 let value = visitor.visit_map(&mut fields)?;
                 fields.end()?;
                 return Ok(value);

@@ -324,3 +324,201 @@ fn native_children_preserve_canonical_shape_checks_through_options_and_newtypes(
         assert!(Vec::<Option<Wrapper>>::deserialize(&mut reader).is_err());
     }
 }
+
+fn decode_canonical<'a, T: Deserialize<'a>>(bytes: &'a [u8]) -> Result<T, Error> {
+    let mut reader = BuildOwnedImageReader::from_image(bytes)?.canonical();
+    let value = T::deserialize(&mut reader)?;
+    reader.end()?;
+    Ok(value)
+}
+
+#[test]
+fn canonical_structs_preserve_all_field_orders_and_nested_full_width_values() {
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct Fields {
+        optional: Option<u64>,
+        unsigned: u64,
+        text: String,
+        item: Item,
+        wide: u128,
+    }
+    let entries = [
+        r#""optional":null"#,
+        r#""unsigned":18446744073709551615"#,
+        r#""text":"é😀""#,
+        r#""item":{"Named":{"optional":null,"text":"nested"}}"#,
+        r#""wide":340282366920938463463374607431768211455"#,
+    ];
+    let expected = Fields {
+        optional: None,
+        unsigned: u64::MAX,
+        text: "é😀".into(),
+        item: Item::Named {
+            text: "nested".into(),
+            optional: None,
+        },
+        wide: u128::MAX,
+    };
+    fn permutations(at: usize, order: &mut [usize], visit: &mut impl FnMut(&[usize])) {
+        if at == order.len() {
+            visit(order);
+            return;
+        }
+        for i in at..order.len() {
+            order.swap(at, i);
+            permutations(at + 1, order, visit);
+            order.swap(at, i);
+        }
+    }
+    let mut checked = 0;
+    permutations(0, &mut [0, 1, 2, 3, 4], &mut |order| {
+        let json = format!(
+            "{{{}}}",
+            order
+                .iter()
+                .map(|&i| entries[i])
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        let native = encode_native_metadata_image(json.as_bytes()).unwrap();
+        assert_eq!(decode_canonical::<Fields>(&native).unwrap(), expected);
+        checked += 1;
+    });
+    assert_eq!(checked, 120);
+}
+
+// This custom struct visitor deliberately accepts duplicate/unknown map keys.
+// Canonical field-set validation must come from the reader, not serde derive.
+#[derive(Debug)]
+struct PermissiveStruct<const N: usize>(std::collections::BTreeMap<String, u64>);
+impl<'de, const N: usize> Deserialize<'de> for PermissiveStruct<N> {
+    fn deserialize<D: Deserializer<'de>>(reader: D) -> Result<Self, D::Error> {
+        static NAMES: [&str; 65] = [
+            "f00", "f01", "f02", "f03", "f04", "f05", "f06", "f07", "f08", "f09", "f10", "f11",
+            "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23",
+            "f24", "f25", "f26", "f27", "f28", "f29", "f30", "f31", "f32", "f33", "f34", "f35",
+            "f36", "f37", "f38", "f39", "f40", "f41", "f42", "f43", "f44", "f45", "f46", "f47",
+            "f48", "f49", "f50", "f51", "f52", "f53", "f54", "f55", "f56", "f57", "f58", "f59",
+            "f60", "f61", "f62", "f63", "f64",
+        ];
+        struct Read<const N: usize>;
+        impl<'de, const N: usize> Visitor<'de> for Read<N> {
+            type Value = PermissiveStruct<N>;
+            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.write_str("a struct with a declared field set")
+            }
+            fn visit_map<A: MapAccess<'de>>(self, fields: A) -> Result<Self::Value, A::Error> {
+                std::collections::BTreeMap::deserialize(de::value::MapAccessDeserializer::new(
+                    fields,
+                ))
+                .map(PermissiveStruct)
+            }
+        }
+        reader.deserialize_struct("PermissiveStruct", &NAMES[..N], Read::<N>)
+    }
+}
+
+#[test]
+fn canonical_struct_field_sets_cover_empty_full_word_and_wide_fallback_boundaries() {
+    fn check<const N: usize>() {
+        for reverse in [false, true] {
+            let mut entries: Vec<_> = (0..N).map(|i| format!("\"f{i:02}\":{i}")).collect();
+            if reverse {
+                entries.reverse();
+            }
+            let json = format!("{{{}}}", entries.join(","));
+            let native = encode_native_metadata_image(json.as_bytes()).unwrap();
+            let value = decode_canonical::<PermissiveStruct<N>>(&native).unwrap().0;
+            assert_eq!(value.len(), N);
+            assert!(
+                value
+                    .iter()
+                    .all(|(key, value)| key == &format!("f{value:02}"))
+            );
+            if N != 0 {
+                for replacement in ["\"unknown\":0", "\"f00\":0"] {
+                    let mut broken = entries.clone();
+                    // In ascending order replace the final field, including bit63;
+                    // in reverse order replace its first entry with an early key.
+                    broken[if reverse { 0 } else { N - 1 }] = replacement.into();
+                    if N == 1 && replacement == "\"f00\":0" {
+                        continue;
+                    }
+                    let native = encode_native_metadata_image(
+                        format!("{{{}}}", broken.join(",")).as_bytes(),
+                    )
+                    .unwrap();
+                    assert!(
+                        decode_canonical::<PermissiveStruct<N>>(&native).is_err(),
+                        "N={N}, reverse={reverse}, replacement={replacement}"
+                    );
+                }
+            }
+        }
+    }
+    check::<0>();
+    check::<1>();
+    check::<2>();
+    check::<63>();
+    check::<64>();
+    check::<65>();
+}
+
+#[test]
+fn canonical_structs_reject_visitors_that_stop_before_every_field_value() {
+    struct Early<const MODE: u8>;
+    impl<'de, const MODE: u8> Deserialize<'de> for Early<MODE> {
+        fn deserialize<D: Deserializer<'de>>(reader: D) -> Result<Self, D::Error> {
+            struct Read<const MODE: u8>;
+            impl<'de, const MODE: u8> Visitor<'de> for Read<MODE> {
+                type Value = Early<MODE>;
+                fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                    f.write_str("a deliberately incomplete struct visitor")
+                }
+                fn visit_map<A: MapAccess<'de>>(
+                    self,
+                    mut fields: A,
+                ) -> Result<Self::Value, A::Error> {
+                    if MODE == 1 {
+                        let _ = fields.next_key::<String>()?;
+                    }
+                    if MODE == 2 {
+                        let _ = fields.next_entry::<String, u64>()?;
+                    }
+                    Ok(Early)
+                }
+            }
+            reader.deserialize_struct("Early", &["a", "b"], Read::<MODE>)
+        }
+    }
+    for json in [br#"{"a":1,"b":2}"#.as_slice(), br#"{"b":2,"a":1}"#] {
+        let native = encode_native_metadata_image(json).unwrap();
+        assert!(decode_canonical::<Early<0>>(&native).is_err());
+        assert!(decode_canonical::<Early<1>>(&native).is_err());
+        assert!(decode_canonical::<Early<2>>(&native).is_err());
+    }
+}
+
+#[test]
+fn canonical_structs_reject_truncation_invalid_keys_counts_and_child_lengths() {
+    let original =
+        encode_native_metadata_image(br#"{"f00":0,"f01":18446744073709551615}"#).unwrap();
+    for end in 0..original.len() {
+        assert!(
+            decode_canonical::<PermissiveStruct<2>>(&original[..end]).is_err(),
+            "end={end}"
+        );
+    }
+    let mut changed = original.clone();
+    changed.push(0);
+    assert!(decode_canonical::<PermissiveStruct<2>>(&changed).is_err());
+    let mut changed = original.clone();
+    changed[13..17].copy_from_slice(&u32::MAX.to_le_bytes());
+    assert!(decode_canonical::<PermissiveStruct<2>>(&changed).is_err());
+    let mut changed = original.clone();
+    changed[21] = 255;
+    assert!(decode_canonical::<PermissiveStruct<2>>(&changed).is_err());
+    let mut changed = original;
+    changed[25..29].copy_from_slice(&u32::MAX.to_le_bytes());
+    assert!(decode_canonical::<PermissiveStruct<2>>(&changed).is_err());
+}
