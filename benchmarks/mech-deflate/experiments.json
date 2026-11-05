@@ -21404,6 +21404,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-random-1024-primary-df1dd2cfdb94.tar.gz"
+        },
+        {
+          "event": "case-repeated-1024-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-repeated-1024-primary-a6f708e42be9.tar.gz",
+          "sha256": "a6f708e42be969504e96f1998ae9d528b0bf9c991c5b1b3c3e8b23fd3ed39b64",
+          "manifest_sha256": "2f5ee9677069a3d3b117d66501e4f457c344184e451f357c5e104ea2fcae5b9a",
+          "bytes": 83166,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-repeated-1024-primary-a6f708e42be9.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
