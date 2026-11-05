@@ -18235,6 +18235,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-eight-literals-prefix-primary-74d5715ed742.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-seven-stored-prefix-primary-9cf0b13a7d9d.tar.gz",
+          "sha256": "9cf0b13a7d9dcff943d234359298d3e0c238d56a1435ae699e92ae27c2797b4c",
+          "manifest_sha256": "4033dc483d37ac574dfa609a04741aaa046978733ca18f315f8875a8b681c6af",
+          "bytes": 242355,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-seven-stored-prefix-primary-9cf0b13a7d9d.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
