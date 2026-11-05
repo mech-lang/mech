@@ -19122,6 +19122,17 @@
           "files": 36,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-reymont-prefix-1024-primary-ceba30b18373.tar.gz"
+        },
+        {
+          "event": "case-320-overlap-primary",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-case-320-overlap-primary-70c23172a3da.tar.gz",
+          "sha256": "70c23172a3da2b071fb3fe9413546f3c35119423031fcb82f6a1d0add235c6e6",
+          "manifest_sha256": "994fbcb310d97523ff54f3e5b8a665cadf4175299227994812150398bdc815de",
+          "bytes": 123937,
+          "files": 36,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-320-overlap-primary-70c23172a3da.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
