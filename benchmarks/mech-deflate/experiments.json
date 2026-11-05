@@ -18898,6 +18898,17 @@
           "files": 23,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-fallback-pieces-round146-20261105/archives/r146-credit-diagnostic-569ef5df1819.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r146-closure-45c9a5e42a5f.tar.gz",
+          "sha256": "45c9a5e42a5f927c41eb6fb86af7cf864f984464e8f3c6e8eaeec57e01df2e10",
+          "manifest_sha256": "168666c253eed24f8a161422bd896a57bd6cd78530f1dc09562ea00be56f2b99",
+          "bytes": 246365,
+          "files": 58,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-fallback-pieces-round146-20261105/archives/r146-closure-45c9a5e42a5f.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
