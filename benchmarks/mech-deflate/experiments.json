@@ -18614,6 +18614,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-reymont-prefix-16384-primary-f4591e0d0b33.tar.gz"
+        },
+        {
+          "event": "case-random-1024-primary",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-case-random-1024-primary-33c4383d855c.tar.gz",
+          "sha256": "33c4383d855c122f21b60a032903c4cf7769a8b0fe92c8a7a7d7d77905d49db5",
+          "manifest_sha256": "4548bef3d49fe37657bc7378893c1956efd1505b90bdb179770bcc5eea267acf",
+          "bytes": 258770,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-random-1024-primary-33c4383d855c.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
