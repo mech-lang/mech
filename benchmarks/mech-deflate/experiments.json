@@ -24093,6 +24093,17 @@
           "files": 120,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-scalar-case-scalar-loop-64-original-5df74edf5975.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-loop-64-decoded",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-scalar-case-scalar-loop-64-decoded-c9234f99dfec.tar.gz",
+          "sha256": "c9234f99dfec50b74d231c401309e94654f3c12d4016ec87db7d23c47dec62e0",
+          "manifest_sha256": "bcf8a511a4ab34ed619e82098cf4a7f4f7229fb446a56f6c759944baa028fa41",
+          "bytes": 170625,
+          "files": 120,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-scalar-case-scalar-loop-64-decoded-c9234f99dfec.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
