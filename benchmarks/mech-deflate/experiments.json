@@ -19532,6 +19532,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-33027-periodic-window-primary-afb0aa768818.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-random-32769-primary-aa074f9b6146.tar.gz",
+          "sha256": "aa074f9b61466a0605bb38029507afbb81266b8f9ed75fc6403f7a24d85bb953",
+          "manifest_sha256": "d8fec802d8813be66175d8b874c4221e5122b2c51f1d71e89404ecf6b3f2f6ea",
+          "bytes": 884406,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-random-32769-primary-aa074f9b6146.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
