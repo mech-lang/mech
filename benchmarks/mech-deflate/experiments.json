@@ -22415,7 +22415,24 @@
         "equivalent_production_source": "2d27e4cc44261a02c6858a232960d8999ac712eb",
         "note": "pc-analysis archive source anchor advanced to58690, but archived binary-map/record pins explicitly remain R153 before diagnosis. New after CPU-time samples use current Object."
       },
-      "next_brief": "Focused current-binary loop cost selection, then whole-loop safety/arithmetic proof and bounded funding as separate measurements. SIMD/source variants follow only with measured contribution and separate attribution."
+      "next_brief": "Focused current-binary loop cost selection, then whole-loop safety/arithmetic proof and bounded funding as separate measurements. SIMD/source variants follow only with measured contribution and separate attribution.",
+      "publication_audit": {
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "paths_with_multiple_preserved_versions": 19,
+        "round": 154,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 1033,
+        "verified_archives": 49,
+        "verified_file_occurrences": 4664,
+        "all_public_archive_server_digests_verified": true,
+        "verified_server_files": 98,
+        "native_binaries_and_bytecode_excluded": true,
+        "data_archive_count": 49,
+        "publication_helper_disposition": "An introduced report helper initially used worktree cwd instead of the evidence root and could not open public-replay/replay.json. Corrected to the absolute evidence root; all raw measurements and reproduced output hashes remain unchanged."
+      }
     }
   },
   "repository": "mech-lang/mech",
