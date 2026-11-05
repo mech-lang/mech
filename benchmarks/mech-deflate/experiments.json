@@ -23427,6 +23427,17 @@
           "files": 123,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-scalar-case-scalar-loop-0-decoded-749dea5dd3c5.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-loop-64-original",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-scalar-case-scalar-loop-64-original-bc24e18dfd08.tar.gz",
+          "sha256": "bc24e18dfd0893965a43426fe08f93132c461fea162f83f1256230a10f03be91",
+          "manifest_sha256": "2001bba286b33f7b53bef1ef572cf3ed9b71d7629617b332138125106973f83f",
+          "bytes": 3493223,
+          "files": 123,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-scalar-case-scalar-loop-64-original-bc24e18dfd08.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
