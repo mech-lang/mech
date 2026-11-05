@@ -19320,6 +19320,17 @@
           "files": 62,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-analysis-final-9306c593346d.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-closure-5d6161c947e3.tar.gz",
+          "sha256": "5d6161c947e3653fc066d28aa47d9dafbe9a121f882ae816e50b922272a162d0",
+          "manifest_sha256": "1d441d41be0cc02ba51256c673af49201445256d097a21fcccb2a04041467caa",
+          "bytes": 11380559,
+          "files": 1156,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-closure-5d6161c947e3.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
