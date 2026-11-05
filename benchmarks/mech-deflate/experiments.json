@@ -17317,6 +17317,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-32-high-entropy-stored-primary-9af8f904e7da.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-case-eight-overlap-primary-406e1a415ecd.tar.gz",
+          "sha256": "406e1a415ecd2a9f55d4333c478f9617a5325e612cee9d5116437fdc70ddbd35",
+          "manifest_sha256": "056cea0a24f70ec544f47758e5f0dbd53279e5142d8ec9f12229e363fca9ed69",
+          "bytes": 227963,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-eight-overlap-primary-406e1a415ecd.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
