@@ -23001,6 +23001,17 @@
           "files": 95,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-profiles-current-d8c21bd32810.tar.gz"
+        },
+        {
+          "event": "clean-parent",
+          "source_revision": "549c2265870964d9fc8e3d17bcc93dd5b8759937",
+          "asset": "r156-clean-parent-81bdc45a0089.tar.gz",
+          "sha256": "81bdc45a00890574a41be7dbc36692a353d9846cc93a7f5a110f2f9a293ebb91",
+          "manifest_sha256": "6a0d839273023c74ffb381ea501d4e50937633c6808490ebabad5e5b70edd1ca",
+          "bytes": 195805,
+          "files": 77,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-clean-parent-81bdc45a0089.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
@@ -23012,7 +23023,7 @@
         "private_abi": 39,
         "bytecode": 14
       },
-      "decision": "Candidate: share current-traversal facts with numeric lowering; remove only proven current variant projection checks. Pending real binary and performance qualification.",
+      "decision": "All local gates pass. Retention and publication pending a bounded control restoring original Frame Pack emission order; preserve observed instruction and elapsed tradeoffs.",
       "retained": false,
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
