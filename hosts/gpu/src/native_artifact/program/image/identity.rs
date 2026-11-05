@@ -317,9 +317,7 @@ fn selected_template(
 // IR172 emits guarded whole-word loads for confined source byte packs.
 // IR173 restores exact cold child markers and selects fully charged ordinary
 // descendant parent pieces; current paid overlaps retain ordinary execution.
-// IR174 reuses immutable read-pack geometry only within the current admitted
-// native entry; cold reentry reconstructs it and window/index checks stay local.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 174;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 173;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

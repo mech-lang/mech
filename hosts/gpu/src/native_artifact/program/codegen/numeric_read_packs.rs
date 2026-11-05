@@ -3,7 +3,7 @@
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::program::prepare::readonly_numeric::{Operation, Proof};
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{Block, Endianness, InstBuilder, MemFlags, Value, types};
+use cranelift_codegen::ir::{Block, Endianness, InstBuilder, MemFlags, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationTerminator as Term,
@@ -318,83 +318,32 @@ pub(super) fn derive(facts: &NativeProgramFacts<'_>, proof: &Proof) -> Vec<Pack>
     packs
 }
 
-// SSA values from the current selected entry, never stored in an image or
-// carried through an ordinary/cold exit. Selection proves read-only array
-// origins cannot be rebound; !writable alone is not an identity proof.
-pub(super) type EntryWindows = BTreeMap<(usize, u64), (Value, Value)>;
-
-fn vector(b: &mut FunctionBuilder<'_>, words: &Words, view: usize) -> Value {
-    let rows = words.read(b, view + 2);
-    let columns = words.read(b, view + 3);
-    let row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
-    let column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
-    b.ins().bor(row, column)
-}
-
-fn window(
-    b: &mut FunctionBuilder<'_>,
-    words: &Words,
-    view: usize,
-    vector: Value,
-    end: u64,
-) -> (Value, Value) {
-    let length = words.read(b, view + 1);
-    let end = b.ins().iconst(types::I64, end as i64);
-    let enough = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, length, end);
-    // Wrapping subtraction is harmless when too short: enough refuses the
-    // fast path, and the reached original actions retain their exact errors.
-    let available = b.ins().isub(length, end);
-    (b.ins().band(vector, enough), available)
-}
-
-pub(super) fn entry_windows(
-    b: &mut FunctionBuilder<'_>,
-    words: &Words,
-    shadow: usize,
-    proof: &Proof,
-    packs: &[Pack],
-) -> EntryWindows {
-    let mut windows = EntryWindows::new();
-    let mut vectors = BTreeMap::new();
-    for pack in packs {
-        if proof.arrays[pack.array].writable {
-            continue;
-        }
-        windows.entry((pack.array, pack.end)).or_insert_with(|| {
-            let view = shadow + proof.view(pack.array);
-            let vector = *vectors
-                .entry(pack.array)
-                .or_insert_with(|| vector(b, words, view));
-            window(b, words, view, vector, pack.end)
-        });
-    }
-    windows
-}
-
 pub(super) fn emit(
     b: &mut FunctionBuilder<'_>,
     words: &Words,
     shadow: usize,
     proof: &Proof,
     pack: &Pack,
-    windows: &EntryWindows,
     next: Block,
 ) {
     let view = shadow + proof.view(pack.array);
+    let length = words.read(b, view + 1);
+    let rows = words.read(b, view + 2);
+    let columns = words.read(b, view + 3);
     let base = words.read(b, pack.base.get() as usize);
+    let row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
+    let column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
+    let vector = b.ins().bor(row, column);
     // base+end<=logical length without overflowing either the source's
     // checked additions or this guard. Spare allocation capacity is irrelevant.
-    let (eligible, available) = windows
-        .get(&(pack.array, pack.end))
-        .copied()
-        .unwrap_or_else(|| {
-            let vector = vector(b, words, view);
-            window(b, words, view, vector, pack.end)
-        });
+    let end = b.ins().iconst(types::I64, pack.end as i64);
+    let enough = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, length, end);
+    let available = b.ins().isub(length, end);
     let fits = b
         .ins()
         .icmp(IntCC::UnsignedLessThanOrEqual, base, available);
-    let mut valid = b.ins().band(eligible, fits);
+    let mut valid = b.ins().band(vector, enough);
+    valid = b.ins().band(valid, fits);
     if pack.offset == 0 {
         let nonzero = b.ins().icmp_imm(IntCC::NotEqual, base, 0);
         valid = b.ins().band(valid, nonzero);
