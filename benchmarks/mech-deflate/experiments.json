@@ -20867,6 +20867,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-33027-periodic-window-primary-ba299e674a6f.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-random-32769-primary-97e3d433f148.tar.gz",
+          "sha256": "97e3d433f1486c27774569dcbd9462eb49f017e8ffc34e5169b634f61abd5b4a",
+          "manifest_sha256": "18834a534b5eea7c7561635165f20f102429a8eea518eca468c3f0f019bbff68",
+          "bytes": 88563,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-random-32769-primary-97e3d433f148.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
