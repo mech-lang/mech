@@ -16920,6 +16920,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-32-high-entropy-stored-primary-e315ec93012f.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-case-eight-overlap-primary-d8c3d3595af1.tar.gz",
+          "sha256": "d8c3d3595af1de354ae3ed7c10dfbcf20bf01b2346f63da376ae36b8907f9dfd",
+          "manifest_sha256": "67412ffbb3184929cf968214ea937670f4d1a6afe507c4899eae10cbe29ea7db",
+          "bytes": 222892,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-eight-overlap-primary-d8c3d3595af1.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
