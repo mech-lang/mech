@@ -18323,6 +18323,17 @@
           "files": 80,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-guard-repeat-reymont-prefix-16384-primary-e16e5dd29a57.tar.gz"
+        },
+        {
+          "event": "guard-repeat-random-64-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-guard-repeat-random-64-primary-c9765d9fb3d8.tar.gz",
+          "sha256": "c9765d9fb3d8529b42beea9160e7afd6f2bac89c49300183fcf7670e8b94e861",
+          "manifest_sha256": "a80b6a4a2603418ba9eebeac821a761127fd960fa43bd3849811494573e1c671",
+          "bytes": 255511,
+          "files": 80,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-guard-repeat-random-64-primary-c9765d9fb3d8.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
