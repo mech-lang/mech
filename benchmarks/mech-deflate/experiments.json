@@ -21338,6 +21338,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-16384-distribution-change-primary-484eee2c5cce.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-33027-periodic-window-primary-25a225b2f29c.tar.gz",
+          "sha256": "25a225b2f29cbbfeb00111cb7f2e5c0ef3522efb553d9bff2f6f75907cf096df",
+          "manifest_sha256": "aa4f3ad1666918b70e69a57ba975ccf3ca5dd315cf306dc65b4dced24dad97fb",
+          "bytes": 79455,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-33027-periodic-window-primary-25a225b2f29c.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
