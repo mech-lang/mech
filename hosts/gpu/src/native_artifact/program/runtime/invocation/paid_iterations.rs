@@ -11,11 +11,25 @@ fn native_paid_iteration_guard_preserves_exact_source_overlap() {
         include_str!("../../../../../tests/fixtures/native/numeric-nested-rebase.mec"),
         include_str!("../../../../../tests/fixtures/native/numeric-collector-rebase.mec"),
     ];
+    // A String-bearing ordinary parent leaves the numeric child's root below
+    // an unpaid ancestor. Its lower ID must be only a possible match.
+    let nested = r#"+> sequence
+scan(values<[u32]>, at<u64>, sum<u64>) => (out<u64>) :=
+  more := at != 0u64
+  value<u64> := (more? | true => values[at] | false => 0u32)
+  out := (more? | true => scan(values, at - 1u64, sum + value) | false => sum).
+outer(values<[u32]>, at<u64>, text<string>) => (out<u64>) :=
+  sum := scan(values, sequence/length(values), 0u64)
+  out := ((at != 0u64)?
+    | true => outer(values, at - 1u64, text)
+    | false => sum + sequence/length(text)).
+outer(values<[u32]>, count<u64>, text<string>)
+"#;
     // Default inventories, explicit interval inventories, paid/unpaid segments,
     // positive ancestry with exact-inventory holes, above-root negatives,
     // other-branch negatives, and the absence of a source iteration.
-    let mut coverage = [0; 8];
-    for source in sources {
+    let mut coverage = [0; 9];
+    for source in sources.into_iter().chain([nested]) {
         let original = super::super::tests::artifact_source(source);
         let decoded = mech_engine::decode_program_artifact_bytecode_v1(
             &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
@@ -38,7 +52,20 @@ fn native_paid_iteration_guard_preserves_exact_source_overlap() {
     println!("paid-iteration coverage={coverage:?}");
 }
 
-fn check(metadata: &ProgramMetadata, coverage: &mut [usize; 8]) {
+fn check(metadata: &ProgramMetadata, coverage: &mut [usize; 9]) {
+    assert!(
+        metadata
+            .plan
+            .iterations()
+            .iter()
+            .enumerate()
+            .all(|(id, loop_)| {
+                loop_
+                    .as_ref()
+                    .parent()
+                    .is_none_or(|parent| (parent as usize) < id)
+            })
+    );
     for (id, region) in metadata.closed_tails.regions.iter().enumerate() {
         let Some(proof) = &region.numeric else {
             continue;
@@ -77,6 +104,9 @@ fn check(metadata: &ProgramMetadata, coverage: &mut [usize; 8]) {
                     "guard excluded paid ancestry: region={id} deepest={deepest} wanted={wanted:?} paid={paid:?}"
                 );
                 assert_eq!(possible, wanted.is_some_and(|at| at <= deepest));
+                if possible && !wanted.is_some_and(|at| paid.contains(&at)) {
+                    coverage[8] += 1;
+                }
                 if let Some(wanted) = wanted {
                     if ancestors[root_at + 1..].contains(&wanted) {
                         coverage[5] += 1;
