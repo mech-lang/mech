@@ -19499,6 +19499,17 @@
           "files": 49,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-refined-screen-repeated-32769-primary-c4383a31f31e.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-eight-literals-primary-e6a3f3053e88.tar.gz",
+          "sha256": "e6a3f3053e88869592d900a53e426047dbee856f17574fa9585aa8565ec0e643",
+          "manifest_sha256": "e878898838f3d4cac652125ddb1d24d3b180b93546bc23181380b29586be732b",
+          "bytes": 886945,
+          "files": 51,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-eight-literals-primary-e6a3f3053e88.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
