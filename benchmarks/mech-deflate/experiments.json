@@ -22458,6 +22458,17 @@
           "files": 29,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-profile-33027-periodic-window-ebbb63bccd5c.tar.gz"
+        },
+        {
+          "event": "pc-profile-repeated-32769",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r155-pc-profile-repeated-32769-c00a95d06e4f.tar.gz",
+          "sha256": "c00a95d06e4ff7f6ead418dfbd192315e37c11b152ce514cc59c5157e5ca6031",
+          "manifest_sha256": "563692a273478516ba453833499b0ba61a0e0912d6edfca45448f864da483b3f",
+          "bytes": 3442232,
+          "files": 29,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-profile-repeated-32769-c00a95d06e4f.tar.gz"
         }
       ],
       "production": null,
