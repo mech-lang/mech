@@ -23218,6 +23218,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-320-overlap-primary-de712cf23844.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-case-random-256-primary-7d69d0330b75.tar.gz",
+          "sha256": "7d69d0330b75dc8006f23e5fbb05306ce6d13db474e818b90ee4b69d1a22ec85",
+          "manifest_sha256": "98bf6107455b6503f7b5978bc70215a833f3821bd9565fc3534d925623e8dc03",
+          "bytes": 3464162,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-random-256-primary-7d69d0330b75.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
