@@ -24304,6 +24304,17 @@
           "files": 74,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-case-repeated-32769-primary-ec465667c491.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-32769-primary",
+          "source_revision": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+          "asset": "r160-case-reymont-prefix-32769-primary-b7286b036a6b.tar.gz",
+          "sha256": "b7286b036a6be221daf852d30e1d80e1ffad302b02682fe417b2784d60c68707",
+          "manifest_sha256": "6fd2085dbfa63dcec0b8902c3c84cc1714653c03c2cc89ad29a4866f8e103cac",
+          "bytes": 119832,
+          "files": 74,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-case-reymont-prefix-32769-primary-b7286b036a6b.tar.gz"
         }
       ],
       "production": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
