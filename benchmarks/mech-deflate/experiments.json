@@ -18279,6 +18279,17 @@
           "files": 164,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-qualified-d90ae15ede00.tar.gz"
+        },
+        {
+          "event": "guard-repeat-eight-literals-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-guard-repeat-eight-literals-primary-596d141b5f1a.tar.gz",
+          "sha256": "596d141b5f1a99cf5f414579e9a52283bb973c1665380344b29e14486d7e3f86",
+          "manifest_sha256": "86bd1220f505122b51a55ee7b0197f61ed28334ef1aa2ab06e02255f86b6f47f",
+          "bytes": 254451,
+          "files": 79,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-guard-repeat-eight-literals-primary-596d141b5f1a.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
