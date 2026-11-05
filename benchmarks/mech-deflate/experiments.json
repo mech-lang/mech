@@ -17096,7 +17096,7 @@
       "base": "23d152cbfc5d32e829f36d8000f0d61dd64c026a",
       "production": "05102440a85c233069b3968f1e6a92c27461258c",
       "compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
-      "decision": "under measurement",
+      "decision": "retain for review: all-three-pairs startup criterion passes; compression guards pass with adverse timings explicitly retained",
       "events": [
         {
           "event": "initial",
@@ -17504,7 +17504,47 @@
         "work_policy": 107,
         "private_abi": 39,
         "bytecode": 14
-      }
+      },
+      "retained": true,
+      "qualified_compiler": "05102440a85c233069b3968f1e6a92c27461258c",
+      "retained_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
+      "source_unchanged": true,
+      "startup": {
+        "medians": {
+          "before": 35.081146958,
+          "after": 34.580817458
+        },
+        "change_percent": -1.4262062201073622,
+        "all3_pairs_improve": true
+      },
+      "regression_guards": {
+        "primary_cases": 20,
+        "primary_observations": 3968,
+        "replication_cases": 3,
+        "replication_primary_observations": 576,
+        "replication_changes_percent": {
+          "random-1024": 0.9573925699865926,
+          "reymont-prefix-16384": 0.6654000510191604,
+          "eight-literals": 0.7262498458888711
+        },
+        "all_within_predeclared_1_05": true,
+        "compression_improvement_or_neutrality_claimed": false,
+        "all_heap_request_byte_incremental_peak_deltas_zero": true
+      },
+      "qualification_counts": {
+        "compatible_gpu": 562,
+        "inherited_profile_exclusions": 7,
+        "focused_overlap_with_compatible": 19,
+        "components": 236,
+        "composition": 8,
+        "real_capacity_path": 1,
+        "ci_guarded_executed": 137,
+        "workflow_python": 132,
+        "architecture_checks": 15,
+        "scalar_controls": 12,
+        "frame_controls": 8
+      },
+      "milestone_scope_frozen": true
     }
   },
   "repository": "mech-lang/mech",

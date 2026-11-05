@@ -1,75 +1,70 @@
 # Native compression: current status
 
-**Milestone: stabilize the native capabilities retained through R140. Capability scope is frozen.** Performance parity is a later objective, not this PR's completion condition.
+**The native capability milestone through R140 is closed for review. Scope is frozen; performance parity and further optimizations are subsequent assignments.** R142 is one bounded startup follow-up, with no new execution capability.
 
-| Current baseline | Value |
+| Current checkpoint | Value |
 |---|---|
-| PR | [#973](https://github.com/mech-lang/mech/pull/973), draft |
+| Frozen milestone | [#973](https://github.com/mech-lang/mech/pull/973), draft at `23d152cbfc5d32e829f36d8000f0d61dd64c026a` |
 | Stack base | `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b` |
-| R140 published checkpoint | `b511c718c5c30cca5ac35812429c3e22198be7db` |
-| Retained compiler | `58f75827e5c44187731df5253b3a058d2e9cd417` |
-| IR/work/ABI/bytecode | **168/107/39/14** |
-| Scope of final source change | Short-buffer semantic test and guarded CI inventory137; production is identical to R140 |
+| R142 integration base | Reviewed `23d152cbfc5d32e829f36d8000f0d61dd64c026a`; separate `codex/native-header-liveness-reuse` branch |
+| Retained compiler | `05102440a85c233069b3968f1e6a92c27461258c` |
+| IR/work/ABI/bytecode | **168/107/39/14**, unchanged |
+| Current increment | Reuse the exact header-liveness set within one immutable preparation; two production files, 15 insertions/8 deletions |
 
-## Work board
+## Work board and decisions
 
-| State | Work and finish condition |
+| State | Work and disposition |
 |---|---|
-| Active | Milestone closure/review: compact documents, responsibility review, evidence publication and integration boundaries |
-| Closed: rejected | R141 early-refusal candidate `80dab41c28`: no established elapsed benefit; implementation removed, evidence and useful correctness test retained |
-| Closed: dispositioned | R136 cold-validation investigation: repeated reachability/liveness work localized; remedy deferred as the first follow-up compiler task |
-| Next | Address review blockers and decide the integration boundary; no new capability work in this increment |
-| Next | Bound immutable analysis reuse within one image admission, with identical reconstructed proofs and malformed-image rejection |
+| Closed: rejected | R141 short-buffer early refusal: no established elapsed benefit; implementation removed, evidence and useful regression test retained |
+| Closed: retained | R142 local header-query reuse: all three startup pairs improve; guards pass with adverse compression timings; separate review increment |
+| Closed | R130 recommendations reconciled, capability scope frozen, current documents consolidated, historical evidence archived |
+| Next | Review the bounded follow-up and decide integration; no active implementation task |
 
-**Known introduced performance findings remain open:** R140's8B literal regression is **+1.322924%** in its retained matched cohort; R136 image validation rose from roughly17s to35–37s. They are explicit tradeoffs for review, not resolved failures or merge-ready claims. The next queue is limited to the two items above.
+**Known introduced costs remain explicit:** R140's 8B literal regression is **+1.322924%** in its original matched cohort. R141 removed four allocations and 0.1039% of instructions but elapsed was0.200298% worse, with four improving/four adverse blocks; its hypothesis was rejected. Efficient ordinary fallback grouping needs a separate finite/error-prefix proof. R136 raised cold image validation from roughly 17 s to 35–37 s; R142 only partly reduces it.
 
-Deferred backlog order after startup: ordinary fallback grouping; already-private stores; bounded-child trips; Huffman/header pricing source work; word-bank/constants/binding/arena changes; further instruction/SIMD work. None is active.
+R142's predeclared primary outcome is image admission, outside compression timing. Three balanced fresh-application pairs with warm file caches give a pooled median **35.081146958s→34.580817458s (−1.426206%)**; each pair improves. Fresh Object, descriptor, metadata, source and bytecode are byte-identical. The already-owned header set moves within one derivation with the same plan/root/facts/empty-predicate/full-query context. Independent image reconstruction, candidate/exit queries, errors and runtime authority remain intact. No compression speedup is inferred.
 
-## Current measurements
+Ordered backlog: residual startup analysis; ordinary fallback grouping; already-private stores; bounded-child trips; Huffman/header pricing source work; word-bank/constants/binding/arena changes; further instruction/SIMD work. None is active or enters this increment automatically.
 
-All **20 retained compression inputs/sizes** have exact raw-output/reference agreement, independent inflation, aliases, output-prefix/capacity/clear-reuse checks and zero final managed data. The fresh R141 **before** side executes the exact retained R140 binary; its after side is rejected. These are complete `evaluate_into` timings. Full multi-megabyte timing and the separate ten-workload suite are excluded.
+## Current compression measurements
 
-| Retained program/input | Elapsed | Mech / Roc |
+All **20 retained compression inputs/sizes** pass exact raw-reference agreement, independent inflation, aliases, prefixes, output capacity/clear-reuse and zero final managed data. R142 has 3,968 primary observations in eight balanced blocks per case. Compressor source, algorithms, tables, search limits, allocations, allocator and complete `evaluate_into` timing boundary remain pinned. Full multi-megabyte timing and the separate ten-workload suite are excluded.
+
+| Program/input | Current elapsed | Mech / Roc |
 |---|---:|---:|
-|Periodic 33,027B|34.753979ms|27.8032×|
-|Repeated 32,769B|23.108604ms|17.3098×|
-|Random 32,769B|8.035166ms|7.6489×|
-|Reymont prefix 32,769B|37.562645ms|8.6272×|
-|Reymont prefix 16KiB|19.419875ms|9.1280×|
-|16KiB distribution change|6.349562ms|7.9969×|
-|Reymont prefix 1KiB|1.944208ms|5.8560×|
-|8B literals|1.341750ms|4.5950×|
+|Periodic 33,027 B|34.759562ms|27.7411×|
+|Repeated 32,769 B|23.183229ms|17.3527×|
+|Random 32,769 B|7.997001ms|7.5945×|
+|Reymont prefix 32,769 B|37.865354ms|8.6648×|
+|Reymont prefix 16 KiB|19.617292ms|9.2100×|
+|16KiB distribution change|6.360084ms|8.0253×|
+|Reymont prefix 1 KiB|1.978855ms|5.9965×|
+|8B literals|1.364604ms|4.7547×|
 
-The full20-case measurements and adverse observations are in the [experiment index](../../benchmarks/mech-deflate/experiments.json), R140/R141. Reference medians for0/1/7B are below the retained clock's resolution; their ratios are unavailable. Ratios from different cohorts must not be compounded.
+The final current/control changes range **−1.222688% to +2.764377%**; 8B is **+2.270195%**. Seventeen of 20 medians are slower; every adverse result is retained, with no claim of compression improvement or neutrality. All 20 satisfy the predeclared 1.05 guard and equal logical work. Separate CPU cohorts change −0.003181% to +0.137973% in instructions; all 20 heap cohorts have exactly unchanged request counts, requested bytes and incremental peaks. Scalar controls retain their 1.05 gate. Reference medians for 0/1/7 B remain clock-limited; no ratio is invented. Cohorts and historical ratios must not be compounded.
 
-R140's matched16KiB distribution-change result improved **187.8584×→7.9902×**, with instructions2.479B→79.465M and requests67,321→5,679. Its incremental heap peak stayed18,702,352B. The retained executable's CPU samples are60.88% generated for periodic33,027B and90.01% for repeated32,769B; samples are separate from instruction counts.
+A single independent guard repeat reverses initialization/block order: 8B **+0.726250%**, random 1KiB **+0.957393%**, Reymont 16KiB **+0.665400%**. All three are adverse and inside the unchanged 1.05 guard. Both cohorts remain separate. R142 is retained for review as a startup/runtime tradeoff; no further experiment is active.
 
-## Decisions and limitations
-
-- **Short buffers:** R141 removed four literal-case allocations and0.1039% of instructions, but elapsed was0.200298% worse, with four improving/four adverse blocks. It failed the elapsed-overhead objective and was rejected. Restoring efficient ordinary grouping requires a separate proof distinguishing current prepaid visits from ordinary fallback; the residual R140 regression is deferred. Source/output capacity13 and the conservative16-byte writer guard stay fixed.
-- **Startup:** a current diagnostic measures36.110197s in image validation; historical R135 records17.022061s and R13634.88–35.42s. Sampling localizes expensive reachability/liveness and ordered-set work during independent proof reconstruction. These are diagnostic/historical observations, not a new controlled speedup claim. No validation is skipped. Remedy is deferred; this remains an integration/readiness finding.
-- **Architecture review:** one read-only reviewer found no blocking correctness/architecture issue in R130→R140, no temporary production tracing, and no safely removable duplicate. Required ordinary and distinct collection fallbacks remain. This is separate from pending hosted review.
+R140's earlier matched 16 KiB distribution-change gain remains 187.8584×→7.9902×, instructions 2.479B→79.465M and requests 67,321→5,679, with incremental peak 18,702,352 B. Current exclusive CPU samples are 60.99% generated for periodic 33,027 B and 89.43% for repeated 32,769 B; these samples do not partition retired instructions. Full 20-case tables and all failures are in the [experiment index](../../benchmarks/mech-deflate/experiments.json), R142.
 
 ## Reconcile the R130 recommendations
 
 | Recommendation | Disposition |
 |---|---|
-| Exact required state at native exits | Completed through R132/R136; preserve live frames, aliases, settlement and original errors |
-| Remove historical temporary dependencies; initialize genuine inputs | Completed in R135 and retained exit lowering |
-| Full physical word-bank lifetime compaction | Partial: transports/consumers shrink; full admitted lane capacity remains. Further compaction deferred |
-| Independently reconstruct exit/representation recipes | Completed; serialized metadata grants no runtime authority |
-| Better address/arithmetic emission | Completed in R137/R138 |
-| Broader inputs and native bulk byte writing | Completed in R139/R140;20-case regression matrix retained |
-| Direct stores after backing becomes private | Deferred; the old-element load/comparison still precedes the private flag |
-| Bounded-child proofs in dynamically funded phases | Deferred; those phases still select empty trip proofs |
-| Huffman lengths-only planning, header pricing and histogram source rewrites | Deferred; compressor source remains pinned |
-| Further constants/binding/arena work, SIMD and instruction tuning | Ordered research backlog; no active implementation |
-| Terminal-error snapshot experiment | R131 rejected; original evidence retained |
+| Required physical state at native exits | Completed through R132/R136; preserve live frames, aliases, settlement and original errors |
+| Historical temporary dependencies; genuine inputs | Completed in R135 and retained exit lowering |
+| Full physical word-bank lifetime compaction | Partial: transport/consumers shrink; full admitted lane capacity remains; further compaction deferred |
+| Independent exit/representation reconstruction | Completed within documented domains; serialized metadata grants no current authority |
+| Address/arithmetic emission | Completed in R137/R138 |
+| Broader inputs and native bulk byte writing | Completed in R139/R140; 20-case matrix retained |
+| Already-private direct stores; dynamically funded child-trip proofs | Deferred; load/comparison and empty-trip limitations remain |
+| Huffman/header source work; constants/binding/arena; further SIMD/instructions | Deferred in the ordered backlog |
+| Terminal-error snapshot | R131 rejected; original evidence retained |
 
 ## Qualification and integration
 
-Retained production plus the new test passes **562 compatible GPU tests** (same7 inherited profile exclusions), **7 focused bulk tests**, and **137 guarded/executed CI tests**. Stable R140 qualification supplies236 components,8 composition,1 real-capacity path,132 workflow tests,15 architecture checks, runtime-only metadata,12 scalar controls and8 frame controls. The R141 candidate also passed those broader cohorts before rejection. The final formatting-edition correction is retained with the failed receipt; configured formatting and diff checks pass. No allowance or expected component value increased.
+Current compiler passes **562 compatible GPU tests** with the same 7 inherited profile exclusions; 19 focused checks overlap that suite. Also pass: 236 component, 8 composition and 1 real-capacity path tests; 137 guarded/listed/executed CI tests; 132 workflow tests; 15 architecture checks; current runtime-only metadata; 12 scalar and 8 frame controls. Warnings remain errors. No expected values, allowances or inventory guards changed. Two introduced harness omissions—an old absolute source route and a misnamed baseline pin—were corrected narrowly; original receipts remain. Neither is an unresolved compiler failure.
 
-Review by responsibility: Engine semantics/proofs → checked preparation → shared emission → current ownership/accounting/cleanup → independent image restoration. Keep coupled proof/emitter/runtime/identity changes atomic. Historical checkpoints permit separate liveness/freshness, scalar/address, and byte-writer reviews; CI/test-only repairs already have separate commits. No additional PRs or history rewrites are needed for this closure.
+One read-only reviewer found no correctness/architecture blocker in R142; the frozen #973 head has a [clean external review](https://github.com/mech-lang/mech/pull/973#issuecomment-6649009367) and no unresolved threads. Review follows Engine semantics/proofs → preparation → shared emission → ownership/accounting → independent restoration. Coupled proof/emitter/runtime/identity changes remain atomic; the local analysis reuse is independently reviewable. No temporary production instrumentation or safely removable duplicate was found; required ordinary and distinct collection fallbacks remain.
 
-Hosted CI is cancelled by standing instruction; **the PR remains draft pending green CI and clean review**. Local qualification does not imply either. Closure does not authorize another optimization campaign. Full historical narratives, commands, raw data, failures and replay scripts are archived through the existing experiment index; [architecture](native-compiler-architecture.md) documents current responsibilities only.
+Hosted ordinary CI stays cancelled by standing instruction, with review jobs and #929 untouched. **Both increments stay draft pending green CI and clean review.** Local qualification does not imply hosted readiness. Current architecture is [organized by responsibility](native-compiler-architecture.md); raw evidence and historical prose remain archived. This checkpoint does not authorize another optimization campaign.
