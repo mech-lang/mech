@@ -20812,6 +20812,17 @@
           "files": 45,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-screen-16384-distribution-change-primary-9d5e491439be.tar.gz"
+        },
+        {
+          "event": "screen-33027-periodic-window-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-screen-33027-periodic-window-primary-dbfdc0912dda.tar.gz",
+          "sha256": "dbfdc0912ddaab51e2bf79aa32cd82801db8389fa81d09bae0eace133dd22df5",
+          "manifest_sha256": "edba44f72276e317e049d676c94d3e9490b8338a626df8eb584b104c18d5bf2d",
+          "bytes": 85307,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-screen-33027-periodic-window-primary-dbfdc0912dda.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
