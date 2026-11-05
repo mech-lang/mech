@@ -16401,8 +16401,9 @@
           "manifest_sha256": "ebbebb8bab72095422ca3b962c30a65cac2f7bfbf2a054a62efc67fdcb054f4e",
           "bytes": 126214,
           "files": 22,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-parent-2a86f7be0963.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-parent-2a86f7be0963.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-parent-2a86f7be0963.tar.gz"
         },
         {
           "event": "first-outlier-work-accounting",
@@ -16412,8 +16413,9 @@
           "manifest_sha256": "2d1698b8ebb45514d44ef1602af7c9e2ee222b68f4509895de980e5e3207a638",
           "bytes": 152319,
           "files": 42,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-first-outlier-work-accounting-979db555e99c.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-first-outlier-work-accounting-979db555e99c.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-first-outlier-work-accounting-979db555e99c.tar.gz"
         },
         {
           "event": "case-16384-distribution-change-primary",
@@ -16423,8 +16425,9 @@
           "manifest_sha256": "ac70234fd9668f20e78454071604eecb260071aa43a1a24d71b0b0c8b308750c",
           "bytes": 155134,
           "files": 43,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-16384-distribution-change-primary-124e77d458ef.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-16384-distribution-change-primary-124e77d458ef.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-16384-distribution-change-primary-124e77d458ef.tar.gz"
         },
         {
           "event": "case-33027-periodic-window-primary",
@@ -16434,8 +16437,9 @@
           "manifest_sha256": "234acf062cc831f8a09ce016b1dfcd817caaa565b0462457e7996e92ac058f0d",
           "bytes": 155769,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-33027-periodic-window-primary-e79c3a0fd8d6.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-33027-periodic-window-primary-e79c3a0fd8d6.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-33027-periodic-window-primary-e79c3a0fd8d6.tar.gz"
         },
         {
           "event": "case-random-32769-primary",
@@ -16445,8 +16449,9 @@
           "manifest_sha256": "aed8921ef491d8f98790c59941baab8e6cda1fb19b72d02beff5c0eff340bea7",
           "bytes": 155862,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-random-32769-primary-45ebdf0dac00.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-random-32769-primary-45ebdf0dac00.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-random-32769-primary-45ebdf0dac00.tar.gz"
         },
         {
           "event": "case-repeated-32769-primary",
@@ -16456,8 +16461,9 @@
           "manifest_sha256": "3c6b3cc2ea8b069a5a3c918cc63851a823a98c26e13a3fca6682f5153d8dfb93",
           "bytes": 156080,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-repeated-32769-primary-8eefafd154f6.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-repeated-32769-primary-8eefafd154f6.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-repeated-32769-primary-8eefafd154f6.tar.gz"
         },
         {
           "event": "case-reymont-prefix-32769-primary",
@@ -16467,8 +16473,9 @@
           "manifest_sha256": "d8328aa270f407f6d439ca71c33ee5626c92f6a77eb21ea6659b4e82f20567b3",
           "bytes": 156370,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-reymont-prefix-32769-primary-8b1ee32312f1.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-reymont-prefix-32769-primary-8b1ee32312f1.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-reymont-prefix-32769-primary-8b1ee32312f1.tar.gz"
         },
         {
           "event": "case-reymont-prefix-16384-primary",
@@ -16478,8 +16485,9 @@
           "manifest_sha256": "ff175b2887913b1c1f8898b1dafe5ad8adf3ba53f85770d4676d890eaca8b85e",
           "bytes": 156651,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-reymont-prefix-16384-primary-70efadbd8264.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-reymont-prefix-16384-primary-70efadbd8264.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-reymont-prefix-16384-primary-70efadbd8264.tar.gz"
         },
         {
           "event": "case-random-1024-primary",
@@ -16489,8 +16497,9 @@
           "manifest_sha256": "6c14575b35a4cc39824305595cae27f52afbf129ef8df9e8e9e97c8a922455a6",
           "bytes": 160062,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-random-1024-primary-a8c23d27ee9f.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-random-1024-primary-a8c23d27ee9f.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-random-1024-primary-a8c23d27ee9f.tar.gz"
         },
         {
           "event": "case-repeated-1024-primary",
@@ -16500,8 +16509,9 @@
           "manifest_sha256": "1918aaf1f65bfd46b857288a2542556af3a2b742f4447e7f541c103628834cf8",
           "bytes": 160376,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-repeated-1024-primary-9ce2ca1b973d.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-repeated-1024-primary-9ce2ca1b973d.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-repeated-1024-primary-9ce2ca1b973d.tar.gz"
         },
         {
           "event": "case-reymont-prefix-1024-primary",
@@ -16511,8 +16521,9 @@
           "manifest_sha256": "d9e88b5756fb4dab4620ffd76652e5823e8ba232a351609ec925c680293503bc",
           "bytes": 160378,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-reymont-prefix-1024-primary-a0c126378490.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-reymont-prefix-1024-primary-a0c126378490.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-reymont-prefix-1024-primary-a0c126378490.tar.gz"
         },
         {
           "event": "case-320-overlap-primary",
@@ -16522,8 +16533,9 @@
           "manifest_sha256": "6623b1b6fa3d1a1fd693ee0a2c88080b5dd3842ed1d0edc674b36e79f7867dd5",
           "bytes": 160439,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-320-overlap-primary-1d82f739b609.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-320-overlap-primary-1d82f739b609.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-320-overlap-primary-1d82f739b609.tar.gz"
         },
         {
           "event": "case-random-256-primary",
@@ -16533,8 +16545,9 @@
           "manifest_sha256": "e2e7209fa4e42c9369d2e21368b8b6071885092afd87009d4e1f19e74a912391",
           "bytes": 160671,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-random-256-primary-a47fedc14af5.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-random-256-primary-a47fedc14af5.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-random-256-primary-a47fedc14af5.tar.gz"
         },
         {
           "event": "case-128-biased-dynamic-primary",
@@ -16544,8 +16557,9 @@
           "manifest_sha256": "3b19037bf529fa2c7f55021001d4b8076e8beb6b10f639af984acb31d734b9be",
           "bytes": 160670,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-128-biased-dynamic-primary-9210e4517595.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-128-biased-dynamic-primary-9210e4517595.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-128-biased-dynamic-primary-9210e4517595.tar.gz"
         },
         {
           "event": "case-random-64-primary",
@@ -16555,8 +16569,9 @@
           "manifest_sha256": "47284460a49c03b6a9cc4e26a9f210dc7c4cd5f630accd6f2a565bb6004b5290",
           "bytes": 160754,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-random-64-primary-dcc826a5b163.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-random-64-primary-dcc826a5b163.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-random-64-primary-dcc826a5b163.tar.gz"
         },
         {
           "event": "case-32-high-entropy-stored-primary",
@@ -16566,8 +16581,9 @@
           "manifest_sha256": "9c5470fe43a1b076ba29a1a078ff3bed19ed46ef51c8025b0ec71002137766c0",
           "bytes": 161063,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-32-high-entropy-stored-primary-9a1f733eb989.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-32-high-entropy-stored-primary-9a1f733eb989.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-32-high-entropy-stored-primary-9a1f733eb989.tar.gz"
         },
         {
           "event": "case-eight-literals-primary",
@@ -16577,8 +16593,9 @@
           "manifest_sha256": "b2669ca84b266de2f9d9d4ac29034444da4fa933ff4b0bbdf07d5af868db565e",
           "bytes": 161255,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-eight-literals-primary-8024a931649d.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-eight-literals-primary-8024a931649d.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-eight-literals-primary-8024a931649d.tar.gz"
         },
         {
           "event": "case-eight-overlap-primary",
@@ -16588,8 +16605,9 @@
           "manifest_sha256": "b76b083d2a24edcb1d149c4dc92c5c334391788fdf09f2aa5b70349f549d35bc",
           "bytes": 161429,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-eight-overlap-primary-f4b5fa0173f7.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-eight-overlap-primary-f4b5fa0173f7.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-eight-overlap-primary-f4b5fa0173f7.tar.gz"
         },
         {
           "event": "case-eight-literals-prefix-primary",
@@ -16599,8 +16617,9 @@
           "manifest_sha256": "e776fb875352a8447c910b37fb31d538901d7769b2f859004353ddc1b5157646",
           "bytes": 161425,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-eight-literals-prefix-primary-4915a05bab7e.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-eight-literals-prefix-primary-4915a05bab7e.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-eight-literals-prefix-primary-4915a05bab7e.tar.gz"
         },
         {
           "event": "case-seven-stored-prefix-primary",
@@ -16610,8 +16629,9 @@
           "manifest_sha256": "02ec204f69687bdfc7d0c6190709457dbdd195a516469d2a866b603e90813d0b",
           "bytes": 161017,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-seven-stored-prefix-primary-1ac2eb7e0897.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-seven-stored-prefix-primary-1ac2eb7e0897.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-seven-stored-prefix-primary-1ac2eb7e0897.tar.gz"
         },
         {
           "event": "case-one-stored-primary",
@@ -16621,8 +16641,9 @@
           "manifest_sha256": "0245ccee555345f5664644697417e6d9576db35d5619b195f50444af9e73f822",
           "bytes": 160686,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-one-stored-primary-2aab0ca3abd2.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-one-stored-primary-2aab0ca3abd2.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-one-stored-primary-2aab0ca3abd2.tar.gz"
         },
         {
           "event": "case-empty-primary",
@@ -16632,8 +16653,9 @@
           "manifest_sha256": "c17a5659db1acee1303fe24c11749ceb5dcc8875ad3ad1d5a2193797ffe83d4a",
           "bytes": 160408,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-empty-primary-0ea7d2facb79.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-empty-primary-0ea7d2facb79.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-case-empty-primary-0ea7d2facb79.tar.gz"
         },
         {
           "event": "matrix-counters",
@@ -16643,8 +16665,9 @@
           "manifest_sha256": "94dd87f90be58b3e33dd3f0cfbf38bc0066e72de6879f914d5c1b039a412825a",
           "bytes": 205760,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-matrix-counters-34f99c08380a.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-matrix-counters-34f99c08380a.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-matrix-counters-34f99c08380a.tar.gz"
         },
         {
           "event": "callback-census",
@@ -16654,8 +16677,9 @@
           "manifest_sha256": "7236227eaa00aeecfc3af55e96609a012e9f51128490e0ebf49f62d9961f5c0e",
           "bytes": 338198,
           "files": 61,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-callback-census-8a6d15cc4a6c.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-callback-census-8a6d15cc4a6c.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-callback-census-8a6d15cc4a6c.tar.gz"
         },
         {
           "event": "scalar-first",
@@ -16665,8 +16689,9 @@
           "manifest_sha256": "a10d36a1225e4cc9d9d15f611f847e428a09fb72acb3cc95b764ed33054af2d9",
           "bytes": 174995,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-scalar-first-a7098171c853.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-scalar-first-a7098171c853.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-scalar-first-a7098171c853.tar.gz"
         },
         {
           "event": "profiles-current",
@@ -16676,8 +16701,9 @@
           "manifest_sha256": "3a150b54dd3bc7040cef1ea68c1bf6bf094d9f79cff37f3661abc7efcbf4dc85",
           "bytes": 584043,
           "files": 82,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-profiles-current-0b8cf60fe346.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-profiles-current-0b8cf60fe346.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-profiles-current-0b8cf60fe346.tar.gz"
         },
         {
           "event": "qualified",
@@ -16687,8 +16713,9 @@
           "manifest_sha256": "773ec93555b649bf574cef1280cdc6f7ea322cf3ad73f4bd22b65ee82fb56354",
           "bytes": 319177,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-qualified-cddaea5e71ba.tar.gz"
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-qualified-cddaea5e71ba.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-qualified-cddaea5e71ba.tar.gz"
         },
         {
           "event": "closure",
@@ -16698,12 +16725,24 @@
           "manifest_sha256": "8561be77af1fab901fbe65e1ecbbcee793018c2cd764037ad5c934719fb425ba",
           "bytes": 5929372,
           "files": 1142,
+          "publication": "pending re-upload to evidence prerelease3 after prior endpoint capacity denial",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-closure-e39394fcabfb.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r140-closure-e39394fcabfb.tar.gz"
+        },
+        {
+          "event": "publication-recovery",
+          "source_revision": "58f75827e5c44187731df5253b3a058d2e9cd417",
+          "asset": "r140-publication-recovery-2b1fb6075f67.tar.gz",
+          "sha256": "2b1fb6075f67c525b90f4b9ca2734a14d55082f273160255ab3bce57119b9b48",
+          "manifest_sha256": "14ae74eef4dee77b35b1cb6082a0abd033557a10d2e9c4d0ae80fa2a3e0af703",
+          "bytes": 349568,
+          "files": 67,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-closure-e39394fcabfb.tar.gz"
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-publication-recovery-2b1fb6075f67.tar.gz"
         }
       ],
-      "release_tag": "evidence-native-compression-experiments-2",
-      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
       "archive_publication": "local-only at measurement; external publication pending"
     }
   },
