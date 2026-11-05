@@ -20988,6 +20988,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-random-64-primary-8ae3ba49e9b6.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-32-high-entropy-stored-primary-86c2074e5091.tar.gz",
+          "sha256": "86c2074e509166ad818a3863218059d01071a3781dc98c8ca5cf40805f0828bf",
+          "manifest_sha256": "7be8ac91607e56194bcfdc0f940bc5f5ba5b78c751ccea309793db249b223c71",
+          "bytes": 92761,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-32-high-entropy-stored-primary-86c2074e5091.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
