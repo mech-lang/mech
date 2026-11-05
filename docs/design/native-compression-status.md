@@ -1,5 +1,127 @@
 # Native compression: current status
 
+## R139: broader compression inputs expose a bulk-byte native gap
+
+Update base: `cd13ae3ad786c82cd6fdeff65ec1422ab888a7f9`.
+Production compiler remains **`f04df6c76ac2a38506becf76a980533e7954b146`**.
+Matched control: `f37ccd3eaa6a83417b9f5ad2d38ca7ae1a77e20e`.
+IR/work/ABI/MBC remain **167/107/39/14**. **No new production change**:
+this expands R138 qualification and uses the resulting profiles to choose the
+next compiler operation. Current Object remains
+`978b3dde98e49e18db5c397d7447af6c952d198a4809f90c9875e32be69b4f75`;
+text7,815,044B and entry stack7,216B.
+
+The matrix now includes all nine maintained small complete-stream fixtures,
+both block/window fixtures, six additional retained synthetic inputs/sizes and
+three bounded prefixes of the original corpus: **20 cases**, **3,776 primary
+observations**, **3,850 including warmup/final controls**. The first17 cases
+have fresh balanced matched R137/R138 measurements. The corpus prefixes are
+new current-compiler baselines, not another before/after optimization. One
+restored image per session avoids repeating cold image proof for each case;
+all restoration remains outside evaluate_into. Every case timing is sealed and
+committed immediately. All exact raw bytes, independent inflate, immutable input
+aliases, current output prefix, retained output capacity/clear/reuse and final
+managed bytes/nodes zero pass.
+
+| Complete evaluate_into | Mech | Reference | Mech / reference |
+|---|---:|---:|---:|
+|33,027B periodic window|37.050334 ms|1.253000 ms|29.5693×|
+|16KiB distribution change|149.393167 ms|0.795500 ms|187.7978×|
+|Random32,769B|8.031917 ms|1.057500 ms|7.5952×|
+|Repeated32,769B|24.760333 ms|1.336000 ms|18.5332×|
+|Random1KiB|1.242521 ms|0.302000 ms|4.1143×|
+|Repeated1KiB|1.998771 ms|0.327000 ms|6.1124×|
+|320B overlap|1.485584 ms|0.297000 ms|5.0020×|
+|Random256B|1.304855 ms|0.297000 ms|4.3934×|
+|128B dynamic|2.336313 ms|0.297000 ms|7.8664×|
+|Random64B|1.251271 ms|0.290000 ms|4.3147×|
+|32B stored|1.224667 ms|0.286000 ms|4.2821×|
+|8B literals|1.322521 ms|0.290500 ms|4.5526×|
+|8B overlap|1.289187 ms|0.284000 ms|4.5394×|
+|8B literals + output prefix|1.322250 ms|0.287000 ms|4.6071×|
+|7B stored + output prefix|0.120166 ms|0 (below resolution)|unavailable|
+|1B stored|0.120167 ms|0 (below resolution)|unavailable|
+|Empty|0.116292 ms|0 (below resolution)|unavailable|
+|Reymont prefix1KiB|7.348291 ms|0.336000 ms|21.8699×|
+|Reymont prefix16KiB|60.096271 ms|2.129000 ms|28.2275×|
+|Reymont prefix32,769B|109.190479 ms|4.370000 ms|24.9864×|
+
+The 0/1/7B reference medians are zero at the retained clock's resolution.
+All zero observations remain; these are not free calls and no denominator or
+ratio is invented. A separately identified higher-resolution cohort is needed
+for precise parity claims on these cases. Full6,627,202B compression is not run.
+The restored [official Silesia corpus](https://sun.aei.polsl.pl/~sdeor/index.php?page=silesia)
+matches its published MD5 `d8f54d78105079775f32d76dc55fc671`; SHA256 is
+`0eac0114a3dfe6e2ee1f345a0f79d653cb26c3bc9f0ed79238af4933422b7578`.
+Here “Reymont prefix” means an input prefix; the two small fixture prefix cases
+retain their separate, original two-byte output prefixes.
+
+The newly covered distribution-change case is **149.393167ms /187.7978×**,
+versus matched control149.599271ms /188.0569×. This is an inherited bottleneck,
+not a new regression. Periodic33,027B improves39.991021→37.050334ms,
+31.9162×→29.5693× (-7.353369%). The repeated32,769B confirmation is
+27.671688→24.760333ms,20.7123×→18.5332× (-10.521060%). All initial R138
+observations, including its adverse small-random median and8B cycle cohort,
+remain retained. These expanded sessions do not replace the original receipts;
+blocks within a prepared pair are descriptive, not independent replications.
+
+Separate current complete-call diagnostics for16KiB distribution change give
+**2,479,247,550 retired instructions**, **483,180,574 cycles** (8 observations),
+**67,321 allocation requests**, **28,844,634 requested bytes** and
+**18,702,352B incremental peak live usable heap** (2 observations). Heap
+instrumentation's own instruction observations are separate and not substituted
+for the CPU cohort. No fresh reference hardware/heap ratio is claimed.
+
+Its actual executable CPU sample has **4.331865% generated code**,48.458150%
+other callbacks,43.024963% private-frame callbacks,3.597651% cleanup and0.587372%
+other context. A fresh16KiB Reymont sample has29.527273% generated code,
+41.890909% other callbacks,25.963636% frame callbacks,2.327273% cleanup and
+0.290909% other. The exact optimized reference gets its own8192-call sample.
+These time weights are not retired-instruction partitions or a claim that all
+callback work is unnecessary. They reverse the next priority inferred from the
+synthetic repeated-input sample: broaden native execution for this writer
+before focusing solely on byte-read instruction tuning.
+
+An isolated diagnostic runtime retains the same Object and source, counting
+**1,052,728 ordinary visits** and **676,073 helper calls** for one complete
+16KiB distribution-change compression. The families overlap. One path-writing
+Tail (iteration434/header39373) accounts for **1,043,480 visits (99.121520%)**.
+Its two selected `sequence/append-le-bytes` sites execute16,232/42 times.
+The pinned reference's BlockOut.roc709–743 uses the corresponding original
+little-endian byte append. Current numeric provenance accepts single-element
+append but refuses this buffer return, so the writer remains ordinary.
+
+A six-line generic bulk-append recurrence reproduces the gap. Original and
+decoded artifacts both produce the independent32-byte literal, report245
+ordinary visits, and clean up completely; requiring a compiled numeric
+recurrence fails on the unchanged compiler with the same array-forwarding
+refusal. This is an expected inherited compiler gap, not a failed compressor.
+The next bounded patch must extend the existing selected bulk byte primitive,
+private append owner and numeric proof; preserve count0/no-change, count>8
+rejection order, geometry, real capacity, source work, finite fallback, aliases
+and atomic publication. Tests must precede broader selection. No compressor
+source rewrite, zero-filled substitute or new unchecked append path is made.
+
+The existing R138 production validation remains the compiler checkpoint;
+there is no fresh large dependency/component-suite rerun for this evidence-only
+round. New evidence executes all20 complete cases, both source forms of the
+minimal reproducer, current hardware/heap cohorts, both current CPU profiles,
+the reference profile and exact dynamic callback counts. Two introduced harness
+build errors (boxed empty Matrix and borrowed temporary metadata) were corrected
+and retained. An environmental reference compiler-cache access denial succeeds
+with the same build under authorized access. The known R136 cold image-proof
+startup regression remains unresolved outside primary timing. Ordinary hosted
+CI is cancelled by standing instruction; the PR stays draft pending green CI and
+clean review. No full-corpus, ten-workload-suite or source-variant timing claim.
+
+Raw observations, reconstruction bytes, exact commands, hashes, negative
+reproducer receipts and profiles are indexed under round139 in
+`benchmarks/mech-deflate/experiments.json`. Native binaries, libraries, Objects,
+bytecode and trace stores stay local. All **29** evidence archives
+(**6,178,726B**) and sidecars are published with server SHA256 verification.
+The broad native bulk-byte append remains
+unimplemented at this checkpoint. Parity remains unproven.
+
 ## R138: branch directly on checked unsigned word comparisons
 
 Update base: `5d2bc0a2f827597449546f035f998465c12e8a4b`.
