@@ -18059,6 +18059,17 @@
           "files": 71,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-eight-literals-primary-7665e829aca2.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-16384-distribution-change-primary-4c89422b6557.tar.gz",
+          "sha256": "4c89422b6557d05acae94b7e6c8b6e35e804c3b18c92f78d0bee88b865380e7f",
+          "manifest_sha256": "8cdb10a568afe004ebdf47014cd24534fd99b59dc0f76772d797f82d7b0ea8db",
+          "bytes": 237536,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-16384-distribution-change-primary-4c89422b6557.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
