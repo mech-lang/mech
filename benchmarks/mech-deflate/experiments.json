@@ -19664,6 +19664,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-32-high-entropy-stored-primary-f9bcaa7df0d6.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-eight-overlap-primary-2c9f323b5fe0.tar.gz",
+          "sha256": "2c9f323b5fe03d4d417629e988ceb165367c53a29a7a3435162cd9ba9775387f",
+          "manifest_sha256": "8d66c76a7d2aeec0b00592aad13f589dde5a7499684ab2bbcc637e4f502215ba",
+          "bytes": 889208,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-eight-overlap-primary-2c9f323b5fe0.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
