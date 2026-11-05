@@ -19763,6 +19763,17 @@
           "files": 106,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-scalar-case-scalar-u64-0-original-b281acc52c51.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-u64-0-decoded",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-scalar-case-scalar-u64-0-decoded-bdd75d51acbf.tar.gz",
+          "sha256": "bdd75d51acbf0d7d597f961ede9e683f935dba627ac367fa532ac44496155565",
+          "manifest_sha256": "56d4c1b1ef5700a44db4b0ebda48170585f60b754c6c8e9b122f3a5c8b8af085",
+          "bytes": 908900,
+          "files": 106,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-scalar-case-scalar-u64-0-decoded-bdd75d51acbf.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
