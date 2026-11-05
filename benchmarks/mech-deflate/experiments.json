@@ -18070,6 +18070,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-16384-distribution-change-primary-4c89422b6557.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-33027-periodic-window-primary-c70b1af47422.tar.gz",
+          "sha256": "c70b1af4742252bfc4859331a0ce64eab0ea63486187714b4fb0daaf62edbce4",
+          "manifest_sha256": "5e64a855af367285acff7f9a2f17562469a3bc7a3ec71f863051c495a11552ca",
+          "bytes": 237859,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-33027-periodic-window-primary-c70b1af47422.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
