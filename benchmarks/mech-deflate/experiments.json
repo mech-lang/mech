@@ -19298,6 +19298,17 @@
           "files": 67,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-matrix-counters-f10209d241cd.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-profiles-current-939e627fa89c.tar.gz",
+          "sha256": "939e627fa89ccf85ecf132f8963e2143710c7760da5f5cced80300f1b6a5cbce",
+          "manifest_sha256": "d23e7330c60854c97dc2e790b7d1404da981fad30b611e7f535bf04d75fc6c2d",
+          "bytes": 1446272,
+          "files": 88,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-profiles-current-939e627fa89c.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
