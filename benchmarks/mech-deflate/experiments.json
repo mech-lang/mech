@@ -21657,6 +21657,17 @@
           "files": 108,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-i64-0-decoded-2786aa4f8739.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-f64-0-original",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-scalar-case-scalar-f64-0-original-7478a8662128.tar.gz",
+          "sha256": "7478a8662128aa80a21e4ff6ba097e69625474507ae3262e5c467068daec2165",
+          "manifest_sha256": "abc47d1762050ff5f4fb4be092569c7e3d74a4fa8571b0a37c479867679bb445",
+          "bytes": 110196,
+          "files": 108,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-f64-0-original-7478a8662128.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
