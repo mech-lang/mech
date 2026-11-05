@@ -20538,6 +20538,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-empty-primary-ef69644bc639.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-bool-0-original",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-scalar-case-scalar-bool-0-original-c0f26675bb2d.tar.gz",
+          "sha256": "c0f26675bb2d633b26bba6a830d03f2372b9757c7b1e23fba67cc76774e50bc4",
+          "manifest_sha256": "9e5c332decb095c77e49da3179a09e397db4692e8f26b44627f5032181f51c43",
+          "bytes": 107390,
+          "files": 97,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-bool-0-original-c0f26675bb2d.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
