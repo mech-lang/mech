@@ -24735,6 +24735,17 @@
           "files": 63,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-screen-eight-literals-primary-3d8c82e4ecc2.tar.gz"
+        },
+        {
+          "event": "screen-repeated-32769-primary",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-screen-repeated-32769-primary-e30b9fc8f0ce.tar.gz",
+          "sha256": "e30b9fc8f0ced7311c5ed65fdb67db96f8066e4b3c8133c2fe42d82dae0fa352",
+          "manifest_sha256": "c8086eebec7b971661588e543a1aaa09d6275469ce75e40ad2200d279537b27f",
+          "bytes": 95592,
+          "files": 63,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-screen-repeated-32769-primary-e30b9fc8f0ce.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
