@@ -19510,6 +19510,17 @@
           "files": 51,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-eight-literals-primary-e6a3f3053e88.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-16384-distribution-change-primary-992037829961.tar.gz",
+          "sha256": "992037829961a8986c37662138ce96e93009a19190e19fcfa8a37de89fb6a26d",
+          "manifest_sha256": "e75d7f64047f72516e0cbfc218c084a37fb40ca10bd42e4424430814a625c4cf",
+          "bytes": 884070,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-16384-distribution-change-primary-992037829961.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
