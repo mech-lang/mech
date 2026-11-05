@@ -21151,8 +21151,8 @@
           "manifest_sha256": "c86590a7089209b3a7d0aef30917d205cc09b7707909b10b53d5b755ed2155a0",
           "bytes": 108533,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-closure-audit-0993af73cf70.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r152-closure-audit-0993af73cf70.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
@@ -21164,7 +21164,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": false,
       "retained_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
       "retained_published_head": "9de07a5a339ef9044133fdd96b644f0279b91781",
