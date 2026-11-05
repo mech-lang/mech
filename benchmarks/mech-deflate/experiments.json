@@ -20681,6 +20681,17 @@
           "files": 80,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-frame-allocation-07df5917c6e8.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-matrix-counters-c1d6c85d1c7a.tar.gz",
+          "sha256": "c1d6c85d1c7a804dfb7ccac8f001af94252ce57a8fed95616a3beb09afbb7b8d",
+          "manifest_sha256": "d6dee00c60cd33b6562933776b37206004f2cb88ebe8bc3159fef4d14381df3f",
+          "bytes": 154802,
+          "files": 58,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-matrix-counters-c1d6c85d1c7a.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
