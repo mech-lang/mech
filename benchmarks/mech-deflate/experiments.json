@@ -22327,6 +22327,17 @@
           "files": 120,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-loop-64-decoded-4ba00e73e6af.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-frame-allocation-672a0013ae8f.tar.gz",
+          "sha256": "672a0013ae8fed1351257ec0049d6b0857e6dbb7b5ff82da2815a5454046ad10",
+          "manifest_sha256": "8c325b72c255361996368eea06fccb91b71809c8a50523ff3003e657f9431e6e",
+          "bytes": 213140,
+          "files": 103,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-frame-allocation-672a0013ae8f.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
