@@ -24169,6 +24169,36 @@
         "bytecode": false,
         "receipt_sha256": "1e14c3f5ffa00d35dd302fc8c661ff7aac484a3dacf5723d99bbd217ed3ed64e"
       }
+    },
+    "160": {
+      "base": "8ef1693a558b9a46544ce425ca2f222e10e3dddc",
+      "events": [
+        {
+          "event": "clean-parent",
+          "source_revision": "d19839958d3d34f77819e0e6f69087b47113758a",
+          "asset": "r160-clean-parent-530459851976.tar.gz",
+          "sha256": "53045985197690a99b20d5a1502c21364529da24a2a2d4146c5c79678e4feb32",
+          "manifest_sha256": "ef29f4d15b166d6ad1160d7675af3579481a94a9641cb8228f2eb605faa92d4c",
+          "bytes": 93378,
+          "files": 61,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-clean-parent-530459851976.tar.gz"
+        }
+      ],
+      "production": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+      "compiler_source": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+      "before_compiler_source": "09853c8157a7cc27448791543f976348a0158868",
+      "versions": {
+        "typed_ir": 182,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Current-view window foundation; no performance or whole-loop completion claim yet.",
+      "retained": false,
+      "release_tag": "evidence-native-compression-experiments-4",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
+      "archive_publication": "local evidence; publication pending"
     }
   },
   "repository": "mech-lang/mech",
