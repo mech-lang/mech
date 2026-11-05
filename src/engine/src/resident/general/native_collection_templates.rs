@@ -10,6 +10,7 @@ use mech_core::{
     CellSlotId, FunctionCatalog, ImplementationMemoryClass, NodeId, OperationContractId,
     ProgramRevision, ResidentOperationKey, ResolvedOperationContract, Schema, SchemaBody, SchemaId,
 };
+use std::sync::Arc;
 
 /// This read-only record certifies the exact selected library implementation
 /// and its symbolic canonical schemas. It is not permission to execute a call:
@@ -24,15 +25,47 @@ pub struct NativeCollectionOperationTemplate {
     leaf: SelectedCollectionLeaf,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct SelectedCollectionLeaf {
-    selected_key: ResidentOperationKey,
     primitive: NativeCollectionPrimitive,
+    implementation_memory: ImplementationMemoryClass,
+    // A source selection and its prepared bindings share immutable descriptive
+    // metadata. Source headers and every invocation cache remain separate.
+    metadata: Arc<SelectedCollectionMetadata>,
+}
+#[derive(Debug, Eq, PartialEq)]
+struct SelectedCollectionMetadata {
+    selected_key: ResidentOperationKey,
     inputs: Box<[Schema]>,
     output: Schema,
     contract: ResolvedOperationContract,
-    #[serde(serialize_with = "image::serialize_memory")]
-    implementation_memory: ImplementationMemoryClass,
+}
+impl serde::Serialize for SelectedCollectionLeaf {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        // Keep the existing wire inventory, field order and struct name.
+        #[derive(serde::Serialize)]
+        #[serde(rename = "SelectedCollectionLeaf")]
+        struct Wire<'a> {
+            selected_key: &'a ResidentOperationKey,
+            primitive: NativeCollectionPrimitive,
+            inputs: &'a [Schema],
+            output: &'a Schema,
+            contract: &'a ResolvedOperationContract,
+            #[serde(serialize_with = "image::serialize_memory")]
+            implementation_memory: ImplementationMemoryClass,
+        }
+        serde::Serialize::serialize(
+            &Wire {
+                selected_key: &self.metadata.selected_key,
+                primitive: self.primitive,
+                inputs: &self.metadata.inputs,
+                output: &self.metadata.output,
+                contract: &self.metadata.contract,
+                implementation_memory: self.implementation_memory,
+            },
+            serializer,
+        )
+    }
 }
 impl NativeCollectionOperationTemplate {
     pub const fn program_revision(&self) -> ProgramRevision {
@@ -45,7 +78,7 @@ impl NativeCollectionOperationTemplate {
         self.target
     }
     pub fn selected_key(&self) -> &ResidentOperationKey {
-        &self.leaf.selected_key
+        &self.leaf.metadata.selected_key
     }
     pub const fn primitive(&self) -> NativeCollectionPrimitive {
         self.leaf.primitive
@@ -54,13 +87,13 @@ impl NativeCollectionOperationTemplate {
         &self.sources
     }
     pub fn inputs(&self) -> &[Schema] {
-        &self.leaf.inputs
+        &self.leaf.metadata.inputs
     }
     pub fn output(&self) -> &Schema {
-        &self.leaf.output
+        &self.leaf.metadata.output
     }
     pub fn contract(&self) -> &ResolvedOperationContract {
-        &self.leaf.contract
+        &self.leaf.metadata.contract
     }
     /// Selected source-implementation metadata, not a native cost allowance.
     pub const fn implementation_memory(&self) -> ImplementationMemoryClass {
@@ -104,19 +137,19 @@ impl NativeCollectionLexicalTemplate {
         &self.sources
     }
     pub fn selected_key(&self) -> &ResidentOperationKey {
-        &self.leaf.selected_key
+        &self.leaf.metadata.selected_key
     }
     pub const fn primitive(&self) -> NativeCollectionPrimitive {
         self.leaf.primitive
     }
     pub fn inputs(&self) -> &[Schema] {
-        &self.leaf.inputs
+        &self.leaf.metadata.inputs
     }
     pub fn output(&self) -> &Schema {
-        &self.leaf.output
+        &self.leaf.metadata.output
     }
     pub fn contract(&self) -> &ResolvedOperationContract {
-        &self.leaf.contract
+        &self.leaf.metadata.contract
     }
     pub const fn implementation_memory(&self) -> ImplementationMemoryClass {
         self.leaf.implementation_memory
@@ -756,12 +789,14 @@ fn select_leaf(
         contract,
     )?;
     Ok(SelectedCollectionLeaf {
-        selected_key: entry.key().clone(),
         primitive,
-        inputs,
-        output,
-        contract: contract.clone(),
         implementation_memory: entry.implementation_memory(),
+        metadata: Arc::new(SelectedCollectionMetadata {
+            selected_key: entry.key().clone(),
+            inputs,
+            output,
+            contract: contract.clone(),
+        }),
     })
 }
 

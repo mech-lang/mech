@@ -205,12 +205,14 @@ fn leaf(
         return Err("image factory witness or memory class differs".into());
     }
     Ok(SelectedCollectionLeaf {
-        selected_key: key,
         primitive,
-        inputs,
-        output,
-        contract: wire.contract,
         implementation_memory: memory,
+        metadata: Arc::new(SelectedCollectionMetadata {
+            selected_key: key,
+            inputs,
+            output,
+            contract: wire.contract,
+        }),
     })
 }
 
@@ -262,7 +264,7 @@ impl NativeCollectionOperationTemplate {
     ) -> Result<Self, String> {
         let wire: Root<'_> = canonical_record(image)?;
         let leaf = leaf(wire.leaf, catalog, schemas)?;
-        if wire.sources.len() != leaf.inputs.len() {
+        if wire.sources.len() != leaf.metadata.inputs.len() {
             return Err("image source count differs".into());
         }
         Ok(Self {
@@ -357,7 +359,7 @@ impl NativeCollectionLexicalTemplate {
     ) -> Result<Self, String> {
         let wire: Lexical<'_> = canonical_record(image)?;
         let leaf = leaf(wire.leaf, catalog, schemas)?;
-        if wire.sources.len() != leaf.inputs.len() {
+        if wire.sources.len() != leaf.metadata.inputs.len() {
             return Err("image source count differs".into());
         }
         Ok(Self {
