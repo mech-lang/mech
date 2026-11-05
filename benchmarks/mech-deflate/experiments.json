@@ -17394,6 +17394,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-profiles-current-dce54010e2e3.tar.gz"
+        },
+        {
+          "event": "scalar-balanced",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-scalar-balanced-ace4be8e7a2c.tar.gz",
+          "sha256": "ace4be8e7a2cb46d830a790a90b921da64993878caf2b2c1c0d51eda59dc5cd3",
+          "manifest_sha256": "17afe8aacba47552f90a31987ae9119aa1df77a040ddd345f2dcefcb4c758ede",
+          "bytes": 284698,
+          "files": 625,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-scalar-balanced-ace4be8e7a2c.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
