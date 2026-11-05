@@ -23550,8 +23550,8 @@
           "manifest_sha256": "d7b09791b65ab690c9c722cf8eb4b09f59263132e731dcaf76c2b17d89532310",
           "bytes": 8027975,
           "files": 18,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-setup-20b6131693e7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-4/r158-setup-20b6131693e7.tar.gz"
         },
         {
           "event": "pc-profile-33027-periodic-window",
@@ -23561,8 +23561,8 @@
           "manifest_sha256": "2619f186ad81aa0554826525dccc738a596e44fb8f9502fc86ded5948b5dd614",
           "bytes": 89786,
           "files": 21,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-pc-profile-33027-periodic-window-1a1aabc0f805.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-4/r158-pc-profile-33027-periodic-window-1a1aabc0f805.tar.gz"
         },
         {
           "event": "pc-profile-repeated-32769",
@@ -23572,8 +23572,8 @@
           "manifest_sha256": "bf3f045a645a6376aa67dcf97e6afbd41d401025f46d8dfaa4d3fad4bcef050f",
           "bytes": 113815,
           "files": 21,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-pc-profile-repeated-32769-0bf38507d7c7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-4/r158-pc-profile-repeated-32769-0bf38507d7c7.tar.gz"
         },
         {
           "event": "pc-profile-reymont-prefix-32769",
@@ -23583,8 +23583,8 @@
           "manifest_sha256": "99b8a4747b145c03167fd517f444d56bc9d95dea8080284f5dfa6ced73bb9339",
           "bytes": 102236,
           "files": 21,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-pc-profile-reymont-prefix-32769-e36d7efe2e33.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-4/r158-pc-profile-reymont-prefix-32769-e36d7efe2e33.tar.gz"
         },
         {
           "event": "pc-tables-33027-periodic-window",
@@ -23594,8 +23594,8 @@
           "manifest_sha256": "c230974eab27b8c713ef559e81ab62143d59eb85efff70c5a5b27d45e629e539",
           "bytes": 369699,
           "files": 29,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-pc-tables-33027-periodic-window-a41aa953bf6a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-4/r158-pc-tables-33027-periodic-window-a41aa953bf6a.tar.gz"
         },
         {
           "event": "pc-tables-repeated-32769",
@@ -23605,8 +23605,8 @@
           "manifest_sha256": "b76d963b40b55680e5551154bddd63d90a6eccf43b7966bf91ee88e3225cc02d",
           "bytes": 350624,
           "files": 29,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-pc-tables-repeated-32769-fb8c8c786961.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-4/r158-pc-tables-repeated-32769-fb8c8c786961.tar.gz"
         },
         {
           "event": "pc-tables-reymont-prefix-32769",
@@ -23616,8 +23616,8 @@
           "manifest_sha256": "3b054acbcfcf8cf2c5736e7be0c3da27dc558c46bb2c8136ac44d04c3a760f9d",
           "bytes": 323488,
           "files": 29,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-pc-tables-reymont-prefix-32769-ff2e48c15ea9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-4/r158-pc-tables-reymont-prefix-32769-ff2e48c15ea9.tar.gz"
         },
         {
           "event": "closure",
@@ -23627,8 +23627,8 @@
           "manifest_sha256": "82c563a650c10a4ae4ec1f06b8e70249bb6f98b738b34beaeffdfa32a5301679",
           "bytes": 9027823,
           "files": 105,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-closure-eb366bf23816.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-4/r158-closure-eb366bf23816.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
@@ -23644,7 +23644,14 @@
       "retained": false,
       "release_tag": "evidence-native-compression-experiments-4",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
-      "archive_publication": "local evidence; publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "analysis": {
+        "script": "replay.py",
+        "expected_outputs": {
+          "results.json": "247f0dcf59566ee5031d6314caced5664deb0f620551957d667ca98065d8c081",
+          "REPORT.md": "755f1fe6e0e8fcf9dff458e7531d3e08fed6a9924fda34c41078f49dcf40f089"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
