@@ -17970,7 +17970,7 @@
       "base": "d441153985d861d5fe6a4a838fb4b04e1e7c367d",
       "production": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
       "compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
-      "decision": "under measurement",
+      "decision": "retain for review; declared full20 elapsed criterion and unchanged guards pass; all adverse cohorts retained",
       "events": [
         {
           "event": "initial",
@@ -18389,7 +18389,38 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": true,
+      "retained_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+      "qualification": {
+        "gpu": 562,
+        "profile_exclusions": 7,
+        "focused": 29,
+        "ci": 137,
+        "workflow": 132,
+        "architecture": 15,
+        "components": 236,
+        "composition": 8,
+        "path": 1,
+        "scalar": 12,
+        "frame": 8
+      },
+      "results": {
+        "primary_geometric_mean_after_before": 0.9879687891413803,
+        "primary_change_percent": -1.203121085861969,
+        "primary_observations": 3968,
+        "total_primary_session_calls": 4048,
+        "adverse_case_medians": 6,
+        "all20_heap_and_work_equal": true,
+        "eight_byte_primary_change_percent": 3.259732609614985,
+        "independent_guard_repeat_separate": true
+      },
+      "open_findings": [
+        "R140 original8B+1.322924% fallback cost deferred",
+        "R136 residual image startup near34.6s deferred",
+        "R144 six adverse primary medians and12adverse scalar medians retained within unchanged gates"
+      ],
+      "active_implementation": null
     }
   },
   "repository": "mech-lang/mech",

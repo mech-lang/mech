@@ -1,68 +1,65 @@
 # Native compression: current status
 
-**The native capability milestone through R140 and R143 are closed for review. R144 is the sole active experiment: use current unit-dimension geometry in the shared numeric address helper. Published #973/#976/#977 stay frozen.**
+**R144 is closed, retained for review. No further optimization is active. The earlier capability milestone and published #973/#976/#977 stay frozen.**
 
-| Current checkpoint | Value |
+| Checkpoint | Value |
 |---|---|
-| Frozen milestone | [#973](https://github.com/mech-lang/mech/pull/973), draft at `23d152cbfc5d32e829f36d8000f0d61dd64c026a` |
-| Reviewed follow-up / R143 base | [#976](https://github.com/mech-lang/mech/pull/976), draft at `f120b81e01cb868ace9ca7af474dd9081776fa32` |
-| Retained compiler | `05102440a85c233069b3968f1e6a92c27461258c` |
-| IR/work/ABI/bytecode | **168/107/39/14**, unchanged |
-| R144 base / candidate | Reviewed `d441153985d861d5fe6a4a838fb4b04e1e7c367d` / `0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc` (IR171, work107/ABI39/MBC14) |
-| Current increment | Current rows or columns equal to one bypass division; original general-matrix formula and all bounds/ownership checks remain |
+| Frozen milestone | [#973](https://github.com/mech-lang/mech/pull/973), draft `23d152cbfc5d32e829f36d8000f0d61dd64c026a` |
+| Frozen startup increment | [#976](https://github.com/mech-lang/mech/pull/976), draft `f120b81e01cb868ace9ca7af474dd9081776fa32` |
+| Reviewed R144 base | [#977](https://github.com/mech-lang/mech/pull/977), draft `d441153985d861d5fe6a4a838fb4b04e1e7c367d` |
+| Retained compiler | `0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc` |
+| IR/work/ABI/bytecode | **171/107/39/14**; rejected IR169/170 remain reserved |
+| Bounded change | Shared numeric addressing uses current unit dimensions directly; general matrix formula and bounds remain |
 
-## Work board and decisions
+## Work board
 
-| State | Work and disposition |
+| State | Disposition |
 |---|---|
-| Closed: rejected | R141 early short-buffer refusal; useful regression test and evidence retained |
-| Closed: retained for review | R142 exact header-query reuse; startup gain with adverse compression timings |
-| Closed: rejected | R143 current-private direct stores; 20-case primary criterion failed, implementation removed |
-| Closed | R130 recommendations reconciled; capability scope frozen; history archived |
-| Active | R144:29 focused checks pass; full Object preserves facts/prices; four-case development screen next |
-| Next | One all20 qualification and retain/reject/defer decision; other optimization work stays deferred |
+| Closed | R130 recommendations reconciled; native capabilities through R140 frozen |
+| Closed: rejected | R141 early refusal; R143 private direct stores; tests and contrary evidence retained |
+| Closed: retained for review | R142 exact header-query reuse; R144 current vector geometry |
+| Next | Review this bounded increment before further semantic or performance changes |
+| Deferred | Residual startup, ordinary fallback grouping; source/ownership/allocation/wider-load work stays in backlog |
 
-Known introduced costs remain explicit: R140’s 8B literals regressed **+1.322924%** in its original cohort. R141 saved four requests and0.1039% instructions but elapsed worsened0.200298%; it was rejected. Efficient ordinary fallback grouping needs a separate finite/error-prefix proof. R136 increased image admission from roughly17s to35–37s; R142 reduces its three-pair median35.081146958s→34.580817458s (−1.426206%), with byte-identical generated artifacts. Residual startup stays open.
+Known costs stay explicit: R140 introduced **8B+1.322924%**; R141 saved four requests/0.1039% instructions but elapsed worsened0.200298%, so it was rejected. Ordinary fallback grouping needs a separate finite/error-prefix proof. R136 image admission rose from roughly17s to35–37s; R142 reduced its three-pair median35.081146958s→34.580817458s (−1.426206%) with byte-identical generated artifacts. R142 also had17/20 adverse compression medians and an adverse guard repeat; no runtime neutrality is claimed. Residual startup remains open, not freshly measured in R144.
 
-R142 is a startup/runtime tradeoff:17/20 primary compression medians were adverse (8B+2.270195%). Its independent reverse-order guard repeat was also adverse at8B/1KiB/16KiB, within the unchanged1.05 guard. No compression improvement or neutrality is claimed. Its production and the frozen #973 head remain unchanged.
+## Current complete-compression measurements
 
-## Current retained compression measurements
+R144 primary **20-case geometric after/before0.987968789 (−1.203121%)**,14 improving/six adverse medians; both predeclared targets improve. All3,968 primary/4,048 total calls preserve exact raw bytes, independent inflate, aliases, prefixes, capacities/clear-reuse and zero final managed data. Algorithms, tables, limits, allocation sites, allocator, source/MBC and complete `evaluate_into` boundary stay pinned. Times below are one matched cohort, not independent replications or compounded historical gains.
 
-All **20 retained compression inputs/sizes** pass exact bytes, independent inflate, aliases, prefixes, capacity/clear-reuse and zero final managed data. Below is the **retained control** from the fresh R143 matched cohort, not the rejected candidate. Source, algorithms, tables, search limits, allocations, allocator and complete `evaluate_into` timing stay pinned. Full multi-megabyte timing and the separate ten-workload suite stay excluded.
+| Input | Before→after ms | Mech / Roc before→after | Change |
+|---|---:|---:|---:|
+|eight-literals|1.733271→1.789771|5.9055×→6.0980×|+3.2597%|
+|16384-distribution-change|7.140438→7.077063|8.6656×→8.5887×|-0.8876%|
+|33027-periodic-window|36.814313→33.939979|28.9421×→26.6824×|-7.8077%|
+|random-32769|10.176167→10.134833|9.3876×→9.3495×|-0.4062%|
+|repeated-32769|25.425917→22.416125|18.4781×→16.2908×|-11.8375%|
+|reymont-prefix-32769|43.775500→42.925875|9.3100×→9.1293×|-1.9409%|
+|reymont-prefix-16384|24.677083→24.314063|10.7525×→10.5944×|-1.4711%|
+|random-1024|2.185583→2.175563|6.8729×→6.8414×|-0.4585%|
+|repeated-1024|2.187874→2.127187|6.4922×→6.3121×|-2.7738%|
+|reymont-prefix-1024|2.320667→2.314917|6.7071×→6.6905×|-0.2478%|
+|320-overlap|1.768812→1.765542|5.7429×→5.7323×|-0.1849%|
+|random-256|1.656272→1.657021|5.3256×→5.3280×|+0.0453%|
+|128-biased-dynamic|2.083208→2.069459|7.0379×→6.9914×|-0.6600%|
+|random-64|2.203625→2.261125|7.2968×→7.4872×|+2.6094%|
+|32-high-entropy-stored|2.130500→2.134105|7.0546×→7.0666×|+0.1692%|
+|eight-overlap|2.338854→2.297104|7.6936×→7.5563×|-1.7851%|
+|eight-literals-prefix|2.523333→2.538791|8.3004×→8.3513×|+0.6126%|
+|seven-stored-prefix|0.136688→0.139459|clock-limited reference|+2.0269%|
+|one-stored|0.143291→0.142209|clock-limited reference|-0.7558%|
+|empty|0.136854→0.136270|clock-limited reference|-0.4264%|
 
-| Program/input | Retained elapsed | Mech / Roc |
-|---|---:|---:|
-|Periodic33,027B|34.828229ms|27.8849×|
-|Repeated32,769B|23.351979ms|17.4074×|
-|Random32,769B|7.995979ms|7.5648×|
-|Reymont prefix32,769B|37.877813ms|8.7095×|
-|Reymont prefix16KiB|19.571063ms|9.1840×|
-|16KiB distribution change|6.322417ms|7.9929×|
-|Reymont prefix1KiB|1.941604ms|5.7444×|
-|8B literals|1.338126ms|4.6142×|
+One separately declared reversed-order guard repeat retains the primary unchanged: periodic27.7494×→25.7581× (−7.1762%), repeated17.3333×→15.5362× (−10.3684%),16KiB text9.1870×→8.9788× (−2.2656%);8B4.6853×→4.6895× (+0.0883%) and random64B−0.5152%. All five medians pass1.05. The development screen is diagnostic only. Higher primary absolute controls did not recur with the same binaries; no cause is established and no8B neutrality/improvement is claimed.
 
-R143 tested private admission before an indexed old-cell load/comparison. The four-case screen suggested about0.4% target gains; final qualification failed: **geometric mean+0.369643%,14/20 slower**, including8B **4.6142×→4.6769× (+1.359140%)**. Repeated17.4074×→17.2733× and periodic27.8849×→27.8764× improve individually, but the predeclared whole-matrix criterion also required a geometric mean below1. The change was rejected without retuning or a repeat. All3,968 primary/4,048 total observations and adverse blocks remain.
-
-Separate R143 counters are adverse on the targets: periodic679,667,220→690,025,266.5 instructions (+1.523988%); repeated474,163,319.5→484,442,172.5 (+2.167787%). All20 heap request/byte/reallocation/incremental-peak measurements are unchanged. Four candidate CPU-time profiles retain generated-exclusive shares60.09–89.59%; these do not partition retired instructions. Code+2,516B/629 static instructions and stack+112B are also rejected. No candidate number becomes the retained baseline. Reference0/1/7B medians are clock-limited; no ratio is invented or historical ratio compounded.
-
-R140 retained its earlier matched distribution-change gain187.8584×→7.9902×, instructions2.479B→79.465M and requests67,321→5,679, with incremental peak18,702,352B. Exact all 20 results, failures, source pins and replay data remain in the [experiment index](../../benchmarks/mech-deflate/experiments.json), R141–R143.
-
-## Reconcile the R130 recommendations
-
-| Recommendation | Disposition |
-|---|---|
-| Required physical exit state; lexical freshness; genuine inputs | Completed through R132/R135/R136; preserve current frames, aliases, settlement and errors |
-| Full physical word-bank compaction | Partial: transport/consumers shrink; full admitted lane capacity remains; further work deferred |
-| Independent exit/representation reconstruction | Completed within documented domains; metadata grants no current authority |
-| Address/arithmetic emission; broader inputs; bulk byte writing | Completed R137/R138/R139/R140;20-case matrix retained |
-| Already-private stores | R143 rejected under the original elapsed criterion |
-| Dynamically funded child trips; source pricing; constants/binding/arena; SIMD | Deferred; none enters this increment automatically |
-| Terminal-error snapshot | R131 rejected; original evidence retained |
+Separate counters: periodic679.647M→659.476M instructions (−2.9678%); repeated474.164M→454.064M (−4.2392%). Many other counts rise, including8B+0.00146% and16KiB text+0.5326%. All20 heap requests/bytes/deallocations/reallocations/copy upper bounds/incremental peaks and logical work are equal, including raw probe samples. Text7,870,320→7,884,856B (+14,536); stack7,744→7,584B. Static source2864 confirms vector bypass of UDIV; dynamic address visits are unmeasured. Current four-case CPU-time profiles show57.80–88.55% generated-exclusive samples; these are not retired-instruction shares. No allocation or universal runtime improvement is claimed.
 
 ## Qualification and integration
 
-The restored compiler passes **562 compatible GPU tests**, with the same 7 inherited profile exclusions; 137 guarded/listed/executed CI tests; 132 workflow tests; 15 architecture checks; current runtime-only metadata and configured formatting. The extended existing first-change test keeps original U32 coverage and adds U8/U16/U32/U64 equal canonical/private visits, two arrays, aliases, refusal, unchanged publication, cleanup and retry in original/decoded forms. Current IR168 is accepted; unsupported169/170 explicitly rejected. Warnings remain errors; no expected value, allowance or inventory changes.
+Old-emitter semantic-first6pass; candidate29 focused;562 compatible GPU tests/7 inherited exclusions;137 CI tests actually listed/guarded/executed;132 workflow tests;15 architecture checks; runtime-only metadata and formatting pass. Source-derived236 components/8 composition/1 real-capacity path pass unchanged. Address oracle covers1,180 evaluations/all four unsigned widths; current geometry/empty/failure/publication/alias/retry witness covers61cases in each original/decoded form. Scalar12 pass unchanged1.05 gate, **all12 medians adverse, maximum1.017231291**; frame8 pass request/byte/work controls. Warnings stay errors. Core/Engine/math/dependencies are frozen; only GPU/required roots rebuilt.
 
-The rejected candidate passed22 focused checks plus identity rejection before timing. Broad candidate component/scalar/frame qualification was intentionally skipped after primary failure. The unchanged retained production already has R142 qualification:236 components,8 composition,1 real-capacity path,12 scalar and8 frame controls. R143 does not claim those were rerun. Corrected fixture, identity and diagnostic include/selector failures remain archived; no unresolved introduced compiler failure. One read-only reviewer found no blocker in the final test-only diff.
+The first component harness build failed on a stale removed-worktree include, identically reproduced on the clean parent. Its exit1 stays archived. Only the external include route changed;82 support files verify byte-identical to the reviewed parent; affected236/8/1 rerun passes. Earlier formatting/diagnostic preparation mistakes were corrected before timing and retained. No unresolved introduced functional failure. Same7 profile exclusions, fresh startup, all-features/dependency rebuild, multi-MB timing and the separate ten-workload suite remain excluded. Hosted ordinary CI is cancelled under standing instruction; **draft until green CI and clean external review**.
 
-Beyond the sole R144 experiment, ordered follow-ups remain residual startup analysis and ordinary fallback grouping; further source, ownership and lowering campaigns stay deferred. Review follows the [current architecture](native-compiler-architecture.md). Historical evidence stays outside the source tree. Hosted ordinary CI remains cancelled, review jobs/#929 untouched. **All increments stay draft pending green CI and clean review; local qualification is distinct from merge readiness.**
+R130 reconciliation remains closed: required physical exits/fresh lexical state/independent reconstruction implemented; full admitted lane-bank compaction partial and deferred; address/arithmetic/bulk writer and all20 matrix implemented; R131 error snapshots and R143 stores rejected; dynamic child funding/source pricing/constants/binding/arena/SIMD deferred. R143 failed its whole-matrix elapsed criterion (+0.369643%,14adverse); its production was restored before R144. No rejected gain enters this baseline.
+
+Exact commands, feature profiles, all observations/failures/adverse blocks, pins and replay reports are in the [experiment index](../../benchmarks/mech-deflate/experiments.json), R144; large evidence stays external. Review follows the [current architecture](native-compiler-architecture.md). Completion of this increment does not imply performance parity.
