@@ -18866,8 +18866,8 @@
           "manifest_sha256": "aa99531f35b7bfd35da90292da95890a962abbdb5554ddee3c677e49549ead2a",
           "bytes": 282655,
           "files": 126,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-publication-replay-0e74d93604d1.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r145-publication-replay-0e74d93604d1.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
@@ -18879,7 +18879,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd"
     }
   },
