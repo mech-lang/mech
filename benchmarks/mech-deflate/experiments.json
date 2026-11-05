@@ -21470,6 +21470,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-random-64-primary-abaefda99649.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-32-high-entropy-stored-primary-43ebf859f801.tar.gz",
+          "sha256": "43ebf859f801559dca02b0372bcb5923a85dc8a7801ba31b2b89485004a0a204",
+          "manifest_sha256": "3ed320dd35ac17ba49d13b3d48763880edcf9dcbd17f9a8cf6abddaa4fc0095f",
+          "bytes": 83956,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-32-high-entropy-stored-primary-43ebf859f801.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
