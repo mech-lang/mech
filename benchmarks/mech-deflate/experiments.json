@@ -18846,6 +18846,17 @@
           "files": 79,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-analysis-bb1a46ab9e47.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-closure-4e53a3e2cd9e.tar.gz",
+          "sha256": "4e53a3e2cd9e76db6f69d4bfa8c5ddbce10ae39ebb87fb451b1b4997b90b209c",
+          "manifest_sha256": "b1b96825ecde2887453dbd9963ad3bbec877005219b72141bb6e7c71399215b4",
+          "bytes": 5821499,
+          "files": 1051,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-closure-4e53a3e2cd9e.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
