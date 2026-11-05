@@ -21371,6 +21371,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-repeated-32769-primary-d4104fa6db61.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-32769-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-reymont-prefix-32769-primary-0b06fab252e3.tar.gz",
+          "sha256": "0b06fab252e3d8056ad22cac9f83d1aac32292cd749c5d1f171864708b1fc564",
+          "manifest_sha256": "fa6c474751977d000026841fb84fd54425996d18deee6b934b0569cf9cdf6b85",
+          "bytes": 79885,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-reymont-prefix-32769-primary-0b06fab252e3.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
