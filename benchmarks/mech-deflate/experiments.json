@@ -20439,6 +20439,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-320-overlap-primary-28429961ddb8.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-case-random-256-primary-f5946066b4db.tar.gz",
+          "sha256": "f5946066b4dbd970078ed78d0212906975e2dcf019fefe058366b8fd1f1c5a07",
+          "manifest_sha256": "ec4fea4ff6253bbfa43d26fc40cace6935baffbff3598c98668737643241e3d8",
+          "bytes": 108194,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-random-256-primary-f5946066b4db.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
