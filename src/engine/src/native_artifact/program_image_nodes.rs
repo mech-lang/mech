@@ -31,10 +31,11 @@ pub(super) fn program_type<'de, D: Deserializer<'de>>(
     schemas: &SchemaTable,
 ) -> Result<NativeProgramType, String> {
     let image: Type = wire(image)?;
-    let definition = values::schema(&image.definition)?;
-    if schemas.get(image.schema) != Some(&definition) {
-        return Err("image type differs from schema table".into());
-    }
+    let entry = schemas
+        .entry(image.schema)
+        .ok_or("image type schema is absent from schema table")?;
+    let definition = entry.schema();
+    values::matching_schema(&image.definition, definition)?;
     let scalar = image
         .scalar
         .map(|scalar| {
@@ -49,11 +50,8 @@ pub(super) fn program_type<'de, D: Deserializer<'de>>(
                 ("F64", SchemaBody::FloatingPoint(FloatWidth::W64)) => NativeScalarKind::F64,
                 _ => return Err("image scalar kind differs from schema".to_owned()),
             };
-            let descriptor = values::descriptor(&scalar.descriptor)?;
-            if scalar.schema != image.schema
-                || scalar.schema_key != definition.key()
-                || descriptor.schema() != &definition
-            {
+            let descriptor = values::descriptor(&scalar.descriptor, definition)?;
+            if scalar.schema != image.schema || scalar.schema_key != entry.key() {
                 return Err("image scalar descriptor differs from schema".into());
             }
             Ok(NativeScalarType {
@@ -66,7 +64,7 @@ pub(super) fn program_type<'de, D: Deserializer<'de>>(
         .transpose()?;
     Ok(NativeProgramType {
         schema: image.schema,
-        definition,
+        definition: definition.clone(),
         scalar,
     })
 }
@@ -268,6 +266,20 @@ mod tests {
         assert!(program_type(&bad, &table).is_err());
         bad["scalar"]["kind"] = "U64".into();
         bad["scalar"]["schema"] = 1.into();
+        assert!(program_type(&bad, &table).is_err());
+
+        let (_, ty) = scalar_image();
+        let mut bad = ty.clone();
+        bad["definition"]["body"] = "Bool".into();
+        assert!(program_type(&bad, &table).is_err());
+        bad = ty.clone();
+        bad["scalar"]["descriptor"][0]["body"] = "Bool".into();
+        assert!(program_type(&bad, &table).is_err());
+        bad = ty.clone();
+        bad["scalar"]["schema_key"] = serde_json::to_value(SchemaKey::from_bytes([0; 32])).unwrap();
+        assert!(program_type(&bad, &table).is_err());
+        bad = ty;
+        bad["schema"] = u32::MAX.into();
         assert!(program_type(&bad, &table).is_err());
     }
     #[test]
