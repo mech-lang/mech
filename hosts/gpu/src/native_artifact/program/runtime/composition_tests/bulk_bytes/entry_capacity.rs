@@ -76,13 +76,15 @@ fn insufficient_bulk_capacity_declines_before_numeric_setup_and_recovers() {
                     );
                 }
                 if capacity < 8 {
-                    assert!(
-                        observed.exit_modes.is_empty(),
-                        "an unfundable entry must decline before opening/settling a loan: {observed:?}"
+                    assert_eq!(
+                        observed.closed_entry_decisions.get(&0),
+                        Some(&1),
+                        "an unfundable entry must decline before opening a loan: {observed:?}"
                     );
+                    assert!(!observed.closed_entry_decisions.contains_key(&1));
                 } else if count == 0 {
                     assert_eq!(
-                        observed.exit_modes.get(&0),
+                        observed.closed_entry_decisions.get(&1),
                         Some(&1),
                         "funded zero-count visits must retain the native route"
                     );
