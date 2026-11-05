@@ -19708,6 +19708,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-one-stored-primary-c1a7ac9362ab.tar.gz"
+        },
+        {
+          "event": "case-empty-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-empty-primary-884a5d056b34.tar.gz",
+          "sha256": "884a5d056b3403b46d2690fcabbd20e47573c20067a551f20f8f4a9c7455d94c",
+          "manifest_sha256": "e0c4dcc1e9e9530e610225198e39200eb2aa12695109d5fc090469141d43c12e",
+          "bytes": 888227,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-empty-primary-884a5d056b34.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
