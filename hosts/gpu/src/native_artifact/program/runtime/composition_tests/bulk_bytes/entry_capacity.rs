@@ -11,6 +11,43 @@ fn insufficient_bulk_capacity_declines_before_numeric_setup_and_recovers() {
             mode.compilation(),
         )
         .unwrap();
+        let (region, array) = jit
+            .descriptor()
+            .metadata()
+            .closed_tails
+            .regions
+            .iter()
+            .enumerate()
+            .find_map(|(id, region)| {
+                let proof = region.numeric.as_ref()?;
+                proof
+                    .arrays
+                    .iter()
+                    .position(|a| a.appends)
+                    .map(|at| (id, at))
+            })
+            .unwrap();
+        assert_eq!(
+            jit.descriptor().metadata().closed_tails.regions[region]
+                .numeric
+                .as_ref()
+                .unwrap()
+                .arrays[array]
+                .append_bound,
+            8
+        );
+        let image = jit.descriptor().encode_build_owned_image().unwrap();
+        for incorrect in [0, 1, 7, 9, u64::MAX] {
+            let mut value: serde_json::Value = serde_json::from_slice(&image).unwrap();
+            value["descriptor"]["closed_tails"]["regions"][region]["numeric"]["arrays"][array]["append_bound"] =
+                serde_json::json!(incorrect);
+            assert!(
+                crate::native_artifact::program::runtime::tests::rejects_malformed_helper_image(
+                    &serde_json::to_vec(&value).unwrap()
+                ),
+                "serialized append bound must be independently reconstructed: {incorrect}"
+            );
+        }
         assert_eq!(
             jit.descriptor()
                 .metadata()

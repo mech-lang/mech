@@ -363,6 +363,7 @@ fn derive_with_children(
                 witness: usize::MAX,
                 writable: false,
                 appends: false,
+                append_bound: 0,
             });
         }
     }
@@ -599,6 +600,14 @@ fn derive_with_children(
     }
     if arrays.iter().any(|array| array.witness == usize::MAX) {
         return Err("unwitnessed retained array");
+    }
+    for (at, array) in arrays.iter_mut().enumerate() {
+        array.append_bound = actions
+            .iter()
+            .try_fold(0usize, |count, (_, op)| {
+                count.checked_add(op.maximum_append(at))
+            })
+            .ok_or("numeric append capacity bound overflows")?;
     }
     // A prefix without a native backedge retains the maintained acyclic parent
     // pieces. A Tail phase adds a second entry and cold export without keeping
