@@ -23295,6 +23295,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-seven-stored-prefix-primary-437305110ee3.tar.gz"
+        },
+        {
+          "event": "case-one-stored-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-case-one-stored-primary-ad1bd23de771.tar.gz",
+          "sha256": "ad1bd23de7714bde0762d0a749b3c73afb1fbd27499b035845a112365138b429",
+          "manifest_sha256": "653b28aa7fe32dd093bc622b7a2b4a32ebd97cc6d402b98a73e38666004b281e",
+          "bytes": 3487651,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-one-stored-primary-ad1bd23de771.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
