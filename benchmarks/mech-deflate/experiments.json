@@ -21236,8 +21236,8 @@
     },
     "153": {
       "base": "6741fccacd5241f02c9b5379f2754c2f0ea1bf67",
-      "production": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
-      "compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+      "production": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+      "compiler_source": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
       "decision": "under measurement",
       "events": [
         {
@@ -21250,11 +21250,22 @@
           "files": 21,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-census-4263742665a1.tar.gz"
+        },
+        {
+          "event": "development",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-development-f408ef931e3a.tar.gz",
+          "sha256": "f408ef931e3a172ff297f82be076b38aca197b3bb648b3e4c05fc476ff7752de",
+          "manifest_sha256": "8ab943b5bef1f0d213e642612dd6991365ca30340f22ef910c7eb880cfb604cc",
+          "bytes": 71799,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-development-f408ef931e3a.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
       "versions": {
-        "typed_ir": 175,
+        "typed_ir": 177,
         "work_policy": 107,
         "private_abi": 39,
         "bytecode": 14
