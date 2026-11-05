@@ -262,6 +262,7 @@ impl NativeProgramObject {
             "linked": false, "executed": false, "timing_samples": 0,
         });
         metadata["compiled_numeric_functions"] = serde_json::json!(&self.codegen.numeric_functions);
+        metadata["compiled_scalar_selects"] = serde_json::json!(self.codegen.scalar_selects);
         metadata["compiled_borrowed_record_maps"] =
             serde_json::json!(&self.descriptor.metadata().borrowed_record_maps.regions);
         metadata["image_binding_symbol"] = serde_json::json!(self.image_binding.symbol());

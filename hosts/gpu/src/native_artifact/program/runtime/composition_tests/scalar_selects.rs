@@ -68,10 +68,14 @@ fn scalar_select_source_keeps_reports_errors_aliases_and_retry() {
             OptimizationPass::ScalarSelects,
         )
         .unwrap();
-        assert_ne!(
-            native.descriptor().code_bytes(),
-            ordinary.descriptor().code_bytes(),
-            "real source must select the transform; code size need not decrease"
+        assert!(
+            native.test_emissions().scalar_selects > 0,
+            "real source must actually select the transform"
+        );
+        assert_eq!(
+            ordinary.test_emissions().scalar_selects,
+            0,
+            "the ablation must disable the transform even when backend code sizes converge"
         );
         for restored in [false, true] {
             let memory = mode.memory_budget();

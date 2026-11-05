@@ -13,6 +13,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub guarded_loops: GuardedLoops,
     pub lookup_facts: LookupFacts,
     pub cfg_cleanup: Option<CfgCleanup>,
+    pub scalar_selects: usize,
     pub outlined_loops: Vec<OutlinedLoop>,
     pub numeric_functions:
         Vec<crate::native_artifact::program::codegen::readonly_numeric::outlined::OutlinedReport>,
@@ -568,6 +569,7 @@ impl CodegenReport {
             "truncated emission report cannot qualify an ablation"
         );
         let mut counts = EmissionCounters::default();
+        counts.scalar_selects = self.scalar_selects;
         counts.edge_facts = (
             self.source_edge_facts
                 .regions

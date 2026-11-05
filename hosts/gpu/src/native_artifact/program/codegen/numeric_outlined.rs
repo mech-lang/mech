@@ -143,9 +143,11 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
         }
         if controls.enabled(OptimizationPass::ScalarSelects) {
-            if crate::native_artifact::codegen::common::scalar_selects::optimize(&mut context.func)
-                > 0
-            {
+            let selected = crate::native_artifact::codegen::common::scalar_selects::optimize(
+                &mut context.func,
+            );
+            report.scalar_selects += selected;
+            if selected > 0 {
                 context.compute_cfg();
                 context.compute_domtree();
             }

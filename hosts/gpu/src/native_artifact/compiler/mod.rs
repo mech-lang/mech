@@ -594,20 +594,26 @@ pub(in crate::native_artifact) fn primitive(
             guard(b, valid, error, STATUS_ARITHMETIC);
             value
         }
-        U32Sub => {
+        U32Sub | U64Sub => {
             let valid = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, a, c);
             guard(b, valid, error, STATUS_ARITHMETIC);
             b.ins().isub(a, c)
         }
-        U64Add | U64Sub | U64Mul => {
-            let (value, overflow) = match op {
-                U64Add => b.ins().uadd_overflow(a, c),
-                U64Sub => b.ins().usub_overflow(a, c),
-                _ => b.ins().umul_overflow(a, c),
-            };
-            let valid = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+        U64Add => {
+            // Unsigned addition wraps below either operand exactly on carry.
+            // Keep the comparison directly in the branch condition, instead
+            // of materializing and re-testing an overflow Boolean.
+            let value = b.ins().iadd(a, c);
+            let valid = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, value, a);
             guard(b, valid, error, STATUS_ARITHMETIC);
             value
+        }
+        U64Mul => {
+            // A full-width product fits iff its unsigned high half is zero.
+            let high = b.ins().umulhi(a, c);
+            let valid = b.ins().icmp_imm(IntCC::Equal, high, 0);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            b.ins().imul(a, c)
         }
         U64Div | U64Rem => {
             let nonzero = b.ins().icmp_imm(IntCC::NotEqual, c, 0);

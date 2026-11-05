@@ -63,6 +63,7 @@ pub(in crate::native_artifact) struct EmissionCounters {
     pub loop_bounds: (usize, usize),
     pub lookup_facts: (usize, usize),
     pub cfg_cleanup: (usize, usize),
+    pub scalar_selects: usize,
     pub loop_outlining: usize,
     pub loop_invariants: (usize, usize, usize),
     pub preserving_calls: usize,

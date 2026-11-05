@@ -1745,6 +1745,7 @@ impl<'plan> CfgDefinition<'plan> {
             let selected = crate::native_artifact::codegen::common::scalar_selects::optimize(
                 &mut context.func,
             );
+            report.scalar_selects += selected;
             if selected > 0 {
                 // Raw CFG edits invalidate cached predecessor/dominance facts.
                 context.compute_cfg();
