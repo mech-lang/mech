@@ -21843,6 +21843,17 @@
           "files": 17,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-profile-33027-periodic-window-e8e90317b1e9.tar.gz"
+        },
+        {
+          "event": "pc-profile-repeated-32769",
+          "source_revision": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+          "asset": "r154-pc-profile-repeated-32769-f567b408a153.tar.gz",
+          "sha256": "f567b408a1534465e0eda84c44803261f2337805b5c2a03dbffa3557e519f134",
+          "manifest_sha256": "4791075714aacac970f9d1b2f4968723a58c6c5d64b3d3479455580e3c8d15ab",
+          "bytes": 102736,
+          "files": 17,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-profile-repeated-32769-f567b408a153.tar.gz"
         }
       ],
       "production": "2d27e4cc44261a02c6858a232960d8999ac712eb",
