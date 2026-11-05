@@ -21272,6 +21272,17 @@
           "files": 61,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-initial-ec92c3c2d019.tar.gz"
+        },
+        {
+          "event": "screen-33027-periodic-window-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-screen-33027-periodic-window-primary-e6a5ada37a4b.tar.gz",
+          "sha256": "e6a5ada37a4b41e9199fa2fdb428d0126f9ac89391221b86b4cd46688a3bd8c3",
+          "manifest_sha256": "a923ba394f508320ac6b2012807c178f0a9506ebb22f54d7a1ac230892ce615d",
+          "bytes": 73932,
+          "files": 44,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-screen-33027-periodic-window-primary-e6a5ada37a4b.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
