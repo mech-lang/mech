@@ -17560,8 +17560,8 @@
           "manifest_sha256": "31c16013775ed57b1ddcbfadde97caaf76997ada81414f491dfaa149d4e4287c",
           "bytes": 185054,
           "files": 12,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-initial-c58c25d6f900.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-initial-c58c25d6f900.tar.gz"
         },
         {
           "event": "test-first-unsupported-u16",
@@ -17571,8 +17571,8 @@
           "manifest_sha256": "0227a8dfed444593f2f58c81d62687280673eed360b4b4a5a1ab3a7bca342352",
           "bytes": 189515,
           "files": 21,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-test-first-unsupported-u16-fc9f564770a9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-test-first-unsupported-u16-fc9f564770a9.tar.gz"
         },
         {
           "event": "test-first",
@@ -17582,8 +17582,8 @@
           "manifest_sha256": "d3f500fcc44980623ef4997ce8d0f922dd84e52bd57933002bf5b5b69e379a4d",
           "bytes": 189427,
           "files": 22,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-test-first-60e3f7cf9422.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-test-first-60e3f7cf9422.tar.gz"
         },
         {
           "event": "identity169",
@@ -17593,8 +17593,8 @@
           "manifest_sha256": "0498a1428be46096792c88ecd4f6cc29fd021f4df4980a8cc4f90e2eb1394d57",
           "bytes": 4773951,
           "files": 69,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-identity169-d499b086f6fd.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-identity169-d499b086f6fd.tar.gz"
         },
         {
           "event": "unit-revision-rejection",
@@ -17604,8 +17604,8 @@
           "manifest_sha256": "146e02929a1b3825be89c8d5896bef3ba2ca43c5f71a09ef4c00e1888fb8b28f",
           "bytes": 219409,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-unit-revision-rejection-70f52db30720.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-unit-revision-rejection-70f52db30720.tar.gz"
         },
         {
           "event": "emitted-evidence",
@@ -17615,8 +17615,8 @@
           "manifest_sha256": "838d86a3ad107c868aed3d3edbcef275e9fe709b6ea6bc91f396952321518ed2",
           "bytes": 505309,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-emitted-evidence-181d4d0ffbf5.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-emitted-evidence-181d4d0ffbf5.tar.gz"
         },
         {
           "event": "screen-eight-literals-primary",
@@ -17626,8 +17626,8 @@
           "manifest_sha256": "488be96ed4db09ccb63b7fefc055bab8996d04a5ec679e691e25741cd40efc25",
           "bytes": 226165,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-screen-eight-literals-primary-f1e5c33e3a4a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-screen-eight-literals-primary-f1e5c33e3a4a.tar.gz"
         },
         {
           "event": "screen-16384-distribution-change-primary",
@@ -17637,8 +17637,8 @@
           "manifest_sha256": "2adb6742f9706d21cdd0e8ef521539bc834599a3dac83462aaa5ae0ece561b77",
           "bytes": 223580,
           "files": 50,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-screen-16384-distribution-change-primary-0120c1c57619.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-screen-16384-distribution-change-primary-0120c1c57619.tar.gz"
         },
         {
           "event": "screen-33027-periodic-window-primary",
@@ -17648,8 +17648,8 @@
           "manifest_sha256": "27c86cd1bad0e396a5ee1a66456ff1523e5e856f845e93995225fbc11cfb256b",
           "bytes": 223825,
           "files": 50,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-screen-33027-periodic-window-primary-01e610230a31.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-screen-33027-periodic-window-primary-01e610230a31.tar.gz"
         },
         {
           "event": "screen-repeated-32769-primary",
@@ -17659,8 +17659,8 @@
           "manifest_sha256": "bfc8917d75a2da4089d8ceb48eb4be3c44520e488ef939fecb706f4ce843e054",
           "bytes": 223953,
           "files": 50,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-screen-repeated-32769-primary-e5bb6c2619a9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-screen-repeated-32769-primary-e5bb6c2619a9.tar.gz"
         },
         {
           "event": "case-eight-literals-primary",
@@ -17670,8 +17670,8 @@
           "manifest_sha256": "84a685493336df8dd6cc13f8418728120747327d45214c7f524b69114280b71b",
           "bytes": 229933,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-eight-literals-primary-94151f632f5c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-eight-literals-primary-94151f632f5c.tar.gz"
         },
         {
           "event": "case-16384-distribution-change-primary",
@@ -17681,8 +17681,8 @@
           "manifest_sha256": "1d86a37743d1df3318bfc17b2074097489c26c6558b5d53809f807794b2d82fd",
           "bytes": 227240,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-16384-distribution-change-primary-aa023d22dc3f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-16384-distribution-change-primary-aa023d22dc3f.tar.gz"
         },
         {
           "event": "case-33027-periodic-window-primary",
@@ -17692,8 +17692,8 @@
           "manifest_sha256": "c891982e27f7d1170f453cffa8d10ef9c89c0290e1ea3c215376c89484932c08",
           "bytes": 227489,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-33027-periodic-window-primary-d3be371263ba.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-33027-periodic-window-primary-d3be371263ba.tar.gz"
         },
         {
           "event": "case-random-32769-primary",
@@ -17703,8 +17703,8 @@
           "manifest_sha256": "a8fd666389e750d34f5c0d65063bfd94a2fe2275be342f9ba8aeefa40303b3ae",
           "bytes": 227946,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-random-32769-primary-2a3c2979567b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-random-32769-primary-2a3c2979567b.tar.gz"
         },
         {
           "event": "case-repeated-32769-primary",
@@ -17714,8 +17714,8 @@
           "manifest_sha256": "c54b14f84be266be8591a1b233008ac75d1ddf2c5fd4d09dd5a0efcdf4e1326e",
           "bytes": 227948,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-repeated-32769-primary-99aff27b5674.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-repeated-32769-primary-99aff27b5674.tar.gz"
         },
         {
           "event": "case-reymont-prefix-32769-primary",
@@ -17725,8 +17725,8 @@
           "manifest_sha256": "17702bf90be21b5c0a4f6fa0c744cc39ea37d42555a956aad654c519e7ef9c47",
           "bytes": 228244,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-reymont-prefix-32769-primary-5b020ce1fabe.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-reymont-prefix-32769-primary-5b020ce1fabe.tar.gz"
         },
         {
           "event": "case-reymont-prefix-16384-primary",
@@ -17736,8 +17736,8 @@
           "manifest_sha256": "7451a32a5c5d33b851bb0ce78729723b0c894fb193f9f5628ff6894a30f9b76a",
           "bytes": 228413,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-reymont-prefix-16384-primary-b7325d302792.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-reymont-prefix-16384-primary-b7325d302792.tar.gz"
         },
         {
           "event": "case-random-1024-primary",
@@ -17747,8 +17747,8 @@
           "manifest_sha256": "a13cafd3bbf998f5ae89fe542a008927da8d954e8f6748ccfd67f6adc5590297",
           "bytes": 231330,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-random-1024-primary-170e914711b5.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-random-1024-primary-170e914711b5.tar.gz"
         },
         {
           "event": "case-repeated-1024-primary",
@@ -17758,8 +17758,8 @@
           "manifest_sha256": "f5e4ce47569b57c7bfdb0daa463516525175c85474f619898e3226b7d64ea3c8",
           "bytes": 231546,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-repeated-1024-primary-785f805a306f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-repeated-1024-primary-785f805a306f.tar.gz"
         },
         {
           "event": "case-reymont-prefix-1024-primary",
@@ -17769,8 +17769,8 @@
           "manifest_sha256": "a65035d8cf56539a3cb57a8a99ad5c4563409dece4d192fd24cafdb30622d4f5",
           "bytes": 231651,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-reymont-prefix-1024-primary-1ef5f4789d95.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-reymont-prefix-1024-primary-1ef5f4789d95.tar.gz"
         },
         {
           "event": "case-320-overlap-primary",
@@ -17780,8 +17780,8 @@
           "manifest_sha256": "31bca137ee2a6b61d4d7d3ecf16456f5f6a353812f763dc1d8d24d5732c0c33a",
           "bytes": 231564,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-320-overlap-primary-ddd97832b43d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-320-overlap-primary-ddd97832b43d.tar.gz"
         },
         {
           "event": "case-random-256-primary",
@@ -17791,8 +17791,8 @@
           "manifest_sha256": "e6a1cb93ac467cc2d7d2462a2016ac78d99ffac8093e11eb1aa37a42aa6975ff",
           "bytes": 231836,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-random-256-primary-0fd43e8547a2.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-random-256-primary-0fd43e8547a2.tar.gz"
         },
         {
           "event": "case-128-biased-dynamic-primary",
@@ -17802,8 +17802,8 @@
           "manifest_sha256": "da4d6f195a5262ef06a8e1abcf4fca95ed8855871e0255bafa1d34ee14da0867",
           "bytes": 231958,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-128-biased-dynamic-primary-93702f6807d1.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-128-biased-dynamic-primary-93702f6807d1.tar.gz"
         },
         {
           "event": "case-random-64-primary",
@@ -17813,8 +17813,8 @@
           "manifest_sha256": "07207a525b79e49eff6ef0c2eb785d22313f030e82a7e5e824367d7a5c3e24cf",
           "bytes": 231967,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-random-64-primary-00476d63a6ad.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-random-64-primary-00476d63a6ad.tar.gz"
         },
         {
           "event": "case-32-high-entropy-stored-primary",
@@ -17824,8 +17824,8 @@
           "manifest_sha256": "29aa72f2b5c75392c4b993396bdc2da8e37f66ae15709c3e67ecf05b9dcac589",
           "bytes": 232313,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-32-high-entropy-stored-primary-1a934e5652e4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-32-high-entropy-stored-primary-1a934e5652e4.tar.gz"
         },
         {
           "event": "case-eight-overlap-primary",
@@ -17835,8 +17835,8 @@
           "manifest_sha256": "5ea8d6ea66e942e6ce76768830012472131ae2f80ddc8d89a31735fe9190afc7",
           "bytes": 232249,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-eight-overlap-primary-ac554e9a9f0f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-eight-overlap-primary-ac554e9a9f0f.tar.gz"
         },
         {
           "event": "case-eight-literals-prefix-primary",
@@ -17846,8 +17846,8 @@
           "manifest_sha256": "8770804b7e97f578da426549aa5b60f49ba24f94f28b1eff3c16898eae5bd847",
           "bytes": 232646,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-eight-literals-prefix-primary-157fbd1bb83d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-eight-literals-prefix-primary-157fbd1bb83d.tar.gz"
         },
         {
           "event": "case-seven-stored-prefix-primary",
@@ -17857,8 +17857,8 @@
           "manifest_sha256": "9338a69f24ebf558f5d90349922216526f4f9947e732deee320137a3d6e22d36",
           "bytes": 232313,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-seven-stored-prefix-primary-4aeb1d1dcaf0.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-seven-stored-prefix-primary-4aeb1d1dcaf0.tar.gz"
         },
         {
           "event": "case-one-stored-primary",
@@ -17868,8 +17868,8 @@
           "manifest_sha256": "e3c48f0c993b45a536232421a82f01292ffb3f11a56c2319f2053e83589db2b3",
           "bytes": 232178,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-one-stored-primary-c10feea0f84a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-one-stored-primary-c10feea0f84a.tar.gz"
         },
         {
           "event": "case-empty-primary",
@@ -17879,8 +17879,8 @@
           "manifest_sha256": "d85ded83ec7b585f880d4ee01ab8a3980e083300e3608fb72024e02d4bada343",
           "bytes": 231959,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-empty-primary-c9bf830adb51.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-case-empty-primary-c9bf830adb51.tar.gz"
         },
         {
           "event": "matrix-counters",
@@ -17890,8 +17890,8 @@
           "manifest_sha256": "5069f4dd6aa75a2a23a5295767bce8f75310f2098631dea3f54a00f09fabc123",
           "bytes": 271973,
           "files": 60,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-matrix-counters-de2bb4d4e227.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-matrix-counters-de2bb4d4e227.tar.gz"
         },
         {
           "event": "profiles-current",
@@ -17901,8 +17901,8 @@
           "manifest_sha256": "0bb23ac518b14843043eada26f9d043dd8df925faa3b1871b5edf18970dcb7e6",
           "bytes": 649531,
           "files": 82,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-profiles-current-584b3d96cac7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-profiles-current-584b3d96cac7.tar.gz"
         },
         {
           "event": "analysis-final",
@@ -17912,8 +17912,8 @@
           "manifest_sha256": "3f0396aae7d25be109a8112a2824bfc42369eaea0fda00b68b23e4bf9ce07962",
           "bytes": 237507,
           "files": 55,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-analysis-final-88673d4560a6.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-analysis-final-88673d4560a6.tar.gz"
         },
         {
           "event": "retained-tests",
@@ -17923,8 +17923,8 @@
           "manifest_sha256": "de626105e3ed6241050de9a69b579c40f59c8c9aac408aa5a66a54d47e207f01",
           "bytes": 233815,
           "files": 62,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-retained-tests-3c187ed7cd34.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-retained-tests-3c187ed7cd34.tar.gz"
         },
         {
           "event": "closure",
@@ -17934,8 +17934,8 @@
           "manifest_sha256": "4bd2f67dd16a52127c52fd3243ce648cd523b9323695ff64e73b12f7891574a8",
           "bytes": 10394549,
           "files": 467,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-closure-4e09675bdaed.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r143-closure-4e09675bdaed.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
@@ -17947,7 +17947,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": false,
       "retained_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
       "retained_versions": {
