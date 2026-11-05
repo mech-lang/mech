@@ -22,32 +22,6 @@ impl Invocation<'_, '_, '_> {
         if self.has_uninventoried_private_owners() {
             return Ok(false);
         }
-        // The emitted header cannot fund a traversal without this spare
-        // capacity. Decline before optional view/metadata preparation. Reading
-        // a current immutable owner's geometry grants no mutation authority;
-        // supported entries still perform every original validation below.
-        for (at, array) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
-            let Some(required) = proof.maximum_append(at) else {
-                return Ok(false);
-            };
-            let owner = self
-                .state
-                .buffer_frames
-                .managed_owner(&metadata.buffer_frames, region.tail.carrier(), array.field)
-                .ok_or_else(|| invalid("numeric entry lost current owner"))?;
-            let mech_core::ValueData::Matrix(matrix) = owner.data() else {
-                return Ok(false);
-            };
-            let Some(capacity) = matrix.unsigned_buffer_capacity() else {
-                return Ok(false);
-            };
-            if capacity
-                .checked_sub(matrix.elements().len())
-                .is_none_or(|spare| spare < required)
-            {
-                return Ok(false);
-            }
-        }
         // Pure same-account/availability preview precedes any potentially
         // failing optimization work. Unsupported/tight contexts keep the route.
         let memory = self.state.library.memory_budget();

@@ -11,9 +11,6 @@ pub(in crate::native_artifact) struct Array {
     pub witness: usize,
     pub writable: bool,
     pub appends: bool,
-    /// Source-derived maximum growth in one funded traversal; no current value
-    /// or permission is retained. Reconstructed when the image is admitted.
-    pub append_bound: usize,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -59,6 +56,7 @@ impl Operation {
     pub fn grows(&self) -> bool {
         matches!(self, Self::Append { .. } | Self::AppendLeBytes { .. })
     }
+    #[cfg(feature = "canonical-native-program")]
     pub fn maximum_append(&self, array: usize) -> usize {
         match self {
             Self::Append { array: at, .. } if *at == array => 1,
@@ -113,12 +111,6 @@ pub(in crate::native_artifact) struct Plan {
     pub boundary_values: BoundaryValues,
 }
 impl Plan {
-    /// Conservative bound for one funded traversal, shared by the current
-    /// entry refusal and emitted header guard. It grants no owner authority.
-    pub fn maximum_append(&self, array: usize) -> Option<usize> {
-        self.arrays.get(array).map(|array| array.append_bound)
-    }
-
     /// Only current input lanes cross an initial entry. Internal frame lanes
     /// are defined by the selected source actions, not by the helper's scratch
     /// bank. Keep the full bank's admission and first-change transport intact.
