@@ -17716,6 +17716,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-repeated-32769-primary-99aff27b5674.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-32769-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-case-reymont-prefix-32769-primary-5b020ce1fabe.tar.gz",
+          "sha256": "5b020ce1fabe5bb60aaa18f2b8dbdb49bf21e586754720ed1286a81532b1522b",
+          "manifest_sha256": "17702bf90be21b5c0a4f6fa0c744cc39ea37d42555a956aad654c519e7ef9c47",
+          "bytes": 228244,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-reymont-prefix-32769-primary-5b020ce1fabe.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
