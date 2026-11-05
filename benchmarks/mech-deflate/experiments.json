@@ -18213,6 +18213,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-32-high-entropy-stored-primary-2c18093717c1.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-eight-overlap-primary-882fd59ca4ab.tar.gz",
+          "sha256": "882fd59ca4abb8cb7d19364abdbf2ea62ea370f7b6fe5c317d14217258ec822c",
+          "manifest_sha256": "0ec188b59cee2a15a9f2ce76a7d6c0199d945749283fbcf19c1bcf35b7406ff2",
+          "bytes": 242457,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-eight-overlap-primary-882fd59ca4ab.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
