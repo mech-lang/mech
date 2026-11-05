@@ -19620,6 +19620,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-320-overlap-primary-fcc58314829a.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-random-256-primary-2db524c29eb2.tar.gz",
+          "sha256": "2db524c29eb2630daec3ff578581f703e52be38b9548de25ada38664cfc3287d",
+          "manifest_sha256": "3da8ab0246b2f70f8f0760a830614f77498547fcce9268f546de1a06ca301371",
+          "bytes": 888433,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-random-256-primary-2db524c29eb2.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
