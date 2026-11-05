@@ -21547,6 +21547,17 @@
           "files": 68,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-primary-label-audit-747aa6bf0ecd.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-matrix-counters-a802040ad37c.tar.gz",
+          "sha256": "a802040ad37c6375e0b38251d9bd6d0c29164025542031e56d7e77df1eee7078",
+          "manifest_sha256": "d410669e95b76d49fb05332054a7a83eb11fa96a0efd12295cc63f3913021f29",
+          "bytes": 126951,
+          "files": 56,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-matrix-counters-a802040ad37c.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
