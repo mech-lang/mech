@@ -20120,6 +20120,17 @@
           "files": 42,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-screen-repeated-32769-primary-849f886a6399.tar.gz"
+        },
+        {
+          "event": "initial",
+          "source_revision": "735fe9f76818f1ada7cbe90dfd19d82d0f0a405f",
+          "asset": "r150-initial-97963ef48605.tar.gz",
+          "sha256": "97963ef486058856c8ab1b86fba6b9132a5290c1c09fa486626a0332d004f606",
+          "manifest_sha256": "002468ae3afa0285796b3134813e297ce409c62febea8e3ae27f67966973eca6",
+          "bytes": 4624654,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-initial-97963ef48605.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
