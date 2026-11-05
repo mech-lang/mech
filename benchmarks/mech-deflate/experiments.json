@@ -15750,6 +15750,17 @@
           "files": 38,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-reference-outlier-45f0d894d29d.tar.gz"
+        },
+        {
+          "event": "outlier-counters",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-outlier-counters-3a707f2166b9.tar.gz",
+          "sha256": "3a707f2166b95c9440462d975fcd66f5d33241d0c74148dd5f1ba426549cc9b9",
+          "manifest_sha256": "1f997024c9d1ca7647ae023d85e6500533ec7f45a8a1fc467165b61e7cc52b76",
+          "bytes": 169219,
+          "files": 36,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-outlier-counters-3a707f2166b9.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
