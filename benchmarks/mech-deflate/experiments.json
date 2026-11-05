@@ -20845,6 +20845,17 @@
           "files": 47,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-eight-literals-primary-ae9a6fe6db71.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-16384-distribution-change-primary-be4f2fa6d26a.tar.gz",
+          "sha256": "be4f2fa6d26a82a27e749ff28c9e4fe0889573a11c0fc3d9cde04c8b66b14f46",
+          "manifest_sha256": "944642b1803ee5459f6042491321385acd1705f032e4603bc7c559fb2dc93809",
+          "bytes": 88207,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-16384-distribution-change-primary-be4f2fa6d26a.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
