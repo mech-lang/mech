@@ -17548,8 +17548,8 @@
     },
     "143": {
       "base": "f120b81e01cb868ace9ca7af474dd9081776fa32",
-      "production": "1aedd32463f3ea86906087130f9d0071587ae385",
-      "compiler_source": "1aedd32463f3ea86906087130f9d0071587ae385",
+      "production": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+      "compiler_source": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
       "decision": "under measurement",
       "events": [
         {
@@ -17595,11 +17595,22 @@
           "files": 69,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-identity169-d499b086f6fd.tar.gz"
+        },
+        {
+          "event": "unit-revision-rejection",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-unit-revision-rejection-70f52db30720.tar.gz",
+          "sha256": "70f52db30720ee3910971d92f071d0482de77acd786f510b0c5c49c332da05ed",
+          "manifest_sha256": "146e02929a1b3825be89c8d5896bef3ba2ca43c5f71a09ef4c00e1888fb8b28f",
+          "bytes": 219409,
+          "files": 49,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-unit-revision-rejection-70f52db30720.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
       "versions": {
-        "typed_ir": 169,
+        "typed_ir": 170,
         "work_policy": 107,
         "private_abi": 39,
         "bytecode": 14
