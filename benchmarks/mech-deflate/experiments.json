@@ -17449,6 +17449,17 @@
           "files": 55,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-replication-random-1024-primary-19bede7caa27.tar.gz"
+        },
+        {
+          "event": "replication-reymont-prefix-16384-primary",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-replication-reymont-prefix-16384-primary-2de59210a7b3.tar.gz",
+          "sha256": "2de59210a7b32143117a6a94d47f1ca7f2b8c2cdd766a0b06d3225a68ae7e92a",
+          "manifest_sha256": "c85890ded93d714b0b60ab21ef347841aedcc865e00704a6639844b1e2ba95b0",
+          "bytes": 239918,
+          "files": 56,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-replication-reymont-prefix-16384-primary-2de59210a7b3.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
