@@ -48,6 +48,15 @@ fn arguments(
 
 #[test]
 fn scalar_select_source_keeps_reports_errors_aliases_and_retry() {
+    source_keeps_reports_errors_aliases_and_retry(OptimizationPass::ScalarSelects);
+}
+
+#[test]
+fn unsigned_guard_source_keeps_reports_errors_aliases_and_retry() {
+    source_keeps_reports_errors_aliases_and_retry(OptimizationPass::UnsignedGuardFacts);
+}
+
+fn source_keeps_reports_errors_aliases_and_retry(pass: OptimizationPass) {
     let mut words = vec![0, 1, u64::MAX, 1 << 63, (1 << 63) - 1];
     let mut seed = 0x7542_3918_abcd_0053u64;
     for _ in 0..64 {
@@ -62,18 +71,21 @@ fn scalar_select_source_keeps_reports_errors_aliases_and_retry() {
         let native =
             JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
                 .unwrap();
-        let ordinary = JitProgramArtifact::compile_for_test(
-            &artifact,
-            &catalog,
-            OptimizationPass::ScalarSelects,
-        )
-        .unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(&artifact, &catalog, pass).unwrap();
         assert!(
-            native.test_emissions().scalar_selects > 0,
+            match pass {
+                OptimizationPass::ScalarSelects => native.test_emissions().scalar_selects,
+                OptimizationPass::UnsignedGuardFacts => native.test_emissions().unsigned_guards,
+                _ => unreachable!(),
+            } > 0,
             "real source must actually select the transform"
         );
         assert_eq!(
-            ordinary.test_emissions().scalar_selects,
+            match pass {
+                OptimizationPass::ScalarSelects => ordinary.test_emissions().scalar_selects,
+                OptimizationPass::UnsignedGuardFacts => ordinary.test_emissions().unsigned_guards,
+                _ => unreachable!(),
+            },
             0,
             "the ablation must disable the transform even when backend code sizes converge"
         );

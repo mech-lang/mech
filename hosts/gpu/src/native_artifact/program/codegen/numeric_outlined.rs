@@ -16,6 +16,7 @@ pub(in crate::native_artifact) struct OutlinedReport {
     pub code_bytes: u64,
     pub caller_template_bound: usize,
     pub cleanup: crate::native_artifact::codegen::control::CfgCleanup,
+    pub unsigned_guards: usize,
 }
 
 fn continuations(region: &Region) -> Vec<usize> {
@@ -152,6 +153,12 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
                 context.compute_domtree();
             }
         }
+        let unsigned_guards = if controls.enabled(OptimizationPass::UnsignedGuardFacts) {
+            crate::native_artifact::codegen::common::unsigned_guard_facts::optimize(&mut context)
+        } else {
+            0
+        };
+        report.unsigned_guards += unsigned_guards;
         let header = region.tail.header() as usize;
         let symbol = format!("{entry_symbol}_numeric_{header}");
         let function = module
@@ -178,6 +185,7 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             code_bytes: bytes,
             caller_template_bound: caller_bound(region),
             cleanup,
+            unsigned_guards,
         });
         functions.push((header, function, stack, bytes));
     }
