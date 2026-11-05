@@ -20153,6 +20153,17 @@
           "files": 40,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-analysis-499607a714bd.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r150-closure-39a65433c043.tar.gz",
+          "sha256": "39a65433c0431df9ed9e420a21895498c77c1cec02fc67afffb4a634a19677d3",
+          "manifest_sha256": "035e337cdb60e0da98914c1948408b5997eb451b66a70119a6501eecc0e21dd9",
+          "bytes": 4717077,
+          "files": 108,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-closure-39a65433c043.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
