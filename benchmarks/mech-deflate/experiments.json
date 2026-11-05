@@ -18768,6 +18768,17 @@
           "files": 174,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-qualified-e380a571cb25.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-matrix-counters-d89b62d9bdf1.tar.gz",
+          "sha256": "d89b62d9bdf14d20e36465d8029f1d24a860a2fa91fc1146b1e2e15e54d1b87f",
+          "manifest_sha256": "0b8fb67c4ffff25361968f65e76bd6c23ff8db919fa09df4020014a0bdfe9384",
+          "bytes": 299205,
+          "files": 83,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-matrix-counters-d89b62d9bdf1.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
