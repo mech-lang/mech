@@ -20318,6 +20318,17 @@
           "files": 106,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-qualified-3e0e5f2f2a16.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-case-eight-literals-primary-308f53d4a32f.tar.gz",
+          "sha256": "308f53d4a32fbdeb3012a74a36e54f1aea094cc58441ed10019b171f11d97f6d",
+          "manifest_sha256": "fc54a389d5197f288ccf800de4a8b7acdbbf5cf1b6ec8e822568415215d52de6",
+          "bytes": 106402,
+          "files": 51,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-eight-literals-primary-308f53d4a32f.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
