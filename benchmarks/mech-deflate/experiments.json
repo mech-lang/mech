@@ -20878,6 +20878,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-random-32769-primary-97e3d433f148.tar.gz"
+        },
+        {
+          "event": "case-repeated-32769-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-repeated-32769-primary-ed85aae51487.tar.gz",
+          "sha256": "ed85aae51487ca4876bf065960fec52ca0d73aebc2e7c9ee7de6299469a12aff",
+          "manifest_sha256": "24889a68146f0fec7044156f5dc722435f7b59cc3ff275d7fc2797d331fc04d4",
+          "bytes": 88527,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-repeated-32769-primary-ed85aae51487.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
