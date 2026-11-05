@@ -22162,6 +22162,17 @@
           "files": 80,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-analysis-423643a78c59.tar.gz"
+        },
+        {
+          "event": "final-focused",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-final-focused-50635ded8019.tar.gz",
+          "sha256": "50635ded8019e45d4594b242efd6f1b558e01d07cc58d1bfd748f79a1f7a85dc",
+          "manifest_sha256": "1c617d230081dfdda36294f1b4ea1eccc8f67dc0c5567458b81994eca42f2b07",
+          "bytes": 205564,
+          "files": 75,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-final-focused-50635ded8019.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
