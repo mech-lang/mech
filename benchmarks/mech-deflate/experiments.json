@@ -16414,6 +16414,17 @@
           "files": 42,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-first-outlier-work-accounting-979db555e99c.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "58f75827e5c44187731df5253b3a058d2e9cd417",
+          "asset": "r140-case-16384-distribution-change-primary-124e77d458ef.tar.gz",
+          "sha256": "124e77d458ef77f4bcff76074ec7dd9a77e7c92498618cb734ba12aaf6128455",
+          "manifest_sha256": "ac70234fd9668f20e78454071604eecb260071aa43a1a24d71b0b0c8b308750c",
+          "bytes": 155134,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-16384-distribution-change-primary-124e77d458ef.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
