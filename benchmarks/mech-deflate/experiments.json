@@ -22008,6 +22008,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-reymont-prefix-16384-primary-1fa369854c61.tar.gz"
+        },
+        {
+          "event": "case-random-1024-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-random-1024-primary-053e09664d03.tar.gz",
+          "sha256": "053e09664d03dc490512e15705c9f0a592e3e4187fb7376eef1997b00b971e8b",
+          "manifest_sha256": "6e9731ec9e4728b8d4b3d749783e1f8d275fffe3f4ad0edf2c5460b0971e07d0",
+          "bytes": 139135,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-random-1024-primary-053e09664d03.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
