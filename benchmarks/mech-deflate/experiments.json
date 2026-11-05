@@ -18835,6 +18835,17 @@
           "files": 86,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-emitted-evidence-final-2ba06c321f3c.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-analysis-bb1a46ab9e47.tar.gz",
+          "sha256": "bb1a46ab9e47540fa8048136e1557261dc60ce1e78f4bcf51718b0c40457b4fc",
+          "manifest_sha256": "f29f85b8e846485422df36b3df9a06d02b54034a9f4c2c58e5d552ee49769117",
+          "bytes": 275429,
+          "files": 79,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-analysis-bb1a46ab9e47.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
