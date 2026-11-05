@@ -23672,6 +23672,36 @@
         "raw_traces": false,
         "private_environment_sections": false
       }
+    },
+    "159": {
+      "base": "7aa8e9c89f6763c0fd95958d333556c1be328dc4",
+      "events": [
+        {
+          "event": "clean-parent",
+          "source_revision": "e41ade09dc3c9477c12045432b1a11514006b873",
+          "asset": "r159-clean-parent-9ba6f82500bf.tar.gz",
+          "sha256": "9ba6f82500bfcc4587a59012dd80f7b925463a61c41bb507c9ec1e597e4af3fe",
+          "manifest_sha256": "fe3328751a959eac734e101760ada86a9aea60f94c9c5f921302e1a591f2a71b",
+          "bytes": 92988,
+          "files": 61,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-clean-parent-9ba6f82500bf.tar.gz"
+        }
+      ],
+      "production": "09853c8157a7cc27448791543f976348a0158868",
+      "compiler_source": "09853c8157a7cc27448791543f976348a0158868",
+      "before_compiler_source": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+      "versions": {
+        "typed_ir": 181,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Fresh U32 comparison-domain candidate; no timing or retention decision yet.",
+      "retained": false,
+      "release_tag": "evidence-native-compression-experiments-4",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
+      "archive_publication": "local evidence; publication pending"
     }
   },
   "repository": "mech-lang/mech",
