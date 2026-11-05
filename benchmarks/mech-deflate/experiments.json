@@ -19653,6 +19653,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-random-64-primary-01635cb13b83.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-32-high-entropy-stored-primary-f9bcaa7df0d6.tar.gz",
+          "sha256": "f9bcaa7df0d6470d913f495dac4ed08dfd512c1bde2aaec86c1d67f2fa6100ee",
+          "manifest_sha256": "0c8915b3b479aa46921832a19b48eb47f7a2dec8958dd6756a4975586dc2ffe2",
+          "bytes": 888927,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-32-high-entropy-stored-primary-f9bcaa7df0d6.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
