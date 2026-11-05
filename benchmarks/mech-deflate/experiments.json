@@ -24688,6 +24688,36 @@
         "bytecode": false,
         "receipt_sha256": "8fd9177b43e8adca5c7c557edcfde5bd170b6475cb3a13bee3ddb926152e1cc8"
       }
+    },
+    "161": {
+      "base": "f6fca4a8df37a773c9b828bd25211fa77b12c81a",
+      "events": [
+        {
+          "event": "clean-parent",
+          "source_revision": "31d7201e4e240a46f14ce81b7ed6067a8a13257d",
+          "asset": "r161-clean-parent-7e8105bd3c13.tar.gz",
+          "sha256": "7e8105bd3c131258d97ce7d69bc3cdeb9bb516879864575fcde6db3b22fffe97",
+          "manifest_sha256": "aaf78918e58e545c26d35c73d6b3ba458ead669b92d01db20cad37ca7ba6674f",
+          "bytes": 85673,
+          "files": 58,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-clean-parent-7e8105bd3c13.tar.gz"
+        }
+      ],
+      "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+      "compiler_source": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+      "before_compiler_source": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+      "versions": {
+        "typed_ir": 183,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Whole selected-child current-window availability and scalar simplification; no performance claim yet.",
+      "retained": false,
+      "release_tag": "evidence-native-compression-experiments-4",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
+      "archive_publication": "local evidence; publication pending"
     }
   },
   "repository": "mech-lang/mech",
