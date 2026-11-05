@@ -22445,8 +22445,8 @@
           "manifest_sha256": "30fd3a92b342913ca102a52d89cc49160be82d564f1b12a421e48176cd84374a",
           "bytes": 6225932,
           "files": 30,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-source-map-build-e93d9027711d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r155-source-map-build-e93d9027711d.tar.gz"
         },
         {
           "event": "pc-profile-33027-periodic-window",
@@ -22456,8 +22456,8 @@
           "manifest_sha256": "fcbdbeb101d358657402d654f6554cf0a22e5aa32232b866584229554d98f914",
           "bytes": 3417244,
           "files": 29,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-profile-33027-periodic-window-ebbb63bccd5c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r155-pc-profile-33027-periodic-window-ebbb63bccd5c.tar.gz"
         },
         {
           "event": "pc-profile-repeated-32769",
@@ -22467,8 +22467,8 @@
           "manifest_sha256": "563692a273478516ba453833499b0ba61a0e0912d6edfca45448f864da483b3f",
           "bytes": 3442232,
           "files": 29,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-profile-repeated-32769-c00a95d06e4f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r155-pc-profile-repeated-32769-c00a95d06e4f.tar.gz"
         },
         {
           "event": "pc-profile-reymont-prefix-32769",
@@ -22478,8 +22478,8 @@
           "manifest_sha256": "ebc27f866c71c505fbeeaff0c084c80c1c699c6853ad5df3c8bc94e68b54b926",
           "bytes": 3430340,
           "files": 29,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-profile-reymont-prefix-32769-d6956db10c56.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r155-pc-profile-reymont-prefix-32769-d6956db10c56.tar.gz"
         },
         {
           "event": "pc-tables-33027-periodic-window",
@@ -22489,8 +22489,8 @@
           "manifest_sha256": "12d56cec5e41aee1a79561659c51a9b6892428a56c98567a26ebdc7aeef26d9f",
           "bytes": 3701442,
           "files": 37,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-tables-33027-periodic-window-23597b6ac539.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r155-pc-tables-33027-periodic-window-23597b6ac539.tar.gz"
         },
         {
           "event": "pc-tables-repeated-32769",
@@ -22500,8 +22500,8 @@
           "manifest_sha256": "e0971baeacffb8cedb362aa5d54e1f697a4fdde47ec9968b8e48090604488cc4",
           "bytes": 3682971,
           "files": 37,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-tables-repeated-32769-44bfb2efe5f1.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r155-pc-tables-repeated-32769-44bfb2efe5f1.tar.gz"
         },
         {
           "event": "pc-tables-reymont-prefix-32769",
@@ -22511,8 +22511,8 @@
           "manifest_sha256": "a66a42d19c428780141ef553d051778f25dff36fb72d13bb24509419a941b6fb",
           "bytes": 3645085,
           "files": 37,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-tables-reymont-prefix-32769-11452cc6669a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r155-pc-tables-reymont-prefix-32769-11452cc6669a.tar.gz"
         },
         {
           "event": "pc-analysis",
@@ -22522,8 +22522,8 @@
           "manifest_sha256": "fc1b94feb2c95beb5c6c88d8e420d19586aeebfb7c405b5176bf1e98b4e701a2",
           "bytes": 3488784,
           "files": 42,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-analysis-704a8d6989dc.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r155-pc-analysis-704a8d6989dc.tar.gz"
         },
         {
           "event": "closure",
@@ -22533,8 +22533,8 @@
           "manifest_sha256": "cdebb553fe71d3cebf3ec6da5c96d9cd067baa391c768eae1b2ae37c8d5a7f5f",
           "bytes": 12371948,
           "files": 123,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-closure-1a6647c55b4e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r155-closure-1a6647c55b4e.tar.gz"
         }
       ],
       "production": null,
@@ -22550,7 +22550,36 @@
       "retained": false,
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local evidence; publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "analysis": {
+        "script": "analyze.py",
+        "expected_outputs": {
+          "results.json": "2ce34359b73562461edce60815ccd316dfc8fc0642c309961da7a104f02204d0",
+          "REPORT.md": "1ccc4aca04e1895788a60a4fb4d8886a6425339db1dd40e67da6aefc102612a9"
+        }
+      },
+      "final_closure_event": "closure",
+      "research_only": true,
+      "selected_loop": "OptimalPathLengths",
+      "semantic_compiler_change_started": false,
+      "reviewed_base": 984,
+      "publication_audit": {
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "paths_with_multiple_preserved_versions": 3,
+        "round": 155,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 123,
+        "verified_archives": 9,
+        "verified_file_occurrences": 393,
+        "all_public_archive_server_digests_verified": true,
+        "verified_server_files": 18,
+        "native_binaries_and_bytecode_excluded": true,
+        "data_archive_count": 9,
+        "research_only": true
+      }
     }
   },
   "repository": "mech-lang/mech",

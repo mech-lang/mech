@@ -36,3 +36,5 @@ Before expansion, add a small Try/Done three-field loop witness that reproduces 
 ## Limits of this selection
 
 The source-location map does not partition every generated instruction: untagged locations and backend-created gaps remain explicit. In natural input,32.961373% of all weights have a nonnumeric/default source tag and16.108727% have no source span; do not silently assign them to these loops. Backend merging/hoisting can select a shared origin, so these are source-attributed weights, not a complete exclusive wall-time ledger. Hardware instructions, cycles, allocations and primary timing for a future candidate still need their own cohorts. No compressor source, allocation site, algorithm, search limit, buffer capacity or timing boundary changed in this research checkpoint. No optimization has yet been retained in R155.
+
+Publication: nine public archives and18server digests verified. A fresh public download verifies393file occurrences across123paths, preserves three historical file versions, and reproduces the PC/loop selection results and report byte-for-byte. Use the experiment index's round155 numerical replay; it does not compile or compress.
