@@ -19895,6 +19895,17 @@
           "files": 67,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-matrix-counters-6ccc64b7fc09.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-profiles-current-503142a30881.tar.gz",
+          "sha256": "503142a30881c4d6de7e4205edfbe4bb83cfaba928e52d92452172ee66962abb",
+          "manifest_sha256": "ab512a8ea5cda06f69c193ac7ae24427dcda11ae03fa0e878dc9389339e746e8",
+          "bytes": 1454137,
+          "files": 88,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-profiles-current-503142a30881.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
