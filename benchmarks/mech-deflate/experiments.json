@@ -21536,6 +21536,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-empty-primary-1655354313ec.tar.gz"
+        },
+        {
+          "event": "primary-label-audit",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-primary-label-audit-747aa6bf0ecd.tar.gz",
+          "sha256": "747aa6bf0ecd45af8b7883ea0170f598847f6178c132916498e43e0cc6eaf817",
+          "manifest_sha256": "6862d3b9b54819189c1965aa112cb37f89981b3f999f58941f69c91b99035605",
+          "bytes": 90096,
+          "files": 68,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-primary-label-audit-747aa6bf0ecd.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
