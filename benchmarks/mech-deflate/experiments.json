@@ -20263,6 +20263,17 @@
           "files": 44,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-screen-16384-distribution-change-primary-f10a93b41581.tar.gz"
+        },
+        {
+          "event": "screen-33027-periodic-window-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-screen-33027-periodic-window-primary-6a4c8babe8de.tar.gz",
+          "sha256": "6a4c8babe8de955fac53af39d65212f56b8b5069718f69cb60aecfbaf79a458f",
+          "manifest_sha256": "74548b3716c96aa8e1e8d723f9fd061d74ab2f6da6cad5ed1e1628052b459405",
+          "bytes": 83773,
+          "files": 44,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-screen-33027-periodic-window-primary-6a4c8babe8de.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
