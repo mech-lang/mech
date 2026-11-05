@@ -21459,6 +21459,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-128-biased-dynamic-primary-d09862526dda.tar.gz"
+        },
+        {
+          "event": "case-random-64-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-random-64-primary-abaefda99649.tar.gz",
+          "sha256": "abaefda996496d2083b2923e6f57fa576a4efb39929cd822315c494799b44e96",
+          "manifest_sha256": "c31b8d59611230b2ab9de5a18413897fc7d9df9df1da450f7eef0d705d4ee0a0",
+          "bytes": 83519,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-random-64-primary-abaefda99649.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
