@@ -17548,7 +17548,7 @@
     },
     "143": {
       "base": "f120b81e01cb868ace9ca7af474dd9081776fa32",
-      "production": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+      "production": "05102440a85c233069b3968f1e6a92c27461258c",
       "compiler_source": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
       "decision": "under measurement",
       "events": [
@@ -17892,6 +17892,17 @@
           "files": 60,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-matrix-counters-de2bb4d4e227.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-profiles-current-584b3d96cac7.tar.gz",
+          "sha256": "584b3d96cac79ced3cac1593ef8f2d2d772277063d1eccb17551475eaa57c478",
+          "manifest_sha256": "0bb23ac518b14843043eada26f9d043dd8df925faa3b1871b5edf18970dcb7e6",
+          "bytes": 649531,
+          "files": 82,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-profiles-current-584b3d96cac7.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
