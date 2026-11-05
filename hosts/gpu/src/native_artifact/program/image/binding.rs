@@ -84,12 +84,29 @@ pub(super) unsafe fn verify<'a>(
     identity: &[u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
     binding: &[u8; NATIVE_PROGRAM_IMAGE_BINDING_BYTES],
 ) -> Result<VerifiedObjectImage<'a>, String> {
-    if &binding[..16] != MAGIC
-        || binding[16..24] != (image.len() as u64).to_le_bytes()
-        || binding[24..32] != 1u64.to_le_bytes()
-        || binding[32..] != digest(image, identity)
-    {
+    if !valid_header(image, binding) || binding[32..] != digest(image, identity) {
         return Err("descriptor bytes differ from the checked Object binding".into());
+    }
+    Ok(VerifiedObjectImage { image })
+}
+
+fn valid_header(image: &[u8], binding: &[u8; NATIVE_PROGRAM_IMAGE_BINDING_BYTES]) -> bool {
+    &binding[..16] == MAGIC
+        && binding[16..24] == (image.len() as u64).to_le_bytes()
+        && binding[24..32] == 1u64.to_le_bytes()
+}
+
+/// # Safety
+/// Image itself, identity and binding must be immutable process-lifetime data
+/// reached through genuine relocations in one trusted compiler-emitted module.
+/// This is stronger than verify: no caller-supplied image is permitted. A wire
+/// flag or a caller-supplied digest must never select this constructor.
+pub(super) unsafe fn from_compiled_module(
+    image: &'static [u8],
+    binding: &'static [u8; NATIVE_PROGRAM_IMAGE_BINDING_BYTES],
+) -> Result<VerifiedObjectImage<'static>, String> {
+    if !valid_header(image, binding) {
+        return Err("compiled module metadata differs from its binding header".into());
     }
     Ok(VerifiedObjectImage { image })
 }

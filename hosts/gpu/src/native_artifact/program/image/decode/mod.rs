@@ -14,6 +14,19 @@ pub(in crate::native_artifact::program::image) fn serialize_schemas<S: Serialize
 }
 
 impl NativeProgramDescriptor {
+    /// # Safety
+    /// Both slices must be immutable data reached by genuine same-Object
+    /// compiler module relocations. No external image bytes may use this path.
+    pub(in crate::native_artifact) unsafe fn decode_compiled_module_image(
+        image: &'static [u8],
+        catalog: &mech_core::FunctionCatalog,
+        binding: &'static [u8; super::binding::NATIVE_PROGRAM_IMAGE_BINDING_BYTES],
+    ) -> Result<Self, String> {
+        // SAFETY: caller establishes stronger immutable-data provenance.
+        let verified = unsafe { super::binding::from_compiled_module(image, binding)? };
+        wire::decode_verified(&verified, catalog)
+    }
+
     /// Restore exact metadata sealed by the SAME trusted checked native Object.
     /// The independent loader below remains available for unbound image checks.
     ///

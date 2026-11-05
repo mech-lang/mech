@@ -13,6 +13,39 @@ pub struct LinkedProgramArtifact {
     descriptor: NativeProgramDescriptor,
 }
 impl LinkedProgramArtifact {
+    /// Bind a compiler-emitted immutable module without rehashing its own data.
+    /// Catalog/factory validation, complete identity and runtime admission stay
+    /// unchanged. External image APIs still verify SHA256 or rederive proofs.
+    ///
+    /// # Safety
+    /// Module MUST be the genuine immutable compiler-emitted export from the
+    /// same unchanged checked Object as every pointer it contains. All metadata,
+    /// identity, binding and entry relocations must retain process lifetime.
+    /// Verify source/bytecode/Object/generated-input pins before linking. A
+    /// caller-created record, matching digest, static lifetime or read-only
+    /// mapping cannot establish this provenance. Catalog must contain only the
+    /// actual maintained factories from that build.
+    pub unsafe fn from_compiled_module(
+        module: &'static crate::native_artifact::NativeProgramModule,
+        catalog: &FunctionCatalog,
+    ) -> Result<Self, NativeLinkError> {
+        // SAFETY: delegated exact immutable same-Object module provenance.
+        let parts = unsafe { module.parts()? };
+        let descriptor = unsafe {
+            NativeProgramDescriptor::decode_compiled_module_image(
+                parts.image,
+                catalog,
+                parts.binding,
+            )
+        }
+        .map_err(|_| NativeLinkError::new("compiled module descriptor could not be restored"))?;
+        check_identity(&descriptor, parts.identity)?;
+        Ok(Self {
+            entry: parts.entry,
+            descriptor,
+        })
+    }
+
     /// Bind descriptor bytes to their read-only compiler-emitted Object record.
     /// Independent source-proof reconstruction remains in from_build_owned_image;
     /// this path checks exact bytes against the Object that already proved them.

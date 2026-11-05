@@ -91,6 +91,8 @@ mod iteration_runtime;
 mod program;
 
 #[cfg(feature = "canonical-native-program-runtime")]
+pub use crate::native_artifact::program::compiled_module::NativeProgramModule;
+#[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::program::linked::LinkedProgramArtifact;
 
 pub use crate::native_artifact::iteration_abi::{NativeIterationDescriptor, NativeIterationVisit};

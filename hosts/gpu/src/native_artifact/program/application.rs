@@ -52,7 +52,7 @@ pub fn generate_linked_program_application_with_limits(
         object.identity().symbol(),
         &bytecode,
     );
-    let main = native_metadata_main(main, &object);
+    let main = compiled_module_main(main, &object);
     write_linked_application(
         &workspace,
         directory,
@@ -246,7 +246,7 @@ fn render_hosted_main(
         object.identity().symbol(),
         bytecode,
     );
-    let main = native_metadata_main(main, object);
+    let main = compiled_module_main(main, object);
     main.replace(
         "@HOSTED_ROUTE_LITERAL@",
         &serde_json::to_string(route).unwrap(),
@@ -261,17 +261,9 @@ fn render_hosted_main(
     )
 }
 
-fn native_metadata_main(
+fn compiled_module_main(
     main: String,
     object: &crate::native_artifact::NativeProgramObject,
 ) -> String {
-    main.replace("@NATIVE_METADATA_SYMBOL@", object.native_metadata_symbol())
-        .replace(
-            "@NATIVE_METADATA_BYTES@",
-            &object.native_metadata().len().to_string(),
-        )
-        .replace(
-            object.image_binding().symbol(),
-            object.native_metadata_binding().symbol(),
-        )
+    main.replace("@COMPILED_MODULE_SYMBOL@", object.compiled_module_symbol())
 }

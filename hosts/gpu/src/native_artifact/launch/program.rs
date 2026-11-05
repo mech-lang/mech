@@ -8,11 +8,18 @@ use std::ffi::c_void;
 type Entry = unsafe extern "C" fn(*mut c_void) -> u64;
 type Catalog = fn() -> Result<FunctionCatalog, String>;
 pub(in crate::native_artifact::launch) struct ProgramCode {
-    image: &'static [u8],
-    identity: &'static [u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
-    image_binding: Option<&'static [u8; NATIVE_PROGRAM_IMAGE_BINDING_BYTES]>,
-    entry: Entry,
+    image: ProgramImage,
     pub(in crate::native_artifact::launch) catalog: Catalog,
+}
+#[derive(Clone, Copy)]
+enum ProgramImage {
+    Compiled(&'static crate::native_artifact::NativeProgramModule),
+    Bound {
+        image: &'static [u8],
+        identity: &'static [u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
+        image_binding: Option<&'static [u8; NATIVE_PROGRAM_IMAGE_BINDING_BYTES]>,
+        entry: Entry,
+    },
 }
 impl ProgramCode {
     pub(in crate::native_artifact::launch) fn bind(
@@ -22,27 +29,43 @@ impl ProgramCode {
         // SAFETY: only the unsafe same-Object binding constructors create this
         // private code owner. The loader and complete identity checks still run.
         unsafe {
-            if let Some(binding) = self.image_binding {
+            let ProgramImage::Bound {
+                image,
+                identity,
+                image_binding,
+                entry,
+            } = self.image
+            else {
+                let ProgramImage::Compiled(module) = self.image else {
+                    unreachable!()
+                };
+                return LinkedProgramArtifact::from_compiled_module(module, catalog);
+            };
+            if let Some(binding) = image_binding {
                 return LinkedProgramArtifact::from_object_bound_image(
-                    self.image,
-                    catalog,
-                    self.identity,
-                    binding,
-                    self.entry,
+                    image, catalog, identity, binding, entry,
                 );
             }
-            LinkedProgramArtifact::from_build_owned_image(
-                self.image,
-                catalog,
-                self.identity,
-                self.entry,
-            )
+            LinkedProgramArtifact::from_build_owned_image(image, catalog, identity, entry)
         }
     }
 }
 /// A checked-build binding for the explicit managed qualification shell.
 pub struct BuildOwnedProgramBinding(pub(in crate::native_artifact::launch) ProgramCode);
 impl BuildOwnedProgramBinding {
+    /// # Safety
+    /// All LinkedProgramArtifact::from_compiled_module provenance requirements
+    /// apply. Only the genuine immutable compiler module may be supplied.
+    pub unsafe fn from_compiled_module(
+        module: &'static crate::native_artifact::NativeProgramModule,
+        catalog: Catalog,
+    ) -> Self {
+        Self(ProgramCode {
+            image: ProgramImage::Compiled(module),
+            catalog,
+        })
+    }
+
     /// # Safety
     /// All from_build_owned_image requirements apply. image_binding must also
     /// be the genuine read-only descriptor-binding symbol from that SAME Object.
@@ -55,10 +78,12 @@ impl BuildOwnedProgramBinding {
         catalog: Catalog,
     ) -> Self {
         Self(ProgramCode {
-            image,
-            identity,
-            image_binding: Some(image_binding),
-            entry,
+            image: ProgramImage::Bound {
+                image,
+                identity,
+                image_binding: Some(image_binding),
+                entry,
+            },
             catalog,
         })
     }
@@ -74,10 +99,12 @@ impl BuildOwnedProgramBinding {
         catalog: Catalog,
     ) -> Self {
         Self(ProgramCode {
-            image,
-            identity,
-            image_binding: None,
-            entry,
+            image: ProgramImage::Bound {
+                image,
+                identity,
+                image_binding: None,
+                entry,
+            },
             catalog,
         })
     }
@@ -91,6 +118,26 @@ pub struct BuildOwnedHostedBinding {
 }
 #[cfg(feature = "canonical-native-program-host-runtime")]
 impl BuildOwnedHostedBinding {
+    /// # Safety
+    /// All LinkedProgramArtifact::from_compiled_module requirements apply. The
+    /// resource image must belong to the same pinned build; its independent
+    /// resource/capability admission and provider checks remain mandatory.
+    pub unsafe fn from_compiled_module(
+        module: &'static crate::native_artifact::NativeProgramModule,
+        resources: &'static [u8],
+        catalog: Catalog,
+        route: &'static str,
+    ) -> Self {
+        Self {
+            code: ProgramCode {
+                image: ProgramImage::Compiled(module),
+                catalog,
+            },
+            resource_image: resources,
+            route,
+        }
+    }
+
     /// # Safety
     /// All from_build_owned_image requirements apply. image_binding is the
     /// genuine read-only binding from the SAME checked program Object. The
@@ -106,10 +153,12 @@ impl BuildOwnedHostedBinding {
     ) -> Self {
         Self {
             code: ProgramCode {
-                image,
-                identity,
-                image_binding: Some(image_binding),
-                entry,
+                image: ProgramImage::Bound {
+                    image,
+                    identity,
+                    image_binding: Some(image_binding),
+                    entry,
+                },
                 catalog,
             },
             resource_image: resources,
@@ -131,10 +180,12 @@ impl BuildOwnedHostedBinding {
     ) -> Self {
         Self {
             code: ProgramCode {
-                image,
-                identity,
-                image_binding: None,
-                entry,
+                image: ProgramImage::Bound {
+                    image,
+                    identity,
+                    image_binding: None,
+                    entry,
+                },
                 catalog,
             },
             resource_image: resources,

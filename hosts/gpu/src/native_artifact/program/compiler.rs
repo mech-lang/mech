@@ -192,6 +192,7 @@ pub struct NativeProgramObject {
     image_binding: super::image::binding::NativeProgramImageBinding,
     native_metadata: Vec<u8>,
     native_metadata_symbol: String,
+    compiled_module_symbol: String,
     native_metadata_binding: super::image::binding::NativeProgramImageBinding,
     codegen: crate::native_artifact::codegen::control::CodegenReport,
 }
@@ -212,6 +213,9 @@ impl NativeProgramObject {
     /// These bytes contain no pointers, owner epochs or invocation caches.
     pub fn native_metadata(&self) -> &[u8] {
         &self.native_metadata
+    }
+    pub fn compiled_module_symbol(&self) -> &str {
+        &self.compiled_module_symbol
     }
     pub fn native_metadata_symbol(&self) -> &str {
         &self.native_metadata_symbol
@@ -268,6 +272,8 @@ impl NativeProgramObject {
             serde_json::json!(&self.descriptor.metadata().borrowed_record_maps.regions);
         metadata["image_binding_symbol"] = serde_json::json!(self.image_binding.symbol());
         metadata["native_metadata_symbol"] = serde_json::json!(self.native_metadata_symbol);
+        metadata["compiled_module_symbol"] = serde_json::json!(self.compiled_module_symbol);
+        metadata["compiled_module_version"] = serde_json::json!(1);
         metadata["native_metadata_bytes"] = serde_json::json!(self.native_metadata.len());
         metadata["native_metadata_binding_symbol"] =
             serde_json::json!(self.native_metadata_binding.symbol());
@@ -367,7 +373,7 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     let mut module = codegen_backend::object("mech_canonical_program", PROGRAM_CODEGEN_FLAGS)?;
     preflight(&plan, &module, limits)?;
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
-    let (_, stack, code, codegen) = crate::native_artifact::codegen::control::define_cfg(
+    let (entry, stack, code, codegen) = crate::native_artifact::codegen::control::define_cfg(
         CodePlan::Program(&prepared),
         ENTRY,
         VERSION,
@@ -383,13 +389,13 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
         },
     );
     let identity = NativeProgramObjectIdentity::from_descriptor(&descriptor).map_err(backend)?;
-    let id = module
+    let identity_id = module
         .declare_data(identity.symbol(), Linkage::Export, false, false)
         .map_err(backend)?;
     let mut data = DataDescription::new();
     data.define(identity.bytes().to_vec().into_boxed_slice());
     data.set_align(8);
-    module.define_data(id, &data).map_err(backend)?;
+    module.define_data(identity_id, &data).map_err(backend)?;
     // All plan/layout proofs were established by PreparedNativeProgram before
     // emission. Bind their exact serialized bytes to this same checked Object;
     // no runtime-supplied digest can manufacture this read-only build symbol.
@@ -416,6 +422,7 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
             &native_metadata,
             &identity,
         );
+    let mut native_ids = Vec::with_capacity(2);
     for (symbol, bytes) in [
         (native_metadata_symbol.as_str(), native_metadata.as_slice()),
         (
@@ -430,7 +437,18 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
         data.define(bytes.to_vec().into_boxed_slice());
         data.set_align(8);
         module.define_data(id, &data).map_err(backend)?;
+        native_ids.push(id);
     }
+    let compiled_module_symbol = format!("{}_compiled_module_v1", identity.symbol());
+    super::compiled_module::define(
+        &mut module,
+        &compiled_module_symbol,
+        native_ids[0],
+        native_metadata.len(),
+        identity_id,
+        native_ids[1],
+        entry,
+    )?;
     Ok(NativeProgramObject {
         bytes: module.finish().emit().map_err(backend)?,
         descriptor,
@@ -438,6 +456,7 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
         image_binding,
         native_metadata,
         native_metadata_symbol,
+        compiled_module_symbol,
         native_metadata_binding,
         codegen,
     })
