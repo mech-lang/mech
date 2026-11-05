@@ -17859,6 +17859,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-seven-stored-prefix-primary-4aeb1d1dcaf0.tar.gz"
+        },
+        {
+          "event": "case-one-stored-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-case-one-stored-primary-c10feea0f84a.tar.gz",
+          "sha256": "c10feea0f84a10d1ede1d38b9764c7c07642de5f787cd64a0f4a7b5f0847a022",
+          "manifest_sha256": "e3c48f0c993b45a536232421a82f01292ffb3f11a56c2319f2053e83589db2b3",
+          "bytes": 232178,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-one-stored-primary-c10feea0f84a.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
