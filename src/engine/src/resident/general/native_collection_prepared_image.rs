@@ -26,6 +26,26 @@ struct Call<T> {
 }
 
 impl NativePreparedLibraryCall {
+    /// # Safety
+    /// All unchanged checked-build, confinement and runtime admission duties of
+    /// `from_build_owned_image` apply. This path retains independent selection
+    /// and actual factory checks without materializing an enclosing JSON tree.
+    pub unsafe fn from_build_owned_record(
+        image: crate::native_artifact::BuildOwnedImageRecord<'_>,
+        schemas: Arc<SchemaTable>,
+        catalog: &FunctionCatalog,
+    ) -> Result<Self, String> {
+        let wire: Call<crate::native_artifact::BuildOwnedImageRecord<'_>> =
+            image.decode().map_err(|e| e.to_string())?;
+        let template = unsafe {
+            crate::native_artifact::program_image_read::library::template_record(
+                wire.template,
+                catalog,
+                &schemas,
+            )?
+        };
+        Self::restore_binding(wire, template, schemas, catalog)
+    }
     /// Restore this build's frozen selection, with a fresh invocation-cache
     /// identity and the actual linked factory. No binding or execution occurs.
     ///

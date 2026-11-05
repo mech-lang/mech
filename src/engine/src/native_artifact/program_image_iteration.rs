@@ -3,7 +3,6 @@ use super::{WireAction, WireOrigin, WireTerminator, action, library, terminator}
 use crate::native_artifact::*;
 use mech_core::{FunctionCatalog, SchemaTable};
 use serde::{Deserialize, Deserializer};
-use serde_json::Value as Json;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -21,7 +20,7 @@ enum Observation {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-enum Action {
+enum Action<'a> {
     Scalar(WireAction),
     Structural {
         source: u32,
@@ -30,7 +29,8 @@ enum Action {
         output: u32,
     },
     LibraryCall {
-        template: Json,
+        #[serde(borrow)]
+        template: BuildOwnedImageRecord<'a>,
         operands: Box<[u32]>,
         output: u32,
     },
@@ -92,9 +92,10 @@ enum Terminator {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Block {
+struct Block<'a> {
     origin: WireOrigin,
-    action: Action,
+    #[serde(borrow)]
+    action: Action<'a>,
     terminator: Terminator,
     iteration: Option<u32>,
 }
@@ -144,7 +145,7 @@ pub(super) unsafe fn block<'de, D: Deserializer<'de>>(
             output,
         } => N::LibraryCall {
             // SAFETY: propagate the enclosing build-image confinement contract.
-            template: unsafe { library::template(&template, catalog, schemas)? },
+            template: unsafe { library::template_record(template, catalog, schemas)? },
             operands: operands
                 .into_vec()
                 .into_iter()

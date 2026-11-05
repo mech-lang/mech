@@ -1,6 +1,9 @@
 //! Build-owned template reconstruction without source-artifact traversal.
 use super::*;
-use crate::native_artifact::program_image_read::values::schema;
+use crate::native_artifact::{
+    BuildOwnedImageRecord,
+    program_image_read::{canonical_record, values::matching_schema_record},
+};
 use serde::Deserialize;
 use serde_json::Value as Json;
 
@@ -141,16 +144,18 @@ struct Key {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Leaf {
+struct Leaf<'a> {
     selected_key: Key,
     primitive: Json,
-    inputs: Box<[Json]>,
-    output: Json,
+    #[serde(borrow)]
+    inputs: Box<[BuildOwnedImageRecord<'a>]>,
+    #[serde(borrow)]
+    output: BuildOwnedImageRecord<'a>,
     contract: ResolvedOperationContract,
     implementation_memory: Json,
 }
 fn leaf(
-    wire: Leaf,
+    wire: Leaf<'_>,
     catalog: &FunctionCatalog,
     schemas: &mech_core::SchemaTable,
 ) -> Result<SelectedCollectionLeaf, String> {
@@ -164,12 +169,33 @@ fn leaf(
         .ok_or("image factory is not linked")?;
     let primitive = crate::resident::native_collection_semantics::primitive(entry)
         .ok_or("image factory lacks maintained witness")?;
+    mech_core::validate_resolved_contract(&wire.contract)
+        .map_err(|e| format!("image contract: {e:?}"))?;
+    let contract = match &wire.contract {
+        mech_core::ResolvedOperationContract::Declared(contract) => contract,
+        _ => return Err("unsupported image operation contract".into()),
+    };
+    if contract.inputs.len() != wire.inputs.len() || contract.outputs.len() != 1 {
+        return Err("image contract schema IDs differ".into());
+    }
     let inputs = wire
         .inputs
-        .iter()
-        .map(schema)
-        .collect::<Result<Box<[_]>, _>>()?;
-    let output = schema(&wire.output)?;
+        .into_vec()
+        .into_iter()
+        .zip(contract.inputs.iter())
+        .map(|(image, port)| {
+            let schema = schemas
+                .get(port.schema)
+                .ok_or("image contract input schema is absent")?;
+            matching_schema_record(image, schema)?;
+            Ok(schema.clone())
+        })
+        .collect::<Result<Box<[_]>, String>>()?;
+    let output = schemas
+        .get(contract.outputs[0].schema)
+        .ok_or("image contract output schema is absent")?;
+    matching_schema_record(wire.output, output)?;
+    let output = output.clone();
     let primitive = specialize_primitive(primitive, &inputs, &output);
     let memory = entry.implementation_memory();
     if serde_json::to_value(primitive).map_err(|e| e.to_string())? != wire.primitive
@@ -177,23 +203,6 @@ fn leaf(
             != wire.implementation_memory
     {
         return Err("image factory witness or memory class differs".into());
-    }
-    mech_core::validate_resolved_contract(&wire.contract)
-        .map_err(|e| format!("image contract: {e:?}"))?;
-    let contract = match &wire.contract {
-        mech_core::ResolvedOperationContract::Declared(contract) => contract,
-        _ => return Err("unsupported image operation contract".into()),
-    };
-    if contract.inputs.len() != inputs.len()
-        || contract.outputs.len() != 1
-        || contract
-            .inputs
-            .iter()
-            .zip(inputs.iter())
-            .any(|(p, s)| schemas.get(p.schema) != Some(s))
-        || schemas.get(contract.outputs[0].schema) != Some(&output)
-    {
-        return Err("image contract schema IDs differ".into());
     }
     Ok(SelectedCollectionLeaf {
         selected_key: key,
@@ -220,12 +229,13 @@ impl Source {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Root {
+struct Root<'a> {
     revision: ProgramRevision,
     node: NodeId,
     target: CellSlotId,
     sources: Box<[Source]>,
-    leaf: Leaf,
+    #[serde(borrow)]
+    leaf: Leaf<'a>,
 }
 impl NativeCollectionOperationTemplate {
     /// # Safety
@@ -236,7 +246,21 @@ impl NativeCollectionOperationTemplate {
         catalog: &FunctionCatalog,
         schemas: &mech_core::SchemaTable,
     ) -> Result<Self, String> {
-        let wire: Root = crate::native_artifact::program_image_read::canonical_json::decode(image)?;
+        let bytes = serde_json::to_vec(image).map_err(|e| e.to_string())?;
+        let text = std::str::from_utf8(&bytes).map_err(|e| e.to_string())?;
+        // SAFETY: identical unchanged-build confinement and factory obligations.
+        unsafe { Self::from_build_record(BuildOwnedImageRecord::Json(text), catalog, schemas) }
+    }
+
+    /// # Safety
+    /// The unchanged checked Object/image provenance and confinement duties of
+    /// `from_build_image` apply. Actual factories and canonical schemas remain checked.
+    pub(crate) unsafe fn from_build_record(
+        image: BuildOwnedImageRecord<'_>,
+        catalog: &FunctionCatalog,
+        schemas: &mech_core::SchemaTable,
+    ) -> Result<Self, String> {
+        let wire: Root<'_> = canonical_record(image)?;
         let leaf = leaf(wire.leaf, catalog, schemas)?;
         if wire.sources.len() != leaf.inputs.len() {
             return Err("image source count differs".into());
@@ -299,13 +323,14 @@ impl LexicalSource {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Lexical {
+struct Lexical<'a> {
     revision: ProgramRevision,
     owner: NodeId,
     block: u32,
     local: u32,
     sources: Box<[LexicalSource]>,
-    leaf: Leaf,
+    #[serde(borrow)]
+    leaf: Leaf<'a>,
 }
 impl NativeCollectionLexicalTemplate {
     /// # Safety
@@ -316,8 +341,21 @@ impl NativeCollectionLexicalTemplate {
         catalog: &FunctionCatalog,
         schemas: &mech_core::SchemaTable,
     ) -> Result<Self, String> {
-        let wire: Lexical =
-            crate::native_artifact::program_image_read::canonical_json::decode(image)?;
+        let bytes = serde_json::to_vec(image).map_err(|e| e.to_string())?;
+        let text = std::str::from_utf8(&bytes).map_err(|e| e.to_string())?;
+        // SAFETY: identical unchanged-build confinement and factory obligations.
+        unsafe { Self::from_build_record(BuildOwnedImageRecord::Json(text), catalog, schemas) }
+    }
+
+    /// # Safety
+    /// The unchanged checked Object/image provenance and confinement duties of
+    /// `from_build_image` apply. Actual factories and canonical schemas remain checked.
+    pub(crate) unsafe fn from_build_record(
+        image: BuildOwnedImageRecord<'_>,
+        catalog: &FunctionCatalog,
+        schemas: &mech_core::SchemaTable,
+    ) -> Result<Self, String> {
+        let wire: Lexical<'_> = canonical_record(image)?;
         let leaf = leaf(wire.leaf, catalog, schemas)?;
         if wire.sources.len() != leaf.inputs.len() {
             return Err("image source count differs".into());

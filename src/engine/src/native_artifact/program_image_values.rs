@@ -27,6 +27,10 @@ struct SchemaImage {
 
 pub(crate) fn schema(image: &Json) -> Result<Schema, String> {
     let wire: SchemaImage = super::canonical_json::decode(image)?;
+    finalize_schema_image(wire)
+}
+
+fn finalize_schema_image(wire: SchemaImage) -> Result<Schema, String> {
     let dimension_parameters = wire
         .dimension_parameters
         .iter()
@@ -78,14 +82,23 @@ fn validate_schema_image(wire: &SchemaImage, schema: &Schema) -> Result<(), Stri
 /// Decode through the strict canonical reader before comparing every field;
 /// neither a matching key nor a schema that merely normalizes to the same type
 /// is sufficient. The canonical schema table remains the source of authority.
-#[cfg(any(
-    test,
-    feature = "pure_text",
-    feature = "map_ops",
-    feature = "sequence_buffers"
-))]
+#[cfg(test)]
 pub(super) fn matching_schema(image: &Json, definition: &Schema) -> Result<(), String> {
     let wire: SchemaImage = super::canonical_json::decode(image)?;
+    validate_schema_image(&wire, definition)
+}
+
+pub(crate) fn schema_record(
+    image: crate::native_artifact::BuildOwnedImageRecord<'_>,
+) -> Result<Schema, String> {
+    finalize_schema_image(super::canonical_record(image)?)
+}
+
+pub(crate) fn matching_schema_record(
+    image: crate::native_artifact::BuildOwnedImageRecord<'_>,
+    definition: &Schema,
+) -> Result<(), String> {
+    let wire = super::canonical_record(image)?;
     validate_schema_image(&wire, definition)
 }
 
@@ -93,12 +106,25 @@ pub(super) fn matching_schema(image: &Json, definition: &Schema) -> Result<(), S
 /// This restores data types only and confers no native execution authority.
 pub fn schemas(image: &Json) -> Result<SchemaTable, String> {
     let entries = image.as_array().ok_or("image schemas must be an array")?;
+    schema_table(entries.iter().map(schema))
+}
+
+pub fn schemas_record(
+    image: crate::native_artifact::BuildOwnedImageRecord<'_>,
+) -> Result<SchemaTable, String> {
+    let entries: Vec<crate::native_artifact::BuildOwnedImageRecord<'_>> =
+        image.decode().map_err(|e| e.to_string())?;
+    schema_table(entries.into_iter().map(schema_record))
+}
+
+fn schema_table(
+    entries: impl Iterator<Item = Result<Schema, String>>,
+) -> Result<SchemaTable, String> {
     let mut builder = SchemaTableBuilder::new();
     let handles = entries
-        .iter()
         .map(|entry| {
             builder
-                .insert(schema(entry)?)
+                .insert(entry?)
                 .map_err(|e| format!("image schema table: {e:?}"))
         })
         .collect::<Result<Vec<_>, String>>()?;
@@ -119,12 +145,7 @@ pub fn schemas(image: &Json) -> Result<SchemaTable, String> {
     Ok(build.table)
 }
 
-#[cfg(any(
-    test,
-    feature = "pure_text",
-    feature = "map_ops",
-    feature = "sequence_buffers"
-))]
+#[cfg(test)]
 pub(super) fn descriptor(
     image: &Json,
     definition: &Schema,
@@ -135,6 +156,28 @@ pub(super) fn descriptor(
         .ok_or("image descriptor must contain a schema and parameters")?;
     matching_schema(&fields[0], definition)?;
     let parameters: Box<[u64]> = super::canonical_json::decode(&fields[1])?;
+    let shape = definition
+        .instantiate_shape(parameters)
+        .map_err(|e| format!("image shape: {e:?}"))?;
+    ResolvedValueDescriptor::from_schema(definition.clone(), shape)
+        .map_err(|e| format!("image type: {e:?}"))
+}
+
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
+pub(super) fn descriptor_record(
+    image: crate::native_artifact::BuildOwnedImageRecord<'_>,
+    definition: &Schema,
+) -> Result<ResolvedValueDescriptor, String> {
+    let (schema, parameters): (
+        crate::native_artifact::BuildOwnedImageRecord<'_>,
+        Box<[u64]>,
+    ) = image.decode().map_err(|e| e.to_string())?;
+    matching_schema_record(schema, definition)?;
     let shape = definition
         .instantiate_shape(parameters)
         .map_err(|e| format!("image shape: {e:?}"))?;
@@ -216,6 +259,32 @@ mod tests {
         );
         let resolved = descriptor(&serde_json::json!([definition, []]), &definition).unwrap();
         assert_eq!(resolved.schema(), &scalar());
+    }
+
+    #[test]
+    fn borrowed_schema_tables_preserve_wide_interval_bounds() {
+        let definition = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+                width: IntegerWidth::W128,
+                lower: 1u128 << 80,
+                upper: (1u128 << 80) + 100,
+                upper_inclusive: false,
+            }),
+        }
+        .finalize()
+        .unwrap();
+        let json = serde_json::to_vec(&[&definition]).unwrap();
+        let native = crate::native_artifact::encode_native_metadata_image(&json).unwrap();
+        for bytes in [&json, &native] {
+            let mut reader =
+                crate::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
+            let image =
+                crate::native_artifact::BuildOwnedImageRecord::deserialize(&mut reader).unwrap();
+            reader.end().unwrap();
+            let table = schemas_record(image).unwrap();
+            assert_eq!(table.get(SchemaId::new(0)), Some(&definition));
+        }
     }
     #[test]
     fn duplicate_schema_invalid_shape_and_mistyped_constant_are_rejected() {

@@ -71,6 +71,7 @@ pub use crate::resident::general::native_match_lowering::{
 pub use program::*;
 pub use program_image::encode_native_program_plan_image;
 pub use program_image_read::values::schemas as decode_native_schema_image;
+pub use program_image_read::values::schemas_record as decode_native_schema_record;
 #[cfg(any(
     feature = "pure_text",
     feature = "map_ops",

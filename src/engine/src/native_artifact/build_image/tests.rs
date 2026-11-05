@@ -173,3 +173,93 @@ fn canonical_native_constants_require_explicit_fields_and_options() {
     assert!(Optional::deserialize(&mut reader).is_ok());
     reader.end().unwrap();
 }
+
+#[test]
+fn typed_metadata_map_keys_match_the_original_json_vocabulary() {
+    use std::collections::BTreeMap;
+    for values in [
+        BTreeMap::from([(0u128, 1u8), (u128::MAX, 2)]),
+        BTreeMap::new(),
+    ] {
+        let json = serde_json::to_vec(&values).unwrap();
+        let image = encode_native_metadata_image(&json).unwrap();
+        assert_eq!(decode::<BTreeMap<u128, u8>>(&image).unwrap(), values);
+    }
+    let values = BTreeMap::from([(i128::MIN, 1u8), (i128::MAX, 2)]);
+    let json = serde_json::to_vec(&values).unwrap();
+    let image = encode_native_metadata_image(&json).unwrap();
+    assert_eq!(decode::<BTreeMap<i128, u8>>(&image).unwrap(), values);
+    for key in ["-0", "01", "+1", "1e0", "-", "18446744073709551616"] {
+        let json = format!("{{\"{key}\":1}}");
+        let image = encode_native_metadata_image(json.as_bytes()).unwrap();
+        let expected = serde_json::from_str::<BTreeMap<u64, u8>>(&json);
+        let actual = decode::<BTreeMap<u64, u8>>(&image);
+        assert_eq!(actual.is_ok(), expected.is_ok(), "{key}");
+        if let (Ok(actual), Ok(expected)) = (actual, expected) {
+            assert_eq!(actual, expected);
+        }
+    }
+}
+
+#[test]
+fn typed_metadata_compact_integer_widths_preserve_boundary_values() {
+    for value in [
+        0,
+        1,
+        255,
+        256,
+        65535,
+        65536,
+        u32::MAX as u64,
+        u32::MAX as u64 + 1,
+        u64::MAX,
+    ] {
+        let image = encode_native_metadata_image(&serde_json::to_vec(&value).unwrap()).unwrap();
+        assert_eq!(decode::<u64>(&image).unwrap(), value);
+    }
+    for value in [
+        -1,
+        -128,
+        -129,
+        -32768,
+        -32769,
+        i32::MIN as i64,
+        i32::MIN as i64 - 1,
+        i64::MIN,
+    ] {
+        let image = encode_native_metadata_image(&serde_json::to_vec(&value).unwrap()).unwrap();
+        assert_eq!(decode::<i64>(&image).unwrap(), value);
+    }
+}
+
+#[test]
+fn native_struct_keys_preserve_reordered_fields_and_reject_duplicates() {
+    #[derive(Debug, Deserialize, PartialEq)]
+    #[serde(deny_unknown_fields)]
+    struct Pair {
+        a: Option<u64>,
+        b: u64,
+    }
+    for json in [br#"{"a":null,"b":2}"#.as_slice(), br#"{"b":2,"a":null}"#] {
+        let bytes = encode_native_metadata_image(json).unwrap();
+        let mut reader = BuildOwnedImageReader::from_image(&bytes)
+            .unwrap()
+            .canonical();
+        assert_eq!(
+            Pair::deserialize(&mut reader).unwrap(),
+            Pair { a: None, b: 2 }
+        );
+        reader.end().unwrap();
+    }
+    for json in [
+        br#"{"a":null,"a":null}"#.as_slice(),
+        br#"{"a":null,"extra":2}"#,
+        br#"{"b":2}"#,
+    ] {
+        let bytes = encode_native_metadata_image(json).unwrap();
+        let mut reader = BuildOwnedImageReader::from_image(&bytes)
+            .unwrap()
+            .canonical();
+        assert!(Pair::deserialize(&mut reader).is_err());
+    }
+}

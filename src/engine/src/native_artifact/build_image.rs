@@ -10,10 +10,12 @@ use serde_json::{Error, value::RawValue};
 
 #[path = "build_image/encode.rs"]
 mod encode;
+#[path = "build_image/key.rs"]
+mod key;
 pub use encode::encode_native_metadata_image;
 
 pub const NATIVE_METADATA_IMAGE_MAGIC: &[u8; 8] = b"MECHTVI1";
-const RAW_RECORD: &str = "mech.build-owned-image.record.v1";
+pub(crate) const RAW_RECORD: &str = "mech.build-owned-image.record.v1";
 const HEADER: usize = 5;
 const MAX_DEPTH: usize = 128;
 const MAX_BYTES: usize = 64 * 1024 * 1024;
@@ -170,6 +172,7 @@ impl<'a> Node<'a> {
             pending_key: false,
             depth: self.depth + 1,
             canonical: self.canonical,
+            known_keys: None,
         })
     }
     fn array<V: Visitor<'a>>(self, visitor: V, length: Option<usize>) -> Result<V::Value, Error> {
@@ -195,6 +198,7 @@ struct Fields<'a> {
     pending_key: bool,
     depth: usize,
     canonical: bool,
+    known_keys: Option<&'static [&'static str]>,
 }
 impl<'a> Fields<'a> {
     fn end(&self) -> Result<(), Error> {
@@ -219,7 +223,7 @@ impl<'a> Fields<'a> {
         self.bytes = &self.bytes[end..];
         Ok(value)
     }
-    fn key(&mut self) -> Result<&'a str, Error> {
+    fn key_bytes(&mut self) -> Result<&'a [u8], Error> {
         let length = self
             .bytes
             .get(..4)
@@ -232,10 +236,11 @@ impl<'a> Fields<'a> {
             .bytes
             .get(4..end)
             .ok_or_else(|| error("native metadata key exceeds its parent"))?;
-        let text =
-            std::str::from_utf8(text).map_err(|_| error("native metadata key is not UTF8"))?;
         self.bytes = &self.bytes[end..];
         Ok(text)
+    }
+    fn key(&mut self) -> Result<&'a str, Error> {
+        std::str::from_utf8(self.key_bytes()?).map_err(|_| error("native metadata key is not UTF8"))
     }
     fn decode<T: DeserializeSeed<'a>>(&mut self, seed: T) -> Result<T::Value, Error> {
         let node = self.node()?;
@@ -274,10 +279,19 @@ impl<'de> MapAccess<'de> for &mut Fields<'de> {
         if self.remaining == 0 {
             return Ok(None);
         }
-        let key = self.key()?;
+        let key = if let Some(names) = self.known_keys {
+            let expected = names[names.len() - self.remaining];
+            // Equality to a static UTF8 field name proves these exact bytes;
+            // no unchecked string conversion or caller-controlled flag is used.
+            if self.key_bytes()? != expected.as_bytes() {
+                return Err(error("native metadata field order differs"));
+            }
+            expected
+        } else {
+            self.key()?
+        };
         self.pending_key = true;
-        seed.deserialize(de::value::BorrowedStrDeserializer::<Error>::new(key))
-            .map(Some)
+        seed.deserialize(key::Key(key)).map(Some)
     }
     fn next_value_seed<T: DeserializeSeed<'de>>(&mut self, seed: T) -> Result<T::Value, Error> {
         if !self.pending_key {
@@ -417,8 +431,27 @@ impl<'de> Deserializer<'de> for Node<'de> {
         expected: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Error> {
+        let mut fields = self.fields(OBJECT)?;
+        if fields.remaining == expected.len() {
+            let mut probe = self.fields(OBJECT)?;
+            let mut ordered = true;
+            for name in expected {
+                if probe.key_bytes()? != name.as_bytes() {
+                    ordered = false;
+                    break;
+                }
+                probe.node()?;
+                probe.remaining -= 1;
+            }
+            if ordered {
+                probe.end()?;
+                fields.known_keys = Some(expected);
+                let value = visitor.visit_map(&mut fields)?;
+                fields.end()?;
+                return Ok(value);
+            }
+        }
         if self.canonical {
-            let fields = self.fields(OBJECT)?;
             if fields.remaining != expected.len() {
                 return Err(error("canonical native metadata field count differs"));
             }
@@ -426,7 +459,7 @@ impl<'de> Deserializer<'de> for Node<'de> {
                 let mut fields = self.fields(OBJECT)?;
                 let mut occurrences = 0;
                 while fields.remaining != 0 {
-                    if fields.key()? == *expected {
+                    if fields.key_bytes()? == expected.as_bytes() {
                         occurrences += 1;
                     }
                     fields.node()?;

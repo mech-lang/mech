@@ -2,17 +2,19 @@
 use super::*;
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Join {
+struct Join<'a> {
     consumer: u32,
-    template: Json,
+    #[serde(borrow)]
+    template: BuildOwnedImageRecord<'a>,
     separator: u32,
     output: u32,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Histogram {
+struct Histogram<'a> {
     consumer: u32,
-    template: Json,
+    #[serde(borrow)]
+    template: BuildOwnedImageRecord<'a>,
     output: u32,
 }
 #[derive(Deserialize)]
@@ -37,10 +39,11 @@ enum StepKind {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Step {
+struct Step<'a> {
     site: u32,
     kind: StepKind,
-    template: Option<Json>,
+    #[serde(borrow)]
+    template: Option<BuildOwnedImageRecord<'a>>,
     operands: Box<[u32]>,
     output: Option<u32>,
 }
@@ -51,9 +54,10 @@ enum SetShape {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Query {
+struct Query<'a> {
     query: u32,
-    steps: Box<[Step]>,
+    #[serde(borrow)]
+    steps: Box<[Step<'a>]>,
     set_shape: SetShape,
     match_result: u32,
     zero: u32,
@@ -62,17 +66,17 @@ struct Query {
     false_copy: u32,
 }
 #[derive(Deserialize)]
-enum Sink {
+enum Sink<'a> {
     Materialized,
-    TextJoin(Join),
-    Histogram(Histogram),
-    GuardedHistogramQuery(Query),
+    TextJoin(#[serde(borrow)] Join<'a>),
+    Histogram(#[serde(borrow)] Histogram<'a>),
+    GuardedHistogramQuery(#[serde(borrow)] Query<'a>),
 }
 
 /// # Safety
 /// The enclosing collection decoder's unchanged build-image confinement applies.
-pub(super) unsafe fn result(
-    image: &Json,
+pub(super) unsafe fn result<'de, D: Deserializer<'de>>(
+    image: D,
     catalog: &FunctionCatalog,
     schemas: &SchemaTable,
 ) -> Result<NativeCollectionResult, String> {
@@ -84,13 +88,13 @@ pub(super) unsafe fn result(
             separator: NativeMatchValue(w.separator),
             output: NativeMatchValue(w.output),
             // SAFETY: same confined image and selected catalog.
-            template: unsafe { library::template(&w.template, catalog, schemas)? },
+            template: unsafe { library::template_record(w.template, catalog, schemas)? },
         }),
         Sink::Histogram(w) => NativeCollectionResult::Histogram(NativeHistogramSink {
             consumer: w.consumer,
             output: NativeMatchValue(w.output),
             // SAFETY: same confined image and selected catalog.
-            template: unsafe { library::template(&w.template, catalog, schemas)? },
+            template: unsafe { library::template_record(w.template, catalog, schemas)? },
         }),
         Sink::GuardedHistogramQuery(w) => {
             let steps = w
@@ -121,7 +125,7 @@ pub(super) unsafe fn result(
                         .template
                         .map(|t| {
                             // SAFETY: same confined image and selected catalog.
-                            unsafe { library::template(&t, catalog, schemas) }
+                            unsafe { library::template_record(t, catalog, schemas) }
                         })
                         .transpose()?;
                     Ok(NativeHistogramQueryStep {

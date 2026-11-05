@@ -1,9 +1,10 @@
 //! Private assembly of the redundant outer template from its actual selection.
+use crate::native_artifact::BuildOwnedImageRecord;
 use crate::native_artifact::{
     NativeCollectionLexicalTemplate, NativeCollectionOperationTemplate,
     NativeProgramLibraryTemplate,
 };
-use mech_core::{FunctionCatalog, NodeId, SchemaTable};
+use mech_core::{FunctionCatalog, NodeId, ProgramRevision, ResolvedOperationContract, SchemaTable};
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -12,6 +13,70 @@ struct Origin {
     node: NodeId,
     block: Option<u32>,
     local: Option<u32>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Key {
+    module_path: Box<[String]>,
+    operation_name: String,
+}
+#[derive(Deserialize)]
+enum Selected<'a> {
+    Root(#[serde(borrow)] BuildOwnedImageRecord<'a>),
+    Lexical(#[serde(borrow)] BuildOwnedImageRecord<'a>),
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Template<'a> {
+    origin: Origin,
+    revision: ProgramRevision,
+    #[serde(borrow)]
+    inputs: Box<[BuildOwnedImageRecord<'a>]>,
+    #[serde(borrow)]
+    output: BuildOwnedImageRecord<'a>,
+    contract: ResolvedOperationContract,
+    selected_key: Key,
+    #[serde(borrow)]
+    selected: Selected<'a>,
+}
+
+/// # Safety
+/// Identical checked compiler/Object, confinement and source-site obligations
+/// to `template`. The selected reader checks the actual maintained factory,
+/// its memory class, canonical schema definitions and resolved contract.
+pub(crate) unsafe fn template_record(
+    image: BuildOwnedImageRecord<'_>,
+    catalog: &FunctionCatalog,
+    schemas: &SchemaTable,
+) -> Result<NativeProgramLibraryTemplate, String> {
+    let wire: Template<'_> = super::canonical_record(image)?;
+    let template = match wire.selected {
+        Selected::Root(image) => NativeProgramLibraryTemplate::from_root(unsafe {
+            NativeCollectionOperationTemplate::from_build_record(image, catalog, schemas)?
+        }),
+        Selected::Lexical(image) => NativeProgramLibraryTemplate::from_lexical(unsafe {
+            NativeCollectionLexicalTemplate::from_build_record(image, catalog, schemas)?
+        }),
+    };
+    let origin = template.origin();
+    let key = template.selected_key();
+    if wire.origin.node != origin.node
+        || wire.origin.block != origin.block
+        || wire.origin.local != origin.local
+        || wire.revision != template.program_revision()
+        || wire.selected_key.module_path != key.module_path
+        || wire.selected_key.operation_name != key.operation_name
+        || wire.contract != *template.contract()
+        || wire.inputs.len() != template.inputs().len()
+    {
+        return Err("outer image metadata differs from selected source metadata".into());
+    }
+    for (image, definition) in wire.inputs.into_vec().into_iter().zip(template.inputs()) {
+        super::values::matching_schema_record(image, definition)?;
+    }
+    super::values::matching_schema_record(wire.output, template.output())?;
+    Ok(template)
 }
 /// # Safety
 /// Keep the returned template confined until the full image has unchanged

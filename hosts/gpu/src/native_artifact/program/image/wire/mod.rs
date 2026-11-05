@@ -4,6 +4,7 @@ use crate::native_artifact::{NativeProgramDescriptor, NativeValueSlot};
 use mech_core::{FunctionCatalog, SchemaId, SchemaKey};
 use mech_engine::native_artifact::*;
 use serde::{Deserialize, Deserializer};
+#[cfg(test)]
 use serde_json::Value as Json;
 
 use std::sync::Arc;
@@ -144,7 +145,8 @@ impl From<Visit> for native::iteration_abi::NativeIterationVisit {
 struct Descriptor<'a> {
     #[serde(borrow)]
     plan: BuildOwnedImageRecord<'a>,
-    schemas: Json,
+    #[serde(borrow)]
+    schemas: BuildOwnedImageRecord<'a>,
     #[serde(borrow)]
     calls: Box<[Option<BuildOwnedImageRecord<'a>>]>,
     types: Box<[Slot]>,
@@ -228,7 +230,7 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     // untrusted field. V1 remains available through independent reconstruction;
     // new checked Objects bind V2 and have a distinct typed-IR identity.
     let frozen_layouts = OBJECT_BOUND;
-    let schemas = Arc::new(decode_native_schema_image(&w.schemas)?);
+    let schemas = Arc::new(decode_native_schema_record(w.schemas)?);
     // SAFETY: only the enclosing unsafe descriptor loader reaches this private
     // reader; it retains all metadata until exact checked-build provenance holds.
     let plan = unsafe { decode_build_owned_native_plan_record(w.plan, &schemas, catalog)? };
@@ -262,11 +264,10 @@ fn decode_inner<const OBJECT_BOUND: bool>(
                     }
                     // Do not retain every call's expanded JSON while binding
                     // the others: these bytes borrow the immutable build image.
-                    let image: Json = image.decode().map_err(|e| e.to_string())?;
                     // SAFETY: same confined build image; factory witnesses are checked too.
                     unsafe {
-                        NativePreparedLibraryCall::from_build_owned_image(
-                            &image,
+                        NativePreparedLibraryCall::from_build_owned_record(
+                            *image,
                             schemas.clone(),
                             catalog,
                         )

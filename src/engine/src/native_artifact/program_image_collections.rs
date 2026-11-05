@@ -3,7 +3,6 @@ use super::{WireOrigin, library};
 use crate::native_artifact::*;
 use mech_core::{FunctionCatalog, SchemaTable};
 use serde::{Deserialize, Deserializer};
-use serde_json::Value as Json;
 
 #[path = "program_image_sinks.rs"]
 mod sinks;
@@ -25,11 +24,13 @@ enum CollectionImageKind {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Span {
+struct Span<'a> {
     range_site: u32,
     selection_site: u32,
-    range_template: Json,
-    selection_template: Json,
+    #[serde(borrow)]
+    range_template: BuildOwnedImageRecord<'a>,
+    #[serde(borrow)]
+    selection_template: BuildOwnedImageRecord<'a>,
     operands: [u32; 2],
     source: u32,
     selector: u32,
@@ -37,7 +38,7 @@ struct Span {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct MapProjection {
+struct MapProjection<'a> {
     iteration: u32,
     element_site: u32,
     selection_site: u32,
@@ -45,19 +46,23 @@ struct MapProjection {
     map: u32,
     element: u32,
     output: u32,
-    selection_template: Json,
+    #[serde(borrow)]
+    selection_template: BuildOwnedImageRecord<'a>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Collection {
+struct Collection<'a> {
     origin: WireOrigin,
     parent: Option<u32>,
     parent_collection: Option<u32>,
     kind: CollectionImageKind,
     output: u32,
-    result: Json,
-    string_span_projection: Option<Span>,
-    string_element_map_projection: Option<MapProjection>,
+    #[serde(borrow)]
+    result: BuildOwnedImageRecord<'a>,
+    #[serde(borrow)]
+    string_span_projection: Option<Span<'a>>,
+    #[serde(borrow)]
+    string_element_map_projection: Option<MapProjection<'a>>,
     generators: Box<[u32]>,
     begin: u32,
     push: u32,
@@ -96,10 +101,12 @@ pub(super) unsafe fn collection<'de, D: Deserializer<'de>>(
                 range_site: s.range_site,
                 selection_site: s.selection_site,
                 // SAFETY: propagate the enclosing unchanged build-image obligation.
-                range_template: unsafe { library::template(&s.range_template, catalog, schemas)? },
+                range_template: unsafe {
+                    library::template_record(s.range_template, catalog, schemas)?
+                },
                 // SAFETY: same confined image and selected catalog.
                 selection_template: unsafe {
-                    library::template(&s.selection_template, catalog, schemas)?
+                    library::template_record(s.selection_template, catalog, schemas)?
                 },
                 operands: s.operands.map(NativeMatchValue),
                 source: NativeMatchValue(s.source),
@@ -121,7 +128,7 @@ pub(super) unsafe fn collection<'de, D: Deserializer<'de>>(
                 output: NativeMatchValue(s.output),
                 // SAFETY: propagate the enclosing unchanged build-image obligation.
                 selection_template: unsafe {
-                    library::template(&s.selection_template, catalog, schemas)?
+                    library::template_record(s.selection_template, catalog, schemas)?
                 },
             })
         })
@@ -137,7 +144,7 @@ pub(super) unsafe fn collection<'de, D: Deserializer<'de>>(
         kind,
         output: NativeMatchValue(wire.output),
         // SAFETY: result metadata belongs to the same confined collection image.
-        result: unsafe { sinks::result(&wire.result, catalog, schemas)? },
+        result: unsafe { sinks::result(&mut wire.result.reader(), catalog, schemas)? },
         string_span_projection: span,
         string_element_map_projection: map,
         generators: wire.generators,

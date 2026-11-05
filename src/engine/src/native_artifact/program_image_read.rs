@@ -22,13 +22,21 @@ use serde::Deserialize;
 pub(crate) mod canonical_json;
 
 #[path = "program_image_raw_json.rs"]
-#[cfg(any(
-    test,
-    feature = "pure_text",
-    feature = "map_ops",
-    feature = "sequence_buffers"
-))]
 pub(crate) mod raw_json;
+
+pub(crate) fn canonical_record<'de, T: serde::Deserialize<'de>>(
+    image: super::BuildOwnedImageRecord<'de>,
+) -> Result<T, String> {
+    match image {
+        super::BuildOwnedImageRecord::Json(text) => raw_json::decode(text.as_bytes()),
+        super::BuildOwnedImageRecord::Native(_) => {
+            let mut reader = image.reader().canonical();
+            let value = T::deserialize(&mut reader).map_err(|e| e.to_string())?;
+            reader.end().map_err(|e| e.to_string())?;
+            Ok(value)
+        }
+    }
+}
 
 #[path = "program_image_plan.rs"]
 #[cfg(any(

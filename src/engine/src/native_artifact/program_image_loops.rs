@@ -3,7 +3,6 @@ use super::{WireOrigin, library};
 use crate::native_artifact::*;
 use mech_core::{FunctionCatalog, SchemaTable};
 use serde::{Deserialize, Deserializer};
-use serde_json::Value as Json;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -40,25 +39,27 @@ struct Tail {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Range {
+struct Range<'a> {
     prepare: u32,
-    template: Json,
+    #[serde(borrow)]
+    template: BuildOwnedImageRecord<'a>,
     operands: [u32; 2],
     output: u32,
     before_collection_begin: bool,
 }
 #[derive(Deserialize)]
-enum Source {
+enum Source<'a> {
     Value(u32),
-    U64Range(Range),
+    U64Range(#[serde(borrow)] Range<'a>),
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Collection {
+struct Collection<'a> {
     origin: WireOrigin,
     parent: Option<u32>,
     collection: u32,
-    source: Source,
+    #[serde(borrow)]
+    source: Source<'a>,
     element: Option<u32>,
     initialize: u32,
     header: u32,
@@ -67,9 +68,9 @@ struct Collection {
     exit: u32,
 }
 #[derive(Deserialize)]
-enum Loop {
+enum Loop<'a> {
     Iteration(Counted),
-    Collection(Collection),
+    Collection(#[serde(borrow)] Collection<'a>),
     Tail(Tail),
 }
 #[derive(Deserialize)]
@@ -145,7 +146,9 @@ pub(super) unsafe fn control_loop<'de, D: Deserializer<'de>>(
                 Source::U64Range(range) => NativeCollectionSource::U64Range(NativeU64RangeCursor {
                     prepare: range.prepare,
                     // SAFETY: delegate the same enclosing build-image obligation.
-                    template: unsafe { library::template(&range.template, catalog, schemas)? },
+                    template: unsafe {
+                        library::template_record(range.template, catalog, schemas)?
+                    },
                     operands: range.operands.map(NativeMatchValue),
                     output: NativeMatchValue(range.output),
                     before_collection_begin: range.before_collection_begin,
