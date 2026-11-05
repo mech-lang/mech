@@ -22184,6 +22184,17 @@
           "files": 79,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-matrix-counters-7d72e0d9b2a5.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-profiles-current-0cbfd8df5082.tar.gz",
+          "sha256": "0cbfd8df50821ccede3fdea3a2cafe1bb81ab62812dd4d4437d56a524996d037",
+          "manifest_sha256": "5dcc909457aed7d1c17901d5155bbcd8f18682ae9c047794095592cbb60f7a86",
+          "bytes": 677987,
+          "files": 97,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-profiles-current-0cbfd8df5082.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
