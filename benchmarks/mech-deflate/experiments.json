@@ -24238,6 +24238,17 @@
           "files": 65,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-screen-reymont-prefix-32769-primary-741b916f1aa6.tar.gz"
+        },
+        {
+          "event": "mapping",
+          "source_revision": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+          "asset": "r160-mapping-9b02156a7b7c.tar.gz",
+          "sha256": "9b02156a7b7cca512c3fc35ffff87503b7b2593815d3853c923d2913e7c91071",
+          "manifest_sha256": "ec39538e1bcb5044fbffd31181d9cc128f97742aed555530e8e147ae933be48e",
+          "bytes": 3396585,
+          "files": 64,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-array-read-facts-round160-20261105/archives/r160-mapping-9b02156a7b7c.tar.gz"
         }
       ],
       "production": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
