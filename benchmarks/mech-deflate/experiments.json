@@ -22627,6 +22627,17 @@
           "files": 59,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-screen-reymont-prefix-32769-primary-1c608b2569d1.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-case-eight-literals-primary-5bb52751bda5.tar.gz",
+          "sha256": "5bb52751bda5dff65fd5d97b0d147d0ad113f313d620767cbb3cc26555662dce",
+          "manifest_sha256": "25a8059533c0a1dd1e1ae6e3d7ff3696c36afc8879303677358ac246f61c71c7",
+          "bytes": 138864,
+          "files": 72,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-eight-literals-primary-5bb52751bda5.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
