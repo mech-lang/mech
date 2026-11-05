@@ -21,9 +21,21 @@ pub(in crate::native_artifact) struct NativeCodeFootprint {
 // Public Serialize is a compatibility boundary, independent of Rust nesting.
 impl serde::Serialize for NativeProgramDescriptor {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.serialize_image_fields::<S, false>(serializer)
+    }
+}
+impl NativeProgramDescriptor {
+    fn serialize_image_fields<S: serde::Serializer, const TABLES: bool>(
+        &self,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
         let mut fields = serializer.serialize_struct("NativeProgramDescriptor", 28)?;
-        fields.serialize_field("plan", &self.metadata.plan)?;
+        if TABLES {
+            fields.serialize_field("plan", &TablePlan(&self.metadata.plan))?;
+        } else {
+            fields.serialize_field("plan", &self.metadata.plan)?;
+        }
         #[derive(serde::Serialize)]
         struct Schemas<'a>(
             #[serde(
@@ -32,7 +44,11 @@ impl serde::Serialize for NativeProgramDescriptor {
             &'a SchemaTable,
         );
         fields.serialize_field("schemas", &Schemas(&self.metadata.schemas))?;
-        fields.serialize_field("calls", &self.metadata.calls)?;
+        if TABLES {
+            fields.serialize_field("calls", &TableCalls(&self.metadata.calls))?;
+        } else {
+            fields.serialize_field("calls", &self.metadata.calls)?;
+        }
         fields.serialize_field("types", &self.metadata.types)?;
         fields.serialize_field("visits", &self.metadata.visits)?;
         fields.serialize_field("retirements", &self.metadata.retirements)?;
@@ -171,3 +187,29 @@ impl crate::native_artifact::iteration_runtime::VisitPlan for NativeProgramDescr
 
 pub(in crate::native_artifact) mod identity;
 pub(in crate::native_artifact) mod packing;
+
+// Serialization wrappers only. No new public deserializer or proof constructor.
+struct TablePlan<'a>(&'a NativeProgramArtifactPlan);
+impl serde::Serialize for TablePlan<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize_build_owned_table_plan(s)
+    }
+}
+struct TableBinding<'a>(&'a mech_engine::native_artifact::NativePreparedLibraryCall);
+impl serde::Serialize for TableBinding<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize_build_owned_binding(s)
+    }
+}
+struct TableCalls<'a>(&'a [Option<mech_engine::native_artifact::NativePreparedLibraryCall>]);
+impl serde::Serialize for TableCalls<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.collect_seq(self.0.iter().map(|call| call.as_ref().map(TableBinding)))
+    }
+}
+struct TableDescriptor<'a>(&'a NativeProgramDescriptor);
+impl serde::Serialize for TableDescriptor<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize_image_fields::<S, true>(s)
+    }
+}

@@ -59,6 +59,26 @@ impl NativeProgramDescriptor {
         })
     }
 
+    /// Emit the same checked descriptor with canonical type-reference and
+    /// prepared-binding rows. V3 changes data representation only: Object
+    /// provenance and independent source/layout validation remain unchanged.
+    pub(in crate::native_artifact) fn encode_build_owned_table_image(
+        &self,
+    ) -> Result<Vec<u8>, serde_json::Error> {
+        #[derive(Serialize)]
+        struct Image<'a> {
+            format: &'static str,
+            version: u32,
+            descriptor: super::TableDescriptor<'a>,
+        }
+        let json = serde_json::to_vec(&Image {
+            format: "mech.build-owned-native-descriptor",
+            version: 3,
+            descriptor: super::TableDescriptor(self),
+        })?;
+        mech_engine::native_artifact::encode_native_metadata_image(&json)
+    }
+
     /// Restore build-prepared metadata without artifact lowering or resource
     /// acquisition. Private frozen-map use inventories are rederived from the
     /// same plan before acceptance. This is not code authority.

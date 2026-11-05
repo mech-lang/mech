@@ -217,13 +217,14 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     let image: Image<'_> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
-        || (OBJECT_BOUND && image.version != 2)
-        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2))
+        || (OBJECT_BOUND && !matches!(image.version, 2 | 3))
+        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3))
     {
         return Err("unsupported native descriptor image format".into());
     }
+    let table_rows = image.version == 3;
     let mut w = image.descriptor;
-    if (image.version == 2) != w.buffer_frames.is_some() {
+    if (image.version >= 2) != w.buffer_frames.is_some() {
         return Err("native descriptor version differs from its frame inventory".into());
     }
     // This is selected only by the private verified-byte borrow, never by an
@@ -233,7 +234,13 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     let schemas = Arc::new(decode_native_schema_record(w.schemas)?);
     // SAFETY: only the enclosing unsafe descriptor loader reaches this private
     // reader; it retains all metadata until exact checked-build provenance holds.
-    let plan = unsafe { decode_build_owned_native_plan_record(w.plan, &schemas, catalog)? };
+    let plan = if table_rows {
+        // SAFETY: same confined checked image; V3 changes wire representation,
+        // never the Object-bound/independent proof-selection policy below.
+        unsafe { decode_build_owned_native_table_plan_record(w.plan, &schemas, catalog)? }
+    } else {
+        unsafe { decode_build_owned_native_plan_record(w.plan, &schemas, catalog)? }
+    };
     let mut descriptor_templates = NativeDescriptorTemplatePool::default();
     let mut calls = w
         .calls
@@ -243,6 +250,20 @@ fn decode_inner<const OBJECT_BOUND: bool>(
             image
                 .as_ref()
                 .map(|image| {
+                    if table_rows {
+                        let template = plan.prepared_library_template(site)
+                            .map_err(str::to_owned)?
+                            .ok_or("table binding has no selected plan template")?;
+                        // SAFETY: this exact source-site template was restored
+                        // against these same schemas and actual catalog. The
+                        // independent path still rederives every source layout.
+                        return unsafe {
+                            NativePreparedLibraryCall::from_build_owned_plan_binding_record_with_descriptors(
+                                *image, template.clone(), schemas.clone(), catalog,
+                                &mut descriptor_templates,
+                            )
+                        };
+                    }
                     if OBJECT_BOUND {
                         // Only the private verified-byte path reaches this
                         // branch. Compilation and restoration share the exact

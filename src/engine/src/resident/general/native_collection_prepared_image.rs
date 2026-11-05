@@ -7,6 +7,25 @@ use serde::Deserialize;
 use serde_json::Value as Json;
 use std::sync::Arc;
 
+// V3 native data stores one fixed binding row. The selected template is already
+// present at this exact source site in the enclosing plan, so it is not copied
+// into every binding a second time. Keys and all finite bounds remain explicit.
+#[derive(Deserialize)]
+struct BindingRow(
+    u64,
+    u64,
+    u64,
+    usize,
+    Box<[SchemaKey]>,
+    SchemaKey,
+    u64,
+    bool,
+    u64,
+    u64,
+    (u64, u64),
+    (u64, u64),
+);
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Call<T> {
@@ -28,6 +47,91 @@ struct Call<T> {
 }
 
 impl NativePreparedLibraryCall {
+    /// Compiler-only wire output for the same immutable binding metadata.
+    /// No live invocation cache or factory pointer is serialized.
+    pub fn serialize_build_owned_binding<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        use serde::Serialize;
+        #[cfg(feature = "pure_text")]
+        let (shape, range) = (
+            self.selection_shape_bounds,
+            self.selection_range_shape_bounds,
+        );
+        #[cfg(not(feature = "pure_text"))]
+        let (shape, range) = ((0u64, 0u64), (0u64, 0u64));
+        (
+            self.binding_bytes,
+            self.binding_work,
+            self.binding_nodes,
+            self.output_parameters,
+            &self.input_keys,
+            self.output_key,
+            self.lookup_work,
+            self.output_follows_input,
+            self.span_selector_metadata_bytes,
+            self.span_selector_work,
+            shape,
+            range,
+        )
+            .serialize(serializer)
+    }
+
+    /// Restore a compact binding row using the enclosing plan's actual selected
+    /// template. Canonical keys, shape arity and linked factories are checked by
+    /// the same constructor as legacy records; every cache identity is fresh.
+    ///
+    /// # Safety
+    /// The caller must confine the result under the exact checked-build duties
+    /// of `from_build_owned_record`, and obtain `template` from this exact plan
+    /// source site after restoring it against the same schemas and catalog.
+    /// The row or a caller-provided template grants no selection/visit authority.
+    pub unsafe fn from_build_owned_plan_binding_record_with_descriptors(
+        image: crate::native_artifact::BuildOwnedImageRecord<'_>,
+        template: NativeProgramLibraryTemplate,
+        schemas: Arc<SchemaTable>,
+        catalog: &FunctionCatalog,
+        descriptors: &mut NativeDescriptorTemplatePool,
+    ) -> Result<Self, String> {
+        let BindingRow(
+            bytes,
+            work,
+            nodes,
+            parameters,
+            inputs,
+            output,
+            lookup,
+            follows_input,
+            span_bytes,
+            span_work,
+            shape,
+            range,
+        ) = image.decode().map_err(|e| e.to_string())?;
+        #[cfg(not(feature = "pure_text"))]
+        if shape != (0, 0) || range != (0, 0) {
+            return Err("native binding shape bounds require text support".into());
+        }
+        let wire = Call {
+            template: (),
+            binding_bytes: bytes,
+            binding_work: work,
+            binding_nodes: nodes,
+            output_parameters: parameters,
+            input_keys: inputs,
+            output_key: output,
+            lookup_work: lookup,
+            output_follows_input: follows_input,
+            span_selector_metadata_bytes: span_bytes,
+            span_selector_work: span_work,
+            #[cfg(feature = "pure_text")]
+            selection_shape_bounds: shape,
+            #[cfg(feature = "pure_text")]
+            selection_range_shape_bounds: range,
+        };
+        Self::restore_binding(wire, template, schemas, catalog, descriptors)
+    }
+
     /// # Safety
     /// All unchanged checked-build, confinement and runtime admission duties of
     /// `from_build_owned_image` apply. This path retains independent selection

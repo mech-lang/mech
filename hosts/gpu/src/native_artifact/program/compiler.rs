@@ -270,6 +270,7 @@ impl NativeProgramObject {
         metadata["native_metadata_binding_symbol"] =
             serde_json::json!(self.native_metadata_binding.symbol());
         metadata["native_metadata_format"] = serde_json::json!("mech.typed-build-image.v1");
+        metadata["native_descriptor_version"] = serde_json::json!(3);
         metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
             self.descriptor
                 .metadata()
@@ -404,8 +405,9 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     // Compile textual tokens to typed immutable values once, before linking.
     // Both the data and its binding are genuine read-only exports from this
     // exact checked Object. The inspectable JSON binding above remains intact.
-    let native_metadata =
-        mech_engine::native_artifact::encode_native_metadata_image(&image).map_err(backend)?;
+    let native_metadata = descriptor
+        .encode_build_owned_table_image()
+        .map_err(backend)?;
     let native_metadata_symbol = format!("{}_native_metadata_v1", identity.symbol());
     let native_metadata_binding =
         super::image::binding::NativeProgramImageBinding::new_native_metadata(

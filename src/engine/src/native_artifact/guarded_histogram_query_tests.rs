@@ -328,7 +328,8 @@ fn guarded_histogram_query_schema_certificate_declines_hidden_distinct_constrain
                 },
             }
             .finalize()
-            .unwrap();
+            .unwrap()
+            .into();
             assert!(schema_certificate(&constrained, h, k, s).is_none());
             constrained = plan.clone();
             constrained.values[s.output().unwrap().get() as usize].definition = SchemaDraft {
@@ -339,7 +340,8 @@ fn guarded_histogram_query_schema_certificate_declines_hidden_distinct_constrain
                 },
             }
             .finalize()
-            .unwrap();
+            .unwrap()
+            .into();
             assert!(schema_certificate(&constrained, h, k, s).is_none());
         }
         let mut constrained = plan.clone();
@@ -356,7 +358,8 @@ fn guarded_histogram_query_schema_certificate_declines_hidden_distinct_constrain
             body: original.body().clone(),
         }
         .finalize()
-        .unwrap();
+        .unwrap()
+        .into();
         assert!(schema_certificate(&constrained, h, k, s).is_none());
     }
 }

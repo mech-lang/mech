@@ -6,6 +6,74 @@ use crate::resident::general::native_collection_calls::invocation::data_footprin
 };
 
 #[test]
+fn compact_binding_rows_keep_keys_bounds_and_fresh_cache_identity() {
+    struct Row<'a>(&'a NativePreparedLibraryCall);
+    impl serde::Serialize for Row<'_> {
+        fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+            self.0.serialize_build_owned_binding(s)
+        }
+    }
+    let mut builder = mech_core::FunctionCatalogBuilder::new();
+    crate::install_intrinsic_resident(&mut builder).unwrap();
+    let catalog = builder.build().unwrap();
+    for artifact in variants() {
+        let memory = ManagedMemoryBudget::new(16 * 1024 * 1024);
+        let (call, prepared, inputs) = setup(&artifact, &memory, maximum_limits(u64::MAX), 2);
+        let json = serde_json::to_vec(&Row(&prepared)).unwrap();
+        let native = crate::native_artifact::encode_native_metadata_image(&json).unwrap();
+        for record in [
+            crate::native_artifact::BuildOwnedImageRecord::Json(
+                std::str::from_utf8(&json).unwrap(),
+            ),
+            crate::native_artifact::BuildOwnedImageRecord::Native(
+                native
+                    .strip_prefix(crate::native_artifact::NATIVE_METADATA_IMAGE_MAGIC)
+                    .unwrap(),
+            ),
+        ] {
+            // SAFETY: a genuine selected template and row from the same fixture,
+            // canonical schemas and linked catalog; no foreign proof executes.
+            let restored = unsafe {
+                NativePreparedLibraryCall::from_build_owned_plan_binding_record_with_descriptors(
+                    record,
+                    prepared.template.clone(),
+                    prepared.schemas.clone(),
+                    &catalog,
+                    &mut NativeDescriptorTemplatePool::default(),
+                )
+            }
+            .unwrap();
+            assert_eq!(
+                serde_json::to_value(&restored).unwrap(),
+                serde_json::to_value(&prepared).unwrap()
+            );
+            assert!(!Arc::ptr_eq(
+                &restored.cache_identity,
+                &prepared.cache_identity
+            ));
+        }
+        for key in [3, 5] {
+            let mut bad: serde_json::Value = serde_json::from_slice(&json).unwrap();
+            bad[key] = if key == 3 {
+                serde_json::json!(u64::MAX)
+            } else {
+                serde_json::json!(vec![0u8; 32])
+            };
+            let bad = serde_json::to_string(&bad).unwrap();
+            assert!(unsafe {
+                NativePreparedLibraryCall::from_build_owned_plan_binding_record_with_descriptors(
+                    crate::native_artifact::BuildOwnedImageRecord::Json(&bad),
+                    prepared.template.clone(), prepared.schemas.clone(), &catalog,
+                    &mut NativeDescriptorTemplatePool::default(),
+                )
+            }.is_err());
+        }
+        drop((inputs, prepared, call));
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+}
+
+#[test]
 fn owner_only_binding_guard_declines_before_starving_a_viable_call() {
     for artifact in variants() {
         let memory = ManagedMemoryBudget::new(16 * 1024 * 1024);

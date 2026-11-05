@@ -134,8 +134,8 @@ fn program_type(
     };
     Ok(NativeProgramType {
         schema: id,
-        definition,
-        scalar,
+        definition: std::sync::Arc::new(definition),
+        scalar: scalar.map(std::sync::Arc::new),
     })
 }
 
@@ -1912,7 +1912,8 @@ mod iteration_proof_tests {
                 },
             }
             .finalize()
-            .unwrap();
+            .unwrap()
+            .into();
             assert!(foreign_nominal.validate_current_visits().is_err());
             let mut bad_tag = valid.clone();
             let action = bad_tag

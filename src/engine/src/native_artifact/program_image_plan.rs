@@ -128,6 +128,22 @@ pub unsafe fn decode_build_owned_native_plan_record(
     restore(plan, schemas, catalog)
 }
 
+/// Restore compiler-emitted type-reference rows against this image's actual
+/// canonical schema table. This representation grants no proof authority.
+///
+/// # Safety
+/// All checked-build provenance, confinement and runtime-admission obligations
+/// of `decode_build_owned_native_plan_record` apply. The enclosing image must
+/// establish the table-format version before selecting this representation.
+pub unsafe fn decode_build_owned_native_table_plan_record(
+    image: BuildOwnedImageRecord<'_>,
+    schemas: &SchemaTable,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramArtifactPlan, String> {
+    let plan = image.decode().map_err(|error| error.to_string())?;
+    restore_inner::<true>(plan, schemas, catalog)
+}
+
 fn records<T>(
     images: Vec<BuildOwnedImageRecord<'_>>,
     mut restore: impl for<'image> FnMut(&mut BuildOwnedImageReader<'image>) -> Result<T, String>,
@@ -148,6 +164,14 @@ fn restore(
     schemas: &SchemaTable,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, String> {
+    restore_inner::<false>(w, schemas, catalog)
+}
+
+fn restore_inner<const TABLES: bool>(
+    w: Plan<'_>,
+    schemas: &SchemaTable,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramArtifactPlan, String> {
     let resource_requirements = records(w.resource_requirements, |reader| nodes::request(reader))?;
     let inputs = records(w.inputs, |v| nodes::input(v, schemas))?;
     let observations = records(w.observations, |v| nodes::observation(v, schemas))?;
@@ -159,7 +183,14 @@ fn restore(
         .into_iter()
         .map(|v| nodes::constant(v, schemas))
         .collect::<Result<_, _>>()?;
-    let values = records(w.values, |v| nodes::program_type(v, schemas))?;
+    let mut types = nodes::TypeTable::new(schemas);
+    let values = records(w.values, |v| {
+        if TABLES {
+            types.read(v)
+        } else {
+            nodes::program_type(v, schemas)
+        }
+    })?;
     let value_scopes = records(w.value_scopes, |reader| loops::scope(reader))?;
     let outputs = records(w.outputs, |v| nodes::output(v, schemas))?;
     // SAFETY: each private reader inherits the enclosing build-owned contract.

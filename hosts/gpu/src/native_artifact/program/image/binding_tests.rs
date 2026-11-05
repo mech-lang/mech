@@ -223,6 +223,65 @@ fn native_metadata_exports_preserve_the_exact_descriptor_and_object_binding() {
 }
 
 #[test]
+fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
+    use serde::Deserialize;
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts("+> sequence\nwords := input<[string]>\nsequence/length(words)\n") {
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let mut reader = mech_engine::native_artifact::BuildOwnedImageReader::from_image(
+            object.native_metadata(),
+        )
+        .unwrap();
+        let image = serde_json::Value::deserialize(&mut reader).unwrap();
+        reader.end().unwrap();
+        assert_eq!(image["version"], 3);
+        let rows = image["descriptor"]["plan"]["values"].as_array().unwrap();
+        assert!(
+            rows.iter()
+                .all(|r| r.as_array().is_some_and(|r| r.len() == 2))
+        );
+        let scalar = rows.iter().position(|r| r[1] == 5).unwrap();
+        let call = image["descriptor"]["calls"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|r| !r.is_null())
+            .unwrap();
+        assert_eq!(
+            image["descriptor"]["calls"][call].as_array().unwrap().len(),
+            12
+        );
+        for fault in 0..3 {
+            let mut bad = image.clone();
+            match fault {
+                0 => bad["descriptor"]["plan"]["values"][scalar][0] = u32::MAX.into(),
+                1 => bad["descriptor"]["plan"]["values"][scalar][1] = 1.into(),
+                _ => bad["descriptor"]["calls"][call][3] = u64::MAX.into(),
+            }
+            let json = serde_json::to_vec(&bad).unwrap();
+            let native = mech_engine::native_artifact::encode_native_metadata_image(&json).unwrap();
+            // SAFETY: confined negative wire test. No changed descriptor or
+            // fabricated proof can escape or reach any native executable.
+            assert!(
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&native, &catalog) }
+                    .is_err()
+            );
+            assert!(
+                unsafe {
+                    NativeProgramDescriptor::decode_object_bound_image(
+                        &native,
+                        &catalog,
+                        object.identity().bytes(),
+                        object.native_metadata_binding().bytes(),
+                    )
+                }
+                .is_err()
+            );
+        }
+    }
+}
+
+#[test]
 fn object_bound_calls_preserve_independent_selections_and_reject_template_tampering() {
     let catalog = mech_stdlib::source_catalog();
     for source in [
