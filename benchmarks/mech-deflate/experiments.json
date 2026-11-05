@@ -17383,6 +17383,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-matrix-counters-b1d72272a807.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-profiles-current-dce54010e2e3.tar.gz",
+          "sha256": "dce54010e2e34a053231af85848490cc88b3944ddad13401cc2b055044ddb6c9",
+          "manifest_sha256": "00cd0db6a2b2f29cda15c5c71163fd8b1e0fdb5a331af639583264eb4916f253",
+          "bytes": 659968,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-profiles-current-dce54010e2e3.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
