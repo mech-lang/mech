@@ -20734,8 +20734,8 @@
           "manifest_sha256": "bdba9e3e58331d518009a4eb79c49922e78642c6d9338c9dcbfea95a758b09ce",
           "bytes": 118336,
           "files": 55,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-publication-audit-fbb8182a1d50.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-publication-audit-fbb8182a1d50.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
@@ -20747,7 +20747,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": true,
       "retained_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
       "qualified_test_revision": "5da7d244be992c9d192369820c3bdc1ac803a898",
