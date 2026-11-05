@@ -24104,6 +24104,17 @@
           "files": 120,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-scalar-case-scalar-loop-64-decoded-c9234f99dfec.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-profiles-current-dbbb34348e16.tar.gz",
+          "sha256": "dbbb34348e1691dd444a63e3fad0b3ee178cadadd607e3077aa66d4d5e4f0c1a",
+          "manifest_sha256": "8ce232858f4ad4c048b15b81357da0ee06e548bbdc2fdbf8517825a97a93dcfc",
+          "bytes": 847037,
+          "files": 97,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-profiles-current-dbbb34348e16.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
