@@ -50,9 +50,10 @@ fn numeric_current_case_proves_fresh_u32_comparison_results() {
                 let &[producer] = facts.predecessors(previous).unwrap() else {
                     panic!("the comparison must be fresh");
                 };
-                if matches!(facts.plan().blocks()[producer as usize].action(),
-                    Action::Scalar(Scalar::Primitive { op: Op::U32Lt, .. }))
-                {
+                if matches!(
+                    facts.plan().blocks()[producer as usize].action(),
+                    Action::Scalar(Scalar::Primitive { op: Op::U32Lt, .. })
+                ) {
                     proven.insert(site);
                     let mut missing = proof.clone();
                     missing.sites.retain(|&at| at != producer as usize);
@@ -70,13 +71,20 @@ fn numeric_current_case_proves_fresh_u32_comparison_results() {
             NativeProgramLimitMode::NoLimits.compilation(),
         )
         .unwrap();
-        let emitted = ["compiled_readonly_numeric_loops", "compiled_numeric_write_loops"]
-            .into_iter()
-            .flat_map(|name| object.metadata()[name].as_array().unwrap())
-            .flat_map(|region| region["proven_boolean_successors"].as_array().unwrap())
-            .map(|row| row[0].as_u64().unwrap() as usize)
-            .collect::<BTreeSet<_>>();
-        assert!(proven.is_subset(&emitted), "the emitter must use the current proof");
+        let emitted_metadata = object.metadata();
+        let emitted = [
+            "compiled_readonly_numeric_loops",
+            "compiled_numeric_write_loops",
+        ]
+        .into_iter()
+        .flat_map(|name| emitted_metadata[name].as_array().unwrap())
+        .flat_map(|region| region["proven_boolean_successors"].as_array().unwrap())
+        .map(|row| row[0].as_u64().unwrap() as usize)
+        .collect::<BTreeSet<_>>();
+        assert!(
+            proven.is_subset(&emitted),
+            "the emitter must use the current proof"
+        );
     }
 }
 
