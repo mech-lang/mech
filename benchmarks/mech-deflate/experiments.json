@@ -16854,6 +16854,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-repeated-1024-primary-04bf38d6a752.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-1024-primary",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-case-reymont-prefix-1024-primary-dec203fc4327.tar.gz",
+          "sha256": "dec203fc43273ea594e0964ea2fd762989d9750dffc64a1c99183e0548f576a5",
+          "manifest_sha256": "38f703a0a981d9fa0a8a652ca3cd561277ca037e67cdec08c00f69aba9665c96",
+          "bytes": 222224,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-reymont-prefix-1024-primary-dec203fc4327.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
