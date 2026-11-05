@@ -22063,6 +22063,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-random-256-primary-9e3ad177d411.tar.gz"
+        },
+        {
+          "event": "case-128-biased-dynamic-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-128-biased-dynamic-primary-978cd4c75e7b.tar.gz",
+          "sha256": "978cd4c75e7b1da90c6267d9dde01fb68501bc29a9a7d77b1783656d2d3e3885",
+          "manifest_sha256": "23851d15551e0b924ba9966421e19eb6f64e061813318d6fc03deebd8aa861dd",
+          "bytes": 156073,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-128-biased-dynamic-primary-978cd4c75e7b.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
