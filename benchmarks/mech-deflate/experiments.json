@@ -21997,6 +21997,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-reymont-prefix-32769-primary-5798da7b47a0.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-16384-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-reymont-prefix-16384-primary-1fa369854c61.tar.gz",
+          "sha256": "1fa369854c61b4dbf564cc3a4a9a04c80be03e11ec8c58d4f190c34becca0547",
+          "manifest_sha256": "e73af3edbfd16c708bb72a4eafb0efbc2365e9d943c01ce8f747248b17649bec",
+          "bytes": 132872,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-reymont-prefix-16384-primary-1fa369854c61.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
