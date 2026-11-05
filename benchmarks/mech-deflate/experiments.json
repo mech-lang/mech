@@ -23906,6 +23906,17 @@
           "files": 74,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-case-32-high-entropy-stored-primary-e9ab5be675b1.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-case-eight-overlap-primary-73a7a6d7c735.tar.gz",
+          "sha256": "73a7a6d7c735775c37c9e891b99b2aa4aafadaa828b37e26dcd961463711a4dd",
+          "manifest_sha256": "bd5b1eccb9b529d80109cd49d1acbd744fe88f4b255892e53a845ebb3429231c",
+          "bytes": 154342,
+          "files": 74,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-case-eight-overlap-primary-73a7a6d7c735.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
