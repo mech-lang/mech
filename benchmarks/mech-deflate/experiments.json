@@ -19884,6 +19884,17 @@
           "files": 90,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-frame-allocation-efdf9ef76820.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-matrix-counters-6ccc64b7fc09.tar.gz",
+          "sha256": "6ccc64b7fc092851aca384a89f102d9032d2e734b85e236f6ca878b1487c67ee",
+          "manifest_sha256": "96b2c1ed9a3071f75936f3c79159b96eb48e4498162433beacd9f3b733f54a21",
+          "bytes": 947569,
+          "files": 67,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-matrix-counters-6ccc64b7fc09.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
