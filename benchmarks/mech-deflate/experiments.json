@@ -18257,6 +18257,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-one-stored-primary-79e0dfa8fbbd.tar.gz"
+        },
+        {
+          "event": "case-empty-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-empty-primary-b660b7a35ffa.tar.gz",
+          "sha256": "b660b7a35ffa7d62482d9c44e3b53a8d31a86f90bd4bb79282b09dbaad23dd92",
+          "manifest_sha256": "af9cfdb528eed03a8452ba59e25a9da129817e1d5194fa05ae4bf5c3d8416204",
+          "bytes": 242169,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-empty-primary-b660b7a35ffa.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
