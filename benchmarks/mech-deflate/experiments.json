@@ -23482,6 +23482,17 @@
           "files": 144,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-qualified-40b4f07b39cd.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-closure-8478e6dacd9d.tar.gz",
+          "sha256": "8478e6dacd9d9e50be916804848d7e69849671dc9d9ebd2a02646106c71d5275",
+          "manifest_sha256": "5b65972d09ea3f043a727dc1e92259b1016f870830e746081c931a0cd133f4d4",
+          "bytes": 16719750,
+          "files": 941,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-closure-8478e6dacd9d.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
@@ -23493,8 +23504,8 @@
         "private_abi": 39,
         "bytecode": 14
       },
-      "decision": "Final candidate: retain duplicate-check elimination with original frame ordering. Native text is byte-identical to R156; this control does not explain its instruction tradeoff. Direct reviewed-baseline qualification pending.",
-      "retained": false,
+      "decision": "Retain shared current-traversal projection proof with original frame ordering. All unchanged local gates pass; retain adverse elapsed and instruction/cycle cohorts. Draft external review and hosted CI remain separate.",
+      "retained": true,
       "release_tag": "evidence-native-compression-experiments-4",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
       "archive_publication": "local evidence; publication pending"
