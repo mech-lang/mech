@@ -22792,6 +22792,17 @@
           "files": 73,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-32-high-entropy-stored-primary-eb073a6ae467.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-case-eight-overlap-primary-3406b7629afb.tar.gz",
+          "sha256": "3406b7629afb7f4e7158cabdd704d0f93a8e766226f48f46b1f96e17494eed07",
+          "manifest_sha256": "d94b2a116b23029dfc1bce9be915f72eabfee508ea9e390514f5276201574ff8",
+          "bytes": 178752,
+          "files": 73,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-eight-overlap-primary-3406b7629afb.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
