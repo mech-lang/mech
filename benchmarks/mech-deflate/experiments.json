@@ -21236,8 +21236,8 @@
     },
     "153": {
       "base": "6741fccacd5241f02c9b5379f2754c2f0ea1bf67",
-      "production": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
-      "compiler_source": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+      "production": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+      "compiler_source": "2d27e4cc44261a02c6858a232960d8999ac712eb",
       "decision": "under measurement",
       "events": [
         {
@@ -21723,6 +21723,17 @@
           "files": 108,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-scalar-case-scalar-loop-64-decoded-df0e74e9d67e.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+          "asset": "r153-frame-allocation-ee11275220de.tar.gz",
+          "sha256": "ee11275220dea6e24f4838f2c684fd5bc2fcf7420e90a063361e853d455b7abf",
+          "manifest_sha256": "f8602446ae60e99aadd771a43d47a63cc2d6df4330218006c22f7de1133a2e8a",
+          "bytes": 107884,
+          "files": 91,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-frame-allocation-ee11275220de.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
