@@ -19675,6 +19675,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-eight-overlap-primary-2c9f323b5fe0.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-eight-literals-prefix-primary-74a9e8e2c3b1.tar.gz",
+          "sha256": "74a9e8e2c3b11a0da9c6638fec82bdbb2ad6426b90e267de2c9eef87bfa0930d",
+          "manifest_sha256": "bea5ddca78d11a185042236cfdf8f747632c2f87c190efcca663aede48235331",
+          "bytes": 889072,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-eight-literals-prefix-primary-74a9e8e2c3b1.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
