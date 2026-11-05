@@ -18537,6 +18537,17 @@
           "files": 74,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-screen-repeated-32769-primary-0cb894421ad3.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-case-eight-literals-primary-171b93876ee5.tar.gz",
+          "sha256": "171b93876ee530c5b490db639cf2fbe14aff3945f7e3bb644d2a2ae7c765f8c1",
+          "manifest_sha256": "fb58aceff29b1df2c7deeb859648b379449042c91aecacca6fa43576567051f0",
+          "bytes": 257526,
+          "files": 75,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-eight-literals-primary-171b93876ee5.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
