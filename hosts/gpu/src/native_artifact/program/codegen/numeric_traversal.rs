@@ -73,9 +73,9 @@ fn local(code: CodePlan<'_>, numeric: &Numeric, shadow: usize, scope: &Scope) ->
     .ok()?;
     for &site in &scope.sites {
         if matches!(numeric.action(site), Some(Operation::Frame)) {
-            for (to, from) in
-                super::numeric_words::frame_word_moves(shadow, code, site, &numeric.frames).ok()?
-            {
+            let moves =
+                super::numeric_words::frame_word_moves(shadow, code, site, &numeric.frames).ok()?;
+            for (to, from) in moves.assignments {
                 slots.extend([to, from]);
             }
         }
@@ -86,9 +86,15 @@ fn local(code: CodePlan<'_>, numeric: &Numeric, shadow: usize, scope: &Scope) ->
                 &program.metadata().scalar_aggregates,
                 program.metadata().scalar_aggregates.action(site)?,
             )),
-            Some(Operation::Frame) => Some(Step::Assign(
-                super::numeric_words::frame_word_moves(shadow, code, site, &numeric.frames).ok()?,
-            )),
+            Some(Operation::Frame) => {
+                let moves =
+                    super::numeric_words::frame_word_moves(shadow, code, site, &numeric.frames)
+                        .ok()?;
+                Some(Step::Assign {
+                    moves: moves.assignments,
+                    parallel: moves.parallel,
+                })
+            }
             Some(Operation::ArrayCopy) => Some(Step::Keep),
             Some(Operation::Read { output, .. } | Operation::Length { output, .. }) => {
                 Some(Step::Define(*output as usize))

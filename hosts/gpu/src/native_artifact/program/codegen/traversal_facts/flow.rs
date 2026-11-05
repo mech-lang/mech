@@ -4,8 +4,11 @@ use super::*;
 pub(in crate::native_artifact::program::codegen) enum Step<'a> {
     Aggregate(&'a NativeScalarAggregates, &'a Aggregate),
     Scalar(&'a Scalar),
-    /// Parallel reads before any writes, including overlapping frame lanes.
-    Assign(Vec<(usize, usize)>),
+    /// Ordering is derived from the same recipe as native frame emission.
+    Assign {
+        moves: Vec<(usize, usize)>,
+        parallel: bool,
+    },
     Define(usize),
     Keep,
 }
@@ -141,15 +144,9 @@ pub(in crate::native_artifact::program::codegen) fn derive<'a>(
                     scalar(state, &mut terms, site, action)?;
                 }
             }
-            Step::Assign(moves) => {
+            Step::Assign { moves, parallel } => {
                 for state in states.iter_mut().flatten() {
-                    let values = moves
-                        .iter()
-                        .map(|&(to, from)| Some((to, state.read(from)?)))
-                        .collect::<Option<Vec<_>>>()?;
-                    for (to, value) in values {
-                        state.words.insert(to, value);
-                    }
+                    state.assign(&moves, parallel)?;
                 }
             }
             Step::Define(output) => {

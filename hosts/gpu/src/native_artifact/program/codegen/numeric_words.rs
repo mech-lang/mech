@@ -101,13 +101,19 @@ pub(super) fn source_slots(
     }
     Ok(slots)
 }
+/// Original read/write ordering, shared with the current-traversal analysis.
+pub(super) struct FrameWordMoves {
+    pub assignments: Vec<(usize, usize)>,
+    pub parallel: bool,
+}
+
 /// Exact scalar lane assignments; managed fields retain their checked recipes.
 pub(super) fn frame_word_moves(
     shadow: usize,
     code: CodePlan<'_>,
     site: usize,
     recipes: &[FrameWords],
-) -> Result<Vec<(usize, usize)>, NativeCompileError> {
+) -> Result<FrameWordMoves, NativeCompileError> {
     let CodePlan::Program(program) = code else {
         return Err(backend("numeric frame lacks managed plan"));
     };
@@ -124,7 +130,7 @@ pub(super) fn frame_word_moves(
         .action(site)
         .ok_or_else(|| backend("numeric frame lost fields"))?
         .operation();
-    Ok(match operation {
+    let assignments = match operation {
         Frame::Pack { output } => {
             let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
                 return Err(backend("numeric pack lost operands"));
@@ -151,10 +157,14 @@ pub(super) fn frame_word_moves(
             .map(|field| (output.get() as usize, shadow + field))
             .into_iter()
             .collect(),
+    };
+    Ok(FrameWordMoves {
+        assignments,
+        parallel: matches!(operation, Frame::Copy { .. }),
     })
 }
 
-/// Emit the exact same parallel move recipe that traversal analysis observes.
+/// Preserve the original Pack/Project and overlapping Copy emission order.
 pub(super) fn frame_words(
     b: &mut FunctionBuilder<'_>,
     words: &Words,
@@ -163,13 +173,22 @@ pub(super) fn frame_words(
     site: usize,
     recipes: &[FrameWords],
 ) -> Result<(), NativeCompileError> {
-    // Read every old scalar before writing any next-state lane.
-    let copied = frame_word_moves(shadow, code, site, recipes)?
-        .into_iter()
-        .map(|(to, from)| (to, words.read(b, from)))
-        .collect::<Vec<_>>();
-    for (to, value) in copied {
-        words.write(b, to, value);
+    let moves = frame_word_moves(shadow, code, site, recipes)?;
+    if moves.parallel {
+        // Copy must read every old scalar before writing any next-state lane.
+        let copied = moves
+            .assignments
+            .into_iter()
+            .map(|(to, from)| (to, words.read(b, from)))
+            .collect::<Vec<_>>();
+        for (to, value) in copied {
+            words.write(b, to, value);
+        }
+    } else {
+        for (to, from) in moves.assignments {
+            let value = words.read(b, from);
+            words.write(b, to, value);
+        }
     }
     Ok(())
 }

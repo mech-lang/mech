@@ -88,6 +88,23 @@ struct State {
     successful: BTreeSet<(Arithmetic, Id, Id)>,
 }
 impl State {
+    fn assign(&mut self, moves: &[(usize, usize)], parallel: bool) -> Option<()> {
+        if parallel {
+            let values = moves
+                .iter()
+                .map(|&(to, from)| Some((to, self.read(from)?)))
+                .collect::<Option<Vec<_>>>()?;
+            for (to, value) in values {
+                self.words.insert(to, value);
+            }
+        } else {
+            for &(to, from) in moves {
+                self.words.insert(to, self.read(from)?);
+            }
+        }
+        Some(())
+    }
+
     fn read(&self, slot: usize) -> Option<Id> {
         self.words.get(&slot).copied()
     }
