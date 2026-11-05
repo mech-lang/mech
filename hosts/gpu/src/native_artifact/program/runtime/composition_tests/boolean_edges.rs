@@ -216,8 +216,21 @@ fn input_and_joined_booleans_keep_literal_checks_and_current_arguments() {
                 mode.compilation(),
             )
             .unwrap();
-            let folds = folded_sites(&object.metadata());
+            let metadata = object.metadata();
+            let folds = folded_sites(&metadata);
             assert!(!folds.is_empty(), "positive numeric cases must still fold");
+            let regions = [
+                "compiled_readonly_numeric_loops",
+                "compiled_numeric_write_loops",
+            ]
+            .into_iter()
+            .flat_map(|name| metadata[name].as_array().unwrap())
+            .collect::<Vec<_>>();
+            let selected = regions
+                .iter()
+                .flat_map(|region| region["source_sites"].as_array().unwrap())
+                .map(|site| site.as_u64().unwrap() as usize)
+                .collect::<BTreeSet<_>>();
             let facts = native.descriptor().metadata().plan.facts();
             let unsupported = facts.plan().blocks().iter().enumerate().filter_map(|(site, block)| {
                 let Term::Scalar(Branch::LiteralBranch { left, right, .. }) = block.terminator() else { return None; };
@@ -233,6 +246,25 @@ fn input_and_joined_booleans_keep_literal_checks_and_current_arguments() {
                 unsupported.len() >= 2,
                 "both input/joined literal cases must exist"
             );
+            assert!(
+                unsupported.iter().all(|site| selected.contains(site)),
+                "refusal controls must remain inside generated numeric regions"
+            );
+            if !folds.is_empty() {
+                assert!(
+                    unsupported.iter().all(|site| regions.iter().any(|region| {
+                        region["source_sites"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .any(|value| value.as_u64() == Some(*site as u64))
+                            && region["proven_boolean_successors"]
+                                .as_array()
+                                .is_some_and(|values| !values.is_empty())
+                    })),
+                    "negative and positive cases must share selected numeric regions"
+                );
+            }
             assert!(unsupported.iter().all(|site| !folds.contains(site)));
             for restored in [false, true] {
                 let memory = mode.memory_budget();
