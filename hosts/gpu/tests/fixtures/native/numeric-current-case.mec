@@ -16,6 +16,11 @@
       } -> :Try(k + 1u64, next-best, next-item)
     | * -> :Done(k, best, item)
   :Done(k, best, item) => {best: best, item: item, k: k}.
-first := #Choice(values<[u32]>, stop<u64>, start<u64>, seed<u32>, nonce<u64>, fault<u64>)
-result := #Choice(values, stop, first.k, first.best, first.item, fault)
+// A normal recursive parent carries the array while the scalar child reads it.
+// This is the representation boundary exercised by nested numeric lowering.
+walk(xs<[u32]>, left<u64>, stop<u64>, start<u64>, best<u32>, item<u64>, fault<u64>) => (out<choice>) :=
+  more := left > 0u64
+  selected := (more? | true => #Choice(xs, stop, start, best, item, fault) | false => {best: best, item: item, k: start})
+  out := (more? | true => walk(xs, left - 1u64, stop, selected.k, selected.best, selected.item, fault) | false => selected).
+result := walk(values<[u32]>, 2u64, stop<u64>, start<u64>, seed<u32>, nonce<u64>, fault<u64>)
 (result.best, result.item, result.k)
