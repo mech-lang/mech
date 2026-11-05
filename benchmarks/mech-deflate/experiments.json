@@ -22638,6 +22638,17 @@
           "files": 72,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-eight-literals-primary-5bb52751bda5.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-case-16384-distribution-change-primary-c1dbc4d4ef65.tar.gz",
+          "sha256": "c1dbc4d4ef65778b9090a6ef9abd75a1027697b0639461020a9a780c6cfe9ea1",
+          "manifest_sha256": "b48e1ce5ca8ff71eddff51c10d86d0bda3823ac06a79ba5389d817ae191ab779",
+          "bytes": 137446,
+          "files": 73,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-16384-distribution-change-primary-c1dbc4d4ef65.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
