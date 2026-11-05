@@ -22052,6 +22052,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-320-overlap-primary-dd81abc3bfc4.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-random-256-primary-9e3ad177d411.tar.gz",
+          "sha256": "9e3ad177d41143ff2213cc5b8b96f5c334c3b7598f8e9326b1c40423dbf57698",
+          "manifest_sha256": "826e31826ae63c51d5c5f93af329dda3608a238a0d9f71f09439894ca6faafd8",
+          "bytes": 152745,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-random-256-primary-9e3ad177d411.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
