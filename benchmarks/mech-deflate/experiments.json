@@ -21841,8 +21841,8 @@
           "manifest_sha256": "321cd52ce711e6921c0f9d6037e9b1a6d4e9ab5b677c8d517fc67b1377a69056",
           "bytes": 77290,
           "files": 17,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-profile-33027-periodic-window-e8e90317b1e9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-pc-profile-33027-periodic-window-e8e90317b1e9.tar.gz"
         },
         {
           "event": "pc-profile-repeated-32769",
@@ -21852,8 +21852,8 @@
           "manifest_sha256": "4791075714aacac970f9d1b2f4968723a58c6c5d64b3d3479455580e3c8d15ab",
           "bytes": 102736,
           "files": 17,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-profile-repeated-32769-f567b408a153.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-pc-profile-repeated-32769-f567b408a153.tar.gz"
         },
         {
           "event": "pc-tables-33027-periodic-window",
@@ -21863,8 +21863,8 @@
           "manifest_sha256": "65fb5b747a48717779bc973ee2d0385105e8e432be8d4762af5bb13bed41f97b",
           "bytes": 358082,
           "files": 27,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-tables-33027-periodic-window-8548bca94c53.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-pc-tables-33027-periodic-window-8548bca94c53.tar.gz"
         },
         {
           "event": "pc-tables-repeated-32769",
@@ -21874,8 +21874,8 @@
           "manifest_sha256": "0e1e8f0e7bb7c9017bdc248ec29efafdcdad54857f961717029a0ff392ad88ff",
           "bytes": 347337,
           "files": 27,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-tables-repeated-32769-fa5997655bd1.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-pc-tables-repeated-32769-fa5997655bd1.tar.gz"
         },
         {
           "event": "parent-semantic",
@@ -21885,8 +21885,8 @@
           "manifest_sha256": "7de5265ae7bd573883905d80386e806d25850eb100ac2bb935e709b31b3cf859",
           "bytes": 89101,
           "files": 26,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-parent-semantic-a5d6f36aa8c3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-parent-semantic-a5d6f36aa8c3.tar.gz"
         },
         {
           "event": "screen-33027-periodic-window-primary",
@@ -21896,8 +21896,8 @@
           "manifest_sha256": "51f6e71e89ad79977124b43b504880b2c83e3cf2e5d5abd8411a3d8117cfd985",
           "bytes": 111847,
           "files": 53,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-screen-33027-periodic-window-primary-a309f10db8a7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-screen-33027-periodic-window-primary-a309f10db8a7.tar.gz"
         },
         {
           "event": "screen-eight-literals-primary",
@@ -21907,8 +21907,8 @@
           "manifest_sha256": "836ce16f3438e9fd92f319966fed4b8d46fdf4e7fd84404eadf0969293d6ec59",
           "bytes": 118537,
           "files": 54,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-screen-eight-literals-primary-445006cd1861.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-screen-eight-literals-primary-445006cd1861.tar.gz"
         },
         {
           "event": "screen-16384-distribution-change-primary",
@@ -21918,8 +21918,8 @@
           "manifest_sha256": "75d2f219ded663e37065477743428a627acd7fea63c1a9661987dc184b029906",
           "bytes": 117369,
           "files": 54,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-screen-16384-distribution-change-primary-3f273eeb9bb8.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-screen-16384-distribution-change-primary-3f273eeb9bb8.tar.gz"
         },
         {
           "event": "screen-repeated-32769-primary",
@@ -21929,8 +21929,8 @@
           "manifest_sha256": "8aef4550322cf70c8627ca0fb8842200cbc4fd5012388c6c9248fee77ae24c8b",
           "bytes": 118208,
           "files": 54,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-screen-repeated-32769-primary-0aaaa7183132.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-screen-repeated-32769-primary-0aaaa7183132.tar.gz"
         },
         {
           "event": "case-eight-literals-primary",
@@ -21940,8 +21940,8 @@
           "manifest_sha256": "10e3520cd70394bb265159d9d8efa2873d4e5b722d308047f8bd56aa5f6f4705",
           "bytes": 127062,
           "files": 59,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-eight-literals-primary-24c9eb0f567f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-eight-literals-primary-24c9eb0f567f.tar.gz"
         },
         {
           "event": "case-16384-distribution-change-primary",
@@ -21951,8 +21951,8 @@
           "manifest_sha256": "2acab62e2568132873c01bcd2f33212cc79402a9f1c7ffaf05e30f90dd4dab6e",
           "bytes": 125286,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-16384-distribution-change-primary-be64deaae0d1.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-16384-distribution-change-primary-be64deaae0d1.tar.gz"
         },
         {
           "event": "case-33027-periodic-window-primary",
@@ -21962,8 +21962,8 @@
           "manifest_sha256": "da9453b61b790c520e2283f696d00a96d02aa368a45c102ec136fc3952e56115",
           "bytes": 126869,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-33027-periodic-window-primary-722f4b4dc228.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-33027-periodic-window-primary-722f4b4dc228.tar.gz"
         },
         {
           "event": "case-random-32769-primary",
@@ -21973,8 +21973,8 @@
           "manifest_sha256": "b14a6d1a085fb35c429cf63f548b8fe45c1b686f85236c044d80a6c5f30434a2",
           "bytes": 128467,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-random-32769-primary-e2be5c182557.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-random-32769-primary-e2be5c182557.tar.gz"
         },
         {
           "event": "case-repeated-32769-primary",
@@ -21984,8 +21984,8 @@
           "manifest_sha256": "ffd01b33df9c4ad666e34e9b9f1eecc1698ec68d4ed1d0702740863b01ad3040",
           "bytes": 129862,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-repeated-32769-primary-5fa07543a40e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-repeated-32769-primary-5fa07543a40e.tar.gz"
         },
         {
           "event": "case-reymont-prefix-32769-primary",
@@ -21995,8 +21995,8 @@
           "manifest_sha256": "6c15ea226efb1fcbefcd23b43282043348f078439409ef2a8cf602270204b16a",
           "bytes": 131381,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-reymont-prefix-32769-primary-5798da7b47a0.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-reymont-prefix-32769-primary-5798da7b47a0.tar.gz"
         },
         {
           "event": "case-reymont-prefix-16384-primary",
@@ -22006,8 +22006,8 @@
           "manifest_sha256": "e73af3edbfd16c708bb72a4eafb0efbc2365e9d943c01ce8f747248b17649bec",
           "bytes": 132872,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-reymont-prefix-16384-primary-1fa369854c61.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-reymont-prefix-16384-primary-1fa369854c61.tar.gz"
         },
         {
           "event": "case-random-1024-primary",
@@ -22017,8 +22017,8 @@
           "manifest_sha256": "6e9731ec9e4728b8d4b3d749783e1f8d275fffe3f4ad0edf2c5460b0971e07d0",
           "bytes": 139135,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-random-1024-primary-053e09664d03.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-random-1024-primary-053e09664d03.tar.gz"
         },
         {
           "event": "case-repeated-1024-primary",
@@ -22028,8 +22028,8 @@
           "manifest_sha256": "1db7a043c063b4a66552dd50cd250481d9d9bd2a57210b597b8866a5d6da11eb",
           "bytes": 142135,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-repeated-1024-primary-ade4004d8d3a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-repeated-1024-primary-ade4004d8d3a.tar.gz"
         },
         {
           "event": "case-reymont-prefix-1024-primary",
@@ -22039,8 +22039,8 @@
           "manifest_sha256": "ab83bb50c9317b2b7ef91f861f0d605e10c3ab823078e20983c2627104514ac7",
           "bytes": 145834,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-reymont-prefix-1024-primary-89e37a322f96.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-reymont-prefix-1024-primary-89e37a322f96.tar.gz"
         },
         {
           "event": "case-320-overlap-primary",
@@ -22050,8 +22050,8 @@
           "manifest_sha256": "7b2d27a911dbe444b147612153ae5d610835acca2ba90414d7558f09d27a44e3",
           "bytes": 149106,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-320-overlap-primary-dd81abc3bfc4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-320-overlap-primary-dd81abc3bfc4.tar.gz"
         },
         {
           "event": "case-random-256-primary",
@@ -22061,8 +22061,8 @@
           "manifest_sha256": "826e31826ae63c51d5c5f93af329dda3608a238a0d9f71f09439894ca6faafd8",
           "bytes": 152745,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-random-256-primary-9e3ad177d411.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-random-256-primary-9e3ad177d411.tar.gz"
         },
         {
           "event": "case-128-biased-dynamic-primary",
@@ -22072,8 +22072,8 @@
           "manifest_sha256": "23851d15551e0b924ba9966421e19eb6f64e061813318d6fc03deebd8aa861dd",
           "bytes": 156073,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-128-biased-dynamic-primary-978cd4c75e7b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-128-biased-dynamic-primary-978cd4c75e7b.tar.gz"
         },
         {
           "event": "case-random-64-primary",
@@ -22083,8 +22083,8 @@
           "manifest_sha256": "9d2a2ac71d99c0562ef51954be66870e51056a26bee6fc987e4f147fe2f67a33",
           "bytes": 160063,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-random-64-primary-0c6d0f911ad9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-random-64-primary-0c6d0f911ad9.tar.gz"
         },
         {
           "event": "case-32-high-entropy-stored-primary",
@@ -22094,8 +22094,8 @@
           "manifest_sha256": "807975cde0584a91cd1a252c118bbba8cf7bb406370fd2d96f9553a379c782d4",
           "bytes": 163949,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-32-high-entropy-stored-primary-3531047e7440.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-32-high-entropy-stored-primary-3531047e7440.tar.gz"
         },
         {
           "event": "case-eight-overlap-primary",
@@ -22105,8 +22105,8 @@
           "manifest_sha256": "639d4c71135ec2a2455c4093ac811df28a361e7c16c8700dedba37add715be51",
           "bytes": 167182,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-eight-overlap-primary-baf7a86d7582.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-eight-overlap-primary-baf7a86d7582.tar.gz"
         },
         {
           "event": "case-eight-literals-prefix-primary",
@@ -22116,8 +22116,8 @@
           "manifest_sha256": "b9c8261fff96622391b7fbc6c34098453c0ff8c1bac07fd6380f63b9b8b65ce0",
           "bytes": 170155,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-eight-literals-prefix-primary-bea49cfb2b4c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-eight-literals-prefix-primary-bea49cfb2b4c.tar.gz"
         },
         {
           "event": "case-seven-stored-prefix-primary",
@@ -22127,8 +22127,8 @@
           "manifest_sha256": "9e7983a0fa65ccc075872da828dc00413de8f626281cf52b2a40c16a0d5d9a26",
           "bytes": 173003,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-seven-stored-prefix-primary-e45a2311f887.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-seven-stored-prefix-primary-e45a2311f887.tar.gz"
         },
         {
           "event": "case-one-stored-primary",
@@ -22138,8 +22138,8 @@
           "manifest_sha256": "f25e514e00949bb150545b9a46920751cc425bac026c82a77973327e917fef51",
           "bytes": 176361,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-one-stored-primary-0803445f8424.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-one-stored-primary-0803445f8424.tar.gz"
         },
         {
           "event": "case-empty-primary",
@@ -22149,8 +22149,8 @@
           "manifest_sha256": "e76fade6bc4f1ced7d39e631c726f68eafaca258d9d16e30cb0e1fdf8b78fb94",
           "bytes": 178991,
           "files": 60,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-empty-primary-33e7600912eb.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-case-empty-primary-33e7600912eb.tar.gz"
         },
         {
           "event": "pc-analysis",
@@ -22160,8 +22160,8 @@
           "manifest_sha256": "a81dfd49e67bb7561a035a0bab65135b066eb2f87265cc45e45d5b39fa407369",
           "bytes": 231367,
           "files": 80,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-analysis-423643a78c59.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-pc-analysis-423643a78c59.tar.gz"
         },
         {
           "event": "final-focused",
@@ -22171,8 +22171,8 @@
           "manifest_sha256": "1c617d230081dfdda36294f1b4ea1eccc8f67dc0c5567458b81994eca42f2b07",
           "bytes": 205564,
           "files": 75,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-final-focused-50635ded8019.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-final-focused-50635ded8019.tar.gz"
         },
         {
           "event": "matrix-counters",
@@ -22182,8 +22182,8 @@
           "manifest_sha256": "efa98303fe8fab37a0fb7d9ad20cfdbab46770ae2abd87d76573f0a4dc80e5c4",
           "bytes": 248543,
           "files": 79,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-matrix-counters-7d72e0d9b2a5.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-matrix-counters-7d72e0d9b2a5.tar.gz"
         },
         {
           "event": "profiles-current",
@@ -22193,8 +22193,8 @@
           "manifest_sha256": "5dcc909457aed7d1c17901d5155bbcd8f18682ae9c047794095592cbb60f7a86",
           "bytes": 677987,
           "files": 97,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-profiles-current-0cbfd8df5082.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-profiles-current-0cbfd8df5082.tar.gz"
         },
         {
           "event": "scalar-case-scalar-bool-0-original",
@@ -22204,8 +22204,8 @@
           "manifest_sha256": "1e0485bb36eae87cbee7a2acab46ec55524778147f4f56b0fcc936e89c2e4c7d",
           "bytes": 212981,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-bool-0-original-3b84c7db2296.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-bool-0-original-3b84c7db2296.tar.gz"
         },
         {
           "event": "scalar-case-scalar-bool-0-decoded",
@@ -22215,8 +22215,8 @@
           "manifest_sha256": "a66a6fdf8f406f74272ee692ed0c70de399ef1f46ed120288263ef6127eec55a",
           "bytes": 213378,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-bool-0-decoded-30ab86a5dfe4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-bool-0-decoded-30ab86a5dfe4.tar.gz"
         },
         {
           "event": "scalar-case-scalar-u64-0-original",
@@ -22226,8 +22226,8 @@
           "manifest_sha256": "bfc83289ccee2d4bbd8a3c0c52b4de59e6e2997f38f4fcff4f5c9a85e346ecfc",
           "bytes": 213736,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-u64-0-original-6e476a963447.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-u64-0-original-6e476a963447.tar.gz"
         },
         {
           "event": "scalar-case-scalar-u64-0-decoded",
@@ -22237,8 +22237,8 @@
           "manifest_sha256": "a872740f279eb5a26caff988df7ec55f8433fb27e5ac62c79470de84aa6eddb6",
           "bytes": 214085,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-u64-0-decoded-93829c7daa8e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-u64-0-decoded-93829c7daa8e.tar.gz"
         },
         {
           "event": "scalar-case-scalar-i64-0-original",
@@ -22248,8 +22248,8 @@
           "manifest_sha256": "648a1460c910c91d6f0646a9d450300e145e2786037d8d122c802f2c658d2b30",
           "bytes": 214341,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-i64-0-original-7f9b7013f69c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-i64-0-original-7f9b7013f69c.tar.gz"
         },
         {
           "event": "scalar-case-scalar-i64-0-decoded",
@@ -22259,8 +22259,8 @@
           "manifest_sha256": "7d6301b35e397e205f8bb60b9d908ce93d22eb1f2c7e928ed0183efa01c3798d",
           "bytes": 214622,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-i64-0-decoded-c8e8623900c9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-i64-0-decoded-c8e8623900c9.tar.gz"
         },
         {
           "event": "scalar-case-scalar-f64-0-original",
@@ -22270,8 +22270,8 @@
           "manifest_sha256": "ea1ece2b365314aacca51f92c71209e55f4d04b6141819951e71115dfc275be7",
           "bytes": 215049,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-f64-0-original-006953eef418.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-f64-0-original-006953eef418.tar.gz"
         },
         {
           "event": "scalar-case-scalar-f64-0-decoded",
@@ -22281,8 +22281,8 @@
           "manifest_sha256": "c0470a2c1a5697c472bb3c356630cac4d7668a7793666cfe387eeffb926f8c2c",
           "bytes": 215286,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-f64-0-decoded-1342ca778c1d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-f64-0-decoded-1342ca778c1d.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-0-original",
@@ -22292,8 +22292,8 @@
           "manifest_sha256": "f53890922b64f30c1ecb7168a27f665fa9ebfe7f20fe71411043d01b59d6ebc5",
           "bytes": 215975,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-loop-0-original-db2ca7f14abc.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-loop-0-original-db2ca7f14abc.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-0-decoded",
@@ -22303,8 +22303,8 @@
           "manifest_sha256": "0b6a56a3c6b06b8754e5bb45e7b8058f476a4fe6df8a63db666418cf85b3bd9f",
           "bytes": 216317,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-loop-0-decoded-372d3a5bef20.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-loop-0-decoded-372d3a5bef20.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-64-original",
@@ -22314,8 +22314,8 @@
           "manifest_sha256": "c51c8ad58980415cac4c5ec92317a70b85616cc4e2e9b3dd76213b1c27921d16",
           "bytes": 216667,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-loop-64-original-171d45b24256.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-loop-64-original-171d45b24256.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-64-decoded",
@@ -22325,8 +22325,8 @@
           "manifest_sha256": "8d1e9ff257c2afa31e1a91ad938740610f7b36b5d3f21274d877d53d3a091bcc",
           "bytes": 216902,
           "files": 120,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-loop-64-decoded-4ba00e73e6af.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-scalar-case-scalar-loop-64-decoded-4ba00e73e6af.tar.gz"
         },
         {
           "event": "frame-allocation",
@@ -22336,8 +22336,8 @@
           "manifest_sha256": "8c325b72c255361996368eea06fccb91b71809c8a50523ff3003e657f9431e6e",
           "bytes": 213140,
           "files": 103,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-frame-allocation-672a0013ae8f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-frame-allocation-672a0013ae8f.tar.gz"
         },
         {
           "event": "machine-comparison",
@@ -22347,8 +22347,8 @@
           "manifest_sha256": "4a9526e3e541dc18c0e78120a30c9120a85af55144632edf831304dd01d9c30f",
           "bytes": 277036,
           "files": 87,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-machine-comparison-c2e1c6d25285.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-machine-comparison-c2e1c6d25285.tar.gz"
         },
         {
           "event": "qualified",
@@ -22358,8 +22358,8 @@
           "manifest_sha256": "66a4d0c7faaf07f9d0b6afaaf07e948f4e32c40f05ec4f2e9d9ac6af80d676a6",
           "bytes": 280047,
           "files": 142,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-qualified-af445bd666dc.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-qualified-af445bd666dc.tar.gz"
         },
         {
           "event": "closure",
@@ -22369,8 +22369,8 @@
           "manifest_sha256": "a53d20981f5b208a0583ecb3ecf5013db4bd8c42fbdfa6446cc22ca37f070002",
           "bytes": 6409088,
           "files": 1033,
-          "publication": "local evidence; publication pending",
-          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-closure-7e3a1b651218.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r154-closure-7e3a1b651218.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
@@ -22386,7 +22386,36 @@
       "retained": true,
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local evidence; publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "retained_compiler_source": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+      "baseline_executable_emitter_source": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+      "qualified_test_revision": "9f750d5ed41553840884b24f96a588a48a217153",
+      "full_retention_qualification_run": true,
+      "native_lowering_coverage_added": false,
+      "primary_result": {
+        "cases": 20,
+        "primary_observations": 3968,
+        "total_complete_calls": 4048,
+        "geometric_after_before": 0.9955766311940516,
+        "adverse_medians": 7,
+        "unchanged_1_05_guards": true,
+        "logical_work_equal_all20": true
+      },
+      "analysis": {
+        "script": "analyze.py",
+        "expected_outputs": {
+          "results.json": "8979aa2473cbdaf86542c1ba16ef53c7cc4f3a2780fc95e4b424c3a17d084e48",
+          "REPORT.md": "54417bf917d5eb744811d25c52b2cab3153743f49f41dbc9e3bbbed11972cfa1"
+        }
+      },
+      "final_closure_event": "closure",
+      "before_exact_pc_provenance": {
+        "object_sha256": "4f56f4bb7d473448cf172f002fa66be56155dd8ada5baa4e0596f468ccee867d",
+        "emitter_source": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+        "equivalent_production_source": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+        "note": "pc-analysis archive source anchor advanced to58690, but archived binary-map/record pins explicitly remain R153 before diagnosis. New after CPU-time samples use current Object."
+      },
+      "next_brief": "Focused current-binary loop cost selection, then whole-loop safety/arithmetic proof and bounded funding as separate measurements. SIMD/source variants follow only with measured contribution and separate attribution."
     }
   },
   "repository": "mech-lang/mech",
