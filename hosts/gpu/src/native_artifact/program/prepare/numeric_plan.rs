@@ -56,7 +56,6 @@ impl Operation {
     pub fn grows(&self) -> bool {
         matches!(self, Self::Append { .. } | Self::AppendLeBytes { .. })
     }
-    #[cfg(feature = "canonical-native-program")]
     pub fn maximum_append(&self, array: usize) -> usize {
         match self {
             Self::Append { array: at, .. } if *at == array => 1,
@@ -111,6 +110,14 @@ pub(in crate::native_artifact) struct Plan {
     pub boundary_values: BoundaryValues,
 }
 impl Plan {
+    /// Conservative bound for one funded traversal, shared by the current
+    /// entry refusal and emitted header guard. It grants no owner authority.
+    pub fn maximum_append(&self, array: usize) -> Option<usize> {
+        self.actions.iter().try_fold(0usize, |count, (_, op)| {
+            count.checked_add(op.maximum_append(array))
+        })
+    }
+
     /// Only current input lanes cross an initial entry. Internal frame lanes
     /// are defined by the selected source actions, not by the helper's scratch
     /// bank. Keep the full bank's admission and first-change transport intact.
