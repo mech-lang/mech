@@ -17969,7 +17969,7 @@
     "144": {
       "base": "d441153985d861d5fe6a4a838fb4b04e1e7c367d",
       "production": null,
-      "compiler_source": "d441153985d861d5fe6a4a838fb4b04e1e7c367d",
+      "compiler_source": "700b9f06e22f6b9d5cec643527154137e2b64062",
       "decision": "under measurement",
       "events": [
         {
@@ -17982,6 +17982,17 @@
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-initial-cf7c2869f0ca.tar.gz"
+        },
+        {
+          "event": "test-first",
+          "source_revision": "700b9f06e22f6b9d5cec643527154137e2b64062",
+          "asset": "r144-test-first-67c42fd4bd9c.tar.gz",
+          "sha256": "67c42fd4bd9cceeb369d61d531501712069b1bbee8f655744f550b6a449a2fac",
+          "manifest_sha256": "3d9f967e9a72a3b166924a48e5d75a45ff605304b903795c8d099214717d27da",
+          "bytes": 218231,
+          "files": 53,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-test-first-67c42fd4bd9c.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
