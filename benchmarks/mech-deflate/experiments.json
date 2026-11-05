@@ -22338,6 +22338,17 @@
           "files": 103,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-frame-allocation-672a0013ae8f.tar.gz"
+        },
+        {
+          "event": "machine-comparison",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-machine-comparison-c2e1c6d25285.tar.gz",
+          "sha256": "c2e1c6d2528545285112a30182f0cb3fbfd70dd3e04e54ef1b97d71174198671",
+          "manifest_sha256": "4a9526e3e541dc18c0e78120a30c9120a85af55144632edf831304dd01d9c30f",
+          "bytes": 277036,
+          "files": 87,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-machine-comparison-c2e1c6d25285.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
@@ -22349,8 +22360,8 @@
         "private_abi": 39,
         "bytecode": 14
       },
-      "decision": "candidate: source guards prove the packed byte window; semantic/coverage witness passed, build real Object and measure next",
-      "retained": false,
+      "decision": "retain: fresh source-window proof removes duplicate packed-read guards; periodic\u22121.668613%, repeated\u22122.060411%, all20geometric\u22120.442337%; fixed regression gates pass with contrary medians retained",
+      "retained": true,
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
       "archive_publication": "local evidence; publication pending"
