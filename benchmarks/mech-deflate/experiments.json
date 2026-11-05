@@ -18345,6 +18345,17 @@
           "files": 86,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-matrix-counters-d093b9732e7c.tar.gz"
+        },
+        {
+          "event": "scalar-balanced",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-scalar-balanced-052a9fc48083.tar.gz",
+          "sha256": "052a9fc48083c79912c91c10a49ac6785988b2d60727659b79bfe1ac1b4a72aa",
+          "manifest_sha256": "13ccd726e06ef7b55e5eff840da5c57445f366ddfc866e3d2dea7d85c2c5ac1a",
+          "bytes": 304129,
+          "files": 655,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-scalar-balanced-052a9fc48083.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
