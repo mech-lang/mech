@@ -19034,6 +19034,17 @@
           "files": 36,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-16384-distribution-change-primary-57f411ac1d8f.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-case-33027-periodic-window-primary-a1ce1845826a.tar.gz",
+          "sha256": "a1ce1845826abda4c523902ce62d53b772d6b0514fe3ab1dcd043a25a043ba4d",
+          "manifest_sha256": "65f9992e37ea0507fb707f215cc8f08b503f8ee889daefa41e54e0dc83de6d0e",
+          "bytes": 120066,
+          "files": 36,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-33027-periodic-window-primary-a1ce1845826a.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
