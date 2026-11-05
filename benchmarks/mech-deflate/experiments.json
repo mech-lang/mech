@@ -24724,6 +24724,17 @@
           "files": 62,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-screen-33027-periodic-window-primary-55da5e92ba64.tar.gz"
+        },
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-screen-eight-literals-primary-3d8c82e4ecc2.tar.gz",
+          "sha256": "3d8c82e4ecc240dfa6a00b09b242ea9c51b260744429cb4b5355b5b13c7d9533",
+          "manifest_sha256": "24ae27ffc7448533be9190012022ff3bc09445d16e276bec6b7b542f41df68b7",
+          "bytes": 97152,
+          "files": 63,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-screen-eight-literals-primary-3d8c82e4ecc2.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
