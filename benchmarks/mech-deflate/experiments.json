@@ -21142,6 +21142,17 @@
           "files": 299,
           "publication": "published; server SHA-256 verified",
           "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r152-closure-7d273afda5e8.tar.gz"
+        },
+        {
+          "event": "closure-audit",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-closure-audit-0993af73cf70.tar.gz",
+          "sha256": "0993af73cf705890c20b1d9a78558fe988d98e4768e515746cf5aba297372507",
+          "manifest_sha256": "c86590a7089209b3a7d0aef30917d205cc09b7707909b10b53d5b755ed2155a0",
+          "bytes": 108533,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-closure-audit-0993af73cf70.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
@@ -21153,7 +21164,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "archive_publication": "local-only at measurement; external publication pending",
       "retained": false,
       "retained_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
       "retained_published_head": "9de07a5a339ef9044133fdd96b644f0279b91781",
@@ -21202,7 +21213,26 @@
           "REPORT.md": "be9f3f7596351b6a70b7783631fb98073c7984faec921f1f6060677f62d5ea16"
         }
       },
-      "final_closure_event": "closure"
+      "final_closure_event": "closure",
+      "publication_audit": {
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "paths_with_multiple_preserved_versions": 7,
+        "round": 152,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 299,
+        "verified_archives": 32,
+        "verified_file_occurrences": 1824,
+        "all_public_archive_server_digests_verified": true,
+        "native_binaries_and_bytecode_excluded": true,
+        "read_only_review": "Prior coverage findings closed; no residual semantic finding. Full retention qualification skipped after failed elapsed gate.",
+        "claim_scope": {
+          "47_sites": "Static codegen proof selections, not47disassembled branches or a dynamic count. Actual ARM64 check removal is verified at source2823.",
+          "heap_equality": "Only the seven fields named by results.json/heap_fields_compared are compared; CPU and OS-memory measurements are separate."
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
