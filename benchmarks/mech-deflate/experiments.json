@@ -16645,6 +16645,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-matrix-counters-34f99c08380a.tar.gz"
+        },
+        {
+          "event": "callback-census",
+          "source_revision": "58f75827e5c44187731df5253b3a058d2e9cd417",
+          "asset": "r140-callback-census-8a6d15cc4a6c.tar.gz",
+          "sha256": "8a6d15cc4a6ccb6bfa768f097c99bbb388a0c59ddc11e2a28c1a447d2e2635b1",
+          "manifest_sha256": "7236227eaa00aeecfc3af55e96609a012e9f51128490e0ebf49f62d9961f5c0e",
+          "bytes": 338198,
+          "files": 61,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-callback-census-8a6d15cc4a6c.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
