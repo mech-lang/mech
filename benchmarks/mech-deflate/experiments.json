@@ -22748,6 +22748,17 @@
           "files": 73,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-320-overlap-primary-d301a7bd2579.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-case-random-256-primary-aef133de2d63.tar.gz",
+          "sha256": "aef133de2d6381d05911f4ef4f33e0003d9df0d95a1d08fc76db3fa39b5983bb",
+          "manifest_sha256": "27474180d6a6daa2ab912e48227af09a210d1f4f37851188be5f8314aef15275",
+          "bytes": 164433,
+          "files": 73,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-random-256-primary-aef133de2d63.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
