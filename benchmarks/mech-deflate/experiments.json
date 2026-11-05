@@ -24713,6 +24713,17 @@
           "files": 57,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-unit-386f5eabe89a.tar.gz"
+        },
+        {
+          "event": "screen-33027-periodic-window-primary",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-screen-33027-periodic-window-primary-55da5e92ba64.tar.gz",
+          "sha256": "55da5e92ba64ca4128df390663a6d839747a5018de375f3bc825b81b5d05736c",
+          "manifest_sha256": "af9857bf90a3aaace3d781dbe309cced9a217befd46ff501431b15549f16548a",
+          "bytes": 90571,
+          "files": 62,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-screen-33027-periodic-window-primary-55da5e92ba64.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
