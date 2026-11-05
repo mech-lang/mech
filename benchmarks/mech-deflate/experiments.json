@@ -17106,8 +17106,8 @@
           "manifest_sha256": "3c0414c34bdc06ec3d57b8daf68642cc4917fa4ad5bddefed515ce1b62771727",
           "bytes": 4677065,
           "files": 15,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-initial-6ecad23f9a49.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-initial-6ecad23f9a49.tar.gz"
         },
         {
           "event": "startup-pair-0",
@@ -17117,8 +17117,8 @@
           "manifest_sha256": "a4fc14f781f72266e70248f64467e14c089fba2ead8045df101a95d2b27bb072",
           "bytes": 211904,
           "files": 37,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-startup-pair-0-3af5441b823a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-startup-pair-0-3af5441b823a.tar.gz"
         },
         {
           "event": "startup-pair-1",
@@ -17128,8 +17128,8 @@
           "manifest_sha256": "0f008fc4e26f417aa48441a28222089e0c32eabeee744a187d110aff2c001144",
           "bytes": 211894,
           "files": 37,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-startup-pair-1-88f762e61ae2.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-startup-pair-1-88f762e61ae2.tar.gz"
         },
         {
           "event": "startup-pair-2",
@@ -17139,8 +17139,8 @@
           "manifest_sha256": "72a9ca9c03daae5ab5c4a2bafa7644737b6fe40a48a4c4d64978e2109699ef87",
           "bytes": 211917,
           "files": 37,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-startup-pair-2-94ca2aeb7c8c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-startup-pair-2-94ca2aeb7c8c.tar.gz"
         },
         {
           "event": "startup-primary",
@@ -17150,8 +17150,8 @@
           "manifest_sha256": "04254b8126232968f7f8fcbdd56cf341ad921b1bbec75555ee4e86a7bb7dffde",
           "bytes": 212541,
           "files": 35,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-startup-primary-e349bf4a38b8.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-startup-primary-e349bf4a38b8.tar.gz"
         },
         {
           "event": "case-eight-literals-primary",
@@ -17161,8 +17161,8 @@
           "manifest_sha256": "8fc63189002bc3c6b8b979774be41d7980a2475c2bddd9214d106ea0341ee354",
           "bytes": 225488,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-eight-literals-primary-4232840e5523.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-eight-literals-primary-4232840e5523.tar.gz"
         },
         {
           "event": "case-16384-distribution-change-primary",
@@ -17172,8 +17172,8 @@
           "manifest_sha256": "ed870343c00430a87d4ea2b913d7edabd7037478f5eaf8f7fb36d57942478326",
           "bytes": 222996,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-16384-distribution-change-primary-9438412ed750.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-16384-distribution-change-primary-9438412ed750.tar.gz"
         },
         {
           "event": "case-33027-periodic-window-primary",
@@ -17183,8 +17183,8 @@
           "manifest_sha256": "2be81790b5971bd2a8931bb4959e49999512de2c0f9116bf545b1990c7147d61",
           "bytes": 223324,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-33027-periodic-window-primary-0487403fa1b4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-33027-periodic-window-primary-0487403fa1b4.tar.gz"
         },
         {
           "event": "case-random-32769-primary",
@@ -17194,8 +17194,8 @@
           "manifest_sha256": "f0e2a5d9091a2a863276cae9d82f184ed72db64b9984eaf5173e39a89d739f56",
           "bytes": 223433,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-random-32769-primary-87beae90364b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-random-32769-primary-87beae90364b.tar.gz"
         },
         {
           "event": "case-repeated-32769-primary",
@@ -17205,8 +17205,8 @@
           "manifest_sha256": "5816b007f0c895146918ab41b61a7042ff81cc607c0328137780b9c1f4217383",
           "bytes": 223748,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-repeated-32769-primary-3dc259472bf8.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-repeated-32769-primary-3dc259472bf8.tar.gz"
         },
         {
           "event": "case-reymont-prefix-32769-primary",
@@ -17216,8 +17216,8 @@
           "manifest_sha256": "67a92123b9629d4b3544ae0151b8c126384e7dd54bb2954e79192ab8352069fc",
           "bytes": 223797,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-reymont-prefix-32769-primary-07cd7868122e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-reymont-prefix-32769-primary-07cd7868122e.tar.gz"
         },
         {
           "event": "case-reymont-prefix-16384-primary",
@@ -17227,8 +17227,8 @@
           "manifest_sha256": "3ae8f368e8c9f89363d372279d29cd04ccb44fa5b6b4a509bba2f20655d6ae23",
           "bytes": 224005,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-reymont-prefix-16384-primary-3bdd8f9589eb.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-reymont-prefix-16384-primary-3bdd8f9589eb.tar.gz"
         },
         {
           "event": "case-random-1024-primary",
@@ -17238,8 +17238,8 @@
           "manifest_sha256": "03a0b3d6bdb3b9ba69b279736330ada73713b9da40cb584174c5b5e2a300b43f",
           "bytes": 226950,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-random-1024-primary-a1d5f6929ab7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-random-1024-primary-a1d5f6929ab7.tar.gz"
         },
         {
           "event": "case-repeated-1024-primary",
@@ -17249,8 +17249,8 @@
           "manifest_sha256": "99029816519636ebea1484495221fe00f061c04c7e53aee50beb33b5b33fba42",
           "bytes": 227389,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-repeated-1024-primary-275aa0fa1a16.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-repeated-1024-primary-275aa0fa1a16.tar.gz"
         },
         {
           "event": "case-reymont-prefix-1024-primary",
@@ -17260,8 +17260,8 @@
           "manifest_sha256": "0f6e2c8701f6d0b59c26b717cd124d59bb87d3d1c41d4951e8ad7664ab7d9cdf",
           "bytes": 227396,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-reymont-prefix-1024-primary-93a91c06f414.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-reymont-prefix-1024-primary-93a91c06f414.tar.gz"
         },
         {
           "event": "case-320-overlap-primary",
@@ -17271,8 +17271,8 @@
           "manifest_sha256": "a9df01f70cce85319855aba06e4028b69e3f93bb0de776bf49ce9164f2803c54",
           "bytes": 227348,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-320-overlap-primary-252f82cb8fee.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-320-overlap-primary-252f82cb8fee.tar.gz"
         },
         {
           "event": "case-random-256-primary",
@@ -17282,8 +17282,8 @@
           "manifest_sha256": "a2b576ff2652caded7f934df4b5c30f5e0a34b22555a1d170e9925bd27420c59",
           "bytes": 227584,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-random-256-primary-70e967a029c3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-random-256-primary-70e967a029c3.tar.gz"
         },
         {
           "event": "case-128-biased-dynamic-primary",
@@ -17293,8 +17293,8 @@
           "manifest_sha256": "6a6309cb09577d0a8c1a6ed70b4ecd9aa36108a28bd827d15476170db3541583",
           "bytes": 227777,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-128-biased-dynamic-primary-b41338c18a7a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-128-biased-dynamic-primary-b41338c18a7a.tar.gz"
         },
         {
           "event": "case-random-64-primary",
@@ -17304,8 +17304,8 @@
           "manifest_sha256": "b6bd94201590782d806a1ae9ef83c5b6a17330ef0cfef251f201cdefaf20bcb3",
           "bytes": 227701,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-random-64-primary-3d25869e3574.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-random-64-primary-3d25869e3574.tar.gz"
         },
         {
           "event": "case-32-high-entropy-stored-primary",
@@ -17315,8 +17315,8 @@
           "manifest_sha256": "2a516c9577aac58e67e5071d424a70034ece533542d71e1e65eec490e30d5f72",
           "bytes": 227930,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-32-high-entropy-stored-primary-9af8f904e7da.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-32-high-entropy-stored-primary-9af8f904e7da.tar.gz"
         },
         {
           "event": "case-eight-overlap-primary",
@@ -17326,8 +17326,8 @@
           "manifest_sha256": "056cea0a24f70ec544f47758e5f0dbd53279e5142d8ec9f12229e363fca9ed69",
           "bytes": 227963,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-eight-overlap-primary-406e1a415ecd.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-eight-overlap-primary-406e1a415ecd.tar.gz"
         },
         {
           "event": "case-eight-literals-prefix-primary",
@@ -17337,8 +17337,8 @@
           "manifest_sha256": "b76c1e7f7dc580cfb9741c5b5c87265affc3260a5a5f1bfa3d331147c2119c25",
           "bytes": 228351,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-eight-literals-prefix-primary-eaea7895812f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-eight-literals-prefix-primary-eaea7895812f.tar.gz"
         },
         {
           "event": "case-seven-stored-prefix-primary",
@@ -17348,8 +17348,8 @@
           "manifest_sha256": "4be538209f548d0aef5061bd678bf509a2a6d0ba2bb19aeeb9cca52e60ed0e8f",
           "bytes": 227778,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-seven-stored-prefix-primary-7253d5b13569.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-seven-stored-prefix-primary-7253d5b13569.tar.gz"
         },
         {
           "event": "case-one-stored-primary",
@@ -17359,8 +17359,8 @@
           "manifest_sha256": "b7de81363a389470e142d46b0e2fb3348c30ee5b748be4bdd321631ae3bed70b",
           "bytes": 227636,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-one-stored-primary-a03433d8e5a2.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-one-stored-primary-a03433d8e5a2.tar.gz"
         },
         {
           "event": "case-empty-primary",
@@ -17370,8 +17370,8 @@
           "manifest_sha256": "309ee18c0d7b84ad220f60a94da1353ec721c4ede56395c499e4880e74b4f678",
           "bytes": 227502,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-empty-primary-7e1530fb37b4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-case-empty-primary-7e1530fb37b4.tar.gz"
         },
         {
           "event": "matrix-counters",
@@ -17381,8 +17381,8 @@
           "manifest_sha256": "243150cd4bbae03ea9f7b3a0a51c9d4e23e74e9b0f076e9b4d9c5df8b5404442",
           "bytes": 270599,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-matrix-counters-b1d72272a807.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-matrix-counters-b1d72272a807.tar.gz"
         },
         {
           "event": "profiles-current",
@@ -17392,8 +17392,8 @@
           "manifest_sha256": "00cd0db6a2b2f29cda15c5c71163fd8b1e0fdb5a331af639583264eb4916f253",
           "bytes": 659968,
           "files": 76,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-profiles-current-dce54010e2e3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-profiles-current-dce54010e2e3.tar.gz"
         },
         {
           "event": "scalar-balanced",
@@ -17403,8 +17403,8 @@
           "manifest_sha256": "17afe8aacba47552f90a31987ae9119aa1df77a040ddd345f2dcefcb4c758ede",
           "bytes": 284698,
           "files": 625,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-scalar-balanced-ace4be8e7a2c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-scalar-balanced-ace4be8e7a2c.tar.gz"
         },
         {
           "event": "frame-allocation",
@@ -17414,8 +17414,8 @@
           "manifest_sha256": "863167e5803f87cd6fed8c87f244d39ecb9bf8a0d04f0580b6e5f1dd123f238e",
           "bytes": 236248,
           "files": 80,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-frame-allocation-df0e9ac8c098.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-frame-allocation-df0e9ac8c098.tar.gz"
         },
         {
           "event": "qualified",
@@ -17425,8 +17425,8 @@
           "manifest_sha256": "6b439c4cd86e1d6f852dbc411b740afd7365d0850291c097dac61a3e81709548",
           "bytes": 337097,
           "files": 122,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-qualified-29e68a7f9f47.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-qualified-29e68a7f9f47.tar.gz"
         },
         {
           "event": "analysis",
@@ -17436,8 +17436,8 @@
           "manifest_sha256": "6d9381fd81de22a1c16502b249fd24cb1e450fcf8a4b71e5b26e2b23d6b33f3f",
           "bytes": 287990,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-analysis-008a1db54bbe.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-analysis-008a1db54bbe.tar.gz"
         },
         {
           "event": "replication-random-1024-primary",
@@ -17447,8 +17447,8 @@
           "manifest_sha256": "c28f9531288b5a14d17dca9abe7651bacc2889bd5cda2b392709c927b8ea9e97",
           "bytes": 242526,
           "files": 55,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-replication-random-1024-primary-19bede7caa27.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-replication-random-1024-primary-19bede7caa27.tar.gz"
         },
         {
           "event": "replication-reymont-prefix-16384-primary",
@@ -17458,8 +17458,8 @@
           "manifest_sha256": "c85890ded93d714b0b60ab21ef347841aedcc865e00704a6639844b1e2ba95b0",
           "bytes": 239918,
           "files": 56,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-replication-reymont-prefix-16384-primary-2de59210a7b3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-replication-reymont-prefix-16384-primary-2de59210a7b3.tar.gz"
         },
         {
           "event": "replication-eight-literals-primary",
@@ -17469,8 +17469,8 @@
           "manifest_sha256": "3deea15e250e3c3b8c4be6b7a3cb8c2ab1a5c1d409150914b7a76c88687c1198",
           "bytes": 242921,
           "files": 56,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-replication-eight-literals-primary-a3153c83a900.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-replication-eight-literals-primary-a3153c83a900.tar.gz"
         },
         {
           "event": "analysis-final",
@@ -17480,8 +17480,8 @@
           "manifest_sha256": "9528946d2e7178b18ca836aa8f151cffe5467e96f0c8cc63845e12d4fc5d6673",
           "bytes": 296069,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-analysis-final-b64c0557b6d4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-analysis-final-b64c0557b6d4.tar.gz"
         },
         {
           "event": "closure",
@@ -17491,13 +17491,13 @@
           "manifest_sha256": "f12d89bef26ea2d7b04426239ec5aa2573da1549b125b3c65115a37c32d9d3da",
           "bytes": 10426905,
           "files": 1093,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-closure-182d63a26012.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r142-closure-182d63a26012.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "before_compiler_source": "58f75827e5c44187731df5253b3a058d2e9cd417",
       "versions": {
         "typed_ir": 168,
