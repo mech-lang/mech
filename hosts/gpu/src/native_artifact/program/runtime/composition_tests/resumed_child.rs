@@ -1,6 +1,10 @@
 //! A current child after an opaque parent boundary needs its own native entry.
 use super::*;
 use mech_engine::native_artifact::NativeControlLoop;
+#[path = "resumed_child_failure.rs"]
+mod failure;
+#[path = "resumed_child_image.rs"]
+mod image;
 
 const SOURCE: &str =
     include_str!("../../../../../tests/fixtures/native/phase-descendant-pieces.mec");
