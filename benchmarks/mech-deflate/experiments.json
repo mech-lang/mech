@@ -17881,6 +17881,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-empty-primary-c9bf830adb51.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-matrix-counters-de2bb4d4e227.tar.gz",
+          "sha256": "de2bb4d4e2278b7bfd049db7171fa7a5309a8e0f61df491ece95f9cb280b3b3b",
+          "manifest_sha256": "5069f4dd6aa75a2a23a5295767bce8f75310f2098631dea3f54a00f09fabc123",
+          "bytes": 271973,
+          "files": 60,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-matrix-counters-de2bb4d4e227.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
