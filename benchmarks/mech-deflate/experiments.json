@@ -23460,6 +23460,17 @@
           "files": 83,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-matrix-counters-dcda65e5a288.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-profiles-current-a65d8c968bf8.tar.gz",
+          "sha256": "a65d8c968bf84c7210ddd0de224ffbad36453efe1e97656aa7a03b039b4c36e0",
+          "manifest_sha256": "ba1bc236235558b9bf285a2857a676976d884bc2397c87969865e7b84d08a35a",
+          "bytes": 4164927,
+          "files": 100,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-profiles-current-a65d8c968bf8.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
@@ -23473,8 +23484,8 @@
       },
       "decision": "Final candidate: retain duplicate-check elimination with original frame ordering. Native text is byte-identical to R156; this control does not explain its instruction tradeoff. Direct reviewed-baseline qualification pending.",
       "retained": false,
-      "release_tag": "evidence-native-compression-experiments-3",
-      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "release_tag": "evidence-native-compression-experiments-4",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
       "archive_publication": "local evidence; publication pending"
     }
   },
