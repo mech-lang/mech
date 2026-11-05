@@ -263,3 +263,64 @@ fn native_struct_keys_preserve_reordered_fields_and_reject_duplicates() {
         assert!(Pair::deserialize(&mut reader).is_err());
     }
 }
+
+#[test]
+fn native_children_reject_visitors_that_return_without_consuming_the_record() {
+    struct Ignored;
+    impl<'de> Deserialize<'de> for Ignored {
+        fn deserialize<D: Deserializer<'de>>(_: D) -> Result<Self, D::Error> {
+            Ok(Self)
+        }
+    }
+    #[derive(Deserialize)]
+    struct Wrapper(#[allow(dead_code)] Ignored);
+    #[derive(Deserialize)]
+    enum Variant {
+        Value(Ignored),
+    }
+    let value = encode_native_metadata_image(b"1").unwrap();
+    assert!(decode::<Option<Ignored>>(&value).is_err());
+    assert!(decode::<Wrapper>(&value).is_err());
+    let array = encode_native_metadata_image(b"[1]").unwrap();
+    assert!(decode::<Vec<Ignored>>(&array).is_err());
+    let object = encode_native_metadata_image(br#"{"a":1}"#).unwrap();
+    assert!(decode::<std::collections::BTreeMap<String, Ignored>>(&object).is_err());
+    let variant = encode_native_metadata_image(br#"{"Value":1}"#).unwrap();
+    assert!(decode::<Variant>(&variant).is_err());
+}
+
+#[test]
+fn native_children_preserve_canonical_shape_checks_through_options_and_newtypes() {
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct Fields {
+        a: Option<u64>,
+        b: u64,
+    }
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct Wrapper(Fields);
+    for json in [
+        br#"[{"a":null,"b":2}]"#.as_slice(),
+        br#"[{"b":2,"a":null}]"#,
+    ] {
+        let bytes = encode_native_metadata_image(json).unwrap();
+        let mut reader = BuildOwnedImageReader::from_image(&bytes)
+            .unwrap()
+            .canonical();
+        assert_eq!(
+            Vec::<Option<Wrapper>>::deserialize(&mut reader).unwrap(),
+            vec![Some(Wrapper(Fields { a: None, b: 2 }))]
+        );
+        reader.end().unwrap();
+    }
+    for json in [
+        br#"[{"b":2}]"#.as_slice(),
+        br#"[{"a":null,"a":null}]"#,
+        br#"[{"a":null,"b":2,"extra":0}]"#,
+    ] {
+        let bytes = encode_native_metadata_image(json).unwrap();
+        let mut reader = BuildOwnedImageReader::from_image(&bytes)
+            .unwrap()
+            .canonical();
+        assert!(Vec::<Option<Wrapper>>::deserialize(&mut reader).is_err());
+    }
+}

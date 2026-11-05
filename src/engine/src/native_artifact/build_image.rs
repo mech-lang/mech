@@ -141,6 +141,12 @@ struct Node<'a> {
     canonical: bool,
 }
 impl<'a> Node<'a> {
+    fn decode<T: DeserializeSeed<'a>>(self, seed: T) -> Result<T::Value, Error> {
+        let mut reader = NativeReader(Some(self));
+        let value = seed.deserialize(&mut reader)?;
+        reader.end()?;
+        Ok(value)
+    }
     fn parts(&self) -> Result<(u8, &'a [u8]), Error> {
         if self.depth > MAX_DEPTH {
             return Err(error("native metadata nesting exceeds its limit"));
@@ -189,6 +195,20 @@ impl<'a> Node<'a> {
         let value = visitor.visit_map(&mut fields)?;
         fields.end()?;
         Ok(value)
+    }
+}
+
+// Child records are already native. Keep their consumption state without
+// carrying a JSON deserializer or branching over the source format per field.
+// A visitor must still consume its child, even when it otherwise returns Ok.
+struct NativeReader<'a>(Option<Node<'a>>);
+impl NativeReader<'_> {
+    fn end(&self) -> Result<(), Error> {
+        if self.0.is_some() {
+            Err(error("unconsumed native metadata record"))
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -243,12 +263,12 @@ impl<'a> Fields<'a> {
         std::str::from_utf8(self.key_bytes()?).map_err(|_| error("native metadata key is not UTF8"))
     }
     fn decode<T: DeserializeSeed<'a>>(&mut self, seed: T) -> Result<T::Value, Error> {
-        let node = self.node()?;
-        let mut reader = BuildOwnedImageReader::native(node, self.depth);
-        reader.canonical = self.canonical;
-        let value = seed.deserialize(&mut reader)?;
-        reader.end()?;
-        Ok(value)
+        Node {
+            bytes: self.node()?,
+            depth: self.depth,
+            canonical: self.canonical,
+        }
+        .decode(seed)
     }
 }
 impl<'de> SeqAccess<'de> for &mut Fields<'de> {
@@ -372,8 +392,10 @@ impl<'de> Deserializer<'de> for Node<'de> {
             }
             visitor.visit_none()
         } else {
-            let mut reader = BuildOwnedImageReader::native(self.bytes, self.depth + 1);
-            reader.canonical = self.canonical;
+            let mut reader = NativeReader(Some(Node {
+                depth: self.depth + 1,
+                ..self
+            }));
             let value = visitor.visit_some(&mut reader)?;
             reader.end()?;
             Ok(value)
@@ -395,11 +417,17 @@ impl<'de> Deserializer<'de> for Node<'de> {
     }
     fn deserialize_newtype_struct<V: Visitor<'de>>(
         self,
-        _: &'static str,
+        name: &'static str,
         visitor: V,
     ) -> Result<V::Value, Error> {
-        let mut reader = BuildOwnedImageReader::native(self.bytes, self.depth + 1);
-        reader.canonical = self.canonical;
+        if name == RAW_RECORD {
+            self.parts()?;
+            return visitor.visit_borrowed_bytes(self.bytes);
+        }
+        let mut reader = NativeReader(Some(Node {
+            depth: self.depth + 1,
+            ..self
+        }));
         let value = visitor.visit_newtype_struct(&mut reader)?;
         reader.end()?;
         Ok(value)
@@ -543,15 +571,14 @@ impl<'de> VariantAccess<'de> for Enumeration<'de> {
         }
     }
     fn newtype_variant_seed<T: DeserializeSeed<'de>>(self, seed: T) -> Result<T::Value, Error> {
-        let mut reader = BuildOwnedImageReader::native(
-            self.payload
+        Node {
+            bytes: self
+                .payload
                 .ok_or_else(|| error("native metadata variant has no payload"))?,
-            self.depth,
-        );
-        reader.canonical = self.canonical;
-        let value = seed.deserialize(&mut reader)?;
-        reader.end()?;
-        Ok(value)
+            depth: self.depth,
+            canonical: self.canonical,
+        }
+        .decode(seed)
     }
     fn tuple_variant<V: Visitor<'de>>(self, length: usize, visitor: V) -> Result<V::Value, Error> {
         Node {
@@ -576,6 +603,28 @@ impl<'de> VariantAccess<'de> for Enumeration<'de> {
             canonical: self.canonical,
         }
         .deserialize_struct("variant", fields, visitor)
+    }
+}
+
+macro_rules! native_forward {
+    ($($method:ident($($arg:ident: $ty:ty),*);)*) => {$ (
+        fn $method<V: Visitor<'de>>(self, $($arg: $ty,)* visitor: V) -> Result<V::Value, Error> {
+            self.0.take().ok_or_else(|| error("native metadata record already consumed"))?
+                .$method($($arg,)* visitor)
+        }
+    )*};
+}
+impl<'de> Deserializer<'de> for &mut NativeReader<'de> {
+    type Error = Error;
+    native_forward! {
+        deserialize_any(); deserialize_bool(); deserialize_i8(); deserialize_i16(); deserialize_i32(); deserialize_i64(); deserialize_i128();
+        deserialize_u8(); deserialize_u16(); deserialize_u32(); deserialize_u64(); deserialize_u128(); deserialize_f32(); deserialize_f64();
+        deserialize_char(); deserialize_str(); deserialize_string(); deserialize_bytes(); deserialize_byte_buf(); deserialize_option(); deserialize_unit();
+        deserialize_unit_struct(name: &'static str); deserialize_newtype_struct(name: &'static str);
+        deserialize_seq(); deserialize_tuple(length: usize);
+        deserialize_tuple_struct(name: &'static str, length: usize); deserialize_map();
+        deserialize_struct(name: &'static str, fields: &'static [&'static str]);
+        deserialize_enum(name: &'static str, variants: &'static [&'static str]); deserialize_identifier(); deserialize_ignored_any();
     }
 }
 
