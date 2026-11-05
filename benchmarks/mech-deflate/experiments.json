@@ -23174,6 +23174,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-reymont-prefix-16384-primary-a54fc0f9701f.tar.gz"
+        },
+        {
+          "event": "case-random-1024-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-case-random-1024-primary-564125b8c4e4.tar.gz",
+          "sha256": "564125b8c4e4f55a2fd9860ff48ee8531c1a4fdf7ddf4add0907846d4d0e1e18",
+          "manifest_sha256": "3dbd170ba38863ee1c27a9743cba7fc1bd55e1a6e1dc68f20cf7a531989b0729",
+          "bytes": 3450456,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-random-1024-primary-564125b8c4e4.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
