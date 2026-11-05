@@ -185,12 +185,10 @@ impl NativePreparedLibraryCall {
     ) -> Result<Self, String> {
         if wire.output_parameters != template.output().dimension_parameters().len()
             || wire.input_keys.len() != template.inputs().len()
-            || wire
-                .input_keys
-                .iter()
-                .zip(template.inputs())
-                .any(|(key, schema)| *key != schema.key())
-            || wire.output_key != template.output().key()
+            || wire.input_keys.iter().enumerate().any(|(index, key)| {
+                Some(*key) != super::input_schema_key(&template, &schemas, index)
+            })
+            || wire.output_key != super::output_schema_key(&template, &schemas)
         {
             return Err("prepared image schema keys or parameter count differ".into());
         }

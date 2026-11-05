@@ -2601,12 +2601,32 @@ pub(crate) struct BorrowedFootprintSchemaProof {
     supported: bool,
 }
 
-/// A bounded binding-time proof for the common scalar/packed-matrix layouts.
-/// It inspects at most two schema variants, allocates nothing and grants no
-/// concrete value footprint. Other schemas retain the metered recursive proof.
+/// A binding-time proof for common scalar/packed-matrix layouts. The layout
+/// check is shallow; schemas outside a finalized table still derive their key
+/// normally. This grants no concrete value footprint or admission.
 pub(crate) fn shallow_borrowed_footprint_schema_proof(
     schema: &mech_core::Schema,
 ) -> Option<BorrowedFootprintSchemaProof> {
+    shallow_borrowed_footprint_schema_supported(schema).then(|| BorrowedFootprintSchemaProof {
+        key: schema.key(),
+        supported: true,
+    })
+}
+
+/// The same bounded proof using the finalized entry's actual stored key.
+/// No caller-supplied key or serialized supported flag can enter this path.
+pub(crate) fn shallow_borrowed_footprint_schema_entry_proof(
+    entry: &mech_core::SchemaEntry,
+) -> Option<BorrowedFootprintSchemaProof> {
+    shallow_borrowed_footprint_schema_supported(entry.schema()).then_some(
+        BorrowedFootprintSchemaProof {
+            key: entry.key(),
+            supported: true,
+        },
+    )
+}
+
+fn shallow_borrowed_footprint_schema_supported(schema: &mech_core::Schema) -> bool {
     let scalar = |body: &SchemaBody| {
         matches!(
             body,
@@ -2622,12 +2642,8 @@ pub(crate) fn shallow_borrowed_footprint_schema_proof(
                 | SchemaBody::Atom(_)
         )
     };
-    let supported = scalar(schema.body())
-        || matches!(schema.body(), SchemaBody::Matrix { element, .. } if scalar(element));
-    supported.then_some(BorrowedFootprintSchemaProof {
-        key: schema.key(),
-        supported,
-    })
+    scalar(schema.body())
+        || matches!(schema.body(), SchemaBody::Matrix { element, .. } if scalar(element))
 }
 
 fn borrowed_footprint_schema_supported(

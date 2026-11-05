@@ -89,6 +89,47 @@ fn descriptors_for_schemas(
         .map(Arc::from)
 }
 
+// A port ID is only a lookup hint. Reuse the stored key solely when the actual
+// finalized entry has this complete schema. Other template forms retain the
+// original schema encoding/hash path and its exact matching behavior.
+fn canonical_schema_key(
+    schema: &mech_core::Schema,
+    id: Option<mech_core::SchemaId>,
+    schemas: &SchemaTable,
+) -> mech_core::SchemaKey {
+    id.and_then(|id| schemas.entry(id))
+        .filter(|entry| entry.schema() == schema)
+        .map_or_else(|| schema.key(), |entry| entry.key())
+}
+
+fn input_schema_key(
+    template: &NativeProgramLibraryTemplate,
+    schemas: &SchemaTable,
+    index: usize,
+) -> Option<mech_core::SchemaKey> {
+    let schema = template.inputs().get(index)?;
+    let id = match template.contract() {
+        mech_core::ResolvedOperationContract::Declared(contract) => {
+            contract.inputs.get(index).map(|port| port.schema)
+        }
+        _ => None,
+    };
+    Some(canonical_schema_key(schema, id, schemas))
+}
+
+fn output_schema_key(
+    template: &NativeProgramLibraryTemplate,
+    schemas: &SchemaTable,
+) -> mech_core::SchemaKey {
+    let id = match template.contract() {
+        mech_core::ResolvedOperationContract::Declared(contract) => {
+            contract.outputs.first().map(|port| port.schema)
+        }
+        _ => None,
+    };
+    canonical_schema_key(template.output(), id, schemas)
+}
+
 /// Program-scoped sharing of immutable, safely constructed type descriptors.
 /// This contains no Values, live shapes, factory/visit authority or invocation
 /// cache. A schema-ID signature only selects candidates: every hit compares
@@ -165,6 +206,36 @@ mod descriptor_template_pool_tests {
         }
         .finalize()
         .unwrap()
+    }
+
+    #[test]
+    fn canonical_key_hints_cannot_substitute_an_unrelated_table_entry() {
+        let unsigned = scalar(SchemaBody::UnsignedInteger(IntegerWidth::W64));
+        let signed = scalar(SchemaBody::SignedInteger(IntegerWidth::W64));
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let unsigned_handle = builder.insert(unsigned.clone()).unwrap();
+        let signed_handle = builder.insert(signed).unwrap();
+        let built = builder.finish().unwrap();
+        let unsigned_id = built.resolve(unsigned_handle).unwrap();
+        let signed_id = built.resolve(signed_handle).unwrap();
+        let expected = unsigned.key();
+        assert_eq!(
+            canonical_schema_key(&unsigned, Some(unsigned_id), &built.table),
+            expected
+        );
+        assert_eq!(
+            canonical_schema_key(&unsigned, Some(signed_id), &built.table),
+            expected
+        );
+        assert_ne!(built.table.entry(signed_id).unwrap().key(), expected);
+        assert_eq!(
+            canonical_schema_key(&unsigned, Some(SchemaId::new(u32::MAX)), &built.table),
+            expected
+        );
+        assert_eq!(
+            canonical_schema_key(&unsigned, None, &built.table),
+            expected
+        );
     }
 
     #[test]
@@ -532,12 +603,11 @@ pub fn prepare_native_program_library_call_with_descriptors(
     let output_parameters = template.output().dimension_parameters().len();
     // Schema::key encodes and hashes its whole tree. Retain immutable keys
     // here, not inside an ostensibly constant-work runtime cache lookup.
-    let input_keys = template
-        .inputs()
-        .iter()
-        .map(|schema| schema.key())
-        .collect();
-    let output_key = template.output().key();
+    let input_keys = (0..template.inputs().len())
+        .map(|index| input_schema_key(&template, artifact.schemas(), index))
+        .collect::<Option<Box<[_]>>>()
+        .ok_or_else(|| super::invalid(node))?;
+    let output_key = output_schema_key(&template, artifact.schemas());
     // Lookup reads only borrowed validated shape tapes. Fund their complete
     // declared lengths, including the prior-output/zero-default signature.
     let parameters = template
