@@ -18446,8 +18446,8 @@
     },
     "145": {
       "base": "65c8f37c58a19d1e39eed833395b98ab87d7bf65",
-      "production": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
-      "compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+      "production": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+      "compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
       "decision": "under measurement",
       "events": [
         {
@@ -18460,6 +18460,17 @@
           "files": 49,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-test-first-b8f6807e7690.tar.gz"
+        },
+        {
+          "event": "expanded-parent",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r145-expanded-parent-3cca52e8e711.tar.gz",
+          "sha256": "3cca52e8e7115a4d05f872c8e384ed796bda799a118aed4671a167e837953726",
+          "manifest_sha256": "7d4b44b89e6c91fd47ca3e3c1328e46f83f28c7cf5f1e0a688e64d0ade12788a",
+          "bytes": 241126,
+          "files": 70,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-expanded-parent-3cca52e8e711.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
