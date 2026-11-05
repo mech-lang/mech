@@ -376,12 +376,15 @@ impl Invocation<'_, '_, '_> {
             self.export_numeric_continuation(id, site)?;
         }
         if mode == 2 {
-            // A native bounds miss executes the original selected operation at
-            // its exact source position. Materialize only that cold operand.
-            let Some(Operation::Read { array, .. } | Operation::Write { array, .. }) =
-                proof.action(site)
+            // A bounds or bulk-count rejection executes the original selected
+            // operation at its exact source position. Export only its owner.
+            let Some(
+                Operation::Read { array, .. }
+                | Operation::Write { array, .. }
+                | Operation::AppendLeBytes { array, .. },
+            ) = proof.action(site)
             else {
-                return Err(invalid("numeric bounds exit outside read"));
+                return Err(invalid("numeric rejection outside selected access"));
             };
             let Action::LibraryCall { operands, .. } = metadata.plan.blocks()[site].action() else {
                 return Err(invalid("numeric bounds lost call"));
