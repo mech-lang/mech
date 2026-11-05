@@ -19366,7 +19366,23 @@
         "unchanged_1_05_guards": true
       },
       "frozen_prior_heads_unchanged": true,
-      "final_closure_event": "closure-final"
+      "final_closure_event": "closure-final",
+      "publication_audit": {
+        "archives_verified": 36,
+        "all_file_hashes_modes_and_git_blobs_verified": true,
+        "downloaded_closure_sha256": "e599b397b50dd6495417e25af600b90a0ca405f86a5126207f740f9469763415",
+        "downloaded_closure_report_and_results_replay_byte_identically": true,
+        "analysis_outputs": {
+          "results.json": "f6e578d1fb4ed1f608d582c7308036217f90def4e502afa9d8108ccb65debdb2",
+          "REPORT.md": "08325135fb14727844240e7687c257339bccef3c2eae0f6c4d60bd49d4887e8d"
+        },
+        "native_binaries_and_bytecode_excluded": true,
+        "benchmark_or_compiler_executed": false,
+        "final_closure_download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r147-closure-final-e599b397b50d.tar.gz",
+        "corrected_allocator_link_input_rehashed": true,
+        "read_only_closure_review": "no blocking correctness, architecture or claim findings after receipt correction",
+        "freed_superseded_temporary_file_bytes": 680886200
+      }
     }
   },
   "repository": "mech-lang/mech",
