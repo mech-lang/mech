@@ -20025,7 +20025,19 @@
           "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-profile-16384-distribution-change-b79d79bc2802.tar.gz"
         }
       ],
-      "events": []
+      "events": [
+        {
+          "event": "pc-tables-33027-periodic-window",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r149-pc-tables-33027-periodic-window-9b68666d0bc9.tar.gz",
+          "sha256": "9b68666d0bc9674c1d8fbfa1c26a3e0dc7e56f6595a41bacc3df04e6a8738249",
+          "manifest_sha256": "cff4642d97d0e59d352bc5807b2e547017d49f7db7f868435caf75e6fa1f38ec",
+          "bytes": 338024,
+          "files": 30,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-tables-33027-periodic-window-9b68666d0bc9.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
