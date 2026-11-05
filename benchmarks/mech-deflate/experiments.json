@@ -18202,6 +18202,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-random-64-primary-6bd194d5532e.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-32-high-entropy-stored-primary-2c18093717c1.tar.gz",
+          "sha256": "2c18093717c1b8e7f44c496471ef4ca9571b7453b15d597ce0803209e9d7c26a",
+          "manifest_sha256": "eeb374c157c7970875ad85b66ac7b6f39f874f6f489894953f9c6c48012adc75",
+          "bytes": 242391,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-32-high-entropy-stored-primary-2c18093717c1.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
