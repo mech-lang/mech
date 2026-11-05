@@ -23651,6 +23651,26 @@
           "results.json": "247f0dcf59566ee5031d6314caced5664deb0f620551957d667ca98065d8c081",
           "REPORT.md": "755f1fe6e0e8fcf9dff458e7531d3e08fed6a9924fda34c41078f49dcf40f089"
         }
+      },
+      "fresh_public_replay": {
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "paths_with_multiple_preserved_versions": 2,
+        "round": 158,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 105,
+        "verified_archives": 8,
+        "verified_file_occurrences": 273
+      },
+      "publication_verification": {
+        "archives": 8,
+        "server_digests": 16,
+        "native_binaries": false,
+        "bytecode": false,
+        "raw_traces": false,
+        "private_environment_sections": false
       }
     }
   },
