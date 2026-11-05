@@ -395,8 +395,8 @@ impl Layout {
             .ok_or("numeric shadow size overflows")?;
         Ok(layout)
     }
-    /// Native entries may share primary source membership, but each Tail
-    /// header has one independently reconstructed entry and one readiness home.
+    /// Find the independently reconstructed entry and readiness home for a header.
+    #[cfg(feature = "canonical-native-program")]
     pub fn header(&self, site: usize) -> Option<usize> {
         self.regions
             .iter()
