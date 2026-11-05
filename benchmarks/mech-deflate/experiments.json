@@ -17328,6 +17328,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-eight-overlap-primary-406e1a415ecd.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-case-eight-literals-prefix-primary-eaea7895812f.tar.gz",
+          "sha256": "eaea7895812f386124248f777b59b2462cf567aafb71f1fc6b028b90d616990e",
+          "manifest_sha256": "b76c1e7f7dc580cfb9741c5b5c87265affc3260a5a5f1bfa3d331147c2119c25",
+          "bytes": 228351,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-eight-literals-prefix-primary-eaea7895812f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
