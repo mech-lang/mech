@@ -225,7 +225,73 @@ fn intrinsic_upper_bound(function: &Function, value: Value, depth: usize) -> u64
     }
 }
 
+#[cfg(test)]
 pub(in crate::native_artifact) fn optimize(context: &mut Context) -> usize {
+    optimize_with_bounds(context, &[])
+}
+
+fn inverse_offset(function: &Function, value: Value) -> Option<(Value, u64)> {
+    let (base, offset) = match *definition(function, value)? {
+        D::BinaryImm64 {
+            opcode: O::IaddImm,
+            arg,
+            imm,
+        } if imm.bits() < 0 => (arg, (imm.bits() as u64).wrapping_neg()),
+        D::Binary {
+            opcode: O::Isub,
+            args,
+        } => (args[0], constant(function, args[1])?),
+        D::Binary {
+            opcode: O::Iadd,
+            args,
+        } => {
+            let (base, addend) = if let Some(addend) = constant(function, args[1]) {
+                (args[0], addend)
+            } else {
+                (args[1], constant(function, args[0])?)
+            };
+            if addend < 1 << 63 {
+                return None;
+            }
+            (base, addend.wrapping_neg())
+        }
+        _ => return None,
+    };
+    Some((function.dfg.resolve_aliases(base), offset))
+}
+
+fn insert_bound(
+    upper: &mut BTreeMap<Value, Vec<(Block, u64)>>,
+    facts: &mut usize,
+    value: Value,
+    at: Block,
+    bound: u64,
+) -> bool {
+    if bound == u64::MAX {
+        return false;
+    }
+    let entries = upper.entry(value).or_default();
+    if let Some((_, old)) = entries.iter_mut().find(|(block, _)| *block == at) {
+        if bound < *old {
+            *old = bound;
+            return true;
+        }
+        return false;
+    }
+    if *facts == MAX_FACTS {
+        return false;
+    }
+    entries.push((at, bound));
+    *facts += 1;
+    true
+}
+
+/// `known` is emitted only from validated packed numeric extent recipes;
+/// no serialized field or caller-supplied array payload grants a range fact.
+pub(in crate::native_artifact) fn optimize_with_bounds(
+    context: &mut Context,
+    known: &[(Value, u64)],
+) -> usize {
     context.compute_cfg();
     context.compute_domtree();
     let function = &context.func;
@@ -241,6 +307,34 @@ pub(in crate::native_artifact) fn optimize(context: &mut Context) -> usize {
     }
     let mut upper = BTreeMap::<Value, Vec<(Block, u64)>>::new();
     let mut facts = 0;
+    let mut known_ranges = BTreeMap::<Value, u64>::new();
+    for &(value, bound) in known {
+        let value = function.dfg.resolve_aliases(value);
+        if function.dfg.value_type(value) == types::I64 {
+            known_ranges
+                .entry(value)
+                .and_modify(|old| *old = (*old).min(bound))
+                .or_insert(bound);
+        }
+    }
+    let at_bound = |operand: Operand, at: Block, upper: &BTreeMap<Value, Vec<(Block, u64)>>| {
+        let mut bound = operand.upper(function);
+        if let Some(value) = operand.value() {
+            if let Some(&known) = known_ranges.get(&value) {
+                bound = bound.min(known);
+            }
+            if let Some(entries) = upper.get(&value) {
+                for &(origin, high) in entries {
+                    if context.domtree.block_dominates(origin, at) {
+                        bound = bound.min(high);
+                    }
+                }
+            }
+        }
+        bound
+    };
+    let mut ranges = Vec::new();
+    let mut checked_adds = Vec::new();
     for block in function.layout.blocks() {
         let Some(inst) = function.layout.last_inst(block) else {
             continue;
@@ -262,6 +356,42 @@ pub(in crate::native_artifact) fn optimize(context: &mut Context) -> usize {
             let Some((cond, a, b)) = comparison(function, arg, truth, 8) else {
                 continue;
             };
+            // Record an exact non-wrapping relation at its sole success edge.
+            // Dynamic addends only prove base<=sum; subtract an increment only
+            // when the actual instruction has that exact constant addend.
+            if let (Some(left), Some(right)) = (a.value(), b.value()) {
+                let pair = match cond {
+                    IntCC::UnsignedGreaterThanOrEqual | IntCC::UnsignedGreaterThan => {
+                        Some((left, right))
+                    }
+                    IntCC::UnsignedLessThanOrEqual | IntCC::UnsignedLessThan => Some((right, left)),
+                    _ => None,
+                };
+                if let Some((sum, base)) = pair {
+                    if addition(function, sum, base).is_some() {
+                        let exact = match definition(function, sum) {
+                            Some(D::BinaryImm64 {
+                                opcode: O::IaddImm,
+                                imm,
+                                ..
+                            }) => Some(imm.bits() as u64),
+                            Some(D::Binary {
+                                opcode: O::Iadd,
+                                args,
+                            }) => {
+                                let [x, y] = args.map(|v| function.dfg.resolve_aliases(v));
+                                if x == base {
+                                    constant(function, y)
+                                } else {
+                                    constant(function, x)
+                                }
+                            }
+                            _ => None,
+                        };
+                        checked_adds.push((target, base, sum, exact.unwrap_or(0)));
+                    }
+                }
+            }
             let (base, bound, strict) = match cond {
                 IntCC::UnsignedLessThan => (a, b, true),
                 IntCC::UnsignedLessThanOrEqual => (a, b, false),
@@ -276,14 +406,49 @@ pub(in crate::native_artifact) fn optimize(context: &mut Context) -> usize {
             let Some(base) = base.value() else {
                 continue;
             };
-            let limit = bound.upper(function);
-            let Some(limit) = limit.checked_sub(u64::from(strict)) else {
-                continue;
-            };
-            if limit < u64::MAX {
-                upper.entry(base).or_default().push((target, limit));
-                facts += 1;
+            ranges.push((block, target, base, bound, strict));
+        }
+    }
+    // A bound at a successful read may constrain an earlier checked sum.
+    // Carry it back to the base only where BOTH success facts dominate; this
+    // never speculates the original first overflow/read failure or a debit.
+    for _ in 0..8 {
+        let mut changed = false;
+        for &(source, target, base, bound, strict) in &ranges {
+            if let Some(limit) = at_bound(bound, source, &upper).checked_sub(u64::from(strict)) {
+                changed |= insert_bound(&mut upper, &mut facts, base, target, limit);
             }
+        }
+        // A checked one-based read tests (index-1)<length. Invert that
+        // modular translation only when the entire inferred interval plus
+        // offset fits u64. For example ordinal<=M proves index<=M+1;
+        // index==0 produces ordinal==MAX and cannot enter that interval.
+        let translated = upper
+            .iter()
+            .filter_map(|(&value, entries)| {
+                inverse_offset(function, value)
+                    .map(|(base, offset)| (base, offset, entries.clone()))
+            })
+            .collect::<Vec<_>>();
+        for (base, offset, entries) in translated {
+            for (at, bound) in entries {
+                if let Some(bound) = bound.checked_add(offset) {
+                    changed |= insert_bound(&mut upper, &mut facts, base, at, bound);
+                }
+            }
+        }
+        for &(success, base, sum, increment) in &checked_adds {
+            let entries = upper.get(&sum).cloned().unwrap_or_default();
+            for (at, bound) in entries {
+                if context.domtree.block_dominates(success, at) {
+                    if let Some(bound) = bound.checked_sub(increment) {
+                        changed |= insert_bound(&mut upper, &mut facts, base, at, bound);
+                    }
+                }
+            }
+        }
+        if !changed {
+            break;
         }
     }
     let mut changes = Vec::new();
@@ -311,13 +476,7 @@ pub(in crate::native_artifact) fn optimize(context: &mut Context) -> usize {
             continue;
         };
         let limit = u64::MAX - increment;
-        if intrinsic_upper_bound(function, base, 8) <= limit
-            || upper.get(&base).is_some_and(|bounds| {
-                bounds.iter().any(|&(at, bound)| {
-                    bound <= limit && context.domtree.block_dominates(at, block)
-                })
-            })
-        {
+        if at_bound(Operand::Value(base), block, &upper) <= limit {
             let call = blocks[success];
             changes.push((
                 inst,

@@ -502,3 +502,261 @@ fn dynamic_masked_addends_and_immediate_predicates_preserve_signed_and_overflow_
         }
     }
 }
+
+fn extent_read_function(mode: usize, immediate: bool) -> (Context, Value) {
+    let mut c = Context::new();
+    c.func.signature.params = vec![AbiParam::new(types::I64); 3];
+    c.func.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut fb = FunctionBuilderContext::new();
+    let length;
+    {
+        let mut b = FunctionBuilder::new(&mut c.func, &mut fb);
+        let entry = b.create_block();
+        let first = b.create_block();
+        let bounds = b.create_block();
+        let second = b.create_block();
+        let success = b.create_block();
+        let overflow = b.create_block();
+        let outside = b.create_block();
+        let later_overflow = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let x = b.block_params(entry)[0];
+        length = b.block_params(entry)[1];
+        let extra = b.block_params(entry)[2];
+        if mode == 1 {
+            b.ins().brif(extra, second, &[], first, &[]);
+        } else {
+            b.ins().jump(first, &[]);
+        }
+        b.switch_to_block(first);
+        let one = b.ins().iconst(types::I64, 1);
+        let first_sum = if mode == 3 {
+            let addend = b.ins().band_imm(extra, 255);
+            b.ins().iadd(x, addend)
+        } else if immediate {
+            b.ins().iadd_imm(x, 1)
+        } else {
+            b.ins().iadd(x, one)
+        };
+        if mode == 5 {
+            b.ins().jump(bounds, &[]);
+        } else {
+            let good = b
+                .ins()
+                .icmp(IntCC::UnsignedGreaterThanOrEqual, first_sum, x);
+            b.ins().brif(good, bounds, &[], overflow, &[]);
+        }
+        b.switch_to_block(bounds);
+        let cc = if mode == 2 {
+            IntCC::SignedLessThanOrEqual
+        } else {
+            IntCC::UnsignedLessThanOrEqual
+        };
+        let valid = b.ins().icmp(cc, first_sum, length);
+        b.ins().brif(valid, second, &[], outside, &[]);
+        b.switch_to_block(second);
+        let increment = if mode == 3 { u64::MAX } else { 2 };
+        let sum = if immediate {
+            b.ins().iadd_imm(x, increment as i64)
+        } else {
+            let increment = b.ins().iconst(types::I64, increment as i64);
+            b.ins().iadd(x, increment)
+        };
+        let good = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, sum, x);
+        b.ins().brif(good, success, &[], later_overflow, &[]);
+        b.switch_to_block(success);
+        b.ins().return_(&[sum]);
+        for (block, value) in [(overflow, -1), (outside, -2), (later_overflow, -3)] {
+            b.switch_to_block(block);
+            let value = b.ins().iconst(types::I64, value);
+            b.ins().return_(&[value]);
+        }
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    (c, length)
+}
+
+#[test]
+fn physical_extent_bounds_keep_first_failures_signed_bypasses_and_dynamic_addends() {
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut entries = Vec::new();
+    for mode in 0..6 {
+        for immediate in [false, true] {
+            for known in [false, true] {
+                let (mut c, length) = extent_read_function(mode, immediate);
+                let limit = if mode == 3 { 255 } else { i64::MAX as u64 / 8 };
+                let hints = if known && mode != 4 {
+                    vec![(length, limit)]
+                } else {
+                    vec![]
+                };
+                assert_eq!(
+                    optimize_with_bounds(&mut c, &hints),
+                    usize::from(known && mode == 0),
+                    "mode={mode} immediate={immediate} known={known}"
+                );
+                c.verify(module.isa()).unwrap();
+                let id = module
+                    .declare_function(
+                        &format!("extent_{mode}_{immediate}_{known}"),
+                        Linkage::Local,
+                        &c.func.signature,
+                    )
+                    .unwrap();
+                module.define_function(id, &mut c).unwrap();
+                entries.push((mode, known && mode != 4, limit, id));
+            }
+        }
+    }
+    module.finalize_definitions().unwrap();
+    let mut vectors = 0;
+    for (mode, known, limit, id) in entries {
+        // SAFETY: exact live three-word ABI owned by this JIT module.
+        let run: unsafe extern "C" fn(u64, u64, u64) -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+        for x in [
+            0u64,
+            1,
+            2,
+            3,
+            4,
+            31,
+            255,
+            256,
+            limit - 1,
+            limit,
+            limit + 1,
+            1 << 63,
+            u64::MAX - 1,
+            u64::MAX,
+        ] {
+            for length in [0u64, 1, 2, 3, 4, 31, 255, limit, u64::MAX - 1, u64::MAX] {
+                if known && length > limit {
+                    continue;
+                }
+                for extra in [0u64, 1, 255, u64::MAX] {
+                    let result = || {
+                        if mode != 1 || extra == 0 {
+                            let addend = if mode == 3 { extra & 255 } else { 1 };
+                            let (sum, overflow) = x.overflowing_add(addend);
+                            if mode != 5 && overflow {
+                                return u64::MAX;
+                            }
+                            let valid = if mode == 2 {
+                                (sum as i64) <= (length as i64)
+                            } else {
+                                sum <= length
+                            };
+                            if !valid {
+                                return u64::MAX - 1;
+                            }
+                        }
+                        x.checked_add(if mode == 3 { u64::MAX } else { 2 })
+                            .unwrap_or(u64::MAX - 2)
+                    };
+                    assert_eq!(
+                        unsafe { run(x, length, extra) },
+                        result(),
+                        "mode={mode} known={known} x={x} length={length} extra={extra}"
+                    );
+                    vectors += 1;
+                }
+            }
+        }
+    }
+    println!("physical extent range vectors: {vectors}");
+}
+
+#[test]
+fn one_based_read_extents_preserve_zero_index_wrap_and_first_error_order() {
+    use cranelift_codegen::cursor::{Cursor, FuncCursor};
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let limit = i64::MAX as u64 / 8;
+    let mut entries = Vec::new();
+    for immediate in [false, true] {
+        for known in [false, true] {
+            let (mut c, length) = extent_read_function(0, immediate);
+            let (inst, sum) = c
+                .func
+                .layout
+                .blocks()
+                .flat_map(|block| c.func.layout.block_insts(block))
+                .find_map(|inst| match c.func.dfg.insts[inst] {
+                    D::IntCompare {
+                        cond: IntCC::UnsignedLessThanOrEqual,
+                        args,
+                        ..
+                    } if args[1] == length => Some((inst, args[0])),
+                    _ => None,
+                })
+                .unwrap();
+            let mut cursor = FuncCursor::new(&mut c.func);
+            cursor.goto_inst(inst);
+            let ordinal = cursor.ins().iadd_imm(sum, -1);
+            cursor.func.dfg.insts[inst] = D::IntCompare {
+                opcode: O::Icmp,
+                cond: IntCC::UnsignedLessThan,
+                args: [ordinal, length],
+            };
+            let hints = if known { vec![(length, limit)] } else { vec![] };
+            assert_eq!(optimize_with_bounds(&mut c, &hints), usize::from(known));
+            c.verify(module.isa()).unwrap();
+            let id = module
+                .declare_function(
+                    &format!("ordinal_extent_{immediate}_{known}"),
+                    Linkage::Local,
+                    &c.func.signature,
+                )
+                .unwrap();
+            module.define_function(id, &mut c).unwrap();
+            entries.push((known, id));
+        }
+    }
+    module.finalize_definitions().unwrap();
+    let mut vectors = 0;
+    for (known, id) in entries {
+        // SAFETY: exact live three-word ABI owned by this JIT module.
+        let run: unsafe extern "C" fn(u64, u64, u64) -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+        for x in [
+            0u64,
+            1,
+            2,
+            3,
+            31,
+            255,
+            limit - 1,
+            limit,
+            limit + 1,
+            1 << 63,
+            u64::MAX - 1,
+            u64::MAX,
+        ] {
+            for length in [0u64, 1, 2, 3, 31, 255, limit, u64::MAX - 1, u64::MAX] {
+                if known && length > limit {
+                    continue;
+                }
+                let expected = match x.checked_add(1) {
+                    None => u64::MAX,
+                    Some(sum) if sum.wrapping_sub(1) >= length => u64::MAX - 1,
+                    Some(_) => x.checked_add(2).unwrap_or(u64::MAX - 2),
+                };
+                assert_eq!(
+                    unsafe { run(x, length, 0) },
+                    expected,
+                    "known={known} x={x} length={length}"
+                );
+                vectors += 1;
+            }
+        }
+    }
+    println!("one-based extent vectors: {vectors}");
+}

@@ -154,7 +154,16 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             }
         }
         let unsigned_guards = if controls.enabled(OptimizationPass::UnsignedGuardFacts) {
-            crate::native_artifact::codegen::common::unsigned_guard_facts::optimize(&mut context)
+            let bounds = local
+                .numeric_write_loops
+                .iter()
+                .chain(&local.readonly_numeric_loops)
+                .flat_map(|r| r.native_extent_bounds.iter().copied())
+                .collect::<Vec<_>>();
+            crate::native_artifact::codegen::common::unsigned_guard_facts::optimize_with_bounds(
+                &mut context,
+                &bounds,
+            )
         } else {
             0
         };

@@ -5,10 +5,13 @@ use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::compiler::offset;
 use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::{FunctionBuilder, Variable};
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 
 pub(in crate::native_artifact) struct Words {
     variables: BTreeMap<usize, Variable>,
+    native_extent_slots: BTreeMap<usize, u64>,
+    native_extent_values: RefCell<BTreeMap<Value, u64>>,
 }
 impl Words {
     pub(in crate::native_artifact) fn new(
@@ -51,14 +54,41 @@ impl Words {
             b.def_var(variable, value);
             variables.insert(slot, variable);
         }
-        Ok(Self { variables })
+        Ok(Self {
+            variables,
+            native_extent_slots: BTreeMap::new(),
+            native_extent_values: RefCell::new(BTreeMap::new()),
+        })
     }
     pub(in crate::native_artifact) fn read(
         &self,
         b: &mut FunctionBuilder<'_>,
         slot: usize,
     ) -> Value {
-        b.use_var(self.variables[&slot])
+        let value = b.use_var(self.variables[&slot]);
+        if let Some(&upper) = self.native_extent_slots.get(&slot) {
+            self.native_extent_values
+                .borrow_mut()
+                .entry(value)
+                .and_modify(|old| *old = (*old).min(upper))
+                .or_insert(upper);
+        }
+        value
+    }
+    /// Only the numeric emitter's genuine packed slice length/capacity lanes
+    /// qualify. Shape axes and arbitrary words loaded from arrays do not.
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn bound_native_extent(&mut self, slot: usize, upper: u64) {
+        assert!(self.variables.contains_key(&slot));
+        self.native_extent_slots.insert(slot, upper);
+    }
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn native_extent_bounds(&self) -> Vec<(Value, u64)> {
+        self.native_extent_values
+            .borrow()
+            .iter()
+            .map(|(&v, &upper)| (v, upper))
+            .collect()
     }
     pub(in crate::native_artifact) fn write(
         &self,

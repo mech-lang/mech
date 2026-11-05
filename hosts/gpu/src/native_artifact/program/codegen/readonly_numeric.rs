@@ -48,6 +48,10 @@ pub(in crate::native_artifact) struct Report {
     pub runtime_scalar_path_walks: usize,
     pub tree_nodes: Vec<usize>,
     pub direct_child_edges: Vec<(usize, usize, usize)>,
+    // Compiler-local SSA facts, regenerated from checked typed-view recipes.
+    // They are never serialized or accepted from a descriptor/image caller.
+    #[serde(skip)]
+    pub native_extent_bounds: Vec<(Value, u64)>,
 }
 
 /// A terminal error never resumes a source consumer. Mode3 still reconciles
@@ -191,7 +195,7 @@ pub(in crate::native_artifact) fn emit_entry(
         b.ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, 16)
     };
-    let words = Words::new_with(b, locals, code, slots, |b, slot| {
+    let mut words = Words::new_with(b, locals, code, slots, |b, slot| {
         if !(shadow..shadow + proof.words).contains(&slot) {
             return Ok(None);
         }
@@ -236,6 +240,20 @@ pub(in crate::native_artifact) fn emit_entry(
             Ok(Some(b.ins().iconst(types::I64, 0)))
         }
     })?;
+    for (at, array) in proof.arrays.iter().enumerate() {
+        if matches!(array.width, 1 | 2 | 4 | 8) {
+            // Runtime unsigned_matrix_native_view validates the actual packed
+            // slice and retained owner. Rust slices/Vec allocations cannot
+            // exceed isize::MAX bytes; appends additionally retain the checked
+            // fixed physical capacity. Never infer this for rows/columns:
+            // a zero-element matrix can have an arbitrarily large empty axis.
+            let upper = i64::MAX as u64 / u64::from(array.width);
+            words.bound_native_extent(shadow + proof.view(at) + 1, upper);
+            if let Some(capacity) = proof.capacity(at) {
+                words.bound_native_extent(shadow + capacity, upper);
+            }
+        }
+    }
     // Every ordinary scalar operand home is retained conservatively. Private
     // virtual-frame intermediates have no cold consumer: reconciliation reads
     // only current carrier/result leaves and exact view/flag/capacity lanes.
@@ -337,6 +355,7 @@ pub(in crate::native_artifact) fn emit_entry(
         header: site,
         parent: region.tail.parent(),
         source_sites: proof.sites.clone(),
+        native_extent_bounds: Vec::new(),
         typed_loads: Vec::new(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
@@ -744,6 +763,7 @@ pub(in crate::native_artifact) fn emit_entry(
     if report.successful_backedge_helpers != 0 {
         return Err(backend("numeric funded body contains a general call"));
     }
+    report.native_extent_bounds = words.native_extent_bounds();
     if proof.writes() {
         reports.numeric_write_loops.push(report);
     } else {
