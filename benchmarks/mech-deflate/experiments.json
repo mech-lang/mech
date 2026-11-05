@@ -16766,6 +16766,17 @@
           "files": 42,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-eight-literals-primary-ce48c477b2b9.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-case-16384-distribution-change-primary-f8d0a6a2638b.tar.gz",
+          "sha256": "f8d0a6a2638b9394ca949f3bef1ae91b5c69da5c2d88be049157b4afc078f4ad",
+          "manifest_sha256": "ba09c429c2cc58e6d5f56901f391ef37be5ef7f2ed1ac6a847ae920509c340d7",
+          "bytes": 217911,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-16384-distribution-change-primary-f8d0a6a2638b.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
