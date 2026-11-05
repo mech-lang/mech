@@ -20047,6 +20047,17 @@
           "files": 30,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-tables-16384-distribution-change-72c32c7e7b67.tar.gz"
+        },
+        {
+          "event": "pc-analysis",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r149-pc-analysis-7bb7ae4540c4.tar.gz",
+          "sha256": "7bb7ae4540c4c78a9581e9d758e235da22cf865c1afff0ea77d3b4831cc2881b",
+          "manifest_sha256": "438db574ac83433051284910c04302bc045a4cfff8fb97b3eb22493b99aa8496",
+          "bytes": 96139,
+          "files": 73,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-analysis-7bb7ae4540c4.tar.gz"
         }
       ]
     }
