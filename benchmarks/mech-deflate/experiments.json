@@ -18443,6 +18443,35 @@
         "R144 six adverse primary medians and12adverse scalar medians retained within unchanged gates"
       ],
       "active_implementation": null
+    },
+    "145": {
+      "base": "65c8f37c58a19d1e39eed833395b98ab87d7bf65",
+      "production": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+      "compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "test-first",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r145-test-first-b8f6807e7690.tar.gz",
+          "sha256": "b8f6807e76908c2466b17520fd8fde528a5fcdf179f04b9a18a8bd472d143cab",
+          "manifest_sha256": "55afd72b60a0561bf2cfa6feb9a3df6ee56a24f9c9b029548d4c1d92cbac4f0e",
+          "bytes": 210836,
+          "files": 49,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-test-first-b8f6807e7690.tar.gz"
+        }
+      ],
+      "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+      "versions": {
+        "typed_ir": 172,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
