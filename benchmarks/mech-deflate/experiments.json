@@ -19386,8 +19386,8 @@
     },
     "148": {
       "base": "2d9d5671ada86d846a33c9620515062280381799",
-      "production": "cdd551dbbef71fdb8b6123ff48186541c680ca1d",
-      "compiler_source": "cdd551dbbef71fdb8b6123ff48186541c680ca1d",
+      "production": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+      "compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
       "decision": "under measurement",
       "events": [
         {
@@ -19455,6 +19455,17 @@
           "files": 39,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-ancestry-walk-development-9a9510d6ce16.tar.gz"
+        },
+        {
+          "event": "refined-screen-eight-literals-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-refined-screen-eight-literals-primary-27a47c072e77.tar.gz",
+          "sha256": "27a47c072e77e503e163bdc327ceecf8ec422c663dc79dd8f5b21fa15833b617",
+          "manifest_sha256": "6afd94e84df3c177ab42fed029dc39f3a762b66b3fc2077f38818818d39e1e27",
+          "bytes": 885408,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-refined-screen-eight-literals-primary-27a47c072e77.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
