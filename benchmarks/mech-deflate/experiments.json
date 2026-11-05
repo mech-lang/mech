@@ -16741,9 +16741,9 @@
     },
     "141": {
       "base": "b511c718c5c30cca5ac35812429c3e22198be7db",
-      "production": "beee5a3fc3f0dff11612c863429711718b6d655b",
+      "production": "58f75827e5c44187731df5253b3a058d2e9cd417",
       "compiler_source": "beee5a3fc3f0dff11612c863429711718b6d655b",
-      "decision": "Retain the bounded rejected-entry resource reduction; no established elapsed improvement. The R140 small-input ordinary-fallback regression is still open.",
+      "decision": "Reject the early-refusal implementation: primary elapsed-overhead objective not established (+0.200298% literal median; most larger medians flat/adverse). Preserve evidence and short-buffer semantic coverage. Retain qualified R140 production; defer ordinary-fallback grouping prerequisite with the residual1.322924% R140 regression explicit.",
       "events": [
         {
           "event": "parent-corrected",
@@ -17019,6 +17019,17 @@
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-periodic-census-f209c6470ebb.tar.gz"
+        },
+        {
+          "event": "retained-controls",
+          "source_revision": "58f75827e5c44187731df5253b3a058d2e9cd417",
+          "asset": "r141-retained-controls-a264bf597978.tar.gz",
+          "sha256": "a264bf597978591e2a622f71a7045ad2983b268c54d602f024c64c8a34e1a8f2",
+          "manifest_sha256": "907dcb999604c1eecb0ddf849a29a66cf77680a15d66a29924b5d4150232b1de",
+          "bytes": 264332,
+          "files": 67,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-retained-controls-a264bf597978.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
@@ -17028,6 +17039,13 @@
       "cases": 20,
       "versions": {
         "typed_ir": 169,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "retained": false,
+      "retained_versions": {
+        "typed_ir": 168,
         "work_policy": 107,
         "private_abi": 39,
         "bytecode": 14
