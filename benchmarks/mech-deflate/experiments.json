@@ -21503,6 +21503,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-eight-literals-prefix-primary-f4bb5927008e.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-seven-stored-prefix-primary-0a0c44b74214.tar.gz",
+          "sha256": "0a0c44b7421404532268ebfa01e4e62ad0cdf1d3da9e50ee1e8f6a1f1803b710",
+          "manifest_sha256": "768c9159a32a7bb06ae0b2dec6c2ddc9e3a024e1f5eba8141676dfac15cb340f",
+          "bytes": 83817,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-seven-stored-prefix-primary-0a0c44b74214.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
