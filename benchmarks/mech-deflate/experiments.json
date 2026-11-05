@@ -17694,6 +17694,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-33027-periodic-window-primary-d3be371263ba.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-case-random-32769-primary-2a3c2979567b.tar.gz",
+          "sha256": "2a3c2979567b251dc11014b400d10c05491a3ba44ceee96d28e19e15e297f575",
+          "manifest_sha256": "a8fd666389e750d34f5c0d65063bfd94a2fe2275be342f9ba8aeefa40303b3ae",
+          "bytes": 227946,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-random-32769-primary-2a3c2979567b.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
