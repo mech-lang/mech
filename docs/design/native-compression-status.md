@@ -1,6 +1,8 @@
 # Native compression milestone
 
-**R154 retains a current-source window proof for native packed reads. It is locally qualified for draft review; parity is not achieved.** Earlier published heads remain frozen.
+**R157 retains shared current-traversal projection facts for numeric lowering.** The direct 20-case comparison against reviewed R154 passes unchanged gates: natural32KB improves7.719026x to6.733391x reference time; the all-case geometric mean improves1.789001%. Allocation counts and incremental live heap remain equal. Periodic/repeated instructions increase1.91%/1.99%, an unresolved performance tradeoff. See the [current report](native-numeric-traversal-facts.md) for exact pins, contrary observations,589 GPU/168 CI tests and remaining loop work. Parity is not achieved; earlier published heads remain frozen.
+
+The R154 checkpoint below remains as historical context for the reviewed base.
 
 | Checkpoint | Revision |
 |---|---|
