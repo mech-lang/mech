@@ -12,6 +12,20 @@ impl Pending {
     pub(super) fn current(&self) -> Option<usize> {
         self.0.map(|value| value.get() - 1)
     }
+    fn prepared(&self, expected: Option<usize>, next: Option<usize>) -> Result<Self, Error> {
+        if self.current() != expected {
+            return Err(invalid("native parent edge differs from its root context"));
+        }
+        let next = next
+            .map(|child| {
+                child
+                    .checked_add(1)
+                    .and_then(NonZeroUsize::new)
+                    .ok_or_else(|| invalid("native parent child edge overflows"))
+            })
+            .transpose()?;
+        Ok(Self(next))
+    }
     fn arm(&mut self, child: usize, outer: Option<usize>) -> Result<(), Error> {
         if self.current() != outer {
             return Err(invalid("parent child edge differs from active ancestor"));
@@ -47,6 +61,91 @@ impl Pending {
 }
 
 impl Invocation<'_, '_, '_> {
+    /// Prepare only a cold handoff's scalar marker. Native initialization did
+    /// not run the ordinary child callback; paid depth is a separate fact.
+    /// All fallible validation precedes publication of the restored control.
+    pub(super) fn native_parent_continuation(
+        &self,
+        root: u32,
+        active: u32,
+        previous: usize,
+        successor: usize,
+    ) -> Result<Option<Pending>, Error> {
+        if self.worker.is_some() {
+            return Ok(None);
+        }
+        let metadata = self.descriptor.metadata();
+        let tracked = |iteration: u32| -> Result<Option<usize>, Error> {
+            let control = metadata
+                .plan
+                .iterations()
+                .get(iteration as usize)
+                .ok_or_else(|| invalid("native parent ancestry is outside its plan"))?
+                .as_ref();
+            let Some((boundary, true)) = metadata
+                .compositions
+                .boundary(control.initialize() as usize)
+            else {
+                return Ok(None);
+            };
+            let (_, child) = metadata
+                .compositions
+                .child_boundary(boundary)
+                .ok_or_else(|| invalid("native parent ancestry lacks its child edge"))?;
+            if child.child != iteration {
+                return Err(invalid(
+                    "native parent ancestry differs from its child edge",
+                ));
+            }
+            Ok(Some(iteration as usize))
+        };
+        let parent = |iteration: u32| {
+            metadata.plan.iterations()[iteration as usize]
+                .as_ref()
+                .parent()
+        };
+        // The previous marker belongs to the ordinary context at native entry.
+        let mut at = Some(root);
+        let mut expected = None;
+        while let Some(iteration) = at {
+            if let Some(child) = tracked(iteration)? {
+                expected = Some(child);
+                break;
+            }
+            at = parent(iteration);
+        }
+        // Find the innermost tracked ACTIVE child and prove it lies under the
+        // same native root, even if a nearer marker has already been found.
+        let mut at = active;
+        let mut next = None;
+        loop {
+            if next.is_none() {
+                next = tracked(at)?;
+            }
+            if at == root {
+                break;
+            }
+            at =
+                parent(at).ok_or_else(|| invalid("native parent continuation escapes its root"))?;
+        }
+        let mut next = next.or(expected);
+        if let Some((boundary, false)) = metadata.compositions.boundary(previous) {
+            let (parent, child) = metadata
+                .compositions
+                .child_boundary(boundary)
+                .ok_or_else(|| invalid("native parent completion lacks its child edge"))?;
+            if parent.iteration != active || child.child_successor as usize != successor {
+                return Err(invalid(
+                    "native parent completion differs from its exact edge",
+                ));
+            }
+            // The first ordinary visit still has to consume this completed
+            // child's return edge. Do not pop it during the native handoff.
+            next = Some(child.child as usize);
+        }
+        self.parent_continuation.prepared(expected, next).map(Some)
+    }
+
     pub(super) fn arm_parent_continuation(&mut self, site: usize) -> Result<(), Error> {
         if self.worker.is_some() {
             return Ok(());
@@ -128,4 +227,19 @@ fn parent_continuation_is_single_use_and_matches_the_exact_child_edge() {
     assert!(state.complete(3, None).is_err());
     state.arm(4, None).unwrap();
     state.complete(4, None).unwrap();
+}
+
+#[test]
+fn native_parent_continuation_prepares_without_mutating_the_old_edge() {
+    let mut state = Pending::default();
+    state.arm(0, None).unwrap();
+    assert!(state.prepared(None, Some(3)).is_err());
+    assert!(state.prepared(Some(0), Some(usize::MAX)).is_err());
+    assert_eq!(state.current(), Some(0));
+    let mut restored = state.prepared(Some(0), Some(3)).unwrap();
+    assert_eq!(state.current(), Some(0));
+    assert_eq!(restored.current(), Some(3));
+    restored.complete(3, Some(0)).unwrap();
+    restored.complete(0, None).unwrap();
+    assert!(!restored.is_pending());
 }

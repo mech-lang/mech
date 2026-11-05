@@ -318,6 +318,8 @@ impl Invocation<'_, '_, '_> {
                     return Err(invalid("fuel continuation found an active ordinary child"));
                 }
             }
+            let continuation =
+                self.native_parent_continuation(proof.iteration, active, exit.from, exit.to)?;
             let mut at = active;
             loop {
                 self.progress[at as usize * 2..][..2].copy_from_slice(&[0, 1]);
@@ -330,6 +332,9 @@ impl Invocation<'_, '_, '_> {
                     .ok_or_else(|| invalid("fuel continuation escapes its native root"))?;
             }
             self.state.control.current = Some(active);
+            if let Some(continuation) = continuation {
+                self.parent_continuation = continuation;
+            }
             self.numeric_prepaid = Some(super::NumericPrepaid { region, deepest });
             self.state.scalar_path = None;
         }

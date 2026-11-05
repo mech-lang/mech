@@ -154,11 +154,14 @@ impl Layout {
                 let region = &closed.regions[id];
                 region.numeric.as_ref().is_some_and(|p| {
                     p.phase.is_some()
-                        && (region.iteration != iteration as u32 || p.prepaid_sites.is_empty())
+                        && region.iteration == iteration as u32
+                        && p.prepaid_sites.is_empty()
                 })
             }) {
                 continue;
             }
+            // Descendants keep the full ordinary source price. Their native
+            // entry declines if any member belongs to a current paid traversal.
             // An interval's custom native CFG and its ordinary cold suffix
             // are distinct execution routes. Keep the maintained parent pieces
             // on that suffix. Reconstruct the exact already-paid source price;
