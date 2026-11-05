@@ -17848,6 +17848,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-eight-literals-prefix-primary-157fbd1bb83d.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-case-seven-stored-prefix-primary-4aeb1d1dcaf0.tar.gz",
+          "sha256": "4aeb1d1dcaf0d7a9e583154263e97ec623fe87e12caf7ab62cd296edff1c1440",
+          "manifest_sha256": "9338a69f24ebf558f5d90349922216526f4f9947e732deee320137a3d6e22d36",
+          "bytes": 232313,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-seven-stored-prefix-primary-4aeb1d1dcaf0.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
