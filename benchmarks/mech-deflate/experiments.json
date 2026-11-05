@@ -20406,6 +20406,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-random-1024-primary-766884f7b235.tar.gz"
+        },
+        {
+          "event": "case-repeated-1024-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-case-repeated-1024-primary-241e7d59504a.tar.gz",
+          "sha256": "241e7d59504a6aa8229954eee73f45c387dd3b844f3d15996bdd7911b4ce7f8a",
+          "manifest_sha256": "2ffb955d75704284e5a79bd7b921e2025b33e679f23a121130fb76ea45211d7a",
+          "bytes": 107715,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-repeated-1024-primary-241e7d59504a.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
