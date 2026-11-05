@@ -21558,6 +21558,17 @@
           "files": 56,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-matrix-counters-a802040ad37c.tar.gz"
+        },
+        {
+          "event": "boundaries-before",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-boundaries-before-f0bd98e128ce.tar.gz",
+          "sha256": "f0bd98e128ce06ff06aa6530ad28031017be54464be2964c0f1f3b35926a7bad",
+          "manifest_sha256": "a01c67fa0b75eb5f3228607c01dcc149c6fb2f546cebe0d4e8bbcb02772698f7",
+          "bytes": 1375599,
+          "files": 62,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-boundaries-before-f0bd98e128ce.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
