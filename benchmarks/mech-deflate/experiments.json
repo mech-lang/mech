@@ -19631,6 +19631,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-random-256-primary-2db524c29eb2.tar.gz"
+        },
+        {
+          "event": "case-128-biased-dynamic-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-128-biased-dynamic-primary-9df8c1508807.tar.gz",
+          "sha256": "9df8c1508807118406012a30e2d0fe57c7935c32209f91b26dbf51b939f5be0f",
+          "manifest_sha256": "09a3af6d1f992b45884d0cf359a996c66b38c43517f7b045e8e88155aff6f41f",
+          "bytes": 888455,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-128-biased-dynamic-primary-9df8c1508807.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
