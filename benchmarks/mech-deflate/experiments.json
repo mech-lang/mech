@@ -17262,6 +17262,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-reymont-prefix-1024-primary-93a91c06f414.tar.gz"
+        },
+        {
+          "event": "case-320-overlap-primary",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-case-320-overlap-primary-252f82cb8fee.tar.gz",
+          "sha256": "252f82cb8feef4995848c4a1f8f68f2f9a00008cc0845eefb33b22a189c0b046",
+          "manifest_sha256": "a9df01f70cce85319855aba06e4028b69e3f93bb0de776bf49ce9164f2803c54",
+          "bytes": 227348,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-320-overlap-primary-252f82cb8fee.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
