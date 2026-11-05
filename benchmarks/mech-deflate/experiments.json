@@ -23517,7 +23517,27 @@
         }
       },
       "reviewed_comparison_base": "ede060a777109403306b411446687b41a44f7ffe",
-      "scope": "Same complete pinned compressor and maintained all20 regression matrix. Primary, counters, heap, scalar and CPU-time samples are separate cohorts."
+      "scope": "Same complete pinned compressor and maintained all20 regression matrix. Primary, counters, heap, scalar and CPU-time samples are separate cohorts.",
+      "fresh_public_replay": {
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "paths_with_multiple_preserved_versions": 18,
+        "round": 157,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 941,
+        "verified_archives": 40,
+        "verified_file_occurrences": 4546,
+        "receipt_sha256": "d5b61d94a1982bafdd77f28f7e554e3fe322131ee5de423039ef848a7a85f629"
+      },
+      "publication_verification": {
+        "archives": 40,
+        "server_digests": 80,
+        "native_binaries": false,
+        "bytecode": false,
+        "receipt_sha256": "f5a9d14dbf25693bd6034e0ea85282d0602db3f774b5845edcf5c507c2507b4b"
+      }
     }
   },
   "repository": "mech-lang/mech",
