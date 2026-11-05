@@ -14,6 +14,31 @@ pub(in crate::native_artifact::program::image) fn serialize_schemas<S: Serialize
 }
 
 impl NativeProgramDescriptor {
+    /// Restore exact metadata sealed by the SAME trusted checked native Object.
+    /// The independent loader below remains available for unbound image checks.
+    ///
+    /// # Safety
+    /// Identity and binding must be genuine read-only symbols from that Object,
+    /// whose complete checked code/build provenance the caller has established.
+    /// A caller-supplied digest is not authentication. Actual catalog factories,
+    /// runtime admission and current-owner checks remain mandatory.
+    pub(in crate::native_artifact) unsafe fn decode_object_bound_image(
+        image: &[u8],
+        catalog: &mech_core::FunctionCatalog,
+        identity: &[u8; super::identity::NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
+        binding: &[u8; super::binding::NATIVE_PROGRAM_IMAGE_BINDING_BYTES],
+    ) -> Result<Self, String> {
+        let unpacked;
+        let image = if image.starts_with(super::packing::MAGIC) {
+            unpacked = super::packing::unpack(image)?;
+            unpacked.as_slice()
+        } else {
+            image
+        };
+        // SAFETY: delegated genuine same-Object symbols and checked build.
+        let verified = unsafe { super::binding::verify(image, identity, binding)? };
+        wire::decode_verified(&verified, catalog)
+    }
     /// Export the already-validated plan, layouts, selected-call metadata and
     /// canonical schemas. No pointers or invocation-local cache identities are
     /// persisted. Only the unsafe build-owned loader may restore its compiler

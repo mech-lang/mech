@@ -192,6 +192,10 @@ pub(in crate::native_artifact) fn render_main(
 ) -> String {
     template
         .replace("@IDENTITY_SYMBOL@", symbol)
+        .replace(
+            "@IMAGE_BINDING_SYMBOL@",
+            &format!("{symbol}_descriptor_binding_v1"),
+        )
         .replace("@BYTECODE_SHA256@", &digest(bytecode))
 }
 

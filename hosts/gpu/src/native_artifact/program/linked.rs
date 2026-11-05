@@ -13,6 +13,38 @@ pub struct LinkedProgramArtifact {
     descriptor: NativeProgramDescriptor,
 }
 impl LinkedProgramArtifact {
+    /// Bind descriptor bytes to their read-only compiler-emitted Object record.
+    /// Independent source-proof reconstruction remains in from_build_owned_image;
+    /// this path checks exact bytes against the Object that already proved them.
+    ///
+    /// # Safety
+    /// Entry, identity and image_binding must be process-lifetime exports from
+    /// the SAME unchanged checked compiler Object. Verify source/bytecode/Object
+    /// and generated-input pins before linking. A supplied digest or matching
+    /// metadata cannot authenticate arbitrary code. Only actual maintained
+    /// factories may populate catalog; runtime resource checks are unchanged.
+    pub unsafe fn from_object_bound_image(
+        image: &[u8],
+        catalog: &FunctionCatalog,
+        identity: &'static [u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
+        image_binding: &'static [u8; crate::native_artifact::NATIVE_PROGRAM_IMAGE_BINDING_BYTES],
+        entry: unsafe extern "C" fn(*mut c_void) -> u64,
+    ) -> Result<Self, NativeLinkError> {
+        // SAFETY: caller establishes the same trusted checked Object/symbols.
+        let descriptor = unsafe {
+            NativeProgramDescriptor::decode_object_bound_image(
+                image,
+                catalog,
+                identity,
+                image_binding,
+            )
+        }
+        .map_err(|_| {
+            NativeLinkError::new("program descriptor differs from its checked Object image")
+        })?;
+        check_identity(&descriptor, identity)?;
+        Ok(Self { entry, descriptor })
+    }
     /// Execute only generated closed activation before provider capture.
     /// The opaque result borrows this checked code owner and can resume once,
     /// with the SAME runtime transaction, limits, arena and cumulative ledger.

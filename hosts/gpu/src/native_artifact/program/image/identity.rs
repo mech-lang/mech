@@ -312,7 +312,8 @@ fn selected_template(
 // IR176 proves invariant recursive inputs outside changing native Map state.
 // IR177 also lifts immutable numeric matrices with independent changing axes.
 // IR178 derives a selected String-matrix scalar projection route on restore.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 178;
+// IR179 binds complete descriptor bytes to an additional read-only Object symbol.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 179;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

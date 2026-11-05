@@ -127,6 +127,10 @@ pub use crate::native_artifact::program::compiler::{
 #[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::program::image::NativeProgramDescriptor;
 #[cfg(feature = "canonical-native-program-runtime")]
+pub use crate::native_artifact::program::image::binding::{
+    NATIVE_PROGRAM_IMAGE_BINDING_BYTES, NativeProgramImageBinding,
+};
+#[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::program::image::identity::{
     NATIVE_PROGRAM_LINK_IDENTITY_BYTES, NATIVE_PROGRAM_TYPED_IR_VERSION,
     NATIVE_PROGRAM_WORK_POLICY_VERSION, NativeProgramObjectIdentity,

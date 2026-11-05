@@ -189,6 +189,7 @@ pub struct NativeProgramObject {
     bytes: Vec<u8>,
     descriptor: NativeProgramDescriptor,
     identity: NativeProgramObjectIdentity,
+    image_binding: super::image::binding::NativeProgramImageBinding,
     codegen: crate::native_artifact::codegen::control::CodegenReport,
 }
 impl NativeProgramObject {
@@ -200,6 +201,9 @@ impl NativeProgramObject {
     }
     pub fn identity(&self) -> &NativeProgramObjectIdentity {
         &self.identity
+    }
+    pub fn image_binding(&self) -> &super::image::binding::NativeProgramImageBinding {
+        &self.image_binding
     }
     pub fn metadata(&self) -> serde_json::Value {
         let mut metadata = serde_json::json!({
@@ -246,6 +250,7 @@ impl NativeProgramObject {
         metadata["compiled_numeric_functions"] = serde_json::json!(&self.codegen.numeric_functions);
         metadata["compiled_borrowed_record_maps"] =
             serde_json::json!(&self.descriptor.metadata().borrowed_record_maps.regions);
+        metadata["image_binding_symbol"] = serde_json::json!(self.image_binding.symbol());
         metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
             self.descriptor
                 .metadata()
@@ -363,10 +368,25 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     data.define(identity.bytes().to_vec().into_boxed_slice());
     data.set_align(8);
     module.define_data(id, &data).map_err(backend)?;
+    // All plan/layout proofs were established by PreparedNativeProgram before
+    // emission. Bind their exact serialized bytes to this same checked Object;
+    // no runtime-supplied digest can manufacture this read-only build symbol.
+    let image = descriptor.encode_build_owned_image().map_err(backend)?;
+    let image_binding = super::image::binding::NativeProgramImageBinding::new(&image, &identity);
+    let binding_id = module
+        .declare_data(image_binding.symbol(), Linkage::Export, false, false)
+        .map_err(backend)?;
+    let mut binding_data = DataDescription::new();
+    binding_data.define(image_binding.bytes().to_vec().into_boxed_slice());
+    binding_data.set_align(8);
+    module
+        .define_data(binding_id, &binding_data)
+        .map_err(backend)?;
     Ok(NativeProgramObject {
         bytes: module.finish().emit().map_err(backend)?,
         descriptor,
         identity,
+        image_binding,
         codegen,
     })
 }

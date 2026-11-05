@@ -150,6 +150,21 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     bytes: &[u8],
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
+    decode_inner(bytes, catalog, false)
+}
+
+pub(in crate::native_artifact::program::image::decode) fn decode_verified(
+    verified: &super::super::binding::VerifiedObjectImage<'_>,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramDescriptor, String> {
+    decode_inner(verified.bytes(), catalog, true)
+}
+
+fn decode_inner(
+    bytes: &[u8],
+    catalog: &FunctionCatalog,
+    object_bound: bool,
+) -> Result<NativeProgramDescriptor, String> {
     let image: Image<'_> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor" || image.version != 1 {
         return Err("unsupported native descriptor image format".into());
@@ -214,14 +229,16 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         .buffer_frame_owner_layouts()
         .map_err(str::to_owned)?;
     native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
-    native::program::prepare::tail::validate_image(
-        &plan,
-        &buffer_frames,
-        &map_owner_words,
-        &w.scalar_aggregates,
-        &calls,
-        &closed_tails,
-    )?;
+    if !object_bound {
+        native::program::prepare::tail::validate_image(
+            &plan,
+            &buffer_frames,
+            &map_owner_words,
+            &w.scalar_aggregates,
+            &calls,
+            &closed_tails,
+        )?;
+    }
     let borrowed_strings: native::program::prepare::borrowed::Layout = w.borrowed_strings.into();
     let occupied = native::program::prepare::frame_prefix_words(
         &plan,

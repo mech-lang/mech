@@ -3,6 +3,7 @@ use crate::native_artifact::iteration_abi::NativeIterationVisit;
 use mech_core::SchemaTable;
 use mech_engine::native_artifact::{NativeIterationAction, NativeProgramArtifactPlan};
 
+pub(in crate::native_artifact) mod binding;
 pub(in crate::native_artifact) mod decode;
 
 #[derive(Debug)]
