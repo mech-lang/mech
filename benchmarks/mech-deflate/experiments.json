@@ -20516,6 +20516,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-seven-stored-prefix-primary-73fd193af7ee.tar.gz"
+        },
+        {
+          "event": "case-one-stored-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-case-one-stored-primary-60c2993c17cb.tar.gz",
+          "sha256": "60c2993c17cb0ed71b7c5b8341dbdb4515299bd3ef194d48997400930db550ea",
+          "manifest_sha256": "5e8f53c8951bd64cd0f474c19fbf908e8c9d977ad622215ecf92203375f8ba1c",
+          "bytes": 108118,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-one-stored-primary-60c2993c17cb.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
