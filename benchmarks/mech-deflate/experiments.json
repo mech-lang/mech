@@ -21481,6 +21481,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-32-high-entropy-stored-primary-43ebf859f801.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-eight-overlap-primary-fd83c23a6c93.tar.gz",
+          "sha256": "fd83c23a6c93c06a1ef318b7f42e5a67292d25b5207e53021887e4ac729f3513",
+          "manifest_sha256": "e912a6c357cb2f8a2074bccd4d2c66b8a75a116749f0476c255306e5917153ce",
+          "bytes": 83957,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-eight-overlap-primary-fd83c23a6c93.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
