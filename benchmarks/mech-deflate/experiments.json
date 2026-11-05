@@ -23741,6 +23741,17 @@
           "files": 68,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-screen-reymont-prefix-32769-primary-3dea38e890a4.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-case-eight-literals-primary-28f0e168abe7.tar.gz",
+          "sha256": "28f0e168abe7b04c76d73995d3799b0b20563685358d33fa1fd6241ce7558bbe",
+          "manifest_sha256": "9c5bb83ac1bfe25fd5c4cbd268136e15c59ed407f3b40e1a3a95acc9caadee49",
+          "bytes": 114779,
+          "files": 73,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-case-eight-literals-primary-28f0e168abe7.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
