@@ -16887,6 +16887,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-random-256-primary-71396339aced.tar.gz"
+        },
+        {
+          "event": "case-128-biased-dynamic-primary",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-case-128-biased-dynamic-primary-ed904ec5f7f8.tar.gz",
+          "sha256": "ed904ec5f7f8dd94fc030b186615c092eed47f6ee488b3fccd33c2fce4ae16ce",
+          "manifest_sha256": "3b7fa5954a79feaa2fcc81a0d74966365d9682348c99c6e9ebc3575b34b79271",
+          "bytes": 222648,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-128-biased-dynamic-primary-ed904ec5f7f8.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
