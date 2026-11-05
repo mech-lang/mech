@@ -15,6 +15,7 @@ mod collection_lifetime;
 mod exit_transport;
 mod failure_transport;
 mod fresh_traversals;
+mod guarded_pack_failure;
 mod guarded_read_packs;
 mod hybrid_intervals;
 mod managed_carriers;

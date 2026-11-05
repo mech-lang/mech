@@ -385,3 +385,7 @@ pub(super) fn emit(
     b.ins().jump(next, &[]);
     b.switch_to_block(original);
 }
+
+#[cfg(test)]
+#[path = "numeric_pack_window_tests.rs"]
+mod tests;
