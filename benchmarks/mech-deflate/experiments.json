@@ -23050,6 +23050,36 @@
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
       "archive_publication": "local evidence; publication pending"
+    },
+    "157": {
+      "base": "ca0c446204a7fc536473b9908a5ac72bbbde887c",
+      "events": [
+        {
+          "event": "screen-33027-periodic-window-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-screen-33027-periodic-window-primary-3ab7a7decd79.tar.gz",
+          "sha256": "3ab7a7decd79c722fa2bd81ec6139153c842d088ed49814ba54dc200271f9d0d",
+          "manifest_sha256": "111a567206cffe1cf679d5596b766f7c3f7cce0b5620940294aeca2c2464c0b9",
+          "bytes": 86032,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-screen-33027-periodic-window-primary-3ab7a7decd79.tar.gz"
+        }
+      ],
+      "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+      "compiler_source": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+      "before_compiler_source": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+      "versions": {
+        "typed_ir": 180,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Control: restore original frame emission order while sharing its exact assignment ordering with traversal facts; repeat the unchanged witnesses.",
+      "retained": false,
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local evidence; publication pending"
     }
   },
   "repository": "mech-lang/mech",
