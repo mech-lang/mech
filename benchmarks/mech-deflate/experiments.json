@@ -20250,8 +20250,8 @@
           "manifest_sha256": "256589b00311a2fb020fe79a84065399a78e0f15e7f53e067286fd78e0ab8fce",
           "bytes": 86326,
           "files": 43,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-screen-eight-literals-primary-9c3ef5fa36b4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-screen-eight-literals-primary-9c3ef5fa36b4.tar.gz"
         },
         {
           "event": "screen-16384-distribution-change-primary",
@@ -20261,8 +20261,8 @@
           "manifest_sha256": "3e4f06cad96bbc3f155c6e48572b7114a7c4b171c5ecdbcd8f855474533694d9",
           "bytes": 83522,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-screen-16384-distribution-change-primary-f10a93b41581.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-screen-16384-distribution-change-primary-f10a93b41581.tar.gz"
         },
         {
           "event": "screen-33027-periodic-window-primary",
@@ -20272,8 +20272,8 @@
           "manifest_sha256": "74548b3716c96aa8e1e8d723f9fd061d74ab2f6da6cad5ed1e1628052b459405",
           "bytes": 83773,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-screen-33027-periodic-window-primary-6a4c8babe8de.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-screen-33027-periodic-window-primary-6a4c8babe8de.tar.gz"
         },
         {
           "event": "screen-repeated-32769-primary",
@@ -20283,8 +20283,8 @@
           "manifest_sha256": "8efbcd71a1c3e0750714f3bf2906451f590287ea61172f52eb502cfd674c15aa",
           "bytes": 83924,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-screen-repeated-32769-primary-7b78720d4a0b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-screen-repeated-32769-primary-7b78720d4a0b.tar.gz"
         },
         {
           "event": "binary-inspection",
@@ -20294,8 +20294,8 @@
           "manifest_sha256": "f56daee1d5627513f3c3697d95f8bff367482eaecd55b82ea9d810902211a079",
           "bytes": 90135,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-binary-inspection-7b4f15c024d7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-binary-inspection-7b4f15c024d7.tar.gz"
         },
         {
           "event": "expanded-parent",
@@ -20305,8 +20305,8 @@
           "manifest_sha256": "7bf80a6f388a7d9239822036ad97136735de6db923942961bc14547f7785ad5a",
           "bytes": 103050,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-expanded-parent-6669d74babc4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-expanded-parent-6669d74babc4.tar.gz"
         },
         {
           "event": "qualified",
@@ -20316,8 +20316,8 @@
           "manifest_sha256": "7d142e63772dc656ef6314dc8e0207bb11e2b05cb9b816ad36c7c2e16c8674f3",
           "bytes": 170779,
           "files": 106,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-qualified-3e0e5f2f2a16.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-qualified-3e0e5f2f2a16.tar.gz"
         },
         {
           "event": "case-eight-literals-primary",
@@ -20327,8 +20327,8 @@
           "manifest_sha256": "fc54a389d5197f288ccf800de4a8b7acdbbf5cf1b6ec8e822568415215d52de6",
           "bytes": 106402,
           "files": 51,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-eight-literals-primary-308f53d4a32f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-eight-literals-primary-308f53d4a32f.tar.gz"
         },
         {
           "event": "case-16384-distribution-change-primary",
@@ -20338,8 +20338,8 @@
           "manifest_sha256": "8c98e0729ae743c55957a0cadcf46ec867b75993a79029191be97164eb297455",
           "bytes": 103626,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-16384-distribution-change-primary-6dd67c244080.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-16384-distribution-change-primary-6dd67c244080.tar.gz"
         },
         {
           "event": "case-33027-periodic-window-primary",
@@ -20349,8 +20349,8 @@
           "manifest_sha256": "d84b0247b323bf315584d68327af41aa313906ef18f15dddc06ba85e62151889",
           "bytes": 103805,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-33027-periodic-window-primary-50592daebf5e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-33027-periodic-window-primary-50592daebf5e.tar.gz"
         },
         {
           "event": "case-random-32769-primary",
@@ -20360,8 +20360,8 @@
           "manifest_sha256": "3eb022e35974945721c67d26e942a2eaf77f0066bf8d7f4539600bce39e3b9e4",
           "bytes": 103850,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-random-32769-primary-78f066ec188c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-random-32769-primary-78f066ec188c.tar.gz"
         },
         {
           "event": "case-repeated-32769-primary",
@@ -20371,8 +20371,8 @@
           "manifest_sha256": "bd048d794f32b46436957a6010f677f2e3cdd0890e255aa593e3c17dd5992f5e",
           "bytes": 104103,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-repeated-32769-primary-12b484713886.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-repeated-32769-primary-12b484713886.tar.gz"
         },
         {
           "event": "case-reymont-prefix-32769-primary",
@@ -20382,8 +20382,8 @@
           "manifest_sha256": "fb599b9c96292d601ba6438c3e2ed311e97d77c631f5af18dee7b7cd6c6de1f9",
           "bytes": 104377,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-reymont-prefix-32769-primary-d0bc87da1f25.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-reymont-prefix-32769-primary-d0bc87da1f25.tar.gz"
         },
         {
           "event": "case-reymont-prefix-16384-primary",
@@ -20393,8 +20393,8 @@
           "manifest_sha256": "5d10eab2b1dcb70029643dc366961d9fbaaee68b55c902336be1052c1ebd085a",
           "bytes": 104543,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-reymont-prefix-16384-primary-accbb6940056.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-reymont-prefix-16384-primary-accbb6940056.tar.gz"
         },
         {
           "event": "case-random-1024-primary",
@@ -20404,8 +20404,8 @@
           "manifest_sha256": "16fd7709365e183e7cef0bc961b7a8a4510c3c0e004d626f21e88bb66b202906",
           "bytes": 107482,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-random-1024-primary-766884f7b235.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-random-1024-primary-766884f7b235.tar.gz"
         },
         {
           "event": "case-repeated-1024-primary",
@@ -20415,8 +20415,8 @@
           "manifest_sha256": "2ffb955d75704284e5a79bd7b921e2025b33e679f23a121130fb76ea45211d7a",
           "bytes": 107715,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-repeated-1024-primary-241e7d59504a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-repeated-1024-primary-241e7d59504a.tar.gz"
         },
         {
           "event": "case-reymont-prefix-1024-primary",
@@ -20426,8 +20426,8 @@
           "manifest_sha256": "29a8d4957a0f6fe9532dcca05605bb63c6bd586710c5dbd55313b682668af9dd",
           "bytes": 108025,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-reymont-prefix-1024-primary-85d4f4cf3a01.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-reymont-prefix-1024-primary-85d4f4cf3a01.tar.gz"
         },
         {
           "event": "case-320-overlap-primary",
@@ -20437,8 +20437,8 @@
           "manifest_sha256": "ce8221ff6d1aafaa4a378031857fface3f936e162ac4fe4dec043161a31fcfff",
           "bytes": 107797,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-320-overlap-primary-28429961ddb8.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-320-overlap-primary-28429961ddb8.tar.gz"
         },
         {
           "event": "case-random-256-primary",
@@ -20448,8 +20448,8 @@
           "manifest_sha256": "ec4fea4ff6253bbfa43d26fc40cace6935baffbff3598c98668737643241e3d8",
           "bytes": 108194,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-random-256-primary-f5946066b4db.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-random-256-primary-f5946066b4db.tar.gz"
         },
         {
           "event": "case-128-biased-dynamic-primary",
@@ -20459,8 +20459,8 @@
           "manifest_sha256": "f883a5dd003ded64deddf43a36953599d392f673f4ef9d39640aca4afb736c56",
           "bytes": 108274,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-128-biased-dynamic-primary-c78e3dc07855.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-128-biased-dynamic-primary-c78e3dc07855.tar.gz"
         },
         {
           "event": "case-random-64-primary",
@@ -20470,8 +20470,8 @@
           "manifest_sha256": "7f7dc0ba4e175b97c8f0e2df34eec4a37bed02d54dc4ebd7d11c927cb40b91ba",
           "bytes": 108162,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-random-64-primary-dd00ec3224a5.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-random-64-primary-dd00ec3224a5.tar.gz"
         },
         {
           "event": "case-32-high-entropy-stored-primary",
@@ -20481,8 +20481,8 @@
           "manifest_sha256": "7c76f65caa46e2928fe22d913fc362ec953010ba012fa4b611cbc8a7c403f63a",
           "bytes": 108373,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-32-high-entropy-stored-primary-b7e6124a4908.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-32-high-entropy-stored-primary-b7e6124a4908.tar.gz"
         },
         {
           "event": "case-eight-overlap-primary",
@@ -20492,8 +20492,8 @@
           "manifest_sha256": "b7e03268667a388ecf0d56ab83c079f592efa9f18fb2fdb01f053f859e46c318",
           "bytes": 108584,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-eight-overlap-primary-921b99603540.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-eight-overlap-primary-921b99603540.tar.gz"
         },
         {
           "event": "case-eight-literals-prefix-primary",
@@ -20503,8 +20503,8 @@
           "manifest_sha256": "12f1b79e9cb150edba1e82364796239ba11a1a91a13740f961c3a38e8b23c85a",
           "bytes": 108807,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-eight-literals-prefix-primary-4687a31236d1.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-eight-literals-prefix-primary-4687a31236d1.tar.gz"
         },
         {
           "event": "case-seven-stored-prefix-primary",
@@ -20514,8 +20514,8 @@
           "manifest_sha256": "b6ac2f3fc4d8db53588670c206cfd3aeecc38ed2820fd05f9b92155b44fd0670",
           "bytes": 108320,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-seven-stored-prefix-primary-73fd193af7ee.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-seven-stored-prefix-primary-73fd193af7ee.tar.gz"
         },
         {
           "event": "case-one-stored-primary",
@@ -20525,8 +20525,8 @@
           "manifest_sha256": "5e8f53c8951bd64cd0f474c19fbf908e8c9d977ad622215ecf92203375f8ba1c",
           "bytes": 108118,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-one-stored-primary-60c2993c17cb.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-one-stored-primary-60c2993c17cb.tar.gz"
         },
         {
           "event": "case-empty-primary",
@@ -20536,8 +20536,8 @@
           "manifest_sha256": "c0b1ce8f8b0e597e605bed99ad49896f951389e47e549232ead098438424503b",
           "bytes": 108151,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-empty-primary-ef69644bc639.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-case-empty-primary-ef69644bc639.tar.gz"
         },
         {
           "event": "scalar-case-scalar-bool-0-original",
@@ -20547,8 +20547,8 @@
           "manifest_sha256": "9e5c332decb095c77e49da3179a09e397db4692e8f26b44627f5032181f51c43",
           "bytes": 107390,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-bool-0-original-c0f26675bb2d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-bool-0-original-c0f26675bb2d.tar.gz"
         },
         {
           "event": "scalar-case-scalar-bool-0-decoded",
@@ -20558,8 +20558,8 @@
           "manifest_sha256": "33c87405c7a20aff3f8ea50765c9d5c3aef480a9f151307047d6fda4157e794f",
           "bytes": 107720,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-bool-0-decoded-22d4c0243e7f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-bool-0-decoded-22d4c0243e7f.tar.gz"
         },
         {
           "event": "scalar-case-scalar-u64-0-original",
@@ -20569,8 +20569,8 @@
           "manifest_sha256": "18828526465ba8cc46fba217a46eda4f451c489fd22c6c5093f9942511901d15",
           "bytes": 107966,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-u64-0-original-4a2fc802f947.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-u64-0-original-4a2fc802f947.tar.gz"
         },
         {
           "event": "scalar-case-scalar-u64-0-decoded",
@@ -20580,8 +20580,8 @@
           "manifest_sha256": "9f77e6d05a7d3e1e188a30017d34d1796b5b1b04a0dbd8d2cf1fe4d5ce910c41",
           "bytes": 108249,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-u64-0-decoded-225bb1f908a2.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-u64-0-decoded-225bb1f908a2.tar.gz"
         },
         {
           "event": "scalar-case-scalar-i64-0-original",
@@ -20591,8 +20591,8 @@
           "manifest_sha256": "c10225638d6b743e6679c14941e0b0ab8fae76929294c19b94e6ff682420ea2c",
           "bytes": 108644,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-i64-0-original-678388378180.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-i64-0-original-678388378180.tar.gz"
         },
         {
           "event": "scalar-case-scalar-i64-0-decoded",
@@ -20602,8 +20602,8 @@
           "manifest_sha256": "ec27b2e395a891576982ce37c6d8f82bb4e7adeec0aeaf61711bbb7f6295642b",
           "bytes": 108976,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-i64-0-decoded-9eb4ffea7c62.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-i64-0-decoded-9eb4ffea7c62.tar.gz"
         },
         {
           "event": "scalar-case-scalar-f64-0-original",
@@ -20613,8 +20613,8 @@
           "manifest_sha256": "9b5d374da6ab54c40b79da5872a1cf198a429ed12f49b7472532e29274c26152",
           "bytes": 109134,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-f64-0-original-1bbfbff721ea.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-f64-0-original-1bbfbff721ea.tar.gz"
         },
         {
           "event": "scalar-case-scalar-f64-0-decoded",
@@ -20624,8 +20624,8 @@
           "manifest_sha256": "ec5b38b744310124773e2a499a84eddad70eff64071ba1e53b62679a07891763",
           "bytes": 109512,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-f64-0-decoded-15a1d7fb56f7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-f64-0-decoded-15a1d7fb56f7.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-0-original",
@@ -20635,8 +20635,8 @@
           "manifest_sha256": "88e4bc1be70f5e67880d877ebd205fc4d3611d57ebd05970ea212765817d5bba",
           "bytes": 110003,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-loop-0-original-339bfcf7f6e3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-loop-0-original-339bfcf7f6e3.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-0-decoded",
@@ -20646,8 +20646,8 @@
           "manifest_sha256": "207f7d5796db328745dc5ebb1d55199ea033283e3eb1f840fe69d7d15c62b0c6",
           "bytes": 110426,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-loop-0-decoded-b2b42fdf7b5b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-loop-0-decoded-b2b42fdf7b5b.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-64-original",
@@ -20657,8 +20657,8 @@
           "manifest_sha256": "ac8de8f0f1e78930542745522a67c0b7030bbcc6678c97e6d050deb50d57daf5",
           "bytes": 110785,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-loop-64-original-d585a25729cc.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-loop-64-original-d585a25729cc.tar.gz"
         },
         {
           "event": "scalar-case-scalar-loop-64-decoded",
@@ -20668,8 +20668,8 @@
           "manifest_sha256": "4a5a905afd9382312d7b7b93135051362e2d3f80f8753f6fdb3c51e0d1d5e20a",
           "bytes": 111167,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-loop-64-decoded-721dd5e61e90.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-scalar-case-scalar-loop-64-decoded-721dd5e61e90.tar.gz"
         },
         {
           "event": "frame-allocation",
@@ -20679,8 +20679,8 @@
           "manifest_sha256": "fe0eed0d733bff130d5ecbe8d08193e1396c5aa64c02f3582c26a7f7ff56bd72",
           "bytes": 107213,
           "files": 80,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-frame-allocation-07df5917c6e8.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-frame-allocation-07df5917c6e8.tar.gz"
         },
         {
           "event": "matrix-counters",
@@ -20690,8 +20690,8 @@
           "manifest_sha256": "d6dee00c60cd33b6562933776b37206004f2cb88ebe8bc3159fef4d14381df3f",
           "bytes": 154802,
           "files": 58,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-matrix-counters-c1d6c85d1c7a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-matrix-counters-c1d6c85d1c7a.tar.gz"
         },
         {
           "event": "profiles-current",
@@ -20701,8 +20701,8 @@
           "manifest_sha256": "030c429cd3877a983c9898c7731f41fd5da6af6c276e66cb1b036d7c1786e436",
           "bytes": 595748,
           "files": 79,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-profiles-current-dc7098e6156e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-profiles-current-dc7098e6156e.tar.gz"
         },
         {
           "event": "analysis",
@@ -20712,8 +20712,8 @@
           "manifest_sha256": "105ee0079dc7702c6c592b2d8a32450edf2720fea4c959b52388eb8a9e05ef32",
           "bytes": 126335,
           "files": 51,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-analysis-dbe306dfa531.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-analysis-dbe306dfa531.tar.gz"
         },
         {
           "event": "closure",
@@ -20723,8 +20723,8 @@
           "manifest_sha256": "14a98a61b8f235a516ea37f6ef3d0cabc9bf3cec607df15144362e7c043964be",
           "bytes": 5712385,
           "files": 971,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-closure-6a72b40196e2.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r151-closure-6a72b40196e2.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
@@ -20736,7 +20736,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": true,
       "retained_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
       "qualified_test_revision": "5da7d244be992c9d192369820c3bdc1ac803a898",
