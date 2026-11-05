@@ -223,6 +223,10 @@ struct Fields<'a> {
 
 enum StructKeys {
     Ordered(&'static [&'static str]),
+    // Noncanonical struct visitors retain their existing policy for missing,
+    // duplicate and unknown fields. Match known names without a probe pass;
+    // unknown names still require ordinary UTF8 validation and visitor handling.
+    Declared(&'static [&'static str]),
     // Canonical struct names come from the deserializing type, never from an
     // image flag. A bounded set checks presence and duplicates as we consume
     // each field, without reparsing the entire record for every declared name.
@@ -324,6 +328,22 @@ impl<'de> MapAccess<'de> for &mut Fields<'de> {
                     }
                     expected
                 }
+                StructKeys::Declared(names) => {
+                    let ordered = names
+                        .len()
+                        .checked_sub(self.remaining)
+                        .and_then(|at| names.get(at))
+                        .copied()
+                        .filter(|name| bytes == name.as_bytes());
+                    if let Some(name) = ordered
+                        .or_else(|| names.iter().copied().find(|name| bytes == name.as_bytes()))
+                    {
+                        name
+                    } else {
+                        std::str::from_utf8(bytes)
+                            .map_err(|_| error("native metadata key is not UTF8"))?
+                    }
+                }
                 StructKeys::Canonical { names, seen } => {
                     let ordered = names.len() - self.remaining;
                     let position = if bytes == names[ordered].as_bytes() {
@@ -342,8 +362,8 @@ impl<'de> MapAccess<'de> for &mut Fields<'de> {
                     names[position]
                 }
             }
-            // Equality to a static UTF8 field name proves these exact bytes;
-            // no unchecked string conversion or caller-controlled flag is used.
+            // Known names prove UTF8 by exact static-name equality. Unknown
+            // noncanonical names receive ordinary UTF8 validation above.
         } else {
             self.key()?
         };
@@ -510,6 +530,11 @@ impl<'de> Deserializer<'de> for Node<'de> {
                 fields.end()?;
                 return Ok(value);
             }
+        } else {
+            fields.known_keys = Some(StructKeys::Declared(expected));
+            let value = visitor.visit_map(&mut fields)?;
+            fields.end()?;
+            return Ok(value);
         }
         if fields.remaining == expected.len() {
             let mut probe = self.fields(OBJECT)?;

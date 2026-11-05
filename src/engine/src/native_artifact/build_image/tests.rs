@@ -522,3 +522,98 @@ fn canonical_structs_reject_truncation_invalid_keys_counts_and_child_lengths() {
     changed[25..29].copy_from_slice(&u32::MAX.to_le_bytes());
     assert!(decode_canonical::<PermissiveStruct<2>>(&changed).is_err());
 }
+
+#[test]
+fn streamed_noncanonical_struct_fields_match_json_missing_duplicate_and_unknown_policies() {
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct Loose {
+        f00: Option<u64>,
+        f01: Option<u64>,
+    }
+    #[derive(Debug, Deserialize, PartialEq)]
+    #[serde(deny_unknown_fields)]
+    struct Strict {
+        f00: Option<u64>,
+        f01: Option<u64>,
+    }
+    fn check<T: for<'de> Deserialize<'de> + std::fmt::Debug + PartialEq>(json: &str) {
+        let expected = serde_json::from_str::<T>(json);
+        let native = encode_native_metadata_image(json.as_bytes()).unwrap();
+        let actual = decode::<T>(&native);
+        assert_eq!(actual.is_ok(), expected.is_ok(), "{json}");
+        if let (Ok(actual), Ok(expected)) = (actual, expected) {
+            assert_eq!(actual, expected, "{json}");
+        }
+    }
+    for json in [
+        "{}",
+        r#"{"f00":0}"#,
+        r#"{"f01":null}"#,
+        r#"{"f00":1,"f01":2}"#,
+        r#"{"f01":2,"f00":1}"#,
+        r#"{"f00":0,"f00":1}"#,
+        r#"{"f00":null,"f00":null}"#,
+        r#"{"unknown":9,"f00":1}"#,
+        r#"{"unknown":9,"f00":1,"f01":2}"#,
+        r#"{"f01":2,"unknown":{"nested":[1,null,"é😀"]},"f00":1}"#,
+        r#"{"unknown":1,"unknown":2}"#,
+        r#"{"é😀":3,"f00":1,"f01":2}"#,
+        r#"{"\u006600":3,"f01":2}"#,
+        r#"{"f00":true,"f01":2}"#,
+        r#"{"f00":18446744073709551616,"f01":2}"#,
+    ] {
+        check::<Loose>(json);
+        check::<Strict>(json);
+        // This custom visitor accepts arbitrary names and last-value-wins
+        // duplicates, even when its declared struct has no fields.
+        for count in [0, 2, 65] {
+            let expected = serde_json::from_str::<std::collections::BTreeMap<String, u64>>(json);
+            let native = encode_native_metadata_image(json.as_bytes()).unwrap();
+            let actual = match count {
+                0 => decode::<PermissiveStruct<0>>(&native).map(|v| v.0),
+                2 => decode::<PermissiveStruct<2>>(&native).map(|v| v.0),
+                65 => decode::<PermissiveStruct<65>>(&native).map(|v| v.0),
+                _ => unreachable!(),
+            };
+            assert_eq!(actual.is_ok(), expected.is_ok(), "count={count}, {json}");
+            if let (Ok(actual), Ok(expected)) = (actual, expected) {
+                assert_eq!(actual, expected);
+            }
+        }
+    }
+}
+
+#[test]
+fn streamed_struct_fields_still_reject_invalid_bytes_and_incomplete_visitors() {
+    let original = encode_native_metadata_image(br#"{"f01":2,"f00":1}"#).unwrap();
+    for end in 0..original.len() {
+        assert!(
+            decode::<PermissiveStruct<2>>(&original[..end]).is_err(),
+            "end={end}"
+        );
+    }
+    let mut changed = original.clone();
+    changed[21] = 255;
+    assert!(decode::<PermissiveStruct<2>>(&changed).is_err());
+    let mut changed = original.clone();
+    changed[25..29].copy_from_slice(&u32::MAX.to_le_bytes());
+    assert!(decode::<PermissiveStruct<2>>(&changed).is_err());
+    struct Early;
+    impl<'de> Deserialize<'de> for Early {
+        fn deserialize<D: Deserializer<'de>>(reader: D) -> Result<Self, D::Error> {
+            struct Read;
+            impl<'de> Visitor<'de> for Read {
+                type Value = Early;
+                fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                    f.write_str("a deliberately incomplete struct visitor")
+                }
+                fn visit_map<A: MapAccess<'de>>(self, mut fields: A) -> Result<Early, A::Error> {
+                    let _ = fields.next_entry::<String, u64>()?;
+                    Ok(Early)
+                }
+            }
+            reader.deserialize_struct("Early", &["f00", "f01"], Read)
+        }
+    }
+    assert!(decode::<Early>(&original).is_err());
+}
