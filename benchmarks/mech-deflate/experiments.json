@@ -17965,6 +17965,35 @@
       "primary_observations": 3968,
       "cases": 20,
       "scope": "Closed bounded private-store task. Useful test-only increment; PR973/976 remain frozen. No further implementation active."
+    },
+    "144": {
+      "base": "d441153985d861d5fe6a4a838fb4b04e1e7c367d",
+      "production": null,
+      "compiler_source": "d441153985d861d5fe6a4a838fb4b04e1e7c367d",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "d441153985d861d5fe6a4a838fb4b04e1e7c367d",
+          "asset": "r144-initial-cf7c2869f0ca.tar.gz",
+          "sha256": "cf7c2869f0ca525679669df7c1ee2a7448047e67fca2f94a9e77e674a30ef68e",
+          "manifest_sha256": "677482f4a511d077fea422bcceeab9405f2bc2bbc445f8c55c26cd7a57ab6c9f",
+          "bytes": 214711,
+          "files": 46,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-initial-cf7c2869f0ca.tar.gz"
+        }
+      ],
+      "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
+      "versions": {
+        "typed_ir": 171,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
