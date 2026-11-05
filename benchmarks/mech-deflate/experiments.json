@@ -18048,6 +18048,17 @@
           "files": 70,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-screen-repeated-32769-primary-a0c5b41f1d76.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-eight-literals-primary-7665e829aca2.tar.gz",
+          "sha256": "7665e829aca224665fc2e03d2338d074fd300e1a063f2a4c250269f418d5958c",
+          "manifest_sha256": "6dd0ee2529b753843796d97f0cd784d26188f61140de1b7f1faab2fc169c8046",
+          "bytes": 240197,
+          "files": 71,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-eight-literals-primary-7665e829aca2.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
