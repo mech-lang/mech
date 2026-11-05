@@ -368,6 +368,9 @@ struct Provenance<'a, 'p> {
     /// Their next/return values are independently checked before selection.
     child_roots: BTreeMap<(u32, usize), usize>,
     captures: BTreeMap<numeric_fields::Key, usize>,
+    // Same-analysis identity facts only. No freshness state or image-provided
+    // authority is cached; every branch/fixed-point meet still runs below.
+    domain: Option<versions::Domain>,
 }
 impl Provenance<'_, '_> {
     fn transfers(&mut self, site: usize) -> Result<Transfers, &'static str> {
@@ -572,6 +575,7 @@ fn derive_inner(
         active: BTreeSet::new(),
         child_roots: BTreeMap::new(),
         captures: BTreeMap::new(),
+        domain: None,
     };
     let mut captured = Vec::new();
     for &site in &sites {

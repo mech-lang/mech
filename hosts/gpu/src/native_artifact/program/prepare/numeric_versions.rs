@@ -21,6 +21,53 @@ struct Traversal {
     order: Vec<usize>,
     next: BTreeMap<usize, Vec<usize>>,
 }
+
+/// One root analysis's immutable identity universe. All predicate passes
+/// inspect the same roots after child phis have been installed and checked.
+/// Sharing this vocabulary never shares their currentness or reachability.
+pub(super) struct Domain {
+    roots: std::sync::Arc<BTreeMap<Key, usize>>,
+    top: State,
+    masks: BTreeMap<usize, state::Mask>,
+}
+impl Domain {
+    fn new(
+        plan: &Plan,
+        frames: &NativeBufferFrames,
+        provenance: &mut Provenance<'_, '_>,
+        arrays: &[Array],
+    ) -> Self {
+        let mut roots = BTreeMap::new();
+        for value in 0..plan.values().len() as u32 {
+            if let Some(root) = provenance.array(value, None) {
+                roots.insert((value, None), root);
+            }
+            if let Some(fields) = numeric_fields::at(frames, value) {
+                for ordinal in 0..fields.len() {
+                    if let Some(root) = provenance.array(value, Some(ordinal)) {
+                        roots.insert((value, Some(ordinal)), root);
+                    }
+                }
+            }
+        }
+        let top = roots.keys().map(|&key| (key, true)).collect::<State>();
+        let masks = arrays
+            .iter()
+            .filter(|a| a.writable || a.appends)
+            .map(|array| {
+                (
+                    array.root,
+                    top.clearing_mask(|key| roots.get(key) == Some(&array.root)),
+                )
+            })
+            .collect();
+        Self {
+            roots: std::sync::Arc::new(roots),
+            top,
+            masks,
+        }
+    }
+}
 impl Traversal {
     fn new(
         plan: &Plan,
@@ -219,6 +266,8 @@ pub(super) fn validate_tree(
     result: &ResultRecipe,
     tree: &super::super::numeric_tree::Proof,
 ) -> Result<ColdHomes, &'static str> {
+    let domain = Domain::new(plan, frames, provenance, arrays);
+    provenance.domain = Some(domain);
     let mut next = BTreeMap::new();
     for &site in sites {
         next.insert(
@@ -337,7 +386,7 @@ impl Analysis {
 fn analyze_tree(
     plan: &Plan,
     tail: &NativeTailLoop,
-    frames: &NativeBufferFrames,
+    _frames: &NativeBufferFrames,
     provenance: &mut Provenance<'_, '_>,
     traversal: &Traversal,
     actions: &[(usize, Operation)],
@@ -348,20 +397,12 @@ fn analyze_tree(
 ) -> Result<Analysis, &'static str> {
     // A key is immutable SSA identity, never just the root number. A store
     // invalidates every earlier identity even when backing storage is shared.
-    let mut keys = Vec::new();
-    for value in 0..plan.values().len() as u32 {
-        if provenance.array(value, None).is_some() {
-            keys.push((value, None));
-        }
-        if let Some(fields) = numeric_fields::at(frames, value) {
-            for ordinal in 0..fields.len() {
-                if provenance.array(value, Some(ordinal)).is_some() {
-                    keys.push((value, Some(ordinal)));
-                }
-            }
-        }
-    }
-    let top = keys.into_iter().map(|key| (key, true)).collect::<State>();
+    let top = provenance
+        .domain
+        .as_ref()
+        .ok_or("numeric tree lacks its identity domain")?
+        .top
+        .clone();
     let mut entry = top.clone();
     entry.clear_where(|key| !arrays.iter().any(|array| array.entry_key(tail) == *key));
     let mut states = BTreeMap::from([((traversal.header, 0), entry)]);
@@ -373,7 +414,7 @@ fn analyze_tree(
         queued.remove(&(site, truth));
         let mut state = states[&(site, truth)].clone();
         reachable.insert((site, truth));
-        transfer(plan, frames, provenance, site, actions, arrays, &mut state)?;
+        transfer(plan, _frames, provenance, site, actions, arrays, &mut state)?;
         for &next in &traversal.next[&site] {
             let mut next_truth = truth;
             if let Some(partition) = partition {
@@ -817,7 +858,16 @@ fn transfer(
                 return Err("tree write lost output");
             };
             let root = arrays[*array].root;
-            state.clear_where(|&(value, field)| provenance.array(value, field) == Some(root));
+            let applied = provenance
+                .domain
+                .as_ref()
+                .and_then(|domain| domain.masks.get(&root))
+                .is_some_and(|mask| state.try_clear_mask(mask));
+            if !applied {
+                // Sparse leaf paths and extended domains keep the exact
+                // original root lookup; a mask never imports or drops a key.
+                state.clear_where(|&(value, field)| provenance.array(value, field) == Some(root));
+            }
             state.insert((output.get(), None), true);
         }
         _ => {}

@@ -12,6 +12,13 @@ pub(super) struct State {
     words: Vec<u64>,
 }
 
+/// A clearing recipe over one exact immutable ordered identity domain. A
+/// growing sparse state must retain its ordinary per-key invalidation path.
+pub(super) struct Mask {
+    keys: Arc<Vec<Key>>,
+    words: Vec<u64>,
+}
+
 impl State {
     pub fn keys(&self) -> std::slice::Iter<'_, Key> {
         self.keys.iter()
@@ -62,6 +69,31 @@ impl State {
                 self.set(index, false);
             }
         }
+    }
+
+    pub fn clearing_mask(&self, mut predicate: impl FnMut(&Key) -> bool) -> Mask {
+        let mut words = vec![0; self.words.len()];
+        for (index, key) in self.keys.iter().enumerate() {
+            if predicate(key) {
+                words[index / 64] |= 1u64 << (index % 64);
+            }
+        }
+        Mask {
+            keys: Arc::clone(&self.keys),
+            words,
+        }
+    }
+
+    /// True means the exact-domain recipe was applied, including a no-op.
+    /// A domain mismatch leaves every fact untouched for the caller's fallback.
+    pub fn try_clear_mask(&mut self, mask: &Mask) -> bool {
+        if !Arc::ptr_eq(&self.keys, &mask.keys) {
+            return false;
+        }
+        for (word, clear) in self.words.iter_mut().zip(&mask.words) {
+            *word &= !clear;
+        }
+        true
     }
 
     /// Meet every incoming path, reporting exactly whether a left fact changed.
@@ -149,6 +181,66 @@ mod tests {
             assert_eq!(compact.get(key), ordinary.get(key).copied(), "{key:?}");
         }
         assert_eq!(compact.get(&(u32::MAX, None)), None);
+    }
+
+    #[test]
+    fn clearing_masks_preserve_root_and_field_identity_and_decline_changed_domains() {
+        let original = (0..193)
+            .flat_map(|value| {
+                [None, Some(0), Some(3)].map(move |field| ((value, field), value % 3 != 0))
+            })
+            .collect::<BTreeMap<_, _>>();
+        let top = original
+            .iter()
+            .map(|(&key, &fresh)| (key, fresh))
+            .collect::<State>();
+        for root in 0..7 {
+            let selected = |key: &Key| (key.0 as usize + key.1.unwrap_or(11)) % 7 == root;
+            let mask = top.clearing_mask(selected);
+            let mut actual = top.clone();
+            let mut expected = original.clone();
+            actual.insert((64, Some(3)), true);
+            expected.insert((64, Some(3)), true);
+            assert!(actual.try_clear_mask(&mask));
+            for (key, fresh) in &mut expected {
+                if selected(key) {
+                    *fresh = false;
+                }
+            }
+            exact(&actual, &expected);
+            assert!(actual.try_clear_mask(&mask));
+            exact(&actual, &expected);
+            let unchanged_sibling = actual.clone();
+            actual.insert((u32::MAX - 1, Some(2)), true);
+            expected.insert((u32::MAX - 1, Some(2)), true);
+            assert!(!actual.try_clear_mask(&mask));
+            exact(&actual, &expected);
+            actual.clear_where(selected);
+            for (key, fresh) in &mut expected {
+                if selected(key) {
+                    *fresh = false;
+                }
+            }
+            exact(&actual, &expected);
+            let mut sibling = unchanged_sibling;
+            assert!(sibling.try_clear_mask(&mask));
+            exact(
+                &sibling,
+                &original
+                    .iter()
+                    .map(|(&key, &fresh)| {
+                        (
+                            key,
+                            if key == (64, Some(3)) {
+                                !selected(&key)
+                            } else {
+                                fresh && !selected(&key)
+                            },
+                        )
+                    })
+                    .collect(),
+            );
+        }
     }
 
     #[test]

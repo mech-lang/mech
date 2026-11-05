@@ -23,20 +23,13 @@ pub(super) fn validate(
     result: &ResultRecipe,
     tree: &super::super::super::numeric_tree::Proof,
 ) -> Result<Analysis, &'static str> {
-    let mut roots = BTreeMap::new();
-    for value in 0..plan.values().len() as u32 {
-        if let Some(root) = provenance.array(value, None) {
-            roots.insert((value, None), root);
-        }
-        if let Some(fields) = numeric_fields::at(frames, value) {
-            for ordinal in 0..fields.len() {
-                if let Some(root) = provenance.array(value, Some(ordinal)) {
-                    roots.insert((value, Some(ordinal)), root);
-                }
-            }
-        }
-    }
-    let empty = roots.keys().map(|&key| (key, false)).collect::<State>();
+    let domain = provenance
+        .domain
+        .as_ref()
+        .ok_or("numeric induction lacks its identity domain")?;
+    let roots = std::sync::Arc::clone(&domain.roots);
+    let mut empty = domain.top.clone();
+    empty.clear_where(|_| true);
     let mut proofs = BTreeMap::<usize, NodeProof>::new();
     for node in (0..tree.nodes.len()).rev() {
         let traversal = traversal(plan, tree, node)?;
@@ -166,7 +159,7 @@ pub(super) fn validate(
             if !current(&entry, &summary.requires) {
                 return Err("numeric induction child requires an older array version");
             }
-            invalidate(&mut entry, &roots, &summary.writes);
+            invalidate(&mut entry, &roots, &summary.writes, provenance);
             for key in keys_for(&roots, child_node.tail.carrier().get()) {
                 entry.insert(key, true);
             }
@@ -202,7 +195,21 @@ fn keys_for(roots: &BTreeMap<Key, usize>, value: u32) -> BTreeSet<Key> {
 fn current(state: &State, requires: &BTreeSet<Key>) -> bool {
     requires.iter().all(|key| state.get(key).unwrap_or(false))
 }
-fn invalidate(state: &mut State, roots: &BTreeMap<Key, usize>, writes: &BTreeSet<usize>) {
+fn invalidate(
+    state: &mut State,
+    roots: &BTreeMap<Key, usize>,
+    writes: &BTreeSet<usize>,
+    provenance: &Provenance<'_, '_>,
+) {
+    if writes.iter().all(|root| {
+        provenance
+            .domain
+            .as_ref()
+            .and_then(|domain| domain.masks.get(root))
+            .is_some_and(|mask| state.try_clear_mask(mask))
+    }) {
+        return;
+    }
     state.clear_where(|key| writes.contains(&roots[key]));
 }
 fn child_at(
@@ -372,7 +379,7 @@ fn pass(
             if let Some(child) = child_at(tree, node, site) {
                 let summary = &proofs[&child].summary;
                 let valid = current(&state, &summary.requires);
-                invalidate(&mut state, roots, &summary.writes);
+                invalidate(&mut state, roots, &summary.writes, provenance);
                 for key in &summary.returns {
                     state.insert(*key, valid);
                 }
