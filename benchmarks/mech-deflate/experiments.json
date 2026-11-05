@@ -20070,6 +20070,35 @@
       "raw_environment_packets_withheld": true,
       "diagnostic_calls": 5138,
       "exact_pc_cross_checks": 7021
+    },
+    "150": {
+      "base": "48b78cd7f9719b8acc184d7b65976a863e955f3f",
+      "production": "735fe9f76818f1ada7cbe90dfd19d82d0f0a405f",
+      "compiler_source": "735fe9f76818f1ada7cbe90dfd19d82d0f0a405f",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "735fe9f76818f1ada7cbe90dfd19d82d0f0a405f",
+          "asset": "r150-screen-eight-literals-primary-2f84accf1b26.tar.gz",
+          "sha256": "2f84accf1b26b97ad97a205d2616f4874d7191f0b95b4caa37c3cc6326e1d227",
+          "manifest_sha256": "5e3f89e8d3e2c9eb0920aadd834d5f81188bade5e0a4c99c10a2768ea80cf753",
+          "bytes": 69478,
+          "files": 41,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-screen-eight-literals-primary-2f84accf1b26.tar.gz"
+        }
+      ],
+      "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+      "versions": {
+        "typed_ir": 174,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
