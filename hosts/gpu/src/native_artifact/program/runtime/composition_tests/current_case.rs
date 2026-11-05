@@ -132,11 +132,10 @@ fn numeric_current_case_keeps_fresh_visits_errors_publication_and_retry() {
                                 .unwrap()
                                 .canonical_data_draft()
                                 .unwrap(),
-                            Data::Tuple(vec![
-                                Data::U32(best),
-                                Data::U64(item),
-                                Data::U64(start.max(stop))
-                            ])
+                            Data::Tuple(
+                                vec![Data::U32(best), Data::U64(item), Data::U64(start.max(stop))]
+                                    .into()
+                            )
                         );
                         if !reference {
                             assert!(!counts.tail_entries.is_empty());
