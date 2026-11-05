@@ -19144,6 +19144,17 @@
           "files": 36,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-random-256-primary-c909c0e699a1.tar.gz"
+        },
+        {
+          "event": "case-128-biased-dynamic-primary",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-case-128-biased-dynamic-primary-7255ca0517d2.tar.gz",
+          "sha256": "7255ca0517d29afc7607b61fc0d65a7cf61ad353d89150f8dbf5cf70c09e913a",
+          "manifest_sha256": "6358e3b5dc867b1622180158be6a2154771d994248541e4a4eff76c00a0ca5f5",
+          "bytes": 124242,
+          "files": 36,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-128-biased-dynamic-primary-7255ca0517d2.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
