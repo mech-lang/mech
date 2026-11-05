@@ -17705,6 +17705,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-random-32769-primary-2a3c2979567b.tar.gz"
+        },
+        {
+          "event": "case-repeated-32769-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-case-repeated-32769-primary-99aff27b5674.tar.gz",
+          "sha256": "99aff27b5674e61799bac6cf15e2602e48f30d40a3d97177e0c053cc7f287f46",
+          "manifest_sha256": "c54b14f84be266be8591a1b233008ac75d1ddf2c5fd4d09dd5a0efcdf4e1326e",
+          "bytes": 227948,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-repeated-32769-primary-99aff27b5674.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
