@@ -22118,6 +22118,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-eight-literals-prefix-primary-bea49cfb2b4c.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-seven-stored-prefix-primary-e45a2311f887.tar.gz",
+          "sha256": "e45a2311f8871c7e3cb701ac221930a78ff9066aef6bab2f8ecd2b96c3325a02",
+          "manifest_sha256": "9e7983a0fa65ccc075872da828dc00413de8f626281cf52b2a40c16a0d5d9a26",
+          "bytes": 173003,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-seven-stored-prefix-primary-e45a2311f887.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
