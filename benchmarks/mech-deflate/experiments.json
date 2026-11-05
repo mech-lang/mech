@@ -18790,6 +18790,17 @@
           "files": 652,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-scalar-balanced-d07722c02b1d.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-frame-allocation-e5b64296c82a.tar.gz",
+          "sha256": "e5b64296c82a5c3f74e4ab1c95d7190c1379023d3096224668bf194afe3f9e26",
+          "manifest_sha256": "f831e13bc94dcdc434ef850f7b83df7ae0c0f61424152151982679f6ef99e212",
+          "bytes": 259774,
+          "files": 107,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-frame-allocation-e5b64296c82a.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
