@@ -319,7 +319,8 @@ fn selected_template(
 // descendant parent pieces; current paid overlaps retain ordinary execution.
 // IR174's pure geometry-placement experiment was rejected. IR175 reconstructs
 // current comparison-produced complementary case edges within numeric entries.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 175;
+// IR176 also removes a U64 subtraction guard proved by its exact current arm.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 176;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
