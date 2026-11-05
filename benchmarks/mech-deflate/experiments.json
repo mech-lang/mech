@@ -19488,6 +19488,17 @@
           "files": 49,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-refined-screen-33027-periodic-window-primary-4bbfb919160f.tar.gz"
+        },
+        {
+          "event": "refined-screen-repeated-32769-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-refined-screen-repeated-32769-primary-c4383a31f31e.tar.gz",
+          "sha256": "c4383a31f31ead6cf61688a4745b9c4c95bf924a4a6f1d687eeaea8c5f3229f0",
+          "manifest_sha256": "03f7fb0750bc85903bf78414c8c9fc298ad18c4d682feb2b2615ca4811b92ff8",
+          "bytes": 883010,
+          "files": 49,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-refined-screen-repeated-32769-primary-c4383a31f31e.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
