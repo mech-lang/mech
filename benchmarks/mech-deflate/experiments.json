@@ -23339,6 +23339,17 @@
           "files": 123,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-scalar-case-scalar-bool-0-decoded-9ea5c4e01a00.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-u64-0-original",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-scalar-case-scalar-u64-0-original-b1d1d55623d0.tar.gz",
+          "sha256": "b1d1d55623d00375bb4fc5724a089ba16016bf4e78c445d552b6d3000846845a",
+          "manifest_sha256": "199987e3baa065028b65afc3ef405769d462bfcf444762d1aec1d6fa9f254cb5",
+          "bytes": 3490769,
+          "files": 123,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-scalar-case-scalar-u64-0-original-b1d1d55623d0.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
