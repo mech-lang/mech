@@ -21898,6 +21898,17 @@
           "files": 53,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-screen-33027-periodic-window-primary-a309f10db8a7.tar.gz"
+        },
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-screen-eight-literals-primary-445006cd1861.tar.gz",
+          "sha256": "445006cd1861b09201ebc5c801a0bd2ed083135ef5da9a605df6ac27d667945b",
+          "manifest_sha256": "836ce16f3438e9fd92f319966fed4b8d46fdf4e7fd84404eadf0969293d6ec59",
+          "bytes": 118537,
+          "files": 54,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-screen-eight-literals-primary-445006cd1861.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
