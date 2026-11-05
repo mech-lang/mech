@@ -21437,6 +21437,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-320-overlap-primary-a6561308519b.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "2b6953e9a8532bae417588d607a553f9c8d86a6d",
+          "asset": "r153-case-random-256-primary-a2d08a9f6096.tar.gz",
+          "sha256": "a2d08a9f60964b0f9f64d55e97efe245787fe8d408ad6729ec06619f1b4531ce",
+          "manifest_sha256": "9b134e3d2b2ff46ab4982bb3ae63c35da4aa73bf495778df5edd786a3fec5bc0",
+          "bytes": 83486,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-runtime-boundaries-round153-20261105/archives/r153-case-random-256-primary-a2d08a9f6096.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
