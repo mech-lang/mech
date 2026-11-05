@@ -19598,6 +19598,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-repeated-1024-primary-e80187e2a27e.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-1024-primary",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r148-case-reymont-prefix-1024-primary-b8e1aaec2671.tar.gz",
+          "sha256": "b8e1aaec2671d49756bc1dc3e853021f099e420f8adc83611b682c136ac1957c",
+          "manifest_sha256": "90424bfe142bdd80c2a538e9ccd60e540c9f4e0c6659d39429720ee2a9f3ca21",
+          "bytes": 888436,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-case-reymont-prefix-1024-primary-b8e1aaec2671.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
