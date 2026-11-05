@@ -79,14 +79,18 @@ fn descriptors_for_schemas(
     inputs
         .iter()
         .chain(core::iter::once(output))
-        .map(|schema| {
-            let shape = schema
-                .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
-                .ok()?;
-            mech_core::ResolvedValueDescriptor::from_schema(schema.clone(), shape).ok()
-        })
+        .map(descriptor_for_schema)
         .collect::<Option<Box<[_]>>>()
         .map(Arc::from)
+}
+
+fn descriptor_for_schema(
+    schema: &mech_core::Schema,
+) -> Option<mech_core::ResolvedValueDescriptor> {
+    let shape = schema
+        .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
+        .ok()?;
+    mech_core::ResolvedValueDescriptor::from_schema(schema.clone(), shape).ok()
 }
 
 // A port ID is only a lookup hint. Reuse the stored key solely when the actual
@@ -137,6 +141,13 @@ fn output_schema_key(
 #[derive(Debug, Default)]
 pub struct NativeDescriptorTemplatePool {
     entries: std::collections::HashMap<Vec<mech_core::SchemaId>, Vec<DescriptorTemplateEntry>>,
+    schemas: std::collections::HashMap<mech_core::SchemaId, Vec<SchemaDescriptorEntry>>,
+}
+
+#[derive(Debug)]
+struct SchemaDescriptorEntry {
+    schema: mech_core::Schema,
+    descriptor: Option<mech_core::ResolvedValueDescriptor>,
 }
 
 #[derive(Debug)]
@@ -172,6 +183,9 @@ impl NativeDescriptorTemplatePool {
         inputs: &[mech_core::Schema],
         output: &mech_core::Schema,
     ) -> Option<Arc<[mech_core::ResolvedValueDescriptor]>> {
+        if signature.len() != inputs.len().checked_add(1)? {
+            return descriptors_for_schemas(inputs, output);
+        }
         if let Some(entry) = self.entries.get(&signature).and_then(|entries| {
             entries
                 .iter()
@@ -181,7 +195,16 @@ impl NativeDescriptorTemplatePool {
         }
         // Preserve the original neutral-shape constructor and its fallback.
         // In particular, rejecting the neutral shape never rejects a live call.
-        let descriptors = descriptors_for_schemas(inputs, output);
+        // Resolve each canonical schema once across different call signatures.
+        // Copy the completed descriptor into the existing contiguous call table:
+        // execution retains its exact owned descriptor layout and clone costs.
+        let descriptors = signature
+            .iter()
+            .copied()
+            .zip(inputs.iter().chain(core::iter::once(output)))
+            .map(|(id, schema)| self.for_schema(id, schema).cloned())
+            .collect::<Option<Box<[_]>>>()
+            .map(Arc::from);
         self.entries
             .entry(signature)
             .or_default()
@@ -191,6 +214,27 @@ impl NativeDescriptorTemplatePool {
                 descriptors: descriptors.clone(),
             });
         descriptors
+    }
+
+    fn for_schema(
+        &mut self,
+        id: mech_core::SchemaId,
+        schema: &mech_core::Schema,
+    ) -> Option<&mech_core::ResolvedValueDescriptor> {
+        let entries = self.schemas.entry(id).or_default();
+        let at = if let Some(at) = entries.iter().position(|entry| &entry.schema == schema) {
+            at
+        } else {
+            // A neutral-shape rejection belongs only to this complete schema;
+            // it never suppresses actual live-shape construction or admission.
+            let descriptor = descriptor_for_schema(schema);
+            entries.push(SchemaDescriptorEntry {
+                schema: schema.clone(),
+                descriptor,
+            });
+            entries.len() - 1
+        };
+        entries[at].descriptor.as_ref()
     }
 }
 
@@ -236,6 +280,38 @@ mod descriptor_template_pool_tests {
             canonical_schema_key(&unsigned, None, &built.table),
             expected
         );
+    }
+
+    #[test]
+    fn repeated_schema_resolution_keeps_owned_call_layouts_and_foreign_ids_separate() {
+        let unsigned = scalar(SchemaBody::UnsignedInteger(IntegerWidth::W64));
+        let signed = scalar(SchemaBody::SignedInteger(IntegerWidth::W64));
+        let u = SchemaId::new(0);
+        let i = SchemaId::new(1);
+        let mut pool = NativeDescriptorTemplatePool::default();
+        let first = pool
+            .for_schemas(vec![u, i], std::slice::from_ref(&unsigned), &signed)
+            .unwrap();
+        let second = pool
+            .for_schemas(vec![i, u, u], &[signed.clone(), unsigned.clone()], &unsigned)
+            .unwrap();
+        assert_eq!(pool.schemas.len(), 2);
+        assert!(pool.schemas.values().all(|entries| entries.len() == 1));
+        assert_eq!(&first[0], &second[1]);
+        assert!(!core::ptr::eq(&first[0], &second[1]));
+        let expected = descriptors_for_schemas(&[signed.clone(), unsigned.clone()], &unsigned)
+            .unwrap();
+        assert_eq!(second.as_ref(), expected.as_ref());
+        let foreign = pool
+            .for_schemas(vec![u, u], std::slice::from_ref(&unsigned), &signed)
+            .unwrap();
+        assert_eq!(foreign[0].schema(), &unsigned);
+        assert_eq!(foreign[1].schema(), &signed);
+        assert_eq!(pool.schemas[&u].len(), 2);
+        let again = pool
+            .for_schemas(vec![i, u, u], &[signed.clone(), unsigned.clone()], &unsigned)
+            .unwrap();
+        assert!(Arc::ptr_eq(&second, &again));
     }
 
     #[test]
@@ -301,10 +377,13 @@ mod descriptor_template_pool_tests {
             pool.for_schemas(ids.clone(), std::slice::from_ref(&rejected), &output)
                 .is_none()
         );
+        assert_eq!(pool.schemas[&SchemaId::new(0)].len(), 1);
+        assert!(pool.schemas[&SchemaId::new(0)][0].descriptor.is_none());
         let descriptors = pool
             .for_schemas(ids.clone(), std::slice::from_ref(&accepted), &output)
             .unwrap();
         assert_eq!(descriptors[0].schema(), &accepted);
+        assert_eq!(pool.schemas[&SchemaId::new(0)].len(), 2);
         assert!(
             pool.for_schemas(ids, std::slice::from_ref(&rejected), &output)
                 .is_none()
