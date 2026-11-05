@@ -23251,6 +23251,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-random-64-primary-6d5b0a6e8f20.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-case-32-high-entropy-stored-primary-49de71af3b4f.tar.gz",
+          "sha256": "49de71af3b4f5fc291570dcd5d27d752666213ab506d7b28daca03000d487d24",
+          "manifest_sha256": "35a48148da19234bca3c465c94ecc133792732d1b0fdfaf03de1c9bd277bdaab",
+          "bytes": 3475638,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-32-high-entropy-stored-primary-49de71af3b4f.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
