@@ -20307,6 +20307,17 @@
           "files": 53,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-expanded-parent-6669d74babc4.tar.gz"
+        },
+        {
+          "event": "qualified",
+          "source_revision": "5da7d244be992c9d192369820c3bdc1ac803a898",
+          "asset": "r151-qualified-3e0e5f2f2a16.tar.gz",
+          "sha256": "3e0e5f2f2a16a19f923bc79b19213946e8b6d05b33ab972109c1123d30098595",
+          "manifest_sha256": "7d142e63772dc656ef6314dc8e0207bb11e2b05cb9b816ad36c7c2e16c8674f3",
+          "bytes": 170779,
+          "files": 106,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-qualified-3e0e5f2f2a16.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
