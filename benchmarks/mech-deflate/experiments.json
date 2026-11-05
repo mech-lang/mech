@@ -18713,6 +18713,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-eight-overlap-primary-1ab10e0e29b2.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-case-eight-literals-prefix-primary-0ba2f17e6d08.tar.gz",
+          "sha256": "0ba2f17e6d08b6c871f9a36de5b6aa3f6c53e51e062c2ede4e8a32c7f9c258f2",
+          "manifest_sha256": "bc81866986c90478ec3f6900b7131b693eda2e04968d09a15230cffe870681a8",
+          "bytes": 260216,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-eight-literals-prefix-primary-0ba2f17e6d08.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
