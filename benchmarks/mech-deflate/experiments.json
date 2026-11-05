@@ -20235,6 +20235,35 @@
         "all_public_archive_server_digests_verified": true,
         "native_binaries_and_raw_traces_excluded": true
       }
+    },
+    "151": {
+      "base": "054f5a5f82622d83d1da23d4b8d35b64ac6b9d50",
+      "production": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+      "compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-screen-eight-literals-primary-9c3ef5fa36b4.tar.gz",
+          "sha256": "9c3ef5fa36b4fb4a3076e121752aa090fff5f0bfb7dc72e4b0b45cc34a459cd2",
+          "manifest_sha256": "256589b00311a2fb020fe79a84065399a78e0f15e7f53e067286fd78e0ab8fce",
+          "bytes": 86326,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-screen-eight-literals-primary-9c3ef5fa36b4.tar.gz"
+        }
+      ],
+      "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+      "versions": {
+        "typed_ir": 175,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
