@@ -23075,6 +23075,17 @@
           "files": 61,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-screen-eight-literals-primary-9b73dd3b06ff.tar.gz"
+        },
+        {
+          "event": "screen-repeated-32769-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-screen-repeated-32769-primary-22dabbf55efb.tar.gz",
+          "sha256": "22dabbf55efb1006821a13d001a0956deb42bf762da2425b0104831be41894a9",
+          "manifest_sha256": "b568187dc751659de0f6c6c2a08b7560fe23d0dc7ea1d986531431f9f0fdaf8a",
+          "bytes": 91024,
+          "files": 61,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-screen-repeated-32769-primary-22dabbf55efb.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
