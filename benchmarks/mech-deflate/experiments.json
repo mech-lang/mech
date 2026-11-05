@@ -19001,6 +19001,17 @@
           "files": 32,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-screen-33027-periodic-window-primary-750513f645cc.tar.gz"
+        },
+        {
+          "event": "screen-repeated-32769-primary",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-screen-repeated-32769-primary-cc9a371e208e.tar.gz",
+          "sha256": "cc9a371e208e30e4c6575ed32524161c8298d2dc0cdbeb24a18e05077b33f224",
+          "manifest_sha256": "4bebd79e848fac9072a7a8ad528b2568ac360d108edaea2e48a25abae8d427f2",
+          "bytes": 115142,
+          "files": 32,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-screen-repeated-32769-primary-cc9a371e208e.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
