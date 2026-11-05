@@ -18896,8 +18896,8 @@
           "manifest_sha256": "7d9f7185ec425ad257543980c5a3498b8abc0c6a6c81bea2a4e56db51e248ad5",
           "bytes": 114099,
           "files": 23,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-fallback-pieces-round146-20261105/archives/r146-credit-diagnostic-569ef5df1819.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r146-credit-diagnostic-569ef5df1819.tar.gz"
         },
         {
           "event": "closure",
@@ -18907,8 +18907,8 @@
           "manifest_sha256": "168666c253eed24f8a161422bd896a57bd6cd78530f1dc09562ea00be56f2b99",
           "bytes": 246365,
           "files": 58,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-fallback-pieces-round146-20261105/archives/r146-closure-45c9a5e42a5f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r146-closure-45c9a5e42a5f.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
@@ -18920,7 +18920,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": false,
       "production_source_changed": false,
       "primary_performance_claim": false,
