@@ -19990,7 +19990,7 @@
       "base": "89f2449cab6fd5b22e57f95c7d2f4006e2677453",
       "production": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
       "compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
-      "decision": "under measurement",
+      "decision": "diagnostic complete; exact-PC tables identify repeated read eligibility; compiler and all primary timings unchanged; one entry-local reuse experiment queued",
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
       "versions": {
         "typed_ir": 173,
@@ -20059,7 +20059,17 @@
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-analysis-7bb7ae4540c4.tar.gz"
         }
-      ]
+      ],
+      "production_change": false,
+      "analysis": {
+        "script": "analyze-pcs.py",
+        "expected_outputs": {
+          "results.json": "24080020e876edd32c9fab43423329310e00bcd514f6398f597095be9309b65c"
+        }
+      },
+      "raw_environment_packets_withheld": true,
+      "diagnostic_calls": 5138,
+      "exact_pc_cross_checks": 7021
     }
   },
   "repository": "mech-lang/mech",
