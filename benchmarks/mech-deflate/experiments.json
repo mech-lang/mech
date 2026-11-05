@@ -24702,6 +24702,17 @@
           "files": 58,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-clean-parent-7e8105bd3c13.tar.gz"
+        },
+        {
+          "event": "unit",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-unit-386f5eabe89a.tar.gz",
+          "sha256": "386f5eabe89aed509092910b884e5f612b11c92827b02298e0bbe580f3535ac0",
+          "manifest_sha256": "12f71b61ea5a62d70d8158ce4f9c450155508a53bb4f4a711dbcf8fb081aa09d",
+          "bytes": 84269,
+          "files": 57,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-unit-386f5eabe89a.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
