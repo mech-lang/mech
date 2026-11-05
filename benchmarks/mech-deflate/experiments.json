@@ -20944,6 +20944,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-reymont-prefix-1024-primary-d863b01a7106.tar.gz"
+        },
+        {
+          "event": "case-320-overlap-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-case-320-overlap-primary-a199ccfb8766.tar.gz",
+          "sha256": "a199ccfb8766916a9c32270633f4376ba94ca4cd19397b3817a84713abcb1dd3",
+          "manifest_sha256": "4429f9e59f5d6adf117bcf2f3248141d888e8823028f8366023989a8c44e7eae",
+          "bytes": 92169,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-case-320-overlap-primary-a199ccfb8766.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
