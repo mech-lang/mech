@@ -18092,6 +18092,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-random-32769-primary-cb728da271a4.tar.gz"
+        },
+        {
+          "event": "case-repeated-32769-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-repeated-32769-primary-e25206ac2fed.tar.gz",
+          "sha256": "e25206ac2fed5968f8d4a3f4aa9e7ae2a0941e54d63d564ddd947c4624dc5baf",
+          "manifest_sha256": "4e850ae60e423c096d774e4490eb8455cc571a3353620540940a4e4b5a824ffa",
+          "bytes": 238187,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-repeated-32769-primary-e25206ac2fed.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
