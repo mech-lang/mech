@@ -22814,6 +22814,17 @@
           "files": 73,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-eight-literals-prefix-primary-707520f03bab.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-case-seven-stored-prefix-primary-a6b34294dec7.tar.gz",
+          "sha256": "a6b34294dec70d953601360dbb65033df6013b5b8e0915de671f5e1bc0a8303f",
+          "manifest_sha256": "d2c97360ab16546ac331858658d671f350725b3f082d227c4b36746d0430b148",
+          "bytes": 185208,
+          "files": 73,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-seven-stored-prefix-primary-a6b34294dec7.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
