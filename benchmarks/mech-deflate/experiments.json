@@ -17815,6 +17815,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-random-64-primary-00476d63a6ad.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-case-32-high-entropy-stored-primary-1a934e5652e4.tar.gz",
+          "sha256": "1a934e5652e493801d3668fa8c734003f7467ad829d01ddeeb523a08170e5286",
+          "manifest_sha256": "29aa72f2b5c75392c4b993396bdc2da8e37f66ae15709c3e67ecf05b9dcac589",
+          "bytes": 232313,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-32-high-entropy-stored-primary-1a934e5652e4.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
