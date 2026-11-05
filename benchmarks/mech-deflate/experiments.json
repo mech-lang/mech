@@ -19444,6 +19444,17 @@
           "files": 40,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-screen-repeated-32769-primary-cff183628c2c.tar.gz"
+        },
+        {
+          "event": "ancestry-walk-development",
+          "source_revision": "cdd551dbbef71fdb8b6123ff48186541c680ca1d",
+          "asset": "r148-ancestry-walk-development-9a9510d6ce16.tar.gz",
+          "sha256": "9a9510d6ce16621ea3ce776e7d7103258b7afe2f5f1a9fe4fc44021b74a093dc",
+          "manifest_sha256": "9a6ced0a0aa272c89fa1b4456a79ce0acad04b77f172f7d4e1cca44669da3f6d",
+          "bytes": 76196,
+          "files": 39,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-paid-iteration-round148-20261105/archives/r148-ancestry-walk-development-9a9510d6ce16.tar.gz"
         }
       ],
       "before_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
