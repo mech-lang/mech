@@ -22491,6 +22491,17 @@
           "files": 37,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-tables-33027-periodic-window-23597b6ac539.tar.gz"
+        },
+        {
+          "event": "pc-tables-repeated-32769",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r155-pc-tables-repeated-32769-44bfb2efe5f1.tar.gz",
+          "sha256": "44bfb2efe5f18042c6ab489969436a3ffc3ca711ddb2dc1134d8af86d503229a",
+          "manifest_sha256": "e0971baeacffb8cedb362aa5d54e1f697a4fdde47ec9968b8e48090604488cc4",
+          "bytes": 3682971,
+          "files": 37,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-tables-repeated-32769-44bfb2efe5f1.tar.gz"
         }
       ],
       "production": null,
