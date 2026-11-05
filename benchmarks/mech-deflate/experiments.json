@@ -17804,6 +17804,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-128-biased-dynamic-primary-93702f6807d1.tar.gz"
+        },
+        {
+          "event": "case-random-64-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-case-random-64-primary-00476d63a6ad.tar.gz",
+          "sha256": "00476d63a6ad9525024f550dac5b9c546c4454bae561045fe0d26fe3f941f726",
+          "manifest_sha256": "07207a525b79e49eff6ef0c2eb785d22313f030e82a7e5e824367d7a5c3e24cf",
+          "bytes": 231967,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-random-64-primary-00476d63a6ad.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
