@@ -19012,6 +19012,17 @@
           "files": 32,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-screen-repeated-32769-primary-cc9a371e208e.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-case-eight-literals-primary-4910e6e3fb6a.tar.gz",
+          "sha256": "4910e6e3fb6aa186b0e0e2b62958efd2fe20074f26e31c9f052ab054e75a257d",
+          "manifest_sha256": "5aeb07ef2ff0b565bf5f330d74555d90fe0eef58b703181ce2d09d897e53e2cf",
+          "bytes": 121932,
+          "files": 35,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-case-eight-literals-primary-4910e6e3fb6a.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
