@@ -20472,6 +20472,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-random-64-primary-dd00ec3224a5.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-case-32-high-entropy-stored-primary-b7e6124a4908.tar.gz",
+          "sha256": "b7e6124a4908e6377cb08bd4d07738b7141665228bb912d895b24cf9902bd094",
+          "manifest_sha256": "7c76f65caa46e2928fe22d913fc362ec953010ba012fa4b611cbc8a7c403f63a",
+          "bytes": 108373,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-32-high-entropy-stored-primary-b7e6124a4908.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
