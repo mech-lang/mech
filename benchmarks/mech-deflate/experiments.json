@@ -16656,6 +16656,17 @@
           "files": 61,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-callback-census-8a6d15cc4a6c.tar.gz"
+        },
+        {
+          "event": "scalar-first",
+          "source_revision": "58f75827e5c44187731df5253b3a058d2e9cd417",
+          "asset": "r140-scalar-first-a7098171c853.tar.gz",
+          "sha256": "a7098171c853db2953a5110a625dcd355434940a257bc08fe40cc9945b99f395",
+          "manifest_sha256": "a10d36a1225e4cc9d9d15f611f847e428a09fb72acb3cc95b764ed33054af2d9",
+          "bytes": 174995,
+          "files": 108,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-scalar-first-a7098171c853.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
