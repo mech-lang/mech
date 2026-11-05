@@ -23719,6 +23719,17 @@
           "files": 68,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-screen-eight-literals-primary-f018645e1d95.tar.gz"
+        },
+        {
+          "event": "screen-repeated-32769-primary",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-screen-repeated-32769-primary-40421421e647.tar.gz",
+          "sha256": "40421421e64768bf0f0d490609072019463ecb05bb26131f2ff1e9e9a5dc926e",
+          "manifest_sha256": "93a933ee8ed1ff1fcc7717d676c7aae5563df75ad0ccc70c7eeaf2dbe1a81bd8",
+          "bytes": 104811,
+          "files": 68,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-screen-repeated-32769-primary-40421421e647.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
