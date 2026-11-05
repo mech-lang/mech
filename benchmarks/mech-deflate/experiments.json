@@ -22737,6 +22737,17 @@
           "files": 73,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-reymont-prefix-1024-primary-64b94c53e709.tar.gz"
+        },
+        {
+          "event": "case-320-overlap-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-case-320-overlap-primary-d301a7bd2579.tar.gz",
+          "sha256": "d301a7bd25791d775cdc6b4a69dee2647bdfa1f355e5c69f2ac821eecf202c50",
+          "manifest_sha256": "53cadd88936ecf6cb0938bee81807a6bc9379f73234defc80634ce510a330a6e",
+          "bytes": 161229,
+          "files": 73,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-320-overlap-primary-d301a7bd2579.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
