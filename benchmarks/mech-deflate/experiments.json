@@ -16909,6 +16909,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-random-64-primary-bb2a97720bf8.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-case-32-high-entropy-stored-primary-e315ec93012f.tar.gz",
+          "sha256": "e315ec93012fbb175a54e88fb8091df29c89937ada4cf45d144db9cd9f08e254",
+          "manifest_sha256": "c5bcea1bd4a492aa6bc6acee36b757c67451182615e4a9392c11834f6e5d5913",
+          "bytes": 222889,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-32-high-entropy-stored-primary-e315ec93012f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
