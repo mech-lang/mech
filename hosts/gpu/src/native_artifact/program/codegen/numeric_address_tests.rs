@@ -103,7 +103,17 @@ fn general_numeric_addresses_emit_one_machine_division() {
 fn native_numeric_addresses_follow_independent_column_order() {
     for width in [1u8, 2, 4, 8] {
         let (_module, address, _) = native_address(width);
-        for (rows, columns) in [(1u64, 1u64), (1, 6), (6, 1), (2, 3), (3, 2), (7, 13)] {
+        for (rows, columns) in [
+            (1u64, 1u64),
+            (1, 6),
+            (6, 1),
+            (2, 3),
+            (3, 2),
+            (7, 13),
+            (1, 17),
+            (11, 13),
+            (17, 1),
+        ] {
             let mut ordinal = 0;
             for column in 0..columns {
                 for row in 0..rows {
@@ -121,6 +131,11 @@ fn native_numeric_addresses_follow_independent_column_order() {
         let ordinal = rows - 1;
         // SAFETY: the same live function computes words with a nonzero row count.
         let observed = unsafe { address(ordinal, rows, 1, 0) };
+        assert_eq!(observed, ordinal * u64::from(width));
+        // The same large ordinal must also retain exact row-vector addressing.
+        // SAFETY: the live function still only computes a word address; the
+        // row count is nonzero and no allocation is read.
+        let observed = unsafe { address(ordinal, 1, rows, 0) };
         assert_eq!(observed, ordinal * u64::from(width));
     }
 }
