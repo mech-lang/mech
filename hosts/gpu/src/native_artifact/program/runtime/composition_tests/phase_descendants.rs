@@ -28,6 +28,60 @@ fn expected(steps: u64, checkpoint: u64, child_checkpoint: u64, nonce: u8) -> Da
 }
 
 #[test]
+fn ordinary_phase_descendant_pieces_keep_their_full_source_price() {
+    for artifact in artifacts(SOURCE) {
+        let native = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let metadata = native.descriptor().metadata();
+        let root = metadata
+            .closed_tails
+            .regions
+            .iter()
+            .find(|region| {
+                region.tail.parent().is_none()
+                    && region.numeric.as_ref().is_some_and(|p| p.phase.is_some())
+            })
+            .unwrap();
+        let proof = root.numeric.as_ref().unwrap();
+        let pieces = metadata
+            .compositions
+            .parents
+            .iter()
+            .filter(|parent| parent.iteration != root.iteration)
+            .flat_map(|parent| &parent.segments)
+            .filter(|segment| {
+                metadata
+                    .compositions
+                    .entry(segment.entry as usize)
+                    .is_some()
+                    && segment
+                        .sites
+                        .iter()
+                        .all(|&site| proof.sites.binary_search(&(site as usize)).is_ok())
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            !pieces.is_empty(),
+            "ordinary native-phase descendants must retain parent pieces"
+        );
+        assert!(
+            pieces
+                .iter()
+                .all(|segment| segment.prepaid_region.is_none())
+        );
+        assert!(
+            pieces
+                .iter()
+                .any(|segment| segment.numeric.as_ref().unwrap().views.len() > 0)
+        );
+    }
+}
+
+#[test]
 fn descendant_reads_keep_current_owners_errors_publication_and_retry() {
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
