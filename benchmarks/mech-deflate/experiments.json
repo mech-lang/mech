@@ -16386,6 +16386,28 @@
         "fresh_large_dependency_or_component_test_rerun": false,
         "production_test_checkpoint": "R138:555compatible/130nativeCI/236components/8composition/1path/132workflow/15architecture/12scalar/8frame, unchanged production revision."
       }
+    },
+    "140": {
+      "base": "46179dce3a88ab2f1a1c4c22359e833823eb9d47",
+      "production": "79ee17c01933af2b7f5b509d510df0bfe69f1490",
+      "compiler_source": "79ee17c01933af2b7f5b509d510df0bfe69f1490",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "parent",
+          "source_revision": "ebd3792fbf8ddcba3bf041828d15d7047f48d9c1",
+          "asset": "r140-parent-2a86f7be0963.tar.gz",
+          "sha256": "2a86f7be09636829fafe0473195a428cc7287b10a094a56a96c49f89a9495501",
+          "manifest_sha256": "ebbebb8bab72095422ca3b962c30a65cac2f7bfbf2a054a62efc67fdcb054f4e",
+          "bytes": 126214,
+          "files": 22,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-parent-2a86f7be0963.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
