@@ -21120,6 +21120,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-native-comparison-cc6c9eef558d.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-analysis-775890374154.tar.gz",
+          "sha256": "775890374154ca61d7fc507ff4bafbaf7dfb7f26e1d9894607c6e7c2f4d9823d",
+          "manifest_sha256": "fd30c553bab614015a6c682279720a736dff0f76b73f263d5e46dd5d4cabd759",
+          "bytes": 109970,
+          "files": 47,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-analysis-775890374154.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
