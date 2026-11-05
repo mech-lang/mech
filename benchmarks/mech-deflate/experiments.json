@@ -22513,6 +22513,17 @@
           "files": 37,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-tables-reymont-prefix-32769-11452cc6669a.tar.gz"
+        },
+        {
+          "event": "pc-analysis",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r155-pc-analysis-704a8d6989dc.tar.gz",
+          "sha256": "704a8d6989dc7d026ea2a4385d4e58943178defb63de68bdc38b6ef91e44758d",
+          "manifest_sha256": "fc1b94feb2c95beb5c6c88d8e420d19586aeebfb7c405b5176bf1e98b4e701a2",
+          "bytes": 3488784,
+          "files": 42,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-analysis-704a8d6989dc.tar.gz"
         }
       ],
       "production": null,
@@ -22524,7 +22535,7 @@
         "private_abi": 39,
         "bytecode": 14
       },
-      "decision": "Research only: establish exact current loop cost before selecting a bounded-loop safety/accounting change.",
+      "decision": "Research selection complete: path-length cost loop has23.347639% natural32KB source-attributed weights. No new optimization retained; next implement shared current-traversal facts with focused tests and timings.",
       "retained": false,
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
