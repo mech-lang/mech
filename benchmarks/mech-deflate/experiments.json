@@ -18570,6 +18570,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-33027-periodic-window-primary-97e8ea995730.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-case-random-32769-primary-40952a63c7e8.tar.gz",
+          "sha256": "40952a63c7e847382b523b339975a8ebf72f5cd9312a77b5c13dd3862ab231ce",
+          "manifest_sha256": "408497249e5667a0094a40c27dc4964d8e8c21d2efe8f925755866c4c6463bde",
+          "bytes": 255258,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-random-32769-primary-40952a63c7e8.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
