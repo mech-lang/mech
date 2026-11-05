@@ -23708,6 +23708,17 @@
           "files": 67,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-screen-33027-periodic-window-primary-a7b87de30241.tar.gz"
+        },
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "09853c8157a7cc27448791543f976348a0158868",
+          "asset": "r159-screen-eight-literals-primary-f018645e1d95.tar.gz",
+          "sha256": "f018645e1d9589e7b8d94cf14f6451ac8f0e79bd125d3a0f131aec76d15786a9",
+          "manifest_sha256": "f95072590771d97cdf1571258dbce018fa1998672619a9df8342ec804b72cbdb",
+          "bytes": 106335,
+          "files": 68,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-u32-case-facts-round159-20261105/archives/r159-screen-eight-literals-primary-f018645e1d95.tar.gz"
         }
       ],
       "production": "09853c8157a7cc27448791543f976348a0158868",
