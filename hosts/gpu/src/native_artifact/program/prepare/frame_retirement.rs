@@ -4,19 +4,22 @@ use mech_engine::native_artifact::{
 };
 use std::ops::Range;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) enum Operation {
     Scalars(Range<usize>),
     Managed(usize),
 }
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 struct Recipe {
     work: u64,
     operations: Range<usize>,
 }
-/// Pure derived descriptor data, never serialized or supplied by a caller.
-/// Liveness remains authoritative in the existing action/lexical inventories.
-#[derive(Debug, Default)]
+/// Immutable compiler-derived data. Independent images rederive this inventory;
+/// a genuine bound Object may restore it. Runtime liveness checks still apply.
+#[derive(Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct FrameRetirements {
     recipes: Box<[Option<Recipe>]>,
     operations: Box<[Operation]>,

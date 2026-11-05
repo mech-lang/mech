@@ -223,6 +223,139 @@ fn native_metadata_exports_preserve_the_exact_descriptor_and_object_binding() {
 }
 
 #[test]
+fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_mutation() {
+    use serde::Deserialize;
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(include_str!(
+        "../../../../tests/fixtures/native/numeric-parent-child.mec"
+    )) {
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let bytes = object.native_metadata();
+        let mut reader =
+            mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
+        let image = serde_json::Value::deserialize(&mut reader).unwrap();
+        reader.end().unwrap();
+        assert_eq!(image["version"], 4);
+        let independent =
+            unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }.unwrap();
+        let bound = unsafe {
+            NativeProgramDescriptor::decode_object_bound_image(
+                bytes,
+                &catalog,
+                object.identity().bytes(),
+                object.native_metadata_binding().bytes(),
+            )
+        }
+        .unwrap();
+        let original = object.descriptor().metadata();
+        for restored in [&independent, &bound] {
+            let restored = restored.metadata();
+            assert_eq!(
+                restored.unsigned_buffer_calls,
+                original.unsigned_buffer_calls
+            );
+            assert_eq!(restored.call_routes, original.call_routes);
+            assert_eq!(restored.call_cache, original.call_cache);
+            assert_eq!(restored.frame_retirements, original.frame_retirements);
+            assert_eq!(restored.cleanup_effects, original.cleanup_effects);
+            assert_eq!(restored.compositions, original.compositions);
+        }
+        // Public V2 descriptors keep their existing field inventory. V3 native
+        // images continue to use independent derivation when no cache is present.
+        let public = object.descriptor().encode_build_owned_image().unwrap();
+        assert!(
+            !serde_json::from_slice::<serde_json::Value>(&public).unwrap()["descriptor"]
+                .as_object()
+                .unwrap()
+                .contains_key("static_layouts")
+        );
+        let mut legacy = image.clone();
+        legacy["version"] = 3.into();
+        legacy["descriptor"]
+            .as_object_mut()
+            .unwrap()
+            .remove("static_layouts");
+        let legacy = mech_engine::native_artifact::encode_native_metadata_image(
+            &serde_json::to_vec(&legacy).unwrap(),
+        )
+        .unwrap();
+        let legacy =
+            unsafe { NativeProgramDescriptor::decode_build_owned_image(&legacy, &catalog) }
+                .unwrap();
+        assert_eq!(legacy.encode_build_owned_image().unwrap(), public);
+
+        for fault in 0..8 {
+            let mut bad = image.clone();
+            let frozen = &mut bad["descriptor"]["static_layouts"];
+            match fault {
+                0 => {
+                    let call = frozen["unsigned_buffer_calls"]
+                        .as_array_mut()
+                        .unwrap()
+                        .iter_mut()
+                        .find(|call| call.is_object())
+                        .expect("fixture has a buffer call");
+                    call["site"] = u32::MAX.into();
+                }
+                1 => frozen["call_routes"][0] = "StringMatrixElement".into(),
+                2 => {
+                    let repeated = frozen["call_cache"]["repeated"].as_array_mut().unwrap();
+                    repeated[0] = (!repeated[0].as_bool().unwrap()).into();
+                }
+                3 => {
+                    let recipe = frozen["frame_retirements"]["recipes"]
+                        .as_array_mut()
+                        .unwrap()
+                        .iter_mut()
+                        .find(|recipe| recipe.is_object())
+                        .expect("fixture has a private frame");
+                    recipe["work"] = (recipe["work"].as_u64().unwrap() + 1).into();
+                }
+                4 => {
+                    frozen["cleanup_effects"]["boundaries"] = serde_json::json!([{
+                        "total": 1, "charges": 1, "omitted_work": 0, "has_frames": false, "effects": []
+                    }])
+                }
+                5 => {
+                    frozen["compositions"]["words"] =
+                        (frozen["compositions"]["words"].as_u64().unwrap() + 1).into()
+                }
+                6 => {
+                    bad["descriptor"]
+                        .as_object_mut()
+                        .unwrap()
+                        .remove("static_layouts");
+                }
+                _ => bad["version"] = 3.into(),
+            }
+            let bytes = mech_engine::native_artifact::encode_native_metadata_image(
+                &serde_json::to_vec(&bad).unwrap(),
+            )
+            .unwrap();
+            // SAFETY: confined negative reader tests; changed proofs never reach
+            // native execution and no replacement Object binding is fabricated.
+            assert!(
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&bytes, &catalog) }
+                    .is_err(),
+                "independent fault {fault}"
+            );
+            assert!(
+                unsafe {
+                    NativeProgramDescriptor::decode_object_bound_image(
+                        &bytes,
+                        &catalog,
+                        object.identity().bytes(),
+                        object.native_metadata_binding().bytes(),
+                    )
+                }
+                .is_err(),
+                "bound fault {fault}"
+            );
+        }
+    }
+}
+
+#[test]
 fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
     use serde::Deserialize;
     let catalog = mech_stdlib::source_catalog();
@@ -234,7 +367,7 @@ fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
         .unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 3);
+        assert_eq!(image["version"], 4);
         let rows = image["descriptor"]["plan"]["values"].as_array().unwrap();
         assert!(
             rows.iter()

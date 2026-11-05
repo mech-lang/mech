@@ -12,13 +12,15 @@ use mech_engine::native_artifact::{
     NativeScalarKind,
 };
 
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct View {
     pub source: usize,
     pub width: u8,
     pub witness: usize,
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Layout {
     pub views: Vec<View>,
     pub actions: Vec<(usize, Operation)>,

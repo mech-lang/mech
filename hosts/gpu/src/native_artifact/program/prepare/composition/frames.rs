@@ -11,27 +11,34 @@ use mech_engine::native_artifact::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, serde::Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) enum Source {
     Value(u32),
     Field { value: u32, ordinal: usize },
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Exit {
     pub from: u32,
     pub to: u32,
+    #[serde(deserialize_with = "super::image::values")]
     pub frames: Vec<NativeMatchValue>,
+    #[serde(deserialize_with = "super::image::values")]
     pub aliases: Vec<NativeMatchValue>,
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Alias {
+    #[serde(deserialize_with = "super::image::value")]
     pub value: NativeMatchValue,
     pub source: usize,
     /// A library result keeps its declared output limits even when its owner
     /// remains private. Structural forwarding has no declared call boundary.
     pub call_result: bool,
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Layout {
     pub sources: Vec<Source>,
     pub aliases: Vec<Alias>,

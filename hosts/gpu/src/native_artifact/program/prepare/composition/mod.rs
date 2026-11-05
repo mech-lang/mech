@@ -11,9 +11,11 @@ use mech_engine::native_artifact::{
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::num::NonZeroUsize;
 pub(in crate::native_artifact) mod frames;
+pub(in crate::native_artifact) mod image;
 pub(in crate::native_artifact) mod numeric;
 
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Segment {
     pub entry: u32,
     pub sites: Vec<u32>,
@@ -21,9 +23,10 @@ pub(in crate::native_artifact) struct Segment {
     pub exits: Vec<(u32, u32)>,
     pub frame_plan: Option<frames::Layout>,
     pub numeric: Option<numeric::Layout>,
-    pub rejection: Option<&'static str>,
+    pub rejection: Option<std::borrow::Cow<'static, str>>,
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Parent {
     pub iteration: u32,
     /// Innermost suspended ancestor edge, rederived from validated loop ancestry
@@ -32,7 +35,8 @@ pub(in crate::native_artifact) struct Parent {
     pub children: Vec<Child>,
     pub segments: Vec<Segment>,
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Child {
     pub child: u32,
     pub child_initialize: u32,
@@ -321,11 +325,11 @@ impl Layout {
                             &mut proof,
                         ) {
                             Ok(numeric) => segment.numeric = Some(numeric),
-                            Err(reason) => segment.rejection = Some(reason),
+                            Err(reason) => segment.rejection = Some(reason.into()),
                         }
                         segment.frame_plan = Some(proof);
                     }
-                    Err(reason) => segment.rejection = Some(reason),
+                    Err(reason) => segment.rejection = Some(reason.into()),
                 }
             }
             // Validate the complete graph partition independently of construction.

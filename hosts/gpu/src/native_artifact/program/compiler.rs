@@ -270,7 +270,7 @@ impl NativeProgramObject {
         metadata["native_metadata_binding_symbol"] =
             serde_json::json!(self.native_metadata_binding.symbol());
         metadata["native_metadata_format"] = serde_json::json!("mech.typed-build-image.v1");
-        metadata["native_descriptor_version"] = serde_json::json!(3);
+        metadata["native_descriptor_version"] = serde_json::json!(4);
         metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
             self.descriptor
                 .metadata()

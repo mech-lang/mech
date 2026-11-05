@@ -2,7 +2,8 @@
 use mech_engine::native_artifact::{NativePreparedLibraryCall, NativeProgramArtifactPlan};
 use std::num::NonZeroUsize;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Layout {
     slots: Box<[Option<NonZeroUsize>]>,
     repeated: Box<[bool]>,

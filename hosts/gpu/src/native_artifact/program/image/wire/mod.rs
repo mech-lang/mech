@@ -179,6 +179,8 @@ struct Descriptor<'a> {
     stack: u64,
     code: u64,
     identity: [u8; 32],
+    #[serde(borrow, default, deserialize_with = "present_raw")]
+    static_layouts: Option<BuildOwnedImageRecord<'a>>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -217,15 +219,18 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     let image: Image<'_> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
-        || (OBJECT_BOUND && !matches!(image.version, 2 | 3))
-        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3))
+        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4))
+        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4))
     {
         return Err("unsupported native descriptor image format".into());
     }
-    let table_rows = image.version == 3;
+    let table_rows = image.version >= 3;
     let mut w = image.descriptor;
     if (image.version >= 2) != w.buffer_frames.is_some() {
         return Err("native descriptor version differs from its frame inventory".into());
+    }
+    if (image.version >= 4) != w.static_layouts.is_some() {
+        return Err("native descriptor version differs from its static layout inventory".into());
     }
     // This is selected only by the private verified-byte borrow, never by an
     // untrusted field. V1 remains available through independent reconstruction;
@@ -502,34 +507,93 @@ fn decode_inner<const OBJECT_BOUND: bool>(
         }
     }
 
-    let unsigned_buffer_calls = plan.unsigned_buffer_calls().into_boxed_slice();
-    let call_routes = native::program::prepare::call_routes::derive(
-        &plan,
-        &buffer_frames,
-        &unsigned_buffer_calls,
-        &calls,
-    );
-    let frame_retirements = native::program::prepare::frame_retirement::FrameRetirements::derive(
-        &buffer_frames,
-        plan.values().len(),
-    )?;
-    let cleanup_effects = native::program::prepare::cleanup_effects::Layout::derive(
-        &plan,
-        &w.retirements,
-        &buffer_frames,
-        &frame_retirements,
-    )?;
-    let call_cache = native::program::prepare::call_cache::Layout::derive(&plan, &calls)?;
-    let compositions = native::program::prepare::composition::Layout::derive(
-        &plan,
-        &buffer_frames,
-        &w.scalar_aggregates,
-        &calls,
-        &closed_tails,
-        &visits,
-        &frame_retirements,
-        &w.map_admission,
-    )?;
+    let static_layouts = w
+        .static_layouts
+        .take()
+        .map(|image| {
+            let mut reader = image.reader();
+            let layouts = super::super::static_layouts::Owned::deserialize(&mut reader)
+                .map_err(|error| error.to_string())?;
+            reader.end().map_err(|error| error.to_string())?;
+            Ok::<_, String>(layouts)
+        })
+        .transpose()?;
+    let (
+        unsigned_buffer_calls,
+        call_routes,
+        frame_retirements,
+        cleanup_effects,
+        call_cache,
+        compositions,
+    ) = match static_layouts {
+        Some(image) if OBJECT_BOUND => {
+            // Only the private VerifiedObjectImage path can select this branch.
+            // These are the exact immutable compiler results bound to the same
+            // native code, not a version-controlled grant of proof authority.
+            (
+                image.unsigned_buffer_calls,
+                image.call_routes,
+                image.frame_retirements,
+                image.cleanup_effects,
+                image.call_cache,
+                image.compositions.into(),
+            )
+        }
+        image => {
+            let unsigned_buffer_calls = plan.unsigned_buffer_calls().into_boxed_slice();
+            let call_routes = native::program::prepare::call_routes::derive(
+                &plan,
+                &buffer_frames,
+                &unsigned_buffer_calls,
+                &calls,
+            );
+            let frame_retirements =
+                native::program::prepare::frame_retirement::FrameRetirements::derive(
+                    &buffer_frames,
+                    plan.values().len(),
+                )?;
+            let cleanup_effects = native::program::prepare::cleanup_effects::Layout::derive(
+                &plan,
+                &w.retirements,
+                &buffer_frames,
+                &frame_retirements,
+            )?;
+            let call_cache = native::program::prepare::call_cache::Layout::derive(&plan, &calls)?;
+            let compositions = native::program::prepare::composition::Layout::derive(
+                &plan,
+                &buffer_frames,
+                &w.scalar_aggregates,
+                &calls,
+                &closed_tails,
+                &visits,
+                &frame_retirements,
+                &w.map_admission,
+            )?;
+            if let Some(image) = image {
+                let image_compositions: native::program::prepare::composition::Layout =
+                    image.compositions.into();
+                if image.unsigned_buffer_calls != unsigned_buffer_calls
+                    || image.call_routes != call_routes
+                    || image.frame_retirements != frame_retirements
+                    || image.cleanup_effects != cleanup_effects
+                    || image.call_cache != call_cache
+                    || image_compositions != compositions
+                {
+                    return Err(
+                        "static native layouts differ from independent source derivation".into(),
+                    );
+                }
+            }
+            (
+                unsigned_buffer_calls,
+                call_routes,
+                frame_retirements,
+                cleanup_effects,
+                call_cache,
+                compositions,
+            )
+        }
+    };
     if w.max_library_inputs < compositions.argument_words() {
         return Err("restored parent native argument bank is too small".into());
     }

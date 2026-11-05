@@ -4,7 +4,7 @@ use mech_engine::native_artifact::{
     NativeProgramArtifactPlan, NativeUnsignedBufferCall,
 };
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub(in crate::native_artifact) enum LibraryCallRoute {
     Canonical,
     BufferFrame,

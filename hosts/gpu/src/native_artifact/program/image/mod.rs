@@ -5,6 +5,7 @@ use mech_engine::native_artifact::{NativeIterationAction, NativeProgramArtifactP
 
 pub(in crate::native_artifact) mod binding;
 pub(in crate::native_artifact) mod decode;
+mod static_layouts;
 
 #[derive(Debug)]
 pub struct NativeProgramDescriptor {
@@ -30,7 +31,8 @@ impl NativeProgramDescriptor {
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
-        let mut fields = serializer.serialize_struct("NativeProgramDescriptor", 28)?;
+        let mut fields =
+            serializer.serialize_struct("NativeProgramDescriptor", if TABLES { 29 } else { 28 })?;
         if TABLES {
             fields.serialize_field("plan", &TablePlan(&self.metadata.plan))?;
         } else {
@@ -77,6 +79,12 @@ impl NativeProgramDescriptor {
         fields.serialize_field("stack", &self.footprint.stack_bytes)?;
         fields.serialize_field("code", &self.footprint.code_bytes)?;
         fields.serialize_field("identity", &self.identity)?;
+        if TABLES {
+            fields.serialize_field(
+                "static_layouts",
+                &static_layouts::Borrowed::from(&self.metadata),
+            )?;
+        }
         fields.end()
     }
 }
