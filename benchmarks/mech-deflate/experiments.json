@@ -17903,6 +17903,17 @@
           "files": 82,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-profiles-current-584b3d96cac7.tar.gz"
+        },
+        {
+          "event": "analysis-final",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-analysis-final-88673d4560a6.tar.gz",
+          "sha256": "88673d4560a6ce7fb8bdaad70e871e215fbb3d1e674f70d52ebc028e3082fb13",
+          "manifest_sha256": "3f0396aae7d25be109a8112a2824bfc42369eaea0fda00b68b23e4bf9ce07962",
+          "bytes": 237507,
+          "files": 55,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-analysis-final-88673d4560a6.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
