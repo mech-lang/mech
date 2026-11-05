@@ -16755,6 +16755,17 @@
           "files": 30,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-parent-corrected-d57bda33d00c.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-case-eight-literals-primary-ce48c477b2b9.tar.gz",
+          "sha256": "ce48c477b2b95d828ad65593aea88a01d78a7a943546db7b1d4857254b5e6285",
+          "manifest_sha256": "f57df71e3b33b452bd4f09d8c403553ae8018e50747efc53573fce5250adeac6",
+          "bytes": 220302,
+          "files": 42,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-eight-literals-primary-ce48c477b2b9.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
