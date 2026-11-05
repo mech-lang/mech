@@ -10,6 +10,9 @@ struct Kernel {
 }
 impl Kernel {
     fn new(prepaid: bool, vectorized: bool) -> Self {
+        Self::with_order(prepaid, vectorized, false)
+    }
+    fn with_order(prepaid: bool, vectorized: bool, physical_order: bool) -> Self {
         let builder = cranelift_jit::JITBuilder::with_flags(
             &[("opt_level", "speed")],
             default_libcall_names(),
@@ -40,7 +43,16 @@ impl Kernel {
             let complete = b.create_block();
             let cold = b.create_block();
             let missing = b.create_block();
-            emit(&mut b, frame, complete, cold, missing, prepaid, vectorized);
+            emit(
+                &mut b,
+                frame,
+                complete,
+                cold,
+                missing,
+                prepaid,
+                vectorized,
+                physical_order,
+            );
             for (block, status) in [(complete, COMPLETE), (cold, COLD), (missing, MISSING)] {
                 b.switch_to_block(block);
                 let result = b.ins().iconst(types::I64, status as i64);
@@ -114,7 +126,6 @@ fn fixture(entries: Vec<String>, keys: Vec<String>, rows: u64, columns: u64) -> 
         .map(|key| Cell {
             address: key.as_ptr() as u64,
             bytes: key.len() as u64,
-            ..Cell::default()
         })
         .collect::<Vec<_>>();
     let mut output = vec![u64::MAX; keys.len()];
@@ -245,6 +256,37 @@ fn native_utf8_work_finite_physical_allowance_and_descriptor_guards() {
     }
 }
 
+#[test]
+fn native_utf8_collection_order_uses_dense_cells_and_rejects_foreign_geometry() {
+    assert_eq!(size_of::<Cell>(), 16);
+    let keys = vec![
+        String::new(),
+        "x".repeat(3),
+        "y".repeat(4),
+        "z".repeat(7),
+        "a".repeat(8),
+        "b".repeat(15),
+        "c".repeat(16),
+        "雪é\0".repeat(3),
+    ];
+    for prepaid in [false, true] {
+        for vectorized in [false, true] {
+            let kernel = Kernel::with_order(prepaid, vectorized, true);
+            let mut data = fixture(keys.clone(), keys.clone(), 1, keys.len() as u64);
+            assert_eq!(kernel.run(&mut data.frame), COMPLETE);
+            assert_eq!(
+                data.output,
+                (100..100 + keys.len() as u64).collect::<Vec<_>>()
+            );
+            let mut foreign = fixture(keys.clone(), keys.clone(), 2, 4);
+            foreign.frame.cells = 0; // must decline before any payload access
+            assert_eq!(kernel.run(&mut foreign.frame), COLD);
+            assert_eq!(foreign.frame.next, 0);
+            assert!(foreign.output.iter().all(|&value| value == u64::MAX));
+        }
+    }
+}
+
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 #[test]
 fn native_utf8_work_simd_tail_never_reads_past_an_admitted_key() {
@@ -303,7 +345,7 @@ fn native_utf8_work_simd_tail_never_reads_past_an_admitted_key() {
         }
     }
     let kernel = Kernel::new(true, true);
-    for len in [0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65] {
+    for len in [0, 1, 3, 4, 5, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65] {
         let bytes = vec![b'a'; len];
         let query = Guarded::new(&bytes);
         let stored = Guarded::new(&bytes);
@@ -321,7 +363,6 @@ fn native_utf8_work_simd_tail_never_reads_past_an_admitted_key() {
         let cell = Cell {
             address: query.key as u64,
             bytes: len as u64,
-            ..Cell::default()
         };
         let cells = [cell, cell];
         let mut output = [u64::MAX; 2];

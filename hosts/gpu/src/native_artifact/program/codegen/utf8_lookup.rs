@@ -40,7 +40,7 @@ pub(in crate::native_artifact) fn emit_entry(
     b.append_block_param(settle, types::I64);
     // Prepare has paid the complete physical worst case before lending the
     // private bank. Logical body fees remain uncommitted until full success.
-    emit(b, frame, complete, declined, missing, true, true);
+    emit(b, frame, complete, declined, missing, true, true, true);
     for (block, status) in [(complete, COMPLETE), (declined, COLD), (missing, MISSING)] {
         b.switch_to_block(block);
         let status = b.ins().iconst(types::I64, status as i64);
@@ -105,6 +105,7 @@ pub(in crate::native_artifact) fn emit(
     missing: Block,
     prepaid: bool,
     vectorized: bool,
+    physical_order: bool,
 ) {
     let cold = b.create_block();
     let done = b.create_block();
@@ -118,6 +119,7 @@ pub(in crate::native_artifact) fn emit(
     let inspect = b.create_block();
     let compare = b.create_block();
     let compare_byte = b.create_block();
+    let scalar_tail = b.create_block();
     let advance = b.create_block();
     let hit = b.create_block();
     let miss = b.create_block();
@@ -161,6 +163,13 @@ pub(in crate::native_artifact) fn emit(
     let product = mul(b, rows, columns, cold);
     let geometry = b.ins().icmp(IntCC::Equal, product, count);
     require(b, geometry, cold);
+    if physical_order {
+        // The selected source region iterates CollectionElement in physical
+        // order. Prepare lends exactly this normalized geometry, including an
+        // empty batch. Validate it once before omitting per-key division.
+        let one_row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
+        require(b, one_row, cold);
+    }
     let empty = b.ins().icmp_imm(IntCC::Equal, count, 0);
     let nonzero = b.ins().icmp_imm(IntCC::NotEqual, rows, 0);
     let good = b.ins().bor(empty, nonzero);
@@ -179,10 +188,14 @@ pub(in crate::native_artifact) fn emit(
     b.ins().brif(more, query, &[], done, &[]);
     b.switch_to_block(query);
     let at = b.use_var(cursor);
-    let row = b.ins().urem(at, rows);
-    let column = b.ins().udiv(at, rows);
-    let base = b.ins().imul(row, columns);
-    let physical = b.ins().iadd(base, column);
+    let physical = if physical_order {
+        at
+    } else {
+        let row = b.ins().urem(at, rows);
+        let column = b.ins().udiv(at, rows);
+        let base = b.ins().imul(row, columns);
+        b.ins().iadd(base, column)
+    };
     let offset = b.ins().imul_imm(physical, size_of::<Cell>() as i64);
     let cell = b.ins().iadd(cells, offset);
     let address = get(b, cell, offset_of!(Cell, address));
@@ -299,7 +312,39 @@ pub(in crate::native_artifact) fn emit(
         b.def_var(equal_at, next);
         b.ins().jump(compare, &[]);
         b.switch_to_block(scalar);
+        // Short UTF8 keys and vector tails still admit bounded whole-word
+        // equality. Unaligned loads are legal; neither string is read beyond
+        // its proven equal byte extent. A mismatch advances the same probe.
+        for (width, ty) in [(8, types::I64), (4, types::I32)] {
+            let at = b.use_var(equal_at);
+            let remaining = b.ins().isub(length, at);
+            let full = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, width);
+            let batch = b.create_block();
+            let tail = b.create_block();
+            b.ins().brif(full, batch, &[], tail, &[]);
+            b.switch_to_block(batch);
+            let source = b.use_var(key_address);
+            let source = b.ins().iadd(source, at);
+            let slot = b.use_var(slot_address);
+            let target = get(b, slot, offset_of!(Slot, address));
+            let target = b.ins().iadd(target, at);
+            let left = b.ins().load(ty, MemFlags::new(), source, 0);
+            let right = b.ins().load(ty, MemFlags::new(), target, 0);
+            let same = b.ins().icmp(IntCC::Equal, left, right);
+            let matched = b.create_block();
+            b.ins().brif(same, matched, &[], advance, &[]);
+            b.switch_to_block(matched);
+            let next = b.ins().iadd_imm(at, width);
+            b.def_var(equal_at, next);
+            b.ins().jump(tail, &[]);
+            b.switch_to_block(tail);
+        }
     }
+    b.ins().jump(scalar_tail, &[]);
+    b.switch_to_block(scalar_tail);
+    let at = b.use_var(equal_at);
     let more = b.ins().icmp(IntCC::UnsignedLessThan, at, length);
     b.ins().brif(more, compare_byte, &[], hit, &[]);
     b.switch_to_block(compare_byte);
@@ -317,7 +362,7 @@ pub(in crate::native_artifact) fn emit(
     b.switch_to_block(next_compare);
     let at = b.ins().iadd_imm(at, 1);
     b.def_var(equal_at, at);
-    b.ins().jump(compare, &[]);
+    b.ins().jump(scalar_tail, &[]);
     b.switch_to_block(advance);
     let at = b.use_var(probe_at);
     let at = b.ins().iadd_imm(at, 1);

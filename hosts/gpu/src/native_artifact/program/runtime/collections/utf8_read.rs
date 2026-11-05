@@ -5,7 +5,7 @@
 use super::*;
 use crate::native_artifact::program::prepare::utf8_reads::Region;
 use crate::native_artifact::program::runtime::maps::utf8_read::{
-    Cell, Frame, HASH_OFFSET, HASH_PRIME, Slot,
+    ADMITTED_CELL_BYTES, Cell, Frame, HASH_OFFSET, HASH_PRIME, Slot,
 };
 use mech_core::snapshot::{MapValue, SequenceView};
 use mech_core::{ResourceDemand, SchemaBody};
@@ -214,7 +214,7 @@ impl State {
         };
         let metadata_bytes = (capacity as u64)
             .checked_mul(size_of::<Slot>() as u64)
-            .and_then(|n| n.checked_add((count as u64).checked_mul(size_of::<Cell>() as u64)?))
+            .and_then(|n| n.checked_add((count as u64).checked_mul(ADMITTED_CELL_BYTES)?))
             .and_then(|n| n.checked_add((size_of::<Loan>() + size_of::<Frame>()) as u64));
         let Some(metadata_bytes) = metadata_bytes else {
             return Ok(None);
@@ -493,10 +493,6 @@ impl State {
             *cell = Cell {
                 address: key.as_ptr() as u64,
                 bytes: key.len() as u64,
-                logical_cloned_bytes: key.len() as u64,
-                selection_compute_work: (key.len() as u64) * 16 + 160,
-                logical_temporary_bytes: metadata.scalar_bytes + (key.len() as u64) * 4,
-                ..Cell::default()
             };
         }
         // An invocation visit never wraps. No pointer can survive this exact

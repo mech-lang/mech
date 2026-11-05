@@ -2,20 +2,21 @@
 //! region. This module grants no source visit or selected-call permission.
 //! Setup owns/pins every pointer; generated WORK borrows it synchronously.
 
-/// Shares the maintained Engine String-matrix cell ABI. A Collection producer
-/// constructs its own prices from its own proof, never another factory's fee.
+/// A borrowed UTF8 slice for a complete CollectionElement batch. Its logical
+/// producer fees are admitted once by the exact whole-region proof, so native
+/// lookup needs only the pinned address and extent. This private layout is
+/// distinct from the Engine's per-selector priced String-matrix loan.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default)]
 pub(in crate::native_artifact) struct Cell {
     pub address: u64,
     pub bytes: u64,
-    pub logical_output_bytes: u64,
-    pub logical_cloned_bytes: u64,
-    pub selection_compute_work: u64,
-    pub selection_comparison_work: u64,
-    pub logical_temporary_bytes: u64,
-    pub logical_extra_nodes: u64,
 }
+
+// Keep the existing conservative work/resource envelope while reducing actual
+// backing. This change never obtains a speedup by discounting admission.
+pub(in crate::native_artifact) const ADMITTED_CELL_BYTES: u64 = 8 * size_of::<u64>() as u64;
+const _: () = assert!(size_of::<Cell>() == 2 * size_of::<u64>());
 
 /// Native table representation, independent of hashbrown's private ABI.
 /// Occupied is stored last by any later mutable-owner extension.
