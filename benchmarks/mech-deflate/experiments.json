@@ -18268,6 +18268,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-empty-primary-b660b7a35ffa.tar.gz"
+        },
+        {
+          "event": "qualified",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-qualified-d90ae15ede00.tar.gz",
+          "sha256": "d90ae15ede00dcd50c977c2dacd6a6d37d75b33dca3695ebfaf366eb304e507d",
+          "manifest_sha256": "084fb79deaa4540c2519f03643249c02e29b85d35ae1cb7020c6ef876d2281e4",
+          "bytes": 347385,
+          "files": 164,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-qualified-d90ae15ede00.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
