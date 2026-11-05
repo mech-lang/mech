@@ -21964,6 +21964,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-33027-periodic-window-primary-722f4b4dc228.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-random-32769-primary-e2be5c182557.tar.gz",
+          "sha256": "e2be5c1825574c14ea8c99dda1bdf5977a3638a4ac22ace945a6af94c15a267e",
+          "manifest_sha256": "b14a6d1a085fb35c429cf63f548b8fe45c1b686f85236c044d80a6c5f30434a2",
+          "bytes": 128467,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-random-32769-primary-e2be5c182557.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
