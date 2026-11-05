@@ -18968,6 +18968,17 @@
           "files": 35,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-unit-db7436b1d977.tar.gz"
+        },
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-screen-eight-literals-primary-a14bdf3f1a92.tar.gz",
+          "sha256": "a14bdf3f1a92a3752d7031e9bc5083d7e92f620cb689b62e425386fbe8e01b6d",
+          "manifest_sha256": "6e7910c2179fed72507db939a292589c98884445abf5386caa9a0a29e684434e",
+          "bytes": 117105,
+          "files": 31,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-screen-eight-literals-primary-a14bdf3f1a92.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
