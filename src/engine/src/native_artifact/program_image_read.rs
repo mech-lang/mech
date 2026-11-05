@@ -29,7 +29,7 @@ pub(crate) fn canonical_record<'de, T: serde::Deserialize<'de>>(
 ) -> Result<T, String> {
     match image {
         super::BuildOwnedImageRecord::Json(text) => raw_json::decode(text.as_bytes()),
-        super::BuildOwnedImageRecord::Native(_) => {
+        super::BuildOwnedImageRecord::Native(_) | super::BuildOwnedImageRecord::UnsignedByte(_) => {
             let mut reader = image.reader().canonical();
             let value = T::deserialize(&mut reader).map_err(|e| e.to_string())?;
             reader.end().map_err(|e| e.to_string())?;

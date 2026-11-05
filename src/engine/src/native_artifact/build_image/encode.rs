@@ -5,12 +5,26 @@ use super::*;
 /// Integer tokens are resolved at full U128/I128 width; no JSON Value or float
 /// intermediary is used. The result grants no Object or execution authority.
 pub fn encode_native_metadata_image(json: &[u8]) -> Result<Vec<u8>, Error> {
+    image::<true>(json)
+}
+
+#[cfg(test)]
+pub(super) fn legacy_image(json: &[u8]) -> Result<Vec<u8>, Error> {
+    image::<false>(json)
+}
+
+fn image<const PACKED: bool>(json: &[u8]) -> Result<Vec<u8>, Error> {
     if json.len() > MAX_BYTES {
         return Err(error("build JSON exceeds its size limit"));
     }
     let raw: &RawValue = serde_json::from_slice(json)?;
-    let mut bytes = NATIVE_METADATA_IMAGE_MAGIC.to_vec();
-    encode(raw, &mut bytes, 0)?;
+    let mut bytes = if PACKED {
+        NATIVE_METADATA_IMAGE_MAGIC
+    } else {
+        LEGACY_NATIVE_METADATA_IMAGE_MAGIC
+    }
+    .to_vec();
+    encode::<PACKED>(raw, &mut bytes, 0)?;
     Ok(bytes)
 }
 
@@ -41,7 +55,11 @@ impl<'de> Deserialize<'de> for Members<'de> {
     }
 }
 
-fn encode(raw: &RawValue, out: &mut Vec<u8>, depth: usize) -> Result<(), Error> {
+fn encode<const PACKED: bool>(
+    raw: &RawValue,
+    out: &mut Vec<u8>,
+    depth: usize,
+) -> Result<(), Error> {
     if depth > MAX_DEPTH {
         return Err(error("build metadata nesting exceeds its limit"));
     }
@@ -60,10 +78,33 @@ fn encode(raw: &RawValue, out: &mut Vec<u8>, depth: usize) -> Result<(), Error> 
         Some(b'[') => {
             let values: Vec<&RawValue> = serde_json::from_str(text)?;
             out.extend_from_slice(&length(values.len())?);
-            for value in values {
-                encode(value, out, depth + 1)?;
+            let start = out.len();
+            let mut packed = PACKED && values.len() >= 4;
+            if packed {
+                for value in &values {
+                    let text = value.get();
+                    if let Ok(byte) = text.parse::<u8>()
+                        && text.as_bytes().first().is_some_and(u8::is_ascii_digit)
+                    {
+                        out.push(byte);
+                    } else {
+                        packed = false;
+                        break;
+                    }
+                }
             }
-            ARRAY
+            if packed {
+                if depth == MAX_DEPTH {
+                    return Err(error("build metadata nesting exceeds its limit"));
+                }
+                BYTE_ARRAY
+            } else {
+                out.truncate(start);
+                for value in values {
+                    encode::<PACKED>(value, out, depth + 1)?;
+                }
+                ARRAY
+            }
         }
         Some(b'{') => {
             // Preserve original field order and duplicates. A malformed input
@@ -73,7 +114,7 @@ fn encode(raw: &RawValue, out: &mut Vec<u8>, depth: usize) -> Result<(), Error> 
             for (key, value) in members.0 {
                 out.extend_from_slice(&length(key.len())?);
                 out.extend_from_slice(key.as_bytes());
-                encode(value, out, depth + 1)?;
+                encode::<PACKED>(value, out, depth + 1)?;
             }
             OBJECT
         }

@@ -219,7 +219,7 @@ pub(super) fn constant_record(
     use crate::native_artifact::BuildOwnedImageRecord;
     match image {
         BuildOwnedImageRecord::Json(text) => constant_bytes(text.as_bytes(), schemas),
-        BuildOwnedImageRecord::Native(_) => {
+        BuildOwnedImageRecord::Native(_) | BuildOwnedImageRecord::UnsignedByte(_) => {
             let mut reader = image.reader().canonical();
             let draft = ValueDraft::deserialize(&mut reader).map_err(|e| e.to_string())?;
             reader.end().map_err(|e| e.to_string())?;

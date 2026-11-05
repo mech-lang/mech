@@ -12,9 +12,12 @@ use serde_json::{Error, value::RawValue};
 mod encode;
 #[path = "build_image/key.rs"]
 mod key;
+#[path = "build_image/packed.rs"]
+mod packed;
 pub use encode::encode_native_metadata_image;
 
-pub const NATIVE_METADATA_IMAGE_MAGIC: &[u8; 8] = b"MECHTVI1";
+pub const NATIVE_METADATA_IMAGE_MAGIC: &[u8; 8] = b"MECHTVI3";
+const LEGACY_NATIVE_METADATA_IMAGE_MAGIC: &[u8; 8] = b"MECHTVI1";
 pub(crate) const RAW_RECORD: &str = "mech.build-owned-image.record.v1";
 const HEADER: usize = 5;
 const MAX_DEPTH: usize = 128;
@@ -30,18 +33,22 @@ const F64: u8 = 7;
 const TEXT: u8 = 8;
 const ARRAY: u8 = 9;
 const OBJECT: u8 = 10;
+const BYTE_ARRAY: u8 = 11;
 
 fn error(message: &str) -> Error {
     <Error as de::Error>::custom(message)
 }
 
-/// Borrowed, unexpanded metadata record. Neither variant grants execution or
+/// Borrowed, unexpanded metadata record. No variant grants execution or
 /// semantic-proof authority. Native records are length delimited, not pointers
 /// into Rust object layouts, and never carry invocation-local state.
 #[derive(Clone, Copy, Debug)]
 pub enum BuildOwnedImageRecord<'a> {
     Json(&'a str),
     Native(&'a [u8]),
+    /// One unsigned numeric element borrowed from a packed native array. The
+    /// parent supplies its element boundary; no synthetic node is allocated.
+    UnsignedByte(&'a u8),
 }
 impl<'a> BuildOwnedImageRecord<'a> {
     pub fn reader(self) -> BuildOwnedImageReader<'a> {
@@ -52,6 +59,11 @@ impl<'a> BuildOwnedImageRecord<'a> {
                 canonical: false,
             },
             Self::Native(bytes) => BuildOwnedImageReader::native(bytes, 0),
+            Self::UnsignedByte(byte) => BuildOwnedImageReader {
+                source: Source::UnsignedByte(Some(byte)),
+                depth: 0,
+                canonical: false,
+            },
         }
     }
     pub fn decode<T: Deserialize<'a>>(self) -> Result<T, Error> {
@@ -76,7 +88,12 @@ impl<'de: 'a, 'a> Deserialize<'de> for BuildOwnedImageRecord<'a> {
                 self,
                 bytes: &'de [u8],
             ) -> Result<Self::Value, E> {
-                Ok(BuildOwnedImageRecord::Native(bytes))
+                // A complete native node has at least HEADER bytes. Only the
+                // packed-element reader supplies this one-byte raw span.
+                Ok(match bytes {
+                    [byte] => BuildOwnedImageRecord::UnsignedByte(byte),
+                    _ => BuildOwnedImageRecord::Native(bytes),
+                })
             }
             fn visit_newtype_struct<D: Deserializer<'de>>(
                 self,
@@ -92,6 +109,7 @@ impl<'de: 'a, 'a> Deserialize<'de> for BuildOwnedImageRecord<'a> {
 enum Source<'a> {
     Json(serde_json::Deserializer<serde_json::de::StrRead<'a>>),
     Native(Option<&'a [u8]>),
+    UnsignedByte(Option<&'a u8>),
 }
 /// A reader for the same private wire vocabulary in inspectable JSON or
 /// compiler-emitted typed Object data. It owns no metadata buffer or live cache.
@@ -112,7 +130,10 @@ impl<'a> BuildOwnedImageReader<'a> {
         if bytes.len() > MAX_BYTES {
             return Err(error("build metadata exceeds its size limit"));
         }
-        if let Some(bytes) = bytes.strip_prefix(NATIVE_METADATA_IMAGE_MAGIC) {
+        if let Some(bytes) = bytes
+            .strip_prefix(NATIVE_METADATA_IMAGE_MAGIC)
+            .or_else(|| bytes.strip_prefix(LEGACY_NATIVE_METADATA_IMAGE_MAGIC))
+        {
             Ok(Self::native(bytes, 0))
         } else {
             let text = std::str::from_utf8(bytes).map_err(|_| error("build JSON is not UTF8"))?;
@@ -131,6 +152,8 @@ impl<'a> BuildOwnedImageReader<'a> {
             Source::Json(reader) => reader.end(),
             Source::Native(None) => Ok(()),
             Source::Native(Some(_)) => Err(error("unconsumed native metadata record")),
+            Source::UnsignedByte(None) => Ok(()),
+            Source::UnsignedByte(Some(_)) => Err(error("unconsumed native metadata record")),
         }
     }
 }
@@ -156,14 +179,20 @@ impl<'a> Node<'a> {
         }
         let tag = self.bytes[0];
         let length = u32::from_le_bytes(self.bytes[1..HEADER].try_into().unwrap()) as usize;
-        if tag > OBJECT || length != self.bytes.len() - HEADER {
+        if tag > BYTE_ARRAY || length != self.bytes.len() - HEADER {
             return Err(error("native metadata node length or kind differs"));
         }
         Ok((tag, &self.bytes[HEADER..]))
     }
     fn fields(&self, expected: u8) -> Result<Fields<'a>, Error> {
         let (tag, payload) = self.parts()?;
-        if tag != expected || payload.len() < 4 {
+        if tag != expected {
+            return Err(error("native metadata collection has a different kind"));
+        }
+        self.members(tag, payload)
+    }
+    fn members(&self, tag: u8, payload: &'a [u8]) -> Result<Fields<'a>, Error> {
+        if payload.len() < 4 {
             return Err(error("native metadata collection has a different kind"));
         }
         let count = u32::from_le_bytes(payload[..4].try_into().unwrap()) as usize;
@@ -182,7 +211,14 @@ impl<'a> Node<'a> {
         })
     }
     fn array<V: Visitor<'a>>(self, visitor: V, length: Option<usize>) -> Result<V::Value, Error> {
-        let mut fields = self.fields(ARRAY)?;
+        let (tag, payload) = self.parts()?;
+        if tag == BYTE_ARRAY {
+            return packed::array(payload, self.depth + 1, self.canonical, visitor, length);
+        }
+        if tag != ARRAY {
+            return Err(error("native metadata collection has a different kind"));
+        }
+        let mut fields = self.members(ARRAY, payload)?;
         if length.is_some_and(|length| length != fields.remaining) {
             return Err(error("native metadata tuple length differs"));
         }
@@ -436,7 +472,7 @@ impl<'de> Deserializer<'de> for Node<'de> {
                 std::str::from_utf8(bytes)
                     .map_err(|_| error("native metadata string is not UTF8"))?,
             ),
-            ARRAY => self.array(visitor, None),
+            ARRAY | BYTE_ARRAY => self.array(visitor, None),
             OBJECT => self.object(visitor),
             _ => Err(error("unknown native metadata kind")),
         }
@@ -710,6 +746,7 @@ macro_rules! forward {
             match &mut self.source {
                 Source::Json(reader) => reader.$method($($arg,)* visitor),
                 Source::Native(bytes) => Node { bytes: bytes.take().ok_or_else(|| error("native metadata record already consumed"))?, depth: self.depth, canonical: self.canonical }.$method($($arg,)* visitor),
+                Source::UnsignedByte(byte) => packed::Byte { byte: byte.take().ok_or_else(|| error("native metadata record already consumed"))?, depth: self.depth, canonical: self.canonical }.$method($($arg,)* visitor),
             }
         }
     )*};
@@ -738,12 +775,28 @@ impl<'de> Deserializer<'de> for &mut BuildOwnedImageReader<'de> {
                     .parts()?;
                     visitor.visit_borrowed_bytes(bytes)
                 }
+                Source::UnsignedByte(byte) => packed::Byte {
+                    byte: byte
+                        .take()
+                        .ok_or_else(|| error("native metadata record already consumed"))?,
+                    depth: self.depth,
+                    canonical: self.canonical,
+                }
+                .deserialize_newtype_struct(name, visitor),
             }
         } else {
             match &mut self.source {
                 Source::Json(reader) => reader.deserialize_newtype_struct(name, visitor),
                 Source::Native(bytes) => Node {
                     bytes: bytes
+                        .take()
+                        .ok_or_else(|| error("native metadata record already consumed"))?,
+                    depth: self.depth,
+                    canonical: self.canonical,
+                }
+                .deserialize_newtype_struct(name, visitor),
+                Source::UnsignedByte(byte) => packed::Byte {
+                    byte: byte
                         .take()
                         .ok_or_else(|| error("native metadata record already consumed"))?,
                     depth: self.depth,

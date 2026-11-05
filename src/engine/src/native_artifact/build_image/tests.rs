@@ -617,3 +617,6 @@ fn streamed_struct_fields_still_reject_invalid_bytes_and_incomplete_visitors() {
     }
     assert!(decode::<Early>(&original).is_err());
 }
+
+#[path = "packed_tests.rs"]
+mod packed;
