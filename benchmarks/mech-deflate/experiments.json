@@ -17914,6 +17914,17 @@
           "files": 55,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-analysis-final-88673d4560a6.tar.gz"
+        },
+        {
+          "event": "retained-tests",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r143-retained-tests-3c187ed7cd34.tar.gz",
+          "sha256": "3c187ed7cd34c46e09ef93b6358e020aad9a485395632eacd0b6ca5223e068f9",
+          "manifest_sha256": "de626105e3ed6241050de9a69b579c40f59c8c9aac408aa5a66a54d47e207f01",
+          "bytes": 233815,
+          "files": 62,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-retained-tests-3c187ed7cd34.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
