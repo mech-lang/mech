@@ -18691,6 +18691,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-random-64-primary-134793c5a3f2.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-case-32-high-entropy-stored-primary-2ba0148ee1d8.tar.gz",
+          "sha256": "2ba0148ee1d893cbc01e1face22bf2ead7ddc9aaac643f67e4563437df1866e6",
+          "manifest_sha256": "31bcbdee3a351e38365c64dbebbfdc95ffa8de0455d7ada60e7d9ec4cffaa352",
+          "bytes": 259794,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-case-32-high-entropy-stored-primary-2ba0148ee1d8.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
