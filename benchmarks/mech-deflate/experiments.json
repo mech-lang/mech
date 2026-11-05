@@ -22649,6 +22649,17 @@
           "files": 73,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-16384-distribution-change-primary-c1dbc4d4ef65.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-case-33027-periodic-window-primary-fa99a6f0c036.tar.gz",
+          "sha256": "fa99a6f0c036c8be9414df91043e1462d97800d4470d8ce9a2de3b801d0b16f8",
+          "manifest_sha256": "43b76cf795f3907f2ab0a5f26445cf523464f186025cf465949d65b039a7ea24",
+          "bytes": 139017,
+          "files": 73,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-33027-periodic-window-primary-fa99a6f0c036.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
