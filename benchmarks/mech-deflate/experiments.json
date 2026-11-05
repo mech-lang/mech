@@ -22173,6 +22173,17 @@
           "files": 75,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-final-focused-50635ded8019.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-matrix-counters-7d72e0d9b2a5.tar.gz",
+          "sha256": "7d72e0d9b2a5516fdca51a2cda41bb9a087af650567e1916648dcf84fa9c1109",
+          "manifest_sha256": "efa98303fe8fab37a0fb7d9ad20cfdbab46770ae2abd87d76573f0a4dc80e5c4",
+          "bytes": 248543,
+          "files": 79,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-matrix-counters-7d72e0d9b2a5.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
