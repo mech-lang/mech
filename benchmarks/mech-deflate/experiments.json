@@ -18246,6 +18246,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-seven-stored-prefix-primary-9cf0b13a7d9d.tar.gz"
+        },
+        {
+          "event": "case-one-stored-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-one-stored-primary-79e0dfa8fbbd.tar.gz",
+          "sha256": "79e0dfa8fbbd7a94491a64d18ee6313399b95e1fee81dfaf636819f987efd82e",
+          "manifest_sha256": "221b320ff4242d3c7b0dc3c4e6d82945a13952835e16c79d66943721b21b0698",
+          "bytes": 242218,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-one-stored-primary-79e0dfa8fbbd.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
