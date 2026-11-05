@@ -20784,6 +20784,35 @@
         "read_only_review": "No material closure blocker; selected-region and image-provenance wording findings fixed.",
         "data_archive_count": 44
       }
+    },
+    "152": {
+      "base": "9de07a5a339ef9044133fdd96b644f0279b91781",
+      "production": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+      "compiler_source": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "screen-eight-literals-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-screen-eight-literals-primary-b666cc733e5d.tar.gz",
+          "sha256": "b666cc733e5d3ae86fd53191a2e0e2b8400b1c5016d43549ba36970a130d40a8",
+          "manifest_sha256": "7557210a7984d084eb61be7f7fdac138d6f33e67afef464ce2ac7c827591d35e",
+          "bytes": 87718,
+          "files": 44,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-screen-eight-literals-primary-b666cc733e5d.tar.gz"
+        }
+      ],
+      "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+      "versions": {
+        "typed_ir": 176,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
