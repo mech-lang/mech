@@ -17782,6 +17782,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-320-overlap-primary-ddd97832b43d.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "13195b40ffb9ae174d21127a6aeb15741552b2cb",
+          "asset": "r143-case-random-256-primary-0fd43e8547a2.tar.gz",
+          "sha256": "0fd43e8547a2671703c274d4cf376d870eafdf8db113c63daf380a1ac08b6e20",
+          "manifest_sha256": "e6a1cb93ac467cc2d7d2462a2016ac78d99ffac8093e11eb1aa37a42aa6975ff",
+          "bytes": 231836,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-case-random-256-primary-0fd43e8547a2.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
