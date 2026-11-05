@@ -20087,6 +20087,17 @@
           "files": 41,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-screen-eight-literals-primary-2f84accf1b26.tar.gz"
+        },
+        {
+          "event": "screen-16384-distribution-change-primary",
+          "source_revision": "735fe9f76818f1ada7cbe90dfd19d82d0f0a405f",
+          "asset": "r150-screen-16384-distribution-change-primary-8b327b6440bd.tar.gz",
+          "sha256": "8b327b6440bd0771d136f57ab7639ed71e1db2ba6b5ec038918e1ca8960bd074",
+          "manifest_sha256": "d4e980fef68a67c25612f1024a6bcaa35f04abafee31bf1c6c77b4f2687dcdd1",
+          "bytes": 66765,
+          "files": 42,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-screen-16384-distribution-change-primary-8b327b6440bd.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
