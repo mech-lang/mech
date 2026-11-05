@@ -16491,6 +16491,17 @@
           "files": 44,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-random-1024-primary-a8c23d27ee9f.tar.gz"
+        },
+        {
+          "event": "case-repeated-1024-primary",
+          "source_revision": "58f75827e5c44187731df5253b3a058d2e9cd417",
+          "asset": "r140-case-repeated-1024-primary-9ce2ca1b973d.tar.gz",
+          "sha256": "9ce2ca1b973d180d40f87a254db3e8a8c3367a0c446fb3e712465adb01b9723b",
+          "manifest_sha256": "1918aaf1f65bfd46b857288a2542556af3a2b742f4447e7f541c103628834cf8",
+          "bytes": 160376,
+          "files": 44,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-case-repeated-1024-primary-9ce2ca1b973d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
