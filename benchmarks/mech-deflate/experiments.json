@@ -22140,6 +22140,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-one-stored-primary-0803445f8424.tar.gz"
+        },
+        {
+          "event": "case-empty-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-empty-primary-33e7600912eb.tar.gz",
+          "sha256": "33e7600912eb2ab8791fc572065d3af876b2e45b08345e5c8a42ec27117fca2f",
+          "manifest_sha256": "e76fade6bc4f1ced7d39e631c726f68eafaca258d9d16e30cb0e1fdf8b78fb94",
+          "bytes": 178991,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-empty-primary-33e7600912eb.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
