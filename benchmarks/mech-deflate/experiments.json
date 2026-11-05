@@ -17082,7 +17082,15 @@
         "work_policy": 107,
         "private_abi": 39,
         "bytecode": 14
-      }
+      },
+      "retained_compiler_source": "58f75827e5c44187731df5253b3a058d2e9cd417",
+      "candidate_versions": {
+        "typed_ir": 169,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "scope": "Closed stabilization checkpoint: early-refusal candidate rejected, retained R140 production plus one semantic test and CI137 guard. Cold-validation remedy explicitly deferred."
     }
   },
   "repository": "mech-lang/mech",
