@@ -17925,6 +17925,17 @@
           "files": 62,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-retained-tests-3c187ed7cd34.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r143-closure-4e09675bdaed.tar.gz",
+          "sha256": "4e09675bdaed59c46c7fa72f199c380053982b2e7ed3340c55b007ea66f98e16",
+          "manifest_sha256": "4bd2f67dd16a52127c52fd3243ce648cd523b9323695ff64e73b12f7891574a8",
+          "bytes": 10394549,
+          "files": 467,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-private-store-round143-20261105/archives/r143-closure-4e09675bdaed.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
