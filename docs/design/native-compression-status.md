@@ -1,6 +1,6 @@
 # Native compression: current status
 
-**R145 is qualified and retained for a separate draft review. No implementation task is active. Published #973/#976/#977/#978 remain frozen.**
+**The finite milestone is closed for draft review at [#979](https://github.com/mech-lang/mech/pull/979), `befca3db05e25363e7df1efac66bf148082bf327`. External review completed without findings. No implementation task is active; all published heads remain frozen.**
 
 | Checkpoint | Value |
 |---|---|
@@ -8,7 +8,7 @@
 | Before / retained compiler | `0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc` / `c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd` |
 | IR/work/ABI/bytecode | **172/107/39/14**; rejected IR169/170 remain reserved |
 | Bounded change | Confined native byte packs use a guarded current-window word load; original source fallback remains |
-| Frozen chain | [#973](https://github.com/mech-lang/mech/pull/973) → [#976](https://github.com/mech-lang/mech/pull/976) → [#977](https://github.com/mech-lang/mech/pull/977) → [#978](https://github.com/mech-lang/mech/pull/978) |
+| Frozen chain | [#973](https://github.com/mech-lang/mech/pull/973) → [#976](https://github.com/mech-lang/mech/pull/976) → [#977](https://github.com/mech-lang/mech/pull/977) → [#978](https://github.com/mech-lang/mech/pull/978) → [#979](https://github.com/mech-lang/mech/pull/979) |
 
 ## Work board
 
@@ -16,12 +16,12 @@
 |---|---|
 | Closed | R130 recommendations reconciled; native capabilities through R140 frozen |
 | Closed: rejected | R141 early refusal; R143 private stores; tests and contrary evidence retained |
-| Closed: retained for review | R142 exact header-query reuse; R144 current vector geometry; R145 confined byte packs |
-| Active | None; R145 awaits external review as a separate draft |
-| Next | Review/integrate the bounded compiler increment; disposition residual startup before another finite task |
-| Deferred | Ordinary fallback grouping, source/ownership/allocation/SIMD/further lowering work stays in backlog |
+| Closed: retained | R142 exact header-query reuse; R144 current vector geometry; R145 confined byte packs; separate external reviews complete |
+| Active | None; no further compiler capability enters this milestone |
+| Next | Integration review of the frozen stack; hosted CI remains a separate readiness gate |
+| Deferred | R146 ordinary fallback grouping requires child-credit/handoff prerequisites; source/ownership/allocation/SIMD/further lowering stays queued |
 
-Known costs remain explicit: R140 introduced **8B+1.322924%**; R141 saved four requests/0.1039% instructions but worsened elapsed0.200298%, so was rejected. R136 image admission rose roughly17s→35–37s; R142 reduced its three-pair median35.081146958s→34.580817458s (−1.426206%) with identical generated artifacts, but had17/20 adverse compression medians and an adverse guard repeat. Residual startup remains open, not freshly measured in R145.
+Known costs remain explicit: R140 introduced **8B+1.322924%**; R141 saved four requests/0.1039% instructions but worsened elapsed0.200298%, so was rejected. The original regression is a retained limitation of this frozen milestone; further fallback work is deferred. R136 image admission rose roughly17s→35–37s; R142 reduced its three-pair median35.081146958s→34.580817458s (−1.426206%) with identical generated artifacts, but had17/20 adverse compression medians and an adverse guard repeat. Residual startup is assigned to a separate image-reconstruction/liveness follow-up: a retained usability limitation for draft review, not fixed or merge-ready; R145 made no matched startup measurement.
 
 ## Current complete-compression measurements
 
@@ -60,6 +60,6 @@ Semantic-first parent2pass; candidate3focused tests; all304 work/error-origin ro
 
 Preparation-only test inference/selection/transcript and inherited unused-symlink staging errors were corrected before final qualification; diagnostic assembly/Git-metadata receipt corrections are archived. The reviewer-requested length-predicate excerpts are complete. No unresolved introduced functional failure. Exact commands/configurations/exits and all contrary blocks are in the archive. Same7profile exclusions, full dependency/all-features graph, startup remeasurement, multi-MB timing and the separate ten-workload suite remain skipped. Ordinary hosted CI is cancelled under standing instruction; **draft until green hosted CI and clean external review**.
 
-R130 reconciliation remains closed: required exits/fresh lexical state/independent reconstruction, address/arithmetic/bulk writing and all20matrix implemented; full lane-bank compaction partial/deferred. R131 error snapshots and R143 stores rejected. Further bounded-child trip proofs in dynamically funded phases, source pricing/constants/binding/arena/SIMD remain separate tasks; no rejected experiment enters this baseline.
+R130 reconciliation remains closed: required exits/fresh lexical state/independent reconstruction, address/arithmetic/bulk writing and all20matrix implemented; full lane-bank compaction partial/deferred. R131 error snapshots and R143 stores rejected. R146 diagnostic-only: three periodic33,027B calls preserve exact bytes/inflate/aliases/capacity/work/cleanup; target callbacks have parent-only credit, so widening paid descendant selection would refuse them. Additional child-continuation restoration would also be required; no current-domain defect or production change. Further bounded-child trip proofs, source pricing/constants/binding/arena/SIMD remain separate tasks.
 
-Exact observations, failures, pins, guard excerpts and replay reports are in the [experiment index](../../benchmarks/mech-deflate/experiments.json), R145; large evidence stays external. Review follows the [current architecture](native-compiler-architecture.md). This finite increment is complete for review; performance parity remains a longer-term objective.
+Exact observations, failures, pins, guard excerpts and replay reports are in the [experiment index](../../benchmarks/mech-deflate/experiments.json), R145 and deferred R146; large evidence stays external. Review follows the [current architecture](native-compiler-architecture.md). Closure changes documentation/evidence only; qualified compiler and binaries remain unchanged. Performance parity remains a longer-term objective.

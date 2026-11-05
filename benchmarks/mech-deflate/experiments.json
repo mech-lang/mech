@@ -18886,7 +18886,7 @@
       "base": "befca3db05e25363e7df1efac66bf148082bf327",
       "production": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
       "compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
-      "decision": "under measurement",
+      "decision": "DEFER: actual descendant callbacks lack child traversal credit; proposed widening also needs exact child continuation handoff. No production change; finite milestone closed for draft review.",
       "events": [
         {
           "event": "credit-diagnostic",
@@ -18909,7 +18909,12 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false,
+      "production_source_changed": false,
+      "primary_performance_claim": false,
+      "compiled_image_unchanged": true,
+      "one_active_implementation": false
     }
   },
   "repository": "mech-lang/mech",
