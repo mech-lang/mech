@@ -127,16 +127,14 @@ fn native_numeric_addresses_follow_independent_column_order() {
         }
         // Exercise exact integer division above floating-point integer precision.
         // These are arithmetic-only addresses, never allocated or dereferenced.
-        let rows = u64::MAX / u64::from(width);
-        let ordinal = rows - 1;
-        // SAFETY: the same live function computes words with a nonzero row count.
-        let observed = unsafe { address(ordinal, rows, 1, 0) };
-        assert_eq!(observed, ordinal * u64::from(width));
-        // The same large ordinal must also retain exact row-vector addressing.
-        // SAFETY: the live function still only computes a word address; the
-        // row count is nonzero and no allocation is read.
-        let observed = unsafe { address(ordinal, 1, rows, 0) };
-        assert_eq!(observed, ordinal * u64::from(width));
+        let length = u64::MAX / u64::from(width);
+        let ordinal = length - 1;
+        for (rows, columns) in [(length, 1), (1, length)] {
+            // SAFETY: the same live function only computes words; each row
+            // count is nonzero and no allocation is read.
+            let observed = unsafe { address(ordinal, rows, columns, 0) };
+            assert_eq!(observed, ordinal * u64::from(width));
+        }
     }
 }
 
