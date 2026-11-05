@@ -21109,6 +21109,17 @@
           "files": 50,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-binary-inspection-09442d546e6a.tar.gz"
+        },
+        {
+          "event": "native-comparison",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-native-comparison-cc6c9eef558d.tar.gz",
+          "sha256": "cc6c9eef558de937819bf647f50e22701ee143df31b635f36a33b8d8fa160129",
+          "manifest_sha256": "9b69f73cdcf3ed9fbf9cccacaad5362c788225481f7f681845ad68d6a8b9a01e",
+          "bytes": 103172,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-native-comparison-cc6c9eef558d.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
