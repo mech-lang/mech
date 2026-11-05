@@ -22979,6 +22979,17 @@
           "files": 118,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-scalar-case-scalar-loop-64-decoded-1b68271c37f5.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-matrix-counters-b8dcaaeaca80.tar.gz",
+          "sha256": "b8dcaaeaca80a37ccf045386c4f1a793b2847adb514cf1b89d48cbf668e61e60",
+          "manifest_sha256": "3b585bfd9b10bfe110715c2aab04e8598f68baa6f75883176be0b13daa2f0fbc",
+          "bytes": 230262,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-matrix-counters-b8dcaaeaca80.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
