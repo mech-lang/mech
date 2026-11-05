@@ -19991,7 +19991,17 @@
       "production": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
       "compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
       "decision": "under measurement",
-      "events": [
+      "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+      "versions": {
+        "typed_ir": 173,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending",
+      "withheld_local_events": [
         {
           "event": "pc-profile-33027-periodic-window",
           "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
@@ -20000,7 +20010,7 @@
           "manifest_sha256": "cc32f61a146e5a4e3a21dffa2c8a7fc34d6414cb5f3ec4fd90e680718085f0f0",
           "bytes": 59670,
           "files": 18,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "publication": "withheld locally; unredacted target environment in original TOC; sanitized replacement packet will be published",
           "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-profile-33027-periodic-window-f001c89c50c4.tar.gz"
         },
         {
@@ -20011,20 +20021,11 @@
           "manifest_sha256": "6c5878cdeeea9ff9adf8491111d7ebb6d04eca188407438af3404c043b96c8ce",
           "bytes": 74576,
           "files": 18,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "publication": "withheld locally; unredacted target environment in original TOC; sanitized replacement packet will be published",
           "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-profile-16384-distribution-change-b79d79bc2802.tar.gz"
         }
       ],
-      "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
-      "versions": {
-        "typed_ir": 173,
-        "work_policy": 107,
-        "private_abi": 39,
-        "bytecode": 14
-      },
-      "release_tag": "evidence-native-compression-experiments-3",
-      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "events": []
     }
   },
   "repository": "mech-lang/mech",
