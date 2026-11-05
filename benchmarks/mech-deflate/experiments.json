@@ -18812,6 +18812,17 @@
           "files": 106,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-profiles-current-38df87002b83.tar.gz"
+        },
+        {
+          "event": "emitted-evidence-complete",
+          "source_revision": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+          "asset": "r145-emitted-evidence-complete-965fa4de8231.tar.gz",
+          "sha256": "965fa4de8231e03a15ae7b59d3566fd1c51a84d0676f41213aa5a2e45134d10b",
+          "manifest_sha256": "8d2fafea33eee82af9a1b5fb19f7b08ffc5c3d9e7c74241352b1d4b11899f10d",
+          "bytes": 260676,
+          "files": 75,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-packs-round145-20261105/archives/r145-emitted-evidence-complete-965fa4de8231.tar.gz"
         }
       ],
       "before_compiler_source": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
