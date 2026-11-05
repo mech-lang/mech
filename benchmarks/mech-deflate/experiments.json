@@ -16931,6 +16931,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-eight-overlap-primary-d8c3d3595af1.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-case-eight-literals-prefix-primary-87853f7ac76e.tar.gz",
+          "sha256": "87853f7ac76ed8091cf03842c697c9cbc124c977ab5d6e7962129f25b6e2bb6c",
+          "manifest_sha256": "f3d5ea6062c11dd9d74c3fea98734bc546dfc5098baf386c85b68d63541776d4",
+          "bytes": 223132,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-eight-literals-prefix-primary-87853f7ac76e.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
