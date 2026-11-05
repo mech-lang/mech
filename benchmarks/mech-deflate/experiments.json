@@ -22107,6 +22107,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-eight-overlap-primary-baf7a86d7582.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-eight-literals-prefix-primary-bea49cfb2b4c.tar.gz",
+          "sha256": "bea49cfb2b4c7b24a8755922ad100adad9537437d12da83440f813df105c519e",
+          "manifest_sha256": "b9c8261fff96622391b7fbc6c34098453c0ff8c1bac07fd6380f63b9b8b65ce0",
+          "bytes": 170155,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-eight-literals-prefix-primary-bea49cfb2b4c.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
