@@ -44,6 +44,23 @@ or performs compiler analysis. Representation modules never own global dispatch.
 
 ## Preparation and work
 
+The selected little-endian byte append shares the existing private numeric
+array path. Engine identifies the exact U8-matrix/U64-word/U8-count factory;
+preparation forwards its returned array, invalidates older versions and seals
+the operation. Image restoration independently reconstructs that proof. Native
+IR168 rejects earlier images; work107, private ABI39 and bytecode14 remain.
+
+Runtime still checks the current key, budget membership, geometry, capacity,
+aliases and funding. Zero count retains the original owner. Invalid count
+settles and executes the original selected rejection at its source position.
+Positive first change uses the existing admitted Engine factory and private
+publication owner. Funded native visits store one little-endian word into eight
+proved spare U8 cells, then advance the initialized length by the actual count.
+No new source operation, permission cache or per-visit host dispatch is added.
+The conservative per-visit capacity bound includes every append site. A miss
+retains ordinary execution; R140's short-buffer fallback overhead is an explicit
+open performance finding in the current compression status.
+
 One owned `PreparedNativeProgram` holds `ProgramMetadata` and complete
 text-line frontiers. Its private fields are exposed by typed shared accessors.
 CodePlan keeps distinct scalar and prepared-program variants. Emission borrows
