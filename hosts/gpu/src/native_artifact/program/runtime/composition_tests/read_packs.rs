@@ -125,6 +125,15 @@ fn byte_pack_emission_requires_a_complete_confined_expression() {
             )
             .unwrap();
             let metadata = object.metadata();
+            let windows = [
+                "compiled_readonly_numeric_loops",
+                "compiled_numeric_write_loops",
+            ]
+            .into_iter()
+            .flat_map(|name| metadata[name].as_array().unwrap())
+            .flat_map(|region| region["read_pack_entry_windows"].as_array().unwrap())
+            .count();
+            assert_eq!(windows, 1, "one current immutable view/window: {metadata}");
             let packs = [
                 "compiled_readonly_numeric_loops",
                 "compiled_numeric_write_loops",
@@ -208,6 +217,193 @@ fn byte_pack_emission_requires_a_complete_confined_expression() {
             assert!(
                 !full,
                 "{case} must retain the full source expression: {metadata}"
+            );
+        }
+    }
+}
+
+#[test]
+fn byte_packs_share_entry_geometry_but_keep_each_current_index() {
+    for width in [4, 8] {
+        let text = source(width, 1)
+            .replace(
+                "  out := (more? | true => walk",
+                "  second := (more? | true => pack(xs, at + 1u64) | false => 0u64)\n  out := (more? | true => walk",
+            )
+            .replace("bits/xor(total, word)", "bits/xor(total, bits/xor(word, second))");
+        for artifact in artifacts(&text) {
+            let mode = NativeProgramLimitMode::NoLimits;
+            let object = crate::native_artifact::emit_program_object_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                mode.compilation(),
+            )
+            .unwrap();
+            let metadata = object.metadata();
+            let regions = [
+                "compiled_readonly_numeric_loops",
+                "compiled_numeric_write_loops",
+            ]
+            .into_iter()
+            .flat_map(|name| metadata[name].as_array().unwrap())
+            .collect::<Vec<_>>();
+            assert_eq!(
+                regions
+                    .iter()
+                    .map(|r| r["read_pack_sites"].as_array().unwrap().len())
+                    .sum::<usize>(),
+                2,
+                "{metadata}"
+            );
+            assert_eq!(
+                regions
+                    .iter()
+                    .map(|r| r["read_pack_entry_windows"].as_array().unwrap().len())
+                    .sum::<usize>(),
+                1,
+                "{metadata}"
+            );
+            let native = JitProgramArtifact::compile_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                mode.compilation(),
+            )
+            .unwrap();
+            for restored in [false, true] {
+                let memory = mode.memory_budget();
+                let mut published = vec![None; artifact.outputs().len()];
+                for (dimensions, at, nonce) in [
+                    ([1, 32], 0, 13),
+                    ([32, 1], 5, 29),
+                    ([4, 8], 2, 7),
+                    ([1, 32], 3, 41),
+                ] {
+                    let args = arguments(&artifact, &memory, dimensions, at, 3, nonce);
+                    let aliases = args.clone();
+                    let before = contents(&args);
+                    let (result, _) = if restored {
+                        observe::run_restored(
+                            &native,
+                            &args,
+                            &mut published,
+                            mode.execution(),
+                            &memory,
+                        )
+                    } else {
+                        observe::run(&native, &args, &mut published, mode.execution(), &memory)
+                    };
+                    result.unwrap();
+                    assert_eq!(
+                        published
+                            .last()
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        Data::U64(
+                            expected(width, dimensions, at, 3, nonce)
+                                ^ expected(width, dimensions, at + 1, 3, nonce)
+                                ^ u64::from(nonce)
+                        )
+                    );
+                    assert_eq!(contents(&aliases), before);
+                }
+                drop(published);
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn byte_pack_entry_geometry_does_not_authorize_readonly_carrier_swaps() {
+    let text = source(8, 1)
+        .replace(
+            "walk(xs<[u8]>, at<u64>",
+            "walk(xs<[u8]>, other<[u8]>, at<u64>",
+        )
+        .replace("walk(xs, at + 1u64", "walk(other, xs, at + 1u64")
+        .replace(
+            "walk(bytes<[u8]>, at<u64>",
+            "walk(bytes<[u8]>, other<[u8]>, at<u64>",
+        );
+    for artifact in artifacts(&text) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let object = crate::native_artifact::emit_program_object_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        let metadata = object.metadata();
+        for name in [
+            "compiled_readonly_numeric_loops",
+            "compiled_numeric_write_loops",
+        ] {
+            assert!(
+                metadata[name]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|r| r["read_pack_entry_windows"].as_array().unwrap().is_empty()),
+                "swapping roots must not reuse a prior view: {metadata}"
+            );
+        }
+        let native = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        for restored in [false, true] {
+            let memory = mode.memory_budget();
+            let mut published = vec![None; artifact.outputs().len()];
+            for steps in [2, 4, 2] {
+                let args = inputs(
+                    &artifact,
+                    &[
+                        ("bytes", Data::Matrix((0..32).map(Data::U8).collect())),
+                        ("other", Data::Matrix((64..80).map(Data::U8).collect())),
+                        ("at", Data::U64(0)),
+                        ("steps", Data::U64(steps)),
+                        ("seed", Data::U64(3)),
+                    ],
+                    &memory,
+                );
+                let aliases = args.clone();
+                let before = contents(&args);
+                let (result, _) = if restored {
+                    observe::run_restored(&native, &args, &mut published, mode.execution(), &memory)
+                } else {
+                    observe::run(&native, &args, &mut published, mode.execution(), &memory)
+                };
+                result.unwrap();
+                let mut expected = 3u64;
+                for visit in 0..steps {
+                    let base = if visit % 2 == 0 { 0 } else { 64 };
+                    let bytes: [u8; 8] = core::array::from_fn(|i| (base + visit + i as u64) as u8);
+                    expected ^= u64::from_le_bytes(bytes);
+                }
+                assert_eq!(
+                    published
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    Data::U64(expected)
+                );
+                assert_eq!(contents(&aliases), before);
+            }
+            drop(published);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
             );
         }
     }
