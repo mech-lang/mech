@@ -19254,6 +19254,17 @@
           "files": 64,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-credit-diagnostic-092377eef4ca.tar.gz"
+        },
+        {
+          "event": "qualified",
+          "source_revision": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
+          "asset": "r147-qualified-8dbb476b90c6.tar.gz",
+          "sha256": "8dbb476b90c648ce945ebc6fd8ba75712b15fdd8f170dac7db18674da61d2845",
+          "manifest_sha256": "0b2045e84ce2b97bcaf476321743d6d71f9879d3ad151e0075c48a1219328c93",
+          "bytes": 290886,
+          "files": 145,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-qualified-8dbb476b90c6.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
