@@ -22195,6 +22195,17 @@
           "files": 97,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-profiles-current-0cbfd8df5082.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-bool-0-original",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-scalar-case-scalar-bool-0-original-3b84c7db2296.tar.gz",
+          "sha256": "3b84c7db2296b77f68a2fbe9f2826190dcfe3c21daeb521014eb820c7e33988d",
+          "manifest_sha256": "1e0485bb36eae87cbee7a2acab46ec55524778147f4f56b0fcc936e89c2e4c7d",
+          "bytes": 212981,
+          "files": 120,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-scalar-case-scalar-bool-0-original-3b84c7db2296.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
