@@ -21887,18 +21887,29 @@
           "files": 26,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-parent-semantic-a5d6f36aa8c3.tar.gz"
+        },
+        {
+          "event": "screen-33027-periodic-window-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-screen-33027-periodic-window-primary-a309f10db8a7.tar.gz",
+          "sha256": "a309f10db8a74a91fd7f1e917a7bcb1fbb1090aab22e8ba5570cb2eea0f88e4f",
+          "manifest_sha256": "51f6e71e89ad79977124b43b504880b2c83e3cf2e5d5abd8411a3d8117cfd985",
+          "bytes": 111847,
+          "files": 53,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-screen-33027-periodic-window-primary-a309f10db8a7.tar.gz"
         }
       ],
-      "production": "2d27e4cc44261a02c6858a232960d8999ac712eb",
-      "compiler_source": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+      "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+      "compiler_source": "58690b58dfc4ccdf44b074c15d3c140a28603866",
       "before_compiler_source": "2d27e4cc44261a02c6858a232960d8999ac712eb",
       "versions": {
-        "typed_ir": 177,
+        "typed_ir": 178,
         "work_policy": 107,
         "private_abi": 39,
         "bytecode": 14
       },
-      "decision": "Fresh exact-PC diagnosis; no compiler change or new elapsed claim yet",
+      "decision": "candidate: source guards prove the packed byte window; semantic/coverage witness passed, build real Object and measure next",
       "retained": false,
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
