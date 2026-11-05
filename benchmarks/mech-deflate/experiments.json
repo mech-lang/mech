@@ -20648,6 +20648,17 @@
           "files": 97,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-loop-0-decoded-b2b42fdf7b5b.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-loop-64-original",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-scalar-case-scalar-loop-64-original-d585a25729cc.tar.gz",
+          "sha256": "d585a25729cc47db7222aaebaf1fb0f87d50ecddfab65ac7e8647b14010e1d33",
+          "manifest_sha256": "ac8de8f0f1e78930542745522a67c0b7030bbcc6678c97e6d050deb50d57daf5",
+          "bytes": 110785,
+          "files": 97,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-loop-64-original-d585a25729cc.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
