@@ -20131,6 +20131,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-initial-97963ef48605.tar.gz"
+        },
+        {
+          "event": "binary-inspection",
+          "source_revision": "735fe9f76818f1ada7cbe90dfd19d82d0f0a405f",
+          "asset": "r150-binary-inspection-6bee38bb2130.tar.gz",
+          "sha256": "6bee38bb2130bd2ff82398e383f2c276a1e69512b08db7d55f717b18043bdd9f",
+          "manifest_sha256": "3e675b2c0aebffe44b61a1839fa34c29428fc4792cecc1be2b7ad12197d7c6f0",
+          "bytes": 75285,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-binary-inspection-6bee38bb2130.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
