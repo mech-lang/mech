@@ -20428,6 +20428,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-reymont-prefix-1024-primary-85d4f4cf3a01.tar.gz"
+        },
+        {
+          "event": "case-320-overlap-primary",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-case-320-overlap-primary-28429961ddb8.tar.gz",
+          "sha256": "28429961ddb83a956ee730aa4750db16758c0db1af2d38f40dd51c79f15d8dda",
+          "manifest_sha256": "ce8221ff6d1aafaa4a378031857fface3f936e162ac4fe4dec043161a31fcfff",
+          "bytes": 107797,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-case-320-overlap-primary-28429961ddb8.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
