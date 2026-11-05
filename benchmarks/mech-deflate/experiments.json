@@ -20823,6 +20823,17 @@
           "files": 45,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-screen-33027-periodic-window-primary-dbfdc0912dda.tar.gz"
+        },
+        {
+          "event": "screen-repeated-32769-primary",
+          "source_revision": "a10f98dd5a0ac53dd2a2d51c4bef9e29c337fe26",
+          "asset": "r152-screen-repeated-32769-primary-e1fba2e12c11.tar.gz",
+          "sha256": "e1fba2e12c11faba5afc2d7d47c27bdffe02af7ee19a671995c82a3598e45933",
+          "manifest_sha256": "1b745e064e6c9e29ea2397973ba257bbfb57445aecff35b352d410dd01f0486b",
+          "bytes": 85537,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-guarded-subtraction-round152-20261105/archives/r152-screen-repeated-32769-primary-e1fba2e12c11.tar.gz"
         }
       ],
       "before_compiler_source": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
