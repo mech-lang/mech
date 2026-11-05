@@ -18191,6 +18191,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-128-biased-dynamic-primary-5c52fe5507b6.tar.gz"
+        },
+        {
+          "event": "case-random-64-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-random-64-primary-6bd194d5532e.tar.gz",
+          "sha256": "6bd194d5532ee90048cb0b423b28046005fa6f491c5a50a7f9e77a1eef5dde93",
+          "manifest_sha256": "997b120dd9b7a37aec99291c4a23fbdfe56ba7e07f8117d4c38aa5da7705158e",
+          "bytes": 242079,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-random-64-primary-6bd194d5532e.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
