@@ -23240,6 +23240,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-128-biased-dynamic-primary-1ead0272d5ac.tar.gz"
+        },
+        {
+          "event": "case-random-64-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-case-random-64-primary-6d5b0a6e8f20.tar.gz",
+          "sha256": "6d5b0a6e8f20eec07d91c7d9193fd7e702fe7eee609fdf9b2927a095fc46ade4",
+          "manifest_sha256": "eda305824d7d92a6f54e53e6d2d05794ab3593e673cdd86fa74f7c35be158f8c",
+          "bytes": 3471926,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-random-64-primary-6d5b0a6e8f20.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
