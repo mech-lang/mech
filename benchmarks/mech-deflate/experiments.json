@@ -21931,6 +21931,17 @@
           "files": 54,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-screen-repeated-32769-primary-0aaaa7183132.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-eight-literals-primary-24c9eb0f567f.tar.gz",
+          "sha256": "24c9eb0f567f7b1a45c478ab3523114a4c42cd899efc731f8413e05ab9690afe",
+          "manifest_sha256": "10e3520cd70394bb265159d9d8efa2873d4e5b722d308047f8bd56aa5f6f4705",
+          "bytes": 127062,
+          "files": 59,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-eight-literals-primary-24c9eb0f567f.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
