@@ -22580,6 +22580,36 @@
         "data_archive_count": 9,
         "research_only": true
       }
+    },
+    "156": {
+      "base": "357a6deffe623f652c9926c4dcccf868113b3145",
+      "events": [
+        {
+          "event": "screen-33027-periodic-window-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-screen-33027-periodic-window-primary-4549ca60627f.tar.gz",
+          "sha256": "4549ca60627f6c6e6b5440589661bebefcb3bde23d485fc0a4ca93e7b353fac7",
+          "manifest_sha256": "37792969260348f690dca875b851a01de2369dd9c0f76c820940630df5518f32",
+          "bytes": 94478,
+          "files": 58,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-screen-33027-periodic-window-primary-4549ca60627f.tar.gz"
+        }
+      ],
+      "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+      "compiler_source": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+      "before_compiler_source": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+      "versions": {
+        "typed_ir": 179,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Candidate: share current-traversal facts with numeric lowering; remove only proven current variant projection checks. Pending real binary and performance qualification.",
+      "retained": false,
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local evidence; publication pending"
     }
   },
   "repository": "mech-lang/mech",
