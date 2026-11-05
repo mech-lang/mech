@@ -114,6 +114,93 @@ fn numeric_current_windows_prove_complete_child_windows_for_both_views() {
 }
 
 #[test]
+fn numeric_current_windows_refuse_a_bound_changed_on_each_visit() {
+    let source = SOURCE
+        .replace(
+            ":Try(k<u64>, best<u32>, item<u64>)",
+            ":Try(k<u64>, best<u32>, item<u64>, remaining<u64>)",
+        )
+        .replace(":Try(start, best, item)", ":Try(start, best, item, stop)")
+        .replace(":Try(k, best, item)", ":Try(k, best, item, remaining)")
+        .replace(
+            "| k < stop ->",
+            "| k >= 8u64 -> :Done(k, best, item)\n    | k < remaining ->",
+        )
+        .replace(
+            ":Try(k + 1u64, next-best, next-item)",
+            ":Try(k + 1u64, next-best, next-item, remaining + 2u64)",
+        );
+    for artifact in artifacts(&source) {
+        let object = crate::native_artifact::emit_program_object_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let metadata = object.metadata();
+        for region in [
+            "compiled_readonly_numeric_loops",
+            "compiled_numeric_write_loops",
+        ]
+        .into_iter()
+        .flat_map(|key| metadata[key].as_array().unwrap())
+        {
+            assert!(
+                region
+                    .get("guarded_loop_windows")
+                    .and_then(|v| v.as_array())
+                    .is_none_or(Vec::is_empty),
+                "a changing bound must not inherit an entry gate: {region}"
+            );
+        }
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            OptimizationPass::ScalarLoops,
+        )
+        .unwrap();
+        let native = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        for jit in [&ordinary, &native] {
+            let memory = NativeProgramLimitMode::NoLimits.memory_budget();
+            let args = arguments(&artifact, &memory, 6, 0, 2, u32::MAX, u64::MAX);
+            let aliases = args.clone();
+            let before = contents(&args);
+            let mut output = vec![None; artifact.outputs().len()];
+            observe::run_restored(
+                jit,
+                &args,
+                &mut output,
+                NativeProgramLimitMode::NoLimits.execution(),
+                &memory,
+            )
+            .0
+            .unwrap();
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Tuple(vec![Data::U32(0), Data::U64(13), Data::U64(8)].into())
+            );
+            assert_eq!(contents(&aliases), before);
+            drop((output, args, aliases));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+
+#[test]
 fn numeric_current_windows_preserve_default_zero_errors_and_fresh_recovery() {
     let mode = NativeProgramLimitMode::NoLimits;
     let mut expected_error = None;

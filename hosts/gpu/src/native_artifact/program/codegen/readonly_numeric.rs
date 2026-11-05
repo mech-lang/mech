@@ -36,6 +36,7 @@ pub(in crate::native_artifact) struct Report {
     pub proven_projection_guards: Vec<(usize, u32, usize, u32)>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
     pub proven_scalar_read_guards: Vec<(usize, usize, u32)>,
+    pub guarded_loop_windows: Vec<super::numeric_loop_windows::Report>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
@@ -176,6 +177,7 @@ pub(in crate::native_artifact) fn emit_entry(
     let boolean_successors =
         super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     let traversal = super::numeric_traversal::derive(code, proof, shadow);
+    let versions = super::numeric_loop_windows::derive(code, proof, shadow, b);
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
@@ -190,6 +192,7 @@ pub(in crate::native_artifact) fn emit_entry(
             .collect(),
         proven_projection_guards: Vec::new(),
         proven_scalar_read_guards: Vec::new(),
+        guarded_loop_windows: versions.iter().map(|v| v.report(proof)).collect(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
         cold_exits: proof
@@ -210,494 +213,532 @@ pub(in crate::native_artifact) fn emit_entry(
         maximum_source_instructions: 0,
         fixed_template_instructions: 0,
     };
-    for &site in &proof.sites {
-        b.switch_to_block(target(site as u32));
-        if matches!(proof.action(site), Some(Operation::Fallback)) {
-            boundaries.insert(target(site as u32));
-            let continuation = proof
-                .exits
-                .iter()
-                .find(|exit| exit.to == site)
-                .ok_or_else(|| backend("ordinary numeric snapshot lacks its exact exit"))?;
-            let count = snapshots::spill(
-                b,
-                &words,
-                locals,
-                code,
-                region,
-                6,
-                Some(site),
-                &continuation.values,
-                &slots,
-            )?;
-            report.boundary_spill_words.push(("ordinary", site, count));
-            set_origin(b, frame, site as u64);
-            let origin = b.ins().iconst(types::I64, site as i64);
-            tail::leave_at(
-                controls.options(),
-                b,
-                locals,
-                region,
-                origin,
-                6,
-                Some(site),
-                hooks,
-                error,
-            )?;
-            let one = b.ins().iconst(types::I64, 1);
-            b.ins().store(
-                tail::flags(controls.options(), region),
-                one,
-                locals,
-                offset(region.cold_resume().unwrap())?,
-            );
-            b.ins().jump(
-                ordinary_blocks[site]
-                    .ok_or_else(|| backend("cold numeric continuation is absent"))?,
-                &[],
-            );
-            continue;
-        }
-        let fail = b.create_block();
-        b.append_block_param(fail, types::I64);
-        b.set_cold_block(fail);
-        boundaries.insert(fail);
-        let before = b.func.dfg.num_insts();
-        if site == region.tail.header() as usize {
-            // Canonical liveness proves no source read before redefinition in
-            // this new traversal. These private SSA definitions add no source
-            // operations or canonical writes and break historical loop-carried
-            // dependencies created solely by conservative exit snapshots.
-            let zero = b.ins().iconst(types::I64, 0);
-            for &slot in &fresh {
-                words.write(b, slot, zero);
-            }
-        }
-        if let Some(count) = child_fuel::emit(
-            b,
-            controls.options(),
-            &words,
-            code,
-            &slots,
-            region,
-            proof,
-            site,
-            frame,
-            locals,
-            hooks,
-            ordinary_blocks,
-            error,
-            &mut boundaries,
-        )? {
-            report.boundary_spill_words.push(("child", site, count));
-        }
-        if site == region.tail.header() as usize {
-            let compute = words.read(b, region.words + 1);
-            let comparison = words.read(b, region.words + 2);
-            let (compute_bound, comparison_bound, valid) = if let Some(phase) = &proof.phase {
-                let (work, a) = super::numeric_fuel::envelope(
-                    b,
-                    &words,
-                    code,
-                    proof,
-                    shadow,
-                    region.tail.carrier().get(),
-                    &phase.compute_bound,
-                )?;
-                let (compare, c) = super::numeric_fuel::envelope(
-                    b,
-                    &words,
-                    code,
-                    proof,
-                    shadow,
-                    region.tail.carrier().get(),
-                    &phase.comparison_bound,
-                )?;
-                (work, compare, b.ins().band(a, c))
+    // Both bodies share the same admitted SSA homes and loan. A guard is
+    // evaluated afresh only at the canonical initialize edge. Each version's
+    // latch returns to its own header; exits rejoin the existing parent.
+    for version in std::iter::once(None).chain(versions.iter().map(Some)) {
+        let target = |site| {
+            if let Some(block) = version.and_then(|v| v.blocks.get(&site)) {
+                *block
+            } else if site == region.tail.exit() {
+                exit
             } else {
-                (
-                    b.ins().iconst(types::I64, region.compute as i64),
-                    b.ins().iconst(types::I64, region.comparison as i64),
-                    b.ins().iconst(types::I8, 1),
-                )
-            };
-            let a = b
-                .ins()
-                .icmp(IntCC::UnsignedGreaterThanOrEqual, compute, compute_bound);
-            let c = b.ins().icmp(
-                IntCC::UnsignedGreaterThanOrEqual,
-                comparison,
-                comparison_bound,
-            );
-            let mut enough = b.ins().band(a, c);
-            enough = b.ins().band(enough, valid);
-            // Capacity is checked before ANY source operation in this visit.
-            // Count all append sites: a conservative DAG traversal bound, even
-            // if a branch would skip some. A miss uses the existing header exit.
-            for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
-                let count = proof
-                    .actions
-                    .iter()
-                    .try_fold(0usize, |count, (_, op)| {
-                        count.checked_add(op.maximum_append(array))
-                    })
-                    .ok_or_else(|| backend("numeric append capacity bound overflows"))?;
-                let length = words.read(b, shadow + proof.view(array) + 1);
-                let capacity = words.read(b, shadow + proof.capacity(array).unwrap());
-                let valid = b
-                    .ins()
-                    .icmp(IntCC::UnsignedLessThanOrEqual, length, capacity);
-                let spare = b.ins().isub(capacity, length);
-                let fits = b
-                    .ins()
-                    .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, spare, count as i64);
-                let fits = b.ins().band(valid, fits);
-                enough = b.ins().band(enough, fits);
-                report.capacity_guards.push((array, count));
+                blocks[&site]
             }
-            let funded = b.create_block();
-            b.ins().brif(enough, funded, &[], bailout, &[]);
-            b.switch_to_block(funded);
-            let cost = b.ins().iconst(types::I64, region.compute as i64);
-            let compute = b.ins().isub(compute, cost);
-            let comparison = b.ins().iadd_imm(comparison, -(region.comparison as i64));
-            words.write(b, region.words + 1, compute);
-            words.write(b, region.words + 2, comparison);
-        }
-        if let Some(debit) = proof.phase.as_ref().and_then(|phase| {
-            phase.loops.iter().find(|loop_| {
-                loop_.header == site
-                    && (!phase.checked_children || loop_.header == region.tail.header() as usize)
-            })
-        }) {
-            if site != region.tail.header() as usize {
+        };
+        let traversal = version.map_or(&traversal, |v| &v.facts);
+        let selected_sites = version.map_or(proof.sites.as_slice(), |v| v.sites.as_slice());
+        for &site in selected_sites {
+            b.switch_to_block(target(site as u32));
+            if matches!(proof.action(site), Some(Operation::Fallback)) {
+                boundaries.insert(target(site as u32));
+                let continuation = proof
+                    .exits
+                    .iter()
+                    .find(|exit| exit.to == site)
+                    .ok_or_else(|| backend("ordinary numeric snapshot lacks its exact exit"))?;
+                let count = snapshots::spill(
+                    b,
+                    &words,
+                    locals,
+                    code,
+                    region,
+                    6,
+                    Some(site),
+                    &continuation.values,
+                    &slots,
+                )?;
+                report.boundary_spill_words.push(("ordinary", site, count));
+                set_origin(b, frame, site as u64);
+                let origin = b.ins().iconst(types::I64, site as i64);
+                tail::leave_at(
+                    controls.options(),
+                    b,
+                    locals,
+                    region,
+                    origin,
+                    6,
+                    Some(site),
+                    hooks,
+                    error,
+                )?;
+                let one = b.ins().iconst(types::I64, 1);
+                b.ins().store(
+                    tail::flags(controls.options(), region),
+                    one,
+                    locals,
+                    offset(region.cold_resume().unwrap())?,
+                );
+                b.ins().jump(
+                    ordinary_blocks[site]
+                        .ok_or_else(|| backend("cold numeric continuation is absent"))?,
+                    &[],
+                );
+                continue;
+            }
+            let fail = b.create_block();
+            b.append_block_param(fail, types::I64);
+            b.set_cold_block(fail);
+            boundaries.insert(fail);
+            let before = b.func.dfg.num_insts();
+            if site == region.tail.header() as usize {
+                // Canonical liveness proves no source read before redefinition in
+                // this new traversal. These private SSA definitions add no source
+                // operations or canonical writes and break historical loop-carried
+                // dependencies created solely by conservative exit snapshots.
+                let zero = b.ins().iconst(types::I64, 0);
+                for &slot in &fresh {
+                    words.write(b, slot, zero);
+                }
+            }
+            if let Some(count) = child_fuel::emit(
+                b,
+                controls.options(),
+                &words,
+                code,
+                &slots,
+                region,
+                proof,
+                site,
+                frame,
+                locals,
+                hooks,
+                ordinary_blocks,
+                error,
+                &mut boundaries,
+            )? {
+                report.boundary_spill_words.push(("child", site, count));
+            }
+            if site == region.tail.header() as usize {
                 let compute = words.read(b, region.words + 1);
                 let comparison = words.read(b, region.words + 2);
-                let compute = b.ins().iadd_imm(compute, -(debit.compute as i64));
-                let comparison = b.ins().iadd_imm(comparison, -(debit.comparison as i64));
+                let (compute_bound, comparison_bound, valid) = if let Some(phase) = &proof.phase {
+                    let (work, a) = super::numeric_fuel::envelope(
+                        b,
+                        &words,
+                        code,
+                        proof,
+                        shadow,
+                        region.tail.carrier().get(),
+                        &phase.compute_bound,
+                    )?;
+                    let (compare, c) = super::numeric_fuel::envelope(
+                        b,
+                        &words,
+                        code,
+                        proof,
+                        shadow,
+                        region.tail.carrier().get(),
+                        &phase.comparison_bound,
+                    )?;
+                    (work, compare, b.ins().band(a, c))
+                } else {
+                    (
+                        b.ins().iconst(types::I64, region.compute as i64),
+                        b.ins().iconst(types::I64, region.comparison as i64),
+                        b.ins().iconst(types::I8, 1),
+                    )
+                };
+                let a = b
+                    .ins()
+                    .icmp(IntCC::UnsignedGreaterThanOrEqual, compute, compute_bound);
+                let c = b.ins().icmp(
+                    IntCC::UnsignedGreaterThanOrEqual,
+                    comparison,
+                    comparison_bound,
+                );
+                let mut enough = b.ins().band(a, c);
+                enough = b.ins().band(enough, valid);
+                // Capacity is checked before ANY source operation in this visit.
+                // Count all append sites: a conservative DAG traversal bound, even
+                // if a branch would skip some. A miss uses the existing header exit.
+                for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
+                    let count = proof
+                        .actions
+                        .iter()
+                        .try_fold(0usize, |count, (_, op)| {
+                            count.checked_add(op.maximum_append(array))
+                        })
+                        .ok_or_else(|| backend("numeric append capacity bound overflows"))?;
+                    let length = words.read(b, shadow + proof.view(array) + 1);
+                    let capacity = words.read(b, shadow + proof.capacity(array).unwrap());
+                    let valid = b
+                        .ins()
+                        .icmp(IntCC::UnsignedLessThanOrEqual, length, capacity);
+                    let spare = b.ins().isub(capacity, length);
+                    let fits =
+                        b.ins()
+                            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, spare, count as i64);
+                    let fits = b.ins().band(valid, fits);
+                    enough = b.ins().band(enough, fits);
+                    report.capacity_guards.push((array, count));
+                }
+                let funded = b.create_block();
+                b.ins().brif(enough, funded, &[], bailout, &[]);
+                b.switch_to_block(funded);
+                let cost = b.ins().iconst(types::I64, region.compute as i64);
+                let compute = b.ins().isub(compute, cost);
+                let comparison = b.ins().iadd_imm(comparison, -(region.comparison as i64));
                 words.write(b, region.words + 1, compute);
                 words.write(b, region.words + 2, comparison);
             }
-            let count = words.read(b, shadow + debit.counter);
-            let count = b.ins().iadd_imm(count, 1);
-            words.write(b, shadow + debit.counter, count);
-        }
-        if let Some(pack) = read_packs.iter().find(|pack| pack.first == site) {
-            super::numeric_read_packs::emit(b, &words, shadow, proof, pack, target(pack.next));
-            if pack.source_window {
-                report.source_guarded_read_packs.push(pack.first);
+            if let Some(debit) = proof.phase.as_ref().and_then(|phase| {
+                phase.loops.iter().find(|loop_| {
+                    loop_.header == site
+                        && (!phase.checked_children
+                            || loop_.header == region.tail.header() as usize)
+                })
+            }) {
+                if site != region.tail.header() as usize {
+                    let compute = words.read(b, region.words + 1);
+                    let comparison = words.read(b, region.words + 2);
+                    let compute = b.ins().iadd_imm(compute, -(debit.compute as i64));
+                    let comparison = b.ins().iadd_imm(comparison, -(debit.comparison as i64));
+                    words.write(b, region.words + 1, compute);
+                    words.write(b, region.words + 2, comparison);
+                }
+                let count = words.read(b, shadow + debit.counter);
+                let count = b.ins().iadd_imm(count, 1);
+                words.write(b, shadow + debit.counter, count);
             }
-            report
-                .read_pack_sites
-                .push((pack.first, pack.last, pack.width));
-        }
-        match proof.action(site) {
-            Some(Operation::Fallback) => unreachable!("cold edge emitted above"),
-            Some(Operation::Aggregate) => {
-                let layout = &program.metadata().scalar_aggregates;
-                let action = layout
-                    .action(site)
-                    .ok_or_else(|| backend("numeric aggregate lost its shared action"))?;
-                aggregates::emit(
-                    b,
-                    &mut SsaWords(&words),
-                    layout,
-                    action,
-                    fail,
-                    &mut super::numeric_traversal::Guards {
+            if let Some(pack) = read_packs.iter().find(|pack| pack.first == site) {
+                super::numeric_read_packs::emit(b, &words, shadow, proof, pack, target(pack.next));
+                if pack.source_window {
+                    report.source_guarded_read_packs.push(pack.first);
+                }
+                report
+                    .read_pack_sites
+                    .push((pack.first, pack.last, pack.width));
+            }
+            match proof.action(site) {
+                Some(Operation::Fallback) => unreachable!("cold edge emitted above"),
+                Some(Operation::Aggregate) => {
+                    let layout = &program.metadata().scalar_aggregates;
+                    let action = layout
+                        .action(site)
+                        .ok_or_else(|| backend("numeric aggregate lost its shared action"))?;
+                    aggregates::emit(
+                        b,
+                        &mut SsaWords(&words),
+                        layout,
+                        action,
+                        fail,
+                        &mut super::numeric_traversal::Guards {
+                            site,
+                            facts: traversal,
+                            emitted: &mut report.proven_projection_guards,
+                        },
+                    )?;
+                }
+                Some(Operation::Frame) => {
+                    super::numeric_words::frame_words(
+                        b,
+                        &words,
+                        shadow,
+                        code,
                         site,
-                        facts: &traversal,
-                        emitted: &mut report.proven_projection_guards,
-                    },
-                )?;
-            }
-            Some(Operation::Frame) => {
-                super::numeric_words::frame_words(b, &words, shadow, code, site, &proof.frames)?;
-            }
-            Some(Operation::ArrayCopy) => {}
-            Some(Operation::Length { array, output }) => {
-                let length = words.read(b, shadow + proof.view(*array) + 1);
-                words.write(b, *output as usize, length);
-                report.length_sites.push(site);
-            }
-            Some(Operation::Append { array, incoming }) => {
-                let view = shadow + proof.view(*array);
-                let length = words.read(b, view + 1);
-                let incoming = words.read(b, *incoming as usize);
-                let private = words.read(b, shadow + proof.private_flag(*array));
-                let store = b.create_block();
-                let materialize = b.create_block();
-                let done = b.create_block();
-                b.set_cold_block(materialize);
-                boundaries.insert(materialize);
-                b.ins().brif(private, store, &[], materialize, &[]);
-                b.switch_to_block(materialize);
-                let index = b.ins().iadd_imm(length, 1);
-                boundary::materialize(
-                    b,
-                    controls.options(),
-                    &words,
-                    region,
-                    proof,
-                    *array,
-                    site,
-                    frame,
-                    locals,
-                    index,
+                        &proof.frames,
+                    )?;
+                }
+                Some(Operation::ArrayCopy) => {}
+                Some(Operation::Length { array, output }) => {
+                    let length = words.read(b, shadow + proof.view(*array) + 1);
+                    words.write(b, *output as usize, length);
+                    report.length_sites.push(site);
+                }
+                Some(Operation::Append { array, incoming }) => {
+                    let view = shadow + proof.view(*array);
+                    let length = words.read(b, view + 1);
+                    let incoming = words.read(b, *incoming as usize);
+                    let private = words.read(b, shadow + proof.private_flag(*array));
+                    let store = b.create_block();
+                    let materialize = b.create_block();
+                    let done = b.create_block();
+                    b.set_cold_block(materialize);
+                    boundaries.insert(materialize);
+                    b.ins().brif(private, store, &[], materialize, &[]);
+                    b.switch_to_block(materialize);
+                    let index = b.ins().iadd_imm(length, 1);
+                    boundary::materialize(
+                        b,
+                        controls.options(),
+                        &words,
+                        region,
+                        proof,
+                        *array,
+                        site,
+                        frame,
+                        locals,
+                        index,
+                        incoming,
+                        hooks,
+                        error,
+                    )?;
+                    b.ins().jump(done, &[]);
+                    b.switch_to_block(store);
+                    let width = proof.arrays[*array].width;
+                    let base = words.read(b, view);
+                    let at = b.ins().imul_imm(length, i64::from(width));
+                    let address = b.ins().iadd(base, at);
+                    let ty = match width {
+                        1 => types::I8,
+                        2 => types::I16,
+                        4 => types::I32,
+                        8 => types::I64,
+                        _ => return Err(backend("numeric append width differs")),
+                    };
+                    let value = if width < 8 {
+                        b.ins().ireduce(ty, incoming)
+                    } else {
+                        incoming
+                    };
+                    // The admitted header proves spare cells for this complete
+                    // traversal. Advance logical length only after initialization.
+                    b.ins().store(MemFlags::new(), value, address, 0);
+                    let length = b.ins().iadd_imm(length, 1);
+                    words.write(b, view + 1, length);
+                    words.write(b, view + 3, length);
+                    b.ins().jump(done, &[]);
+                    b.switch_to_block(done);
+                    report.typed_stores.push((site, width));
+                    report.append_sites.push((site, width));
+                    report.first_change_boundaries.push(site);
+                }
+                Some(Operation::AppendLeBytes {
+                    array,
                     incoming,
-                    hooks,
-                    error,
-                )?;
-                b.ins().jump(done, &[]);
-                b.switch_to_block(store);
-                let width = proof.arrays[*array].width;
-                let base = words.read(b, view);
-                let at = b.ins().imul_imm(length, i64::from(width));
-                let address = b.ins().iadd(base, at);
-                let ty = match width {
-                    1 => types::I8,
-                    2 => types::I16,
-                    4 => types::I32,
-                    8 => types::I64,
-                    _ => return Err(backend("numeric append width differs")),
-                };
-                let value = if width < 8 {
-                    b.ins().ireduce(ty, incoming)
-                } else {
-                    incoming
-                };
-                // The admitted header proves spare cells for this complete
-                // traversal. Advance logical length only after initialization.
-                b.ins().store(MemFlags::new(), value, address, 0);
-                let length = b.ins().iadd_imm(length, 1);
-                words.write(b, view + 1, length);
-                words.write(b, view + 3, length);
-                b.ins().jump(done, &[]);
-                b.switch_to_block(done);
-                report.typed_stores.push((site, width));
-                report.append_sites.push((site, width));
-                report.first_change_boundaries.push(site);
-            }
-            Some(Operation::AppendLeBytes {
-                array,
-                incoming,
-                count,
-            }) => {
-                let count = words.read(b, *count as usize);
-                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, count, 8);
-                let checked = b.create_block();
-                let bad = b.create_block();
-                let changed = b.create_block();
-                let store = b.create_block();
-                let materialize = b.create_block();
-                let done = b.create_block();
-                b.set_cold_block(bad);
-                b.set_cold_block(materialize);
-                boundaries.extend([bad, materialize]);
-                b.ins().brif(valid, checked, &[], bad, &[]);
-                b.switch_to_block(bad);
-                let spilled = boundary::source_failure(
-                    b, controls, &words, frame, locals, code, closed, id, site, hooks, error,
-                )?;
-                report.bounds_error_spill_words.push((site, spilled));
-                b.switch_to_block(checked);
-                // A zero-count append is the existing same-schema identity.
-                // It neither confines an owner nor initializes spare cells.
-                b.ins().brif(count, changed, &[], done, &[]);
-                b.switch_to_block(changed);
-                let incoming = words.read(b, *incoming as usize);
-                let private = words.read(b, shadow + proof.private_flag(*array));
-                b.ins().brif(private, store, &[], materialize, &[]);
-                b.switch_to_block(materialize);
-                boundary::materialize(
-                    b,
-                    controls.options(),
-                    &words,
-                    region,
-                    proof,
-                    *array,
-                    site,
-                    frame,
-                    locals,
                     count,
-                    incoming,
-                    hooks,
-                    error,
-                )?;
-                b.ins().jump(done, &[]);
-                b.switch_to_block(store);
-                let view = shadow + proof.view(*array);
-                let base = words.read(b, view);
-                let length = words.read(b, view + 1);
-                let address = b.ins().iadd(base, length);
-                // The current traversal admits eight spare U8 cells per site.
-                // Match the selected leaf's whole-word store: only count bytes
-                // become visible, and the exclusive owner hides spare cells.
-                b.ins().store(
-                    MemFlags::new().with_endianness(cranelift_codegen::ir::Endianness::Little),
-                    incoming,
-                    address,
-                    0,
-                );
-                let length = b.ins().iadd(length, count);
-                words.write(b, view + 1, length);
-                words.write(b, view + 3, length);
-                b.ins().jump(done, &[]);
-                b.switch_to_block(done);
-                report.typed_stores.push((site, 8));
-                report.append_sites.push((site, 1));
-                report.bulk_append_sites.push(site);
-                report.first_change_boundaries.push(site);
-            }
-            Some(
-                operation @ (Operation::Read { array, index, .. }
-                | Operation::Write { array, index, .. }),
-            ) => {
-                let view = shadow + proof.view(*array);
-                let index = words.read(b, *index as usize);
-                let length = words.read(b, view + 1);
-                let ordinal = b.ins().iadd_imm(index, -1);
-                if let Operation::Read { array, index, .. } = operation
-                    && traversal.read(site, *array, *index)
-                {
-                    report
-                        .proven_scalar_read_guards
-                        .push((site, *array, *index));
-                } else {
-                    let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, length);
-                    let good = b.create_block();
+                }) => {
+                    let count = words.read(b, *count as usize);
+                    let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, count, 8);
+                    let checked = b.create_block();
                     let bad = b.create_block();
+                    let changed = b.create_block();
+                    let store = b.create_block();
+                    let materialize = b.create_block();
+                    let done = b.create_block();
                     b.set_cold_block(bad);
-                    boundaries.insert(bad);
-                    b.ins().brif(valid, good, &[], bad, &[]);
+                    b.set_cold_block(materialize);
+                    boundaries.extend([bad, materialize]);
+                    b.ins().brif(valid, checked, &[], bad, &[]);
                     b.switch_to_block(bad);
-                    // Preserve the exact original source-failure path whenever
-                    // no current selected-view proof justifies this read.
                     let spilled = boundary::source_failure(
                         b, controls, &words, frame, locals, code, closed, id, site, hooks, error,
                     )?;
                     report.bounds_error_spill_words.push((site, spilled));
-                    b.switch_to_block(good);
+                    b.switch_to_block(checked);
+                    // A zero-count append is the existing same-schema identity.
+                    // It neither confines an owner nor initializes spare cells.
+                    b.ins().brif(count, changed, &[], done, &[]);
+                    b.switch_to_block(changed);
+                    let incoming = words.read(b, *incoming as usize);
+                    let private = words.read(b, shadow + proof.private_flag(*array));
+                    b.ins().brif(private, store, &[], materialize, &[]);
+                    b.switch_to_block(materialize);
+                    boundary::materialize(
+                        b,
+                        controls.options(),
+                        &words,
+                        region,
+                        proof,
+                        *array,
+                        site,
+                        frame,
+                        locals,
+                        count,
+                        incoming,
+                        hooks,
+                        error,
+                    )?;
+                    b.ins().jump(done, &[]);
+                    b.switch_to_block(store);
+                    let view = shadow + proof.view(*array);
+                    let base = words.read(b, view);
+                    let length = words.read(b, view + 1);
+                    let address = b.ins().iadd(base, length);
+                    // The current traversal admits eight spare U8 cells per site.
+                    // Match the selected leaf's whole-word store: only count bytes
+                    // become visible, and the exclusive owner hides spare cells.
+                    b.ins().store(
+                        MemFlags::new().with_endianness(cranelift_codegen::ir::Endianness::Little),
+                        incoming,
+                        address,
+                        0,
+                    );
+                    let length = b.ins().iadd(length, count);
+                    words.write(b, view + 1, length);
+                    words.write(b, view + 3, length);
+                    b.ins().jump(done, &[]);
+                    b.switch_to_block(done);
+                    report.typed_stores.push((site, 8));
+                    report.append_sites.push((site, 1));
+                    report.bulk_append_sites.push(site);
+                    report.first_change_boundaries.push(site);
                 }
-                // Canonical storage is row-major; source linear selection is
-                // one-based column-major. A valid ordinal proves rows > 0.
-                let rows = words.read(b, view + 2);
-                let columns = words.read(b, view + 3);
-                let width = proof.arrays[*array].width;
-                let Action::LibraryCall { template, .. } =
-                    code.blocks()[proof.arrays[*array].witness].action()
-                else {
-                    return Err(backend("numeric address lost its entry witness"));
-                };
-                let (address, ty) = super::numeric_words::linear_address(
-                    b,
-                    ordinal,
-                    rows,
-                    columns,
-                    width,
-                    template.inputs()[0].body(),
-                    |b| words.read(b, view),
-                )?;
-                let value = b.ins().load(ty, MemFlags::new(), address, 0);
-                let value = if width < 8 {
-                    b.ins().uextend(types::I64, value)
-                } else {
-                    value
-                };
-                report.typed_loads.push((site, width));
-                match operation {
-                    Operation::Read { output, .. } => words.write(b, *output as usize, value),
-                    Operation::Write { incoming, .. } => {
-                        let incoming = words.read(b, *incoming as usize);
-                        let changed = b.ins().icmp(IntCC::NotEqual, value, incoming);
-                        let update = b.create_block();
-                        let done = b.create_block();
-                        b.ins().brif(changed, update, &[], done, &[]);
-                        b.switch_to_block(update);
-                        let private = words.read(b, shadow + proof.private_flag(*array));
-                        let store = b.create_block();
-                        let materialize = b.create_block();
-                        b.set_cold_block(materialize);
-                        boundaries.insert(materialize);
-                        b.ins().brif(private, store, &[], materialize, &[]);
-                        b.switch_to_block(materialize);
-                        boundary::materialize(
-                            b,
-                            controls.options(),
-                            &words,
-                            region,
-                            proof,
-                            *array,
-                            site,
-                            frame,
-                            locals,
-                            index,
-                            incoming,
-                            hooks,
+                Some(
+                    operation @ (Operation::Read { array, index, .. }
+                    | Operation::Write { array, index, .. }),
+                ) => {
+                    let view = shadow + proof.view(*array);
+                    let index = words.read(b, *index as usize);
+                    let length = words.read(b, view + 1);
+                    let ordinal = b.ins().iadd_imm(index, -1);
+                    if let Operation::Read { array, index, .. } = operation
+                        && traversal.read(site, *array, *index)
+                    {
+                        report
+                            .proven_scalar_read_guards
+                            .push((site, *array, *index));
+                    } else {
+                        let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, length);
+                        let good = b.create_block();
+                        let bad = b.create_block();
+                        b.set_cold_block(bad);
+                        boundaries.insert(bad);
+                        b.ins().brif(valid, good, &[], bad, &[]);
+                        b.switch_to_block(bad);
+                        // Preserve the exact original source-failure path whenever
+                        // no current selected-view proof justifies this read.
+                        let spilled = boundary::source_failure(
+                            b, controls, &words, frame, locals, code, closed, id, site, hooks,
                             error,
                         )?;
-                        b.ins().jump(done, &[]);
-                        b.switch_to_block(store);
-                        let narrowed = if width < 8 {
-                            b.ins().ireduce(ty, incoming)
-                        } else {
-                            incoming
-                        };
-                        b.ins().store(MemFlags::new(), narrowed, address, 0);
-                        b.ins().jump(done, &[]);
-                        b.switch_to_block(done);
-                        report.typed_stores.push((site, width));
-                        report.first_change_boundaries.push(site);
+                        report.bounds_error_spill_words.push((site, spilled));
+                        b.switch_to_block(good);
                     }
-                    _ => unreachable!("selected numeric access"),
+                    // Canonical storage is row-major; source linear selection is
+                    // one-based column-major. A valid ordinal proves rows > 0.
+                    let rows = words.read(b, view + 2);
+                    let columns = words.read(b, view + 3);
+                    let width = proof.arrays[*array].width;
+                    let Action::LibraryCall { template, .. } =
+                        code.blocks()[proof.arrays[*array].witness].action()
+                    else {
+                        return Err(backend("numeric address lost its entry witness"));
+                    };
+                    let (address, ty) = super::numeric_words::linear_address(
+                        b,
+                        ordinal,
+                        rows,
+                        columns,
+                        width,
+                        template.inputs()[0].body(),
+                        |b| words.read(b, view),
+                    )?;
+                    let value = b.ins().load(ty, MemFlags::new(), address, 0);
+                    let value = if width < 8 {
+                        b.ins().uextend(types::I64, value)
+                    } else {
+                        value
+                    };
+                    report.typed_loads.push((site, width));
+                    match operation {
+                        Operation::Read { output, .. } => words.write(b, *output as usize, value),
+                        Operation::Write { incoming, .. } => {
+                            let incoming = words.read(b, *incoming as usize);
+                            let changed = b.ins().icmp(IntCC::NotEqual, value, incoming);
+                            let update = b.create_block();
+                            let done = b.create_block();
+                            b.ins().brif(changed, update, &[], done, &[]);
+                            b.switch_to_block(update);
+                            let private = words.read(b, shadow + proof.private_flag(*array));
+                            let store = b.create_block();
+                            let materialize = b.create_block();
+                            b.set_cold_block(materialize);
+                            boundaries.insert(materialize);
+                            b.ins().brif(private, store, &[], materialize, &[]);
+                            b.switch_to_block(materialize);
+                            boundary::materialize(
+                                b,
+                                controls.options(),
+                                &words,
+                                region,
+                                proof,
+                                *array,
+                                site,
+                                frame,
+                                locals,
+                                index,
+                                incoming,
+                                hooks,
+                                error,
+                            )?;
+                            b.ins().jump(done, &[]);
+                            b.switch_to_block(store);
+                            let narrowed = if width < 8 {
+                                b.ins().ireduce(ty, incoming)
+                            } else {
+                                incoming
+                            };
+                            b.ins().store(MemFlags::new(), narrowed, address, 0);
+                            b.ins().jump(done, &[]);
+                            b.switch_to_block(done);
+                            report.typed_stores.push((site, width));
+                            report.first_change_boundaries.push(site);
+                        }
+                        _ => unreachable!("selected numeric access"),
+                    }
                 }
+                None => match code.blocks()[site].action() {
+                    Action::Scalar(Scalar::None) => {}
+                    Action::Scalar(Scalar::Copy { source, output }) => {
+                        let value = words.read(b, source.get() as usize);
+                        words.write(b, output.get() as usize, value);
+                    }
+                    Action::Scalar(Scalar::Primitive {
+                        op,
+                        operands,
+                        output,
+                        ..
+                    }) => {
+                        let args = operands
+                            .iter()
+                            .map(|v| words.read(b, v.get() as usize))
+                            .collect::<Vec<_>>();
+                        let value = if let Some(&known) = traversal.predicates.get(&site) {
+                            b.ins().iconst(types::I64, i64::from(known))
+                        } else {
+                            primitive(b, *op, &args, fail)
+                        };
+                        words.write(b, output.get() as usize, value);
+                        report.scalar_operations += 1;
+                    }
+                    _ => return Err(backend("numeric proof contains unsupported action")),
+                },
             }
-            None => match code.blocks()[site].action() {
-                Action::Scalar(Scalar::None) => {}
-                Action::Scalar(Scalar::Copy { source, output }) => {
-                    let value = words.read(b, source.get() as usize);
-                    words.write(b, output.get() as usize, value);
-                }
-                Action::Scalar(Scalar::Primitive {
-                    op,
-                    operands,
-                    output,
-                    ..
-                }) => {
-                    let args = operands
-                        .iter()
-                        .map(|v| words.read(b, v.get() as usize))
-                        .collect::<Vec<_>>();
-                    let value = primitive(b, *op, &args, fail);
-                    words.write(b, output.get() as usize, value);
-                    report.scalar_operations += 1;
-                }
-                _ => return Err(backend("numeric proof contains unsupported action")),
-            },
-        }
-        terminators::emit_source_terminator(
-            b,
-            &words,
-            code,
-            boolean_successors
-                .get(&site)
-                .map_or(code.blocks()[site].terminator(), |&next| {
-                    mech_engine::native_artifact::NativeIterationTerminator::Scalar(
-                        mech_engine::native_artifact::NativeMatchTerminator::Jump(next),
-                    )
-                }),
-            fail,
-            target,
-        );
-        b.switch_to_block(fail);
-        let status = b.block_params(fail)[0];
-        set_origin(b, frame, site as u64);
-        b.ins().jump(failed, &[status.into()]);
-        let instructions = b.func.dfg.num_insts() - before;
-        report.maximum_source_instructions = report.maximum_source_instructions.max(instructions);
-        // Cold synchronization is covered by the fixed boundary envelope.
-        if instructions > OVERHEAD as usize + register_words * 2 {
-            return Err(backend("numeric leaf exceeds finite source envelope"));
+            if version.is_none()
+                && let Some(window) = versions.iter().find(|v| v.initialize == site)
+            {
+                window.gate(b, &words, shadow, proof, target(window.header as u32));
+            } else {
+                terminators::emit_source_terminator(
+                    b,
+                    &words,
+                    code,
+                    traversal
+                        .successors
+                        .get(&site)
+                        .or_else(|| boolean_successors.get(&site))
+                        .map_or(code.blocks()[site].terminator(), |&next| {
+                            mech_engine::native_artifact::NativeIterationTerminator::Scalar(
+                                mech_engine::native_artifact::NativeMatchTerminator::Jump(next),
+                            )
+                        }),
+                    fail,
+                    target,
+                );
+            }
+            b.switch_to_block(fail);
+            let status = b.block_params(fail)[0];
+            set_origin(b, frame, site as u64);
+            b.ins().jump(failed, &[status.into()]);
+            let instructions = b.func.dfg.num_insts() - before;
+            report.maximum_source_instructions =
+                report.maximum_source_instructions.max(instructions);
+            // Cold synchronization is covered by the fixed boundary envelope.
+            if instructions > OVERHEAD as usize + register_words * 2 {
+                return Err(backend("numeric leaf exceeds finite source envelope"));
+            }
         }
     }
     let boundary = b.func.dfg.num_insts();
