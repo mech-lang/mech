@@ -23141,6 +23141,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-random-32769-primary-8b7f1b0c5963.tar.gz"
+        },
+        {
+          "event": "case-repeated-32769-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-case-repeated-32769-primary-c7d5fcaa279f.tar.gz",
+          "sha256": "c7d5fcaa279f6bcf33dfa56f9aa6c730f2d58f85298ee637f811edc60e7fc66f",
+          "manifest_sha256": "a4ad929db803ec6a2d45fd0533a3ce4702bc086ccfe1fa480b5482cd75b1023f",
+          "bytes": 3441837,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-repeated-32769-primary-c7d5fcaa279f.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
