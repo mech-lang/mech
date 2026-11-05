@@ -23262,6 +23262,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-32-high-entropy-stored-primary-49de71af3b4f.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-case-eight-overlap-primary-243197783e16.tar.gz",
+          "sha256": "243197783e16d286ec528ef0e1566489f7e67ed5de50b3304b2ff3b041bb7bae",
+          "manifest_sha256": "f91ba3046e5950571e3d8fe14715fe651e2b58902bbf2b7edb535e17f8dd859f",
+          "bytes": 3478463,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-eight-overlap-primary-243197783e16.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
