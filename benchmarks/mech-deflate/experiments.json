@@ -19342,8 +19342,8 @@
           "manifest_sha256": "67d25d96e834afcf77687e8ad53000043c28cf3f99badbe8b39e5351ec487635",
           "bytes": 11391801,
           "files": 1166,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-closure-final-e599b397b50d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r147-closure-final-e599b397b50d.tar.gz"
         }
       ],
       "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
@@ -19355,7 +19355,7 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained_compiler_source": "c4759eb2f5b26e8e883cdc317b57cdc7a218ba8d",
       "primary_result": {
         "geometric_after_before": 0.969855561035726,
