@@ -23538,6 +23538,36 @@
         "bytecode": false,
         "receipt_sha256": "f5a9d14dbf25693bd6034e0ea85282d0602db3f774b5845edcf5c507c2507b4b"
       }
+    },
+    "158": {
+      "base": "e666915d8e6b2a97ca760998244a8d638ce0e149",
+      "events": [
+        {
+          "event": "setup",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r158-setup-20b6131693e7.tar.gz",
+          "sha256": "20b6131693e70baf19fc443589ffcb3f286562796b7ab46f8867d986d3bff8f7",
+          "manifest_sha256": "d7b09791b65ab690c9c722cf8eb4b09f59263132e731dcaf76c2b17d89532310",
+          "bytes": 8027975,
+          "files": 18,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-path-window-facts-round158-20261105/archives/r158-setup-20b6131693e7.tar.gz"
+        }
+      ],
+      "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+      "compiler_source": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+      "before_compiler_source": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+      "versions": {
+        "typed_ir": 180,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Baseline investigation only: current R157 exact-PC cost after tag elimination. No compiler candidate or primary timing claim.",
+      "retained": false,
+      "release_tag": "evidence-native-compression-experiments-4",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
+      "archive_publication": "local evidence; publication pending"
     }
   },
   "repository": "mech-lang/mech",
