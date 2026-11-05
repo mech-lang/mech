@@ -22019,6 +22019,17 @@
           "files": 60,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-random-1024-primary-053e09664d03.tar.gz"
+        },
+        {
+          "event": "case-repeated-1024-primary",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r154-case-repeated-1024-primary-ade4004d8d3a.tar.gz",
+          "sha256": "ade4004d8d3a859dfbdcaeea47f8f055b403755ba01c3de93b4f9e40fd6369eb",
+          "manifest_sha256": "1db7a043c063b4a66552dd50cd250481d9d9bd2a57210b597b8866a5d6da11eb",
+          "bytes": 142135,
+          "files": 60,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-case-repeated-1024-primary-ade4004d8d3a.tar.gz"
         }
       ],
       "production": "58690b58dfc4ccdf44b074c15d3c140a28603866",
