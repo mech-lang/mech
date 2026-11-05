@@ -18169,6 +18169,17 @@
           "files": 72,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-320-overlap-primary-e7b849833096.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-case-random-256-primary-c7a5ff9a1956.tar.gz",
+          "sha256": "c7a5ff9a1956afb70ac22d44d09ef18020c7a3b3dbe25ea44c449e4eb0332b50",
+          "manifest_sha256": "d458cfa1412589ae851532bf719a81c242c478b1c763880712033313b88efbc3",
+          "bytes": 242016,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-case-random-256-primary-c7a5ff9a1956.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
