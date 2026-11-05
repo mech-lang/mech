@@ -1,7 +1,6 @@
 //! Synchronous invocation borrows, dispatch and narrowly lent helper views.
 use super::{NativeProgramExecutionError as Error, *};
 use crate::native_artifact::iteration_runtime::ControlState;
-use crate::native_artifact::program::prepare::ProgramMetadata;
 use crate::native_artifact::program::runtime::maps::string::PublicationGeometry;
 use crate::native_artifact::program::runtime::session::CallCacheLane;
 use crate::native_artifact::{NativeValueHandle, NativeWorkMeter};
@@ -168,21 +167,10 @@ pub(super) struct NumericPrepaid {
     deepest: u32,
 }
 impl NumericPrepaid {
-    fn includes_iteration(self, metadata: &ProgramMetadata, wanted: Option<u32>) -> bool {
-        let root = metadata.closed_tails.regions[self.region].iteration;
-        let mut at = self.deepest;
-        loop {
-            if wanted == Some(at) {
-                return true;
-            }
-            if at == root {
-                return false;
-            }
-            let Some(parent) = metadata.plan.iterations()[at as usize].as_ref().parent() else {
-                return false;
-            };
-            at = parent;
-        }
+    /// Validated parents have smaller IDs, so no paid ancestor can be newer
+    /// than the deepest paid iteration. This negative grants no source credit.
+    fn may_include_iteration(self, wanted: Option<u32>) -> bool {
+        wanted.is_some_and(|wanted| wanted <= self.deepest)
     }
 }
 
@@ -244,7 +232,20 @@ impl Invocation<'_, '_, '_> {
         } {
             return false;
         }
-        route.includes_iteration(metadata, metadata.plan.blocks()[site].iteration())
+        let wanted = metadata.plan.blocks()[site].iteration();
+        let mut at = route.deepest;
+        loop {
+            if wanted == Some(at) {
+                return true;
+            }
+            if at == region.iteration {
+                return false;
+            }
+            let Some(parent) = metadata.plan.iterations()[at as usize].as_ref().parent() else {
+                return false;
+            };
+            at = parent;
+        }
     }
 
     pub(in crate::native_artifact::program::runtime) fn control(

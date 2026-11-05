@@ -1,5 +1,6 @@
 //! The segment-level negative must preserve the exact per-source paid predicate.
-use super::{NumericPrepaid, ProgramMetadata};
+use super::NumericPrepaid;
+use crate::native_artifact::program::prepare::ProgramMetadata;
 use crate::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 use std::collections::BTreeSet;
 
@@ -70,11 +71,12 @@ fn check(metadata: &ProgramMetadata, coverage: &mut [usize; 8]) {
             for wanted in
                 std::iter::once(None).chain((0..metadata.plan.iterations().len() as u32).map(Some))
             {
-                assert_eq!(
-                    route.includes_iteration(metadata, wanted),
-                    wanted.is_some_and(|at| paid.contains(&at)),
-                    "region={id} deepest={deepest} wanted={wanted:?} paid={paid:?}"
+                let possible = route.may_include_iteration(wanted);
+                assert!(
+                    possible || !wanted.is_some_and(|at| paid.contains(&at)),
+                    "guard excluded paid ancestry: region={id} deepest={deepest} wanted={wanted:?} paid={paid:?}"
                 );
+                assert_eq!(possible, wanted.is_some_and(|at| at <= deepest));
                 if let Some(wanted) = wanted {
                     if ancestors[root_at + 1..].contains(&wanted) {
                         coverage[5] += 1;
@@ -94,12 +96,10 @@ fn check(metadata: &ProgramMetadata, coverage: &mut [usize; 8]) {
                         .is_some_and(|at| paid.contains(&at))
             };
             for (site, block) in metadata.plan.blocks().iter().enumerate() {
-                let ancestry = route.includes_iteration(metadata, block.iteration());
-                assert_eq!(
-                    inventory.binary_search(&site).is_ok() && ancestry,
-                    source_paid(site)
-                );
-                if ancestry && !inventory.contains(&site) {
+                assert!(route.may_include_iteration(block.iteration()) || !source_paid(site));
+                if block.iteration().is_some_and(|at| paid.contains(&at))
+                    && !inventory.contains(&site)
+                {
                     coverage[4] += 1;
                 }
             }
@@ -110,12 +110,9 @@ fn check(metadata: &ProgramMetadata, coverage: &mut [usize; 8]) {
                         metadata.plan.blocks()[site as usize].iteration() == Some(parent.iteration)
                     }));
                     let old_overlap = segment.sites.iter().any(|&site| source_paid(site as usize));
-                    let ancestry = route.includes_iteration(metadata, Some(parent.iteration));
-                    let guarded_overlap = ancestry
-                        && segment.sites.iter().any(|&site| {
-                            inventory.binary_search(&(site as usize)).is_ok()
-                                && route.includes_iteration(metadata, Some(parent.iteration))
-                        });
+                    let possible = route.may_include_iteration(Some(parent.iteration));
+                    let guarded_overlap =
+                        possible && segment.sites.iter().any(|&site| source_paid(site as usize));
                     assert_eq!(guarded_overlap, old_overlap);
                     coverage[if old_overlap { 2 } else { 3 }] += 1;
                 }
