@@ -20036,6 +20036,17 @@
           "files": 30,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-tables-33027-periodic-window-9b68666d0bc9.tar.gz"
+        },
+        {
+          "event": "pc-tables-16384-distribution-change",
+          "source_revision": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+          "asset": "r149-pc-tables-16384-distribution-change-72c32c7e7b67.tar.gz",
+          "sha256": "72c32c7e7b6798a48538a459c99014281f82bada429937d984dc6bd0ecfa687c",
+          "manifest_sha256": "277d1f7519330ceef37dd475b16860258154318b4a906e168cd329fa2a6954b3",
+          "bytes": 421724,
+          "files": 30,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-hot-path-round149-20261105/archives/r149-pc-tables-16384-distribution-change-72c32c7e7b67.tar.gz"
         }
       ]
     }
