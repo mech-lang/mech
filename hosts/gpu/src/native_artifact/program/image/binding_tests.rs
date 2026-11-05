@@ -143,3 +143,77 @@ fn object_bound_and_independent_images_preserve_all_prepared_metadata() {
         }
     }
 }
+
+#[test]
+fn object_bound_calls_preserve_independent_selections_and_reject_template_tampering() {
+    let catalog = mech_stdlib::source_catalog();
+    for source in [
+        "+> sequence\n[at + 1u64 | at <- 0u64..=limit<u64>]\n",
+        include_str!("../../../../tests/fixtures/native/window-histogram.mec"),
+        "+> text\n+> map\nentries := {\"a\": \"A\", \"b\": \"B\"}\ntext/join([entries{ch} | ch <- seed<string>], \"\")\n",
+        include_str!("../../../../tests/fixtures/native/numeric-parent-child.mec"),
+    ] {
+        for artifact in artifacts(source) {
+            let object = emit_program_object(&artifact, &catalog).unwrap();
+            let image = object.descriptor().encode_build_owned_image().unwrap();
+            // SAFETY: both paths use the same genuine checked Object metadata;
+            // no native entry or execution authority is manufactured here.
+            let independent =
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }
+                    .unwrap();
+            let bound = unsafe {
+                NativeProgramDescriptor::decode_object_bound_image(
+                    &image,
+                    &catalog,
+                    object.identity().bytes(),
+                    object.image_binding().bytes(),
+                )
+            }
+            .unwrap();
+            assert_eq!(bound.encode_build_owned_image().unwrap(), image);
+            assert_eq!(independent.encode_build_owned_image().unwrap(), image);
+            let plan = bound.plan();
+            assert!(plan.prepared_library_template(plan.blocks().len()).is_err());
+            for (site, (a, b)) in independent
+                .metadata()
+                .calls
+                .iter()
+                .zip(bound.metadata().calls.iter())
+                .enumerate()
+            {
+                assert_eq!(
+                    a.as_ref().map(|c| c.template()),
+                    b.as_ref().map(|c| c.template())
+                );
+                assert_eq!(
+                    b.as_ref().map(|c| c.template()),
+                    plan.prepared_library_template(site).unwrap()
+                );
+            }
+            let mut changed: serde_json::Value = serde_json::from_slice(&image).unwrap();
+            let call = changed["descriptor"]["calls"]
+                .as_array_mut()
+                .unwrap()
+                .iter_mut()
+                .find(|call| !call.is_null())
+                .expect("fixture must exercise a prepared call");
+            call["template"]["origin"]["node"] = u32::MAX.into();
+            let changed = serde_json::to_vec(&changed).unwrap();
+            assert!(
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&changed, &catalog) }
+                    .is_err()
+            );
+            assert!(
+                unsafe {
+                    NativeProgramDescriptor::decode_object_bound_image(
+                        &changed,
+                        &catalog,
+                        object.identity().bytes(),
+                        object.image_binding().bytes(),
+                    )
+                }
+                .is_err()
+            );
+        }
+    }
+}

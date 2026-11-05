@@ -177,10 +177,31 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     let mut calls = w
         .calls
         .iter()
-        .map(|image| {
+        .enumerate()
+        .map(|(site, image)| {
             image
                 .as_ref()
                 .map(|image| {
+                    if OBJECT_BOUND {
+                        // Only the private verified-byte path reaches this
+                        // branch. Compilation and restoration share the exact
+                        // source-site association, not a wire-supplied selector.
+                        let template = plan
+                            .prepared_library_template(site)
+                            .map_err(str::to_owned)?
+                            .ok_or("bound prepared call has no selected plan template")?;
+                        // SAFETY: the complete image has genuine same-Object
+                        // provenance; this is the exact plan site's selection,
+                        // restored against these same schemas and catalog.
+                        return unsafe {
+                            NativePreparedLibraryCall::from_object_bound_binding_image(
+                                image.get().as_bytes(),
+                                template.clone(),
+                                schemas.clone(),
+                                catalog,
+                            )
+                        };
+                    }
                     // Do not retain every call's expanded JSON while binding
                     // the others: these bytes borrow the immutable build image.
                     let image: Json =

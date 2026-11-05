@@ -1,5 +1,5 @@
 //! Restore build-time binding bounds; never prepare or admit a runtime call.
-use super::NativePreparedLibraryCall;
+use super::{NativePreparedLibraryCall, NativeProgramLibraryTemplate};
 use mech_core::{FunctionCatalog, SchemaKey, SchemaTable};
 use serde::Deserialize;
 use serde_json::Value as Json;
@@ -7,8 +7,8 @@ use std::sync::Arc;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Call {
-    template: Json,
+struct Call<T> {
+    template: T,
     binding_bytes: u64,
     binding_work: u64,
     binding_nodes: u64,
@@ -41,7 +41,7 @@ impl NativePreparedLibraryCall {
         schemas: Arc<SchemaTable>,
         catalog: &FunctionCatalog,
     ) -> Result<Self, String> {
-        let wire = Call::deserialize(image).map_err(|e| e.to_string())?;
+        let wire = Call::<Json>::deserialize(image).map_err(|e| e.to_string())?;
         // SAFETY: the caller inherits the enclosing unchanged-build confinement
         // obligation; this helper also checks the actual maintained factory.
         let template = unsafe {
@@ -51,6 +51,37 @@ impl NativePreparedLibraryCall {
                 &schemas,
             )?
         };
+        Self::restore_binding(wire, template, schemas, catalog)
+    }
+
+    /// Reuse the exact plan selection from the same verified Object image.
+    /// The redundant serialized template is borrowed, never expanded or used
+    /// as an authority. Binding bounds and fresh invocation caches are restored
+    /// normally; actual linked factory and schema-key checks still run.
+    ///
+    /// # Safety
+    /// In addition to `from_build_owned_image`'s confinement obligations, the
+    /// caller must establish genuine checked-Object provenance for every image
+    /// byte and obtain `template` from this exact plan/source site's selected
+    /// call, already restored against the SAME schemas and catalog. A supplied
+    /// digest or arbitrary caller template does not establish that association.
+    pub unsafe fn from_object_bound_binding_image(
+        bytes: &[u8],
+        template: NativeProgramLibraryTemplate,
+        schemas: Arc<SchemaTable>,
+        catalog: &FunctionCatalog,
+    ) -> Result<Self, String> {
+        let wire: Call<&serde_json::value::RawValue> =
+            serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+        Self::restore_binding(wire, template, schemas, catalog)
+    }
+
+    fn restore_binding<T>(
+        wire: Call<T>,
+        template: NativeProgramLibraryTemplate,
+        schemas: Arc<SchemaTable>,
+        catalog: &FunctionCatalog,
+    ) -> Result<Self, String> {
         if wire.output_parameters != template.output().dimension_parameters().len()
             || wire.input_keys.len() != template.inputs().len()
             || wire

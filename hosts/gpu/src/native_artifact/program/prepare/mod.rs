@@ -201,97 +201,15 @@ impl PreparedNativeProgram {
             |site| native::program::prepare::map_owner::extra_work(&map_owner_words, site),
             "map owner visit work overflow",
         )?;
-        let mut calls = plan
-            .blocks()
-            .iter()
-            .map(|block| match block.action() {
-                NativeIterationAction::LibraryCall { template, .. } => {
-                    prepare_native_program_library_call(artifact, template, catalog)
-                        .map(Some)
-                        .map_err(|e| e.to_string())
-                }
-                NativeIterationAction::PrepareStringSpanSelector { collection }
-                | NativeIterationAction::ProjectStringSpan { collection } => {
-                    let projection = plan.collections()[*collection as usize]
-                        .string_span_projection()
-                        .ok_or("String span action lacks its selected proof")?;
-                    let template = if matches!(
-                        block.action(),
-                        NativeIterationAction::PrepareStringSpanSelector { .. }
-                    ) {
-                        projection.range_template()
-                    } else {
-                        projection.selection_template()
-                    };
-                    prepare_native_program_library_call(artifact, template, catalog)
-                        .map(Some)
-                        .map_err(|error| error.to_string())
-                }
-                NativeIterationAction::ProjectStringMapEntry { collection } => {
-                    let projection = plan.collections()[*collection as usize]
-                        .string_element_map_projection()
-                        .ok_or("String map projection lacks its selected proof")?;
-                    prepare_native_program_library_call(
-                        artifact,
-                        projection.selection_template(),
-                        catalog,
-                    )
-                    .map(Some)
-                    .map_err(|error| error.to_string())
-                }
-                NativeIterationAction::HistogramQueryStep { collection, step } => {
-                    let mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(
-                        sink,
-                    ) = plan.collections()[*collection as usize].result()
-                    else {
-                        return Err("histogram query stage lacks selected proof".into());
-                    };
-                    sink.steps()
-                        .get(*step as usize)
-                        .ok_or("histogram query step outside proof")?
-                        .template()
-                        .map(|template| {
-                            prepare_native_program_library_call(artifact, template, catalog)
-                        })
-                        .transpose()
-                        .map_err(|error| error.to_string())
-                }
-                NativeIterationAction::HistogramFinish { collection } => {
-                    let mech_engine::native_artifact::NativeCollectionResult::Histogram(sink) =
-                        plan.collections()[*collection as usize].result()
-                    else {
-                        return Err("histogram consumer lacks selected sink proof".into());
-                    };
-                    prepare_native_program_library_call(artifact, sink.template(), catalog)
-                        .map(Some)
-                        .map_err(|error| error.to_string())
-                }
-                NativeIterationAction::TextJoinFinish { collection } => {
-                    let mech_engine::native_artifact::NativeCollectionResult::TextJoin(sink) =
-                        plan.collections()[*collection as usize].result()
-                    else {
-                        return Err("text join consumer lacks selected sink proof".into());
-                    };
-                    prepare_native_program_library_call(artifact, sink.template(), catalog)
-                        .map(Some)
-                        .map_err(|e| e.to_string())
-                }
-                NativeIterationAction::PrepareU64Range { iteration } => {
-                    let mech_engine::native_artifact::NativeControlLoop::Collection(generator) =
-                        &plan.iterations()[*iteration as usize]
-                    else {
-                        return Err("range source is not a collection".into());
-                    };
-                    let mech_engine::native_artifact::NativeCollectionSource::U64Range(cursor) =
-                        generator.source()
-                    else {
-                        return Err("range source lacks selected proof".into());
-                    };
-                    prepare_native_program_library_call(artifact, cursor.template(), catalog)
-                        .map(Some)
-                        .map_err(|e| e.to_string())
-                }
-                _ => Ok(None),
+        let mut calls = (0..plan.blocks().len())
+            .map(|site| {
+                plan.prepared_library_template(site)
+                    .map_err(str::to_owned)?
+                    .map(|template| {
+                        prepare_native_program_library_call(artifact, template, catalog)
+                            .map_err(|error| error.to_string())
+                    })
+                    .transpose()
             })
             .collect::<Result<Box<[_]>, _>>()?;
         query_stages::validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
