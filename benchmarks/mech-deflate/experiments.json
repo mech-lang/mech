@@ -17416,6 +17416,17 @@
           "files": 80,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-frame-allocation-df0e9ac8c098.tar.gz"
+        },
+        {
+          "event": "qualified",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-qualified-29e68a7f9f47.tar.gz",
+          "sha256": "29e68a7f9f4743287545d5b49fa0385f021895c2bfd2fcd04ce2585438c4f29a",
+          "manifest_sha256": "6b439c4cd86e1d6f852dbc411b740afd7365d0850291c097dac61a3e81709548",
+          "bytes": 337097,
+          "files": 122,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-qualified-29e68a7f9f47.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
