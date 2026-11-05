@@ -18378,6 +18378,17 @@
           "files": 108,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-profiles-current-6cc3eb82f7ac.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "0ae8926bfa5bccb6e36f5cb92bebae20b4c8adfc",
+          "asset": "r144-closure-c63c93149910.tar.gz",
+          "sha256": "c63c93149910efb2023dfaace4f1063fcd22801de803cd87fc6defcccb1bb8fb",
+          "manifest_sha256": "e6cde271f368399974aacb16136669591728237f7b6cd01cc37641e2db39a624",
+          "bytes": 5779335,
+          "files": 1110,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-vector-address-round144-20261105/archives/r144-closure-c63c93149910.tar.gz"
         }
       ],
       "before_compiler_source": "05102440a85c233069b3968f1e6a92c27461258c",
