@@ -17284,6 +17284,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-random-256-primary-70e967a029c3.tar.gz"
+        },
+        {
+          "event": "case-128-biased-dynamic-primary",
+          "source_revision": "05102440a85c233069b3968f1e6a92c27461258c",
+          "asset": "r142-case-128-biased-dynamic-primary-b41338c18a7a.tar.gz",
+          "sha256": "b41338c18a7a0b2afddb9361cdc4957900ea7538769fd8a138654bfe0785dbfe",
+          "manifest_sha256": "6a6309cb09577d0a8c1a6ed70b4ecd9aa36108a28bd827d15476170db3541583",
+          "bytes": 227777,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-header-liveness-round142-20261104/archives/r142-case-128-biased-dynamic-primary-b41338c18a7a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
