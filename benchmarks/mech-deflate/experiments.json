@@ -16689,6 +16689,17 @@
           "files": 53,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-qualified-cddaea5e71ba.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "58f75827e5c44187731df5253b3a058d2e9cd417",
+          "asset": "r140-closure-e39394fcabfb.tar.gz",
+          "sha256": "e39394fcabfb87ebe7b97860550ed8d67c05e376105a18d0411c681ecd382cc9",
+          "manifest_sha256": "8561be77af1fab901fbe65e1ecbbcee793018c2cd764037ad5c934719fb425ba",
+          "bytes": 5929372,
+          "files": 1142,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bulk-bytes-round140-20261104/archives/r140-closure-e39394fcabfb.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
