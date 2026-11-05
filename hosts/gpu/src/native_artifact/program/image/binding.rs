@@ -33,15 +33,27 @@ impl NativeProgramImageBinding {
         image: &[u8],
         identity: &NativeProgramObjectIdentity,
     ) -> Self {
+        Self::new_named(image, identity, symbol(identity.symbol()))
+    }
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn new_native_metadata(
+        image: &[u8],
+        identity: &NativeProgramObjectIdentity,
+    ) -> Self {
+        Self::new_named(
+            image,
+            identity,
+            format!("{}_native_metadata_binding_v1", identity.symbol()),
+        )
+    }
+    #[cfg(feature = "canonical-native-program")]
+    fn new_named(image: &[u8], identity: &NativeProgramObjectIdentity, symbol: String) -> Self {
         let mut bytes = [0; NATIVE_PROGRAM_IMAGE_BINDING_BYTES];
         bytes[..16].copy_from_slice(MAGIC);
         bytes[16..24].copy_from_slice(&(image.len() as u64).to_le_bytes());
         bytes[24..32].copy_from_slice(&1u64.to_le_bytes());
         bytes[32..].copy_from_slice(&digest(image, identity.bytes()));
-        Self {
-            bytes,
-            symbol: symbol(identity.symbol()),
-        }
+        Self { bytes, symbol }
     }
     pub fn bytes(&self) -> &[u8; NATIVE_PROGRAM_IMAGE_BINDING_BYTES] {
         &self.bytes

@@ -8,6 +8,8 @@ unsafe extern "C" {
     static LINKED_IDENTITY: [u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES];
     #[link_name = "@IMAGE_BINDING_SYMBOL@"]
     static LINKED_IMAGE_BINDING: [u8; NATIVE_PROGRAM_IMAGE_BINDING_BYTES];
+    #[link_name = "@NATIVE_METADATA_SYMBOL@"]
+    static LINKED_NATIVE_METADATA: [u8; @NATIVE_METADATA_BYTES@];
 }
 fn catalog() -> Result<mech_core::FunctionCatalog, String> {
     let mut builder = mech_core::FunctionCatalogBuilder::new();
@@ -18,7 +20,7 @@ fn main() {
     // SAFETY: build.rs verifies the unchanged Object/images and all generated
     // inputs. Entry, identity and images belong to that SAME checked build.
     let binding = unsafe { BuildOwnedHostedBinding::from_object_bound_image(
-        include_bytes!("../native-descriptor.bin"), include_bytes!("../native-resources.json"),
+        &LINKED_NATIVE_METADATA, include_bytes!("../native-resources.json"),
         &LINKED_IDENTITY, &LINKED_IMAGE_BINDING, linked_entry, catalog, @HOSTED_ROUTE_LITERAL@,
     ) };
     if let Err(error) = @HOSTED_LAUNCHER@(binding, std::env::args_os().skip(1)) {

@@ -120,16 +120,16 @@ pub(super) fn input<'de, D: Deserializer<'de>>(
 struct Constant<'a> {
     value: u32,
     #[serde(borrow)]
-    constant: &'a serde_json::value::RawValue,
+    constant: BuildOwnedImageRecord<'a>,
 }
 pub(super) fn constant(
-    image: &serde_json::value::RawValue,
+    image: BuildOwnedImageRecord<'_>,
     schemas: &SchemaTable,
 ) -> Result<NativeProgramConstant, String> {
-    let r: Constant<'_> = serde_json::from_str(image.get()).map_err(|e| e.to_string())?;
+    let r: Constant<'_> = image.decode().map_err(|e| e.to_string())?;
     Ok(NativeProgramConstant {
         value: NativeMatchValue(r.value),
-        constant: values::constant_bytes(r.constant.get().as_bytes(), schemas)?,
+        constant: values::constant_record(r.constant, schemas)?,
     })
 }
 #[derive(Deserialize)]

@@ -5,7 +5,7 @@ use mech_core::{FunctionCatalog, SchemaId, SchemaKey};
 use mech_engine::native_artifact::*;
 use serde::{Deserialize, Deserializer};
 use serde_json::Value as Json;
-use serde_json::value::RawValue;
+
 use std::sync::Arc;
 
 // This trait is inaccessible outside the native implementation. In particular,
@@ -143,10 +143,10 @@ impl From<Visit> for native::iteration_abi::NativeIterationVisit {
 #[serde(deny_unknown_fields)]
 struct Descriptor<'a> {
     #[serde(borrow)]
-    plan: &'a RawValue,
+    plan: BuildOwnedImageRecord<'a>,
     schemas: Json,
     #[serde(borrow)]
-    calls: Box<[Option<&'a RawValue>]>,
+    calls: Box<[Option<BuildOwnedImageRecord<'a>>]>,
     types: Box<[Slot]>,
     visits: Box<[Visit]>,
     retirements: native::program::prepare::retirement::RetirementTables,
@@ -161,7 +161,7 @@ struct Descriptor<'a> {
     #[serde(deserialize_with = "proof")]
     scalar_aggregates: NativeScalarAggregates,
     #[serde(borrow, default, deserialize_with = "present_raw")]
-    buffer_frames: Option<&'a RawValue>,
+    buffer_frames: Option<BuildOwnedImageRecord<'a>>,
     #[serde(deserialize_with = "proof")]
     map_owner_words: Option<NativeMapOwnerWords>,
     borrowed_record_maps: native::program::prepare::borrowed_record_map::Layout,
@@ -187,8 +187,10 @@ struct Image<'a> {
     descriptor: Descriptor<'a>,
 }
 
-fn present_raw<'de, D: Deserializer<'de>>(reader: D) -> Result<Option<&'de RawValue>, D::Error> {
-    <&RawValue>::deserialize(reader).map(Some)
+fn present_raw<'de, D: Deserializer<'de>>(
+    reader: D,
+) -> Result<Option<BuildOwnedImageRecord<'de>>, D::Error> {
+    <BuildOwnedImageRecord>::deserialize(reader).map(Some)
 }
 
 pub(in crate::native_artifact::program::image::decode) fn decode(
@@ -209,7 +211,9 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     bytes: &[u8],
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
-    let image: Image<'_> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+    let mut reader = BuildOwnedImageReader::from_image(bytes).map_err(|e| e.to_string())?;
+    let image: Image<'_> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
+    reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
         || (OBJECT_BOUND && image.version != 2)
         || (!OBJECT_BOUND && !matches!(image.version, 1 | 2))
@@ -227,8 +231,7 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     let schemas = Arc::new(decode_native_schema_image(&w.schemas)?);
     // SAFETY: only the enclosing unsafe descriptor loader reaches this private
     // reader; it retains all metadata until exact checked-build provenance holds.
-    let plan =
-        unsafe { decode_build_owned_native_plan_body(w.plan.get().as_bytes(), &schemas, catalog)? };
+    let plan = unsafe { decode_build_owned_native_plan_record(w.plan, &schemas, catalog)? };
     let mut calls = w
         .calls
         .iter()
@@ -249,8 +252,8 @@ fn decode_inner<const OBJECT_BOUND: bool>(
                         // provenance; this is the exact plan site's selection,
                         // restored against these same schemas and catalog.
                         return unsafe {
-                            NativePreparedLibraryCall::from_object_bound_binding_image(
-                                image.get().as_bytes(),
+                            NativePreparedLibraryCall::from_object_bound_binding_record(
+                                *image,
                                 template.clone(),
                                 schemas.clone(),
                                 catalog,
@@ -259,8 +262,7 @@ fn decode_inner<const OBJECT_BOUND: bool>(
                     }
                     // Do not retain every call's expanded JSON while binding
                     // the others: these bytes borrow the immutable build image.
-                    let image: Json =
-                        serde_json::from_str(image.get()).map_err(|e| e.to_string())?;
+                    let image: Json = image.decode().map_err(|e| e.to_string())?;
                     // SAFETY: same confined build image; factory witnesses are checked too.
                     unsafe {
                         NativePreparedLibraryCall::from_build_owned_image(
@@ -306,7 +308,11 @@ fn decode_inner<const OBJECT_BOUND: bool>(
             // SAFETY: the enclosing loader confines all recipes until unchanged
             // checked-build provenance holds. Independent loading compares these
             // records with fresh source derivation before use.
-            unsafe { NativeBufferFrames::from_build_owned_image_bytes(image.get().as_bytes()) }
+            let mut reader = image.reader();
+            let frames = unsafe { NativeBufferFrames::from_build_owned_image_reader(&mut reader) }
+                .map_err(|e| e.to_string())?;
+            reader.end().map_err(|e| e.to_string())?;
+            Ok::<_, String>(frames)
         })
         .transpose()?;
     let (buffer_frames, computed_map_owner_words) = if frozen_layouts {

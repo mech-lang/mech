@@ -44,7 +44,7 @@ mod plan;
 ))]
 pub use plan::{
     decode_build_owned_native_plan_body, decode_build_owned_native_plan_image,
-    decode_build_owned_native_plan_value,
+    decode_build_owned_native_plan_record, decode_build_owned_native_plan_value,
 };
 
 #[path = "program_image_collections.rs"]

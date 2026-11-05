@@ -52,6 +52,7 @@ pub fn generate_linked_program_application_with_limits(
         object.identity().symbol(),
         &bytecode,
     );
+    let main = native_metadata_main(main, &object);
     write_linked_application(
         &workspace,
         directory,
@@ -191,12 +192,7 @@ fn generate_hosted(
     } else {
         "canonical-artifact-program-object-secured-cli"
     };
-    let main = render_hosted_main(
-        object.identity().symbol(),
-        &bytecode,
-        route,
-        benchmark_policy,
-    );
+    let main = render_hosted_main(&object, &bytecode, route, benchmark_policy);
     write_linked_application(
         &workspace,
         directory,
@@ -239,12 +235,18 @@ fn generate_hosted(
 }
 
 #[cfg(feature = "canonical-native-program-host")]
-fn render_hosted_main(symbol: &str, bytecode: &[u8], route: &str, benchmark: bool) -> String {
+fn render_hosted_main(
+    object: &crate::native_artifact::NativeProgramObject,
+    bytecode: &[u8],
+    route: &str,
+    benchmark: bool,
+) -> String {
     let main = render_main(
         include_str!("../templates/linked_hosted_program_main.rs.in"),
-        symbol,
+        object.identity().symbol(),
         bytecode,
     );
+    let main = native_metadata_main(main, object);
     main.replace(
         "@HOSTED_ROUTE_LITERAL@",
         &serde_json::to_string(route).unwrap(),
@@ -257,4 +259,19 @@ fn render_hosted_main(symbol: &str, bytecode: &[u8], route: &str, benchmark: boo
             "run_hosted_program_application"
         },
     )
+}
+
+fn native_metadata_main(
+    main: String,
+    object: &crate::native_artifact::NativeProgramObject,
+) -> String {
+    main.replace("@NATIVE_METADATA_SYMBOL@", object.native_metadata_symbol())
+        .replace(
+            "@NATIVE_METADATA_BYTES@",
+            &object.native_metadata().len().to_string(),
+        )
+        .replace(
+            object.image_binding().symbol(),
+            object.native_metadata_binding().symbol(),
+        )
 }

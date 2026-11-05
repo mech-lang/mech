@@ -145,6 +145,84 @@ fn object_bound_and_independent_images_preserve_all_prepared_metadata() {
 }
 
 #[test]
+fn native_metadata_exports_preserve_the_exact_descriptor_and_object_binding() {
+    let catalog = mech_stdlib::source_catalog();
+    for source in [
+        "input<u64> + 1u64\n",
+        include_str!("../../../../tests/fixtures/native/numeric-parent-child.mec"),
+        "+> map\n+> sequence\nwords := input<[string]>\nmap/histogram(words)\n",
+    ] {
+        for artifact in artifacts(source) {
+            let object = emit_program_object(&artifact, &catalog).unwrap();
+            let json = object.descriptor().encode_build_owned_image().unwrap();
+            let bytes = object.native_metadata();
+            let binding = object.native_metadata_binding().bytes();
+            assert!(bytes.starts_with(mech_engine::native_artifact::NATIVE_METADATA_IMAGE_MAGIC));
+            // SAFETY: genuine data, identity and binding from the same checked
+            // Object. No foreign entry or fabricated source proof is executed.
+            let bound = unsafe {
+                NativeProgramDescriptor::decode_object_bound_image(
+                    bytes,
+                    &catalog,
+                    object.identity().bytes(),
+                    binding,
+                )
+            }
+            .unwrap();
+            let independent =
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }
+                    .unwrap();
+            assert_eq!(bound.encode_build_owned_image().unwrap(), json);
+            assert_eq!(independent.encode_build_owned_image().unwrap(), json);
+            assert!(
+                unsafe {
+                    verify(
+                        bytes,
+                        object.identity().bytes(),
+                        object.image_binding().bytes(),
+                    )
+                }
+                .is_err()
+            );
+            assert!(unsafe { verify(&json, object.identity().bytes(), binding) }.is_err());
+            for byte in 0..binding.len() {
+                let mut changed = *binding;
+                changed[byte] ^= 1;
+                assert!(unsafe { verify(bytes, object.identity().bytes(), &changed) }.is_err());
+            }
+            for byte in [0, 7, bytes.len() / 2, bytes.len() - 1] {
+                let mut changed = bytes.to_vec();
+                changed[byte] ^= 1;
+                assert!(
+                    unsafe {
+                        NativeProgramDescriptor::decode_object_bound_image(
+                            &changed,
+                            &catalog,
+                            object.identity().bytes(),
+                            binding,
+                        )
+                    }
+                    .is_err()
+                );
+            }
+            assert!(
+                unsafe {
+                    verify(
+                        &bytes[..bytes.len() - 1],
+                        object.identity().bytes(),
+                        binding,
+                    )
+                }
+                .is_err()
+            );
+            let mut changed = bytes.to_vec();
+            changed.push(0);
+            assert!(unsafe { verify(&changed, object.identity().bytes(), binding) }.is_err());
+        }
+    }
+}
+
+#[test]
 fn object_bound_calls_preserve_independent_selections_and_reject_template_tampering() {
     let catalog = mech_stdlib::source_catalog();
     for source in [

@@ -71,8 +71,32 @@ impl NativePreparedLibraryCall {
         schemas: Arc<SchemaTable>,
         catalog: &FunctionCatalog,
     ) -> Result<Self, String> {
-        let wire: Call<&serde_json::value::RawValue> =
-            serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+        let text = std::str::from_utf8(bytes).map_err(|e| e.to_string())?;
+        // SAFETY: identical unchanged-build and exact source-site association.
+        unsafe {
+            Self::from_object_bound_binding_record(
+                crate::native_artifact::BuildOwnedImageRecord::Json(text),
+                template,
+                schemas,
+                catalog,
+            )
+        }
+    }
+
+    /// Bind the same compiler-selected template to borrowed typed Object data.
+    ///
+    /// # Safety
+    /// All genuine checked-Object provenance, exact source-site association,
+    /// confinement and runtime admission duties of
+    /// `from_object_bound_binding_image` apply. A record is not authority.
+    pub unsafe fn from_object_bound_binding_record(
+        image: crate::native_artifact::BuildOwnedImageRecord<'_>,
+        template: NativeProgramLibraryTemplate,
+        schemas: Arc<SchemaTable>,
+        catalog: &FunctionCatalog,
+    ) -> Result<Self, String> {
+        let wire: Call<crate::native_artifact::BuildOwnedImageRecord<'_>> =
+            image.decode().map_err(|e| e.to_string())?;
         Self::restore_binding(wire, template, schemas, catalog)
     }
 

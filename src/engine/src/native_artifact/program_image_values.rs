@@ -163,6 +163,30 @@ pub(super) fn constant_bytes(bytes: &[u8], schemas: &SchemaTable) -> Result<Valu
         .map_err(|e| format!("image constant: {e:?}"))
 }
 
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
+pub(super) fn constant_record(
+    image: crate::native_artifact::BuildOwnedImageRecord<'_>,
+    schemas: &SchemaTable,
+) -> Result<Value, String> {
+    use crate::native_artifact::BuildOwnedImageRecord;
+    match image {
+        BuildOwnedImageRecord::Json(text) => constant_bytes(text.as_bytes(), schemas),
+        BuildOwnedImageRecord::Native(_) => {
+            let mut reader = image.reader().canonical();
+            let draft = ValueDraft::deserialize(&mut reader).map_err(|e| e.to_string())?;
+            reader.end().map_err(|e| e.to_string())?;
+            draft
+                .finalize(&SnapshotValidationContext::new(schemas))
+                .map_err(|e| format!("image constant: {e:?}"))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

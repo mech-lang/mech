@@ -190,6 +190,9 @@ pub struct NativeProgramObject {
     descriptor: NativeProgramDescriptor,
     identity: NativeProgramObjectIdentity,
     image_binding: super::image::binding::NativeProgramImageBinding,
+    native_metadata: Vec<u8>,
+    native_metadata_symbol: String,
+    native_metadata_binding: super::image::binding::NativeProgramImageBinding,
     codegen: crate::native_artifact::codegen::control::CodegenReport,
 }
 impl NativeProgramObject {
@@ -204,6 +207,17 @@ impl NativeProgramObject {
     }
     pub fn image_binding(&self) -> &super::image::binding::NativeProgramImageBinding {
         &self.image_binding
+    }
+    /// Compiler-resolved typed values, also exported as read-only Object data.
+    /// These bytes contain no pointers, owner epochs or invocation caches.
+    pub fn native_metadata(&self) -> &[u8] {
+        &self.native_metadata
+    }
+    pub fn native_metadata_symbol(&self) -> &str {
+        &self.native_metadata_symbol
+    }
+    pub fn native_metadata_binding(&self) -> &super::image::binding::NativeProgramImageBinding {
+        &self.native_metadata_binding
     }
     pub fn metadata(&self) -> serde_json::Value {
         let mut metadata = serde_json::json!({
@@ -251,6 +265,11 @@ impl NativeProgramObject {
         metadata["compiled_borrowed_record_maps"] =
             serde_json::json!(&self.descriptor.metadata().borrowed_record_maps.regions);
         metadata["image_binding_symbol"] = serde_json::json!(self.image_binding.symbol());
+        metadata["native_metadata_symbol"] = serde_json::json!(self.native_metadata_symbol);
+        metadata["native_metadata_bytes"] = serde_json::json!(self.native_metadata.len());
+        metadata["native_metadata_binding_symbol"] =
+            serde_json::json!(self.native_metadata_binding.symbol());
+        metadata["native_metadata_format"] = serde_json::json!("mech.typed-build-image.v1");
         metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
             self.descriptor
                 .metadata()
@@ -382,11 +401,40 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     module
         .define_data(binding_id, &binding_data)
         .map_err(backend)?;
+    // Compile textual tokens to typed immutable values once, before linking.
+    // Both the data and its binding are genuine read-only exports from this
+    // exact checked Object. The inspectable JSON binding above remains intact.
+    let native_metadata =
+        mech_engine::native_artifact::encode_native_metadata_image(&image).map_err(backend)?;
+    let native_metadata_symbol = format!("{}_native_metadata_v1", identity.symbol());
+    let native_metadata_binding =
+        super::image::binding::NativeProgramImageBinding::new_native_metadata(
+            &native_metadata,
+            &identity,
+        );
+    for (symbol, bytes) in [
+        (native_metadata_symbol.as_str(), native_metadata.as_slice()),
+        (
+            native_metadata_binding.symbol(),
+            native_metadata_binding.bytes().as_slice(),
+        ),
+    ] {
+        let id = module
+            .declare_data(symbol, Linkage::Export, false, false)
+            .map_err(backend)?;
+        let mut data = DataDescription::new();
+        data.define(bytes.to_vec().into_boxed_slice());
+        data.set_align(8);
+        module.define_data(id, &data).map_err(backend)?;
+    }
     Ok(NativeProgramObject {
         bytes: module.finish().emit().map_err(backend)?,
         descriptor,
         identity,
         image_binding,
+        native_metadata,
+        native_metadata_symbol,
+        native_metadata_binding,
         codegen,
     })
 }

@@ -51,7 +51,12 @@ pub use buffer_frames::{
     NativeBufferFrameAction, NativeBufferFrameField, NativeBufferFrameLane,
     NativeBufferFrameOperation, NativeBufferFrames,
 };
+mod build_image;
 mod program_factory_linkage;
+pub use build_image::{
+    BuildOwnedImageReader, BuildOwnedImageRecord, NATIVE_METADATA_IMAGE_MAGIC,
+    encode_native_metadata_image,
+};
 mod program_image;
 #[cfg(any(
     feature = "pure_text",
@@ -73,7 +78,7 @@ pub use program_image_read::values::schemas as decode_native_schema_image;
 ))]
 pub use program_image_read::{
     decode_build_owned_native_plan_body, decode_build_owned_native_plan_image,
-    decode_build_owned_native_plan_value,
+    decode_build_owned_native_plan_record, decode_build_owned_native_plan_value,
 };
 
 #[cfg(any(
