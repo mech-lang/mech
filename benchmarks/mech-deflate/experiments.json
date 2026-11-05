@@ -23273,6 +23273,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-eight-overlap-primary-243197783e16.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-case-eight-literals-prefix-primary-7e21b7aa5312.tar.gz",
+          "sha256": "7e21b7aa5312ec807c9592d3360f414ace0569d62d1527922d3de1a3754bb9d8",
+          "manifest_sha256": "3a3de3bf55c66eb0c28a51261e03fef44157cb47f5b2b8c5fcde71f1c75d58bd",
+          "bytes": 3481571,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-eight-literals-prefix-primary-7e21b7aa5312.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
