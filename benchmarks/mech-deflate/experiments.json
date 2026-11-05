@@ -15816,6 +15816,17 @@
           "files": 42,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-reymont-prefix-32769-primary-d33e07b458cd.tar.gz"
+        },
+        {
+          "event": "profile-reymont-prefix-16384",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-profile-reymont-prefix-16384-75044a650a4c.tar.gz",
+          "sha256": "75044a650a4c99f09eaee9fa6946a2cab070571bd320d486973cd6d91a9d53a1",
+          "manifest_sha256": "4b471d033b58e36f72e14a8fe6063c5fea97a74ff9d620be576be64ecc6ba501",
+          "bytes": 336512,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-profile-reymont-prefix-16384-75044a650a4c.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
