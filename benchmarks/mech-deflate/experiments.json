@@ -23097,18 +23097,29 @@
           "files": 61,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-screen-reymont-prefix-32769-primary-905f09091205.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
+          "asset": "r157-case-eight-literals-primary-c86cc016a85f.tar.gz",
+          "sha256": "c86cc016a85f4b08191badf94f3b848207af960b64e8f1add9e5d308c5e8a9c5",
+          "manifest_sha256": "89931524b262c72087fd51f71c3bf83067520c126049899c9f303635f58c4bc9",
+          "bytes": 3438499,
+          "files": 77,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-frame-move-order-round157-20261105/archives/r157-case-eight-literals-primary-c86cc016a85f.tar.gz"
         }
       ],
       "production": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
       "compiler_source": "78d6a87f8cb0c61c434ea73d6e8bb17e4d2cb679",
-      "before_compiler_source": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+      "before_compiler_source": "58690b58dfc4ccdf44b074c15d3c140a28603866",
       "versions": {
         "typed_ir": 180,
         "work_policy": 107,
         "private_abi": 39,
         "bytecode": 14
       },
-      "decision": "Control: restore original frame emission order while sharing its exact assignment ordering with traversal facts; repeat the unchanged witnesses.",
+      "decision": "Final candidate: retain duplicate-check elimination with original frame ordering. Native text is byte-identical to R156; this control does not explain its instruction tradeoff. Direct reviewed-baseline qualification pending.",
       "retained": false,
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
