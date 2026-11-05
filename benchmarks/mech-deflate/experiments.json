@@ -18937,6 +18937,35 @@
       "primary_performance_claim": false,
       "compiled_image_unchanged": true,
       "one_active_implementation": false
+    },
+    "147": {
+      "base": "ab8cfed2524c2183414c122531e122863c5a7c42",
+      "production": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+      "compiler_source": "0b3171712210050ab417e8468126655e633fe9db",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "semantic-parent",
+          "source_revision": "0b3171712210050ab417e8468126655e633fe9db",
+          "asset": "r147-semantic-parent-3b01dc9515ef.tar.gz",
+          "sha256": "3b01dc9515efc9f3f01a3af80a18adfa7758b566b2ee40830189cce935b3a94e",
+          "manifest_sha256": "fadc284a1e20f96f6619cdf54ae5f051fdb1b6850d55ca8571f415cbc7aa3a5b",
+          "bytes": 44838,
+          "files": 22,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-phase-pieces-round147-20261105/archives/r147-semantic-parent-3b01dc9515ef.tar.gz"
+        }
+      ],
+      "before_compiler_source": "c03bdfc7ffca8ffdf4f2207729536d8b4a5d8dbd",
+      "versions": {
+        "typed_ir": 173,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "release_tag": "evidence-native-compression-experiments-3",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
