@@ -20075,7 +20075,7 @@
       "base": "48b78cd7f9719b8acc184d7b65976a863e955f3f",
       "production": "735fe9f76818f1ada7cbe90dfd19d82d0f0a405f",
       "compiler_source": "735fe9f76818f1ada7cbe90dfd19d82d0f0a405f",
-      "decision": "under measurement",
+      "decision": "reject: native text/relocations/targets identical, periodic median+0.014505%; source candidate and tests reverted",
       "events": [
         {
           "event": "screen-eight-literals-primary",
@@ -20085,8 +20085,8 @@
           "manifest_sha256": "5e3f89e8d3e2c9eb0920aadd834d5f81188bade5e0a4c99c10a2768ea80cf753",
           "bytes": 69478,
           "files": 41,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-screen-eight-literals-primary-2f84accf1b26.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r150-screen-eight-literals-primary-2f84accf1b26.tar.gz"
         },
         {
           "event": "screen-16384-distribution-change-primary",
@@ -20096,8 +20096,8 @@
           "manifest_sha256": "d4e980fef68a67c25612f1024a6bcaa35f04abafee31bf1c6c77b4f2687dcdd1",
           "bytes": 66765,
           "files": 42,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-screen-16384-distribution-change-primary-8b327b6440bd.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r150-screen-16384-distribution-change-primary-8b327b6440bd.tar.gz"
         },
         {
           "event": "screen-33027-periodic-window-primary",
@@ -20107,8 +20107,8 @@
           "manifest_sha256": "f3e7593697b8d29f8d1a2631bf875c633778c15d297deaac26ccbd8ad6bc95f4",
           "bytes": 66939,
           "files": 42,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-screen-33027-periodic-window-primary-0d0d9ffc40dd.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r150-screen-33027-periodic-window-primary-0d0d9ffc40dd.tar.gz"
         },
         {
           "event": "screen-repeated-32769-primary",
@@ -20118,8 +20118,8 @@
           "manifest_sha256": "d14c5a880915f0893df4bab286ec1e592613f96b56dcd3f51abfb397f2eaf204",
           "bytes": 67317,
           "files": 42,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-screen-repeated-32769-primary-849f886a6399.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r150-screen-repeated-32769-primary-849f886a6399.tar.gz"
         },
         {
           "event": "initial",
@@ -20129,8 +20129,8 @@
           "manifest_sha256": "002468ae3afa0285796b3134813e297ce409c62febea8e3ae27f67966973eca6",
           "bytes": 4624654,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-initial-97963ef48605.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r150-initial-97963ef48605.tar.gz"
         },
         {
           "event": "binary-inspection",
@@ -20140,8 +20140,8 @@
           "manifest_sha256": "3e675b2c0aebffe44b61a1839fa34c29428fc4792cecc1be2b7ad12197d7c6f0",
           "bytes": 75285,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-binary-inspection-6bee38bb2130.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r150-binary-inspection-6bee38bb2130.tar.gz"
         },
         {
           "event": "analysis",
@@ -20151,8 +20151,8 @@
           "manifest_sha256": "49c2f24747b8339f6724816b0236332d3de7db75a7da451f2fa9c87a7033f04a",
           "bytes": 68909,
           "files": 40,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-analysis-499607a714bd.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r150-analysis-499607a714bd.tar.gz"
         },
         {
           "event": "closure",
@@ -20162,8 +20162,8 @@
           "manifest_sha256": "035e337cdb60e0da98914c1948408b5997eb451b66a70119a6501eecc0e21dd9",
           "bytes": 4717077,
           "files": 108,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-read-pack-geometry-round150-20261105/archives/r150-closure-39a65433c043.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-3/r150-closure-39a65433c043.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
@@ -20175,7 +20175,27 @@
       },
       "release_tag": "evidence-native-compression-experiments-3",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-3",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "retained": false,
+      "candidate_compiler_source": "735fe9f76818f1ada7cbe90dfd19d82d0f0a405f",
+      "retained_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
+      "revert_revision": "b2691e8c2c013beac4e3e5d79669e25eed663171",
+      "retained_versions": {
+        "typed_ir": 173,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "final_closure_event": "closure",
+      "primary_performance_improvement_claimed": false,
+      "full_retention_qualification_run": false,
+      "analysis": {
+        "script": "analyze.py",
+        "expected_outputs": {
+          "results.json": "8b17687ce876c7d712c143e2ae0a6b5182984b3f2dd20cc86a26a03c8d793b29",
+          "REPORT.md": "d34c0251c245d5614f9b4584b7099a5a1d9cdc410715afc0d9a3f60c1cacd0d6"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
