@@ -1,5 +1,6 @@
 //! Selected bulk byte append must remain inside its ordinary numeric recurrence.
 use super::*;
+mod geometry;
 
 const SOURCE: &str = "+> sequence\n+> bits\nemit-bytes(bytes<[u8]>, word<u64>, count<u8>, i<u64>, end<u64>) => (out<[u8]>) :=\n  more := i < end\n  next := (more? | true => sequence/append-le-bytes(bytes, bits/wrapping-add(word, i), count) | false => bytes)\n  out := (more? | true => emit-bytes(next, word, count, i + 1u64, end) | false => bytes).\nemit-bytes(sequence/with-capacity(0u8, capacity<u64>), word<u64>, count<u8>, 0u64, steps<u64>)\n";
 
