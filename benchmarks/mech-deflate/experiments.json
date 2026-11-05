@@ -20670,6 +20670,17 @@
           "files": 97,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-scalar-case-scalar-loop-64-decoded-721dd5e61e90.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "dd3253562ee9d33451a66f4ef9b9808577dc4c1e",
+          "asset": "r151-frame-allocation-07df5917c6e8.tar.gz",
+          "sha256": "07df5917c6e80e7fbd10ed684ed0cf1ffa6414e0bc052aa7090a68e73abc5db9",
+          "manifest_sha256": "fe0eed0d733bff130d5ecbe8d08193e1396c5aa64c02f3582c26a7f7ff56bd72",
+          "bytes": 107213,
+          "files": 80,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-known-bool-edges-round151-20261105/archives/r151-frame-allocation-07df5917c6e8.tar.gz"
         }
       ],
       "before_compiler_source": "d9fd2855a2b3aef7a7f843f051466abd39f7ef25",
