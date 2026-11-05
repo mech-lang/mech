@@ -319,7 +319,11 @@ pub(in crate::native_artifact) fn emit_entry(
             // if a branch would skip some. A miss uses the existing header exit.
             for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
                 let count = proof
-                    .maximum_append(array)
+                    .actions
+                    .iter()
+                    .try_fold(0usize, |count, (_, op)| {
+                        count.checked_add(op.maximum_append(array))
+                    })
                     .ok_or_else(|| backend("numeric append capacity bound overflows"))?;
                 let length = words.read(b, shadow + proof.view(array) + 1);
                 let capacity = words.read(b, shadow + proof.capacity(array).unwrap());

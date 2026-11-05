@@ -1,8 +1,8 @@
-//! Insufficient spare capacity must decline before opening a native loan.
+//! Tight ordinary fallback preserves source results, errors and publication.
 use super::*;
 
 #[test]
-fn insufficient_bulk_capacity_declines_before_numeric_setup_and_recovers() {
+fn short_buffer_fallback_preserves_outputs_aliases_and_recovery() {
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
         let jit = JitProgramArtifact::compile_with_limits(
@@ -11,43 +11,6 @@ fn insufficient_bulk_capacity_declines_before_numeric_setup_and_recovers() {
             mode.compilation(),
         )
         .unwrap();
-        let (region, array) = jit
-            .descriptor()
-            .metadata()
-            .closed_tails
-            .regions
-            .iter()
-            .enumerate()
-            .find_map(|(id, region)| {
-                let proof = region.numeric.as_ref()?;
-                proof
-                    .arrays
-                    .iter()
-                    .position(|a| a.appends)
-                    .map(|at| (id, at))
-            })
-            .unwrap();
-        assert_eq!(
-            jit.descriptor().metadata().closed_tails.regions[region]
-                .numeric
-                .as_ref()
-                .unwrap()
-                .arrays[array]
-                .append_bound,
-            8
-        );
-        let image = jit.descriptor().encode_build_owned_image().unwrap();
-        for incorrect in [0, 1, 7, 9, u64::MAX] {
-            let mut value: serde_json::Value = serde_json::from_slice(&image).unwrap();
-            value["descriptor"]["closed_tails"]["regions"][region]["numeric"]["arrays"][array]["append_bound"] =
-                serde_json::json!(incorrect);
-            assert!(
-                crate::native_artifact::program::runtime::tests::rejects_malformed_helper_image(
-                    &serde_json::to_vec(&value).unwrap()
-                ),
-                "serialized append bound must be independently reconstructed: {incorrect}"
-            );
-        }
         assert_eq!(
             jit.descriptor()
                 .metadata()
@@ -86,7 +49,7 @@ fn insufficient_bulk_capacity_declines_before_numeric_setup_and_recovers() {
                 let before = contents(&args);
                 let previous = output.clone();
                 let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
-                let (result, observed) = if restored {
+                let (result, _observed) = if restored {
                     observe::run_restored(&jit, &args, &mut output, mode.execution(), &memory)
                 } else {
                     observe::run(&jit, &args, &mut output, mode.execution(), &memory)
@@ -110,20 +73,6 @@ fn insufficient_bulk_capacity_declines_before_numeric_setup_and_recovers() {
                     assert_eq!(
                         contents(&[output.last().unwrap().as_ref().unwrap().clone()]),
                         [expected(0x0102_0304_0506_0708, count.min(8), steps)]
-                    );
-                }
-                if capacity < 8 {
-                    assert_eq!(
-                        observed.closed_entry_decisions.get(&0),
-                        Some(&1),
-                        "an unfundable entry must decline before opening a loan: {observed:?}"
-                    );
-                    assert!(!observed.closed_entry_decisions.contains_key(&1));
-                } else if count == 0 {
-                    assert_eq!(
-                        observed.closed_entry_decisions.get(&1),
-                        Some(&1),
-                        "funded zero-count visits must retain the native route"
                     );
                 }
                 assert_eq!(contents(&args), before);

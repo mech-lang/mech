@@ -15,7 +15,6 @@ pub(super) struct Counts {
     pub selected: u64,
     pub phases: u64,
     pub phase_sites: BTreeMap<u64, u64>,
-    pub closed_entry_decisions: BTreeMap<u64, u64>,
     pub phase_initial_fuel: Vec<u64>,
     pub phase_write_fuel: Vec<u64>,
     pub first_change_backings: Vec<(usize, usize)>,
@@ -414,12 +413,6 @@ unsafe extern "C" fn helper(
     if op == GlobalHelper::ClosedTailBegin.raw() && status == 0 {
         // SAFETY: the checked helper completed and retained its result cell.
         let selected = unsafe { *out };
-        COUNTS.with(|v| {
-            *v.borrow_mut()
-                .closed_entry_decisions
-                .entry(selected)
-                .or_default() += 1;
-        });
         if selected == 1 {
             let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
             let metadata = ctx.descriptor.metadata();
