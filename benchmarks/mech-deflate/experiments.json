@@ -22660,6 +22660,17 @@
           "files": 73,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-33027-periodic-window-primary-fa99a6f0c036.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-case-random-32769-primary-0846cf7fe5e8.tar.gz",
+          "sha256": "0846cf7fe5e8186654a290f4f092aac082f6591ec4420614a25ba7caaab9fca4",
+          "manifest_sha256": "8e8a093b8729613a3ac08a34541b79fb637be7bcfb4d34b986dfbec44edc2390",
+          "bytes": 140248,
+          "files": 73,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-random-32769-primary-0846cf7fe5e8.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
