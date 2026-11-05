@@ -21854,6 +21854,17 @@
           "files": 17,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-profile-repeated-32769-f567b408a153.tar.gz"
+        },
+        {
+          "event": "pc-tables-33027-periodic-window",
+          "source_revision": "2d27e4cc44261a02c6858a232960d8999ac712eb",
+          "asset": "r154-pc-tables-33027-periodic-window-8548bca94c53.tar.gz",
+          "sha256": "8548bca94c530c53ec3e83110e95665c27c1ec4b04ae3e5f2214a5c716df2447",
+          "manifest_sha256": "65fb5b747a48717779bc973ee2d0385105e8e432be8d4762af5bb13bed41f97b",
+          "bytes": 358082,
+          "files": 27,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-hot-instructions-round154-20261105/archives/r154-pc-tables-33027-periodic-window-8548bca94c53.tar.gz"
         }
       ],
       "production": "2d27e4cc44261a02c6858a232960d8999ac712eb",
