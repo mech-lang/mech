@@ -314,7 +314,8 @@ fn selected_template(
 // IR168 lowers checked bulk little-endian byte appends in private numeric loops.
 // IR169/170 were rejected refusal/private-store experiments. IR171 checks
 // current unit-dimension geometry in the shared numeric address emitter.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 171;
+// IR172 emits guarded whole-word loads for confined source byte packs.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 172;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

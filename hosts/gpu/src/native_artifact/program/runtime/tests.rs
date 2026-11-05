@@ -984,6 +984,7 @@ fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_en
             (16, 168u64),
             (16, 169u64),
             (16, 170u64),
+            (16, 171u64),
             (24, 11u64),
             (24, 37u64),
             (32, 34u64),
