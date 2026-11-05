@@ -217,3 +217,98 @@ fn object_bound_calls_preserve_independent_selections_and_reject_template_tamper
         }
     }
 }
+
+#[test]
+fn frozen_frames_preserve_metadata_and_independent_legacy_validation() {
+    let catalog = mech_stdlib::source_catalog();
+    for source in [
+        include_str!("../../../../tests/fixtures/native/numeric-parent-named-managed.mec"),
+        include_str!("../../../../tests/fixtures/native/private-tagged-map.mec"),
+        include_str!("../../../../tests/fixtures/native/window-histogram.mec"),
+    ] {
+        for artifact in artifacts(source) {
+            let object = emit_program_object(&artifact, &catalog).unwrap();
+            let bytes = object.descriptor().encode_build_owned_image().unwrap();
+            let image: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(image["version"], 2);
+            assert!(image["descriptor"]["buffer_frames"].is_object());
+            for bound in [false, true] {
+                // SAFETY: complete metadata and symbols come from one genuine
+                // checked Object. No entry authority is fabricated here.
+                let restored = if bound {
+                    unsafe {
+                        NativeProgramDescriptor::decode_object_bound_image(
+                            &bytes,
+                            &catalog,
+                            object.identity().bytes(),
+                            object.image_binding().bytes(),
+                        )
+                    }
+                } else {
+                    unsafe { NativeProgramDescriptor::decode_build_owned_image(&bytes, &catalog) }
+                }
+                .unwrap();
+                assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
+            }
+            let mut legacy = image.clone();
+            legacy["version"] = 1.into();
+            legacy["descriptor"]
+                .as_object_mut()
+                .unwrap()
+                .remove("buffer_frames");
+            // Build-side compatibility conversion only; no changed image is
+            // paired with an entry or allowed to bypass Object provenance.
+            let restored = unsafe {
+                NativeProgramDescriptor::decode_build_owned_image(
+                    &serde_json::to_vec(&legacy).unwrap(),
+                    &catalog,
+                )
+            }
+            .unwrap();
+            assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
+            for mode in 0..4 {
+                let mut changed = image.clone();
+                match mode {
+                    0 => {
+                        let old = changed["descriptor"]["buffer_frames"]["scalar_fields"]
+                            .as_u64()
+                            .unwrap();
+                        changed["descriptor"]["buffer_frames"]["scalar_fields"] = (old + 1).into();
+                    }
+                    1 => {
+                        changed["descriptor"]
+                            .as_object_mut()
+                            .unwrap()
+                            .remove("buffer_frames");
+                    }
+                    2 => {
+                        changed["descriptor"]["buffer_frames"] = serde_json::Value::Null;
+                    }
+                    _ => {
+                        changed["version"] = 1.into();
+                    }
+                }
+                let changed = serde_json::to_vec(&changed).unwrap();
+                assert!(
+                    unsafe {
+                        NativeProgramDescriptor::decode_build_owned_image(&changed, &catalog)
+                    }
+                    .is_err(),
+                    "case {mode}"
+                );
+                assert!(
+                    unsafe {
+                        NativeProgramDescriptor::decode_object_bound_image(
+                            &changed,
+                            &catalog,
+                            object.identity().bytes(),
+                            object.image_binding().bytes(),
+                        )
+                    }
+                    .is_err(),
+                    "case {mode}"
+                );
+            }
+        }
+    }
+}

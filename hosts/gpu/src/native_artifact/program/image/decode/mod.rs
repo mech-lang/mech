@@ -43,6 +43,8 @@ impl NativeProgramDescriptor {
     /// canonical schemas. No pointers or invocation-local cache identities are
     /// persisted. Only the unsafe build-owned loader may restore its compiler
     /// proofs, and it must retain the exact checked Object's provenance.
+    /// V2 includes frozen frame recipes. Only the exact Object-bound path may
+    /// reuse them without source analysis; independent loading rederives them.
     pub fn encode_build_owned_image(&self) -> Result<Vec<u8>, serde_json::Error> {
         #[derive(Serialize)]
         struct Image<'a> {
@@ -52,7 +54,7 @@ impl NativeProgramDescriptor {
         }
         serde_json::to_vec(&Image {
             format: "mech.build-owned-native-descriptor",
-            version: 1,
+            version: 2,
             descriptor: self,
         })
     }

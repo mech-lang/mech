@@ -121,6 +121,8 @@ struct Descriptor<'a> {
     string_map_regions: Box<[NativeStringMapRegion]>,
     #[serde(deserialize_with = "proof")]
     scalar_aggregates: NativeScalarAggregates,
+    #[serde(borrow, default, deserialize_with = "present_raw")]
+    buffer_frames: Option<&'a RawValue>,
     #[serde(deserialize_with = "proof")]
     map_owner_words: Option<NativeMapOwnerWords>,
     borrowed_record_maps: native::program::prepare::borrowed_record_map::Layout,
@@ -146,6 +148,10 @@ struct Image<'a> {
     descriptor: Descriptor<'a>,
 }
 
+fn present_raw<'de, D: Deserializer<'de>>(reader: D) -> Result<Option<&'de RawValue>, D::Error> {
+    <&RawValue>::deserialize(reader).map(Some)
+}
+
 pub(in crate::native_artifact::program::image::decode) fn decode(
     bytes: &[u8],
     catalog: &FunctionCatalog,
@@ -165,10 +171,20 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
     let image: Image<'_> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
-    if image.format != "mech.build-owned-native-descriptor" || image.version != 1 {
+    if image.format != "mech.build-owned-native-descriptor"
+        || (OBJECT_BOUND && image.version != 2)
+        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2))
+    {
         return Err("unsupported native descriptor image format".into());
     }
-    let w = image.descriptor;
+    let mut w = image.descriptor;
+    if (image.version == 2) != w.buffer_frames.is_some() {
+        return Err("native descriptor version differs from its frame inventory".into());
+    }
+    // This is selected only by the private verified-byte borrow, never by an
+    // untrusted field. V1 remains available through independent reconstruction;
+    // new checked Objects bind V2 and have a distinct typed-IR identity.
+    let frozen_layouts = OBJECT_BOUND;
     let schemas = Arc::new(decode_native_schema_image(&w.schemas)?);
     // SAFETY: only the enclosing unsafe descriptor loader reaches this private
     // reader; it retains all metadata until exact checked-build provenance holds.
@@ -244,56 +260,99 @@ fn decode_inner<const OBJECT_BOUND: bool>(
         return Err("constant ownership bounds differ from canonical runtime reads".into());
     }
     let closed_tails: native::program::prepare::tail::Layout = w.closed_tails.into();
-    let (buffer_frames, map_owner_words) = plan
-        .facts()
-        .buffer_frame_owner_layouts()
-        .map_err(str::to_owned)?;
+    let image_frames = w
+        .buffer_frames
+        .take()
+        .map(|image| {
+            // SAFETY: the enclosing loader confines all recipes until unchanged
+            // checked-build provenance holds. Independent loading compares these
+            // records with fresh source derivation before use.
+            unsafe { NativeBufferFrames::from_build_owned_image_bytes(image.get().as_bytes()) }
+        })
+        .transpose()?;
+    let (buffer_frames, computed_map_owner_words) = if frozen_layouts {
+        (image_frames.unwrap(), None)
+    } else {
+        let (frames, owners) = plan
+            .facts()
+            .buffer_frame_owner_layouts()
+            .map_err(str::to_owned)?;
+        if let Some(image_frames) = image_frames
+            && serde_json::to_value(&frames).map_err(|e| e.to_string())?
+                != serde_json::to_value(&image_frames).map_err(|e| e.to_string())?
+        {
+            return Err(
+                "native buffer frames differ from independently derived source uses".into(),
+            );
+        }
+        (frames, Some(owners))
+    };
     native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
     if !OBJECT_BOUND {
         native::program::prepare::tail::validate_image(
             &plan,
             &buffer_frames,
-            &map_owner_words,
+            computed_map_owner_words.as_ref().unwrap(),
             &w.scalar_aggregates,
             &calls,
             &closed_tails,
         )?;
     }
     let borrowed_strings: native::program::prepare::borrowed::Layout = w.borrowed_strings.into();
-    let occupied = native::program::prepare::frame_prefix_words(
-        &plan,
-        &w.scalar_aggregates,
-        &borrowed_strings,
-        &closed_tails,
-    )
-    .ok_or("restored map owner frame prefix overflows")?;
-    let map_owner_words = map_owner_words
-        .after_frame_words(occupied)
-        .map_err(str::to_owned)?;
-    let map_owner_words = (!map_owner_words.regions().is_empty()).then_some(map_owner_words);
-    if serde_json::to_vec(&map_owner_words).map_err(|e| e.to_string())?
-        != serde_json::to_vec(&w.map_owner_words).map_err(|e| e.to_string())?
-    {
-        return Err(
-            "retained-map owner lanes differ from independently validated source uses".into(),
-        );
-    }
-    let borrowed_record_maps = map_owner_words
-        .as_ref()
-        .map(|owners| native::program::prepare::borrowed_record_map::Layout::derive(&plan, owners))
-        .transpose()
-        .map_err(str::to_owned)?
-        .unwrap_or_default();
-    if borrowed_record_maps != w.borrowed_record_maps {
-        return Err(
-            "borrowed record-map proof differs from exact canonical publication uses".into(),
-        );
-    }
-    let utf8_reads =
-        native::program::prepare::utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
-    if utf8_reads != w.utf8_reads {
-        return Err("native UTF8 lookup proof differs from exact source collection uses".into());
-    }
+    let map_owner_words = if frozen_layouts {
+        w.map_owner_words.take()
+    } else {
+        let occupied = native::program::prepare::frame_prefix_words(
+            &plan,
+            &w.scalar_aggregates,
+            &borrowed_strings,
+            &closed_tails,
+        )
+        .ok_or("restored map owner frame prefix overflows")?;
+        let map_owner_words = computed_map_owner_words
+            .unwrap()
+            .after_frame_words(occupied)
+            .map_err(str::to_owned)?;
+        let map_owner_words = (!map_owner_words.regions().is_empty()).then_some(map_owner_words);
+        if serde_json::to_vec(&map_owner_words).map_err(|e| e.to_string())?
+            != serde_json::to_vec(&w.map_owner_words).map_err(|e| e.to_string())?
+        {
+            return Err(
+                "retained-map owner lanes differ from independently validated source uses".into(),
+            );
+        }
+        map_owner_words
+    };
+    let borrowed_record_maps = if frozen_layouts {
+        w.borrowed_record_maps
+    } else {
+        let derived = map_owner_words
+            .as_ref()
+            .map(|owners| {
+                native::program::prepare::borrowed_record_map::Layout::derive(&plan, owners)
+            })
+            .transpose()
+            .map_err(str::to_owned)?
+            .unwrap_or_default();
+        if derived != w.borrowed_record_maps {
+            return Err(
+                "borrowed record-map proof differs from exact canonical publication uses".into(),
+            );
+        }
+        derived
+    };
+    let utf8_reads = if frozen_layouts {
+        w.utf8_reads
+    } else {
+        let derived =
+            native::program::prepare::utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
+        if derived != w.utf8_reads {
+            return Err(
+                "native UTF8 lookup proof differs from exact source collection uses".into(),
+            );
+        }
+        derived
+    };
     let visits: Box<[native::iteration_abi::NativeIterationVisit]> = w
         .visits
         .into_vec()
@@ -334,32 +393,43 @@ fn decode_inner<const OBJECT_BOUND: bool>(
             return Err("native fill header template is not funded".into());
         }
     }
-    let admission = native::program::prepare::map_admission::Layout::derive(
-        &plan,
-        &w.scalar_aggregates,
-        map_owner_words.as_ref(),
-        &visits,
-        &closed_tails,
-    )
-    .map_err(str::to_owned)?;
-    if admission != w.map_admission {
-        return Err("native path admission differs from its source frontiers".into());
+    if !frozen_layouts {
+        let admission = native::program::prepare::map_admission::Layout::derive(
+            &plan,
+            &w.scalar_aggregates,
+            map_owner_words.as_ref(),
+            &visits,
+            &closed_tails,
+        )
+        .map_err(str::to_owned)?;
+        if admission != w.map_admission {
+            return Err("native path admission differs from its source frontiers".into());
+        }
     }
-    let frozen_maps = map_owner_words
-        .as_ref()
-        .map(|owner| {
-            native::program::prepare::frozen_map::Layout::derive(&plan, owner, &closed_tails)
-        })
-        .transpose()
-        .map_err(str::to_owned)?
-        .unwrap_or_default();
-    if frozen_maps != w.frozen_maps {
-        return Err("frozen-map descriptor proof differs from its complete source uses".into());
-    }
-    let selected_joins =
-        native::program::prepare::selected_join::Layout::derive(&plan, &plan.string_map_regions())?;
-    if selected_joins.maps != w.selected_joins.maps {
-        return Err("selected-join map proof differs from its complete source uses".into());
+    let frozen_maps = if frozen_layouts {
+        w.frozen_maps
+    } else {
+        let derived = map_owner_words
+            .as_ref()
+            .map(|owner| {
+                native::program::prepare::frozen_map::Layout::derive(&plan, owner, &closed_tails)
+            })
+            .transpose()
+            .map_err(str::to_owned)?
+            .unwrap_or_default();
+        if derived != w.frozen_maps {
+            return Err("frozen-map descriptor proof differs from its complete source uses".into());
+        }
+        derived
+    };
+    if !frozen_layouts {
+        let selected_joins = native::program::prepare::selected_join::Layout::derive(
+            &plan,
+            &plan.string_map_regions(),
+        )?;
+        if selected_joins.maps != w.selected_joins.maps {
+            return Err("selected-join map proof differs from its complete source uses".into());
+        }
     }
 
     let unsigned_buffer_calls = plan.unsigned_buffer_calls().into_boxed_slice();

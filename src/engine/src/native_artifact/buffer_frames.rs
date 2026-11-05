@@ -12,7 +12,7 @@ use mech_core::{IntegerWidth, SchemaBody, SchemaId};
 #[path = "buffer_frames_tagged.rs"]
 mod tagged;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub enum NativeBufferFrameOperation {
     Pack {
         output: Value,
@@ -38,7 +38,7 @@ pub enum NativeBufferFrameOperation {
         output: Value,
     },
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeBufferFrameAction {
     operation: NativeBufferFrameOperation,
     retire: Box<[Value]>,
@@ -52,7 +52,7 @@ impl NativeBufferFrameAction {
     }
 }
 /// An immutable field recipe derived from exact same-component leaf schemas.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeBufferFrameLane {
     Scalar {
         at: usize,
@@ -74,7 +74,7 @@ pub enum NativeBufferFrameLane {
         count: usize,
     },
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, serde::Serialize)]
 pub struct NativeBufferFrameField {
     schema: SchemaId,
     lane: NativeBufferFrameLane,
@@ -87,7 +87,7 @@ impl NativeBufferFrameField {
         self.lane
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct NativeBufferFrames {
     slots: Box<[Option<(usize, usize)>]>,
     actions: Box<[Option<NativeBufferFrameAction>]>,
@@ -96,7 +96,97 @@ pub struct NativeBufferFrames {
     scalar_fields: usize,
     managed_fields: usize,
 }
+// Immutable compiler recipes only. Keep decoding private and confined by the
+// same unsafe checked-build contract as the other native image proofs.
+super::program_image_proofs::image_enum!(NativeBufferFrameOperation {
+    Pack { output: Value },
+    EnumPack { output: Value, payload: Value, ordinal: u32 },
+    Observe { source: Value, path: Box<[Step]>, observation: Observation, output: Value },
+    Copy { source: Value, output: Value },
+    Project { source: Value, ordinal: usize, output: Value },
+});
+super::program_image_proofs::image_enum!(NativeBufferFrameLane {
+    Scalar { at: usize, kind: super::NativeScalarKind },
+    Managed { at: usize },
+    Tagged { tag: usize, at: usize, count: usize },
+    Composite { at: usize, count: usize },
+});
+super::program_image_proofs::image_struct!(NativeBufferFrameAction {
+    operation: NativeBufferFrameOperation,
+    retire: Box<[Value]>,
+});
+super::program_image_proofs::image_struct!(NativeBufferFrameField {
+    schema: SchemaId,
+    lane: NativeBufferFrameLane,
+});
+super::program_image_proofs::image_struct!(NativeBufferFrames {
+    slots: Box<[Option<(usize, usize)>]>,
+    actions: Box<[Option<NativeBufferFrameAction>]>,
+    elements: usize,
+    fields: Box<[NativeBufferFrameField]>,
+    scalar_fields: usize,
+    managed_fields: usize,
+});
+super::program_image_proofs::image_enum!(Step {
+    EnumPayload { ordinal: u32 },
+    TupleItem { ordinal: u32 },
+});
+impl super::program_image_proofs::ImageRead for super::NativeScalarKind {
+    fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
+        #[derive(serde::Deserialize)]
+        enum Wire {
+            Bool,
+            U8,
+            U16,
+            U32,
+            U64,
+            I64,
+            F64,
+        }
+        Ok(match <Wire as serde::Deserialize>::deserialize(image)? {
+            Wire::Bool => Self::Bool,
+            Wire::U8 => Self::U8,
+            Wire::U16 => Self::U16,
+            Wire::U32 => Self::U32,
+            Wire::U64 => Self::U64,
+            Wire::I64 => Self::I64,
+            Wire::F64 => Self::F64,
+        })
+    }
+}
+impl super::program_image_proofs::ImageRead for Observation {
+    fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
+        #[derive(serde::Deserialize)]
+        #[serde(deny_unknown_fields)]
+        enum Wire {
+            EnumOrdinal { ordinal: u32 },
+            U64,
+            CanonicalValue,
+            StringEqual { peer: u32 },
+        }
+        Ok(match <Wire as serde::Deserialize>::deserialize(image)? {
+            Wire::EnumOrdinal { ordinal } => Self::EnumOrdinal { ordinal },
+            Wire::U64 => Self::U64,
+            Wire::CanonicalValue => Self::CanonicalValue,
+            Wire::StringEqual { peer } => Self::StringEqual { peer: Value(peer) },
+        })
+    }
+}
 impl NativeBufferFrames {
+    /// Restore typed frame recipes without an intermediate JSON object tree.
+    ///
+    /// # Safety
+    /// Keep the result confined until the enclosing loader establishes the
+    /// unchanged SAME checked compiler/Object provenance. These indices are
+    /// compiler proof output, not fresh runtime owner or visit permission.
+    pub unsafe fn from_build_owned_image_bytes(bytes: &[u8]) -> Result<Self, String> {
+        let mut reader = serde_json::Deserializer::from_slice(bytes);
+        let frames = <Self as super::program_image_proofs::ImageRead>::read(&mut reader)
+            .map_err(|e| e.to_string())?;
+        reader.end().map_err(|e| e.to_string())?;
+        Ok(frames)
+    }
+
     pub fn slot(&self, value: Value) -> Option<(usize, usize)> {
         self.slot_at(value.get() as usize)
     }
@@ -140,6 +230,133 @@ impl NativeBufferFrames {
             return None;
         }
         self.children(field)?.get(ordinal as usize).copied()
+    }
+}
+
+#[cfg(test)]
+mod image_tests {
+    use super::*;
+
+    #[test]
+    fn frame_wire_covers_scalar_kinds_structural_lanes_and_operations() {
+        // Wire-only fixture: never attached to a descriptor or native entry.
+        // Private reading here grants no source proof or execution authority.
+        let fields = [
+            super::super::NativeScalarKind::Bool,
+            super::super::NativeScalarKind::U8,
+            super::super::NativeScalarKind::U16,
+            super::super::NativeScalarKind::U32,
+            super::super::NativeScalarKind::U64,
+            super::super::NativeScalarKind::I64,
+            super::super::NativeScalarKind::F64,
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(at, kind)| NativeBufferFrameField {
+            schema: SchemaId::new(at as u32),
+            lane: NativeBufferFrameLane::Scalar { at, kind },
+        })
+        .chain([
+            NativeBufferFrameField {
+                schema: SchemaId::new(7),
+                lane: NativeBufferFrameLane::Managed { at: 0 },
+            },
+            NativeBufferFrameField {
+                schema: SchemaId::new(8),
+                lane: NativeBufferFrameLane::Tagged {
+                    tag: 7,
+                    at: 0,
+                    count: 7,
+                },
+            },
+            NativeBufferFrameField {
+                schema: SchemaId::new(9),
+                lane: NativeBufferFrameLane::Composite { at: 0, count: 8 },
+            },
+        ])
+        .collect();
+        let operations = [
+            NativeBufferFrameOperation::Pack { output: Value(1) },
+            NativeBufferFrameOperation::EnumPack {
+                output: Value(1),
+                payload: Value(0),
+                ordinal: u32::MAX,
+            },
+            NativeBufferFrameOperation::Copy {
+                source: Value(0),
+                output: Value(1),
+            },
+            NativeBufferFrameOperation::Project {
+                source: Value(0),
+                ordinal: 2,
+                output: Value(1),
+            },
+        ]
+        .into_iter()
+        .chain(
+            [
+                Observation::EnumOrdinal { ordinal: 3 },
+                Observation::U64,
+                Observation::CanonicalValue,
+                Observation::StringEqual { peer: Value(1) },
+            ]
+            .into_iter()
+            .map(|observation| NativeBufferFrameOperation::Observe {
+                source: Value(0),
+                path: Box::new([
+                    Step::EnumPayload { ordinal: 1 },
+                    Step::TupleItem { ordinal: 2 },
+                ]),
+                observation,
+                output: Value(1),
+            }),
+        );
+        let original = NativeBufferFrames {
+            slots: Box::new([Some((0, 10)), None]),
+            actions: operations
+                .map(|operation| {
+                    Some(NativeBufferFrameAction {
+                        operation,
+                        retire: Box::new([Value(0)]),
+                    })
+                })
+                .collect(),
+            elements: 1,
+            fields,
+            scalar_fields: 8,
+            managed_fields: 1,
+        };
+        let bytes = serde_json::to_vec(&original).unwrap();
+        let mut reader = serde_json::Deserializer::from_slice(&bytes);
+        let restored = <NativeBufferFrames as super::super::program_image_proofs::ImageRead>::read(
+            &mut reader,
+        )
+        .unwrap();
+        reader.end().unwrap();
+        assert_eq!(
+            serde_json::to_value(&restored).unwrap(),
+            serde_json::to_value(&original).unwrap()
+        );
+        for mode in 0..3 {
+            let mut changed = serde_json::to_value(&original).unwrap();
+            match mode {
+                0 => {
+                    changed["fields"][0]["lane"]["Scalar"]["kind"] = "Unknown".into();
+                }
+                1 => {
+                    changed["fields"][0]["extra"] = true.into();
+                }
+                _ => {
+                    changed["actions"][0]["operation"] = serde_json::json!({"Pack": {}});
+                }
+            }
+            assert!(
+                <NativeBufferFrames as super::super::program_image_proofs::ImageRead>::read(
+                    &changed
+                )
+                .is_err()
+            );
+        }
     }
 }
 

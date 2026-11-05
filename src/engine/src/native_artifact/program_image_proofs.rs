@@ -89,6 +89,7 @@ primitives!(
     usize,
     bool,
     mech_core::NodeId,
+    mech_core::SchemaId,
     mech_core::ProgramRevision
 );
 impl ImageRead for NativeMatchValue {
