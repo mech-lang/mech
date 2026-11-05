@@ -16876,6 +16876,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-320-overlap-primary-a63cbca60f66.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "80dab41c28d6f7598223d490399686b39fdd4dd1",
+          "asset": "r141-case-random-256-primary-71396339aced.tar.gz",
+          "sha256": "71396339acedac5bcdfa82a4fd648b8adabe8a19afd94c0ab92b53bb7c32c41a",
+          "manifest_sha256": "d5b9e65f6d65a78a4715bc1a2288600acabe26630ed20687025ed221b1051723",
+          "bytes": 222522,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round141-20261104/archives/r141-case-random-256-primary-71396339aced.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-3",
