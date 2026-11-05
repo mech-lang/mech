@@ -22447,6 +22447,17 @@
           "files": 30,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-source-map-build-e93d9027711d.tar.gz"
+        },
+        {
+          "event": "pc-profile-33027-periodic-window",
+          "source_revision": "58690b58dfc4ccdf44b074c15d3c140a28603866",
+          "asset": "r155-pc-profile-33027-periodic-window-ebbb63bccd5c.tar.gz",
+          "sha256": "ebbb63bccd5c5f2585a0558550441388590f1e7e71914485c958f37ac5039c86",
+          "manifest_sha256": "fcbdbeb101d358657402d654f6554cf0a22e5aa32232b866584229554d98f914",
+          "bytes": 3417244,
+          "files": 29,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-bounded-loop-windows-round155-20261105/archives/r155-pc-profile-33027-periodic-window-ebbb63bccd5c.tar.gz"
         }
       ],
       "production": null,
