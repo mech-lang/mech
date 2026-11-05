@@ -22781,6 +22781,17 @@
           "files": 73,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-random-64-primary-f49babb9cb03.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
+          "asset": "r156-case-32-high-entropy-stored-primary-eb073a6ae467.tar.gz",
+          "sha256": "eb073a6ae4671af74b08fd48840de94260aaaa5d37b65cdc9f7f3300a0ce321d",
+          "manifest_sha256": "7875f143db41dcf0a3c3c43d34870d81f733d09bea60520fd14e160114743840",
+          "bytes": 175555,
+          "files": 73,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-numeric-traversal-round156-20261105/archives/r156-case-32-high-entropy-stored-primary-eb073a6ae467.tar.gz"
         }
       ],
       "production": "637fe885bb919d7afc4fa18fc7d74eb5f9ae8207",
