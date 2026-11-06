@@ -25441,6 +25441,17 @@
           "files": 71,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-empty-primary-28482667a200.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-matrix-counters-34e32eea8316.tar.gz",
+          "sha256": "34e32eea8316af35284e8f5d325cb47b089be2e8097976f47e4899ebcc271459",
+          "manifest_sha256": "2794df15f7cb070cf58b75e588e93206c488fff7b304d8c6dcabfc773f705e06",
+          "bytes": 201212,
+          "files": 76,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-matrix-counters-34e32eea8316.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
