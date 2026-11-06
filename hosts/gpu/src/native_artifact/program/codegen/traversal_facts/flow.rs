@@ -360,7 +360,7 @@ fn analyze<'a>(
                     && let Some(mut recording) = terms.recording.take()
                 {
                     for state in outgoing.iter().flatten() {
-                        recording.advance(candidate, state, &terms);
+                        recording.latch(candidate, state, &terms);
                     }
                     terms.recording = Some(recording);
                 }

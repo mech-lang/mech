@@ -1,5 +1,68 @@
 # Native compression milestone
 
+**R178 fixes exhausted payload transport in native reductions.** A valid source
+transition reset the final minimum to zero; optimized execution bypassed that
+update and returned 9. The maintained regression fails on the clean R177 parent.
+The compiler now requires identity transport of every bypassed payload on every
+exhausted path. Other cases use the existing checked native source loop. Original
+and decoded artifacts now return the resident result, including changed/conditional
+payloads, fresh invocations, finite failures, unchanged publication and retry.
+Completion, totality, funding and ownership remain separate proofs.
+
+The compressor's actual entry and entire text section are byte-identical to R177.
+This is a correctness repair, with **no speedup claim**. All 20 unchanged 1.05
+latency gates pass: nine medians faster, eleven slower, geometric change −0.105306%.
+These matched ratios retain the adverse observations:
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| Natural text, 32 KB | 4.174178× | 4.193258× | +0.457096% |
+| Natural text, 16 KB | 4.941493× | 4.959524× | +0.364893% |
+| Random, 32 KB | 5.370558× | 5.389583× | +0.354246% |
+| Distribution change, 16 KB | 6.974300× | 7.009917× | +0.510686% |
+| Repeated, 32 KB | 3.169128× | 3.199825× | +0.968629% |
+| Periodic, 33 KB | 3.710310× | 3.712902× | +0.069851% |
+| Eight literals | 4.557791× | 4.582620× | +0.544754% |
+
+All 20 allocation and usable-heap medians are equal. Eight instruction medians
+and eight cycle medians rise; eight-byte cycles rise 6.220448%. The initial
+~27.39% eight-byte RSS increase is retained. Fresh four-session ABBA diagnostics
+show +0.017729% RSS and −0.007032% physical footprint. No memory saving or cause
+for the initial discrepancy is claimed. Code remains 8,955,224 B; stack 15,792 B.
+
+Qualification: 17 focused / 635 GPU tests pass, with the same seven inherited
+exclusions; all 218 selected CI tests execute. Fresh 236 components, eight
+composition and one real-capacity path tests, 12 scalar controls, 15 architecture
+checks, 132 workflow tests, runtime-only, formatting and warnings denied pass.
+No allowance or expected value changed. The introduced test-syntax fault was
+repaired and qualification rerun. Disk exhaustion interrupted the initial profile
+export; successful timing/counter/scalar cohorts were preserved. Superseded build
+outputs were removed, then only profiling was rerun. Five fresh profiles cover
+16,705 complete calls with current byte-identical maps; unknown native attribution
+remains 36.35% on natural32. Samples are not retired-instruction partitions.
+
+Parent `369714775615e4adb85d67467b9e7409a69f92b4`; measured compiler
+`09c57a46a33fd7d5420a59f60b71e3abf373a3b7`; corrected test source
+`25a8fddfa354e2c36300476d9f36356ad219ebaa`. Production files are byte-identical
+across the test-only correction. IR/work/ABI/MBC **198/107/39/14**, frozen R145
+dependencies. Source/MBC/algorithm, real buffers, allocator and full API boundary
+remain pinned. Largest input 33,027 B. See the [R178 report](native-exhausted-payload-transport.md)
+for all 20 results, exact commands, negative-parent evidence, failures and skipped
+coverage. The first public replay exposed a missing YAML source snapshot; the
+packaging whitelist is corrected and an extra closure packet supplies it without
+changing qualified sources or repeating timing. Review finding 4489282114 is addressed by this patch; resolution follows
+publication of the fix and evidence. Ordinary hosted CI is cancelled by standing
+instruction; #973 stays draft pending green CI and clean review. Parity remains
+active. The mutable-parent fact project remains unfinished: next inspect current
+hot parent/child guard and state paths before extending the effect analysis.
+
+Publication verifies **40 public archives / 80 server digests**. Fresh public
+retrieval verifies **6,067 file occurrences / 1,140 paths / 15 historical versions**
+and reconstructs results.json and REPORT.md byte-for-byte, without compiling or
+compressing. The initial missing-YAML failure remains in the supplemental packet.
+
+## Historical R177 checkpoint
+
 **R177 retains current affine read-address geometry.** All 20 complete-call
 elapsed medians improve, with 1.255563% geometric improvement and unchanged
 1.05 gates. Natural32KB improves **4.242162× → 4.177357× Roc** (1.527657%),

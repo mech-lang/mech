@@ -162,8 +162,9 @@ impl Reduction {
         words.write(b, self.best, minimum);
         words.write(b, self.item, item);
         // Exact original prices/visits were already settled. The recorded
-        // terminal dependency proof excludes skipped private temporaries, and
-        // the original terminal traversal constructs the returned value.
+        // exhausted payload identity and terminal dependency proofs exclude
+        // skipped updates/temporaries. The original terminal traversal still
+        // constructs the returned value.
         b.ins().jump(ordinary, &[]);
     }
 }
