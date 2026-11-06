@@ -1,6 +1,6 @@
 # Native compiler architecture
 
-The maintained path is source/bytecode → canonical `ProgramArtifact` → checked native plan → shared JIT/Object emission → current execution. Engine owns language semantics. Native preparation selects representations; runtime image restoration independently reconstructs their source facts. The current retained versions are **IR171 / work107 / private ABI39 / bytecode14**. [Current milestone and qualification](native-compression-status.md).
+The maintained path is source/bytecode → canonical `ProgramArtifact` → checked native plan → shared JIT/Object emission → current execution. Engine owns language semantics. Native preparation selects representations; runtime image restoration independently reconstructs their source facts. The current retained versions are **IR172 / work107 / private ABI39 / bytecode14**. [Current milestone and qualification](native-compression-status.md).
 
 ## Responsibilities and authority
 
@@ -37,6 +37,8 @@ Preparation validates revision, selected current visits and counts before substa
 Analysis visits, charged source work and emitted-instruction bounds are distinct quantities. Checked additions retain failure order. Completion, helper, borrowed, parent/child and retirement supplements remain explicit. No hardware instruction count is inferred from conservative work accounting.
 
 ## Native numeric selection and emission
+
+Numeric codegen may combine a complete confined little-endian byte expression into one native word load. It derives the expression from canonical definitions/read roles and the existing selected U8-read recipe; it introduces no serialized permission or second numeric representation. Only same-iteration single-entry Jump chains without escaping intermediates, mutations, assertions, funding boundaries or cold/interior entries qualify. Current vector geometry and an overflow-safe initialized-length guard authorize the unaligned load at the lexical first action. Refusal executes every original source action, preserving error order, work and recovery. Image reconstruction independently preserves the same source facts; emission identity distinguishes the changed code. The ordinary read path remains necessary for unsupported expressions and refused current windows.
 
 Numeric regions require source definitions, versions, scopes, confined uses and supported operations. Nested synchronous Tail children use current-account fuel; unsupported or non-Tail work exits through the exact ordinary continuation. Membership in a native region and membership in the current prepaid traversal are separate facts.
 

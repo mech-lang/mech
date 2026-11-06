@@ -31,6 +31,7 @@ pub(in crate::native_artifact) struct Report {
     pub parent: Option<u32>,
     pub source_sites: Vec<usize>,
     pub typed_loads: Vec<(usize, u8)>,
+    pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
@@ -167,12 +168,14 @@ pub(in crate::native_artifact) fn emit_entry(
             blocks[&site]
         }
     };
+    let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
         parent: region.tail.parent(),
         source_sites: proof.sites.clone(),
         typed_loads: Vec::new(),
+        read_pack_sites: Vec::new(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
         cold_exits: proof
@@ -364,6 +367,12 @@ pub(in crate::native_artifact) fn emit_entry(
             let count = words.read(b, shadow + debit.counter);
             let count = b.ins().iadd_imm(count, 1);
             words.write(b, shadow + debit.counter, count);
+        }
+        if let Some(pack) = read_packs.iter().find(|pack| pack.first == site) {
+            super::numeric_read_packs::emit(b, &words, shadow, proof, pack, target(pack.next));
+            report
+                .read_pack_sites
+                .push((pack.first, pack.last, pack.width));
         }
         match proof.action(site) {
             Some(Operation::Fallback) => unreachable!("cold edge emitted above"),
