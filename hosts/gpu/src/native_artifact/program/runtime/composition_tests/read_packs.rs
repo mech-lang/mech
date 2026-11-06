@@ -1,7 +1,7 @@
 //! Confined byte construction keeps source errors, current views and recovery.
 use super::*;
 
-fn source(width: usize, first: u64) -> String {
+pub(super) fn source(width: usize, first: u64) -> String {
     let mut body = String::from("+> bits\npack(xs<[u8]>, at<u64>) => (out<u64>) :=\n");
     let mut words = Vec::new();
     for byte in 0..width {
@@ -34,7 +34,7 @@ fn source(width: usize, first: u64) -> String {
     body
 }
 
-fn arguments(
+pub(super) fn arguments(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,
     dimensions: [u64; 2],
@@ -101,7 +101,7 @@ fn expected(width: usize, dimensions: [u64; 2], at: u64, steps: u64, nonce: u8) 
     result
 }
 
-fn unchanged_publication(published: &[Option<Value>], previous: &[Option<Value>]) {
+pub(super) fn unchanged_publication(published: &[Option<Value>], previous: &[Option<Value>]) {
     for (current, old) in published.iter().zip(previous) {
         match (current, old) {
             (Some(current), Some(old)) => assert!(current.shares_frozen_storage(old)),

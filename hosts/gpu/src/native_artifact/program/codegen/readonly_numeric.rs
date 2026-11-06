@@ -32,6 +32,7 @@ pub(in crate::native_artifact) struct Report {
     pub source_sites: Vec<usize>,
     pub typed_loads: Vec<(usize, u8)>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
+    pub proven_boolean_successors: Vec<(usize, u32)>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
@@ -169,6 +170,8 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     };
     let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
+    let boolean_successors =
+        super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
@@ -176,6 +179,10 @@ pub(in crate::native_artifact) fn emit_entry(
         source_sites: proof.sites.clone(),
         typed_loads: Vec::new(),
         read_pack_sites: Vec::new(),
+        proven_boolean_successors: boolean_successors
+            .iter()
+            .map(|(&site, &next)| (site, next))
+            .collect(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
         cold_exits: proof
@@ -653,7 +660,13 @@ pub(in crate::native_artifact) fn emit_entry(
             b,
             &words,
             code,
-            code.blocks()[site].terminator(),
+            boolean_successors
+                .get(&site)
+                .map_or(code.blocks()[site].terminator(), |&next| {
+                    mech_engine::native_artifact::NativeIterationTerminator::Scalar(
+                        mech_engine::native_artifact::NativeMatchTerminator::Jump(next),
+                    )
+                }),
             fail,
             target,
         );
