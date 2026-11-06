@@ -68,8 +68,8 @@ impl NativeProgramImageBinding {
 pub(super) struct VerifiedObjectImage<'a> {
     image: &'a [u8],
 }
-impl VerifiedObjectImage<'_> {
-    pub(super) fn bytes(&self) -> &[u8] {
+impl<'a> VerifiedObjectImage<'a> {
+    pub(super) fn bytes(&self) -> &'a [u8] {
         self.image
     }
 }

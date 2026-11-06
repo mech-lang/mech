@@ -6,6 +6,14 @@ use serde::{Serialize, Serializer};
 #[path = "../wire/mod.rs"]
 pub(in crate::native_artifact::program::image::decode) mod wire;
 
+#[cfg(test)]
+pub(in crate::native_artifact::program::image) fn decode_compiled_for_test(
+    verified: &super::binding::VerifiedObjectImage<'static>,
+    catalog: &mech_core::FunctionCatalog,
+) -> Result<NativeProgramDescriptor, String> {
+    wire::decode_compiled_verified(verified, catalog)
+}
+
 pub(in crate::native_artifact::program::image) fn serialize_schemas<S: Serializer>(
     schemas: &SchemaTable,
     serializer: S,
@@ -24,7 +32,7 @@ impl NativeProgramDescriptor {
     ) -> Result<Self, String> {
         // SAFETY: caller establishes stronger immutable-data provenance.
         let verified = unsafe { super::binding::from_compiled_module(image, binding)? };
-        wire::decode_verified(&verified, catalog)
+        wire::decode_compiled_verified(&verified, catalog)
     }
 
     /// Restore exact metadata sealed by the SAME trusted checked native Object.

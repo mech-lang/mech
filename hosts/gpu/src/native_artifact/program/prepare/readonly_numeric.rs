@@ -71,37 +71,10 @@ impl Array {
         }
     }
 }
-#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(in crate::native_artifact) struct FrameWords {
-    pub value: u32,
-    /// Relative direct scalar lane, or None for an array/composite field.
-    pub fields: Vec<Option<usize>>,
-    pub arrays: Vec<Option<usize>>,
-    pub array_bindings: Vec<(usize, usize)>,
-    pub maximum_arity: usize,
-    /// Recursive scalar leaves in field order. Paths retain exact structural
-    /// identity; a composite span never hides a managed array or owner.
-    pub scalar_paths: Vec<(Vec<usize>, usize)>,
-    /// Count exact structural prefixes once during independent preparation.
-    pub scalar_node_count: usize,
-}
-impl FrameWords {
-    #[cfg(feature = "canonical-native-program")]
-    pub fn scalar_slots(&self) -> impl Iterator<Item = usize> + '_ {
-        self.scalar_paths.iter().map(|(_, slot)| *slot)
-    }
-    #[cfg(feature = "canonical-native-program")]
-    pub fn field_slots(&self, ordinal: usize) -> impl Iterator<Item = usize> + '_ {
-        self.scalar_paths
-            .iter()
-            .filter(move |(path, _)| path.first() == Some(&ordinal))
-            .map(|(_, slot)| *slot)
-    }
-    pub fn scalar_nodes(&self) -> usize {
-        self.scalar_node_count
-    }
-}
+#[path = "numeric_frame.rs"]
+pub(in crate::native_artifact) mod numeric_frame;
+pub(in crate::native_artifact) use numeric_frame::{FrameWords, OwnedFrameWords};
+
 pub(in crate::native_artifact::program::prepare) fn scalar_node_count(
     paths: &[(Vec<usize>, usize)],
 ) -> usize {
@@ -133,18 +106,64 @@ pub(in crate::native_artifact) struct ScalarBinding {
 fn deserialize_scalar_kind<'de, D: serde::Deserializer<'de>>(
     deserializer: D,
 ) -> Result<NativeScalarKind, D::Error> {
-    let value = <String as serde::Deserialize>::deserialize(deserializer)?;
-    match value.as_str() {
-        "Bool" => Ok(NativeScalarKind::Bool),
-        "U8" => Ok(NativeScalarKind::U8),
-        "U16" => Ok(NativeScalarKind::U16),
-        "U32" => Ok(NativeScalarKind::U32),
-        "U64" => Ok(NativeScalarKind::U64),
-        "I64" => Ok(NativeScalarKind::I64),
-        "F64" => Ok(NativeScalarKind::F64),
-        _ => Err(serde::de::Error::custom(
-            "unknown prepared scalar binding kind",
-        )),
+    struct Kind;
+    impl<'de> serde::de::Visitor<'de> for Kind {
+        type Value = NativeScalarKind;
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a prepared scalar binding kind")
+        }
+        fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
+            match value {
+                "Bool" => Ok(NativeScalarKind::Bool),
+                "U8" => Ok(NativeScalarKind::U8),
+                "U16" => Ok(NativeScalarKind::U16),
+                "U32" => Ok(NativeScalarKind::U32),
+                "U64" => Ok(NativeScalarKind::U64),
+                "I64" => Ok(NativeScalarKind::I64),
+                "F64" => Ok(NativeScalarKind::F64),
+                _ => Err(E::custom("unknown prepared scalar binding kind")),
+            }
+        }
+    }
+    deserializer.deserialize_str(Kind)
+}
+
+#[cfg(test)]
+mod scalar_kind_borrow_tests {
+    use super::*;
+    use serde::Deserialize;
+    #[derive(Deserialize)]
+    struct Kind(#[serde(deserialize_with = "deserialize_scalar_kind")] NativeScalarKind);
+    #[test]
+    fn borrowed_frame_metadata_scalar_kinds_keep_all_variants_and_reject_other_values() {
+        for (name, expected) in [
+            ("Bool", NativeScalarKind::Bool),
+            ("U8", NativeScalarKind::U8),
+            ("U16", NativeScalarKind::U16),
+            ("U32", NativeScalarKind::U32),
+            ("U64", NativeScalarKind::U64),
+            ("I64", NativeScalarKind::I64),
+            ("F64", NativeScalarKind::F64),
+        ] {
+            let json = serde_json::to_vec(name).unwrap();
+            let native = mech_engine::native_artifact::encode_native_metadata_image(&json).unwrap();
+            for bytes in [&json[..], &native[..]] {
+                let mut reader =
+                    mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
+                assert_eq!(Kind::deserialize(&mut reader).unwrap().0, expected);
+                reader.end().unwrap();
+            }
+        }
+        for json in [r#""u64""#, r#""Other""#, "0", "true", "null", "[]", "{}"] {
+            let native =
+                mech_engine::native_artifact::encode_native_metadata_image(json.as_bytes())
+                    .unwrap();
+            for bytes in [json.as_bytes(), &native[..]] {
+                let mut reader =
+                    mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
+                assert!(Kind::deserialize(&mut reader).is_err());
+            }
+        }
     }
 }
 pub(in crate::native_artifact::program::prepare) fn scalar_bindings(
@@ -215,10 +234,10 @@ pub(in crate::native_artifact) struct ColdAlias {
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(in crate::native_artifact) struct Proof {
+pub(in crate::native_artifact) struct Proof<Frame = FrameWords> {
     pub nested_managed: bool,
     pub arrays: Vec<Array>,
-    pub frames: Vec<FrameWords>,
+    pub frames: Vec<Frame>,
     pub actions: Vec<(usize, Operation)>,
     pub sites: Vec<usize>,
     pub scalar_words: usize,
@@ -244,6 +263,30 @@ pub(in crate::native_artifact) struct Proof {
     /// ancestor continuation after a child returns, not just its lexical body.
     pub append_limits: Vec<(usize, Vec<(usize, usize)>)>,
 }
+impl<Frame: Into<FrameWords>> Proof<Frame> {
+    pub(in crate::native_artifact) fn into_runtime(self) -> Proof {
+        Proof {
+            nested_managed: self.nested_managed,
+            arrays: self.arrays,
+            frames: self.frames.into_iter().map(Into::into).collect(),
+            actions: self.actions,
+            sites: self.sites,
+            scalar_words: self.scalar_words,
+            scalar_inputs: self.scalar_inputs,
+            scalar_captures: self.scalar_captures,
+            scalar_outputs: self.scalar_outputs,
+            words: self.words,
+            boundary_words: self.boundary_words,
+            boundary_work: self.boundary_work,
+            result: self.result,
+            cold_aliases: self.cold_aliases,
+            cold_scalars: self.cold_scalars,
+            cold_frames: self.cold_frames,
+            append_limits: self.append_limits,
+        }
+    }
+}
+
 impl Proof {
     pub fn action(&self, site: usize) -> Option<&Operation> {
         self.actions
@@ -1014,7 +1057,7 @@ fn derive_inner(
                     _ => None,
                 })
                 .collect();
-            FrameWords {
+            FrameWords::from(OwnedFrameWords {
                 value,
                 fields,
                 arrays: array_fields,
@@ -1028,7 +1071,7 @@ fn derive_inner(
                     frames.fields_at(value as usize).unwrap(),
                 ),
                 scalar_paths: paths,
-            }
+            })
         })
         .collect();
     // Tree entries pass their scalar-bank pointer in argument word two.

@@ -48,13 +48,13 @@ impl From<Borrowed> for native::program::prepare::borrowed::Layout {
 }
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-struct TailRegion {
+struct TailRegion<Frame> {
     iteration: u32,
     #[serde(deserialize_with = "proof")]
     tail: NativeTailLoop,
     borrowed: Option<usize>,
     map: Option<usize>,
-    numeric: Option<native::program::prepare::readonly_numeric::Proof>,
+    numeric: Option<native::program::prepare::readonly_numeric::Proof<Frame>>,
     numeric_tree: Option<NumericTree>,
     captures: Option<native::program::prepare::captured_numeric::Proof>,
     packed: Option<native::program::prepare::packed_map::Proof>,
@@ -63,14 +63,16 @@ struct TailRegion {
     compute: u64,
     comparison: u64,
 }
-impl From<TailRegion> for native::program::prepare::tail::Region {
-    fn from(w: TailRegion) -> Self {
+impl<Frame: Into<native::program::prepare::readonly_numeric::FrameWords>> From<TailRegion<Frame>>
+    for native::program::prepare::tail::Region
+{
+    fn from(w: TailRegion<Frame>) -> Self {
         Self {
             iteration: w.iteration,
             tail: w.tail,
             borrowed: w.borrowed,
             map: w.map,
-            numeric: w.numeric,
+            numeric: w.numeric.map(|proof| proof.into_runtime()),
             numeric_tree: w.numeric_tree.map(Into::into),
             captures: w.captures,
             packed: w.packed,
@@ -121,16 +123,18 @@ impl From<NumericTree> for native::program::prepare::numeric_tree::Proof {
 }
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(in crate::native_artifact::program::image::decode::wire) struct Tails {
-    regions: Vec<TailRegion>,
+pub(in crate::native_artifact::program::image::decode::wire) struct Tails<Frame> {
+    regions: Vec<TailRegion<Frame>>,
     sites: Vec<Option<usize>>,
     initializers: Vec<Option<usize>>,
     exits: Vec<Option<usize>>,
     words: usize,
     logical_words: usize,
 }
-impl From<Tails> for native::program::prepare::tail::Layout {
-    fn from(w: Tails) -> Self {
+impl<Frame: Into<native::program::prepare::readonly_numeric::FrameWords>> From<Tails<Frame>>
+    for native::program::prepare::tail::Layout
+{
+    fn from(w: Tails<Frame>) -> Self {
         Self {
             regions: w.regions.into_iter().map(Into::into).collect(),
             sites: w.sites,

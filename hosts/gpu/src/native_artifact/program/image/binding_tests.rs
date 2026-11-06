@@ -223,6 +223,61 @@ fn native_metadata_exports_preserve_the_exact_descriptor_and_object_binding() {
 }
 
 #[test]
+fn borrowed_frame_metadata_genuine_object_rows_keep_runtime_lanes_and_exact_public_images() {
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(include_str!(
+        "../../../../tests/fixtures/native/numeric-parent-child.mec"
+    )) {
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let expected = object.descriptor().encode_build_owned_image().unwrap();
+        let bytes = Box::leak(object.native_metadata().to_vec().into_boxed_slice());
+        // SAFETY: exact immutable metadata copy, identity and binding from
+        // this genuine checked Object. No entry is invoked by this reader test.
+        let verified = unsafe {
+            verify(
+                bytes,
+                object.identity().bytes(),
+                object.native_metadata_binding().bytes(),
+            )
+        }
+        .unwrap();
+        let restored = crate::native_artifact::program::image::decode::decode_compiled_for_test(
+            &verified, &catalog,
+        )
+        .unwrap();
+        let frames = restored
+            .metadata()
+            .closed_tails
+            .regions
+            .iter()
+            .filter_map(|r| r.numeric.as_ref())
+            .flat_map(|p| p.frames.iter())
+            .collect::<Vec<_>>();
+        assert!(!frames.is_empty());
+        assert!(
+            frames
+                .iter()
+                .all(|f| f.compiler_data_is_borrowed_and_unmaterialized())
+        );
+        for frame in &frames {
+            std::hint::black_box((
+                frame.value,
+                frame.maximum_arity,
+                frame.scalar_nodes(),
+                &frame.arrays,
+                &frame.array_bindings,
+            ));
+        }
+        assert!(
+            frames
+                .iter()
+                .all(|f| f.compiler_data_is_borrowed_and_unmaterialized())
+        );
+        assert_eq!(restored.encode_build_owned_image().unwrap(), expected);
+    }
+}
+
+#[test]
 fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_mutation() {
     use serde::Deserialize;
     let catalog = mech_stdlib::source_catalog();

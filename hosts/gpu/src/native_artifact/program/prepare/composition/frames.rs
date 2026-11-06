@@ -2,7 +2,8 @@
 //! descriptions; the runtime must still establish current invocation availability.
 use super::Segment;
 use crate::native_artifact::program::prepare::readonly_numeric::{
-    FrameWords, ScalarBinding, scalar_bindings, scalar_children, scalar_node_count, scalar_paths,
+    FrameWords, OwnedFrameWords, ScalarBinding, scalar_bindings, scalar_children,
+    scalar_node_count, scalar_paths,
 };
 use mech_engine::native_artifact::{
     NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame, NativeBufferFrames,
@@ -283,7 +284,7 @@ impl Layout {
                 }
             }
             physical_bindings.extend(scalar_bindings(frames, value, &paths)?);
-            recipes.push(FrameWords {
+            recipes.push(FrameWords::from(OwnedFrameWords {
                 value,
                 scalar_node_count: scalar_node_count(&paths),
                 scalar_paths: paths,
@@ -298,7 +299,7 @@ impl Layout {
                     .collect(),
                 maximum_arity: fields.len(),
                 arrays,
-            });
+            }));
         }
         let mut aliases = Vec::new();
         for &value in projected.values() {

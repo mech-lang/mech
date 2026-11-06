@@ -7,6 +7,7 @@ use serde::{Deserialize, Deserializer};
 #[cfg(test)]
 use serde_json::Value as Json;
 
+use native::program::prepare::readonly_numeric::{FrameWords, numeric_frame::CompiledFrame};
 use std::sync::Arc;
 
 // This trait is inaccessible outside the native implementation. In particular,
@@ -142,7 +143,7 @@ impl From<Visit> for native::iteration_abi::NativeIterationVisit {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Descriptor<'a> {
+struct Descriptor<'a, Frame> {
     #[serde(borrow)]
     plan: BuildOwnedImageRecord<'a>,
     #[serde(borrow)]
@@ -174,7 +175,7 @@ struct Descriptor<'a> {
     map_admission: native::program::prepare::map_admission::Layout,
     parallel: native::program::prepare::parallel::Layout,
     borrowed_strings: layouts::Borrowed,
-    closed_tails: layouts::Tails,
+    closed_tails: layouts::Tails<Frame>,
     selected_joins: layouts::SelectedJoins,
     line_matrices: layouts::LineMatrices,
     prefix: Option<layouts::Prefix>,
@@ -186,11 +187,11 @@ struct Descriptor<'a> {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Image<'a> {
+struct Image<'a, Frame> {
     format: String,
     version: u32,
     #[serde(borrow)]
-    descriptor: Descriptor<'a>,
+    descriptor: Descriptor<'a, Frame>,
 }
 
 fn present_numeric_maps<'de, D: Deserializer<'de>>(
@@ -209,22 +210,29 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     bytes: &[u8],
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
-    decode_inner::<false>(bytes, catalog)
+    decode_inner::<false, FrameWords>(bytes, catalog)
 }
 
 pub(in crate::native_artifact::program::image::decode) fn decode_verified(
     verified: &super::super::binding::VerifiedObjectImage<'_>,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
-    decode_inner::<true>(verified.bytes(), catalog)
+    decode_inner::<true, FrameWords>(verified.bytes(), catalog)
 }
 
-fn decode_inner<const OBJECT_BOUND: bool>(
-    bytes: &[u8],
+pub(in crate::native_artifact::program::image::decode) fn decode_compiled_verified(
+    verified: &super::super::binding::VerifiedObjectImage<'static>,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramDescriptor, String> {
+    decode_inner::<true, CompiledFrame>(verified.bytes(), catalog)
+}
+
+fn decode_inner<'a, const OBJECT_BOUND: bool, Frame: Deserialize<'a> + Into<FrameWords>>(
+    bytes: &'a [u8],
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
     let mut reader = BuildOwnedImageReader::from_image(bytes).map_err(|e| e.to_string())?;
-    let image: Image<'_> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
+    let image: Image<'a, Frame> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
         || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7))
