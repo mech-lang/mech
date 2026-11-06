@@ -25684,6 +25684,36 @@
         "inherited_limitations": [
           "Cold image-validation startup remains outside evaluate_into; no current startup repair or matched startup-speed claim."
         ]
+      },
+      "public_replay": {
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "paths_with_multiple_preserved_versions": 18,
+        "round": 162,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 1700,
+        "verified_archives": 38,
+        "verified_file_occurrences": 5002,
+        "command": [
+          "python3",
+          "benchmarks/mech-deflate/experiment.py",
+          "replay-round",
+          "--index",
+          "benchmarks/mech-deflate/experiments.json",
+          "--round",
+          "162",
+          "--output",
+          "FRESH_OUTPUT_DIRECTORY"
+        ],
+        "outputs_sha256": {
+          "results.json": "17100b1284a19e721b95d648ff1d5285035a05dea50420a982a821e67bfc73c9",
+          "REPORT.md": "abf0e0355d9c50e168576070352378584836165a4a7832576a97aef6f7e7e5b8"
+        },
+        "server_verified_archive_and_sidecar_files": 76,
+        "archive_bytes": 34051567,
+        "initial_invocation_error": "First replay invocation omitted required --index and exited2 before replay; corrected command above succeeds."
       }
     }
   },
