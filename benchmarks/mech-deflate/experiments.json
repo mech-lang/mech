@@ -25142,6 +25142,17 @@
           "files": 78,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-mapping-2bfcab237e9f.tar.gz"
+        },
+        {
+          "event": "qualified",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-qualified-b01690aa6f62.tar.gz",
+          "sha256": "b01690aa6f62a172462de5530acc34f4a8154b31add6fdd95b0b0a284533c940",
+          "manifest_sha256": "ce2044495cfb29581e48f3e59fb45d54fcab495240c84d6205fe8ce3cb1d8798",
+          "bytes": 257274,
+          "files": 193,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-qualified-b01690aa6f62.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
