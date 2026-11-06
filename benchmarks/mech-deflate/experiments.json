@@ -24878,6 +24878,17 @@
           "files": 69,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-320-overlap-primary-21a6b9f3cb1d.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-case-random-256-primary-35fe2ab6e1d5.tar.gz",
+          "sha256": "35fe2ab6e1d559dd5db55c1e0f486b0c48333a40142429e9af0a4a623935e786",
+          "manifest_sha256": "58b33971f89ca38d622fb22f630e83135344b809446d85063c4d60b8c1f12aea",
+          "bytes": 131741,
+          "files": 69,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-random-256-primary-35fe2ab6e1d5.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
