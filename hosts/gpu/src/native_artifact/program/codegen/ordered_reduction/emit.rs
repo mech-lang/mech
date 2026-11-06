@@ -3,7 +3,7 @@ use super::*;
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::compiler::primitive;
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{Block, InstBuilder, Value, types};
+use cranelift_codegen::ir::{Block, ConstantData, Endianness, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
 
 impl Reduction {
@@ -89,19 +89,18 @@ impl Reduction {
         b.ins()
             .jump(header, &[next.into(), costs.into(), indices.into()]);
         b.switch_to_block(finish);
-        let mut minimum = best;
-        let mut winner = missing;
-        for lane in 0..4 {
-            let cost = b.ins().extractlane(params[1], lane);
-            let index = b.ins().extractlane(params[2], lane);
-            let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, minimum);
-            let equal = b.ins().icmp(IntCC::Equal, cost, minimum);
-            let earlier = b.ins().icmp(IntCC::UnsignedLessThan, index, winner);
-            let tie = b.ins().band(equal, earlier);
-            let choose = b.ins().bor(less, tie);
-            minimum = b.ins().select(choose, cost, minimum);
-            winner = b.ins().select(choose, index, winner);
-        }
+        // The incoming best already occupies every cost lane. A lane records
+        // an index only after a strict improvement, so ties with that incoming
+        // best retain the missing sentinel. Among improved lanes, reduce the
+        // matching indices separately: the earliest index need not be in the
+        // lowest lane after multiple vector groups.
+        let minima = minimum_splat(b, params[1]);
+        let equal = b.ins().icmp(IntCC::Equal, params[1], minima);
+        let missing_indices = b.ins().splat(types::I32X4, missing);
+        let indices = b.ins().bitselect(equal, params[2], missing_indices);
+        let winners = minimum_splat(b, indices);
+        let minimum = b.ins().extractlane(minima, 0);
+        let winner = b.ins().extractlane(winners, 0);
         b.ins()
             .jump(scalar, &[end.into(), minimum.into(), winner.into()]);
         b.switch_to_block(scalar);
@@ -152,6 +151,32 @@ impl Reduction {
         // the original terminal traversal constructs the returned value.
         b.ins().jump(ordinary, &[]);
     }
+}
+
+/// Broadcast the unsigned minimum using the existing portable vector vocabulary.
+/// Two pairwise shuffles keep both costs and stable indices in vector registers.
+fn minimum_splat(b: &mut FunctionBuilder<'_>, mut values: Value) -> Value {
+    for mask in [
+        // Both inputs are the same vector. Name the wrapped half through the
+        // second input so the backend recognizes one contiguous extraction,
+        // rather than a general table lookup with a loaded shuffle mask.
+        [
+            8u8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+        ],
+        [4u8, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11],
+    ] {
+        let flags = MemFlags::new().with_endianness(Endianness::Little);
+        let bytes = b.ins().bitcast(types::I8X16, flags, values);
+        let mask = b
+            .func
+            .dfg
+            .immediates
+            .push(ConstantData::from(mask.to_vec()));
+        let shuffled = b.ins().shuffle(bytes, bytes, mask);
+        let shuffled = b.ins().bitcast(types::I32X4, flags, shuffled);
+        values = b.ins().umin(values, shuffled);
+    }
+    values
 }
 
 fn emit_item(
