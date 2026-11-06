@@ -2,6 +2,201 @@
 use super::*;
 use crate::native_artifact::codegen::options::OptimizationPass;
 
+const ZERO_APPEND_FRONTIER_SOURCE: &str = r#"+> sequence
+frontier-leaf(data<[u64]>, at<u64>, end<u64>, sum<u64>) => (out<u64>) :=
+  more := at < end
+  next := (more? | true => sum + data[at + 1u64] | false => sum)
+  out := (more? | true => frontier-leaf(data,at + 1u64,end,next) | false => sum).
+frontier-middle(data<[u64]>, pass<u64>, passes<u64>, width<u64>, sum<u64>) => (out<u64>) :=
+  more := pass < passes
+  next := (more? | true => frontier-leaf(data,0u64,width,sum) | false => sum)
+  out := (more? | true => frontier-middle(data,pass + 1u64,passes,width,next) | false => sum).
+frontier-step(data<[u64]>, passes<u64>, width<u64>, at<u64>, output<[u64]>) => (out<[u64]>) :=
+  first := frontier-middle(data,0u64,passes,width,at)
+  second := frontier-middle(data,0u64,passes,width,first)
+  out := sequence/append(output,second).
+frontier-outer(data<[u64]>, at<u64>, end<u64>, passes<u64>, width<u64>, output<[u64]>) => (out<[u64]>) :=
+  more := at < end
+  next := (more? | true => frontier-step(data,passes,width,at,output) | false => output)
+  out := (more? | true => frontier-outer(data,at + 1u64,end,passes,width,next) | false => output).
+data := input<[u64]>
+result := frontier-outer(data,0u64,rounds<u64>,passes<u64>,width<u64>,sequence/with-capacity(0u64,capacity<u64>))
+(result,data)
+"#;
+
+fn frontier_arguments(
+    artifact: &ProgramArtifact,
+    memory: &ManagedMemoryBudget,
+    values: &[u64],
+    rounds: u64,
+    passes: u64,
+    width: u64,
+    capacity: u64,
+) -> Vec<Value> {
+    inputs(
+        artifact,
+        &[
+            (
+                "input",
+                Data::Matrix(values.iter().copied().map(Data::U64).collect()),
+            ),
+            ("rounds", Data::U64(rounds)),
+            ("passes", Data::U64(passes)),
+            ("width", Data::U64(width)),
+            ("capacity", Data::U64(capacity)),
+        ],
+        memory,
+    )
+}
+
+#[test]
+fn zero_append_frontiers_remove_only_empty_guards_and_preserve_growth_errors_and_retry() {
+    for artifact in artifacts(ZERO_APPEND_FRONTIER_SOURCE) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let catalog = mech_stdlib::source_catalog();
+        let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+        let old_object = crate::native_artifact::program::compiler::emit_program_object_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::ZeroAppendFrontiers,
+        )
+        .unwrap();
+        let guards = |metadata: &serde_json::Value| {
+            [
+                "compiled_numeric_write_loops",
+                "compiled_readonly_numeric_loops",
+            ]
+            .into_iter()
+            .flat_map(|key| metadata[key].as_array().unwrap().iter())
+            .flat_map(|region| region["capacity_guards"].as_array().unwrap().iter())
+            .map(|guard| (guard[0].as_u64().unwrap(), guard[1].as_u64().unwrap()))
+            .collect::<Vec<_>>()
+        };
+        let before = guards(&old_object.metadata());
+        let after = guards(&object.metadata());
+        assert!(
+            before.iter().any(|(_, count)| *count == 0),
+            "exercise a real zero-append child frontier"
+        );
+        assert!(after.iter().all(|(_, count)| *count > 0));
+        assert_eq!(
+            after,
+            before
+                .into_iter()
+                .filter(|(_, count)| *count > 0)
+                .collect::<Vec<_>>()
+        );
+        let native =
+            JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+                .unwrap();
+        let old = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::ZeroAppendFrontiers,
+        )
+        .unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::ScalarLoops,
+        )
+        .unwrap();
+        for restored in [false, true] {
+            for capacity in [0, 1, 2, 3, 8] {
+                let memory = mode.memory_budget();
+                let mut outputs = [
+                    vec![None; artifact.outputs().len()],
+                    vec![None; artifact.outputs().len()],
+                    vec![None; artifact.outputs().len()],
+                ];
+                for (values, rounds, passes, width, accepts) in [
+                    (vec![2, 3, 5], 3, 2, 3, true),
+                    (vec![2, 3, 5], 0, 2, 4, true),
+                    (vec![], 3, 0, 9, true),
+                    (vec![], 3, 2, 0, true),
+                    (vec![2, 3, 5], 3, 2, 4, false),
+                    (vec![u64::MAX, 1], 3, 2, 2, false),
+                    (vec![2, 3, 5], 3, 2, 3, true),
+                ] {
+                    let args = frontier_arguments(
+                        &artifact, &memory, &values, rounds, passes, width, capacity,
+                    );
+                    let aliases = args.clone();
+                    let original = contents(&args);
+                    let mut errors = Vec::new();
+                    for (jit, output) in [&native, &old, &ordinary].into_iter().zip(&mut outputs) {
+                        let prior = output.clone();
+                        let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                        let (result, counts) = if restored {
+                            observe::run_restored(jit, &args, output, mode.execution(), &memory)
+                        } else {
+                            observe::run(jit, &args, output, mode.execution(), &memory)
+                        };
+                        assert_eq!(result.is_ok(), accepts, "{result:?}");
+                        if accepts {
+                            let sum = if rounds == 0 || passes == 0 {
+                                0
+                            } else {
+                                values[..width as usize].iter().sum::<u64>() * passes * 2
+                            };
+                            let expected = Data::Tuple(
+                                vec![
+                                    Data::Matrix(
+                                        (0..rounds).map(|round| Data::U64(round + sum)).collect(),
+                                    ),
+                                    Data::Matrix(values.iter().copied().map(Data::U64).collect()),
+                                ]
+                                .into(),
+                            );
+                            assert_eq!(last(output), expected);
+                            if core::ptr::eq(jit, &native)
+                                && rounds > 0
+                                && passes > 0
+                                && width > 0
+                                && capacity >= rounds
+                            {
+                                assert!(
+                                    !counts.closed_tail_exits.is_empty(),
+                                    "exercise native execution: {counts:?}"
+                                );
+                            }
+                        } else {
+                            errors.push(format!("{:?}", result.unwrap_err()));
+                            assert!(output.iter().zip(prior).all(|(now, old)| {
+                                now.as_ref()
+                                    .unwrap()
+                                    .shares_frozen_storage(old.as_ref().unwrap())
+                            }));
+                            assert_eq!(
+                                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                                retained
+                            );
+                        }
+                    }
+                    assert!(
+                        errors.windows(2).all(|pair| pair[0] == pair[1]),
+                        "{errors:?}"
+                    );
+                    assert_eq!(contents(&args), original);
+                    assert_eq!(contents(&aliases), original);
+                }
+                drop(outputs);
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn zero_append_frontiers_keep_finite_denials_atomic_and_recoverable() {
+    resources::finite_boundaries(ZERO_APPEND_FRONTIER_SOURCE, |artifact, memory| {
+        frontier_arguments(artifact, memory, &[2, 3, 5], 3, 2, 3, 2)
+    });
+}
+
 pub(super) const SOURCE: &str = r#"+> sequence
 <tree-rank> := <((u8,u64),u64)>
 <tree-state> := <([u8],tree-rank)>

@@ -447,6 +447,15 @@ pub(in crate::native_artifact) fn emit_entry(
                         })
                         .count()
                 };
+                // Entry lends a real Vec prefix whose length is within its
+                // capacity. Every append-capable frontier still checks its
+                // complete advance before executing source operations, and a
+                // cold first change reloads a newly validated reserved view.
+                // A zero frontier cannot advance this prefix before the next
+                // header, so it does not need to re-prove the invariant.
+                if count == 0 && controls.enabled(OptimizationPass::ZeroAppendFrontiers) {
+                    continue;
+                }
                 let length = words.read(b, shadow + proof.view(array) + 1);
                 let capacity = words.read(b, shadow + proof.capacity(array).unwrap());
                 let valid = b
