@@ -43,6 +43,7 @@ mod resumed_child;
 mod scalar_child;
 mod schema_key;
 mod virtual_retirement;
+mod word_collection_vectors;
 mod word_collections;
 
 #[test]

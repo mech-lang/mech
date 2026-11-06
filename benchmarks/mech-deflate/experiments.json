@@ -29996,6 +29996,481 @@
         "verified_archives": 58,
         "verified_file_occurrences": 5132
       }
+    },
+    "171": {
+      "base": "9035d3ab3c34e802a652f2154c8d19ba0fae5597",
+      "events": [
+        {
+          "event": "baseline-profiles",
+          "source_revision": "3a3ae5dca4aa4eda77b928a9073110949295770d",
+          "asset": "r171-baseline-profiles-41cfca71b44c.tar.gz",
+          "sha256": "41cfca71b44c2c42ab550b0f74d3c613204ee0d10c49b2719f4c22132d41133b",
+          "manifest_sha256": "d8845146dc7e1964c64ab9ebc54aaf0de8b592fa75cd8afccee880314587c8f7",
+          "bytes": 2019744,
+          "files": 172,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-baseline-profiles-41cfca71b44c.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-random-32769-primary-7c8438f9702f.tar.gz",
+          "sha256": "7c8438f9702f10473fcb174f277f8794901a85634b8779168b11952cc0e3f23b",
+          "manifest_sha256": "bf879d932ad12417267bca7f42ea810656d4905172b5dd94b2c8cdce8ef29122",
+          "bytes": 119133,
+          "files": 74,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-random-32769-primary-7c8438f9702f.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-33027-periodic-window-primary-8421f676bfcf.tar.gz",
+          "sha256": "8421f676bfcfd9dcbebc968f4e23a81d1a0ba01a97fb42a6f119696347c0679f",
+          "manifest_sha256": "25254548847f3c728f2402350ebbc85f8094342bfe2eb71368286528763c99be",
+          "bytes": 120981,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-33027-periodic-window-primary-8421f676bfcf.tar.gz"
+        },
+        {
+          "event": "case-repeated-32769-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-repeated-32769-primary-c7513f4ad675.tar.gz",
+          "sha256": "c7513f4ad6755bef2051631942a61d497112622fb89467b4e29ccb2962ebb6cf",
+          "manifest_sha256": "064607729259ca44198a1e3b125f9915b9b12eed1f1250d4bf100cff5cdf02cf",
+          "bytes": 122378,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-repeated-32769-primary-c7513f4ad675.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-32769-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-reymont-prefix-32769-primary-077d1f7bf976.tar.gz",
+          "sha256": "077d1f7bf976f2dcbd64c30c63f71f4c6c9e61e1e945e3fed1b07974ac8d3442",
+          "manifest_sha256": "2b032d5353d4c0ae4ed35967b1a6d5b4fe310a88dd6cc8b3b56472e662bc1050",
+          "bytes": 123840,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-reymont-prefix-32769-primary-077d1f7bf976.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-eight-literals-primary-ff5f4f558c86.tar.gz",
+          "sha256": "ff5f4f558c86b6c507626a26dc733c40caa98657e45210f1f1daea1fee612b41",
+          "manifest_sha256": "598a5f1cf638cc1f206768ebcc2143c229faf1f55043dd25c8c546481b239f26",
+          "bytes": 130102,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-eight-literals-primary-ff5f4f558c86.tar.gz"
+        },
+        {
+          "event": "case-empty-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-empty-primary-8ca16694a834.tar.gz",
+          "sha256": "8ca16694a834a855727d9e585100a2ef2a9a52471a8177ae372806ea36a517ed",
+          "manifest_sha256": "c42b17ecccebf49302256d5265b2fdbf9499c9e44e3aea0e22aef0055039692b",
+          "bytes": 132199,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-empty-primary-8ca16694a834.tar.gz"
+        },
+        {
+          "event": "case-one-stored-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-one-stored-primary-e226aa6749cb.tar.gz",
+          "sha256": "e226aa6749cb3e69d49e551d22a0c3ecee1f42db6c75a313baca44861358cb62",
+          "manifest_sha256": "f0c64b420960c512d885dfc533bd5b7f321217ea5ad6290cff5ddd17a5cdbb9c",
+          "bytes": 135545,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-one-stored-primary-e226aa6749cb.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-seven-stored-prefix-primary-0bff3aea75b8.tar.gz",
+          "sha256": "0bff3aea75b8c3472e35b81da38f67162fb8464543cd1f9fa1a7e6de0a930edf",
+          "manifest_sha256": "a61e3fd57bf33c919ba4dc779e92c29540a151c2e0cf49573416475c723f0808",
+          "bytes": 138962,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-seven-stored-prefix-primary-0bff3aea75b8.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-eight-overlap-primary-abbd6e07abca.tar.gz",
+          "sha256": "abbd6e07abca9828aec232871bba9c3555aa3540486e7269c24134e202fb9f58",
+          "manifest_sha256": "13ff1bcf311bd28e83f207d8a23e19bb34e4f2c152f634ffe3902a513ff87c4f",
+          "bytes": 142970,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-eight-overlap-primary-abbd6e07abca.tar.gz"
+        },
+        {
+          "event": "case-320-overlap-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-320-overlap-primary-3ff27239a9c5.tar.gz",
+          "sha256": "3ff27239a9c5c517f952b8bcfd8f4b7104e5125080ef8cc5a62d1a4cdcb51e8f",
+          "manifest_sha256": "8b7b29489b607e76f98ee5507f5befe536f74eef0d337486370243e3f6207123",
+          "bytes": 147023,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-320-overlap-primary-3ff27239a9c5.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-eight-literals-prefix-primary-e3ed3b2a61e8.tar.gz",
+          "sha256": "e3ed3b2a61e89a0419c05c88912d6f08a9888b7c633e814e18b4e6d7c7a309c0",
+          "manifest_sha256": "2296db19eaa2f45204b5ba244d4454a3a7aa51291052226da8a0b948bd6caa59",
+          "bytes": 151010,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-eight-literals-prefix-primary-e3ed3b2a61e8.tar.gz"
+        },
+        {
+          "event": "case-128-biased-dynamic-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-128-biased-dynamic-primary-f77949ccf513.tar.gz",
+          "sha256": "f77949ccf513163539b5ae1bf94a88bca62aeb36b47f469915e1ad65cdad071d",
+          "manifest_sha256": "872a9a4b560a2abf52765c52bea052328e37186feb1e20e1ae715f0d5fa1b6b7",
+          "bytes": 154441,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-128-biased-dynamic-primary-f77949ccf513.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-32-high-entropy-stored-primary-124dde8bb258.tar.gz",
+          "sha256": "124dde8bb258d0821a308e39306934bb1b8e6cd5de3afdda255b1e0c319738d1",
+          "manifest_sha256": "4aa6ffe8a38999c4e1add30f3aaf78ddfdb116caff63b5abb6c893b78347d4fc",
+          "bytes": 157977,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-32-high-entropy-stored-primary-124dde8bb258.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-16384-distribution-change-primary-07d351e28bd0.tar.gz",
+          "sha256": "07d351e28bd0081fd9e7a824e62eab3f48156afb5539f2db73ac21bf3fa2c5cc",
+          "manifest_sha256": "5c7a91350c42130575a8cb949ba62ecd037678c102e7081ebfb9387b0602e002",
+          "bytes": 156341,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-16384-distribution-change-primary-07d351e28bd0.tar.gz"
+        },
+        {
+          "event": "case-random-64-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-random-64-primary-cac4c166b74b.tar.gz",
+          "sha256": "cac4c166b74b7a5970f8b539943d25d381dbac75eb6c8ee63a699fb05058858d",
+          "manifest_sha256": "1c3bcc0cbb584de5fc728c74488a9acc232fc3bab5440a6c104ac3bc1a8b6e93",
+          "bytes": 162322,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-random-64-primary-cac4c166b74b.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-random-256-primary-5c8b1b71227d.tar.gz",
+          "sha256": "5c8b1b71227d9217b34326635a0e99eee546e5e05a418cdfd342d78508ce94c8",
+          "manifest_sha256": "915a9dfde544099559fca54caf3a1648891eeec95a87830f9e197029cb31298c",
+          "bytes": 165900,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-random-256-primary-5c8b1b71227d.tar.gz"
+        },
+        {
+          "event": "case-random-1024-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-random-1024-primary-648d6610d77a.tar.gz",
+          "sha256": "648d6610d77ae088d69ced9727400cf9a66664d3ae06b6a0ce354d52f8d84104",
+          "manifest_sha256": "4d30c37e8ca3d8bd02d6b7f55b260948805c688b596dd8472fba2d30ec9851bd",
+          "bytes": 169152,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-random-1024-primary-648d6610d77a.tar.gz"
+        },
+        {
+          "event": "case-repeated-1024-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-repeated-1024-primary-c18be3ae15bd.tar.gz",
+          "sha256": "c18be3ae15bd288d90c4b21bc84ae05aace72ad29cfc436de050bb1c238bab41",
+          "manifest_sha256": "2dc6f2c36fbf189f443ff38d36d044bd13b00cd0251545d1b9423619b97c22f9",
+          "bytes": 172526,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-repeated-1024-primary-c18be3ae15bd.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-1024-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-reymont-prefix-1024-primary-50c6e8997fea.tar.gz",
+          "sha256": "50c6e8997fea214910bdaba6332b8dea448878ddeb8a62c61b87c01d7aee4b8a",
+          "manifest_sha256": "a29a18128dcc873b9f22a98754d5371d7337d540b1285393707ab499c4c0a31e",
+          "bytes": 176302,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-reymont-prefix-1024-primary-50c6e8997fea.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-16384-primary",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-case-reymont-prefix-16384-primary-7fbdcaf46178.tar.gz",
+          "sha256": "7fbdcaf461789d42d9be00e5616658706cb28a712c14dd8a3df5f488d03f7875",
+          "manifest_sha256": "dd72a5c83cb8fc52578c226b2c7e85ffa4f67897baf8b75357eb8bc774200e03",
+          "bytes": 174609,
+          "files": 75,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-case-reymont-prefix-16384-primary-7fbdcaf46178.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-matrix-counters-e412869d8ebd.tar.gz",
+          "sha256": "e412869d8ebd5ff2d7817f0d2ad0528844e4ad47f4999902811024deec874a0e",
+          "manifest_sha256": "1de9d5efeee4c65cb8d797413e09d92ab41ece527cf3ec0604cb1779426c40ce",
+          "bytes": 215338,
+          "files": 80,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-matrix-counters-e412869d8ebd.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-bool-0-original",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-bool-0-original-23a333d676f2.tar.gz",
+          "sha256": "23a333d676f245fae366e5a6f52e03bccd5294d78782c3ca8e00b974c29ed845",
+          "manifest_sha256": "ea0b28b12ec90a37fc033649835c92535c6e940b618f229466d0d6153e74ccbb",
+          "bytes": 177992,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-bool-0-original-23a333d676f2.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-bool-0-decoded",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-bool-0-decoded-1404f9a2c608.tar.gz",
+          "sha256": "1404f9a2c608b41e87d1b115548a46fb14bcc7eb446ee5685988c625d6ea8da2",
+          "manifest_sha256": "c49482363a08ac5e75a3ea0d04499117e9843e4988149f652997a1697d9dae8c",
+          "bytes": 178173,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-bool-0-decoded-1404f9a2c608.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-u64-0-original",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-u64-0-original-eeeb20a33e8f.tar.gz",
+          "sha256": "eeeb20a33e8f4bafdb7bb6179d7aa9996518e1fdd705042a534699dd10a96d33",
+          "manifest_sha256": "fdb06de85b1ff95a67bb943443b6db6f9c9a98dcf1047584995354341d8a7180",
+          "bytes": 178439,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-u64-0-original-eeeb20a33e8f.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-u64-0-decoded",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-u64-0-decoded-7b529c97dacb.tar.gz",
+          "sha256": "7b529c97dacb252ad032e43c9b5b374c4ef40ca252b306da264dee55f197b97c",
+          "manifest_sha256": "9de1a3d760621ce22bee11b0aa1d9fa15aaf44fa78133f8e700822f8e40dd56c",
+          "bytes": 178726,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-u64-0-decoded-7b529c97dacb.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-i64-0-original",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-i64-0-original-38744112a94b.tar.gz",
+          "sha256": "38744112a94b4205092bb2c61c58f30889c9cb036fc35fe3984b21681c23b163",
+          "manifest_sha256": "98ffac5ee7f0591eb59361a8e724c25bb1347dfeea7df250275c04a32c75b32c",
+          "bytes": 179258,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-i64-0-original-38744112a94b.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-i64-0-decoded",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-i64-0-decoded-2a8885581351.tar.gz",
+          "sha256": "2a8885581351c103c00134ca2f377eb748d7a6bb9e787a0fc9a2b08c3d940c7d",
+          "manifest_sha256": "7aa2bac93d8af626ebb876f8f6025b32861a5ad5942cdcfd988c542a8e52c2c3",
+          "bytes": 179337,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-i64-0-decoded-2a8885581351.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-f64-0-original",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-f64-0-original-1b4530c6f81c.tar.gz",
+          "sha256": "1b4530c6f81cdbc3ebab5d291502b44056e0cb81682bf3b1eaefe29fed20faa7",
+          "manifest_sha256": "50f183c58016d511a9fc2d78ff3c6280668d69227bd1ed06febd6f3aea9ac375",
+          "bytes": 179653,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-f64-0-original-1b4530c6f81c.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-f64-0-decoded",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-f64-0-decoded-cf7fe3a54f94.tar.gz",
+          "sha256": "cf7fe3a54f9473027001b50a820ca50b4c2286f7e1cc9f02698870700e03cd1f",
+          "manifest_sha256": "6d334c13df7a04929fd453be6a39e5281c1b6341b24ecd2644f0bd82d5786403",
+          "bytes": 179910,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-f64-0-decoded-cf7fe3a54f94.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-loop-0-original",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-loop-0-original-e5c6fc72e75f.tar.gz",
+          "sha256": "e5c6fc72e75f26a420af72a6319b31bd2725dc5887578ab4b21a8f448eced42a",
+          "manifest_sha256": "4fea35b453f46b2bb8242e360c5c4c45889c69e617e7006346c11a3645de93a5",
+          "bytes": 180497,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-loop-0-original-e5c6fc72e75f.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-loop-0-decoded",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-loop-0-decoded-efcc869d92b0.tar.gz",
+          "sha256": "efcc869d92b08f013f086be61a15e9b1fbdd71ea3adf9e00ef79e1ff7194d39b",
+          "manifest_sha256": "5ec493a22be2125c9418b42f8e821caa4862eca22a8b6636b116b0e9b5101420",
+          "bytes": 180961,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-loop-0-decoded-efcc869d92b0.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-loop-64-original",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-loop-64-original-f07389a5742f.tar.gz",
+          "sha256": "f07389a5742f12780cc76ccad1ee5253389fc27dabe6ce66cb2765f5a3982110",
+          "manifest_sha256": "b54a21b37fa1a84e7804c1d4cd58a5c32a4652bc1115d0728045c03aefdc8d61",
+          "bytes": 181339,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-loop-64-original-f07389a5742f.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-loop-64-decoded",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-scalar-case-scalar-loop-64-decoded-06e9610c41a5.tar.gz",
+          "sha256": "06e9610c41a5a28af5dcc6cc86f7b79faf1434fc16bf6be6b69f491dff03114c",
+          "manifest_sha256": "e0f76ec0cf7ab403a53ba37aeaeeff4714eea835f41ff73b02cd2f9499d41afc",
+          "bytes": 181519,
+          "files": 124,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-scalar-case-scalar-loop-64-decoded-06e9610c41a5.tar.gz"
+        },
+        {
+          "event": "host-census",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-host-census-4dd62dc49318.tar.gz",
+          "sha256": "4dd62dc493181b5a88eef39004166a544e3bc0c99472dfbe9d74efcd33369d69",
+          "manifest_sha256": "65397f793456028852a9e6e7bf3763b9cf3cdc25c84de027bcbec69723940cfe",
+          "bytes": 969586,
+          "files": 89,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-host-census-4dd62dc49318.tar.gz"
+        },
+        {
+          "event": "candidate-profile",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-candidate-profile-e4f33d3c4570.tar.gz",
+          "sha256": "e4f33d3c4570bbee0d105378152321738153f3ecd12ca1ebb9e09468ca6c813b",
+          "manifest_sha256": "29d7a552716f708fac31843cf83a866ddbf6d6f35f4a3678f3f68326c394c7dd",
+          "bytes": 3216284,
+          "files": 159,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-candidate-profile-e4f33d3c4570.tar.gz"
+        },
+        {
+          "event": "mapping",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-mapping-ef971734447a.tar.gz",
+          "sha256": "ef971734447a827b65bc88cf139531792529c20390444be674ef1da54f78a89d",
+          "manifest_sha256": "1a603ff4e01667798035419c9804162e4c24d942762a9c0cd5f00271ee245164",
+          "bytes": 4022486,
+          "files": 86,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-mapping-ef971734447a.tar.gz"
+        },
+        {
+          "event": "qualified",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-qualified-2d7e3c013f15.tar.gz",
+          "sha256": "2d7e3c013f15960e652f5179e65588e09100b5fa7d6965a0ba05af7df637b4d4",
+          "manifest_sha256": "38e95f1aa103e12d1c9b3aa22527b215225b1d0bbf1666cd28cb803ebfbc427f",
+          "bytes": 286320,
+          "files": 170,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-qualified-2d7e3c013f15.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+          "asset": "r171-closure-4140f12d8d21.tar.gz",
+          "sha256": "4140f12d8d21b8461d10c4880c5466240e9257325abb842f258184f1037b728a",
+          "manifest_sha256": "f2c99ee569d82bc17f1e34c1253a2c032c888dc7923f3e4bc7484a629471101c",
+          "bytes": 15024099,
+          "files": 1132,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-5/r171-closure-4140f12d8d21.tar.gz"
+        }
+      ],
+      "production": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+      "compiler_source": "9a0fb83a20ae9ce12f4251d209c03b754dbc82da",
+      "before_compiler_source": "3a3ae5dca4aa4eda77b928a9073110949295770d",
+      "versions": {
+        "ir": 192,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Retain generic clamped-subtraction vector maps: all20 unchanged1.05 gates pass, random32KB -11.337597%, repeated32KB -5.665892%, periodic33KB -4.886192%; geometric -1.774875%,15 faster/5 slower. Preserve all adverse elapsed/instruction/cycle observations. All20 heap metrics unchanged; +232B generated text, entry stack unchanged.",
+      "retained": true,
+      "release_tag": "evidence-native-compression-experiments-5",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-5",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "analysis": {
+        "script": "checkpoint.py",
+        "expected_outputs": {
+          "results.json": "5019eabe572a05c256224d3df2cd2854ab5ef9338c3cd5e4704f93c56d88daa4",
+          "REPORT.md": "fdb40d360244d79780b746c7d1149714ee33cfba5064a6fb5371a32a6197fd03"
+        }
+      },
+      "source_proof": {
+        "all_measured_compiler_file_hashes_match": true,
+        "canonical_plan_and_complete_numeric_recipes_exactly_equal": true,
+        "main_entry_machine_bytes_exactly_equal": true,
+        "whole_object_equal": false,
+        "frozen_r145_core_engine_math_dependencies": true,
+        "source_and_bytecode_unchanged": true
+      },
+      "independent_replay": {
+        "round": 171,
+        "verified_archives": 39,
+        "verified_file_occurrences": 4875,
+        "unique_paths": 1132,
+        "paths_with_multiple_preserved_versions": 26,
+        "byte_identical_outputs": [
+          "results.json",
+          "REPORT.md"
+        ],
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing."
+      }
     }
   },
   "repository": "mech-lang/mech",
