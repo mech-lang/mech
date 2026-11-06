@@ -25617,6 +25617,17 @@
           "files": 167,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-qualified-6bdb6c810847.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-closure-0db6a99914c5.tar.gz",
+          "sha256": "0db6a99914c50de8a207cb300281aaaf43d8b078fb663a2c397d710496ad0c62",
+          "manifest_sha256": "1fbdc90296b8f6339be0c2940ad06088e1bdc73be98ce20a8428b511a9b45b69",
+          "bytes": 24167631,
+          "files": 1700,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-closure-0db6a99914c5.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
