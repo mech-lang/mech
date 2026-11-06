@@ -7,6 +7,7 @@ pub(super) fn states<'a>(
     slots: &BTreeSet<usize>,
     tag: Option<usize>,
     windows: &[Window],
+    captures: &[CapturedWindow],
     completion: Option<&completion::Candidate>,
     step: &impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<(Terms, Vec<State>)> {
@@ -18,6 +19,7 @@ pub(super) fn states<'a>(
     terms.constant(1)?;
     let mut initial = State::default();
     initial.windows.extend_from_slice(windows);
+    initial.captures.extend_from_slice(captures);
     for &slot in slots {
         initial
             .words
@@ -32,6 +34,11 @@ pub(super) fn states<'a>(
                 .words
                 .insert(value.get() as usize, terms.constant(constant)?);
         }
+    }
+    for window in captures {
+        let k = initial.read(window.induction)?;
+        let limit = initial.read(window.limit)?;
+        initial.assume(&terms, Relation::Le, k, limit)?;
     }
     if let Some(candidate) = completion {
         terms.recording = Some(expressions::Recording::new(candidate.clone()));

@@ -16,7 +16,9 @@ use crate::native_artifact::{NativeCompileError, abi::STATUS_ABI};
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
-use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMatchAction as Scalar};
+use mech_engine::native_artifact::{
+    NativeIterationAction as Action, NativeMatchAction as Scalar, NativeScalarOp as Op,
+};
 use std::collections::{BTreeMap, BTreeSet};
 #[path = "numeric_boundary.rs"]
 mod boundary;
@@ -33,10 +35,13 @@ pub(in crate::native_artifact) struct Report {
     pub typed_loads: Vec<(usize, u8)>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub source_guarded_read_packs: Vec<usize>,
+    pub fully_lowered_read_packs: Vec<usize>,
     pub proven_projection_guards: Vec<(usize, u32, usize, u32)>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
     pub proven_scalar_read_guards: Vec<(usize, usize, u32)>,
+    pub proven_scalar_arithmetic: Vec<usize>,
     pub guarded_loop_windows: Vec<super::numeric_loop_windows::Report>,
+    pub version_entry_gates: Vec<(usize, usize, Option<usize>)>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
@@ -52,6 +57,17 @@ pub(in crate::native_artifact) struct Report {
     pub successful_backedge_helpers: usize,
     pub maximum_source_instructions: usize,
     pub fixed_template_instructions: usize,
+}
+
+impl Report {
+    fn source_instructions(&mut self, instructions: usize) -> Result<(), NativeCompileError> {
+        self.maximum_source_instructions = self.maximum_source_instructions.max(instructions);
+        // Cold synchronization is covered by the fixed boundary envelope.
+        if instructions > OVERHEAD as usize + self.register_words * 2 {
+            return Err(backend("numeric leaf exceeds finite source envelope"));
+        }
+        Ok(())
+    }
 }
 
 fn slots(
@@ -177,7 +193,7 @@ pub(in crate::native_artifact) fn emit_entry(
     let boolean_successors =
         super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     let traversal = super::numeric_traversal::derive(code, proof, shadow);
-    let versions = super::numeric_loop_windows::derive(code, proof, shadow, b);
+    let versions = super::numeric_loop_windows::derive(code, proof, shadow, b, &read_packs);
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
@@ -186,13 +202,16 @@ pub(in crate::native_artifact) fn emit_entry(
         typed_loads: Vec::new(),
         read_pack_sites: Vec::new(),
         source_guarded_read_packs: Vec::new(),
+        fully_lowered_read_packs: Vec::new(),
         proven_boolean_successors: boolean_successors
             .iter()
             .map(|(&site, &next)| (site, next))
             .collect(),
         proven_projection_guards: Vec::new(),
         proven_scalar_read_guards: Vec::new(),
+        proven_scalar_arithmetic: Vec::new(),
         guarded_loop_windows: versions.iter().map(|v| v.report(proof)).collect(),
+        version_entry_gates: Vec::new(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
         cold_exits: proof
@@ -222,6 +241,21 @@ pub(in crate::native_artifact) fn emit_entry(
             .flat_map(|version| version.sites.iter().map(move |&site| (Some(version), site))),
     );
     for (version, site) in emitted_sites {
+        let complete_pack = |pack: &super::numeric_read_packs::Pack| {
+            pack.source_window
+                && version.is_some_and(|v| {
+                    v.facts.flat_arrays.contains(&pack.array) && pack.confined_to(&v.blocks)
+                })
+        };
+        // A completed packed read replaces its entire confined expression.
+        // Do not manufacture unreachable byte definitions and their SSA joins
+        // in the selected loop. Original checked code is emitted separately.
+        if read_packs
+            .iter()
+            .any(|pack| pack.first != site && pack.contains(site) && complete_pack(pack))
+        {
+            continue;
+        }
         let target = |site| {
             if let Some(block) = version.and_then(|v| v.blocks.get(&site)) {
                 *block
@@ -405,13 +439,26 @@ pub(in crate::native_artifact) fn emit_entry(
             words.write(b, shadow + debit.counter, count);
         }
         if let Some(pack) = read_packs.iter().find(|pack| pack.first == site) {
-            super::numeric_read_packs::emit(b, &words, shadow, proof, pack, target(pack.next));
+            let complete = super::numeric_read_packs::emit(
+                b,
+                &words,
+                shadow,
+                proof,
+                pack,
+                complete_pack(pack),
+                target(pack.next),
+            );
             if pack.source_window {
                 report.source_guarded_read_packs.push(pack.first);
             }
             report
                 .read_pack_sites
                 .push((pack.first, pack.last, pack.width));
+            if complete {
+                report.fully_lowered_read_packs.push(pack.first);
+                report.source_instructions(b.func.dfg.num_insts() - before)?;
+                continue;
+            }
         }
         match proof.action(site) {
             Some(Operation::Fallback) => unreachable!("cold edge emitted above"),
@@ -692,6 +739,20 @@ pub(in crate::native_artifact) fn emit_entry(
                         .collect::<Vec<_>>();
                     let value = if let Some(&known) = traversal.predicates.get(&site) {
                         b.ins().iconst(types::I64, i64::from(known))
+                    } else if version.is_some_and(|v| !v.captures.is_empty())
+                        && traversal.arithmetic(site, *op, operands)
+                    {
+                        report.proven_scalar_arithmetic.push(site);
+                        primitive(
+                            b,
+                            match op {
+                                Op::U64Add => Op::U64WrappingAdd,
+                                Op::U64Sub => Op::U64WrappingSub,
+                                _ => return Err(backend("proved numeric arithmetic differs")),
+                            },
+                            &args,
+                            fail,
+                        )
                     } else {
                         primitive(b, *op, &args, fail)
                     };
@@ -701,9 +762,13 @@ pub(in crate::native_artifact) fn emit_entry(
                 _ => return Err(backend("numeric proof contains unsupported action")),
             },
         }
-        if version.is_none()
-            && let Some(window) = versions.iter().find(|v| v.initialize == site)
-        {
+        if let Some(window) = versions.iter().find(|v| v.initialize == site) {
+            // Initialize just copied this child's current source arguments.
+            // Re-admit it even when its caller is another selected version;
+            // caller facts never become permissions for the child.
+            report
+                .version_entry_gates
+                .push((site, window.header, version.map(|v| v.header)));
             window.gate(
                 b,
                 &words,
@@ -734,12 +799,7 @@ pub(in crate::native_artifact) fn emit_entry(
         let status = b.block_params(fail)[0];
         set_origin(b, frame, site as u64);
         b.ins().jump(failed, &[status.into()]);
-        let instructions = b.func.dfg.num_insts() - before;
-        report.maximum_source_instructions = report.maximum_source_instructions.max(instructions);
-        // Cold synchronization is covered by the fixed boundary envelope.
-        if instructions > OVERHEAD as usize + register_words * 2 {
-            return Err(backend("numeric leaf exceeds finite source envelope"));
-        }
+        report.source_instructions(b.func.dfg.num_insts() - before)?;
     }
     let boundary = b.func.dfg.num_insts();
     b.switch_to_block(bailout);

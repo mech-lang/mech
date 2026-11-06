@@ -20,12 +20,24 @@ pub(super) struct Pack {
     pub next: u32,
     pub width: u8,
     pub source_window: bool,
-    array: usize,
-    base: NativeMatchValue,
-    offset: u64,
+    pub(super) array: usize,
+    pub(super) base: NativeMatchValue,
+    pub(super) offset: u64,
     end: u64,
     output: NativeMatchValue,
     sites: BTreeSet<usize>,
+}
+
+impl Pack {
+    pub(super) fn contains(&self, site: usize) -> bool {
+        self.sites.contains(&site)
+    }
+
+    pub(super) fn confined_to(&self, sites: &BTreeMap<u32, Block>) -> bool {
+        self.sites
+            .iter()
+            .all(|&site| sites.contains_key(&(site as u32)))
+    }
 }
 
 struct Finder<'a, 'p> {
@@ -330,15 +342,20 @@ pub(super) fn emit(
     shadow: usize,
     proof: &Proof,
     pack: &Pack,
+    flat: bool,
     next: Block,
-) {
+) -> bool {
     let view = shadow + proof.view(pack.array);
-    let rows = words.read(b, view + 2);
-    let columns = words.read(b, view + 3);
     let base = words.read(b, pack.base.get() as usize);
-    let row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
-    let column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
-    let vector = b.ins().bor(row, column);
+    let vector = if flat {
+        b.ins().iconst(types::I8, 1)
+    } else {
+        let rows = words.read(b, view + 2);
+        let columns = words.read(b, view + 3);
+        let row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
+        let column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
+        b.ins().bor(row, column)
+    };
     // base+end<=logical length without overflowing either the source's
     // checked additions or this guard. Spare allocation capacity is irrelevant.
     let mut valid = vector;
@@ -357,10 +374,16 @@ pub(super) fn emit(
             valid = b.ins().band(valid, nonzero);
         }
     }
-    let fast = b.create_block();
-    let original = b.create_block();
-    b.ins().brif(valid, fast, &[], original, &[]);
-    b.switch_to_block(fast);
+    let complete = flat && pack.source_window;
+    let original = if complete {
+        None
+    } else {
+        let fast = b.create_block();
+        let original = b.create_block();
+        b.ins().brif(valid, fast, &[], original, &[]);
+        b.switch_to_block(fast);
+        Some(original)
+    };
     let ordinal = b.ins().iadd_imm(base, pack.offset.wrapping_sub(1) as i64);
     let pointer = words.read(b, view);
     let address = b.ins().iadd(pointer, ordinal);
@@ -383,7 +406,10 @@ pub(super) fn emit(
     };
     words.write(b, pack.output.get() as usize, value);
     b.ins().jump(next, &[]);
-    b.switch_to_block(original);
+    if let Some(original) = original {
+        b.switch_to_block(original);
+    }
+    complete
 }
 
 #[cfg(test)]

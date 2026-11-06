@@ -42,7 +42,21 @@ pub(in crate::native_artifact::program::codegen) fn with_windows<'a>(
     windows: &[Window],
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
-    analyze(code, scope, slots, tag, windows, None, step)
+    analyze(code, scope, slots, tag, windows, &[], None, step)
+}
+
+pub(in crate::native_artifact::program::codegen) fn with_captured_windows<'a>(
+    code: CodePlan<'_>,
+    scope: &Scope,
+    slots: &BTreeSet<usize>,
+    captures: &[CapturedWindow],
+    step: impl Fn(usize) -> Option<Step<'a>>,
+) -> Option<Proof> {
+    let mut proof = analyze(code, scope, slots, None, &[], captures, None, step)?;
+    proof
+        .flat_arrays
+        .extend(captures.iter().map(|window| window.array));
+    Some(proof)
 }
 
 pub(in crate::native_artifact::program::codegen) fn with_completion<'a>(
@@ -53,7 +67,19 @@ pub(in crate::native_artifact::program::codegen) fn with_completion<'a>(
     completion: completion::Candidate,
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
-    analyze(code, scope, slots, None, windows, Some(completion), step)
+    if !scope.outside.is_empty() {
+        return None;
+    }
+    analyze(
+        code,
+        scope,
+        slots,
+        None,
+        windows,
+        &[],
+        Some(completion),
+        step,
+    )
 }
 
 fn analyze<'a>(
@@ -62,6 +88,7 @@ fn analyze<'a>(
     slots: &BTreeSet<usize>,
     tag: Option<usize>,
     windows: &[Window],
+    captures: &[CapturedWindow],
     completion: Option<completion::Candidate>,
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
@@ -72,6 +99,7 @@ fn analyze<'a>(
         slots,
         tag,
         windows,
+        captures,
         completion.as_ref(),
         &step,
     )?;
@@ -84,8 +112,17 @@ fn analyze<'a>(
     *incoming.get_mut(&(scope.header))? = partitions.into_iter().map(Some).collect();
     let mut proof = Proof::default();
     let mut written = BTreeSet::new();
+    let protected = captures
+        .iter()
+        .flat_map(|window| [window.base, window.induction, window.limit])
+        .collect::<BTreeSet<_>>();
     for &site in &ordered {
-        loop_windows::writes(step(site)?, &mut written)?;
+        let mut current = BTreeSet::new();
+        loop_windows::writes(step(site)?, &mut current)?;
+        if site != scope.latch && current.iter().any(|word| protected.contains(word)) {
+            return None;
+        }
+        written.extend(current);
     }
     // A gate is checked once at activation. A capture changed on a latch
     // cannot inherit that gate on later visits, even if its home is reused.
@@ -136,6 +173,32 @@ fn analyze<'a>(
                 }
             }
             Step::Scalar(action) => {
+                if !captures.is_empty()
+                    && let Scalar::Primitive { op, operands, .. } = action
+                    && let Some((relation, reverse)) = comparison(*op)
+                    && let [a, b] = operands.as_ref()
+                {
+                    let outcomes = states
+                        .iter()
+                        .flatten()
+                        .map(|state| {
+                            let (a, b) =
+                                (state.read(a.get() as usize)?, state.read(b.get() as usize)?);
+                            state.truth(
+                                &terms,
+                                relation,
+                                if reverse { b } else { a },
+                                if reverse { a } else { b },
+                            )
+                        })
+                        .collect::<Option<Vec<_>>>();
+                    if let Some(outcomes) = outcomes
+                        && let Some(&value) = outcomes.first()
+                        && outcomes.iter().all(|&v| v == value)
+                    {
+                        proof.predicates.insert(site, value);
+                    }
+                }
                 if let Scalar::Primitive {
                     op: Op::U64Lt,
                     operands,
@@ -309,7 +372,7 @@ fn analyze<'a>(
                 if let Some(completion) = &mut completion {
                     completion.exit(&terms, &outgoing);
                 }
-            } else {
+            } else if !scope.outside.contains(&next) {
                 for (target, state) in incoming.get_mut(&(next as usize))?.iter_mut().zip(outgoing)
                 {
                     if let Some(state) = state {
@@ -322,7 +385,8 @@ fn analyze<'a>(
                 }
             }
         }
-        if !windows.is_empty() && branch_count == 2 && reached.len() == 1 {
+        if (!windows.is_empty() || !captures.is_empty()) && branch_count == 2 && reached.len() == 1
+        {
             proof.successors.insert(site, reached[0]);
         }
     }
@@ -333,4 +397,16 @@ fn analyze<'a>(
         proof.expressions = Some(recording.finish(&terms, written));
     }
     Some(proof)
+}
+
+fn comparison(op: Op) -> Option<(Relation, bool)> {
+    Some(match op {
+        Op::U64Lt => (Relation::Lt, false),
+        Op::U64Le => (Relation::Le, false),
+        Op::U64Gt => (Relation::Lt, true),
+        Op::U64Ge => (Relation::Le, true),
+        Op::U64Eq => (Relation::Eq, false),
+        Op::U64Ne => (Relation::Ne, false),
+        _ => return None,
+    })
 }

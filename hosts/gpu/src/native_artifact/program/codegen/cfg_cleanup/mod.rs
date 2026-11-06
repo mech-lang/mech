@@ -2,6 +2,7 @@
 //! unreachable blocks and their phi inputs before register allocation. Source
 //! work debits and runtime predicates without a word proof remain unchanged.
 mod local_phis;
+mod preheaders;
 mod word_ranges;
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::control::CfgCleanup;
@@ -66,6 +67,7 @@ pub(in crate::native_artifact) fn optimize(
         fixed_point: !enabled,
         pre_codegen_data_passes: 0,
         local_phi_parameters_removed: 0,
+        local_phi_preheaders: 0,
     };
     if !enabled {
         return Ok(report);
@@ -91,6 +93,12 @@ pub(in crate::native_artifact) fn optimize(
     context.compute_domtree();
     context.eliminate_unreachable_code(isa).map_err(backend)?;
     context.remove_constant_phis(isa).map_err(backend)?;
+    report.local_phi_preheaders =
+        preheaders::normalize(&mut context.func, &context.cfg, &context.domtree);
+    if report.local_phi_preheaders != 0 {
+        context.compute_cfg();
+        context.compute_domtree();
+    }
     report.local_phi_parameters_removed =
         local_phis::simplify(&mut context.func, &context.cfg, &context.domtree);
     let (blocks, instructions) = counts(&context.func);

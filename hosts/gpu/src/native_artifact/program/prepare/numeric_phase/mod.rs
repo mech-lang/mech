@@ -12,6 +12,8 @@ use mech_engine::native_artifact::{
 use std::collections::{BTreeMap, BTreeSet};
 mod atoms;
 mod bounds;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod captured_windows;
 mod cold;
 mod flow;
 mod homes;

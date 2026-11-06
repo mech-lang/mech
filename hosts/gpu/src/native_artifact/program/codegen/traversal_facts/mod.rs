@@ -8,6 +8,7 @@ use mech_engine::native_artifact::{
     NativeScalarAggregates, NativeScalarKind, NativeScalarOp as Op,
 };
 use std::collections::{BTreeMap, BTreeSet};
+mod captured_windows;
 mod completion;
 mod entry;
 mod expressions;
@@ -17,10 +18,11 @@ mod operations;
 mod ranges;
 mod scope;
 mod windows;
+pub(super) use captured_windows::CapturedWindow;
 pub(super) use completion::{Candidate, Completed};
 pub(super) use expressions::{Graph, Node};
 pub(super) use flow::{Step, derive};
-pub(super) use flow::{with_completion, with_windows};
+pub(super) use flow::{with_captured_windows, with_completion, with_windows};
 pub(super) use loop_windows::Window;
 use operations::{aggregate, scalar};
 pub(super) use scope::Scope;
@@ -102,6 +104,7 @@ struct State {
     relations: BTreeSet<(Relation, Id, Id)>,
     successful: BTreeSet<(Arithmetic, Id, Id)>,
     windows: Vec<Window>,
+    captures: Vec<CapturedWindow>,
 }
 impl State {
     fn assign(&mut self, moves: &[(usize, usize)], parallel: bool) -> Option<()> {
@@ -160,6 +163,16 @@ impl State {
         }
         if self.window_holds(terms, b, a) {
             return Some(relation == Relation::Ne);
+        }
+        if self.capture_relation(terms, relation, a, b) {
+            return Some(true);
+        }
+        if match relation {
+            Relation::Lt => self.capture_relation(terms, Relation::Le, b, a),
+            Relation::Le => self.capture_relation(terms, Relation::Lt, b, a),
+            Relation::Eq | Relation::Ne => false,
+        } {
+            return Some(false);
         }
         let known = |r, x, y| self.relations.contains(&(r, x, y));
         match relation {
@@ -293,6 +306,7 @@ pub(super) struct Proof {
     pub(super) windows: BTreeSet<Window>,
     pub(super) successors: BTreeMap<usize, u32>,
     pub(super) predicates: BTreeMap<usize, bool>,
+    pub(super) flat_arrays: BTreeSet<usize>,
 }
 impl Proof {
     pub(super) fn extend(&mut self, other: Self) {

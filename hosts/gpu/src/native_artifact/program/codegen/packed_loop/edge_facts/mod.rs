@@ -17,6 +17,7 @@ pub(super) fn derive(
         header: region.tail.header() as usize,
         latch: region.tail.latch() as usize,
         exit: region.tail.exit(),
+        outside: BTreeSet::new(),
         sites: closed
             .sites
             .iter()

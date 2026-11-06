@@ -11,6 +11,14 @@ fn compiled(
     ty: cranelift_codegen::ir::Type,
     optimize: bool,
 ) -> (cranelift_jit::JITModule, Entry, usize, usize) {
+    compiled_with_preheader(mode, ty, optimize, false)
+}
+fn compiled_with_preheader(
+    mode: u8,
+    ty: cranelift_codegen::ir::Type,
+    optimize: bool,
+    normalize: bool,
+) -> (cranelift_jit::JITModule, Entry, usize, usize) {
     let mut module = cranelift_jit::JITModule::new(
         cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
             .unwrap(),
@@ -23,6 +31,16 @@ fn compiled(
     context.compute_cfg();
     context.compute_domtree();
     context.remove_constant_phis(module.isa()).unwrap();
+    if normalize {
+        let added =
+            super::super::preheaders::normalize(&mut context.func, &context.cfg, &context.domtree);
+        if mode == 2 {
+            assert_eq!(added, 1);
+        }
+        context.compute_cfg();
+        context.compute_domtree();
+        context.verify(module.isa()).unwrap();
+    }
     let before = context.func.dfg.block_params(child).len();
     assert_eq!(before, FIELDS + 2);
     let removed = if optimize {
@@ -161,6 +179,54 @@ fn local_phis_preserve_effects_prior_publication_early_failure_and_retry() {
         } else {
             assert_eq!(b, expected(3, 4, seed, 0, 64));
             assert_eq!(optimized[0], b);
+        }
+    }
+}
+
+#[test]
+fn local_phi_preheader_keeps_distinct_current_entries_outside_the_backedge() {
+    for ty in [
+        types::I8,
+        types::I16,
+        types::I32,
+        types::I64,
+        types::F32,
+        types::F64,
+    ] {
+        let (_module, entry, removed, after) = compiled_with_preheader(2, ty, true, true);
+        assert!(removed >= FIELDS * 2);
+        assert_eq!(after, 2);
+        for (outer, inner, seed) in [(0, 4, 2), (3, 0, 7), (4, 7, 19), (3, 4, u64::MAX - 8)] {
+            let mut output = [0xfeed, 0, u64::MAX];
+            assert_eq!(
+                unsafe { entry(output.as_mut_ptr(), outer, inner, seed, u64::MAX) },
+                expected(outer, inner, seed, 2, ty.bits())
+            );
+            assert_eq!(output, [0xfeed, 0, u64::MAX]);
+        }
+    }
+}
+
+#[test]
+fn local_phi_preheader_preserves_updates_alternate_body_entries_effects_and_retry() {
+    for mode in [1, 3, 4] {
+        let (_before, before, _, _) = compiled(mode, types::I64, false);
+        let (_after, after, _, parameters) = compiled_with_preheader(mode, types::I64, true, true);
+        if mode == 1 {
+            assert_eq!(parameters, FIELDS + 2);
+        }
+        let mut original = [0xfeed, 0, u64::MAX];
+        let mut optimized = original;
+        for (outer, inner, seed, fail) in [
+            (3, 0, 7, u64::MAX),
+            (4, 7, 19, u64::MAX),
+            (3, 4, 31, 0),
+            (3, 4, 43, 3),
+            (3, 4, 59, u64::MAX),
+        ] {
+            let a = unsafe { before(original.as_mut_ptr(), outer, inner, seed, fail) };
+            let b = unsafe { after(optimized.as_mut_ptr(), outer, inner, seed, fail) };
+            assert_eq!((a, original), (b, optimized));
         }
     }
 }
