@@ -19,6 +19,7 @@ pub(super) struct Version {
     pub facts: Facts,
     pub blocks: BTreeMap<u32, Block>,
     pub prepaid: Option<super::numeric_loop_prepayment::Prepayment>,
+    pub reduction: Option<super::ordered_reduction::Reduction>,
 }
 
 #[derive(serde::Serialize)]
@@ -30,6 +31,7 @@ pub(in crate::native_artifact) struct Report {
     pub read_sites: Vec<usize>,
     pub count: usize,
     pub prepaid: Option<serde_json::Value>,
+    pub reduction: Option<serde_json::Value>,
 }
 
 pub(super) fn derive(
@@ -96,15 +98,29 @@ pub(super) fn derive(
             continue;
         }
         let mut prepaid = None;
+        let mut reduction = None;
         if let Some(candidate) =
             super::numeric_loop_prepayment::candidate(code, proof, tail, &windows)
             && let Some(complete) =
                 super::numeric_traversal::complete(code, proof, shadow, &scope, &windows, candidate)
             && let Some(completion) = complete.completed.clone()
         {
-            prepaid =
-                super::numeric_loop_prepayment::Prepayment::new(proof, scope.header, completion);
+            prepaid = super::numeric_loop_prepayment::Prepayment::new(
+                proof,
+                scope.header,
+                completion.clone(),
+            );
             if prepaid.is_some() {
+                if let Some(graph) = &complete.expressions {
+                    reduction = super::ordered_reduction::derive(
+                        code,
+                        proof,
+                        tail,
+                        &completion,
+                        graph,
+                        &windows,
+                    );
+                }
                 facts = complete;
             }
         }
@@ -120,6 +136,7 @@ pub(super) fn derive(
             windows,
             facts,
             prepaid,
+            reduction,
         });
     }
     versions
@@ -152,6 +169,10 @@ impl Version {
                 .prepaid
                 .as_ref()
                 .map(|p| serde_json::to_value(p).unwrap()),
+            reduction: self
+                .reduction
+                .as_ref()
+                .map(|r| serde_json::to_value(r).unwrap()),
         }
     }
 
@@ -183,15 +204,17 @@ impl Version {
             enough = b.ins().band(enough, valid);
         }
         if let Some(prepaid) = &self.prepaid {
-            prepaid.gate(
-                b,
-                words,
-                state,
-                shadow,
-                enough,
-                self.blocks[&(self.header as u32)],
-                checked,
-            );
+            let scalar = self.blocks[&(self.header as u32)];
+            let selected = if self.reduction.is_some() {
+                b.create_block()
+            } else {
+                scalar
+            };
+            prepaid.gate(b, words, state, shadow, enough, selected, checked);
+            if let Some(reduction) = &self.reduction {
+                b.switch_to_block(selected);
+                reduction.emit(b, words, proof, shadow, scalar);
+            }
             return;
         }
         b.ins().brif(

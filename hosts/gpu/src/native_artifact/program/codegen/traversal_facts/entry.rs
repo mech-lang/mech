@@ -34,6 +34,7 @@ pub(super) fn states<'a>(
         }
     }
     if let Some(candidate) = completion {
+        terms.recording = Some(expressions::Recording::new(candidate.clone()));
         let mut partitions = Vec::new();
         let tag = initial.read(candidate.tag)?;
         for ordinal in [candidate.active, candidate.terminal] {

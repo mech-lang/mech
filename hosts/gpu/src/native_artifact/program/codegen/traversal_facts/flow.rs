@@ -75,6 +75,7 @@ fn analyze<'a>(
         completion.as_ref(),
         &step,
     )?;
+    let candidate = completion.clone();
     let mut completion = completion.map(completion::Collector::new);
     let mut incoming: BTreeMap<usize, Vec<Option<State>>> = ordered
         .iter()
@@ -98,6 +99,10 @@ fn analyze<'a>(
         }
         let block = &code.blocks()[site];
         let operation = step(site)?;
+        if let Some(mut recording) = terms.recording.take() {
+            recording.terminal(&terms, &states, &operation);
+            terms.recording = Some(recording);
+        }
         if let Some(completion) = &mut completion {
             completion.action(&terms, &states, &operation, block.terminator());
         }
@@ -226,10 +231,23 @@ fn analyze<'a>(
                 }
                 let value = terms.intern(Expr::Definition(site, output))?;
                 for state in states.iter_mut().flatten() {
+                    if let Some(recording) = &mut terms.recording {
+                        recording.record(
+                            value,
+                            Node::Read {
+                                array,
+                                index: state.read(index as usize)?,
+                            },
+                        );
+                    }
                     state.words.insert(output, value);
                 }
             }
             Step::Keep => {}
+        }
+        if let Some(mut recording) = terms.recording.take() {
+            recording.terminal_condition(&terms, &states, block.terminator());
+            terms.recording = Some(recording);
         }
         if site == scope.latch {
             continue;
@@ -275,6 +293,14 @@ fn analyze<'a>(
                 reached.push(next);
             }
             if next as usize == scope.latch {
+                if let Some(candidate) = &candidate
+                    && let Some(mut recording) = terms.recording.take()
+                {
+                    for state in outgoing.iter().flatten() {
+                        recording.advance(candidate, state, &terms);
+                    }
+                    terms.recording = Some(recording);
+                }
                 if let Some(completion) = &mut completion {
                     completion.latch(&terms, &outgoing);
                 }
@@ -301,5 +327,10 @@ fn analyze<'a>(
         }
     }
     proof.completed = completion.and_then(completion::Collector::finish);
+    if proof.completed.is_some()
+        && let Some(recording) = terms.recording.take()
+    {
+        proof.expressions = Some(recording.finish(&terms, written));
+    }
     Some(proof)
 }

@@ -1,5 +1,61 @@
 # Native compression milestone
 
+**R164 completes the selected compact scalar/SIMD cost-loop experiment.**
+Natural32KB improves **5.242043× → 4.596870× Roc**
+(22.839583 → 20.028563 ms, **12.307670%**); natural16KB improves
+5.903462× → 5.250235× (**11.065162%**). Repeated32KB is
+5.855326× → 5.740210× and periodic33KB is6.588496× → 6.479518×.
+Eight bytes rises4.719225× → 4.731433× (+0.258703%). These are fresh
+matched cohorts, not replacements for the historical observations below.
+
+All20 exact-output and unchanged1.05 gates pass:17 faster/3 slower medians,
+**1.725622% geometric elapsed improvement**. The worst adverse case is
+eight-overlap (+1.157951%). All12 scalar controls pass without larger allowances.
+Source/MBC/algorithm/tables/search limits/real scratch capacities/allocation
+sites/allocator/input aliases/output clear-reuse and evaluate_into stay pinned.
+No compressor source change is included.
+
+The compiler uses the existing complete-child proof and current array windows
+to recognize a generic ordered U32 minimum with an associated item. It emits
+compact scalar costs for short intervals and remainders, with four-lane costs
+for intervals of at least16 candidates. Incoming best and earliest improving
+ties, U32 wrapping, exact item encoding, original terminal construction,
+finite prices/error prefixes, aliases, publication and retry are preserved.
+The actual complete-compressor Object contains four `umin.4s` bodies and real
+vector loads/shuffles. The first vector-only screen was insufficient on natural
+text and is preserved separately; its results are not pooled with this cohort.
+
+Natural32 instructions fall274.605M → 260.132M (−5.270371%), with cycles
+−11.395186%. Eleven case instruction medians fall/nine rise; fourteen cycle
+medians fall/six rise. All20 heap requests/bytes/reallocations/incremental peaks
+are exactly equal. Generated text grows9,248B and entry stack256B. Fresh
+profiles sample82.48% generated execution on natural32,83.62% repeated and
+80.89% periodic; these CPU-time contexts do not partition retired instructions.
+The [full R164 report](native-ordered-reduction.md) retains all contrary results.
+
+Measured compiler9017ab40d19047f39bf1832c5c85d05f00accb5d, parent
+209193766599c1b125665b6063e9edf50d8a7997; IR/work/ABI/MBC184/107/39/14.
+Final docs/evidence and cfg(test) module ordering are folded into the same
+optimization commit in **#973 only**, with production file hashes unchanged.
+Passing receipts:615 compatible GPU (same7 exclusions),27 focused,198 CI-selected
+and executed,236 unchanged components/8 composition/1 real-capacity path,
+132 workflow/15 architecture/runtime-only/format/warnings,12 scalar controls.
+Ordinary hosted CI is cancelled by instruction; #973 remains draft pending
+green CI and clean exact-head review. Parity is not achieved.
+
+Brief steps1–4 and the selected path-cost experiment/qualification in steps5–6
+are complete. The alternative match-extension unroll/wider comparison was not
+implemented. Step7 remains: inventory previous source variants and select one
+separately pinned, measured source experiment. Compiler and source gains must
+remain separate.
+
+Publication:41 public archives/82 server SHA256 digests verified. Fresh retrieval
+validates5,785 file occurrences/1,026 paths/21 preserved historical versions and
+reproduces results.json and REPORT.md byte-for-byte. Replay with
+`python3 benchmarks/mech-deflate/experiment.py replay-round --index benchmarks/mech-deflate/experiments.json --round 164 --output /tmp/r164-replay`.
+
+## Historical R163 checkpoint
+
 **R163 settles exact visits once for proved complete native children.** All20
 matched medians improve; geometric elapsed falls1.559354%, and the unchanged1.05
 case and scalar gates pass. Natural32KB moves5.350369× to5.255555× reference

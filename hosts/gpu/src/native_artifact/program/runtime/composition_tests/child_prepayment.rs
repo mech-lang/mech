@@ -1,7 +1,7 @@
 //! Complete child funding must retain source arithmetic and finite fallback.
 use super::*;
 
-fn source() -> String {
+pub(super) fn source() -> String {
     let source = include_str!("../../../../../tests/fixtures/native/numeric-array-windows.mec");
     let fallible = "divisor := ((k == fault)? | true => 0u64 | false => 1u64)\n        checked := 10u64 / divisor";
     assert_eq!(source.matches(fallible).count(), 1);
