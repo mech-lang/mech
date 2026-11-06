@@ -1,5 +1,58 @@
 # Native compression milestone
 
+**R171 retains generic vector clamped-subtraction maps.** Random32KB improves
+**6.103196× → 5.411240× Roc** (11.337597%); repeated32KB
+**3.899690× → 3.678737×** (5.665892%); periodic33KB
+**4.418974× → 4.203054×** (4.886192%). Natural32KB improves
+4.336329× → 4.271206× (1.501793%); eight literals4.696510× →4.657510×.
+All20 unchanged1.05 gates pass:15 faster/5 slower medians,1.774875% geometric
+improvement. Natural16KB rises0.278163% and eight-literals-prefix2.092883%;
+all contrary observations remain. The matched comparison is retained R170.
+
+An exact proof over the already admitted total scalar collection selects a64-byte
+vector prefix and the existing checked scalar tail. Actual ARM64 helpers use four
+UQSUB.8H operations per32 U16 entries, as does the inspected reference tree slide.
+Diagnostic calls verify the full262144-entry tree in four large cases; small cases
+without those helpers have no loop-specific saving claim. Main entry machine bytes
+are identical to R170. Generated accounted text grows232B; entry stack stays15840B.
+
+Nineteen instruction medians fall; empty rises14 instructions. Three adverse cycle
+medians remain. All20 allocation-request/byte/reallocation/incremental heap-peak
+metrics are exactly equal. Five exact-binary profiles execute16277 complete calls;
+unknown native attribution and generated helpers outside entry remain explicit.
+A separate60-call diagnostic counts current runtime callbacks:4303 random32KB,
+3248 repeated32KB,9741 natural32KB,8074 distribution16KB,4466 eight literals.
+These are frequencies, not a partition of execution time or hardware instructions.
+
+Qualification:3 focused width/tail/current-capture/finite-failure tests;629 GPU
+passes with the same7 inherited exclusions; all212 CI-selected names execute and
+pass;236 unchanged components/8 composition/1 real-capacity path;12 original/
+decoded scalar controls;132 workflow tests;15 architecture/catalog checks,
+runtime-only, formatting and warnings denied. Streams, independent inflate,
+source work, input aliases, capacities and managed cleanup zero hold in all cases.
+Largest input33027B. No unresolved introduced functional failure remains.
+
+Parent9035d3ab3c34e802a652f2154c8d19ba0fae5597; measured compiler
+9a0fb83a20ae9ce12f4251d209c03b754dbc82da; comparison3a3ae5dca4a (R170).
+IR/work/ABI/MBC192/107/39/14. Frozen dependencies, source/MBC, allocator,
+algorithm/tables/search/EOF/real scratch capacities and complete evaluate_into
+stay pinned; the separate R165 source experiment is excluded. See the
+[full report](native-vector-clamps-experiment.md) for all20 results, exact pins,
+commands, adverse cohorts, repaired setup faults and skipped coverage.
+
+The new brief's next step is a bounded investigation of lost facts through mutable
+parent loops and redundant current child admission. Establish actual dynamic
+weight before extending the existing analysis. Model-stability/frequency/replay
+counts are a separate source investigation. Minimum-reduction tuning is deferred.
+One optimization commit in #973; the PR remains draft. Ordinary hosted CI is
+cancelled by standing instruction. Parity is not achieved.
+
+Publication:39 public archives/78 server digests verified. Fresh retrieval verifies
+4875 file occurrences/1132 paths/26 historical versions and reconstructs
+results.json and REPORT.md byte-for-byte without compilation or compression.
+
+## Historical R170 checkpoint
+
 **R170 retains corrected vector minimum selection.** Natural32KB improves
 **4.430760× → 4.347484× Roc** (1.879497%), and natural16KB
 **5.165119× → 5.088877×** (1.476092%). All20 unchanged1.05 gates pass:

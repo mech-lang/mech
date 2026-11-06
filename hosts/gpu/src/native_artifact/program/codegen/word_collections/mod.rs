@@ -12,6 +12,8 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMatchAction as Scalar};
 use std::collections::{BTreeMap, BTreeSet};
+mod saturating;
+mod vector;
 
 pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
@@ -68,8 +70,20 @@ pub(in crate::native_artifact) fn define<M: Module>(
             .iter()
             .map(|&site| (site, b.create_block()))
             .collect::<BTreeMap<_, _>>();
-        let zero = b.ins().iconst(types::I64, 0);
-        b.ins().jump(header, &[zero.into()]);
+        let start = if let Some(threshold) = saturating::select(code, region) {
+            vector::emit(
+                &mut b,
+                &words,
+                source,
+                sink,
+                count,
+                region.input_width,
+                threshold,
+            )
+        } else {
+            b.ins().iconst(types::I64, 0)
+        };
+        b.ins().jump(header, &[start.into()]);
         b.switch_to_block(header);
         let index = b.block_params(header)[0];
         let more = b.ins().icmp(IntCC::UnsignedLessThan, index, count);
@@ -147,6 +161,10 @@ pub(in crate::native_artifact) fn define<M: Module>(
         .ok_or_else(|| backend("word collection code missing"))?;
     let stack = crate::native_artifact::compiler::compiled_stack_bytes(&compiled.buffer)?;
     Ok((function, stack, compiled.code_info().total_size as u64))
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn vector_selected(code: CodePlan<'_>, region: &Region) -> bool {
+    saturating::select(code, region).is_some()
 }
 fn memory_type(width: u8) -> cranelift_codegen::ir::Type {
     match width {
