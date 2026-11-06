@@ -1275,6 +1275,7 @@ impl<'a> Prepared<'a> {
             worker: self.worker.take(),
             parallel_batch: None,
             window_region: None,
+            histogram: None,
             window_hashes: None,
             borrowed_strings: None,
             closed_tail: None,
@@ -1325,7 +1326,8 @@ impl<'a> Prepared<'a> {
         if let Some(error) = context.error.take() {
             return Err(error);
         }
-        if context.window_hashes.is_some()
+        if context.histogram.is_some()
+            || context.window_hashes.is_some()
             || context.window_region.is_some()
             || context.borrowed_strings.is_some()
             || context.closed_tail.is_some()

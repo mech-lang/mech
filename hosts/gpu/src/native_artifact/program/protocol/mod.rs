@@ -50,6 +50,8 @@ pub(in crate::native_artifact) enum GlobalHelper {
     Utf8ReadFinish,
     UniformFillPrepare,
     UniformFillFinish,
+    HistogramPrepare,
+    HistogramFinish,
 }
 impl GlobalHelper {
     // Decoding classifies only. Site, phase, lane, admission and cursor checks
@@ -97,6 +99,8 @@ impl GlobalHelper {
             value if value == u64::MAX - 36 => Self::Utf8ReadFinish,
             value if value == u64::MAX - 37 => Self::UniformFillPrepare,
             value if value == u64::MAX - 38 => Self::UniformFillFinish,
+            value if value == u64::MAX - 39 => Self::HistogramPrepare,
+            value if value == u64::MAX - 40 => Self::HistogramFinish,
             value => Self::Output(OutputIndex(value - 3)),
         }
     }
@@ -144,6 +148,8 @@ impl GlobalHelper {
             Self::Utf8ReadFinish => u64::MAX - 36,
             Self::UniformFillPrepare => u64::MAX - 37,
             Self::UniformFillFinish => u64::MAX - 38,
+            Self::HistogramPrepare => u64::MAX - 39,
+            Self::HistogramFinish => u64::MAX - 40,
         }
     }
     #[cfg(feature = "canonical-native-program")]

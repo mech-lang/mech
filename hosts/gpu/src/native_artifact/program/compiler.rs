@@ -265,6 +265,9 @@ impl NativeProgramObject {
             "compiled_loop_invariants": &self.codegen.loop_invariants,
             "linked": false, "executed": false, "timing_samples": 0,
         });
+        if let Some(histogram) = &self.codegen.utf8_histogram {
+            metadata["compiled_utf8_histogram"] = serde_json::json!(histogram);
+        }
         metadata["compiled_numeric_functions"] = serde_json::json!(&self.codegen.numeric_functions);
         metadata["compiled_scalar_selects"] = serde_json::json!(self.codegen.scalar_selects);
         metadata["compiled_unsigned_guards"] = serde_json::json!(self.codegen.unsigned_guards);

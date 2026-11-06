@@ -26,7 +26,8 @@ impl Invocation<'_, '_, '_> {
     /// These private loans have no ordinary canonical-owner census yet.
     /// Every selecting consumer retains its own check order and fallback.
     pub(super) fn has_uninventoried_private_owners(&self) -> bool {
-        self.line_window.is_some()
+        self.histogram.is_some()
+            || self.line_window.is_some()
             || self.window_region.is_some()
             || self.window_hashes.is_some()
             || self.closed_tail.is_some()

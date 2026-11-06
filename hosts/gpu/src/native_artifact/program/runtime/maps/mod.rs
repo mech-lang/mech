@@ -19,3 +19,6 @@ pub(in crate::native_artifact) mod string;
 mod native_utf8_prototype;
 
 pub(in crate::native_artifact) mod utf8_read;
+
+// Physical storage only; original-call admission controls every loan.
+pub(in crate::native_artifact) mod utf8_histogram;

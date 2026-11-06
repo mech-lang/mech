@@ -54,7 +54,5 @@ pub(in crate::native_artifact) mod utf8_lookup;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod constant_fill;
 
-// Establish the checked leaf before connecting original-call admission and
-// canonical publication. It is not selected by production artifact emission.
-#[cfg(all(test, feature = "canonical-native-program"))]
-mod utf8_histogram;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod utf8_histogram;

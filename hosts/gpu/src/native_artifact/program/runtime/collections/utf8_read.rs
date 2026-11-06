@@ -36,7 +36,10 @@ fn hash(key: &[u8]) -> u64 {
         (hash ^ u64::from(*byte)).wrapping_mul(HASH_PRIME)
     })
 }
-fn fixed<T: Copy>(len: usize, value: T) -> Option<Box<[T]>> {
+pub(in crate::native_artifact::program::runtime) fn fixed<T: Copy>(
+    len: usize,
+    value: T,
+) -> Option<Box<[T]>> {
     if len == 0 {
         return Some(Box::default());
     }
@@ -51,7 +54,7 @@ fn fixed<T: Copy>(len: usize, value: T) -> Option<Box<[T]>> {
     }
     Some(unsafe { out.assume_init() })
 }
-pub(super) fn boxed<T>(value: T) -> Option<Box<T>> {
+pub(in crate::native_artifact::program::runtime) fn boxed<T>(value: T) -> Option<Box<T>> {
     let layout = std::alloc::Layout::new::<T>();
     if layout.size() == 0 {
         return Some(Box::new(value));

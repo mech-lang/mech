@@ -9,32 +9,57 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{FuncId, Linkage, Module};
 use std::mem::{offset_of, size_of};
 
-pub(super) const COMPLETE: u64 = 0;
-pub(super) const COLD: u64 = 1;
-pub(super) const FULL: u64 = 2;
-pub(super) const INVALID: u64 = 3;
+use crate::native_artifact::program::runtime::maps::utf8_histogram::{
+    COLD, COMPLETE, FULL, Frame, INVALID, Slot,
+};
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub(super) struct Slot {
-    pub hash: u64,
-    pub count: u64,
-    // Zero is empty. Occupied markers are written last, after all checks.
-    pub row_plus_one: u64,
+/// Static eligibility is the exact same maintained selected-call proof that
+/// runtime rechecks before lending a source. No extra image authority exists.
+pub(in crate::native_artifact) fn selected(
+    metadata: &crate::native_artifact::program::prepare::ProgramMetadata,
+    site: usize,
+) -> bool {
+    matches!(metadata.plan.blocks()[site].action(),
+        mech_engine::native_artifact::NativeIterationAction::LibraryCall { operands, .. }
+        if operands.len() == 1)
+        && metadata.calls[site]
+            .as_ref()
+            .is_some_and(|call| call.supports_compiled_string_histogram())
 }
 
-#[repr(C)]
-#[derive(Debug)]
-pub(super) struct Frame {
-    pub cells: u64,
-    pub count: u64,
-    pub slots: u64,
-    pub capacity: u64,
-    pub fuel: u64,
-    pub comparison: u64,
-    pub completed: u64,
-    pub distinct: u64,
-    pub payload: u64,
+/// Run the checked private leaf only between its genuine original-call loans.
+/// A declined entry/finalization keeps the untouched ordinary library action.
+pub(in crate::native_artifact) fn entry<M: Module>(
+    b: &mut FunctionBuilder<'_>,
+    module: &mut M,
+    function: FuncId,
+    hooks: &crate::native_artifact::program::codegen::hooks::Hooks,
+    site: usize,
+    error: cranelift_codegen::ir::Block,
+) -> cranelift_codegen::ir::Block {
+    use crate::native_artifact::program::protocol::GlobalHelper;
+    let zero = b.ins().iconst(types::I64, 0);
+    hooks.call(b, site, GlobalHelper::HistogramPrepare, [zero; 3], error);
+    let frame = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+    let native = b.create_block();
+    let ordinary = b.create_block();
+    let done = b.create_block();
+    b.ins().brif(frame, native, &[], ordinary, &[]);
+    b.switch_to_block(native);
+    let function = module.declare_func_in_func(function, b.func);
+    let call = b.ins().call(function, &[frame]);
+    let status = b.inst_results(call)[0];
+    hooks.call(
+        b,
+        site,
+        GlobalHelper::HistogramFinish,
+        [frame, status, zero],
+        error,
+    );
+    let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+    b.ins().brif(ready, done, &[], ordinary, &[]);
+    b.switch_to_block(ordinary);
+    done
 }
 
 fn get(b: &mut FunctionBuilder<'_>, base: Value, offset: usize) -> Value {
@@ -67,7 +92,7 @@ fn spend(
 /// The caller must provide valid, aligned, disjoint banks, immutable cells and
 /// UTF8 byte owners, and truthful prefix state. Header checks are defensive;
 /// they do not establish the provenance of arbitrary native pointers.
-pub(super) fn define<M: Module>(
+pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     symbol: &str,
     vectorized: bool,

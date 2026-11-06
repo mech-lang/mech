@@ -294,6 +294,9 @@ mod histogram_query_observation_tests;
 mod histogram_observation_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
+mod compiled_histogram_tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
 mod text_join_observation_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]

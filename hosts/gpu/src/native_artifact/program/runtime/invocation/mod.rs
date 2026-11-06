@@ -11,6 +11,7 @@ mod buffer_frames;
 mod captured_numeric;
 pub(super) mod continuation;
 mod helper_fallbacks;
+mod histogram;
 mod numeric_segments;
 mod numeric_tree;
 mod numeric_writes;
@@ -184,6 +185,7 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
     pub(in crate::native_artifact::program::runtime) worker: Option<Box<parallel::Worker>>,
     pub(in crate::native_artifact::program::runtime) parallel_batch: Option<parallel::Batch>,
     pub(in crate::native_artifact::program::runtime) window_region: Option<(u32, u64)>,
+    pub(in crate::native_artifact::program::runtime) histogram: Option<Box<histogram::Loan>>,
     pub(in crate::native_artifact::program::runtime) window_hashes: Option<
         Box<crate::native_artifact::program::runtime::invocation::window::hashes::WindowHashes>,
     >,
@@ -392,6 +394,9 @@ impl Invocation<'_, '_, '_> {
         args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
         let tag = GlobalHelper::decode(operation);
+        if self.histogram.is_some() && tag != GlobalHelper::HistogramFinish {
+            return Err(invalid("helper while compiled histogram loan is active"));
+        }
         if self
             .prefix
             .as_ref()
@@ -453,6 +458,12 @@ impl Invocation<'_, '_, '_> {
             return Err(invalid("helper outside exact admitted visit"));
         }
         let site = site as usize;
+        if matches!(
+            tag,
+            GlobalHelper::HistogramPrepare | GlobalHelper::HistogramFinish
+        ) {
+            return self.histogram_helper(site, tag, args);
+        }
         #[cfg(all(test, feature = "canonical-native-program"))]
         crate::native_artifact::program::runtime::collections::before_span_helper(self, site)?;
         let descriptor = self.descriptor;
@@ -647,6 +658,12 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         site: u64,
     ) -> Result<(), NativeProgramExecutionError> {
+        if self.histogram.is_some() {
+            return Err(invalid(
+                "source visit while compiled histogram loan is active",
+            ));
+        }
+
         if self
             .state
             .collections

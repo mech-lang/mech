@@ -239,6 +239,8 @@ struct CfgDeclarations<'plan> {
     #[cfg(feature = "canonical-native-program")]
     joined_maps: Vec<(u32, FuncId)>,
     #[cfg(feature = "canonical-native-program")]
+    histogram_function: Option<(FuncId, u64, u64)>,
+    #[cfg(feature = "canonical-native-program")]
     packed_functions: Vec<(usize, FuncId, u64, u64)>,
     #[cfg(feature = "canonical-native-program")]
     numeric_functions: Vec<(usize, FuncId, u64, u64)>,
@@ -283,6 +285,37 @@ impl<'plan> CfgDefinition<'plan> {
         let aggregates = self.aggregates;
         #[cfg(feature = "canonical-native-program")]
         let report = &mut self.report;
+        #[cfg(feature = "canonical-native-program")]
+        let histogram_function = if let plan::CodePlan::Program(program) = plan {
+            let metadata = program.metadata();
+            let sites = (0..metadata.plan.blocks().len())
+                .filter(|&site| {
+                    crate::native_artifact::program::codegen::utf8_histogram::selected(
+                        metadata, site,
+                    )
+                })
+                .collect::<Vec<_>>();
+            if sites.is_empty() {
+                None
+            } else {
+                let symbol = format!("{entry_symbol}_utf8_histogram");
+                let (id, stack, code) =
+                    crate::native_artifact::program::codegen::utf8_histogram::define(
+                        module, &symbol, true,
+                    )?;
+                report.utf8_histogram = Some(
+                    crate::native_artifact::codegen::control::codegen_report::Utf8Histogram {
+                        symbol,
+                        stack_bytes: stack,
+                        code_bytes: code,
+                        sites,
+                    },
+                );
+                Some((id, stack, code))
+            }
+        } else {
+            None
+        };
         #[cfg(feature = "canonical-native-program")]
         let window_functions =
             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(program) = plan
@@ -424,6 +457,8 @@ impl<'plan> CfgDefinition<'plan> {
             joined_functions,
             #[cfg(feature = "canonical-native-program")]
             joined_maps,
+            #[cfg(feature = "canonical-native-program")]
+            histogram_function,
             #[cfg(feature = "canonical-native-program")]
             packed_functions,
             #[cfg(feature = "canonical-native-program")]
@@ -1270,6 +1305,26 @@ impl<'plan> CfgDefinition<'plan> {
                     };
                     #[cfg(not(feature = "canonical-native-program"))]
                     let operation = 0;
+                    #[cfg(feature = "canonical-native-program")]
+                    let histogram_done =
+                        if let (Some((function, _, _)), plan::CodePlan::Program(program)) =
+                            (declarations.histogram_function, plan)
+                        {
+                            if crate::native_artifact::program::codegen::utf8_histogram::selected(
+                                program.metadata(),
+                                index,
+                            ) {
+                                Some(
+                                    crate::native_artifact::program::codegen::utf8_histogram::entry(
+                                        b, module, function, hooks, index, error,
+                                    ),
+                                )
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        };
                     hooks.library_operation(
                         b,
                         index,
@@ -1308,6 +1363,11 @@ impl<'plan> CfgDefinition<'plan> {
                             b.ins().jump(joined, &[]);
                             b.switch_to_block(joined);
                         }
+                    }
+                    #[cfg(feature = "canonical-native-program")]
+                    if let Some(done) = histogram_done {
+                        b.ins().jump(done, &[]);
+                        b.switch_to_block(done);
                     }
                 }
                 NativeIterationAction::Scalar(action) => {
@@ -1711,6 +1771,8 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let window_functions = declarations.window_functions;
         #[cfg(feature = "canonical-native-program")]
+        let histogram_function = declarations.histogram_function;
+        #[cfg(feature = "canonical-native-program")]
         let map_functions = declarations.map_functions;
         #[cfg(feature = "canonical-native-program")]
         let joined_functions = declarations.joined_functions;
@@ -1773,6 +1835,7 @@ impl<'plan> CfgDefinition<'plan> {
                         .chain(joined_functions.iter().map(|(_, _, stack, _)| *stack))
                         .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack))
                         .chain(numeric_functions.iter().map(|(_, _, stack, _)| *stack))
+                        .chain(histogram_function.iter().map(|(_, stack, _)| *stack))
                         .max()
                         .unwrap_or(0),
                 )
@@ -1784,6 +1847,7 @@ impl<'plan> CfgDefinition<'plan> {
                 .chain(joined_functions.iter().map(|(_, _, _, code)| *code))
                 .chain(packed_functions.iter().map(|(_, _, _, code)| *code))
                 .chain(numeric_functions.iter().map(|(_, _, _, code)| *code))
+                .chain(histogram_function.iter().map(|(_, _, code)| *code))
                 .try_fold(
                     code + bound_call_shim.map_or(0, |shim| shim.code),
                     |total, code| total.checked_add(code),

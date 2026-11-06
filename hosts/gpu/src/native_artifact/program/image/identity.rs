@@ -313,7 +313,8 @@ fn selected_template(
 // IR177 also lifts immutable numeric matrices with independent changing axes.
 // IR178 derives a selected String-matrix scalar projection route on restore.
 // IR179 binds complete descriptor bytes to an additional read-only Object symbol.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 197;
+// IR203 emits a checked bulk UTF8 histogram at its original library visit.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 203;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -527,7 +528,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 197;
 // reconciliation. Existing flat-frame prices retain their original formula.
 // Policy110 includes numeric worker receipts and shared native-fuel metadata.
 // Policy111 funds selected String projection/copy without generic call planning.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 111;
+// Policy113 accounts the complete physical batch and canonical publication.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 113;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

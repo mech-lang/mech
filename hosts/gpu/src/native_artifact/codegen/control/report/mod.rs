@@ -15,6 +15,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub cfg_cleanup: Option<CfgCleanup>,
     pub scalar_selects: usize,
     pub unsigned_guards: usize,
+    pub utf8_histogram: Option<Utf8Histogram>,
     pub outlined_loops: Vec<OutlinedLoop>,
     pub numeric_functions:
         Vec<crate::native_artifact::program::codegen::readonly_numeric::outlined::OutlinedReport>,
@@ -686,4 +687,12 @@ impl CodegenReport {
         }
         counts
     }
+}
+
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct Utf8Histogram {
+    pub symbol: String,
+    pub stack_bytes: u64,
+    pub code_bytes: u64,
+    pub sites: Vec<usize>,
 }

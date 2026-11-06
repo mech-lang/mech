@@ -1131,3 +1131,8 @@ impl State {
         Ok(())
     }
 }
+
+// Fallible exact-layout storage; each selecting owner prepays its layout.
+pub(in crate::native_artifact::program::runtime) use utf8_read::{
+    boxed as fixed_box, fixed as fixed_slice,
+};
