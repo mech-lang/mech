@@ -218,6 +218,7 @@ def main():
     def save():
         args.output.write_text(json.dumps(report, indent=2) + '\n')
 
+    save()
     for sample, order in enumerate(orders):
         outputs, rows = {}, []
         for variant in order:
