@@ -13,9 +13,12 @@ mod identity;
 mod payload;
 mod transaction;
 
+#[cfg(test)]
+mod fixed_arena_tests;
+
 pub(crate) use self::access::RetainedPublicationLease;
 pub use self::access::*;
-pub use self::allocation::{PlannedArenaElement, PlannedArenaProjection};
+pub use self::allocation::{FixedHostArenaPlan, PlannedArenaElement, PlannedArenaProjection};
 pub(crate) use self::budget::ManagedMemoryCharge;
 pub(crate) use self::budget::SnapshotNodeCharge;
 pub use self::budget::{ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation};
