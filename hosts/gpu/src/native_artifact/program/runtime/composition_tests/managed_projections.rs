@@ -13,14 +13,9 @@ fn managed_projection_aliases_execute_inside_parent_pieces() {
         let memory = mode.memory_budget();
         let jit = compile_parent_pieces(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let metadata = jit.descriptor().metadata();
-        let projections = metadata
-            .compositions
-            .parents
-            .iter()
-            .flat_map(|parent| &parent.segments)
-            .filter(|piece| metadata.compositions.entry(piece.entry as usize).is_some())
-            .flat_map(|piece| &piece.sites)
-            .filter(|&&site| {
+        let projections = selected_native_sites(&jit)
+            .into_iter()
+            .filter(|&site| {
                 metadata
                     .buffer_frames
                     .action(site as usize)
@@ -29,7 +24,6 @@ fn managed_projection_aliases_execute_inside_parent_pieces() {
                     if metadata.plan.values()[output.get() as usize].scalar_kind().is_none())
                     })
             })
-            .map(|&site| u64::from(site))
             .collect::<BTreeSet<_>>();
         assert!(
             !projections.is_empty(),
@@ -46,7 +40,7 @@ fn managed_projection_aliases_execute_inside_parent_pieces() {
                 observe::run(&jit, &args, &mut output, mode.execution(), &memory)
             };
             result.unwrap();
-            assert!(counts.selected > 0);
+            assert!(counts.selected + counts.phases > 0);
             assert!(
                 counts
                     .helpers

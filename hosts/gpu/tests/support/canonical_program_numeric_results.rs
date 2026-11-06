@@ -151,7 +151,7 @@ mod scalar_results;
 pub(super) const SCALAR_PAIR: &str = scalar_results::PAIR;
 
 #[test]
-fn numeric_results_select_generic_and_unchanged_assign_leaf_under_parent() {
+fn numeric_results_select_generic_and_unchanged_assign_leaf_or_fused_parent() {
     let mut observed = Vec::new();
     for (name, source) in sources() {
         for (form, artifact) in ["original", "decoded"]
@@ -162,7 +162,25 @@ fn numeric_results_select_generic_and_unchanged_assign_leaf_under_parent() {
                 .unwrap()
                 .metadata();
             let regions = metadata["compiled_numeric_write_loops"].as_array().unwrap();
-            let selected = regions.iter().any(|r| r["parent"].is_u64());
+            let phases = metadata["compiled_readonly_numeric_loops"]
+                .as_array()
+                .unwrap();
+            let fused = regions.iter().chain(phases).any(|emitted| {
+                !emitted["typed_stores"].as_array().unwrap().is_empty()
+                    && metadata["readonly_numeric_regions"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .chain(metadata["numeric_write_regions"].as_array().unwrap())
+                        .any(|region| {
+                            region["header"] == emitted["header"]
+                                && region
+                                    .pointer("/proof/phase/loops")
+                                    .and_then(|loops| loops.as_array())
+                                    .is_some_and(|loops| loops.len() > 1)
+                        })
+            });
+            let selected = regions.iter().any(|r| r["parent"].is_u64()) || fused;
             observed.push((name.clone(), form, selected));
             println!(
                 "{}",
@@ -171,6 +189,9 @@ fn numeric_results_select_generic_and_unchanged_assign_leaf_under_parent() {
             for region in regions {
                 assert_eq!(region["successful_backedge_helpers"], 0);
                 assert!(!region["typed_stores"].as_array().unwrap().is_empty());
+            }
+            for phase in phases {
+                assert_eq!(phase["successful_backedge_helpers"], 0);
             }
         }
     }

@@ -29,6 +29,14 @@ fn continuations(region: &Region) -> Vec<usize> {
                 .map(|node| node.tail.header() as usize),
         );
     }
+    if let Some(proof) = &region.numeric {
+        let mut seen = sites.iter().copied().collect::<BTreeSet<_>>();
+        for exit in &proof.exits {
+            if seen.insert(exit.to) {
+                sites.push(exit.to);
+            }
+        }
+    }
     sites
 }
 
@@ -58,7 +66,7 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
         let Some(proof) = &region.numeric else {
             continue;
         };
-        if region.numeric_tree.is_some() && !controls.enabled(OptimizationPass::NumericTrees) {
+        if region.numeric_subtree() && !controls.enabled(OptimizationPass::NumericTrees) {
             continue;
         }
         let resume = continuations(region);

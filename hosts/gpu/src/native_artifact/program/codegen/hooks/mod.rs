@@ -340,7 +340,67 @@ impl Hooks {
     ) -> Result<(), NativeCompileError> {
         super::constant_fill::emit_entry(b, locals, site, self, region, counter_slot, exit, error)
     }
-
+    #[cfg(feature = "canonical-native-program")]
+    pub fn word_collection(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        region: &crate::native_artifact::program::prepare::word_collections::Region,
+        function: cranelift_codegen::ir::FuncRef,
+        locals: Value,
+        counter_slot: usize,
+        exit: Block,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        use crate::native_artifact::compiler::offset;
+        let remaining = b
+            .ins()
+            .load(types::I64, MemFlags::new(), locals, offset(counter_slot)?);
+        let collection = b.ins().iconst(types::I64, i64::from(region.collection));
+        let zero = b.ins().iconst(types::I64, 0);
+        self.call(
+            b,
+            site,
+            GlobalHelper::WordCollectionPrepare,
+            [collection, remaining, zero],
+            error,
+        );
+        let ready = b.ins().load(types::I64, MemFlags::new(), self.result, 0);
+        let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, ready, 1);
+        guard(b, valid, error, crate::native_artifact::abi::STATUS_ABI);
+        let selected = b.create_block();
+        let ordinary = b.create_block();
+        b.ins().brif(ready, selected, &[], ordinary, &[]);
+        b.switch_to_block(selected);
+        self.require_argument_words(b, 3, error);
+        let source = b.ins().load(types::I64, MemFlags::new(), self.arguments, 0);
+        let sink = b.ins().load(types::I64, MemFlags::new(), self.arguments, 8);
+        let count = b
+            .ins()
+            .load(types::I64, MemFlags::new(), self.arguments, 16);
+        let call = b.ins().call(function, &[locals, source, sink, count]);
+        let status = b.inst_results(call)[0];
+        let valid = b.ins().icmp_imm(
+            IntCC::Equal,
+            status,
+            crate::native_artifact::abi::STATUS_OK as i64,
+        );
+        // A reached scalar error contradicts the independently reconstructed
+        // totality proof. Never publish any partially initialized sink.
+        guard(b, valid, error, crate::native_artifact::abi::STATUS_ABI);
+        self.call(
+            b,
+            site,
+            GlobalHelper::WordCollectionFinish,
+            [collection, count, zero],
+            error,
+        );
+        b.ins()
+            .store(MemFlags::new(), zero, locals, offset(counter_slot)?);
+        b.ins().jump(exit, &[]);
+        b.switch_to_block(ordinary);
+        Ok(())
+    }
     pub fn load<M: Module>(
         mixed: bool,
         b: &mut FunctionBuilder<'_>,

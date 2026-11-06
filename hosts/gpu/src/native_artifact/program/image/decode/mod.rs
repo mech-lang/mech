@@ -95,7 +95,7 @@ impl NativeProgramDescriptor {
         }
         let json = serde_json::to_vec(&Image {
             format: "mech.build-owned-native-descriptor",
-            version: 8,
+            version: 9,
             descriptor: super::TableDescriptor(self),
         })?;
         mech_engine::native_artifact::encode_native_metadata_image(&json)

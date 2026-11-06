@@ -1,5 +1,8 @@
 # Related-post native compiler review
 
+Current integration: [related-post compiler plus latest #973](integration/README.md), **IR226 / work115 / ABI41 / image9**. The compiler builds; four variants retain53 native numeric functions and pass124 output fixtures, and133 scalar/DEFLATE controls match IR225 exactly in all non-timing fields. Complete qualification and new timings are pending. The timing tables below describe their recorded historical compilers.
+
+
 This branch contains the accepted compiler optimization series for
 [zupat/related_post_gen](https://github.com/zupat/related_post_gen), starting from
 the DEFLATE compiler. The review targets the branch behind

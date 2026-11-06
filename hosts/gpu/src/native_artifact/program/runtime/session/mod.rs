@@ -10,6 +10,9 @@ use crate::native_artifact::program::runtime::*;
 
 mod call_cache_allocation;
 
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod argument_bank_tests;
+
 mod capture;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 mod capture_admission;
@@ -672,8 +675,9 @@ impl<'a> Prepared<'a> {
             memory,
             &mut work,
         )?;
-        let call_inputs = NativeTypedStorage::new_values(
+        let call_inputs = super::call_inputs::CallInputs::new(
             descriptor.metadata().max_library_inputs,
+            descriptor.metadata().max_call_values,
             limits.execution.max_transport_bytes,
             memory,
         )?;
@@ -1279,6 +1283,7 @@ impl<'a> Prepared<'a> {
             window_hashes: None,
             borrowed_strings: None,
             closed_tail: None,
+            numeric_prepaid: None,
             parent_continuation: Default::default(),
             selected_join: None,
             prefix: prefix_input.map(|input| {

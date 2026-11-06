@@ -34,7 +34,7 @@ pub(in crate::native_artifact::program::runtime) struct ExecutionState<'plan> {
     pub(in crate::native_artifact::program::runtime) buffer_frames:
         super::buffer_frames::BufferFrames,
     pub(in crate::native_artifact::program::runtime) arena: NativeValueArena<'plan>,
-    pub(in crate::native_artifact::program::runtime) call_inputs: NativeTypedStorage<Option<Value>>,
+    pub(in crate::native_artifact::program::runtime) call_inputs: super::call_inputs::CallInputs,
     pub(in crate::native_artifact::program::runtime) call_caches: session::CallCacheLane<'plan>,
     pub(in crate::native_artifact::program::runtime) library: NativeLibraryWorkBudget,
     pub(in crate::native_artifact::program::runtime) control: ControlState,

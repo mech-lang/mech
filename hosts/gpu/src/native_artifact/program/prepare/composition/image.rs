@@ -11,6 +11,7 @@ pub(in crate::native_artifact) struct Borrowed<'a> {
     entries: &'a [Option<NonZeroUsize>],
     regions: &'a [(usize, usize)],
     boundaries: &'a [(usize, usize)],
+    native_contexts: &'a [Option<u32>],
     words: usize,
 }
 impl Layout {
@@ -20,6 +21,7 @@ impl Layout {
             entries: &self.entries,
             regions: &self.regions,
             boundaries: &self.boundaries,
+            native_contexts: &self.native_contexts,
             words: self.words,
         }
     }
@@ -32,6 +34,7 @@ pub(in crate::native_artifact) struct Owned {
     entries: Box<[Option<NonZeroUsize>]>,
     regions: Vec<(usize, usize)>,
     boundaries: Vec<(usize, usize)>,
+    native_contexts: Box<[Option<u32>]>,
     words: usize,
 }
 impl From<Owned> for Layout {
@@ -41,6 +44,7 @@ impl From<Owned> for Layout {
             entries: image.entries,
             regions: image.regions,
             boundaries: image.boundaries,
+            native_contexts: image.native_contexts,
             words: image.words,
         }
     }

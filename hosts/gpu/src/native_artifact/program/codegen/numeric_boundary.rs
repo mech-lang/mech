@@ -2,6 +2,67 @@
 use super::*;
 use crate::native_artifact::program::prepare::tail::Region;
 
+/// Settle the loan and run the exact original rejecting selected operation.
+/// Only its scalar operands and the existing settlement inputs need spilling.
+pub(super) fn source_failure(
+    b: &mut FunctionBuilder<'_>,
+    controls: &CompilationControls,
+    words: &Words,
+    frame: Value,
+    locals: Value,
+    code: CodePlan<'_>,
+    closed: &Layout,
+    id: usize,
+    site: usize,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<usize, NativeCompileError> {
+    set_origin(b, frame, site as u64);
+    let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
+        return Err(backend("numeric rejection lost selected call"));
+    };
+    if !closed.regions[id]
+        .numeric
+        .as_ref()
+        .is_some_and(|proof| proof.sites.binary_search(&site).is_ok())
+    {
+        return Err(backend("numeric rejection differs from its active region"));
+    }
+    let region = &closed.regions[id];
+    let shadow = region
+        .shadow
+        .ok_or_else(|| backend("numeric rejection lacks scratch home"))?;
+    let live = (region.words..region.words + 3)
+        .chain(
+            tail::numeric_exit_words(region, 2, None)?
+                .into_iter()
+                .map(|word| shadow + word),
+        )
+        .chain(
+            operands
+                .iter()
+                .filter(|value| code.kind(**value).is_some())
+                .map(|value| value.get() as usize),
+        )
+        .collect::<BTreeSet<_>>();
+    words.spill_live(b, locals, &live)?;
+    let origin = b.ins().iconst(types::I64, site as i64);
+    tail::leave(
+        controls.options(),
+        b,
+        locals,
+        region,
+        origin,
+        2,
+        hooks,
+        error,
+    )?;
+    hooks.library(b, site, operands, locals, |v| code.kind(v).is_some(), error)?;
+    let status = b.ins().iconst(types::I64, STATUS_ABI as i64);
+    b.ins().jump(error, &[status.into()]);
+    Ok(live.len())
+}
+
 pub(super) fn materialize(
     controls: &CompilationControls,
     b: &mut FunctionBuilder<'_>,
@@ -18,6 +79,7 @@ pub(super) fn materialize(
     error: Block,
     fuel_debits: Option<&super::super::numeric_fuel_debits::Anchors>,
 ) -> Result<(), NativeCompileError> {
+    let options = controls.options();
     if let Some(anchors) = fuel_debits {
         anchors.publish(b, words);
     }
@@ -27,8 +89,12 @@ pub(super) fn materialize(
     set_origin(b, frame, site as u64);
     let zero = b.ins().iconst(types::I64, 0);
     // No active generated loan survives a failed cold call.
-    b.ins()
-        .store(MemFlags::new(), zero, locals, offset(region.words)?);
+    b.ins().store(
+        tail::flags(options, region),
+        zero,
+        locals,
+        offset(region.words)?,
+    );
     hooks.require_argument_words(b, proof.words + 4, error);
     for field in proof
         .frame(region.tail.carrier().get())
@@ -76,6 +142,17 @@ pub(super) fn materialize(
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
     }
+    if let Some(phase) = &proof.phase {
+        for debit in &phase.loops {
+            let value = words.read(b, shadow + debit.counter);
+            b.ins().store(
+                MemFlags::new(),
+                value,
+                hooks.arguments,
+                offset(2 + debit.counter)?,
+            );
+        }
+    }
     b.ins().store(
         MemFlags::new(),
         index,
@@ -110,6 +187,9 @@ pub(super) fn materialize(
             shadow + proof.view(array) + 3,
             shadow + capacity,
         ]);
+    }
+    if let Some(phase) = &proof.phase {
+        reload.extend(phase.loops.iter().map(|debit| shadow + debit.counter));
     }
     for slot in reload {
         let argument = if slot == region.words + 1 {
@@ -151,8 +231,12 @@ pub(super) fn materialize(
     }
     let one = b.ins().iconst(types::I64, 1);
     words.write(b, region.words, one);
-    b.ins()
-        .store(MemFlags::new(), one, locals, offset(region.words)?);
+    b.ins().store(
+        tail::flags(options, region),
+        one,
+        locals,
+        offset(region.words)?,
+    );
     if let Some(anchors) = fuel_debits {
         anchors.refresh(b, words);
     }

@@ -180,9 +180,24 @@ fn multiple_child_parent_pieces_are_selected_and_execute() {
             .filter(|piece| piece.numeric.is_some())
             .map(|piece| u64::from(piece.entry))
             .collect::<std::collections::BTreeSet<_>>();
+        let nested_phases = jit
+            .descriptor()
+            .metadata()
+            .closed_tails
+            .regions
+            .iter()
+            .filter(|region| {
+                region.tail.parent().is_some()
+                    && region
+                        .numeric
+                        .as_ref()
+                        .is_some_and(|proof| proof.phase.is_some())
+            })
+            .map(|region| u64::from(region.tail.initialize()))
+            .collect::<std::collections::BTreeSet<_>>();
         assert!(
-            !nested_entries.is_empty(),
-            "nested parent must retain independently proved pieces"
+            !nested_entries.is_empty() || !nested_phases.is_empty(),
+            "nested parent must retain independently proved native execution"
         );
         let args = arguments(&artifact, &memory, 3, false, true, true, 1, false);
         let mut outputs = vec![None; artifact.outputs().len()];
@@ -199,7 +214,11 @@ fn multiple_child_parent_pieces_are_selected_and_execute() {
             counts
                 .selected_sites
                 .iter()
-                .any(|(site, &count)| nested_entries.contains(site) && count > 0),
+                .any(|(site, &count)| nested_entries.contains(site) && count > 0)
+                || counts
+                    .phase_sites
+                    .iter()
+                    .any(|(site, &count)| nested_phases.contains(site) && count > 0),
             "nested native piece must execute with the exact suspended ancestor: {counts:?}"
         );
         for child in &parent.children {

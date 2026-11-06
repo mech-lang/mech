@@ -1,6 +1,9 @@
 //! Fold constant native branches before the single backend data pass, then
 //! retire unreachable blocks and their phi inputs. No runtime predicate,
 //! source operation, failure or work debit is assumed away.
+mod local_phis;
+mod preheaders;
+mod word_ranges;
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::control::CfgCleanup;
 use crate::native_artifact::codegen::options::{CompilationControls, OptimizationPass};
@@ -147,6 +150,7 @@ fn constant_condition(function: &Function, value: Value) -> Option<bool> {
     constant_integer(function, value, MAX_CONSTANT_DEPTH, &mut steps).map(|value| value != 0)
 }
 fn fold(function: &mut Function) -> usize {
+    let mut facts = word_ranges::Facts::new(function);
     let changes = function
         .layout
         .blocks()
@@ -155,7 +159,8 @@ fn fold(function: &mut Function) -> usize {
             let InstructionData::Brif { arg, blocks, .. } = &function.dfg.insts[inst] else {
                 return None;
             };
-            let selected = &blocks[usize::from(!constant_condition(function, *arg)?)];
+            let condition = constant_condition(function, *arg).or_else(|| facts.condition(*arg))?;
+            let selected = &blocks[usize::from(!condition)];
             Some((
                 inst,
                 selected.block(&function.dfg.value_lists),
@@ -302,11 +307,13 @@ fn optimize_ordered(
         after_instructions: before_instructions,
         fixed_point: !enabled,
         pre_codegen_data_passes: 0,
+        local_phi_parameters_removed: 0,
+        local_phi_preheaders: 0,
     };
     if !enabled {
         return Ok(report);
     }
-    // Retire literal source specializations BEFORE data optimization. Running
+    // Retire proved source specializations BEFORE data optimization. Running
     // the egraph repeatedly here and once again in define_function can change
     // placement/rematerialization and increase register pressure. Leave exactly
     // one ordinary data/speed pass to the final backend compilation.
@@ -338,6 +345,14 @@ fn optimize_ordered(
         context.eliminate_unreachable_code(isa).map_err(backend)?;
         context.remove_constant_phis(isa).map_err(backend)?;
     }
+    report.local_phi_preheaders =
+        preheaders::normalize(&mut context.func, &context.cfg, &context.domtree);
+    if report.local_phi_preheaders != 0 {
+        context.compute_cfg();
+        context.compute_domtree();
+    }
+    report.local_phi_parameters_removed =
+        local_phis::simplify(&mut context.func, &context.cfg, &context.domtree);
     let (blocks, instructions) = counts(&context.func);
     report.after_blocks = blocks;
     report.after_instructions = instructions;

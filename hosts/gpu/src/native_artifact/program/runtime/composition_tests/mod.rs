@@ -5,28 +5,52 @@ use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;
 mod admission_overlap;
 mod bit_counts;
+mod boolean_edges;
 mod borrowed_record_map;
 mod bounds_retry;
+mod bulk_bytes;
 mod captured_numeric;
+mod captured_window_handoffs;
+mod captured_windows;
 mod child_cleanup;
+mod child_fuel;
+mod child_prepayment;
+mod cold_child;
+mod cold_intervals;
 mod collection_lifetime;
+mod current_case;
+mod current_windows;
 mod deep_nested_scalar;
 mod exit_transport;
+mod failure_transport;
+mod fresh_traversals;
+mod guarded_pack_failure;
+mod guarded_read_packs;
+mod hybrid_intervals;
 mod invariant_numeric;
 mod managed_carriers;
 mod managed_projections;
 mod mixed_string_map;
 mod multiple_children;
+mod mutable_children;
 mod named_managed_projections;
 mod nested_numeric;
+mod nested_phase;
+mod nested_phase_growing;
+mod nested_phase_handoff;
 mod nested_scalar_array;
 mod numeric_bindings;
 mod numeric_induction;
 mod numeric_tree;
-mod observe;
+pub(super) mod observe;
+mod ordered_reduction;
 mod pack;
+mod phase_descendants;
+mod physical_exits;
+mod read_packs;
 mod record_lookup;
 mod resources;
+mod resumed_child;
 mod retained_compound_map;
 mod scalar_child;
 mod scalar_selects;
@@ -34,7 +58,10 @@ mod schema_key;
 mod tagged_map_carrier;
 mod tuple_capture;
 mod utf8_reads;
+mod virtual_retirement;
 mod wide_scalar_array;
+mod word_collection_vectors;
+mod word_collections;
 
 /// Retain direct coverage of the independently proved around-child path. A
 /// complete tree normally consumes these source sites before the pieces run;
@@ -84,7 +111,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                114
+                115
             );
             // Policies107/108/110/111 add fills, recursive frames, worker
             // transport and selected String-matrix scalar projections.
@@ -101,7 +128,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
                 .closed_tails
                 .regions
                 .iter()
-                .filter(|region| region.numeric_tree.is_none())
+                .filter(|region| !region.numeric_subtree())
                 .collect::<Vec<_>>();
             assert_eq!(fallback.len(), 1);
             let added_price = |site: usize| {
@@ -153,7 +180,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(child_entries, 3);
             assert_eq!(
                 (setup, entries, ordinary, pieces),
-                (14_704, 384, 12_288, 94_208)
+                (12_372, 384, 12_288, 94_208)
             );
             assert_eq!(
                 report.work,
@@ -187,21 +214,34 @@ fn complete_numeric_tree_and_retained_parent_fallback_preserve_the_same_source_o
         let complete =
             JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
                 .unwrap();
-        let tree_region = complete
+        let region = complete
             .descriptor()
             .metadata()
             .closed_tails
             .regions
             .iter()
-            .find(|region| region.numeric_tree.is_some())
+            .find(|region| region.numeric_subtree())
             .unwrap();
-        let tree = tree_region.numeric_tree.as_ref().unwrap();
-        let boundaries = tree
-            .nodes
-            .iter()
-            .skip(1)
-            .flat_map(|node| [node.tail.initialize(), node.tail.header(), node.tail.exit()])
-            .collect::<std::collections::BTreeSet<_>>();
+        let boundaries = if let Some(tree) = &region.numeric_tree {
+            tree.nodes
+                .iter()
+                .skip(1)
+                .flat_map(|node| [node.tail.initialize(), node.tail.header(), node.tail.exit()])
+                .collect::<std::collections::BTreeSet<_>>()
+        } else {
+            region
+                .numeric
+                .as_ref()
+                .unwrap()
+                .phase
+                .as_ref()
+                .unwrap()
+                .loops
+                .iter()
+                .skip(1)
+                .flat_map(|node| [node.initialize as u32, node.header as u32, node.exit as u32])
+                .collect()
+        };
         for restored in [false, true] {
             for (jit, tree_enabled) in [(&ordinary, false), (&complete, true)] {
                 let memory = mode.memory_budget();
@@ -237,8 +277,7 @@ fn complete_numeric_tree_and_retained_parent_fallback_preserve_the_same_source_o
                             observed
                                 .closed_tail_exits
                                 .iter()
-                                .any(|row| row[0] == u64::from(tree_region.tail.exit())
-                                    && row[3] == 0),
+                                .any(|row| row[0] == u64::from(region.tail.exit()) && row[3] == 0),
                             "the complete tree must actually lend and settle: {observed:?}"
                         );
                         for boundary in &boundaries {
@@ -259,15 +298,14 @@ fn complete_numeric_tree_and_retained_parent_fallback_preserve_the_same_source_o
                         }
                     } else {
                         assert!(
-                            observed.selected > 0 && observed.fused_numeric_entries > 0,
+                            observed.selected > 0,
                             "the retained smaller proof must actually select: {observed:?}"
                         );
                         assert!(
                             !observed
                                 .closed_tail_exits
                                 .iter()
-                                .any(|row| row[0] == u64::from(tree_region.tail.exit())
-                                    && row[3] == 0),
+                                .any(|row| row[0] == u64::from(region.tail.exit()) && row[3] == 0),
                             "the ablation must not execute the complete tree: {observed:?}"
                         );
                     }
@@ -505,3 +543,255 @@ fn composition_native_parent_resumes_after_an_ordinary_empty_child() {
 mod uniform_fill;
 
 mod numeric_maps;
+
+#[test]
+fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
+    let source = include_str!("../../../../../tests/fixtures/native/numeric-parent-child.mec");
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let memory = mode.memory_budget();
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        let args = huffman_inputs(&artifact, 3, vec![0, 1, 1, 2], &memory);
+        let before = contents(&args);
+        let mut output = vec![None; artifact.outputs().len()];
+        let mut expected_work = None;
+        for _ in 0..2 {
+            output.fill(None);
+            super::retirement::take_observation();
+            super::retirement::take_child_observation();
+            let report = jit
+                .evaluate_into(&args, &mut output, mode.execution(), &memory)
+                .unwrap();
+            let batches = super::retirement::take_observation();
+            let omitted = super::retirement::take_child_observation();
+            assert_eq!(contents(&args), before);
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix([3, 1, 3, 2].map(Data::U8).into()),
+            );
+            assert_eq!(report.work, *expected_work.get_or_insert(report.work));
+            assert_eq!(
+                crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
+                115
+            );
+            assert_eq!(
+                report.work, 41_515_826,
+                "policy115 retains child fallback banks (+296 setup work); the complete phase keeps its source prices"
+            );
+            println!("huffman-cleanup work={} batches={batches}", report.work);
+            assert!(
+                batches > 0,
+                "original Huffman parent must use funded cleanup"
+            );
+            assert!(
+                omitted > 0,
+                "completed Huffman children must avoid repeated physical cleanup"
+            );
+        }
+        drop((args, output));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
+
+fn selected_native_sites(jit: &JitProgramArtifact) -> std::collections::BTreeSet<u64> {
+    let metadata = jit.descriptor().metadata();
+    metadata
+        .compositions
+        .parents
+        .iter()
+        .flat_map(|parent| &parent.segments)
+        .filter(|piece| metadata.compositions.entry(piece.entry as usize).is_some())
+        .flat_map(|piece| piece.sites.iter().map(|&site| u64::from(site)))
+        .chain(
+            metadata
+                .closed_tails
+                .regions
+                .iter()
+                .filter_map(|region| region.numeric.as_ref())
+                .flat_map(|proof| proof.sites.iter().map(|&site| site as u64)),
+        )
+        .collect()
+}
+
+#[test]
+fn composition_counts_real_child_initializations_and_completed_empty_calls_latest_phase() {
+    let source = include_str!("../../../../../tests/fixtures/native/numeric-parent-child.mec");
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        let metadata = jit.descriptor().metadata();
+        let region = metadata
+            .closed_tails
+            .regions
+            .iter()
+            .find(|region| {
+                region.tail.parent().is_none()
+                    && region
+                        .numeric
+                        .as_ref()
+                        .is_some_and(|proof| proof.phase.is_some())
+            })
+            .unwrap();
+        let phase = region.numeric.as_ref().unwrap();
+        assert_eq!(phase.phase.as_ref().unwrap().loops.len(), 2);
+        let child = &phase.phase.as_ref().unwrap().loops[1];
+        let mut output = vec![None; artifact.outputs().len()];
+        let memory = mode.memory_budget();
+        for (width, counts, expected_calls, expected) in [
+            (0, vec![], 0, vec![9, 9, 9, 9]),
+            (3, vec![0, 0, 0, 0], 3, vec![9, 9, 9, 9]),
+            (3, vec![0, 1, 1, 2], 3, vec![3, 1, 3, 2]),
+        ] {
+            let args = huffman_inputs(&artifact, width, counts, &memory);
+            let before = contents(&args);
+            let (result, actual) =
+                observe::run(&jit, &args, &mut output, mode.execution(), &memory);
+            result.unwrap();
+            assert_eq!(actual.phases, 1);
+            assert_eq!(
+                actual
+                    .admits
+                    .get(&u64::from(child.initialize as u64))
+                    .copied()
+                    .unwrap_or(0),
+                0
+            );
+            assert_eq!(
+                actual
+                    .admits
+                    .get(&u64::from(child.exit as u64))
+                    .copied()
+                    .unwrap_or(0),
+                0
+            );
+            if width == 0 || expected == vec![9, 9, 9, 9] {
+                let writes = phase;
+                for &(site, _) in writes.actions.iter().filter(|(_, op)| matches!(op, crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. })) {
+                    assert!(
+                        actual.helpers.keys().all(|&(s, _)| s != site as u64),
+                        "empty child performed a first write: {actual:?}"
+                    );
+                }
+            }
+            assert_eq!(contents(&args), before);
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix(expected.into_iter().map(Data::U8).collect())
+            );
+            println!(
+                "{}",
+                serde_json::json!({"witness":"actual-child-boundaries", "width":width, "source_child_calls":expected_calls, "selected_parent_fragments":actual.selected})
+            );
+        }
+        drop(output);
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
+
+#[test]
+fn composition_native_parent_resumes_after_an_ordinary_empty_child_latest_phase() {
+    let source = include_str!("../../../../../tests/fixtures/native/numeric-parent-child.mec");
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let memory = mode.memory_budget();
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        let args = inputs(
+            &artifact,
+            &[
+                ("a", Data::Matrix([2, 0, 3, 1].map(Data::U32).into())),
+                ("lens", Data::Matrix(vec![Data::U8(9); 8].into())),
+                ("counts", Data::Matrix([0, 0, 0, 0].map(Data::U64).into())),
+                ("width", Data::U64(3)),
+                ("start", Data::U64(0)),
+            ],
+            &memory,
+        );
+        let before = contents(&args);
+        let mut output = vec![None; artifact.outputs().len()];
+        let mut policy = mode.execution();
+        // The child preview must decline its possible eight-element write.
+        // Its actual empty path constructs only the existing two-field result.
+        // Parent frame packs have at most five fields and remain eligible.
+        policy.library.max_output_elements = Some(5);
+        let (result, counts) = observe::run(&jit, &args, &mut output, policy, &memory);
+        result.unwrap();
+        assert_eq!(
+            counts.phases, 0,
+            "tight limits must keep ordinary execution"
+        );
+        let metadata = jit.descriptor().metadata();
+        let root = metadata
+            .plan
+            .iterations()
+            .iter()
+            .position(|loop_| loop_.as_ref().parent().is_none())
+            .unwrap() as u32;
+        let child_id = metadata
+            .plan
+            .iterations()
+            .iter()
+            .position(|loop_| loop_.as_ref().parent() == Some(root))
+            .unwrap();
+        let mech_engine::native_artifact::NativeControlLoop::Tail(child) =
+            &jit.descriptor().plan().iterations()[child_id]
+        else {
+            panic!()
+        };
+        for site in [child.initialize(), child.body(), child.exit()] {
+            assert_eq!(
+                counts.admits.get(&u64::from(site)).copied().unwrap_or(0),
+                3,
+                "ordinary child was replayed or skipped: {counts:?}"
+            );
+        }
+        assert_eq!(contents(&args), before);
+        assert_eq!(
+            output
+                .last()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            Data::Matrix(vec![Data::U8(9); 8].into())
+        );
+        drop((args, output));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}

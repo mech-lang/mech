@@ -35,6 +35,31 @@ pub(in crate::native_artifact) struct Region {
     pub compute: u64,
     pub comparison: u64,
 }
+impl Region {
+    #[cfg(feature = "canonical-native-program")]
+    pub fn numeric_subtree(&self) -> bool {
+        self.numeric_tree.is_some()
+            || self
+                .numeric
+                .as_ref()
+                .is_some_and(|proof| proof.phase.is_some())
+    }
+    /// Ordinary children may use the phases' shared scratch bank. Pending
+    /// continuation identity therefore lives beside this region's fuel.
+    pub fn cold_resume(&self) -> Option<usize> {
+        self.numeric
+            .as_ref()
+            .is_some_and(|proof| !proof.exits.is_empty())
+            .then(|| self.words + 3)
+    }
+    fn state_words(&self) -> usize {
+        if self.map.is_some() {
+            5
+        } else {
+            3 + usize::from(self.cold_resume().is_some())
+        }
+    }
+}
 #[derive(Debug, Default, serde::Serialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Layout {
@@ -70,10 +95,30 @@ impl Layout {
             .and_then(|n| n.checked_add(aggregates.words()))
             .and_then(|n| n.checked_add(borrowed.words))
             .ok_or("Tail word count overflow")?;
+        let mut secondary_sites = vec![false; plan.blocks().len()];
         for (iteration, control) in plan.iterations().iter().enumerate() {
             let NativeControlLoop::Tail(tail) = control else {
                 continue;
             };
+            // Primary source ownership remains outermost. A complete child
+            // may additionally enter after its partial parent exported a cold
+            // continuation; never select overlapping secondary children.
+            let primary = layout.sites[tail.header() as usize].filter(|&id| {
+                layout.regions[id]
+                    .numeric
+                    .as_ref()
+                    .is_some_and(|proof| !proof.exits.is_empty() || !proof.prepaid_sites.is_empty())
+            });
+            if secondary_sites[tail.header() as usize]
+                || primary.is_some_and(|id| {
+                    !layout.regions[id]
+                        .numeric
+                        .as_ref()
+                        .is_some_and(|proof| !proof.exits.is_empty())
+                })
+            {
+                continue;
+            }
             let map = owners
                 .initializer(tail.initialize() as usize)
                 .filter(|&owner| {
@@ -112,7 +157,16 @@ impl Layout {
             // managed-frame initializer here would strand their array reads
             // on the ordinary callback path. The proof itself rejects loops
             // without arrays, preserving the established scalar-only entry.
-            let mut numeric = if map.is_none() {
+            let phase = (map.is_none())
+                .then(|| {
+                    super::readonly_numeric::derive(plan, tail, frames, aggregates, calls, visits)
+                        .ok()
+                })
+                .flatten()
+                .filter(|proof| proof.phase.is_some() || !proof.exits.is_empty());
+            let mut numeric = if phase.is_some() {
+                phase
+            } else if map.is_none() {
                 if let Ok(tree) = discovery.discover(tail) {
                     match super::readonly_numeric::derive_tree(
                         plan, tail, frames, aggregates, calls, &tree,
@@ -121,13 +175,14 @@ impl Layout {
                             numeric_tree = Some(tree);
                             Some(proof)
                         }
-                        Err(_) => {
-                            super::readonly_numeric::derive(plan, tail, frames, aggregates, calls)
-                                .ok()
-                        }
+                        Err(_) => super::readonly_numeric::derive(
+                            plan, tail, frames, aggregates, calls, visits,
+                        )
+                        .ok(),
                     }
                 } else {
-                    super::readonly_numeric::derive(plan, tail, frames, aggregates, calls).ok()
+                    super::readonly_numeric::derive(plan, tail, frames, aggregates, calls, visits)
+                        .ok()
                 }
             } else {
                 None
@@ -140,6 +195,47 @@ impl Layout {
                 super::captured_numeric::derive(plan, tail, calls).ok()
             } else {
                 None
+            };
+            if let Some(owner) = primary {
+                let parent = layout.regions[owner].numeric.as_ref().unwrap();
+                if map.is_some()
+                    || layout.initializers[tail.initialize() as usize].is_some()
+                    || layout.exits[tail.exit() as usize].is_some()
+                    || !numeric.as_ref().is_some_and(|proof| {
+                        proof.exits.is_empty()
+                            && proof.prepaid_sites.is_empty()
+                            && proof
+                                .sites
+                                .iter()
+                                .all(|site| parent.sites.binary_search(site).is_ok())
+                    })
+                {
+                    continue;
+                }
+            }
+            let successors = |site: usize| {
+                if numeric.as_ref().is_some_and(|proof| {
+                    proof.exits.iter().any(|exit| {
+                        exit.to == site
+                            && matches!(exit.kind, super::numeric_plan::ExitKind::Unsupported)
+                    })
+                }) {
+                    return Vec::new();
+                }
+                numeric
+                    .as_ref()
+                    .and_then(|proof| proof.phase.as_ref())
+                    .and_then(|phase| phase.cold.iter().find(|child| child.initialize == site))
+                    .map_or_else(
+                        || {
+                            visits[site]
+                                .successors
+                                .into_iter()
+                                .flatten()
+                                .collect::<Vec<_>>()
+                        },
+                        |child| vec![child.exit as u32],
+                    )
             };
             if (tail.parent().is_some() && map.is_none() && numeric.is_none() && captures.is_none())
                 || (map.is_none()
@@ -179,11 +275,10 @@ impl Layout {
                     )
                     || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
                         if plan.values()[output.get() as usize].scalar_kind().is_some());
-                if numeric_tree
-                    .as_ref()
-                    .map_or(block.iteration() != Some(iteration as u32), |tree| {
-                        tree.node(site as usize).is_none()
-                    })
+                if !(block.iteration() == Some(iteration as u32)
+                    || numeric
+                        .as_ref()
+                        .is_some_and(|p| p.sites.contains(&(site as usize))))
                     || !native
                     || (map.is_some() && borrowed.action(site as usize).is_some())
                     || plan.activation_boundary() == Some(site)
@@ -191,7 +286,7 @@ impl Layout {
                     closed = false;
                     break;
                 }
-                for next in visits[site as usize].successors.into_iter().flatten() {
+                for next in successors(site as usize) {
                     if next == tail.exit() && site != tail.finish() {
                         closed = false;
                     }
@@ -199,23 +294,46 @@ impl Layout {
                 }
                 sites.push(site);
             }
-            if !closed || !seen[tail.finish() as usize] || !seen[tail.latch() as usize] {
+            let partial = numeric
+                .as_ref()
+                .is_some_and(|proof| !proof.prepaid_sites.is_empty());
+            if !closed
+                || (!partial && (!seen[tail.finish() as usize] || !seen[tail.latch() as usize]))
+            {
                 continue;
             }
-            // Removing the sole declared latch backedge must make the region a
-            // DAG. Then summing every block bounds any one header-to-boundary path.
-            let mut incoming = vec![0usize; plan.blocks().len()];
-            for &site in &sites {
-                for next in visits[site as usize].successors.into_iter().flatten() {
-                    let backedge = numeric_tree.as_ref().map_or(
-                        site == tail.latch() && next == tail.header(),
+            // Cut all and only the declared backedges in the selected phase.
+            let backedges = numeric.as_ref().and_then(|p| p.phase.as_ref()).map_or_else(
+                || {
+                    numeric_tree.as_ref().map_or_else(
+                        || std::collections::BTreeSet::from([(tail.latch(), tail.header())]),
                         |tree| {
                             tree.nodes
                                 .iter()
-                                .any(|node| site == node.tail.latch() && next == node.tail.header())
+                                .map(|node| (node.tail.latch(), node.tail.header()))
+                                .collect()
                         },
-                    );
-                    if next != tail.exit() && !backedge {
+                    )
+                },
+                |phase| {
+                    phase
+                        .loops
+                        .iter()
+                        .map(|loop_| {
+                            let NativeControlLoop::Tail(t) =
+                                &plan.iterations()[loop_.iteration as usize]
+                            else {
+                                unreachable!()
+                            };
+                            (t.latch(), t.header())
+                        })
+                        .collect()
+                },
+            );
+            let mut incoming = vec![0usize; plan.blocks().len()];
+            for &site in &sites {
+                for next in successors(site as usize) {
+                    if next != tail.exit() && !backedges.contains(&(site, next)) {
                         incoming[next as usize] += 1;
                     }
                 }
@@ -228,16 +346,8 @@ impl Layout {
             let mut count = 0;
             while let Some(site) = ready.pop() {
                 count += 1;
-                for next in visits[site as usize].successors.into_iter().flatten() {
-                    let backedge = numeric_tree.as_ref().map_or(
-                        site == tail.latch() && next == tail.header(),
-                        |tree| {
-                            tree.nodes
-                                .iter()
-                                .any(|node| site == node.tail.latch() && next == node.tail.header())
-                        },
-                    );
-                    if next == tail.exit() || backedge {
+                for next in successors(site as usize) {
+                    if next == tail.exit() || backedges.contains(&(site, next)) {
                         continue;
                     }
                     incoming[next as usize] -= 1;
@@ -425,10 +535,17 @@ impl Layout {
                 compute = tree.nodes[0].compute;
                 comparison = tree.nodes[0].comparison;
                 proof.boundary_work = boundary;
+            } else if let Some(phase) = numeric.as_ref().and_then(|p| p.phase.as_ref()) {
+                compute = phase.loops[0].compute;
+                comparison = phase.loops[0].comparison;
             }
             let index = layout.regions.len();
             for site in sites {
-                layout.sites[site as usize] = Some(index);
+                if primary.is_some() {
+                    secondary_sites[site as usize] = true;
+                } else {
+                    layout.sites[site as usize] = Some(index);
+                }
             }
             layout.initializers[tail.initialize() as usize] = Some(index);
             layout.exits[tail.exit() as usize] = Some(index);
@@ -458,21 +575,30 @@ impl Layout {
             layout.logical_words = layout
                 .logical_words
                 .checked_add(
-                    if map.is_some() { 5 } else { 3 }
-                        + layout.regions.last().map_or(0, |r| {
-                            r.numeric.as_ref().map_or_else(
-                                || r.captures.as_ref().map_or(0, |p| p.words()),
+                    layout.regions.last().unwrap().state_words()
+                        + layout
+                            .regions
+                            .last()
+                            .and_then(|r| r.numeric.as_ref())
+                            .map_or_else(
+                                || {
+                                    layout
+                                        .regions
+                                        .last()
+                                        .and_then(|r| r.captures.as_ref())
+                                        .map_or(0, |p| p.words())
+                                },
                                 |p| p.words,
-                            )
-                        }),
+                            ),
                 )
                 .ok_or("Tail words overflow")?;
             layout.words = layout
                 .words
-                .checked_add(if map.is_some() { 5 } else { 3 })
+                .checked_add(layout.regions.last().unwrap().state_words())
                 .ok_or("Tail state words overflow")?;
         }
-        // Every selected numeric body is child-free. The runtime admits only
+        // Distinct phases never overlap at runtime. Each includes its own
+        // simultaneously live parent/child homes. The runtime admits only
         // one closed loan and reconciles it before ordinary/parent execution.
         // Sharing the flags too would let global abort export the wrong region.
         let maximum = layout
@@ -499,15 +625,29 @@ impl Layout {
             .ok_or("numeric shadow size overflows")?;
         Ok(layout)
     }
+    /// Find the independently reconstructed entry and readiness home for a header.
+    #[cfg(feature = "canonical-native-program")]
+    pub fn header(&self, site: usize) -> Option<usize> {
+        self.regions
+            .iter()
+            .position(|region| region.tail.header() as usize == site)
+    }
     pub fn extra_work(&self, site: usize) -> u64 {
         if self.sites.get(site).copied().flatten().is_some()
             || self.initializers.get(site).copied().flatten().is_some()
             || self.exits.get(site).copied().flatten().is_some()
+            || self.prepaid_site(site)
         {
             OVERHEAD
         } else {
             0
         }
+    }
+    pub fn prepaid_site(&self, site: usize) -> bool {
+        self.regions
+            .iter()
+            .filter_map(|region| region.numeric.as_ref())
+            .any(|proof| proof.prepaid_sites.binary_search(&site).is_ok())
     }
 }
 

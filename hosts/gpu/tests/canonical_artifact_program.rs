@@ -138,6 +138,12 @@ mod costs_qualification;
 #[path = "support/canonical_program_default_costs.rs"]
 mod default_costs_qualification;
 
+#[path = "support/canonical_program_histogram_reuse.rs"]
+mod histogram_reuse_qualification;
+
+#[path = "support/canonical_program_frequency_reuse.rs"]
+mod frequency_reuse_qualification;
+
 #[path = "support/canonical_program_header.rs"]
 mod header_qualification;
 

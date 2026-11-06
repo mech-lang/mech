@@ -1,0 +1,13 @@
+{
+  "control_build": "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v11/build.json",
+  "qualified_build": "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v13/build.json",
+  "source_differences": [
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/nested_phase.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/nested_phase_fallback.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/named_managed_projections.rs"
+  ],
+  "all_differences_in_test_only_modules": true,
+  "control_cases": 133,
+  "all_nontiming_and_allocation_fields_exact": true
+}

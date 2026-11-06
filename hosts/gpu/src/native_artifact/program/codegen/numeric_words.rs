@@ -4,6 +4,7 @@ use crate::native_artifact::codegen::common::{aggregates, ssa_words::Words};
 use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::compiler::backend;
 use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation};
+use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{InstBuilder, Value, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
@@ -53,6 +54,11 @@ pub(super) fn source_slots(
             Some(Operation::Append { incoming, .. }) => {
                 slots.insert(*incoming as usize);
             }
+            Some(Operation::AppendLeBytes {
+                incoming, count, ..
+            }) => {
+                slots.extend([*incoming as usize, *count as usize]);
+            }
             _ => {}
         }
         if let CodePlan::Program(program) = code {
@@ -95,16 +101,19 @@ pub(super) fn source_slots(
     }
     Ok(slots)
 }
-/// Emit the same scalar frame words for a leaf or an acyclic parent piece.
-/// Managed fields remain in the owning checked frame/array recipes.
-pub(super) fn frame_words(
-    b: &mut FunctionBuilder<'_>,
-    words: &Words,
+/// Original read/write ordering, shared with the current-traversal analysis.
+pub(super) struct FrameWordMoves {
+    pub assignments: Vec<(usize, usize)>,
+    pub parallel: bool,
+}
+
+/// Exact scalar lane assignments; managed fields retain their checked recipes.
+pub(super) fn frame_word_moves(
     shadow: usize,
     code: CodePlan<'_>,
     site: usize,
     recipes: &[FrameWords],
-) -> Result<(), NativeCompileError> {
+) -> Result<FrameWordMoves, NativeCompileError> {
     let CodePlan::Program(program) = code else {
         return Err(backend("numeric frame lacks managed plan"));
     };
@@ -120,7 +129,7 @@ pub(super) fn frame_words(
         .action(site)
         .ok_or_else(|| backend("numeric frame lost fields"))?
         .operation();
-    match operation {
+    let assignments = match operation {
         Frame::EnumPack { .. } | Frame::Observe { .. } => {
             return Err(backend("tagged frame outside numeric word emitter"));
         }
@@ -140,7 +149,7 @@ pub(super) fn frame_words(
                     if target.len() != 1 {
                         return Err(backend("numeric scalar pack span differs"));
                     }
-                    copied.push((target[0], words.read(b, operand.get() as usize)));
+                    copied.push((shadow + target[0], operand.get() as usize));
                 } else {
                     let source = recipe(operand.get())?.scalar_slots().collect::<Vec<_>>();
                     if source.len() != target.len() {
@@ -150,53 +159,70 @@ pub(super) fn frame_words(
                         source
                             .into_iter()
                             .zip(target)
-                            .map(|(from, to)| (to, words.read(b, shadow + from))),
+                            .map(|(from, to)| (shadow + to, shadow + from)),
                     );
                 }
             }
-            for (to, value) in copied {
-                words.write(b, shadow + to, value);
-            }
+            copied
         }
-        Frame::Copy { source, output } => {
-            // Read every old scalar before writing any next-state lane.
-            let copied = recipe(source.get())?
-                .scalar_slots()
-                .zip(recipe(output.get())?.scalar_slots())
-                .map(|(from, to)| (to, words.read(b, shadow + from)))
-                .collect::<Vec<_>>();
-            for (to, value) in copied {
-                words.write(b, shadow + to, value);
-            }
-        }
+        Frame::Copy { source, output } => recipe(source.get())?
+            .scalar_slots()
+            .zip(recipe(output.get())?.scalar_slots())
+            .map(|(from, to)| (shadow + to, shadow + from))
+            .collect(),
         Frame::Project {
             source,
             ordinal,
             output,
         } => {
             if let Some(field) = recipe(source.get())?.fields[*ordinal] {
-                let value = words.read(b, shadow + field);
-                words.write(b, output.get() as usize, value);
+                vec![(output.get() as usize, shadow + field)]
             } else {
                 let source = recipe(source.get())?
                     .field_slots(*ordinal)
                     .collect::<Vec<_>>();
-                if !source.is_empty() {
-                    let target = recipe(output.get())?.scalar_slots().collect::<Vec<_>>();
-                    if source.len() != target.len() {
-                        return Err(backend("numeric composite projection span differs"));
-                    }
-                    let copied = source
-                        .into_iter()
-                        .zip(target)
-                        .map(|(from, to)| (to, words.read(b, shadow + from)))
-                        .collect::<Vec<_>>();
-                    for (to, value) in copied {
-                        words.write(b, shadow + to, value);
-                    }
+                if source.is_empty() {
+                    return Ok(FrameWordMoves {
+                        assignments: Vec::new(),
+                        parallel: true,
+                    });
                 }
+                let target = recipe(output.get())?.scalar_slots().collect::<Vec<_>>();
+                if source.len() != target.len() {
+                    return Err(backend("numeric composite projection span differs"));
+                }
+                source
+                    .into_iter()
+                    .zip(target)
+                    .map(|(from, to)| (shadow + to, shadow + from))
+                    .collect()
             }
         }
+    };
+    // Composite spans may overlap. Match the existing read-all/write-all
+    // emission, and expose that ordering to current-traversal proofs.
+    Ok(FrameWordMoves {
+        assignments,
+        parallel: true,
+    })
+}
+
+pub(super) fn frame_words(
+    b: &mut FunctionBuilder<'_>,
+    words: &Words,
+    shadow: usize,
+    code: CodePlan<'_>,
+    site: usize,
+    recipes: &[FrameWords],
+) -> Result<(), NativeCompileError> {
+    let moves = frame_word_moves(shadow, code, site, recipes)?;
+    let copied = moves
+        .assignments
+        .into_iter()
+        .map(|(to, from)| (to, words.read(b, from)))
+        .collect::<Vec<_>>();
+    for (to, value) in copied {
+        words.write(b, to, value);
     }
     Ok(())
 }
@@ -222,10 +248,29 @@ pub(super) fn linear_address(
     let physical = if vector {
         ordinal
     } else {
-        let row = b.ins().urem(ordinal, rows);
+        // Generic schemas can still carry a current row or column vector.
+        // The caller has checked this admitted view's bounds, so either unit
+        // dimension makes the physical ordinal identical to source order.
+        let one_row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
+        let one_column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
+        let contiguous = b.ins().bor(one_row, one_column);
+        let general = b.create_block();
+        let done = b.create_block();
+        b.append_block_param(done, types::I64);
+        b.ins()
+            .brif(contiguous, done, &[ordinal.into()], general, &[]);
+        b.switch_to_block(general);
         let column = b.ins().udiv(ordinal, rows);
+        // Bounds on the admitted view prove rows > 0. Reuse the quotient:
+        // column * rows <= ordinal, so this internal remainder cannot overflow.
+        // Separate urem/udiv lower to duplicate machine divisions on AArch64.
+        let consumed = b.ins().imul(column, rows);
+        let row = b.ins().isub(ordinal, consumed);
         let row = b.ins().imul(row, columns);
-        b.ins().iadd(row, column)
+        let physical = b.ins().iadd(row, column);
+        b.ins().jump(done, &[physical.into()]);
+        b.switch_to_block(done);
+        b.block_params(done)[0]
     };
     let at = b.ins().imul_imm(physical, i64::from(width));
     let base = base(b);

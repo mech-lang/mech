@@ -1,0 +1,25 @@
+// A complete append phase with two levels of synchronous scalar children.
+// The compressor's path scan needs this same view and owner continuity.
++> sequence
+
+phase-prefix(values<[u32]>, at<u64>, end<u64>, number<u64>, allowed<bool>, divisor<u64>) => (out<u64>) :=
+  allowed! := allowed
+  more := at < end
+  word<u64> := (more? | true => values[at + 1u64] | false => 0u32)
+  out := (more? | true => phase-prefix(values, at + 1u64, end, number + word, allowed, divisor) | false => number / divisor).
+
+phase-candidates(values<[u32]>, end<u64>, number<u64>, allowed<bool>, divisor<u64>) => (out<u64>) :=
+  allowed! := allowed
+  more := end <= sequence/length(values)
+  prefix := (more? | true => phase-prefix(values, 0u64, end, 0u64, allowed, divisor) | false => 0u64)
+  out := (more? | true => phase-candidates(values, end + 1u64, number + prefix, allowed, divisor) | false => number).
+
+phase-scan(values<[u32]>, nodes<[u64]>, left<u64>, at<u64>, flag<bool>, allowed<bool>, deny-at<u64>, divisor<u64>, bias<u64>) => (out<[u64]>) :=
+  more := left != 0u64
+  permitted := allowed && (at != deny-at)
+  number := (more? | true => phase-candidates(values, 1u64, 0u64, permitted, divisor) | false => 0u64)
+  tag := (flag? | true => 0u64 | false => 100u64)
+  next := (more? | true => sequence/append(nodes, number + at + tag + bias) | false => nodes)
+  out := (more? | true => phase-scan(values, next, left - 1u64, at + 1u64, flag == false, allowed, deny-at, divisor, bias) | false => nodes).
+
+phase-scan(values<[u32]>, sequence/reserve(nodes<[u64]>, 305257u64), steps<u64>, 0u64, flag<bool>, allowed<bool>, deny-at<u64>, divisor<u64>, bias<u64>)

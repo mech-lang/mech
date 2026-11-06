@@ -54,6 +54,8 @@ pub(in crate::native_artifact) enum GlobalHelper {
     NumericMapFinish,
     HistogramPrepare,
     HistogramFinish,
+    WordCollectionPrepare,
+    WordCollectionFinish,
 }
 impl GlobalHelper {
     // Decoding classifies only. Site, phase, lane, admission and cursor checks
@@ -105,6 +107,8 @@ impl GlobalHelper {
             value if value == u64::MAX - 42 => Self::NumericMapFinish,
             value if value == u64::MAX - 39 => Self::HistogramPrepare,
             value if value == u64::MAX - 40 => Self::HistogramFinish,
+            value if value == u64::MAX - 43 => Self::WordCollectionPrepare,
+            value if value == u64::MAX - 44 => Self::WordCollectionFinish,
             value => Self::Output(OutputIndex(value - 3)),
         }
     }
@@ -156,6 +160,8 @@ impl GlobalHelper {
             Self::NumericMapFinish => u64::MAX - 42,
             Self::HistogramPrepare => u64::MAX - 39,
             Self::HistogramFinish => u64::MAX - 40,
+            Self::WordCollectionPrepare => u64::MAX - 43,
+            Self::WordCollectionFinish => u64::MAX - 44,
         }
     }
     #[cfg(feature = "canonical-native-program")]

@@ -1,0 +1,15 @@
+# Related-post compiler integration with #973
+
+This branch combines the related-post compiler series with #973 at `fb37ded7af3dd59bb6cd5f13f5044aa29e91833e`. Its combined identity is **IR226 / work115 / ABI41 / image9**. It targets `codex/level12-compression-consolidated` through [PR990](https://github.com/mech-lang/mech/pull/990).
+
+The production compiler builds with the pinned optimized dependency closure. Original and compact sources with four and eight workers each retain **53 native numeric functions** and pass **31 exact-output fixtures per variant (124 total)**. The original-four native code decreases from **930,772 to 908,464 bytes**. Seven additional unsigned guards are proved per variant. These are code-generation observations; no integrated speed result is claimed yet.
+
+All **133 scalar and DEFLATE controls match IR225 in every non-timing field, including allocation metrics**. The published receipts identify their exact build; `control-source-equivalence.json` records the subsequent differences, all confined to test modules. The complete GPU suite passes **836 tests**, with exactly the two inherited matrix-catalog and missing-stats-catalog failures. Focused nested-phase, continuation, work-price, private-retirement, and argument-bank checks pass. Runtime-only, complete loader, old-Object, broader finite-budget, timing/resource, and fresh-profile qualification remain pending.
+
+Both compiler paths lower source work to native instructions. Recursive frames and immutable captured arrays retain their must-current tree proof. Bounded and partial phases retain #973's separate coverage proof, then convert to the shared checked native representation. The combined emitter includes local-phi normalization, range cleanup, completed-child read windows, child settlement and prepayment. Those phase proofs do not yet cover the related-post current-funded query trees; their presence is not a claim that every pass optimizes this benchmark.
+
+The integration also preserves independently proved child entries and parent pieces when an outer phase declines. A live paid route must still match its exact primary, and overlapping paid source work still declines admission. Helper tags, serialized metadata, current scalar-bank imports, recursive owner projections, cold exports and image validation use the combined ABI and work policy.
+
+`verify-review.py` verifies the retained timing evidence against its historical compiler Git tree and verifies the current integration's Rust/manifest inventory separately. The timings in the original review guide still belong to **IR223**, not this integration. The IR225 screen in `evidence/` is also a separate, unselected experiment: **3.133083 ms /1.960679× matched Rust**, **38.782792 ms /1.490356× complete Rust**, with 0.70% fewer instructions but a 0.64% processing regression against IR224. IR208 remains the selected speed checkpoint; Rust parity is unmet.
+
+Build plans, receipts, and archive references retain the original local paths and pinned dependency hashes. This is not a portable one-command build or a remotely hosted raw-archive claim.

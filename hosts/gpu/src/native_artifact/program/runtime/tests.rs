@@ -981,6 +981,13 @@ fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_en
             (16, 25u64),
             (16, 143u64),
             (16, 144u64),
+            (16, 168u64),
+            (16, 169u64),
+            (16, 170u64),
+            (16, 171u64),
+            (16, 172u64),
+            (16, 173u64),
+            (16, 174u64),
             (24, 11u64),
             (24, 37u64),
             (32, 34u64),
@@ -1000,7 +1007,7 @@ fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_en
 }
 #[test]
 fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-    assert_eq!(VERSION, 40);
+    assert_eq!(VERSION, 41);
     assert_eq!(
         crate::native_artifact::program::protocol::abi::PHASE_CAPTURE_TAIL,
         3

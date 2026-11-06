@@ -32,6 +32,30 @@ impl NativePreparedLibraryCall {
             && primitive::width(element).is_some()
     }
 
+    /// Exact byte-append factory with an unchanged plain matrix binding.
+    /// Count, current row geometry, owners and funding remain runtime checks.
+    pub fn supports_unsigned_matrix_append_le_bytes(&self) -> bool {
+        let [matrix, word, count] = self.template.inputs() else {
+            return false;
+        };
+        let mech_core::SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = matrix.body()
+        else {
+            return false;
+        };
+        self.template.primitive() == P::SequenceAppendLeBytes
+            && matrix == self.template.output()
+            && dimensions.len() == 2
+            && element.as_ref()
+                == &mech_core::SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8)
+            && word.body() == &mech_core::SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+            && count.body() == &mech_core::SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8)
+            && word.dimension_parameters().is_empty()
+            && count.dimension_parameters().is_empty()
+    }
+
     pub fn supports_unsigned_buffer(&self) -> bool {
         self.buffer_operation().is_some()
     }
@@ -134,6 +158,35 @@ impl NativePreparedLibraryCall {
             Some(source),
             argument,
             None,
+            None,
+            may_consume,
+            limits,
+            work,
+            coexistence,
+            |value, admission| Ok(value.into_private_unsigned_matrix(admission)?),
+        )
+    }
+
+    /// Materialize a positive bulk byte append using the same selected leaf.
+    /// Zero-count identity remains with the current immutable owner; it is not
+    /// a first-change transition. The generated caller proves that distinction.
+    pub fn unsigned_matrix_append_le_bytes_private(
+        &self,
+        source: Value,
+        word: u64,
+        count: u64,
+        may_consume: bool,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<mech_core::snapshot::PrivateUnsignedMatrix, InvokeError> {
+        if !self.supports_unsigned_matrix_append_le_bytes() || !(1..=8).contains(&count) {
+            return Err(InvokeError::InvalidInput);
+        }
+        self.unsigned_buffer_with(
+            Some(source),
+            word,
+            Some(count),
             None,
             may_consume,
             limits,

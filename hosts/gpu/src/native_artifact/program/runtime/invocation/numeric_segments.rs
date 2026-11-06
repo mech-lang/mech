@@ -60,6 +60,35 @@ impl Invocation<'_, '_, '_> {
             .numeric
             .as_ref()
             .ok_or_else(|| invalid("parent numeric proof missing"))?;
+        if self.numeric_prepaid.is_some()
+            && self.numeric_prepaid_region() != segment.prepaid_region
+            // Every segment site has its parent's iteration. Validated parent
+            // IDs decrease, so an iteration newer than the paid deepest cannot
+            // overlap. Older IDs still need the exact source/ancestry scan.
+            && self
+                .numeric_prepaid
+                .is_some_and(|route| route.may_include_iteration(Some(parent.iteration)))
+            && segment
+                .sites
+                .iter()
+                .any(|&site| self.numeric_source_prepaid(site as usize))
+        {
+            // Ancestor traversal credit does not authorize a segment whose
+            // prepared recipe lacks that same source-price coverage.
+            #[cfg(all(test, feature = "canonical-native-program"))]
+            super::super::composition_tests::observe::paid_segment_decline(site);
+            return Ok(Some(0));
+        }
+        let compute = if self.numeric_prepaid.is_some()
+            && self.numeric_prepaid_region() == segment.prepaid_region
+        {
+            proof
+                .compute
+                .checked_sub(proof.source_work)
+                .ok_or_else(|| invalid("parent prepaid source price exceeds its total"))?
+        } else {
+            proof.compute
+        };
         if args != [0; 3]
             || self.closed_tail.is_some()
             || (self.worker.is_none()
@@ -174,7 +203,7 @@ impl Invocation<'_, '_, '_> {
             return Ok(Some(0));
         };
         let Some(required) = entry
-            .checked_add(proof.compute)
+            .checked_add(compute)
             .and_then(|n| n.checked_add(proof.retirement_work))
             .and_then(|n| n.checked_add(alias_work?))
         else {
@@ -215,6 +244,18 @@ impl Invocation<'_, '_, '_> {
                     .state
                     .buffer_frames
                     .current_scalar_binding(binding.physical, binding.kind)
+            {
+                return Ok(Some(0));
+            }
+        }
+        // Only an omitted frame retirement needs this additional canonical
+        // empty-slot proof. Other private frames keep the existing route.
+        for &value in &proof.virtual_frames {
+            if self
+                .state
+                .arena
+                .native_entry_preview(value, &self.state.control.work)?
+                .is_some()
             {
                 return Ok(Some(0));
             }
@@ -334,13 +375,15 @@ impl Invocation<'_, '_, '_> {
                 self.write_borrowed_word(frames.scalar_words + array * 4 + at, word)?;
             }
         }
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        super::super::composition_tests::observe::prepaid_segment_entry_work(entry);
         self.state
             .control
             .work
             .charge(NativeExecutionPhase::Setup, entry)?;
         self.state
             .library
-            .charge(proof.compute, 0)
+            .charge(compute, 0)
             .map_err(|error| Error::Collection {
                 origin: metadata.plan.blocks()[site].origin(),
                 error,
@@ -546,26 +589,55 @@ impl Invocation<'_, '_, '_> {
         frames: &FrameLayout,
         proof: &NumericLayout,
     ) -> Result<(), Error> {
-        let descriptor = self.descriptor;
-        let metadata = descriptor.metadata();
         let flags = frames.scalar_words + proof.views.len() * 4;
-        for (at, (_, values)) in frames.retirements.iter().enumerate() {
+        for (at, (site, values)) in frames.retirements.iter().enumerate() {
             match self.read_borrowed_word(flags + at)? {
                 0 => continue,
                 1 => {}
                 _ => return Err(invalid("parent retirement flag is not Boolean")),
             }
-            for &value in values {
-                if !self.state.buffer_frames.retire(
-                    &metadata.frame_retirements,
-                    value,
-                    &mut self.state.control.work,
-                )? {
-                    self.state
-                        .arena
-                        .retire_current(value, &mut self.state.control.work)?;
+            let Some(effects) = &proof.retirement_effects[at] else {
+                for &value in values {
+                    self.retire_segment_value(*site, value)?;
                 }
+                continue;
+            };
+            for effect in effects {
+                use crate::native_artifact::program::prepare::composition::numeric::Retirement;
+                let value = match *effect {
+                    Retirement::Pay(price) => {
+                        // The current entry proved no physical owner exists;
+                        // execution used only native words/bindings, and all
+                        // exports follow this cleanup. Keep each original
+                        // charge in its exact source order and granularity.
+                        self.state
+                            .control
+                            .work
+                            .charge(crate::native_artifact::NativeExecutionPhase::Setup, price)?;
+                        #[cfg(all(test, feature = "canonical-native-program"))]
+                        super::super::composition_tests::observe::virtual_retirement(*site);
+                        continue;
+                    }
+                    Retirement::Current(value) => value,
+                };
+                self.retire_segment_value(*site, value)?;
             }
+        }
+        Ok(())
+    }
+
+    #[inline(always)]
+    fn retire_segment_value(&mut self, _site: u32, value: u32) -> Result<(), Error> {
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        super::super::composition_tests::observe::segment_retirement(_site, value);
+        if !self.state.buffer_frames.retire(
+            &self.descriptor.metadata().frame_retirements,
+            value,
+            &mut self.state.control.work,
+        )? {
+            self.state
+                .arena
+                .retire_current(value, &mut self.state.control.work)?;
         }
         Ok(())
     }

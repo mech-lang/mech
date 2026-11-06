@@ -49,14 +49,7 @@ fn selected_named_fields(jit: &JitProgramArtifact) -> BTreeSet<u64> {
             .then_some(site as u64)
         })
         .collect::<BTreeSet<_>>();
-    let selected = metadata
-        .compositions
-        .parents
-        .iter()
-        .flat_map(|parent| &parent.segments)
-        .filter(|piece| metadata.compositions.entry(piece.entry as usize).is_some())
-        .flat_map(|piece| piece.sites.iter().map(|&site| u64::from(site)))
-        .collect::<BTreeSet<_>>();
+    let selected = selected_native_sites(jit);
     let fields = fields
         .intersection(&selected)
         .copied()
@@ -133,7 +126,7 @@ fn named_managed_fields_stay_native_with_fresh_arguments_and_recovery() {
                         Data::Matrix(expected.into())
                     );
                 }
-                assert!(counts.selected > 0, "{counts:?}");
+                assert!(counts.selected + counts.phases > 0, "{counts:?}");
                 assert!(
                     counts
                         .helpers
@@ -269,7 +262,12 @@ fn named_managed_fields_decline_missing_and_tight_declared_output_limits() {
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
-        let jit = compile_parent_pieces(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
         let fields = selected_named_fields(&jit);
         let args = arguments(&artifact, &memory, 3, 2, true, 1);
         let before = contents(&args);
@@ -326,9 +324,16 @@ fn named_managed_fields_decline_missing_and_tight_declared_output_limits() {
             assert_eq!(contents(&args), before);
             assert_eq!(contents(&aliases), before);
             if dimension == "bytes" && allowance == Some(1024) {
+                assert_eq!(
+                    counts.phases, 1,
+                    "the complete native frame fits this same cap: {counts:?}"
+                );
                 assert!(
-                    counts.helpers.keys().any(|(site, _)| fields.contains(site)),
-                    "tight byte cap did not exercise ordinary fallback: {counts:?}"
+                    counts
+                        .helpers
+                        .keys()
+                        .all(|(site, _)| !fields.contains(site)),
+                    "{counts:?}"
                 );
             }
             jit.evaluate_into(&args, &mut output, mode.execution(), &memory)

@@ -123,6 +123,7 @@ impl Layout {
                 && (!scalar
                     || !matches!(visit.progress, Progress::Normal)
                     || closed.sites.get(site).copied().flatten().is_some()
+                    || closed.prepaid_site(site)
                     || !matches!(
                         block.terminator(),
                         Terminator::Scalar(

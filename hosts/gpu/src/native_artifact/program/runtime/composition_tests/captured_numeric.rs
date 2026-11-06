@@ -104,22 +104,8 @@ fn capture_sites(artifact: &ProgramArtifact, jit: &JitProgramArtifact, width: u8
     )
     .unwrap();
     let metadata = object.metadata();
-    let emitted = metadata["compiled_captured_numeric_loops"]
-        .as_array()
-        .expect("captured native loop emission receipt");
-    assert!(
-        !emitted.is_empty(),
-        "the capture proof must produce native code; candidates={}, closed_tails={}, scalar_loops={}",
-        metadata["captured_numeric_candidates"],
-        serde_json::to_string(&jit.descriptor().metadata().closed_tails).unwrap(),
-        metadata["compiled_scalar_loops"],
-    );
-    for report in emitted {
-        assert_eq!(report["successful_backedge_helpers"], 0);
-        assert!(!report["typed_loads"].as_array().unwrap().is_empty());
-        assert!(!report["length_sites"].as_array().unwrap().is_empty());
-    }
     let mut sites = Vec::new();
+    let mut headers = std::collections::BTreeSet::new();
     for region in &jit.descriptor().metadata().closed_tails.regions {
         if let Some(proof) = &region.captures {
             assert!(!proof.captures.is_empty());
@@ -129,8 +115,39 @@ fn capture_sites(artifact: &ProgramArtifact, jit: &JitProgramArtifact, width: u8
                     .iter()
                     .all(|capture| capture.width == width / 8)
             );
+            headers.insert(region.tail.header());
             sites.extend(proof.actions.iter().map(|(site, _)| *site));
         }
+        if let Some(proof) = &region.numeric {
+            let captures = proof.arrays.iter().filter(|array| !matches!(array.storage, crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::Carrier {..})).collect::<Vec<_>>();
+            if !captures.is_empty() {
+                assert!(
+                    captures
+                        .iter()
+                        .all(|array| array.width == width / 8 && !array.writable)
+                );
+                headers.insert(region.tail.header());
+                sites.extend(proof.actions.iter().map(|(site, _)| *site));
+            }
+        }
+    }
+    let emitted = [
+        "compiled_captured_numeric_loops",
+        "compiled_readonly_numeric_loops",
+        "compiled_numeric_write_loops",
+    ]
+    .into_iter()
+    .flat_map(|key| metadata[key].as_array().unwrap())
+    .filter(|report| headers.contains(&(report["header"].as_u64().unwrap() as u32)))
+    .collect::<Vec<_>>();
+    assert!(
+        !emitted.is_empty(),
+        "the current immutable capture proof must produce native code"
+    );
+    for report in emitted {
+        assert_eq!(report["successful_backedge_helpers"], 0);
+        assert!(!report["typed_loads"].as_array().unwrap().is_empty());
+        assert!(!report["length_sites"].as_array().unwrap().is_empty());
     }
     assert!(
         !sites.is_empty(),

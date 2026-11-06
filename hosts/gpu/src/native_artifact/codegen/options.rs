@@ -28,7 +28,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     CandidateValues,
     PairedCandidates,
     ScalarLoops,
-    /// Public compilation always enables complete numeric trees. Tests may
+    /// Public compilation enables both current-funded numeric trees and proved phases. Tests may
     /// ablate only their emission to exercise the independently proved smaller
     /// parent pieces and leaf loans retained on the ordinary fallback route.
     NumericTrees,

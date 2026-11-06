@@ -12,16 +12,20 @@ mod captured_numeric;
 pub(super) mod continuation;
 mod helper_fallbacks;
 mod histogram;
+mod numeric_exits;
 mod numeric_map;
 mod numeric_segments;
 mod numeric_tree;
 mod numeric_writes;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod paid_iterations;
 mod readonly_numeric;
 mod selected_calls;
 mod string_reads;
 mod uniform_fill;
 mod unsigned_buffers;
 mod utf8_read;
+mod word_collections;
 mod word_reads;
 mod word_updates;
 
@@ -163,6 +167,20 @@ impl<'borrow, 'state, 'visit, 'plan> MapExecution<'borrow, 'state, 'visit, 'plan
     }
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct NumericPrepaid {
+    region: usize,
+    /// Deepest active traversal already paid before an exact cold edge.
+    deepest: u32,
+}
+impl NumericPrepaid {
+    /// Validated parents have smaller IDs, so no paid ancestor can be newer
+    /// than the deepest paid iteration. This negative grants no source credit.
+    fn may_include_iteration(self, wanted: Option<u32>) -> bool {
+        wanted.is_some_and(|wanted| wanted <= self.deepest)
+    }
+}
+
 pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visit, 'plan> {
     pub(in crate::native_artifact::program::runtime) state: &'state mut ExecutionState<'plan>,
     pub(in crate::native_artifact::program::runtime) descriptor: &'plan NativeProgramDescriptor,
@@ -171,6 +189,7 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
     pub(in crate::native_artifact::program::runtime) borrowed_strings: Option<borrowed::State>,
     pub(in crate::native_artifact::program::runtime) closed_tail:
         Option<crate::native_artifact::program::runtime::invocation::tail::State>,
+    pub(super) numeric_prepaid: Option<NumericPrepaid>,
     // Scalar edge identity only; all owners remain in the inventoried frame/arena banks.
     pub(in crate::native_artifact::program::runtime) parent_continuation: continuation::Pending,
     pub(in crate::native_artifact::program::runtime) selected_join:
@@ -196,6 +215,73 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
         Option<&'visit mech_engine::native_artifact::NativeTextLineWindow<'visit>>,
 }
 impl Invocation<'_, '_, '_> {
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn active_numeric_tail(
+        &self,
+    ) -> Option<usize> {
+        self.closed_tail
+            .as_ref()
+            .and_then(|state| match state.region {
+                tail::Region::Tail(id) => Some(id),
+                tail::Region::Segment(_) => None,
+            })
+    }
+
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn numeric_tail_partial(&self) -> bool {
+        self.closed_tail.as_ref().is_some_and(|state| state.partial)
+    }
+
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn numeric_prepaid_cursor(
+        &self,
+    ) -> Option<(usize, u32)> {
+        self.numeric_prepaid
+            .map(|route| (route.region, route.deepest))
+    }
+
+    pub(in crate::native_artifact::program::runtime) fn numeric_prepaid_region(
+        &self,
+    ) -> Option<usize> {
+        self.numeric_prepaid.map(|route| route.region)
+    }
+
+    fn numeric_source_prepaid(&self, site: usize) -> bool {
+        let Some(route) = self.numeric_prepaid else {
+            return false;
+        };
+        let metadata = self.descriptor.metadata();
+        let region = &metadata.closed_tails.regions[route.region];
+        let Some(proof) = &region.numeric else {
+            return false;
+        };
+        if if proof.prepaid_sites.is_empty() {
+            // Both inventories come from ordered sets and are independently
+            // reconstructed on image load. Cold continuations can visit every
+            // element of a large collection; do not scan the entire native
+            // source inventory again at each ordinary source visit.
+            proof.sites.binary_search(&site).is_err()
+        } else {
+            proof.prepaid_sites.binary_search(&site).is_err()
+        } {
+            return false;
+        }
+        let wanted = metadata.plan.blocks()[site].iteration();
+        let mut at = route.deepest;
+        loop {
+            if wanted == Some(at) {
+                return true;
+            }
+            if at == region.iteration {
+                return false;
+            }
+            let Some(parent) = metadata.plan.iterations()[at as usize].as_ref().parent() else {
+                return false;
+            };
+            at = parent;
+        }
+    }
+
     pub(in crate::native_artifact::program::runtime) fn control(
         &mut self,
     ) -> Control<'_, '_, NativeProgramDescriptor> {
@@ -409,6 +495,10 @@ impl Invocation<'_, '_, '_> {
             let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
             return self.end_closed_tail(site, args);
         }
+        if tag == GlobalHelper::ClosedTailBegin {
+            let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
+            return self.begin_closed_tail(site, args);
+        }
         if tag == GlobalHelper::NumericWritePrepare {
             let site = usize::try_from(site)
                 .map_err(|_| invalid("numeric materialization site overflow"))?;
@@ -561,6 +651,10 @@ impl Invocation<'_, '_, '_> {
             self.prepare_string_map_region(site, args)
         } else if tag == GlobalHelper::StringMapFinish {
             self.finish_string_map_region(site, args)
+        } else if tag == GlobalHelper::WordCollectionPrepare {
+            self.prepare_word_collection(site, args)
+        } else if tag == GlobalHelper::WordCollectionFinish {
+            self.finish_word_collection(site, args)
         } else if tag == GlobalHelper::JoinMapPrepare {
             self.prepare_join_map_chunk(site, args)
         } else if tag == GlobalHelper::JoinMapFinish {
@@ -789,6 +883,11 @@ impl Invocation<'_, '_, '_> {
         if let Some(state) = &self.state.collections {
             state.validate_span_boundary(block.action())?;
         }
+        let prepaid = self.numeric_source_prepaid(index);
+        #[cfg(test)]
+        if prepaid {
+            super::composition_tests::observe::prepaid_source_visit(index);
+        }
         let group = self
             .descriptor
             .metadata()
@@ -816,6 +915,13 @@ impl Invocation<'_, '_, '_> {
         if group.is_some_and(|group| u64::from(group.start()) != site) {
             return Err(invalid("ordinary visit inside admitted scalar group"));
         }
+        // Closed numeric membership excludes ordinary scalar groups. A later
+        // grouping extension must prove its own paid coverage, not inherit it.
+        if prepaid && group.is_some() {
+            return Err(invalid(
+                "prepaid numeric visit overlaps a scalar admission group",
+            ));
+        }
         if previous.is_none() && self.worker.is_some() {
             let worker = self.worker.as_ref().unwrap();
             let region = self
@@ -829,6 +935,16 @@ impl Invocation<'_, '_, '_> {
                 return Err(invalid("worker entry outside constructor proof"));
             }
             self.control().visit_outlined_entry(site, region.begin)?;
+        } else if prepaid {
+            #[cfg(test)]
+            let already_paid = self.state.control.work.used();
+            self.control().visit_prepaid_from(site, previous)?;
+            #[cfg(test)]
+            assert_eq!(
+                self.state.control.work.used(),
+                already_paid,
+                "a prepaid source visit must neither debit twice nor renew work"
+            );
         } else {
             self.control()
                 .visit_from(site, group.map(|group| group.work), previous)?;
@@ -838,6 +954,27 @@ impl Invocation<'_, '_, '_> {
             .filter(|group| group.owner.is_none())
             .map(|group| group.start());
         self.state.map_owners.closed_exit = None;
+        if let Some(route) = self.numeric_prepaid {
+            let metadata = self.descriptor.metadata();
+            let mech_engine::native_artifact::NativeControlLoop::Tail(tail) =
+                &metadata.plan.iterations()[route.deepest as usize]
+            else {
+                return Err(invalid("prepaid continuation lost its Tail"));
+            };
+            if index == tail.latch() as usize || index == tail.finish() as usize {
+                self.numeric_prepaid =
+                    if route.deepest == metadata.closed_tails.regions[route.region].iteration {
+                        None
+                    } else {
+                        Some(NumericPrepaid {
+                            region: route.region,
+                            deepest: tail
+                                .parent()
+                                .ok_or_else(|| invalid("prepaid continuation lost its ancestor"))?,
+                        })
+                    };
+            }
+        }
         let descriptor = self.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
             self.borrowed_action(index)
@@ -1151,6 +1288,11 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
     pub(in crate::native_artifact::program::runtime) fn retirements(&self) -> &'visit [u64] {
         self.invocation.retirements
     }
+    pub(in crate::native_artifact::program::runtime) fn frozen_retirement_work(
+        &self,
+    ) -> Result<u64, Error> {
+        self.invocation.frozen_retirement_work()
+    }
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn worker(
         &self,
@@ -1223,7 +1365,7 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
         let state = &mut *self.invocation.state;
         collections::charge(
             &mut state.control.work,
-            amount(state.call_inputs.values().len(), 16, 128)?,
+            amount(state.call_inputs.funded_len(), 16, 128)?,
         )
     }
 }

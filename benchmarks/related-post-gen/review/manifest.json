@@ -3834,10 +3834,8 @@
       "publication_generated": true
     },
     "README.md": {
-      "sha256": "10e82a71c6520bd117f9de2e72d3d2a65d30f4ba0a62bc96ccba924600395b08",
-      "bytes": 9097,
-      "recorded_source": null,
-      "publication_generated": true
+      "sha256": "ff90651f5687a126ee6ffbc37a221b66cb13823c95bf24f5ba94e3fd4e4cd198",
+      "bytes": 9520
     },
     "review/history-bridge.json": {
       "sha256": "c86df5628c3c2e2b87f99fe3c009db907cdbb6b57e7bb8c617f33cece7b59dae",
@@ -3846,10 +3844,8 @@
       "publication_generated": true
     },
     "verify-review.py": {
-      "sha256": "cab24d188f79d8800d97509a00c8189c08d3e4b2b840345f33e6b7390f1c8e16",
-      "bytes": 1696,
-      "recorded_source": null,
-      "publication_generated": true
+      "sha256": "fb02d7559be1c767f7bf73112d627351421d3ef452f9f1dadc8d255b9d037666",
+      "bytes": 3156
     },
     "review/native-metadata/after-4/metadata.json.gz": {
       "sha256": "6172681ef00ff2861529ff54dd9b29666bc8e923a397c9043f08a1d7b93b1e8a",
@@ -3883,6 +3879,114 @@
       "sha256": "3b028a25104010b03fd74c11c9b522a169104412557e92bd52a381d1b4c30779",
       "bytes": 2673,
       "recorded_source": "/private/tmp/mech-related-publish-review-20261106/pr973-integration-preview.json"
+    },
+    "integration/native-code-comparison.json": {
+      "sha256": "2836ff82eca4e2d28de9866d401732e421c8764f4afb37726225e50e37882d02",
+      "bytes": 44519
+    },
+    "integration/source-inventory.json": {
+      "sha256": "50dd7ea131fb86abf142ba74679aa192390547b16629e96d8b9fb22136feb875",
+      "bytes": 306313
+    },
+    "integration/compiler-build.json": {
+      "sha256": "22b768e2dd17b9e45ebcc1cabdc34bfdcfcaef14779c378e1454a367fdfbfae9",
+      "bytes": 75813
+    },
+    "integration/README.md": {
+      "sha256": "578149a0879667187204a782db12fe802ab458b61fbf53150835d064e7297c2c",
+      "bytes": 3120
+    },
+    "integration/evidence/size-native-fuel-derived-debits-20261106.json": {
+      "sha256": "3ad02f64e2500b47f6f068654b6a38baf414869a2be7eff4381e716129fb390f",
+      "bytes": 96963
+    },
+    "integration/evidence/one-kib-comparison.json": {
+      "sha256": "a4a940ab66ca8cc1f3cda2e029b5d1d640fcf2fd78125e4982ff09a6524c7d3c",
+      "bytes": 6006
+    },
+    "integration/evidence/one-kib-run.json": {
+      "sha256": "3cc7ba9d2d73282b12316c7fbf7a71b9ebe2b6369d8039c35e0a1916cf7c03e7",
+      "bytes": 3258
+    },
+    "integration/evidence/scalar-run.json": {
+      "sha256": "ceed9a0b5d0cd946e65b109151d0c2897d20d983c52e911a53abc9f35eea7251",
+      "bytes": 39455
+    },
+    "integration/evidence/profile-native-fuel-derived-debits-post-json-native-pcs-20261106.json": {
+      "sha256": "fde080760aa2254d1153223a76642d6b3772d13b611f6d6aa683856b1eaab847",
+      "bytes": 86305
+    },
+    "integration/evidence/comparison-native-fuel-derived-debits-resources-20261106-5000-m3.json": {
+      "sha256": "3e84db01bf9719144bc934006f453e7b025020cb1a0e438adae040e0aef97805",
+      "bytes": 1638384
+    },
+    "integration/evidence/comparison-native-fuel-derived-debits-20261106-5000-m3.json": {
+      "sha256": "c1d47d36dddedc1c0d1649a3588e13b9fb65acb2a0777abf19120ae4a11f3e3e",
+      "bytes": 513850
+    },
+    "integration/evidence/profile-native-fuel-derived-debits-worker-instructions-20261106.json": {
+      "sha256": "4c632700ba25558e2c5245d864ba2af5ea9e38380128868371922c2f28159dcb",
+      "bytes": 200535
+    },
+    "integration/evidence/one-kib.build.json": {
+      "sha256": "c3fb455c4140d4abc1d2fabeded4bf3bdbb3a4d0c78f64378dfe6ea774f16964",
+      "bytes": 4728
+    },
+    "integration/evidence/profile-native-fuel-derived-debits-post-json-all-symbols-20261106.json": {
+      "sha256": "5ccf6ea4f9d5d5b1c001f7ce50ef10499c0967a5f4784a293de952c9a4a6dc48",
+      "bytes": 66343
+    },
+    "integration/evidence/comparison-native-fuel-derived-debits-confirmation-20261106-5000-m3.json": {
+      "sha256": "ced9bbc74c78ba313efe87c8896eb32a7b2ab910506b5186edd5368d3bc06423",
+      "bytes": 805445
+    },
+    "integration/evidence/compiler-native-fuel-derived-debits-screen-20261106.json": {
+      "sha256": "ba49676bfbf4caa23b9fcf424e30c501332f39340176c6398b1919e7c23c5024",
+      "bytes": 103810
+    },
+    "integration/evidence/scalar.build.json": {
+      "sha256": "b169cd8220d86cce2e1c693462c3ef77897fcf10efdd1508b5ba32a16404f047",
+      "bytes": 2520
+    },
+    "integration/evidence/scalar-comparison.json": {
+      "sha256": "e6db189be9f55efb5ad099cf83602570ae51e34326d7599fa08d9213c5f40d9d",
+      "bytes": 6586
+    },
+    "integration/control-source-equivalence.json": {
+      "sha256": "28d39751b4fda3eab983c44bdf7e7bdf086dd973d60fb9f5fbc39468dffacad0",
+      "bytes": 727
+    },
+    "integration/evidence/focus-huffman_parent_cleanup.json": {
+      "sha256": "7e2f42fe22925c7911a3bd57a31dfafb9c8ad2572891441293961f6a1fca13b9",
+      "bytes": 236
+    },
+    "integration/evidence/mech_gpu-build.json": {
+      "sha256": "11f218ed7f3f3066ab88dd93d2ba93b16d629d1b8a5ec8e819e5bf487cd6ba78",
+      "bytes": 8579
+    },
+    "integration/evidence/focus-virtual_retirement.json": {
+      "sha256": "8b4ec721473b7d6546774d817e96c1b9e2a356b658e325277989037ccb07eeae",
+      "bytes": 231
+    },
+    "integration/evidence/focus-named_managed_fields_decline.json": {
+      "sha256": "01f93273a82cf86e2509025fb2f559af488f82d0e14c74e4ee82375be369df83",
+      "bytes": 241
+    },
+    "integration/evidence/focus-nested_phase.json": {
+      "sha256": "20572c77cfdd5ccb18208b60fb26c2539193f6afd68fbe92564924f024cbdf89",
+      "bytes": 224
+    },
+    "integration/evidence/focus-phase_descendants.json": {
+      "sha256": "58caef5d6599aa249a27dc9b6492474c8bdff4636f546688dd6538c7b2035b33",
+      "bytes": 230
+    },
+    "integration/evidence/focus-native_argument_bank_numeric.json": {
+      "sha256": "6cf18e560c2255453ac4315a04abb9da7bb960aa408867decf59e66ef50ff0bf",
+      "bytes": 242
+    },
+    "integration/evidence/test-run.json": {
+      "sha256": "e078a6307b0934caea6668edd1205473c2ad20dfa652e98575dd57f9541859bb",
+      "bytes": 635
     }
   },
   "limitations": [
@@ -3890,5 +3994,15 @@
     "Native executable/Object archives, retained dependency libraries and raw sampler traces remain in the separately indexed local archive.",
     "Public packet contains source, complete latency/resource samples, profile summaries and qualification receipts; it does not claim raw archives were remotely uploaded.",
     "Original measured compiler remains pinned independently of the history bridge, restored ignored fixtures and added review material."
-  ]
+  ],
+  "active_integration": {
+    "target_pr": 973,
+    "target_branch": "codex/level12-compression-consolidated",
+    "incoming": "fb37ded7af3dd59bb6cd5f13f5044aa29e91833e",
+    "identity": "IR226/work115/ABI41/image9",
+    "source_inventory": "integration/source-inventory.json",
+    "speed_measured": false,
+    "gpu_tests_passed": 836,
+    "inherited_gpu_failures": 2
+  }
 }

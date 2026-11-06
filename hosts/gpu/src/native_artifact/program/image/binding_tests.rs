@@ -290,7 +290,7 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
             mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 8);
+        assert_eq!(image["version"], 9);
         let independent =
             unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }.unwrap();
         let bound = unsafe {
@@ -451,7 +451,7 @@ fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
         .unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 8);
+        assert_eq!(image["version"], 9);
         let rows = image["descriptor"]["plan"]["values"].as_array().unwrap();
         assert!(
             rows.iter()
@@ -554,7 +554,7 @@ fn frozen_uniform_collections_preserve_fields_and_reject_changed_proofs() {
                     mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
                 let image = serde_json::Value::deserialize(&mut reader).unwrap();
                 reader.end().unwrap();
-                assert_eq!(image["version"], 8);
+                assert_eq!(image["version"], 9);
                 assert_eq!(
                     image["descriptor"]["static_layouts"]["uniform_word_collections"]
                         .as_array()
@@ -706,7 +706,7 @@ fn shared_template_definitions_preserve_sites_and_reject_foreign_rows_and_factor
                 mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
             let image = serde_json::Value::deserialize(&mut reader).unwrap();
             reader.end().unwrap();
-            assert_eq!(image["version"], 8);
+            assert_eq!(image["version"], 9);
             let definitions = image["descriptor"]["plan"]["template_definitions"]
                 .as_array()
                 .unwrap();
@@ -991,7 +991,7 @@ fn native_numeric_map_inventory_matches_source_and_rejects_changed_proofs_and_un
             mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 8);
+        assert_eq!(image["version"], 9);
         let expected = &object.descriptor().metadata().numeric_maps;
         assert_eq!(expected.regions.len(), 1);
         for bound in [false, true] {
@@ -1105,7 +1105,7 @@ fn frozen_schema_templates_preserve_public_metadata_and_reject_type_evidence_for
         .unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 8);
+        assert_eq!(image["version"], 9);
         let templates = image["descriptor"]["schema_templates"].as_array().unwrap();
         assert_eq!(
             templates.len(),

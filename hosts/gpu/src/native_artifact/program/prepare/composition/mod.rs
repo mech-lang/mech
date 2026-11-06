@@ -23,6 +23,9 @@ pub(in crate::native_artifact) struct Segment {
     pub exits: Vec<(u32, u32)>,
     pub frame_plan: Option<frames::Layout>,
     pub numeric: Option<numeric::Layout>,
+    /// Exact root traversal whose source visits can already have been paid.
+    /// The invocation must still hold that root's current cold continuation.
+    pub prepaid_region: Option<usize>,
     pub rejection: Option<std::borrow::Cow<'static, str>>,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -61,10 +64,16 @@ pub(in crate::native_artifact) struct Layout {
     regions: Vec<(usize, usize)>,
     #[serde(skip)]
     boundaries: Vec<(usize, usize)>,
+    /// Nearest tracked edge at each native root, derived once from ancestry.
+    #[serde(skip)]
+    native_contexts: Box<[Option<u32>]>,
     #[serde(skip)]
     pub words: usize,
 }
 impl Layout {
+    pub(in crate::native_artifact) fn native_context(&self, region: usize) -> Option<Option<u32>> {
+        self.native_contexts.get(region).copied()
+    }
     pub(in crate::native_artifact) fn entry(&self, site: usize) -> Option<usize> {
         let encoded = self.entries.get(site)?.map(|v| v.get() - 1)?;
         (encoded % 4 == 0).then_some(encoded / 4)
@@ -107,6 +116,21 @@ impl Layout {
             .max()
             .unwrap_or(0)
     }
+    /// Canonical owner pins use source ordinals, not numeric word homes.
+    pub(in crate::native_artifact) fn argument_values(&self) -> usize {
+        self.regions
+            .iter()
+            .map(|&(p, s)| {
+                self.parents[p].segments[s]
+                    .frame_plan
+                    .as_ref()
+                    .unwrap()
+                    .sources
+                    .len()
+            })
+            .max()
+            .unwrap_or(0)
+    }
     /// Source preparation and independently validated image loading use this
     /// same pure derivation. No serialized candidate inventory is accepted.
     pub(in crate::native_artifact) fn derive(
@@ -126,11 +150,46 @@ impl Layout {
         let reachable = (0..plan.blocks().len())
             .map(|site| facts.is_reachable(site as u32))
             .collect::<Result<Vec<_>, _>>()?;
+        let cold_predecessors = closed
+            .regions
+            .iter()
+            .filter_map(|region| region.numeric.as_ref().filter(|p| p.phase.is_some()))
+            .flat_map(|proof| proof.exits.iter().map(|exit| exit.from))
+            .collect::<BTreeSet<_>>();
         let mut parents = Vec::new();
         for (iteration, control) in plan.iterations().iter().enumerate() {
             let Loop::Tail(parent) = control else {
                 continue;
             };
+            let closed_region = closed
+                .sites
+                .get(parent.header() as usize)
+                .copied()
+                .flatten();
+            // Preserve independently proved ordinary parent pieces even when
+            // a native phase covers this loop. A declined phase grants no
+            // source credit; actual paid overlap still declines at admission.
+            // Descendants keep the full ordinary source price. Their native
+            // entry declines if any member belongs to a current paid traversal.
+            // An interval's custom native CFG and its ordinary cold suffix
+            // are distinct execution routes. Keep the maintained parent pieces
+            // on that suffix. Reconstruct the exact already-paid source price;
+            // physical entry, synchronization and retirement stay separately
+            // funded. No child scope or previous traversal can lend credit.
+            let prepaid_region = closed_region.filter(|&id| {
+                let region = &closed.regions[id];
+                region.iteration == iteration as u32
+                    && region.numeric.as_ref().is_some_and(|proof| {
+                        !proof.prepaid_sites.is_empty()
+                            && proof.phase.as_ref().is_some_and(|phase| {
+                                proof
+                                    .prepaid_sites
+                                    .iter()
+                                    .try_fold(0u64, |n, &site| n.checked_add(visits[site].work))
+                                    .is_some_and(|price| price <= phase.loops[0].compute)
+                            })
+                    })
+            });
             let children = plan
                 .iterations()
                 .iter()
@@ -209,6 +268,14 @@ impl Layout {
                 });
             }
             if child_boundaries.len() != children.len() {
+                continue;
+            }
+            // Keep the original ordinary completion when a native cut could
+            // land after a child's exit but before its successor consumes it.
+            if child_boundaries
+                .iter()
+                .any(|child| cold_predecessors.contains(&(child.child_exit as usize)))
+            {
                 continue;
             }
             // Every lifecycle transition and managed scalar handoff stays an
@@ -300,6 +367,7 @@ impl Layout {
                     exits: Vec::new(),
                     frame_plan: None,
                     numeric: None,
+                    prepaid_region,
                     rejection: None,
                 });
                 segment.sites.push(site);
@@ -311,6 +379,19 @@ impl Layout {
             }
             let mut segments = segments.into_values().collect::<Vec<_>>();
             for segment in &mut segments {
+                if let Some(id) = segment.prepaid_region
+                    && !segment.sites.iter().all(|&site| {
+                        closed.regions[id]
+                            .numeric
+                            .as_ref()
+                            .unwrap()
+                            .prepaid_sites
+                            .binary_search(&(site as usize))
+                            .is_ok()
+                    })
+                {
+                    segment.prepaid_region = None;
+                }
                 match frames::Layout::derive(plan, &facts, frames, segment) {
                     Ok(mut proof) => {
                         match numeric::Layout::derive(
@@ -422,21 +503,30 @@ impl Layout {
         };
         // Determine the expected outer marker once, using immutable ancestry.
         // Child calls and piece entry must not walk the graph on every visit.
-        for parent in &mut parents {
-            let mut current = Some(parent.iteration);
+        let suspended_child = |iteration| {
+            let mut current = Some(iteration);
             while let Some(id) = current {
                 if tracked_children[id as usize] {
-                    parent.suspended_child = Some(id);
-                    break;
+                    return Some(id);
                 }
                 current = plan.iterations()[id as usize].as_ref().parent();
             }
+            None
+        };
+        for parent in &mut parents {
+            parent.suspended_child = suspended_child(parent.iteration);
         }
+        let native_contexts = closed
+            .regions
+            .iter()
+            .map(|region| suspended_child(region.iteration))
+            .collect();
         Ok(Self {
             parents,
             entries,
             regions,
             boundaries,
+            native_contexts,
             words,
         })
     }

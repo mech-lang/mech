@@ -201,31 +201,7 @@ pub(in crate::native_artifact::program::prepare) fn scalar_bindings(
         })
         .collect()
 }
-#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(in crate::native_artifact) enum Operation {
-    Frame,
-    Aggregate,
-    ArrayCopy,
-    Length {
-        array: usize,
-        output: u32,
-    },
-    Read {
-        array: usize,
-        index: u32,
-        output: u32,
-    },
-    Write {
-        array: usize,
-        index: u32,
-        incoming: u32,
-    },
-    Append {
-        array: usize,
-        incoming: u32,
-    },
-}
+pub(in crate::native_artifact) use super::numeric_plan::Operation;
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct ColdAlias {
@@ -262,6 +238,11 @@ pub(in crate::native_artifact) struct Proof<Frame = FrameWords> {
     /// Maximum appends before the next tree header or final exit. Includes the
     /// ancestor continuation after a child returns, not just its lexical body.
     pub append_limits: Vec<(usize, Vec<(usize, usize)>)>,
+    pub prepaid_sites: Vec<usize>,
+    pub phase: Option<super::numeric_phase::Schedule>,
+    pub exits: Vec<super::numeric_plan::Exit>,
+    pub fresh_values: Vec<u32>,
+    pub boundary_values: super::numeric_plan::BoundaryValues,
 }
 impl<Frame: Into<FrameWords>> Proof<Frame> {
     pub(in crate::native_artifact) fn into_runtime(self) -> Proof {
@@ -283,18 +264,54 @@ impl<Frame: Into<FrameWords>> Proof<Frame> {
             cold_scalars: self.cold_scalars,
             cold_frames: self.cold_frames,
             append_limits: self.append_limits,
+            prepaid_sites: self.prepaid_sites,
+            phase: self.phase,
+            exits: self.exits,
+            fresh_values: self.fresh_values,
+            boundary_values: self.boundary_values,
         }
     }
 }
 
 impl Proof {
+    /// Only current input lanes cross an initial entry. Internal frame lanes
+    /// are defined by the selected source actions, not by the helper's scratch
+    /// bank. Keep the full bank's admission and first-change transport intact.
+    #[cfg(feature = "canonical-native-program")]
+    #[cfg(test)]
+    pub fn entry_words(&self, carrier: u32) -> Result<Vec<usize>, &'static str> {
+        let mut words = self
+            .frame(carrier)
+            .ok_or("numeric entry lacks its carrier fields")?
+            .scalar_slots()
+            .collect::<Vec<_>>();
+        for array in 0..self.arrays.len() {
+            words.extend(self.view(array)..self.view(array) + 4);
+            if self.writes() {
+                words.push(self.private_flag(array));
+            }
+            words.extend(self.capacity(array));
+        }
+        if let Some(phase) = &self.phase {
+            for debit in &phase.loops {
+                words.push(debit.counter);
+                words.extend(debit.first_visit);
+            }
+        }
+        words.sort_unstable();
+        words.dedup();
+        if words.last().is_some_and(|word| *word >= self.words) {
+            return Err("numeric entry input is outside its admitted word bank");
+        }
+        Ok(words)
+    }
+
     pub fn action(&self, site: usize) -> Option<&Operation> {
         self.actions
             .iter()
             .find(|(s, _)| *s == site)
             .map(|(_, action)| action)
     }
-    #[cfg(test)]
     pub fn fields(&self, value: u32) -> Option<&[Option<usize>]> {
         self.frames
             .iter()
@@ -538,6 +555,191 @@ impl Provenance<'_, '_> {
 }
 
 pub(in crate::native_artifact) fn derive(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+) -> Result<Proof, &'static str> {
+    super::phase_numeric::derive(plan, tail, frames, aggregates, calls, visits)
+        .and_then(|phase| from_phase(plan, tail, frames, aggregates, phase))
+        .or_else(|_| derive_leaf(plan, tail, frames, aggregates, calls))
+}
+
+#[cfg(test)]
+pub(in crate::native_artifact) fn derive_fueled(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+) -> Result<Proof, &'static str> {
+    from_phase(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        super::phase_numeric::derive_fueled(plan, tail, frames, aggregates, calls, visits)?,
+    )
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn derive_hybrid(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+) -> Result<Proof, &'static str> {
+    from_phase(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        super::phase_numeric::derive_hybrid(plan, tail, frames, aggregates, calls, visits)?,
+    )
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn derive_interval(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+) -> Result<Proof, &'static str> {
+    from_phase(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        super::phase_numeric::derive_interval(plan, tail, frames, aggregates, calls, visits)?,
+    )
+}
+
+fn from_phase(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    phase: super::numeric_plan::Plan,
+) -> Result<Proof, &'static str> {
+    let carrier = frames
+        .fields(tail.carrier())
+        .ok_or("phase carrier lacks fields")?;
+    let arrays = phase
+        .arrays
+        .into_iter()
+        .map(|array| {
+            let field = *carrier
+                .get(array.field)
+                .ok_or("phase array leaves carrier")?;
+            let Lane::Managed { at: physical } = field.lane() else {
+                return Err("phase array is not managed");
+            };
+            Ok(Array {
+                root: array.field,
+                storage: ArrayStorage::Carrier {
+                    field: array.field,
+                    physical,
+                },
+                schema: field.schema(),
+                width: array.width,
+                witness: array.witness,
+                writable: array.writable,
+                appends: array.appends,
+            })
+        })
+        .collect::<Result<Vec<_>, &'static str>>()?;
+    let frame_words = phase
+        .frames
+        .into_iter()
+        .map(|frame| {
+            let fields = frames
+                .fields_at(frame.value as usize)
+                .ok_or("phase frame lacks fields")?;
+            if fields.len() != frame.fields.len() || fields.len() != frame.arrays.len() {
+                return Err("phase frame span differs");
+            }
+            let scalar_paths = frame
+                .fields
+                .iter()
+                .enumerate()
+                .filter_map(|(at, word)| word.map(|word| (vec![at], word)))
+                .collect::<Vec<_>>();
+            let array_bindings = fields
+                .iter()
+                .zip(&frame.arrays)
+                .filter_map(|(field, array)| match (field.lane(), array) {
+                    (Lane::Managed { at }, Some(array)) => Some((at, *array)),
+                    _ => None,
+                })
+                .collect();
+            Ok(FrameWords::from(OwnedFrameWords {
+                value: frame.value,
+                maximum_arity: fields.len(),
+                scalar_node_count: fields.len(),
+                scalar_paths,
+                fields: frame.fields,
+                arrays: frame.arrays,
+                array_bindings,
+            }))
+        })
+        .collect::<Result<Vec<_>, &'static str>>()?;
+    let bindings = |value| {
+        frame_words
+            .iter()
+            .find(|frame| frame.value == value)
+            .map_or_else(
+                || Ok(Vec::new()),
+                |frame| scalar_bindings(frames, value, &frame.scalar_paths),
+            )
+    };
+    let scalar_inputs = bindings(tail.carrier().get())?;
+    let scalar_outputs = phase
+        .result
+        .frame()
+        .map_or_else(|| Ok(Vec::new()), bindings)?;
+    let sites = phase.sites.iter().copied().collect::<BTreeSet<_>>();
+    let boundary_words = register_bound(plan, aggregates, &sites)?
+        .checked_add(phase.words)
+        .and_then(|n| n.checked_add(3))
+        .ok_or("phase boundary words overflow")?;
+    let boundary_work = phase
+        .phase
+        .as_ref()
+        .map_or(super::tail::FIXED_OVERHEAD, |schedule| {
+            schedule.boundary_work
+        });
+    Ok(Proof {
+        nested_managed: false,
+        arrays,
+        frames: frame_words,
+        actions: phase.actions,
+        sites: phase.sites,
+        scalar_words: phase.scalar_words,
+        scalar_inputs,
+        scalar_captures: Vec::new(),
+        scalar_outputs,
+        words: phase.words,
+        boundary_words,
+        boundary_work,
+        result: phase.result,
+        cold_aliases: Vec::new(),
+        cold_scalars: Vec::new(),
+        cold_frames: Vec::new(),
+        append_limits: Vec::new(),
+        prepaid_sites: phase.prepaid_sites,
+        phase: phase.phase,
+        exits: phase.exits,
+        fresh_values: phase.fresh_values,
+        boundary_values: phase.boundary_values,
+    })
+}
+
+fn derive_leaf(
     plan: &Plan,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
@@ -1182,6 +1384,15 @@ fn derive_inner(
         cold_scalars,
         cold_frames,
         append_limits,
+        prepaid_sites: Vec::new(),
+        phase: None,
+        exits: Vec::new(),
+        fresh_values: Vec::new(),
+        boundary_values: super::numeric_plan::BoundaryValues {
+            candidates: Vec::new(),
+            header: Vec::new(),
+            exit: Vec::new(),
+        },
     })
 }
 

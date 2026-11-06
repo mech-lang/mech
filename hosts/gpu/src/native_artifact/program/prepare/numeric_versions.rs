@@ -568,6 +568,9 @@ fn verify_tree(
     if let Some(state) = analysis.outputs.get(&(tail.finish() as usize)) {
         let fresh = |key| state.get(&key).unwrap_or(false);
         let current = match result {
+            ResultRecipe::Unreachable => {
+                return Err("complete tree has an unreachable result recipe");
+            }
             ResultRecipe::Scalar | ResultRecipe::Aggregate { .. } => true,
             ResultRecipe::Array { .. } => fresh((tail.returned().get(), None)),
             ResultRecipe::Frame { value, arrays } => arrays
@@ -962,6 +965,9 @@ fn pass(
         }
         if site == tail.finish() as usize {
             let current = match result {
+                ResultRecipe::Unreachable => {
+                    return Err("complete tree has an unreachable result recipe");
+                }
                 ResultRecipe::Scalar | ResultRecipe::Aggregate { .. } => true,
                 ResultRecipe::Array { .. } => fresh(&state, (tail.returned().get(), None)),
                 ResultRecipe::Frame { value, arrays } => arrays

@@ -23,6 +23,43 @@ impl Default for CollectedValues {
     }
 }
 impl CollectedValues {
+    pub(super) fn unsigned_pointer(&mut self) -> Result<u64, Error> {
+        Ok(match self {
+            Self::U8(v) => v.as_mut_ptr() as u64,
+            Self::U16(v) => v.as_mut_ptr() as u64,
+            Self::U32(v) => v.as_mut_ptr() as u64,
+            Self::U64(v) => v.as_mut_ptr() as u64,
+            Self::Draft(_) => return Err(invalid("word kernel requires unsigned storage")),
+        })
+    }
+    /// # Safety
+    /// The same-build checked kernel initialized exactly this prefix through
+    /// the unique admitted sink loan. No initialized length was exposed before
+    /// it returned successfully; every unsigned bit pattern is a valid value.
+    pub(super) unsafe fn initialize_unsigned(&mut self, count: usize) -> Result<(), Error> {
+        unsafe fn finish<T>(values: &mut Vec<T>, count: usize) -> Result<(), Error> {
+            if !values.is_empty() || count > values.capacity() {
+                return Err(invalid("word kernel initialized extent exceeds its loan"));
+            }
+            // SAFETY: inherited from the typed successful kernel's exact
+            // prefix contract; the capacity bound was checked above.
+            unsafe {
+                values.set_len(count);
+            }
+            Ok(())
+        }
+        // SAFETY: each selected unsigned lane has the caller's same initialized
+        // prefix. This never treats draft/managed values as native words.
+        unsafe {
+            match self {
+                Self::U8(v) => finish(v, count),
+                Self::U16(v) => finish(v, count),
+                Self::U32(v) => finish(v, count),
+                Self::U64(v) => finish(v, count),
+                Self::Draft(_) => Err(invalid("word kernel has no unsigned sink")),
+            }
+        }
+    }
     pub(super) fn new(body: &mech_core::SchemaBody) -> Self {
         use mech_core::{IntegerWidth as W, SchemaBody as B};
         match body {

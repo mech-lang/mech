@@ -18,6 +18,26 @@ pub(in crate::native_artifact) mod cleanup_effects;
 pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod constant_owners;
 pub(in crate::native_artifact) mod frame_retirement;
+pub(in crate::native_artifact) mod numeric_phase;
+
+/// Canonical arguments are source operands or parent-piece owner pins. Numeric
+/// SSA/reconciliation words never install managed owners in this bank.
+pub(in crate::native_artifact) fn call_value_bound(
+    plan: &NativeProgramArtifactPlan,
+    compositions: &composition::Layout,
+    window_owners: bool,
+) -> usize {
+    plan.blocks()
+        .iter()
+        .filter_map(|block| match block.action() {
+            NativeIterationAction::LibraryCall { operands, .. } => Some(operands.len()),
+            _ => None,
+        })
+        .max()
+        .unwrap_or(0)
+        .max(compositions.argument_values())
+        .max(if window_owners { 2 } else { 0 })
+}
 
 /// Recomputed both on source preparation and independent build-image loading.
 pub(in crate::native_artifact) fn prepare_frame_composition(
@@ -64,6 +84,9 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) scalar_bytes: u64,
     pub(in crate::native_artifact) observation_schema_bytes: u64,
     pub(in crate::native_artifact) max_library_inputs: usize,
+    // Canonical argument owners only. Raw reconciliation words retain their
+    // separately admitted legacy bound above. Recomputed on image loading.
+    pub(in crate::native_artifact) max_call_values: usize,
     // Derived from this SAME immutable plan; callers cannot inject a region
     // from another artifact or rebind one to a different selected factory.
     // Same-plan last-use candidates are recomputed on every image load. The
@@ -80,6 +103,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
         Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
     pub(in crate::native_artifact) utf8_reads: utf8_reads::Layout,
     pub(in crate::native_artifact) numeric_maps: numeric_maps::Layout,
+    pub(in crate::native_artifact) word_collections: Box<[word_collections::Region]>,
     pub(in crate::native_artifact) window_regions:
         Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(in crate::native_artifact) string_map_regions:
@@ -267,6 +291,8 @@ impl PreparedNativeProgram {
             &map_admission,
         )?;
         let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
+        let word_collections =
+            word_collections::derive(&plan, &visits, &map_admission).into_boxed_slice();
         let window_regions = plan.window_regions().into_boxed_slice();
         let occupied_frame =
             frame_prefix_words(&plan, &scalar_aggregates, &borrowed_strings, &closed_tails)
@@ -277,7 +303,7 @@ impl PreparedNativeProgram {
         // Programs without owner candidates keep no second copy of their
         // existing scalar slot/action/constant inventories in the descriptor.
         let map_owner_words = (!map_owner_words.regions().is_empty()).then_some(map_owner_words);
-        let max_library_inputs = plan
+        let call_arity = plan
             .blocks()
             .iter()
             .filter_map(|block| match block.action() {
@@ -285,7 +311,13 @@ impl PreparedNativeProgram {
                 _ => None,
             })
             .max()
-            .unwrap_or(0)
+            .unwrap_or(0);
+        let max_call_values = call_value_bound(
+            &plan,
+            &compositions,
+            !window_regions.is_empty() || !string_map_regions.is_empty(),
+        );
+        let max_library_inputs = call_arity
             .max(
                 if window_regions.is_empty() && string_map_regions.is_empty() {
                     0
@@ -330,7 +362,8 @@ impl PreparedNativeProgram {
             } else {
                 4
             })
-            .max(compositions.argument_words());
+            .max(compositions.argument_words())
+            .max(if word_collections.is_empty() { 0 } else { 3 });
         let types: Box<[_]> = plan
             .values()
             .iter()
@@ -394,9 +427,11 @@ impl PreparedNativeProgram {
             scalar_bytes,
             observation_schema_bytes,
             max_library_inputs,
+            max_call_values,
             uniform_word_collections,
             utf8_reads,
             numeric_maps,
+            word_collections,
             unsigned_buffer_calls,
             buffer_frames,
             frame_retirements,
@@ -520,7 +555,9 @@ pub(in crate::native_artifact) fn validate_type_slots(
 }
 
 pub(in crate::native_artifact) mod captured_numeric;
+pub(in crate::native_artifact) mod numeric_plan;
 pub(in crate::native_artifact) mod numeric_tree;
+mod phase_numeric;
 pub(in crate::native_artifact) mod readonly_numeric;
 pub(in crate::native_artifact) mod retirement;
 
@@ -543,6 +580,7 @@ pub(in crate::native_artifact) mod prefix;
 pub(in crate::native_artifact) mod selected_join;
 pub(in crate::native_artifact) mod tail;
 pub(in crate::native_artifact) mod window_histogram;
+pub(in crate::native_artifact) mod word_collections;
 
 pub(in crate::native_artifact) mod numeric_maps;
 pub(in crate::native_artifact) mod query_stages;

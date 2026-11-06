@@ -19,6 +19,13 @@ pub(in crate::native_artifact) struct View {
     pub width: u8,
     pub witness: usize,
 }
+/// Physical cleanup follows the chosen representation. Virtual temporaries
+/// retain their original ordered charge but have no storage to retire.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(in crate::native_artifact) enum Retirement {
+    Pay(u64),
+    Current(u32),
+}
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Layout {
@@ -26,8 +33,14 @@ pub(in crate::native_artifact) struct Layout {
     pub actions: Vec<(usize, Operation)>,
     pub words: usize,
     pub compute: u64,
+    /// Exact source visit prices, excluding this piece's physical overhead.
+    pub source_work: u64,
     /// Reserved separately; only reached lexical retirement actions spend it.
     pub retirement_work: u64,
+    /// None retains the original loop when the reached group has no virtual
+    /// values. Do not add per-value dispatch to unchanged physical cleanup.
+    pub retirement_effects: Vec<Option<Vec<Retirement>>>,
+    pub virtual_frames: Vec<u32>,
 }
 impl Layout {
     /// The exit consumer reads reached-retirement flags on every path, and
@@ -63,6 +76,7 @@ impl Layout {
         let mut views = Vec::<View>::new();
         let mut actions = Vec::new();
         let mut compute = FIXED_OVERHEAD;
+        let mut source_work = 0u64;
         for &site in &segment.sites {
             let at = site as usize;
             compute = compute
@@ -74,6 +88,9 @@ impl Layout {
                 )
                 .and_then(|n| n.checked_add(OVERHEAD))
                 .ok_or("parent native work overflows")?;
+            source_work = source_work
+                .checked_add(visits[at].work)
+                .ok_or("parent source visit work overflows")?;
             let action = if frame_layout.action(at).is_some() {
                 // Frame proof above already checked every pack/copy/project.
                 Operation::Frame
@@ -211,23 +228,55 @@ impl Layout {
             .checked_add(spill)
             .ok_or("parent total native price overflows")?;
         let mut retirement_work = 0u64;
+        let private_frames = frames
+            .frames
+            .iter()
+            .filter(|frame| !frames.inputs.contains(&frame.value))
+            .map(|frame| frame.value)
+            .collect::<std::collections::BTreeSet<_>>();
+        let private_aliases = frames
+            .aliases
+            .iter()
+            .map(|alias| alias.value.get())
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut retirement_effects = Vec::with_capacity(frames.retirements.len());
+        let mut virtual_frames = std::collections::BTreeSet::new();
         for (_, values) in &frames.retirements {
+            let virtual_group = values
+                .iter()
+                .any(|value| private_frames.contains(value) || private_aliases.contains(value));
+            let mut effects = virtual_group.then(|| Vec::with_capacity(values.len()));
             for &value in values {
+                let price = retirements
+                    .get(value as usize)
+                    .map_or(32, |(price, _)| price);
                 retirement_work = retirement_work
-                    .checked_add(
-                        retirements
-                            .get(value as usize)
-                            .map_or(32, |(price, _)| price),
-                    )
+                    .checked_add(price)
                     .ok_or("parent retirement price overflows")?;
+                if let Some(effects) = &mut effects {
+                    effects.push(
+                        if private_frames.contains(&value) || private_aliases.contains(&value) {
+                            if private_frames.contains(&value) {
+                                virtual_frames.insert(value);
+                            }
+                            Retirement::Pay(price)
+                        } else {
+                            Retirement::Current(value)
+                        },
+                    );
+                }
             }
+            retirement_effects.push(effects);
         }
         Ok(Self {
             views,
             actions,
             words,
             compute,
+            source_work,
             retirement_work,
+            retirement_effects,
+            virtual_frames: virtual_frames.into_iter().collect(),
         })
     }
 }

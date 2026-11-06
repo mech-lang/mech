@@ -323,7 +323,71 @@ fn selected_template(
 // before replacing equality-to-Boolean branches with direct native tests.
 // IR225 derives projected child debit totals from the same checked remaining
 // fuel and root traversal count, publishing exact totals at cold boundaries.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 225;
+// Additional #973 IR history (its independent version sequence):
+// IR146 composes synchronous numeric children into one phase with current buffer
+// versions, distinct live scalar homes, and independently reconstructed exits.
+// IR147 is reserved for the held strided-phase eligibility experiment.
+// IR148 binds numeric first-change handoff to the independently reconstructed
+// ordinary source-site canonical alias-retirement proof.
+// IR149 independently derives the canonical argument prefix separately from
+// numeric reconciliation words. Physical backing and original prices remain.
+// IR150 rederives checked-offset positive-stride phase bounds on the retained
+// canonical first-change handoff and independently bounded argument owners.
+// IR151 reconstructs exact current-state cold child exits for numeric loops.
+// IR152 adds actual cold source cuts and independently proved prepaid membership.
+// IR153 keeps SSA and boundary accesses in each private home's same alias region.
+// IR154 independently reconstructs dead root carrier retirement after all live
+// values have been exported at an actual native interval boundary.
+// IR155 reconstructs ordinary parent pieces on a native interval's cold route.
+// Source-price coverage belongs to the exact current root continuation only.
+// Acyclic prefixes retain their existing parent pieces.
+// IR156 reconstructs fixed-size mutable child effects, current owner returns
+// and conservative first-change funding on the same invocation account.
+// IR157 reconstructs checked child-visit funding, exact nested continuations
+// and already-paid ancestor traversal membership. Static paths retain prices.
+// IR158 reconstructs physical cleanup from native segment representations;
+// unmaterialized frames/aliases retain ordered original charges, not drops.
+// IR159 keeps unchanged cleanup groups on their original route and checks
+// canonical emptiness only for the frame retirements actually omitted.
+// IR160 composes current-funded Tail children with exact cold Collection exits,
+// restoring the reached active Tail and only its paid ancestor traversal credit.
+// IR161 was a rejected terminal-error transport experiment. IR162 narrows only
+// bounds-error snapshots to exact settlement inputs and current call operands.
+// IR163 binds total unsigned pointwise CFGs to admitted collection views.
+// IR164 reconstructs fresh private SSA values at each lexical root traversal.
+// IR165 reconstructs exact current consumer values for every numeric exit family.
+// IR166 shares the checked view's matrix-address quotient and remainder.
+// IR167 emits checked unsigned add/sub directly as exact word comparisons.
+// IR168 lowers checked bulk little-endian byte appends in private numeric loops.
+// IR169/170 were rejected refusal/private-store experiments. IR171 checks
+// current unit-dimension geometry in the shared numeric address emitter.
+// IR172 emits guarded whole-word loads for confined source byte packs.
+// IR173 restores exact cold child markers and selects fully charged ordinary
+// descendant parent pieces; current paid overlaps retain ordinary execution.
+// IR174's pure geometry-placement experiment was rejected. IR175 reconstructs
+// current comparison-produced complementary case edges within numeric entries.
+// IR176's guarded-subtraction emission experiment was rejected.
+// IR177 reconstructs complete child re-entry after a partial parent's cold
+// handoff, retaining primary source ownership and one invocation-current loan.
+// IR178 reuses a freshly executed source window check for confined packed
+// reads. Current geometry and the original lexical checks remain required.
+// IR179 rederives current-traversal aggregate guard facts for numeric regions
+// with the same fact engine as packed maps. No fact crosses a source latch.
+// IR180 binds the shared traversal transfer to the original ordered Pack/
+// Project and parallel Copy recipe, including overlapping private word homes.
+// IR181 recognizes fresh normalized U32 comparisons at the same confined
+// numeric complementary cases; arbitrary raw Bool homes retain their defaults.
+// IR182 rederives current immutable-view lengths and selected normalized Bool
+// relations before omitting an exact one-based scalar-read bounds guard.
+// IR183 rederives activation-current complete child read windows and paired
+// checked/native bodies. No persisted guard grants execution authority.
+// IR184 also reconstructs bounded unsigned SSA word facts for early CFG cleanup.
+// IR185/186 were rejected experiments. IR187 reconstructs dominance-scoped
+// invariant phi chains without changing source operations or their prices.
+// IR188 rederives activation-current affine read windows after local-phi cleanup.
+// IR189 also merges activation entries before invariant local-phi analysis.
+// IR226 combines both compiler histories and their independently checked metadata.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 226;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -539,7 +603,29 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 225;
 // Policy111 funds selected String projection/copy without generic call planning.
 // Policy113 accounts the complete physical batch and canonical publication.
 // Policy114 prepays each bounded pass and coexisting old/new growth banks.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 114;
+// Independent #973 pricing history, prior to the combined policy below:
+// Policy100 retains existing leaf and parent prices. Nested phases separately
+// prove an outer admission envelope and settle actual per-loop traversal debits;
+// their finite boundary allowance follows the phase's source word inventory.
+// Policy101 is reserved for the held strided-phase eligibility experiment.
+// Policy102 funds the existing same-plan canonical alias checks and ordered
+// matching retirements before a nested phase first-change consuming handoff.
+// Existing child-free leaf handoffs and their prices remain unchanged.
+// Policy103 composes reached traversal prices in positive-stride phases.
+// Admission envelopes remain conservative bounds, never prepaid debits.
+// Existing leaf/parent prices and original per-site failure order remain.
+// Policy104 retains the paid root traversal across an ordinary child and suffix.
+// Only those proved source visits are prepaid; child/factory work stays dynamic.
+// Policy105 extends that membership to exact interval cuts and retains each
+// private fuel home's boundary alias region.
+// Policy106 charges the existing frame retirement recipe when a dead interval
+// carrier releases its pins after exporting the ordinary continuation.
+// Policy107 retains the paid root source visits across an ordinary parent
+// piece. Its own entry, per-site overhead, synchronization and cleanup are
+// still charged; neither a source debit nor an account is renewed or refunded.
+// Policy115 combines phase/continuation pricing with the complete numeric-tree
+// and typed collection envelopes; neither branch can authenticate old Objects.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 115;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

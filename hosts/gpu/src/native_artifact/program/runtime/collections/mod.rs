@@ -32,6 +32,7 @@ pub(in crate::native_artifact) mod numeric_map;
 mod row_blocks;
 pub(in crate::native_artifact) mod uniform_words;
 mod utf8_read;
+mod word_collections;
 pub(in crate::native_artifact::program::runtime) fn source_count(
     value: &Value,
 ) -> Result<u64, Error> {

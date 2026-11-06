@@ -18,6 +18,8 @@ struct Flags {
 struct Counts {
     selected: u64,
     complete: u64,
+    word_selected: u64,
+    word_complete: u64,
     interleaved_refused: u64,
     elements: BTreeMap<u64, u64>,
     helpers: BTreeMap<(u64, u64), u64>,
@@ -38,6 +40,14 @@ unsafe extern "C" fn helper(
 ) -> u64 {
     COUNTS.with(|v| *v.borrow_mut().helpers.entry((site, op)).or_default() += 1);
     let flags = FLAGS.with(Cell::get);
+    // Corruption controls target the numeric-map frame specifically. Decline
+    // the independently proved total-word alternative before it borrows a loan.
+    if op == GlobalHelper::WordCollectionPrepare.raw()
+        && (flags.ordinary || flags.corrupt != 0 || flags.interleave)
+    {
+        unsafe { *out = 0 };
+        return 0;
+    }
     if op == GlobalHelper::NumericMapPrepare.raw() && flags.ordinary {
         unsafe { *out = 0 };
         return 0;
@@ -121,6 +131,12 @@ unsafe extern "C" fn helper(
     let status = unsafe { ORIGINAL.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
     if status == 0 {
         let value = unsafe { *out };
+        if op == GlobalHelper::WordCollectionPrepare.raw() && value == 1 {
+            COUNTS.with(|counts| counts.borrow_mut().word_selected += 1);
+        }
+        if op == GlobalHelper::WordCollectionFinish.raw() {
+            COUNTS.with(|counts| counts.borrow_mut().word_complete += 1);
+        }
         if op == GlobalHelper::NumericMapPrepare.raw() && value != 0 {
             COUNTS.with(|v| {
                 let mut counts = v.borrow_mut();
@@ -310,7 +326,13 @@ fn numeric_maps_all_unsigned_widths_original_decoded_have_no_element_callbacks_a
                                 Data::Matrix(data.iter().map(|&x| scalar(to, x)).collect())
                             );
                             if !ordinary {
-                                assert_eq!((counts.selected, counts.complete), (1, 1));
+                                assert_eq!(
+                                    (
+                                        counts.selected + counts.word_selected,
+                                        counts.complete + counts.word_complete
+                                    ),
+                                    (1, 1)
+                                );
                                 for &site in &element_sites {
                                     assert_eq!(
                                         counts
@@ -616,7 +638,13 @@ fn numeric_map_fallible_probe_keeps_arithmetic_errors_under_tight_native_work_ca
             Flags::default(),
         );
         result.unwrap();
-        assert_eq!((counts.selected, counts.complete), (1, 1));
+        assert_eq!(
+            (
+                counts.selected + counts.word_selected,
+                counts.complete + counts.word_complete
+            ),
+            (1, 1)
+        );
         drop((valid, output));
         drop(args);
         assert_eq!(

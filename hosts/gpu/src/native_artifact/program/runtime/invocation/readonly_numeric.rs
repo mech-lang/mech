@@ -54,14 +54,19 @@ impl Invocation<'_, '_, '_> {
         }
     }
 
-    pub(super) fn begin_numeric_views(&mut self, region: usize) -> Result<bool, Error> {
+    pub(super) fn begin_numeric_views(&mut self, id: usize) -> Result<bool, Error> {
         let descriptor = self.descriptor;
         let metadata = descriptor.metadata();
-        let region = &metadata.closed_tails.regions[region];
+        let region = &metadata.closed_tails.regions[id];
         let proof = region
             .numeric
             .as_ref()
             .ok_or_else(|| invalid("missing numeric leaf proof"))?;
+        // A worker's observed shared remainder is not an exclusive reservation.
+        // Whole phases initially borrow only the synchronous invocation account.
+        if proof.phase.is_some() && self.worker.is_some() {
+            return Ok(false);
+        }
         if self.has_uninventoried_private_owners() {
             return Ok(false);
         }
@@ -296,8 +301,6 @@ impl Invocation<'_, '_, '_> {
             } else {
                 None
             };
-            let id = metadata.closed_tails.sites[region.tail.header() as usize]
-                .ok_or_else(|| invalid("numeric region lost layout"))?;
             if !self.state.buffer_frames.prepare_private(
                 id,
                 proof.arrays.len(),
@@ -338,6 +341,19 @@ impl Invocation<'_, '_, '_> {
                     .set_private_alias(id, index, alias.value, ticket)?;
             }
         }
+        if let Some(phase) = &proof.phase {
+            for debit in &phase.loops {
+                self.write_borrowed_word(2 + debit.counter, 0)?;
+                if let Some(word) = debit.first_visit {
+                    self.write_borrowed_word(2 + word, 0)?;
+                }
+            }
+        }
+        if proof.writes() {
+            for array in 0..proof.arrays.len() {
+                self.write_borrowed_word(2 + proof.private_flag(array), 0)?;
+            }
+        }
         if !proof.scalar_inputs.is_empty()
             || !proof.scalar_captures.is_empty()
             || region.numeric_tree.is_some()
@@ -365,7 +381,10 @@ impl Invocation<'_, '_, '_> {
         let Some(proof) = &region.numeric else {
             return Ok(());
         };
-        if mode != 0 && mode != 3 {
+        if mode == 0 && matches!(proof.result, crate::native_artifact::program::prepare::readonly_numeric::ResultRecipe::Unreachable) {
+            return Err(invalid("native interval reached an ordinary-only finish"));
+        }
+        if (mode != 0 && mode != 3) || (region.numeric_tree.is_none() && proof.phase.is_some()) {
             // Resumable fuel/bounds/first-write boundaries restore current
             // scalar fields. Terminal mode3 cannot publish or resume a scalar
             // consumer; owner/shape/fuel reconciliation below remains intact.
@@ -448,13 +467,19 @@ impl Invocation<'_, '_, '_> {
                 }
             }
         }
+        if matches!(mode, 6 | 7) {
+            self.export_numeric_continuation(id, site)?;
+        }
         if mode == 2 {
-            // A native bounds miss executes the original selected operation at
-            // its exact source position. Materialize only that cold operand.
-            let Some(Operation::Read { array, .. } | Operation::Write { array, .. }) =
-                proof.action(site)
+            // A bounds or bulk-count rejection executes the original selected
+            // operation at its exact source position. Export only its owner.
+            let Some(
+                Operation::Read { array, .. }
+                | Operation::Write { array, .. }
+                | Operation::AppendLeBytes { array, .. },
+            ) = proof.action(site)
             else {
-                return Err(invalid("numeric bounds exit outside read"));
+                return Err(invalid("numeric rejection outside selected access"));
             };
             let Action::LibraryCall { operands, .. } = metadata.plan.blocks()[site].action() else {
                 return Err(invalid("numeric bounds lost call"));

@@ -9,7 +9,7 @@ use mech_syntax::document::{
 
 fn artifacts() -> [ProgramArtifact; 2] {
     artifacts_for(include_str!(
-        "../../../../tests/fixtures/native/numeric-parent-child.mec"
+        "../../../../tests/fixtures/native/numeric-changing-capture-tree.mec"
     ))
 }
 
@@ -49,7 +49,7 @@ fn numeric_tree_images_rederive_ancestry_fuel_edges_and_cold_scalar_homes() {
             .unwrap()
             .iter()
             .position(|region| region["numeric_tree"].is_object())
-            .expect("the generic parent/child fixture must contain a real tree");
+            .expect("the captured parent/child fixture must contain a real tree");
         let original = tails["regions"][at]["numeric_tree"].clone();
         assert!(original["nodes"].as_array().unwrap().len() >= 2);
         if let Some(previous) = &previous {

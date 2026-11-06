@@ -67,61 +67,74 @@ fn policy() -> mech_gpu::native_artifact::NativeProgramExecutionLimits {
 }
 
 #[test]
-fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
+fn path_scan_emits_one_native_phase_with_nested_scalar_children() {
     for artifact in artifacts(SOURCE).0 {
         let object = super::emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let metadata = object.metadata();
-        let parents = metadata["numeric_parent_partitions"]["parents"]
+        let selected = metadata["numeric_write_regions"]
             .as_array()
-            .unwrap();
-        let segments = metadata["compiled_numeric_segments"].as_array().unwrap();
-        let selected = parents
+            .unwrap()
             .iter()
-            .filter(|parent| parent["children"][0]["scalar_child"] == true)
-            .filter(|parent| {
-                segments
-                    .iter()
-                    .any(|segment| segment["iteration"] == parent["iteration"])
+            .filter(|region| {
+                region["proof"]["phase"]["loops"]
+                    .as_array()
+                    .is_some_and(|loops| loops.len() == 3)
             })
             .collect::<Vec<_>>();
         assert_eq!(
             selected.len(),
             1,
-            "the unchanged path scan must emit native pieces"
+            "the unchanged path scan must select one complete numeric phase"
         );
-        let parent = selected[0];
+        let region = selected[0];
+        let proof = &region["proof"];
+        let loops = proof["phase"]["loops"].as_array().unwrap();
+        let arrays = proof["arrays"].as_array().unwrap();
+        assert_eq!(arrays.len(), 6);
+        assert_eq!(
+            arrays
+                .iter()
+                .filter(|array| array["writable"] == true)
+                .count(),
+            1
+        );
+        assert_eq!(
+            arrays
+                .iter()
+                .filter(|array| array["appends"] == true && array["width"] == 8)
+                .count(),
+            1
+        );
+        let sites = proof["sites"].as_array().unwrap();
+        for (index, child) in loops.iter().enumerate() {
+            assert!(sites.contains(&child["header"]));
+            assert!(sites.contains(&child["latch"]));
+            assert!(sites.contains(&child["finish"]));
+            if index > 0 {
+                assert!(sites.contains(&child["initialize"]));
+                assert!(sites.contains(&child["exit"]));
+            }
+        }
+        assert_eq!(loops[1]["parent"], loops[0]["iteration"]);
+        assert_eq!(loops[2]["parent"], loops[1]["iteration"]);
+        let report = metadata["compiled_numeric_write_loops"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|report| report["header"] == region["header"])
+            .unwrap();
+        assert_eq!(report["successful_backedge_helpers"], 0);
+        assert_eq!(report["source_sites"], proof["sites"]);
+        assert_eq!(report["append_sites"].as_array().unwrap().len(), 1);
         assert!(
-            parent["children"][0]["returned_arrays"]
+            metadata["compiled_numeric_segments"]
                 .as_array()
                 .unwrap()
-                .is_empty()
-        );
-        let child = parent["children"][0]["child"].as_u64().unwrap() as u32;
-        assert!(
-            object
-                .descriptor()
-                .plan()
-                .iterations()
                 .iter()
-                .any(|iteration| iteration.as_ref().parent() == Some(child)),
-            "the actual match-choice child retains its nested length search"
-        );
-        for segment in segments
-            .iter()
-            .filter(|segment| segment["iteration"] == parent["iteration"])
-        {
-            assert_eq!(segment["successful_interior_helpers"], 0);
-            assert!(
-                segment["source_sites"]
-                    .as_array()
-                    .unwrap()
+                .all(|segment| !loops
                     .iter()
-                    .all(|site| {
-                        site != &parent["children"][0]["child_initialize"]
-                            && site != &parent["children"][0]["child_exit"]
-                    })
-            );
-        }
+                    .any(|child| child["iteration"] == segment["iteration"]))
+        );
     }
 }
 
@@ -136,6 +149,23 @@ fn zero_trip_min_cost_paths_keep_exact_nodes_and_real_reservation() {
 }
 
 fn qualify_min_cost_paths(source: &str) {
+    qualify_min_cost_paths_with_limits(source, policy(), false);
+}
+
+#[test]
+fn native_path_phase_keeps_all_pinned_nodes_and_real_reservation() {
+    qualify_min_cost_paths_with_limits(
+        SOURCE,
+        mech_gpu::native_artifact::NativeProgramLimitMode::NoLimits.execution(),
+        true,
+    );
+}
+
+fn qualify_min_cost_paths_with_limits(
+    source: &str,
+    run_policy: mech_gpu::native_artifact::NativeProgramExecutionLimits,
+    require_phase: bool,
+) {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-optimal-path-reference.json"
     ))
@@ -153,13 +183,22 @@ fn qualify_min_cost_paths(source: &str) {
             let mut output = vec![None; artifact.outputs().len()];
             let start = std::time::Instant::now();
             let (result, requests, bytes) = allocation_probe::measured_with_bytes(|| {
-                jit.evaluate_into(&args, &mut output, policy(), &memory)
+                jit.evaluate_into(&args, &mut output, run_policy, &memory)
             });
             println!(
                 "{}",
                 serde_json::json!({"witness":"pinned-min-cost-path","artifact":form,"case":case["name"],"block_length":case["block_length"],"elapsed_seconds":start.elapsed().as_secs_f64(),"allocation_requests":requests,"requested_bytes":bytes,"result":format!("{result:?}")})
             );
-            result.unwrap();
+            let report = result.unwrap();
+            if require_phase && case["block_length"].as_u64().unwrap() >= 320 {
+                // Ordinary fallback takes over 65,000 visits for these cases.
+                // The separate structural gate requires the entire three-loop
+                // phase, and this gate requires its current views to admit.
+                assert!(
+                    report.visits < 1024,
+                    "complete phase did not execute: {report:?}"
+                );
+            }
             let value = output.last().unwrap().as_ref().unwrap();
             let expected = Data::Matrix(
                 case["nodes"]
@@ -192,11 +231,26 @@ fn path_checks_preserve_entry_order_publication_aliases_and_recovery() {
 }
 
 #[test]
-fn zero_trip_path_checks_preserve_entry_order_publication_aliases_and_recovery() {
+fn zero_trip_checks_keep_errors_aliases_and_recovery() {
     qualify_path_checks(&zero_trip::path_source(SOURCE));
 }
 
 fn qualify_path_checks(source: &str) {
+    qualify_path_checks_with_limits(source, policy());
+}
+
+#[test]
+fn native_path_phase_checks_keep_origins_publication_aliases_and_retry() {
+    qualify_path_checks_with_limits(
+        SOURCE,
+        mech_gpu::native_artifact::NativeProgramLimitMode::NoLimits.execution(),
+    );
+}
+
+fn qualify_path_checks_with_limits(
+    source: &str,
+    run_policy: mech_gpu::native_artifact::NativeProgramExecutionLimits,
+) {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-optimal-path-reference.json"
     ))
@@ -233,7 +287,7 @@ fn qualify_path_checks(source: &str) {
             let old = output.clone();
             let retained = memory.used_bytes();
             let nodes = memory.retained_snapshot_nodes();
-            let result = jit.evaluate_into(&args, &mut output, policy(), &memory);
+            let result = jit.evaluate_into(&args, &mut output, run_policy, &memory);
             if reject {
                 let error = format!("{:?}", result.unwrap_err());
                 assert!(error.contains("Integrity"), "{error}");

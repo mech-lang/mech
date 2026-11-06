@@ -157,6 +157,8 @@ struct Descriptor<'a, Frame> {
     scalar_bytes: u64,
     observation_schema_bytes: u64,
     max_library_inputs: usize,
+    #[serde(default)]
+    word_collections: Box<[native::program::prepare::word_collections::Region]>,
     #[serde(deserialize_with = "proof")]
     window_regions: Box<[NativeWindowRegion]>,
     #[serde(deserialize_with = "proof")]
@@ -242,8 +244,8 @@ fn decode_inner<
     let image: Image<'a, Frame> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
-        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7 | 8))
-        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8))
+        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9))
+        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9))
     {
         return Err("unsupported native descriptor image format".into());
     }
@@ -559,6 +561,14 @@ fn decode_inner<
             return Err("numeric map header template is not funded".into());
         }
     }
+    let word_collections =
+        native::program::prepare::word_collections::derive(&plan, &visits, &w.map_admission)
+            .into_boxed_slice();
+    if word_collections != w.word_collections
+        || (!word_collections.is_empty() && w.max_library_inputs < 3)
+    {
+        return Err("word collection proof differs from its total scalar source CFG".into());
+    }
     for region in &uniform_word_collections {
         let site = region.header() as usize;
         let required = base_visits
@@ -687,6 +697,16 @@ fn decode_inner<
     if w.max_library_inputs < compositions.argument_words() {
         return Err("restored parent native argument bank is too small".into());
     }
+    // The managed prefix is not serialized permission. Reconstruct it from
+    // source calls, checked parent pieces and source-derived window candidates.
+    let max_call_values = native::program::prepare::call_value_bound(
+        &plan,
+        &compositions,
+        !plan.window_regions().is_empty() || !plan.string_map_regions().is_empty(),
+    );
+    if max_call_values > w.max_library_inputs {
+        return Err("restored canonical arguments exceed admitted backing".into());
+    }
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
@@ -706,7 +726,9 @@ fn decode_inner<
             scalar_bytes: w.scalar_bytes,
             observation_schema_bytes: w.observation_schema_bytes,
             max_library_inputs: w.max_library_inputs,
+            max_call_values,
             uniform_word_collections,
+            word_collections,
             unsigned_buffer_calls,
             buffer_frames,
             frame_retirements,
