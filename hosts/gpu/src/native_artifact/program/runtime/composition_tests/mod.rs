@@ -34,6 +34,7 @@ mod nested_phase_growing;
 mod nested_phase_handoff;
 pub(super) mod observe;
 mod ordered_reduction;
+mod ordered_reduction_exhaustion;
 mod ordered_reduction_geometry;
 mod pack;
 mod phase_descendants;

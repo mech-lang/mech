@@ -45,6 +45,7 @@ pub(super) fn derive(
         || next_width != width
         || graph.advances.is_empty()
         || !terminal_local(graph, tag, width)
+        || !exhaustion_preserves_payload(graph, tag, next, width)
     {
         return None;
     }
@@ -126,6 +127,21 @@ pub(super) fn derive(
         answer = Some(found);
     }
     answer
+}
+
+/// Completion proves the loop finishes, not that its exhausted transition is
+/// an identity. Only bypass that source edge when every current payload is
+/// transported unchanged on every recorded exit. Other transitions retain the
+/// existing native source traversal and its complete-child funding proof.
+fn exhaustion_preserves_payload(graph: &Graph, tag: usize, next: usize, width: usize) -> bool {
+    !graph.exhausted.is_empty()
+        && graph.exhausted.iter().all(|edge| {
+            (1..width).all(|offset| {
+                edge.get(&(next + offset))
+                    .and_then(|&id| graph.nodes.get(id))
+                    == Some(&Node::Initial(tag + offset))
+            })
+        })
 }
 
 fn terminal_local(graph: &Graph, tag: usize, width: usize) -> bool {

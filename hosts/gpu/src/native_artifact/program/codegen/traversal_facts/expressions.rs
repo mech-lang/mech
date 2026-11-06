@@ -18,6 +18,8 @@ pub(in crate::native_artifact::program::codegen) enum Node {
 pub(in crate::native_artifact::program::codegen) struct Graph {
     pub nodes: Vec<Node>,
     pub advances: Vec<BTreeMap<usize, Id>>,
+    /// Current payload values on each active-to-terminal latch edge.
+    pub exhausted: Vec<BTreeMap<usize, Id>>,
     pub written: BTreeSet<usize>,
     pub terminal_inputs: Option<BTreeSet<Id>>,
 }
@@ -27,6 +29,7 @@ pub(super) struct Recording {
     definitions: BTreeMap<Id, Node>,
     ambiguous: BTreeSet<Id>,
     advances: Vec<BTreeMap<usize, Id>>,
+    exhausted: Vec<BTreeMap<usize, Id>>,
     overflowed: bool,
     candidate: Option<Candidate>,
     terminal_inputs: Option<BTreeSet<Id>>,
@@ -174,19 +177,30 @@ impl Recording {
         self.ambiguous.insert(id);
     }
 
-    pub fn advance(&mut self, candidate: &Candidate, state: &State, terms: &Terms) {
-        if state
+    pub fn latch(&mut self, candidate: &Candidate, state: &State, terms: &Terms) {
+        if self.overflowed {
+            return;
+        }
+        let tag = state
             .read(candidate.next_tag)
-            .and_then(|v| state.constant(terms, v))
-            == Some(candidate.active)
-            && !self.overflowed
-        {
-            if self.advances.len() == MAX_PARTITIONS {
-                self.overflowed = true;
-                self.advances.clear();
-            } else {
-                self.advances.push(state.words.clone());
-            }
+            .and_then(|v| state.constant(terms, v));
+        let active = tag == Some(candidate.active);
+        if !active && tag != Some(candidate.terminal) {
+            return;
+        }
+        let count = if active {
+            self.advances.len()
+        } else {
+            self.exhausted.len()
+        };
+        if count == MAX_PARTITIONS {
+            self.overflowed = true;
+            self.advances.clear();
+            self.exhausted.clear();
+        } else if active {
+            self.advances.push(state.words.clone());
+        } else {
+            self.exhausted.push(state.words.clone());
         }
     }
 
@@ -224,6 +238,7 @@ impl Recording {
         Graph {
             nodes,
             advances: self.advances,
+            exhausted: self.exhausted,
             written,
             terminal_inputs: self.terminal_inputs,
         }
