@@ -1,4 +1,18 @@
-# Related-post compiler integration with #973
+# Current related-post integration targeting #973
+
+The current compiler integrates #973 through **369714775615e4adb85d67467b9e7409a69f92b4** and repairs its inherited exhausted-transition reduction miscompile. Compiler **fc61145beddd6a9777e40e0469e224801bfe47c8** is **IR231 / work115 / ABI41 / image9**. [PR990](https://github.com/mech-lang/mech/pull/990) targets `codex/level12-compression-consolidated` (#973).
+
+The regression first reproduces the unfixed result `(9,119,1)` instead of `(0,119,1)` with the reduction selected. The fix retains the active tag and resumes the original exhausted source transition after the candidate reduction, preserving arbitrary final payload updates. Prepayment still charges the exact original visits. The new tests cover three payload updates, scalar/vector thresholds and tails, zero/exhausted entries, ties, original/decoded artifacts, direct/restored execution, aliases, finite publication, cleanup and retry. The optimized reduction stays selected.
+
+Current local qualification: **841 GPU passes with exactly the two inherited failures**, **128 scalar and five compression rows exactly equal to IR228 in every non-timing field**, 434 loader fixtures, 52 original/decoded bundle files, 48 finite denials, 12 finite small/full successes, 16 forged-frontier rejections, and two fresh genuine same-ABI/work-policy old-Object checks (IR228/230). Runtime-only full5000, scalar-only compilation and the unmodified generated application's success/error/denial checks pass. Earlier old-Object checks remain separately labeled. This is a draft; no green hosted-CI claim is made.
+
+All four related-post complete native text sections and their **212 numeric functions are byte-identical to measured IR228**. The incoming affine-address optimization and this reduction correctness fix do not select the related query trees. **No new latency cohort or speedup is claimed for IR231.** The latest timing/resource/profile evidence below remains IR228 evidence, with its own exact compiler pin. IR208 stays selected; Rust parity remains unmet.
+
+See `ir231-review-status.json`, `ir231-local-archive-index.json` and `evidence/ir231-*` for the failed-before/passed-after evidence, complete source/build inventory and current qualification. Raw binaries and Objects are indexed locally, not remotely uploaded. The fresh-traversal IR229 probe is also retained as negative evidence: it identifies 464 query words but emits unchanged native text.
+
+The supplied performance review examines historical IR223. Reinspection confirms direct producer-proven Boolean literal lowering is still missing in the current source emitter; the later backend Boolean cleanup is a separate pass. The next experiments are recorded in `evidence/ir231-review-driven-next-experiments.json`: direct Boolean branches, ordered subset keys and mask reuse, immutable one-shot call/restore metadata, producer-derived ranges and native-tree funding. The fixture independently confirms 5000 ordered unique rows, 22538 tag IDs, 35228 triples and 15152 quartets. These are experiment targets, not demonstrated speedups.
+
+## Retained IR228 measurements and qualification
 
 The current compiler merges #973 through **0bca6a54cdc2d69df71ca2763a6f36993448fe02** and the related-post compiler series. Compiler commit **29838b0e08b5ba66bbad5b7f7565fc354a4e9490** is **IR228 / work115 / ABI41 / image9**. [PR990](https://github.com/mech-lang/mech/pull/990) targets `codex/level12-compression-consolidated` (#973).
 

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-reduction-terminal-transition-tests-20261106-v1/mech_gpu-tests",
+    "ordered_reduction",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 16.695703458040953
+}

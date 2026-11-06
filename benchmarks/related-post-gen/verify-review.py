@@ -116,6 +116,36 @@ if latest_path.exists():
         assert result['all_nontiming_fields_equal_IR227']
     assert latest['selected'] is False and latest['goal_complete'] is False
 
+current_status = packet / 'integration/ir231-review-status.json'
+if current_status.exists():
+    status = json.loads(current_status.read_text())
+    assert status['identity'] == 'IR231/work115/ABI41/image9'
+    assert status['target_pr'] == 973
+    assert status['gpu_passed'] == 841
+    assert len(status['inherited_gpu_failures']) == 2
+    assert status['current_performance_cohort_run'] is False
+    assert status['new_performance_gain_claim'] is False
+    assert status['selected'] is False and status['goal_complete'] is False
+    before = json.loads((evidence / 'ir231-unfixed-confirmation.json').read_text())
+    assert before['inherited_miscompile_reproduced']
+    assert json.loads((evidence / 'ir231-unfixed-reproducer.json').read_text())['exit'] == 101
+    after = json.loads((evidence / 'ir231-gpu-focus-ordered_reduction.json').read_text())
+    assert after['exit'] == 0
+    full = json.loads((evidence / 'ir231-gpu-test-run.json').read_text())
+    assert full['expected_failures_exact'] and not full['new_failures']
+    for kind, count in [('scalar', 128), ('one-kib', 5)]:
+        def rows(path):
+            return [{k: v for k, v in json.loads(line).items()
+                     if k not in ('seconds', 'seconds_per_evaluation')}
+                    for line in json.loads(path.read_text())['stdout'].splitlines()
+                    if line.startswith('{')]
+        old = rows(evidence / f'ir228-control-{kind}-run.json')
+        new = rows(evidence / f'ir231-control-{kind}-run.json')
+        assert len(old) == len(new) == count and old == new
+    native = json.loads((evidence / 'ir231-native-text-equivalence.json').read_text())
+    assert len(native) == 4
+    assert all(x['complete_native_text_byte_identical'] for x in native.values())
+
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833
 assert report['matched_native_reference']['median_seconds'] == 0.001651875
