@@ -32,7 +32,7 @@
   "scalar_only_compiler_passed": true,
   "complete_native_text_all_four_variants_equal_IR228": true,
   "native_functions_compared": 212,
-  "current_performance_cohort_run": false,
+  "current_performance_cohort_run": true,
   "retained_latest_performance_compiler": "29838b0e08b5ba66bbad5b7f7565fc354a4e9490",
   "retained_latest_performance_identity": "IR228/work115/ABI41/image9",
   "new_performance_gain_claim": false,
@@ -42,5 +42,7 @@
   "source_files": 2461,
   "local_archive_verified_files": 1780,
   "raw_archives_remotely_uploaded": false,
-  "updated_utc": "2026-11-06T23:08:15.046907+00:00"
+  "updated_utc": "2026-11-06T23:08:15.046907+00:00",
+  "current_performance_role": "Current IR231 parent control in the randomized IR232/233 experiment screens",
+  "current_performance_report": "evidence/boolean-experiments/summary.json"
 }

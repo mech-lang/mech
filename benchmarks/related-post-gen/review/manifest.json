@@ -2302,8 +2302,8 @@
       "recorded_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py"
     },
     "compare-implementations.py": {
-      "sha256": "9b4bd9c9314ddc5b88d9748a770c3aeb1769a2cdb315c597d341fcb117930000",
-      "bytes": 20131,
+      "sha256": "0e27f5bc614bf99939f233d11c018bb47fdc7f531c1fb29ba55a52d8823659f0",
+      "bytes": 21679,
       "recorded_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/compare-implementations.py"
     },
     "collect-size-metrics.py": {
@@ -3834,8 +3834,8 @@
       "publication_generated": true
     },
     "README.md": {
-      "sha256": "b9f9c957a3c7f999f973eca35b5aebbeede30bd7da750c5e2ba0037b537964e8",
-      "bytes": 10096
+      "sha256": "16e04fd9e95e9fd2596a7e8c535f592a228db19432a6fb9f648fff4acf9ee2b0",
+      "bytes": 10214
     },
     "review/history-bridge.json": {
       "sha256": "c86df5628c3c2e2b87f99fe3c009db907cdbb6b57e7bb8c617f33cece7b59dae",
@@ -3844,8 +3844,8 @@
       "publication_generated": true
     },
     "verify-review.py": {
-      "sha256": "ec5aa56df11888937147d4b73a737b26a4f988afd3b177d71e461edec8030881",
-      "bytes": 8448
+      "sha256": "da8eac900e3253319cbc68a7a9e152d58bdd99197925e65ec7106448f76fc23f",
+      "bytes": 10083
     },
     "review/native-metadata/after-4/metadata.json.gz": {
       "sha256": "6172681ef00ff2861529ff54dd9b29666bc8e923a397c9043f08a1d7b93b1e8a",
@@ -3893,8 +3893,8 @@
       "bytes": 76400
     },
     "integration/README.md": {
-      "sha256": "977252cf33acdd0f9b0d07ef60a142f7898202a2f0f2d1e0d7e10cc8006a0418",
-      "bytes": 16228
+      "sha256": "5138aaa426f3e3fcc6f6eda3024b50ccd14b1028d850d13ed396f698ebc23b53",
+      "bytes": 19884
     },
     "integration/evidence/size-native-fuel-derived-debits-20261106.json": {
       "sha256": "3ad02f64e2500b47f6f068654b6a38baf414869a2be7eff4381e716129fb390f",
@@ -6733,8 +6733,100 @@
       "bytes": 841020
     },
     "integration/ir231-review-status.json": {
-      "sha256": "817bc8ca7322516cd472c4bf5c6c693a4a777a4b0e2f53feaa014c2bb3379605",
-      "bytes": 2103
+      "sha256": "30293741cda717e9e61d610d875ec14b5aa989a502ff942be0042495fb352166",
+      "bytes": 2288
+    },
+    "integration/evidence/boolean-experiments/IR232-compression-control-comparison.json": {
+      "sha256": "e97457fae2ea28fc195835a123ecf2c41f08e5d599d11dcae3a37719be51bd48",
+      "bytes": 411
+    },
+    "integration/evidence/boolean-experiments/IR233-latency.json.gz": {
+      "sha256": "b40c36bf08d4692ccaa87ea762f25fb278c049bfd095fdfbe78380f9422176af",
+      "bytes": 26112,
+      "compression": "gzip",
+      "uncompressed_sha256": "8e9dd7e3cbbfb80ae24c2a30085cdd554db32c0a2f4dd678f45963537a2c1b07"
+    },
+    "integration/evidence/boolean-experiments/summary.json": {
+      "sha256": "e063c435e303c82436122ff3ef78ac83d35d703399e9690ba564e99289e35131",
+      "bytes": 7001
+    },
+    "integration/evidence/boolean-experiments/IR232-all-symbols.json": {
+      "sha256": "089c2b659b7a625a7a957f1f322002c806f4795dd325d1fe00ca1962afe06e56",
+      "bytes": 32136
+    },
+    "integration/evidence/boolean-experiments/IR233-source-inventory.json": {
+      "sha256": "dc8682ffa17850b507a790de74bd94a022ec94e867c651ec75e2acb6df14f446",
+      "bytes": 312920
+    },
+    "integration/evidence/boolean-experiments/IR232-boolean-proof-tests.json": {
+      "sha256": "69edd76922ef8e2a7d7b909e65b9a433b777ed5ef4f1adc84b704cb124a0babc",
+      "bytes": 234
+    },
+    "integration/evidence/boolean-experiments/local-archive-index.json": {
+      "sha256": "c9da5e221ab6578fe0ffe38911fa9929c1503aa200d9825302e3628a95925064",
+      "bytes": 795858
+    },
+    "integration/evidence/boolean-experiments/IR232-source.patch": {
+      "sha256": "63015f42f38c811538b42e22c5b6adb68f9f82c83307d494947e9f701f4527b0",
+      "bytes": 24048
+    },
+    "integration/evidence/boolean-experiments/IR232-initial-test-expectation.stderr.log": {
+      "sha256": "ff4ae8b82f2241a90f0e65c85bd1bbf93bc2d9edcd79480b86f62efc581d28cc",
+      "bytes": 491
+    },
+    "integration/evidence/boolean-experiments/IR232-latency.json.gz": {
+      "sha256": "4c1b93cf77e4435ec40baf3db829ab84813e33e52d037b17de8615b09565a68c",
+      "bytes": 22646,
+      "compression": "gzip",
+      "uncompressed_sha256": "2e2f43713990eaf50cfc2ee7710ef983dd833888584555f5f4e8efa7e623b681"
+    },
+    "integration/evidence/boolean-experiments/IR232-boolean-proof-tests.stdout.log": {
+      "sha256": "186ddd31b0d1b9deb4e3cfefd6494cb419dfd5ba3befdd26994f6ec64aa2de8d",
+      "bytes": 1381
+    },
+    "integration/evidence/boolean-experiments/IR233-source.patch": {
+      "sha256": "09a173e5e227f2166f58aa3a34f3df68c68d4a0391c8a377bd5adcf3cac88790",
+      "bytes": 24199
+    },
+    "integration/evidence/boolean-experiments/IR232-scalar-control-comparison.json": {
+      "sha256": "18c8924b6cfcf25122aac7a41525b862cd738d476f6aaa7ef594f2aa30178559",
+      "bytes": 6586
+    },
+    "integration/evidence/boolean-experiments/IR232-source-inventory.json": {
+      "sha256": "d215baba84099d24c707cc645008cb397bfd930a457e78f324cce9375f3a496a",
+      "bytes": 312924
+    },
+    "integration/evidence/boolean-experiments/IR232-current-profile.json": {
+      "sha256": "7692fa35e8c6283b9be6c6fb8c744426f1f1f9a277c280d64845fdd233652f45",
+      "bytes": 38640
+    },
+    "integration/evidence/boolean-experiments/IR232-resources.json.gz": {
+      "sha256": "3aed3d563c441936a543a749878f0ed8828cdd66a6c58c4661c11dd227ff9faa",
+      "bytes": 44164,
+      "compression": "gzip",
+      "uncompressed_sha256": "99bebf290264553bb2947a0cb1e536988c8423768593f9c0f8e0ab837380ced2"
+    },
+    "integration/evidence/boolean-experiments/IR232-worker-instructions.json": {
+      "sha256": "336b5f8d62768295a170eea7e26e674e0f136cd5f1f6dccf7f6b93727543cb0c",
+      "bytes": 95673
+    },
+    "integration/evidence/boolean-experiments/IR232-tests.json": {
+      "sha256": "ab4eb7a4fe0d9dcd1776733a7440cc05e8fc8b9bbd8893e2b70b14841230b2f7",
+      "bytes": 639
+    },
+    "integration/evidence/boolean-experiments/IR233-resources.json.gz": {
+      "sha256": "59b49380cb01caad71b739273580b7fcfe8163215eff58d5cb240055bd40dbc1",
+      "bytes": 50581,
+      "compression": "gzip",
+      "uncompressed_sha256": "7bcf8d795e57bb1dc5b8243d20e9998c77a5f34fd5ad4be5e023cd961254f75c"
+    },
+    "integration/evidence/boolean-experiments/IR233-targeted-boolean-tests.json": {
+      "sha256": "930945f5abd804613bef9f842c84738d59574a4a7ba83cbf703727db76f8524e",
+      "bytes": 228
+    },
+    "check-cohort-ordering.py": {
+      "sha256": "59782b9d0ef2516fba0c79ca497f8354c832ccd021249494b44d475b26f03bbf",
+      "bytes": 2222
     }
   },
   "limitations": [
@@ -6750,8 +6842,8 @@
     "compiler": "fc61145beddd6a9777e40e0469e224801bfe47c8",
     "identity": "IR231/work115/ABI41/image9",
     "source_inventory": "integration/source-inventory.json",
-    "speed_measured": false,
-    "integrated_timings_run": false,
+    "speed_measured": true,
+    "integrated_timings_run": true,
     "retained_latest_performance": "integration/evidence/ir228-screen-report.json",
     "retained_latest_performance_compiler": "29838b0e08b5ba66bbad5b7f7565fc354a4e9490",
     "gpu_tests_passed": 841,
@@ -6763,7 +6855,9 @@
     "local_archive": "integration/ir231-local-archive-index.json",
     "status": "integration/ir231-review-status.json",
     "selected": false,
-    "goal_complete": false
+    "goal_complete": false,
+    "performance": "integration/evidence/boolean-experiments/summary.json",
+    "performance_role": "IR231 parent control; IR232/233 remain unselected source patches"
   },
   "integration_history": [
     {

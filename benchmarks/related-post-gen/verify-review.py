@@ -123,7 +123,7 @@ if current_status.exists():
     assert status['target_pr'] == 973
     assert status['gpu_passed'] == 841
     assert len(status['inherited_gpu_failures']) == 2
-    assert status['current_performance_cohort_run'] is False
+    assert status['current_performance_cohort_run'] is True
     assert status['new_performance_gain_claim'] is False
     assert status['selected'] is False and status['goal_complete'] is False
     before = json.loads((evidence / 'ir231-unfixed-confirmation.json').read_text())
@@ -145,6 +145,30 @@ if current_status.exists():
     native = json.loads((evidence / 'ir231-native-text-equivalence.json').read_text())
     assert len(native) == 4
     assert all(x['complete_native_text_byte_identical'] for x in native.values())
+
+experiments = evidence / 'boolean-experiments'
+if experiments.exists():
+    experiment = json.loads((experiments / 'summary.json').read_text())
+    assert experiment['selected'] is False and experiment['goal_complete'] is False
+    assert experiment['qualification']['IR232_gpu_passed'] == 843
+    assert experiment['qualification']['IR233_full_gpu_and_compression_controls_not_run']
+    total = 0
+    for label, expected in [('IR232-latency', 248), ('IR232-resources', 63),
+                            ('IR233-latency', 279), ('IR233-resources', 70)]:
+        run = json.loads(gzip.decompress((experiments / (label+'.json.gz')).read_bytes()))
+        assert len(run['samples']) == expected
+        assert all(row['exit'] == 0 and row['exact_rust_output'] for row in run['samples'])
+        assert run['execution_order']['mode'] == 'randomized'
+        assert len(run['execution_order']['rounds']) == (31 if 'latency' in label else 7)
+        total += expected
+    assert total == 660
+    latest = json.loads(gzip.decompress((experiments / 'IR233-latency.json.gz').read_bytes()))
+    assert latest['matched_native_reference']['variant'] == 'rust-mech-control-u8-ids-u32'
+    assert latest['whole_process_reference']['variant'] == 'rust-mech-control-u32-casts'
+    assert latest['summary']['mech-parent-4']['median_post_json_seconds'] == .002961916
+    assert latest['summary']['mech-width-4']['median_post_json_seconds'] == .002954208
+    assert experiment['paired']['mech-after-4']['mech-parent-4']['post_json_seconds']['wins'] == 14
+    assert experiment['paired']['mech-width-4']['mech-parent-4']['post_json_seconds']['wins'] == 17
 
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833
