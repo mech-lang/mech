@@ -1,0 +1,32 @@
+{
+  "basis": "native-image-libraries",
+  "factories": [
+    "mech_engine::linked_factories::ACCESS_SCALAR",
+    "mech_engine::linked_factories::CORE_COMPOSITE_PACK",
+    "mech_engine::linked_factories::CORE_ENUM_PACK",
+    "mech_engine::linked_factories::CORE_ASSIGN_INDEXED_AXIS",
+    "mech_engine::linked_factories::MAP_HISTOGRAM",
+    "mech_engine::linked_factories::MAP_INSERT",
+    "mech_engine::linked_factories::MAP_KEYS",
+    "mech_engine::linked_factories::MAP_NEW",
+    "mech_engine::linked_factories::RANGE_INCLUSIVE",
+    "mech_engine::linked_factories::SEQUENCE_APPEND",
+    "mech_engine::linked_factories::SEQUENCE_LENGTH",
+    "mech_engine::linked_factories::SEQUENCE_WITH_CAPACITY"
+  ],
+  "missing": [],
+  "operations": [
+    "access/scalar",
+    "core/composite-pack",
+    "core/enum-pack",
+    "core/assign/indexed-axis",
+    "map/histogram",
+    "map/insert",
+    "map/keys",
+    "map/new",
+    "range/inclusive",
+    "sequence/append",
+    "sequence/length",
+    "sequence/with-capacity"
+  ]
+}

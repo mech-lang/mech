@@ -1,0 +1,386 @@
+[
+  {
+    "input": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/0/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 79.041\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":0.00001775,\"triple_index_and_coverage_seconds\":0.000041583},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-100.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/1/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 190.792\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":0.000051875,\"triple_index_and_coverage_seconds\":0.00004675},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-500.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/2/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 859.083\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":0.000139,\"triple_index_and_coverage_seconds\":0.000063708},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-unicode-ties.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/3/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 8.834\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":3.25e-6,\"triple_index_and_coverage_seconds\":1.25e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-empty-tags.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/4/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 6.083\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":1.959e-6,\"triple_index_and_coverage_seconds\":1.083e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/all-empty/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/5/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 2.292\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":2.92e-7},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/one-post/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/6/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 4.209\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":1.166e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/eight-tag-boundary/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/7/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 24.334\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"fully_covered\":true,\"interning_and_eligibility_seconds\":3.958e-6,\"quartet_entries\":630,\"quartet_index_and_masks_seconds\":5.042e-6,\"queries_and_index_export_seconds\":7.708e-6,\"triple_entries\":504,\"triple_index_and_coverage_seconds\":2.875e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/duplicate-utf8/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/8/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 15\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":4.792e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/wrapped-u8/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/9/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 28.667\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":2.834e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/wrap255/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/10/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 8.167\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":2.083e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/wrap256/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/11/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 16.458\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":3.583e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/wrap257/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/12/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 180\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":5.417e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/long-nine-tags/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/13/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 9.25\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":3.667e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/large-vocabulary/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/14/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 70.667\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":0.000047667},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/mixed-full-sparse/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/15/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 9\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":3.042e-6,\"triple_index_and_coverage_seconds\":1.375e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/coverage-five-with-two-tag-fifth/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/16/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 8.208\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":2.625e-6,\"triple_index_and_coverage_seconds\":1.125e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/coverage-six-with-two-tag-extra/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/17/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 10.042\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":3.5e-6,\"triple_index_and_coverage_seconds\":1.458e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/coverage-all-six/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/18/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 12.458\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":3.291e-6,\"triple_index_and_coverage_seconds\":1.792e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/coverage-permuted-ties/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/19/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 11.916\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":4e-6,\"triple_index_and_coverage_seconds\":1.583e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/utf8-key-prefix/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/20/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 18.083\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"fully_covered\":true,\"interning_and_eligibility_seconds\":5.541e-6,\"quartet_entries\":10,\"quartet_index_and_masks_seconds\":1.708e-6,\"queries_and_index_export_seconds\":1.875e-6,\"triple_entries\":40,\"triple_index_and_coverage_seconds\":3.5e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/long-utf8-key-prefix/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/21/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 23.042\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"fully_covered\":true,\"interning_and_eligibility_seconds\":7.625e-6,\"quartet_entries\":8,\"quartet_index_and_masks_seconds\":4.417e-6,\"queries_and_index_export_seconds\":1.916e-6,\"triple_entries\":32,\"triple_index_and_coverage_seconds\":2.708e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/coverage-mixed-disjoint/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/22/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 16.666\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":4.666e-6,\"triple_index_and_coverage_seconds\":4.666e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/random-0/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/23/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 23.875\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":7.042e-6,\"triple_index_and_coverage_seconds\":6.708e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/random-1/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/24/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 23.875\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":7.209e-6,\"triple_index_and_coverage_seconds\":6.333e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/random-2/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/25/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 37.167\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":0.000012916,\"triple_index_and_coverage_seconds\":9.792e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/random-3/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/26/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 33.834\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":9.5e-6,\"triple_index_and_coverage_seconds\":9.375e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/random-4/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/27/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 26.75\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":8.417e-6,\"triple_index_and_coverage_seconds\":7.708e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/random-5/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/28/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 20.833\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":6e-6,\"triple_index_and_coverage_seconds\":7.541e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/random-6/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/29/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 38.584\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":0.000011792,\"triple_index_and_coverage_seconds\":0.000010875},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-native-u32-arithmetic-runners-20261106-v1/narrow-4/edges/edges/random-7/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/30/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 25.25\u00b5s\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"interning_and_eligibility_seconds\":6.958e-6,\"triple_index_and_coverage_seconds\":9.5e-6},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  },
+  {
+    "input": "/private/tmp/mech-related-post-rust-local-20261102/posts.json",
+    "command": [
+      "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech"
+    ],
+    "cwd": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/checks/31/run",
+    "exit": 0,
+    "exact_rust_output": true,
+    "stdout": "Processing time (w/o IO): 3.89925ms\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"fully_covered\":true,\"interning_and_eligibility_seconds\":0.001349292,\"quartet_entries\":15152,\"quartet_index_and_masks_seconds\":0.00053625,\"queries_and_index_export_seconds\":0.001372041,\"triple_entries\":35228,\"triple_index_and_coverage_seconds\":0.0004765},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+    "stderr": "",
+    "timings_excluded": true
+  }
+]

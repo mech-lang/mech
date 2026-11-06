@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v2/compiler-decoded",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runners-20261106-v2/compact-4/build/source.mec",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runners-20261106-v2/compact-4-decoded-bundle"
+  ],
+  "exit": 0,
+  "seconds": 5.012843959033489,
+  "stdout": "{\"code_bytes\":914068,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1584}\n",
+  "stderr": ""
+}
