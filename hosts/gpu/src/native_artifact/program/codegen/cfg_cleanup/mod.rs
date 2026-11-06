@@ -250,6 +250,43 @@ pub(in crate::native_artifact) fn optimize(
     context: &mut Context,
     isa: &dyn TargetIsa,
 ) -> Result<CfgCleanup, NativeCompileError> {
+    optimize_ordered(controls, context, isa, true)
+}
+
+// Numeric range proofs still consume exact equality-to-one facts on phi
+// words. Keep that vocabulary until the existing guard pass has finished.
+pub(in crate::native_artifact) fn optimize_before_unsigned_guards(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<CfgCleanup, NativeCompileError> {
+    optimize_ordered(controls, context, isa, false)
+}
+
+pub(in crate::native_artifact) fn finish_boolean_conditions(
+    controls: &CompilationControls,
+    context: &mut Context,
+    report: &mut CfgCleanup,
+) {
+    if !report.enabled || !controls.enabled(OptimizationPass::BooleanConditions) {
+        return;
+    }
+    let simplified = boolean_conditions::optimize(&mut context.func);
+    report.boolean_conditions_simplified += simplified;
+    if simplified != 0 {
+        // Inverted tests swap successor order. Even with the same edge set,
+        // Cranelift's cached postorder must be refreshed.
+        context.compute_cfg();
+        context.compute_domtree();
+    }
+}
+
+fn optimize_ordered(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+    early_boolean_conditions: bool,
+) -> Result<CfgCleanup, NativeCompileError> {
     let (before_blocks, before_instructions) = counts(&context.func);
 
     let enabled = !!controls.enabled(OptimizationPass::CfgCleanup);
@@ -281,15 +318,8 @@ pub(in crate::native_artifact) fn optimize(
         context.compute_domtree();
         context.eliminate_unreachable_code(isa).map_err(backend)?;
         context.remove_constant_phis(isa).map_err(backend)?;
-        if controls.enabled(OptimizationPass::BooleanConditions) {
-            let simplified = boolean_conditions::optimize(&mut context.func);
-            report.boolean_conditions_simplified += simplified;
-            if simplified != 0 {
-                // Inverted tests swap successor order. Even with the same
-                // edge set, Cranelift's cached postorder must be refreshed.
-                context.compute_cfg();
-                context.compute_domtree();
-            }
+        if early_boolean_conditions {
+            finish_boolean_conditions(controls, context, &mut report);
         }
         report.rounds += 1;
         let removed = fold(&mut context.func);

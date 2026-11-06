@@ -170,3 +170,100 @@ fn boolean_conditions_preserve_raw_words_and_every_loop_entry_and_backedge() {
         }
     }
 }
+
+#[test]
+fn late_boolean_conditions_preserve_dominating_unsigned_guard_proofs() {
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut functions = Vec::new();
+    for enabled in [false, true] {
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(types::I64)];
+        context.func.signature.returns = vec![AbiParam::new(types::I64)];
+        let id = module
+            .declare_function(
+                &format!("late_boolean_guards_{enabled}"),
+                Linkage::Local,
+                &context.func.signature,
+            )
+            .unwrap();
+        let mut fc = FunctionBuilderContext::new();
+        {
+            let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+            let entry = b.create_block();
+            let left = b.create_block();
+            let right = b.create_block();
+            let join = b.create_block();
+            let checked = b.create_block();
+            let success = b.create_block();
+            let failure = b.create_block();
+            let outside = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.append_block_param(join, types::I64);
+            b.switch_to_block(entry);
+            let input = b.block_params(entry)[0];
+            let route = b.ins().icmp_imm(IntCC::NotEqual, input, 0);
+            b.ins().brif(route, left, &[], right, &[]);
+            b.switch_to_block(left);
+            let flag = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, input, 4);
+            let flag = b.ins().uextend(types::I64, flag);
+            b.ins().jump(join, &[flag.into()]);
+            b.switch_to_block(right);
+            let flag = b.ins().icmp_imm(IntCC::UnsignedLessThan, input, 2);
+            let flag = b.ins().uextend(types::I64, flag);
+            b.ins().jump(join, &[flag.into()]);
+            b.switch_to_block(join);
+            let flag = b.block_params(join)[0];
+            let one = b.ins().iconst(types::I64, 1);
+            let yes = b.ins().icmp(IntCC::Equal, flag, one);
+            b.ins().brif(yes, checked, &[], outside, &[]);
+            b.switch_to_block(checked);
+            let sum = b.ins().iadd(flag, one);
+            let fits = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, sum, flag);
+            b.ins().brif(fits, success, &[], failure, &[]);
+            b.switch_to_block(success);
+            b.ins().return_(&[sum]);
+            b.switch_to_block(failure);
+            let bad = b.ins().iconst(types::I64, -1);
+            b.ins().return_(&[bad]);
+            b.switch_to_block(outside);
+            let skipped = b.ins().iconst(types::I64, 0x91);
+            b.ins().return_(&[skipped]);
+            b.seal_all_blocks();
+            b.finalize();
+        }
+        let options = if enabled {
+            OptimizationOptions::default()
+        } else {
+            OptimizationOptions::without(OptimizationPass::BooleanConditions)
+        };
+        let controls = CompilationControls::new(options);
+        let mut report =
+            super::super::optimize_before_unsigned_guards(&controls, &mut context, module.isa())
+                .unwrap();
+        let removed =
+            crate::native_artifact::codegen::common::unsigned_guard_facts::optimize(&mut context);
+        assert!(
+            removed > 0,
+            "The exact flag==1 edge must still prove flag+1 fits"
+        );
+        super::super::finish_boolean_conditions(&controls, &mut context, &mut report);
+        assert_eq!(report.boolean_conditions_simplified, usize::from(enabled));
+        module.define_function(id, &mut context).unwrap();
+        functions.push(id);
+    }
+    module.finalize_definitions().unwrap();
+    for id in functions {
+        // SAFETY: these two owned functions have exactly the declared word ABI.
+        let run: unsafe extern "C" fn(u64) -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+        for input in (0..512).chain([u64::MAX, 1 << 63]) {
+            assert_eq!(
+                unsafe { run(input) },
+                if input == 0 || input > 4 { 2 } else { 0x91 }
+            );
+        }
+    }
+}

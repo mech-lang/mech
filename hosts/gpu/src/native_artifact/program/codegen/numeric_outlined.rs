@@ -135,11 +135,12 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
         if controls.enabled(OptimizationPass::BitCounts) {
             crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
         }
-        let cleanup = crate::native_artifact::program::codegen::cfg_cleanup::optimize(
-            controls,
-            &mut context,
-            module.isa(),
-        )?;
+        let mut cleanup =
+            crate::native_artifact::program::codegen::cfg_cleanup::optimize_before_unsigned_guards(
+                controls,
+                &mut context,
+                module.isa(),
+            )?;
         if controls.enabled(OptimizationPass::BitCounts) {
             crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
         }
@@ -168,6 +169,11 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             0
         };
         report.unsigned_guards += unsigned_guards;
+        crate::native_artifact::program::codegen::cfg_cleanup::finish_boolean_conditions(
+            controls,
+            &mut context,
+            &mut cleanup,
+        );
         let header = region.tail.header() as usize;
         let symbol = format!("{entry_symbol}_numeric_{header}");
         let function = module
