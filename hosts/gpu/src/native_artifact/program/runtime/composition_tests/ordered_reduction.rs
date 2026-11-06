@@ -52,7 +52,7 @@ fn numeric_ordered_reduction_preserves_prefix_remainders_wrapping_and_global_tie
             for restored in [false, true] {
                 let memory = mode.memory_budget();
                 let mut outputs = vec![None; artifact.outputs().len()];
-                for pattern in 0..3 {
+                for pattern in 0..7 {
                     let mut prices = vec![u32::MAX; 300];
                     let mut nodes = vec![u64::MAX; 300];
                     if pattern == 1 {
@@ -66,6 +66,21 @@ fn numeric_ordered_reduction_preserves_prefix_remainders_wrapping_and_global_tie
                         }
                         for (at, p) in nodes.iter_mut().enumerate() {
                             *p = u64::MAX.wrapping_sub((at as u64).wrapping_mul(0x1_ffff_fffd));
+                        }
+                    } else if pattern >= 3 {
+                        // Each possible vector lane wins, with ties across
+                        // groups and distinct ignored high halves in every
+                        // node. The independent scalar oracle below retains
+                        // the earliest current source index, including tails.
+                        prices.fill(0);
+                        for k in 0..=297 {
+                            let low = if k % 4 == pattern - 3 {
+                                1
+                            } else {
+                                u32::MAX - k as u32
+                            };
+                            let high = (k as u64).wrapping_mul(0x9e37_79b9) ^ 0xa5a5_5a5a;
+                            nodes[297 - k] = (high << 32) | u64::from(low);
                         }
                     }
                     for (start, stop) in [

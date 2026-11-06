@@ -1,5 +1,40 @@
 # Native compression milestone
 
+**R175 rejects a reverse-input permutation experiment.** Natural32KB improves
+4.327658× →4.303257× Roc (0.563841%) and natural16KB5.135407× →5.099904×
+(0.691339%), but all20 elapsed medians regress0.224967% geometrically:7 faster,
+13 slower. Eight literals worsen0.896254%, repeated32KB0.505027%; all contrary
+observations are retained. The production compiler remains exactly R174/IR194.
+Four lane-specific high-half/tie regression patterns remain; the rejected patch
+is exported for independent reuse rather than discarded.
+
+The actual vector body stays26 instructions: mask-load/TBL becomes UZP1/REV64.
+Four literal pools shrink code64B, stack unchanged;19 instruction medians rise,
+14 cycle medians rise. All20 heap/requested-byte/reallocation metrics remain equal.
+Five fresh exact-candidate profiles cover16587 complete calls without applying an
+old source map to changed code. All20 exact streams/inflate/source work/aliases/
+capacities/cleanup and existing1.05 gates pass.
+
+An address audit of the retained R174 baseline puts8.864469% of natural samples
+in one scalar condition/routing segment versus0.384615% in its vector body.
+Fresh inspection of the pinned reference finds an11-instruction scalar loop,
+versus19 on the selected Mech path. Next bounded target: consume the existing
+nonempty-entry fact and test the compact scalar loop at its bottom. This is
+proposed work, with no saving yet claimed.
+
+Final restored production passes14 focused/632 GPU tests with the same7 inherited
+exclusions; all215 selected CI names execute. All15 architecture/catalog checks,
+132 workflow tests, runtime-only, formatting and warnings denied pass. Existing
+236 components/8 composition/1 real-capacity path and12 scalar controls are explicitly
+reused from the identical R174 production. Largest input33027B. See the
+[R175 report](native-reverse-input-experiment.md) for exact pins, all20 results,
+candidate-versus-final coverage and replay. One experiment commit in draft #973;
+ordinary CI cancelled by instruction, review retained. Parity remains active.
+
+Publication verifies26 archives/52 server digests. Fresh public retrieval verifies
+2970 file occurrences/443 paths/11 historical versions and reconstructs results.json
+and REPORT.md byte-for-byte without compiling or compressing.
+
 **R174 retains one current funding gate for affine child loops.** Repeated32KB
 improves **3.682374× →3.241896× Roc** (11.961799%); periodic33KB
 **4.227835× →3.764477×** (10.959703%). All eight blocks improve in each case.
