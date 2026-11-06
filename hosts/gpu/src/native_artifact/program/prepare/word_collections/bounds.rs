@@ -6,8 +6,11 @@ use mech_engine::native_artifact::{
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct Range(pub u64, pub u64);
+pub(in crate::native_artifact) struct Range(pub u64, pub u64);
 impl Range {
+    pub(in crate::native_artifact) fn bit_and(self, other: Self) -> Self {
+        Self(0, self.1.min(other.1))
+    }
     pub(super) fn kind(kind: Kind) -> Option<Self> {
         Some(Self(
             0,
@@ -114,7 +117,7 @@ impl State {
                 U64Div if args[1].0 != 0 => Range(args[0].0 / args[1].1, args[0].1 / args[1].0),
                 U64Rem if args[1].0 != 0 => Range(0, args[0].1.min(args[1].1 - 1)),
                 BoolAnd | BoolOr | BoolXor | BoolNot => Range(0, 1),
-                U64BitAnd => Range(0, args[0].1.min(args[1].1)),
+                U64BitAnd => args[0].bit_and(args[1]),
                 U64BitOr | U64BitXor | U64BitNot | U64ShlWrap | U64ShrWrap | U64WrappingAdd
                 | U64WrappingSub | U64WrappingMul => Range(0, u64::MAX),
                 U64Clz | U64Ctz => Range(0, 64),

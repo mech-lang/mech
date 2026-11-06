@@ -332,7 +332,10 @@ fn selected_template(
 // numeric complementary cases; arbitrary raw Bool homes retain their defaults.
 // IR182 rederives current immutable-view lengths and selected normalized Bool
 // relations before omitting an exact one-based scalar-read bounds guard.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 182;
+// IR183 rederives activation-current complete child read windows and paired
+// checked/native bodies. No persisted guard grants execution authority.
+// IR184 also reconstructs bounded unsigned SSA word facts for early CFG cleanup.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 184;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

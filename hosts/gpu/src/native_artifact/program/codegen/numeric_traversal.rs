@@ -37,14 +37,20 @@ pub(super) fn derive(code: CodePlan<'_>, numeric: &Numeric, shadow: usize) -> Pr
             exit: tail.exit(),
             sites,
         };
-        if let Some(proof) = local(code, numeric, shadow, &scope) {
+        if let Some(proof) = local(code, numeric, shadow, &scope, &[]) {
             facts.extend(proof);
         }
     }
     facts
 }
 
-fn local(code: CodePlan<'_>, numeric: &Numeric, shadow: usize, scope: &Scope) -> Option<Proof> {
+pub(super) fn local(
+    code: CodePlan<'_>,
+    numeric: &Numeric,
+    shadow: usize,
+    scope: &Scope,
+    windows: &[traversal_facts::Window],
+) -> Option<Proof> {
     let CodePlan::Program(program) = code else {
         return None;
     };
@@ -80,7 +86,7 @@ fn local(code: CodePlan<'_>, numeric: &Numeric, shadow: usize, scope: &Scope) ->
             }
         }
     }
-    traversal_facts::derive(code, scope, &slots, None, |site| {
+    traversal_facts::with_windows(code, scope, &slots, None, windows, |site| {
         match numeric.action(site) {
             Some(Operation::Aggregate) => Some(Step::Aggregate(
                 &program.metadata().scalar_aggregates,

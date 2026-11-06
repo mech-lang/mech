@@ -52,5 +52,6 @@ pub(in crate::native_artifact) mod readonly_numeric;
 #[cfg(feature = "canonical-native-program")]
 mod traversal_facts;
 
+mod numeric_loop_windows;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_traversal;

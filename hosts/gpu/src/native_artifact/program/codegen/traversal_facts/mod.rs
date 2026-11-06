@@ -9,10 +9,13 @@ use mech_engine::native_artifact::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 mod flow;
+mod loop_windows;
 mod operations;
 mod scope;
 mod windows;
+pub(super) use flow::with_windows;
 pub(super) use flow::{Step, derive};
+pub(super) use loop_windows::Window;
 use operations::{aggregate, scalar};
 pub(super) use scope::Scope;
 const MAX_SITES: usize = 256;
@@ -42,6 +45,7 @@ enum Expr {
     Definition(usize, usize),
     Phi(usize, usize),
     Arithmetic(Arithmetic, Id, Id),
+    Wrapping(Arithmetic, Id, Id),
     Compare(Relation, Id, Id),
     Not(Id),
 }
@@ -88,6 +92,7 @@ struct State {
     words: BTreeMap<usize, Id>,
     relations: BTreeSet<(Relation, Id, Id)>,
     successful: BTreeSet<(Arithmetic, Id, Id)>,
+    windows: Vec<Window>,
 }
 impl State {
     fn assign(&mut self, moves: &[(usize, usize)], parallel: bool) -> Option<()> {
@@ -140,6 +145,12 @@ impl State {
         }
         if self.relations.contains(&(relation, a, b)) {
             return Some(true);
+        }
+        if self.window_holds(terms, a, b) {
+            return Some(relation != Relation::Eq);
+        }
+        if self.window_holds(terms, b, a) {
+            return Some(relation == Relation::Ne);
         }
         let known = |r, x, y| self.relations.contains(&(r, x, y));
         match relation {
@@ -298,12 +309,18 @@ pub(super) struct Proof {
     guards: BTreeSet<(usize, u32, usize, u32)>,
     arithmetic: BTreeMap<usize, (Op, Vec<NativeMatchValue>)>,
     reads: BTreeSet<(usize, usize, u32)>,
+    pub(super) windows: BTreeSet<Window>,
+    pub(super) successors: BTreeMap<usize, u32>,
+    pub(super) predicates: BTreeMap<usize, bool>,
 }
 impl Proof {
     pub(super) fn extend(&mut self, other: Self) {
         self.guards.extend(other.guards);
         self.arithmetic.extend(other.arithmetic);
         self.reads.extend(other.reads);
+        self.windows.extend(other.windows);
+        self.successors.extend(other.successors);
+        self.predicates.extend(other.predicates);
     }
 
     pub fn guard(
