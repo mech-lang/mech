@@ -10,6 +10,7 @@ use mech_engine::native_artifact::{
 use std::collections::{BTreeMap, BTreeSet};
 mod completion;
 mod entry;
+mod expressions;
 mod flow;
 mod loop_windows;
 mod operations;
@@ -17,6 +18,7 @@ mod ranges;
 mod scope;
 mod windows;
 pub(super) use completion::{Candidate, Completed};
+pub(super) use expressions::{Graph, Node};
 pub(super) use flow::{Step, derive};
 pub(super) use flow::{with_completion, with_windows};
 pub(super) use loop_windows::Window;
@@ -59,6 +61,7 @@ enum Expr {
 struct Terms {
     terms: Vec<Expr>,
     interned: BTreeMap<Expr, Id>,
+    recording: Option<expressions::Recording>,
 }
 impl Terms {
     fn intern(&mut self, expr: Expr) -> Option<Id> {
@@ -244,9 +247,33 @@ impl State {
         }
     }
     fn merge(&mut self, other: &Self, site: usize, terms: &mut Terms) -> Option<()> {
+        let condition = terms
+            .recording
+            .as_ref()
+            .and_then(|_| expressions::condition(self, other, terms));
         for (&slot, value) in &mut self.words {
             if other.words.get(&slot) != Some(&*value) {
-                *value = terms.intern(Expr::Phi(site, slot))?;
+                let old = *value;
+                let phi = terms.intern(Expr::Phi(site, slot))?;
+                if let Some(recording) = &mut terms.recording {
+                    if let Some((condition, yes)) = condition
+                        && let Some(&from) = other.words.get(&slot)
+                        && old != phi
+                        && from != phi
+                    {
+                        recording.record(
+                            phi,
+                            Node::Select {
+                                condition,
+                                yes: if yes { old } else { from },
+                                no: if yes { from } else { old },
+                            },
+                        );
+                    } else {
+                        recording.invalidate(phi);
+                    }
+                }
+                *value = phi;
             }
         }
         self.relations.retain(|fact| other.relations.contains(fact));
@@ -262,6 +289,7 @@ pub(super) struct Proof {
     arithmetic: BTreeMap<usize, (Op, Vec<NativeMatchValue>)>,
     reads: BTreeSet<(usize, usize, u32)>,
     pub(super) completed: Option<Completed>,
+    pub(super) expressions: Option<Graph>,
     pub(super) windows: BTreeSet<Window>,
     pub(super) successors: BTreeMap<usize, u32>,
     pub(super) predicates: BTreeMap<usize, bool>,

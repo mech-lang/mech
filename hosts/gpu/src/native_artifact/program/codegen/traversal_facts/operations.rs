@@ -160,6 +160,9 @@ pub(super) fn scalar(
                 }
                 _ => terms.intern(Expr::Definition(site, output.get() as usize))?,
             };
+            if let Some(recording) = &mut terms.recording {
+                recording.record(value, Node::Scalar(*op, args));
+            }
             state.words.insert(output.get() as usize, value);
         }
     }

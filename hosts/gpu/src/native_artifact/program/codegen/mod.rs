@@ -56,3 +56,4 @@ mod numeric_loop_prepayment;
 mod numeric_loop_windows;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_traversal;
+mod ordered_reduction;

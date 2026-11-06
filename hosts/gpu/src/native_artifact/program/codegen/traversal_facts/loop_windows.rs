@@ -1,7 +1,7 @@
 //! Conditional affine windows, admitted once for this child activation.
 use super::*;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, serde::Serialize)]
 pub(in crate::native_artifact::program::codegen) struct Window {
     pub induction: usize,
     pub count: usize,
