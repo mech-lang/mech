@@ -25397,6 +25397,17 @@
           "files": 71,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-eight-overlap-primary-956fb1139312.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-prefix-primary",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-case-eight-literals-prefix-primary-4aa51d65aefe.tar.gz",
+          "sha256": "4aa51d65aefed59345dcd6c3919de58c6f7f1cf07c77b55a4c104fb6947865ef",
+          "manifest_sha256": "eaf9436534d3da6129dc01f1d53f895281bf60c7ab41f38747e4b144b4443127",
+          "bytes": 153089,
+          "files": 71,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-eight-literals-prefix-primary-4aa51d65aefe.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
