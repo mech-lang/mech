@@ -6,7 +6,7 @@ use crate::native_artifact::NativeValueHandle;
 use crate::native_artifact::program::protocol::GlobalHelper;
 use crate::native_artifact::program::runtime::collections::{fixed_box, fixed_slice};
 use crate::native_artifact::program::runtime::maps::utf8_histogram::{
-    COLD, COMPLETE, FULL, Frame, Slot, bank_limit, maximum_capacity, pass_work,
+    COLD, COMPLETE, FULL, INVALID, Frame, Slot, bank_limit, maximum_capacity, pass_work,
 };
 use crate::native_artifact::program::runtime::maps::utf8_read::Cell;
 use mech_core::snapshot::{
@@ -278,6 +278,9 @@ impl Invocation<'_, '_, '_> {
         }
         if args[1] == COLD {
             return Ok(Some(0));
+        }
+        if args[1] == INVALID {
+            return Err(invalid("compiled histogram rejected its private bank header"));
         }
         if args[1] == FULL {
             if loan.frame.distinct != loan.frame.limit || loan.frame.completed >= loan.frame.count {
