@@ -25584,6 +25584,17 @@
           "files": 117,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-scalar-case-scalar-loop-64-decoded-f29f8a1dd01d.tar.gz"
+        },
+        {
+          "event": "profiles-current",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-profiles-current-42508188ac2d.tar.gz",
+          "sha256": "42508188ac2d7d17b6abad4336b340d1aad82684f01806cd4eba19d59b1ad6c1",
+          "manifest_sha256": "89f0f3198044bfa8555336ed14de09bef66e5ac423451715696cac2d48260a3b",
+          "bytes": 1265249,
+          "files": 100,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-profiles-current-42508188ac2d.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
@@ -25595,8 +25606,8 @@
         "private_abi": 39,
         "bytecode": 14
       },
-      "decision": "Unsigned word bounds in existing early CFG cleanup; no performance claim yet. Final retention compares against qualified R160.",
-      "retained": false,
+      "decision": "Retain combined current-window and unsigned-word candidate against qualified R160: every unchanged20case/scalar1.05 gate passes, geometric elapsed improves1.165633%, natural32KB14.178867% faster; eight bytes1.629548% slower remains explicit. All20 heap counts/bytes/peak equal.",
+      "retained": true,
       "release_tag": "evidence-native-compression-experiments-4",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
       "archive_publication": "local evidence; publication pending"
