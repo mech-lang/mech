@@ -328,7 +328,9 @@ fn selected_template(
 // with the same fact engine as packed maps. No fact crosses a source latch.
 // IR180 binds the shared traversal transfer to the original ordered Pack/
 // Project and parallel Copy recipe, including overlapping private word homes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 180;
+// IR181 recognizes fresh normalized U32 comparisons at the same confined
+// numeric complementary cases; arbitrary raw Bool homes retain their defaults.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 181;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

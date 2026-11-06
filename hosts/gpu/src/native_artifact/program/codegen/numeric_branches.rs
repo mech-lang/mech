@@ -64,7 +64,18 @@ pub(super) fn derive(facts: &NativeProgramFacts<'_>, proof: &Proof) -> BTreeMap<
             (*output == value
                 && matches!(
                     op,
-                    Op::U64Eq | Op::U64Ne | Op::U64Lt | Op::U64Le | Op::U64Gt | Op::U64Ge
+                    Op::U32Eq
+                        | Op::U32Ne
+                        | Op::U32Lt
+                        | Op::U32Le
+                        | Op::U32Gt
+                        | Op::U32Ge
+                        | Op::U64Eq
+                        | Op::U64Ne
+                        | Op::U64Lt
+                        | Op::U64Le
+                        | Op::U64Gt
+                        | Op::U64Ge
                 ))
             .then_some((value, producer))
         });
