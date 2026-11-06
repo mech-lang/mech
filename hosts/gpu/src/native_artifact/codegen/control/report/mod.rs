@@ -154,6 +154,7 @@ pub(in crate::native_artifact) struct CfgCleanup {
     pub enabled: bool,
     pub rounds: usize,
     pub constant_branches_removed: usize,
+    pub neutral_operations_removed: usize,
     pub before_blocks: usize,
     pub before_instructions: usize,
     pub after_blocks: usize,

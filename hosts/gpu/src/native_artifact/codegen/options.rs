@@ -14,6 +14,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     LoopBounds,
     LookupFacts,
     CfgCleanup,
+    EarlyIdentities,
     LoopOutlining,
     LoopInvariants,
     PreservingCalls,

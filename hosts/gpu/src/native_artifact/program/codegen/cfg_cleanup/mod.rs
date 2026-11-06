@@ -91,6 +91,11 @@ fn constant_integer(
             }
             let bits = function.dfg.value_type(left).bits();
             integer_mask(bits)?;
+            if function.dfg.resolve_aliases(left) == function.dfg.resolve_aliases(right) {
+                // The two uses refer to the same already-computed scalar.
+                // Its producer, including any load/call/trap, stays in place.
+                return Some(u64::from(integer_comparison(cond, 0, 0, bits)));
+            }
             u64::from(integer_comparison(cond, get(left)?, get(right)?, bits))
         }
         InstructionData::IntCompareImm { cond, arg, imm, .. } => {
@@ -162,6 +167,82 @@ fn fold(function: &mut Function) -> usize {
     changes.len()
 }
 
+// Backend data optimization also knows these identities, but it runs after
+// invariant block-parameter removal. Resolve them first so a loop's x+0
+// recurrence does not look like a new independent value to that earlier pass.
+// Only one-result, same-width, scalar wrapping integer operations qualify.
+// Operand producers and every separately emitted check/debit remain intact.
+fn identity_operand(function: &Function, inst: cranelift_codegen::ir::Inst) -> Option<Value> {
+    let &[result] = function.dfg.inst_results(inst) else {
+        return None;
+    };
+    let ty = function.dfg.value_type(result);
+    if !ty.is_int() {
+        return None;
+    }
+    let mask = integer_mask(ty.bits())?;
+    let literal = |value| {
+        let mut steps = MAX_CONSTANT_STEPS;
+        constant_integer(function, value, MAX_CONSTANT_DEPTH, &mut steps)
+    };
+    let identity = |opcode, value, constant, right| {
+        let neutral = match opcode {
+            Opcode::Iadd
+            | Opcode::IaddImm
+            | Opcode::Bor
+            | Opcode::BorImm
+            | Opcode::Bxor
+            | Opcode::BxorImm => constant == 0,
+            Opcode::Isub => right && constant == 0,
+            Opcode::Imul | Opcode::ImulImm => constant == 1,
+            Opcode::Band | Opcode::BandImm => constant == mask,
+            _ => false,
+        };
+        (neutral && function.dfg.value_type(value) == ty)
+            .then(|| function.dfg.resolve_aliases(value))
+    };
+    match function.dfg.insts[inst] {
+        InstructionData::BinaryImm64 { opcode, arg, imm } => {
+            identity(opcode, arg, imm.bits() as u64 & mask, true)
+        }
+        InstructionData::Binary {
+            opcode,
+            args: [left, right],
+        } => {
+            if let Some(constant) = literal(right) {
+                if let Some(value) = identity(opcode, left, constant, true) {
+                    return Some(value);
+                }
+            }
+            literal(left).and_then(|constant| identity(opcode, right, constant, false))
+        }
+        _ => None,
+    }
+}
+
+fn fold_identities(function: &mut Function) -> usize {
+    let instructions = function
+        .layout
+        .blocks()
+        .flat_map(|block| function.layout.block_insts(block))
+        .collect::<Vec<_>>();
+    let mut changed = 0;
+    for inst in instructions {
+        let Some(source) = identity_operand(function, inst) else {
+            continue;
+        };
+        let result = function.dfg.inst_results(inst)[0];
+        if result == source {
+            continue;
+        }
+        function.dfg.detach_inst_results(inst);
+        function.dfg.change_to_alias(result, source);
+        function.layout.remove_inst(inst);
+        changed += 1;
+    }
+    changed
+}
+
 pub(in crate::native_artifact) fn optimize(
     controls: &CompilationControls,
     context: &mut Context,
@@ -174,6 +255,7 @@ pub(in crate::native_artifact) fn optimize(
         enabled,
         rounds: 0,
         constant_branches_removed: 0,
+        neutral_operations_removed: 0,
         before_blocks,
         before_instructions,
         after_blocks: before_blocks,
@@ -189,6 +271,9 @@ pub(in crate::native_artifact) fn optimize(
     // placement/rematerialization and increase register pressure. Leave exactly
     // one ordinary data/speed pass to the final backend compilation.
     for _ in 0..MAX_ROUNDS {
+        if controls.enabled(OptimizationPass::EarlyIdentities) {
+            report.neutral_operations_removed += fold_identities(&mut context.func);
+        }
         context.compute_cfg();
         context.compute_domtree();
         context.eliminate_unreachable_code(isa).map_err(backend)?;
