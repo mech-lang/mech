@@ -1,5 +1,16 @@
 # Native compression milestone
 
+**R173 rejects an empty-block compiler experiment.** It removes112720 empty
+intermediate blocks, but generated code grows47336B and every retired-instruction
+median increases. Twenty-case elapsed regresses0.943248% geometrically:5 faster,
+15 slower. Natural32KB4.260443× →4.308305× Roc; eight bytes4.649535× →4.692437×.
+All heap metrics remain equal. The production compiler is restored byte-for-byte
+to the previous GPU source; the rejected patch and complete evidence are retained.
+The separate R172 source variant below is unchanged. See the
+[R173 report](native-empty-block-experiment.md) for all20 results, five current
+profiles,631 candidate tests, exact pins, replay and skipped coverage. The next
+bounded compiler target is funding inside already admitted pure early-exit loops.
+
 **R172 retains a separate convergence-frequency source variant.** On unchanged
 R170 compiler libraries, eight literals improve **4.668385× → 4.279426× Roc**
 (8.331763%), distribution16KB **7.147809× → 6.830304×** (4.441991%), and
