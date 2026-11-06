@@ -18,6 +18,7 @@ pub(super) struct Version {
     pub windows: Vec<Window>,
     pub facts: Facts,
     pub blocks: BTreeMap<u32, Block>,
+    pub prepaid: Option<super::numeric_loop_prepayment::Prepayment>,
 }
 
 #[derive(serde::Serialize)]
@@ -28,6 +29,7 @@ pub(in crate::native_artifact) struct Report {
     pub source_successors: Vec<(usize, u32)>,
     pub read_sites: Vec<usize>,
     pub count: usize,
+    pub prepaid: Option<serde_json::Value>,
 }
 
 pub(super) fn derive(
@@ -85,12 +87,26 @@ pub(super) fn derive(
         }) else {
             continue;
         };
-        let Some(facts) = super::numeric_traversal::local(code, proof, shadow, &scope, &windows)
+        let Some(mut facts) =
+            super::numeric_traversal::local(code, proof, shadow, &scope, &windows)
         else {
             continue;
         };
         if facts.predicates.len() < 2 || facts.successors.len() < 2 {
             continue;
+        }
+        let mut prepaid = None;
+        if let Some(candidate) =
+            super::numeric_loop_prepayment::candidate(code, proof, tail, &windows)
+            && let Some(complete) =
+                super::numeric_traversal::complete(code, proof, shadow, &scope, &windows, candidate)
+            && let Some(completion) = complete.completed.clone()
+        {
+            prepaid =
+                super::numeric_loop_prepayment::Prepayment::new(proof, scope.header, completion);
+            if prepaid.is_some() {
+                facts = complete;
+            }
         }
         versions.push(Version {
             initialize: tail.initialize() as usize,
@@ -103,6 +119,7 @@ pub(super) fn derive(
             sites: scope.sites,
             windows,
             facts,
+            prepaid,
         });
     }
     versions
@@ -131,6 +148,10 @@ impl Version {
                 })
                 .collect(),
             count: self.windows[0].count,
+            prepaid: self
+                .prepaid
+                .as_ref()
+                .map(|p| serde_json::to_value(p).unwrap()),
         }
     }
 
@@ -142,6 +163,7 @@ impl Version {
         words: &Words,
         shadow: usize,
         proof: &Proof,
+        state: usize,
         checked: Block,
     ) {
         let mut enough = b.ins().iconst(cranelift_codegen::ir::types::I8, 1);
@@ -159,6 +181,18 @@ impl Version {
                 .icmp(IntCC::UnsignedGreaterThanOrEqual, length, required);
             let valid = b.ins().band(safe, fits);
             enough = b.ins().band(enough, valid);
+        }
+        if let Some(prepaid) = &self.prepaid {
+            prepaid.gate(
+                b,
+                words,
+                state,
+                shadow,
+                enough,
+                self.blocks[&(self.header as u32)],
+                checked,
+            );
+            return;
         }
         b.ins().brif(
             enough,

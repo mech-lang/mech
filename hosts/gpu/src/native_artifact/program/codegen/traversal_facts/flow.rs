@@ -42,62 +42,40 @@ pub(in crate::native_artifact::program::codegen) fn with_windows<'a>(
     windows: &[Window],
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
-    if slots.len() > MAX_WORDS {
-        return None;
-    }
+    analyze(code, scope, slots, tag, windows, None, step)
+}
+
+pub(in crate::native_artifact::program::codegen) fn with_completion<'a>(
+    code: CodePlan<'_>,
+    scope: &Scope,
+    slots: &BTreeSet<usize>,
+    windows: &[Window],
+    completion: completion::Candidate,
+    step: impl Fn(usize) -> Option<Step<'a>>,
+) -> Option<Proof> {
+    analyze(code, scope, slots, None, windows, Some(completion), step)
+}
+
+fn analyze<'a>(
+    code: CodePlan<'_>,
+    scope: &Scope,
+    slots: &BTreeSet<usize>,
+    tag: Option<usize>,
+    windows: &[Window],
+    completion: Option<completion::Candidate>,
+    step: impl Fn(usize) -> Option<Step<'a>>,
+) -> Option<Proof> {
     let ordered = scope.order(code)?;
-    let mut terms = Terms::default();
-    let mut initial = State::default();
-    initial.windows.extend_from_slice(windows);
-    for &slot in slots {
-        initial
-            .words
-            .insert(slot, terms.intern(Expr::Initial(slot))?);
-    }
-    for i in 0..code.constant_count() {
-        let (value, constant) = code.constant(i).ok()?;
-        if let Some(constant) = constant
-            && slots.contains(&(value.get() as usize))
-        {
-            initial
-                .words
-                .insert(value.get() as usize, terms.constant(constant)?);
-        }
-    }
-    let tag = tag.and_then(|slot| initial.read(slot));
-    let mut ordinals = BTreeSet::new();
-    for &site in &ordered {
-        if let Step::Aggregate(_, action) = step(site)? {
-            match action {
-                Aggregate::Observe {
-                    ordinal: Some(ordinal),
-                    ..
-                } => {
-                    ordinals.insert(*ordinal);
-                }
-                _ => {}
-            }
-        }
-    }
-    let mut partitions = Vec::new();
-    if let Some(tag) = tag
-        && !ordinals.is_empty()
-        && ordinals.len() < MAX_PARTITIONS
-    {
-        for &ordinal in &ordinals {
-            let mut state = initial.clone();
-            let value = terms.constant(u64::from(ordinal))?;
-            state.assume(&terms, Relation::Eq, tag, value)?;
-            partitions.push(state);
-        }
-        // The native entry may contain a malformed tag. This exhaustive
-        // remainder preserves its original Reject/ABI path and origin.
-        for ordinal in ordinals {
-            let value = terms.constant(u64::from(ordinal))?;
-            initial.assume(&terms, Relation::Ne, tag, value)?;
-        }
-    }
-    partitions.push(initial);
+    let (mut terms, partitions) = entry::states(
+        code,
+        &ordered,
+        slots,
+        tag,
+        windows,
+        completion.as_ref(),
+        &step,
+    )?;
+    let mut completion = completion.map(completion::Collector::new);
     let mut incoming: BTreeMap<usize, Vec<Option<State>>> = ordered
         .iter()
         .map(|&site| (site, vec![None; partitions.len()]))
@@ -119,7 +97,11 @@ pub(in crate::native_artifact::program::codegen) fn with_windows<'a>(
             continue;
         }
         let block = &code.blocks()[site];
-        match step(site)? {
+        let operation = step(site)?;
+        if let Some(completion) = &mut completion {
+            completion.action(&terms, &states, &operation, block.terminator());
+        }
+        match operation {
             Step::Aggregate(layout, action) => {
                 if let Aggregate::Project { source, guards, .. }
                 | Aggregate::Observe { source, guards, .. } = action
@@ -292,7 +274,16 @@ pub(in crate::native_artifact::program::codegen) fn with_windows<'a>(
             if edge_reached {
                 reached.push(next);
             }
-            if next != scope.exit {
+            if next as usize == scope.latch {
+                if let Some(completion) = &mut completion {
+                    completion.latch(&terms, &outgoing);
+                }
+            }
+            if next == scope.exit {
+                if let Some(completion) = &mut completion {
+                    completion.exit(&terms, &outgoing);
+                }
+            } else {
                 for (target, state) in incoming.get_mut(&(next as usize))?.iter_mut().zip(outgoing)
                 {
                     if let Some(state) = state {
@@ -309,5 +300,6 @@ pub(in crate::native_artifact::program::codegen) fn with_windows<'a>(
             proof.successors.insert(site, reached[0]);
         }
     }
+    proof.completed = completion.and_then(completion::Collector::finish);
     Some(proof)
 }

@@ -4,7 +4,7 @@ use crate::native_artifact::codegen::options::OptimizationPass;
 
 const SOURCE: &str = include_str!("../../../../../tests/fixtures/native/numeric-array-windows.mec");
 
-fn arguments(
+pub(super) fn arguments(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,
     size: usize,

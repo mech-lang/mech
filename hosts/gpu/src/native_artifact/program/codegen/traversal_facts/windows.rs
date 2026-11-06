@@ -17,7 +17,13 @@ impl State {
                 .map(|literal| (value, literal != 0))
         });
         if let Some((value, selected)) = predicate {
-            self.condition(terms, value, selected == equal)
+            let selected = selected == equal;
+            if let Some(&literal) = terms.interned.get(&Expr::Constant(u64::from(selected))) {
+                if !self.assume(terms, Relation::Eq, value, literal)? {
+                    return Some(false);
+                }
+            }
+            self.condition(terms, value, selected)
         } else {
             Some(true)
         }

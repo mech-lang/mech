@@ -51,6 +51,28 @@ pub(super) fn local(
     scope: &Scope,
     windows: &[traversal_facts::Window],
 ) -> Option<Proof> {
+    analyze(code, numeric, shadow, scope, windows, None)
+}
+
+pub(super) fn complete(
+    code: CodePlan<'_>,
+    numeric: &Numeric,
+    shadow: usize,
+    scope: &Scope,
+    windows: &[traversal_facts::Window],
+    candidate: traversal_facts::Candidate,
+) -> Option<Proof> {
+    analyze(code, numeric, shadow, scope, windows, Some(candidate))
+}
+
+fn analyze(
+    code: CodePlan<'_>,
+    numeric: &Numeric,
+    shadow: usize,
+    scope: &Scope,
+    windows: &[traversal_facts::Window],
+    candidate: Option<traversal_facts::Candidate>,
+) -> Option<Proof> {
     let CodePlan::Program(program) = code else {
         return None;
     };
@@ -86,7 +108,7 @@ pub(super) fn local(
             }
         }
     }
-    traversal_facts::with_windows(code, scope, &slots, None, windows, |site| {
+    let step = |site| {
         match numeric.action(site) {
             Some(Operation::Aggregate) => Some(Step::Aggregate(
                 &program.metadata().scalar_aggregates,
@@ -123,7 +145,12 @@ pub(super) fn local(
                 _ => None,
             },
         }
-    })
+    };
+    if let Some(candidate) = candidate {
+        traversal_facts::with_completion(code, scope, &slots, windows, candidate, step)
+    } else {
+        traversal_facts::with_windows(code, scope, &slots, None, windows, step)
+    }
 }
 
 /// Strategy-owned use of an exact, rederived current-site fact. All other

@@ -142,6 +142,22 @@ pub(super) fn scalar(
                 Op::BoolNot if terms.boolean(*args.first()?) => {
                     terms.intern(Expr::Not(*args.first()?))?
                 }
+                Op::U64BitAnd => {
+                    use crate::native_artifact::program::prepare::word_collections::bounds::Range;
+                    let bound = Range(0, state.upper(terms, args[0]))
+                        .bit_and(Range(0, state.upper(terms, args[1])));
+                    terms.intern(Expr::Bounded(site, output.get() as usize, bound.1))?
+                }
+                Op::BoolAnd | Op::BoolOr | Op::BoolXor
+                    if args.iter().all(|&value| terms.boolean(value)) =>
+                {
+                    terms.intern(Expr::Boolean(site, output.get() as usize))?
+                }
+                _ if op.signature().1 == NativeScalarKind::Bool
+                    && !matches!(op, Op::BoolNot | Op::BoolAnd | Op::BoolOr | Op::BoolXor) =>
+                {
+                    terms.intern(Expr::Boolean(site, output.get() as usize))?
+                }
                 _ => terms.intern(Expr::Definition(site, output.get() as usize))?,
             };
             state.words.insert(output.get() as usize, value);
