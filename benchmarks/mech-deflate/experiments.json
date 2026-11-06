@@ -25065,6 +25065,17 @@
           "files": 124,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-scalar-case-scalar-f64-0-original-e6a9e9c2b3dd.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-f64-0-decoded",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-scalar-case-scalar-f64-0-decoded-7409cfc86b4a.tar.gz",
+          "sha256": "7409cfc86b4a878f5cea661d14da248dc3c7a83a28a2c379759d56e113952923",
+          "manifest_sha256": "1b1e9306295f5def258093fdcdbfa5b3bcbde6a0116798c6840342d4870452e9",
+          "bytes": 167949,
+          "files": 124,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-scalar-case-scalar-f64-0-decoded-7409cfc86b4a.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
