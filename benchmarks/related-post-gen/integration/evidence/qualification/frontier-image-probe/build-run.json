@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v15/build.json",
+    "--source",
+    "/private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/frontier-image-probe/probe.rs",
+    "--out",
+    "/private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/frontier-image-probe/probe",
+    "--bundle",
+    "/private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/frontier-image-probe/build",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 1.4586824590805918,
+  "stdout": "warning: static `LINKED_NATIVE_METADATA` is never used\n --> /private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/frontier-image-probe/build/linked.rs:4:143\n  |\n4 | ...824388ded5b67b8e524aa4dac_native_metadata_v1\"] static LINKED_NATIVE_METADATA:[u8;5067439];\n  |                                                          ^^^^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: static `LINKED_NATIVE_METADATA_BINDING` is never used\n --> /private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/frontier-image-probe/build/linked.rs:5:151\n  |\n5 | ...7b8e524aa4dac_native_metadata_binding_v1\"] static LINKED_NATIVE_METADATA_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMA...\n  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: 2 warnings emitted\n\n{\"seconds\": 0.9348967091646045, \"exit\": 0}\n",
+  "stderr": ""
+}

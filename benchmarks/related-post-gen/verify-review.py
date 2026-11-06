@@ -58,6 +58,44 @@ if integration.exists():
         verify(root, name, expected)
     current_files = len(current['files'])
 
+# Validate the corrected audit from raw reports, not a printed success label.
+evidence = packet / 'integration/evidence'
+audit_path = evidence / 'funding-audit-audit-summary.json'
+if audit_path.exists():
+    audit = json.loads(audit_path.read_text())
+    assert audit['status'] == 'passed'
+    def control_rows(text):
+        return [{k: v for k, v in json.loads(line).items()
+                 if k not in ('seconds', 'seconds_per_evaluation')}
+                for line in text.splitlines() if line.startswith('{')]
+    current = control_rows(json.loads((evidence / 'current-control-one-kib-run.json').read_text())['stdout'])
+    for name in ('ir226-control-one-kib-run.json', 'funding-disabled-one-kib-run.json'):
+        assert control_rows(json.loads((evidence / name).read_text())['stdout']) == current, name
+    assert control_rows((evidence / 'funding-audit-ir226-repeat.stdout.log').read_text()) == current
+    assert len(current) == 5
+    old_comparison = json.loads((evidence / 'ir226-control-one-kib-comparison.json').read_text())
+    assert old_comparison['all_nontiming_fields_equal_IR225'] is False
+    assert len(old_comparison['differences']) == 3
+    assert json.loads((evidence / 'funding-audit-audit.json').read_text())['exit'] == 0
+
+screen_path = evidence / 'current-screen-report.json'
+if screen_path.exists():
+    screen = json.loads(screen_path.read_text())
+    for phase, count in (('initial', 405), ('confirmation', 675),
+                         ('extended', 1395), ('resources', 357)):
+        report = json.loads(gzip.decompress((evidence / f'current-{phase}.json.gz').read_bytes()))
+        assert len(report['samples']) == count
+        assert all(row['exit'] == 0 and row['exact_rust_output']
+                   for row in report['samples'])
+        if phase == 'extended':
+            assert report['summary'] == screen['extended_31_rounds']
+            assert report['matched_native_reference'] == screen['references']['matched']
+            assert report['whole_process_reference'] == screen['references']['whole']
+    assert screen['qualification']['cohort_outputs_exact'] == 2832
+    assert screen['qualification']['genuine_old_objects_rejected'] == 25
+    assert screen['paired']['extended']['mech-before-4']['wall_seconds']['wins'] == 19
+    assert screen['selected'] is False and screen['goal_complete'] is False
+
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833
 assert report['matched_native_reference']['median_seconds'] == 0.001651875

@@ -1,6 +1,6 @@
 # Related-post native compiler review
 
-Current integration: [related-post compiler plus latest #973](integration/README.md), **IR227 / work115 / ABI41 / image9**. The compiler builds; four variants retain53 native numeric functions and pass124 output fixtures,839 GPU tests retain two inherited failures,289 Engine checks and runtime/application checks pass. All128 scalar controls remain exact; the compression output is exact but its changed route/accounting remains under audit. No integrated timing or adoption claim. Historical timing tables below retain their recorded compiler revisions.
+Current integration: [related-post compiler plus latest #973](integration/README.md), **IR227 / work115 / ABI41 / image9**, targets #973 through [PR990](https://github.com/mech-lang/mech/pull/990). A31-round comparison records **2.942167 ms /1.846066× fastest matched Rust**, **38.678625 ms /1.520997× fastest whole-process Rust**, with four native workers. There are53 native numeric functions per variant,839 GPU passes with two inherited failures,289 Engine passes,434 loader fixtures,25 old-Object checks,2,832 exact comparison outputs and2,000 exact profile invocations. Child-funding counter ablation passes; the earlier incorrect IR226 control summary is corrected in the guide. Whole-process paired wins are19/31 versus IR208, so IR208 stays selected. Historical timing tables below retain their recorded compiler revisions.
 
 
 This branch contains the accepted compiler optimization series for
@@ -106,15 +106,15 @@ pre-existing GPU test failures remain explicit:
 - `batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable`
 - `native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map`
 
-These results qualify the pinned measured compiler, not a new merge of the
-latest changes on #973. Hosted CI and integration with concurrent #973 changes
-are not claimed by this publication.
+These historical results qualify the pinned IR223 compiler. The current
+IR227 integration is qualified separately in the guide linked above. No
+green hosted-CI result is claimed.
 
 The publication merge preview against #973 head `dcc09ee9e75...` identifies
 36 conflicting compiler files. Their exact names and compared revisions are
 recorded in [the integration preview](review/pr973-integration-preview.json).
-The PR is a draft for review of this measured checkpoint; resolving and
-qualifying the combined compiler remains integration work.
+That preview predates the now-qualified IR227 integration. PR990 remains
+a draft for review; its current guide and receipts are linked above.
 
 ## Evidence and reproduction
 

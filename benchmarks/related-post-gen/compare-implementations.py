@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import platform
 import re
@@ -14,6 +15,20 @@ import time
 
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def retain_output_copy(source, destination, objects):
+    """Share immutable evidence copies; a producer never writes into the store."""
+    digest = sha(source)
+    blob = objects / (digest + '.json')
+    if blob.exists():
+        assert sha(blob) == digest
+    else:
+        shutil.copy2(source, blob)
+        assert sha(blob) == digest
+        blob.chmod(0o444)
+    destination.unlink(missing_ok=True)
+    os.link(blob, destination)
 
 
 def add_timing_comparisons(report):
@@ -104,6 +119,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--timeout', type=float, default=600)
     parser.add_argument('--resources', action='store_true', help='Record macOS whole-process resource counters separately from processing-window measurements.')
+    parser.add_argument('--deduplicate-outputs', action='store_true', help='Retain immutable content-addressed output copies after each timed process exits.')
     args = parser.parse_args()
     config = json.loads(args.config.read_text())
     if args.resources and platform.system() != 'Darwin':
@@ -114,6 +130,9 @@ def main():
     input_path = args.input.resolve()
     args.work.mkdir(parents=True, exist_ok=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    objects = args.work / 'output-objects'
+    if args.deduplicate_outputs:
+        objects.mkdir(exist_ok=True)
     shutil.copy2(input_path, args.work / 'posts.json')
     report = {
         'schema': 'mech.related-post-gen.implementations-comparison.v1',
@@ -131,6 +150,8 @@ def main():
         'input': {'path': str(input_path), 'sha256': sha(input_path), 'posts': len(json.loads(input_path.read_text()))},
         'implementations': [], 'samples': [], 'summary': {},
     }
+    if args.deduplicate_outputs:
+        report['output_retention'] = 'After process timing ends, identical output files share read-only content-addressed copies. Producer paths never alias the retained store. Measured commands, outputs and timing boundaries are unchanged.'
     if args.resources:
         report['latency_qualification'] = config.get('latency_qualification', False)
         report['authoritative_latency_comparison'] = config.get('authoritative_latency_comparison')
@@ -172,6 +193,8 @@ def main():
             pin = next(p for p in report['implementations'] if p['name'] == name)
             assert sha(executable) == pin['executable_sha256']
             output = (args.work / f'{name}-{sample}.json').resolve()
+            if args.deduplicate_outputs and output.exists():
+                raise SystemExit(f'Refusing to overwrite retained output: {output}')
             if variant['kind'] == 'mech':
                 command = [str(executable), str(Path(variant['source']).resolve()), str(input_path), str(output), '1']
                 cwd = executable.parent
@@ -222,7 +245,12 @@ def main():
                     row['measurement'] = data.get('processing', data)
                     if 'preparation' in data:
                         row['preparation_measurement'] = data['preparation']
-                shutil.copy2(upstream_output, output)
+                if args.deduplicate_outputs:
+                    retain_output_copy(upstream_output, output, objects)
+                else:
+                    shutil.copy2(upstream_output, output)
+            if args.deduplicate_outputs and variant['kind'] == 'mech':
+                retain_output_copy(output, output, objects)
             row['output_sha256'] = sha(output)
             if 'measurement' in row:
                 assert row['measurement']['allocator_lifetime_accounting_underflows'] == 0

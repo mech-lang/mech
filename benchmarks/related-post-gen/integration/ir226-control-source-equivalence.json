@@ -9,5 +9,9 @@
   ],
   "all_differences_in_test_only_modules": true,
   "control_cases": 133,
-  "all_nontiming_and_allocation_fields_exact": true
+  "superseded_incorrect_claim": true,
+  "scalar_rows_exact_IR225": 128,
+  "compression_rows_exact_IR225": false,
+  "compression_rows_exact_current_IR227": true,
+  "correction": "See evidence/funding-audit-audit-summary.json and original IR226 raw run/comparison receipts."
 }

@@ -1,5 +1,5 @@
 {
-  "status": "unselected_accounting_audit_pending",
+  "status": "counter_audit_and_integration_qualification_passed_measured_unselected",
   "identity": "IR227/work115/ABI41/image9",
   "scalar_cases_exact_all_nontiming": 128,
   "compression_output_identical": true,
@@ -14,7 +14,15 @@
     "requested_bytes"
   ],
   "compression_difference_receipt": "evidence/current-control-one-kib-comparison.json",
-  "timing_claim": false,
+  "timing_claim": true,
   "selected_speed_compiler": "c3a6925108ad3523f4e29022b66f1c17b92c9878",
-  "next": "Explain the changed DEFLATE route/accounting using same-compiler child-funding ablation before allowing the new benchmark cohorts."
+  "next": "Reduce the remaining measured native-tree and constructor/admission work; retain exact source errors, fuel and ownership.",
+  "compression_all_nontiming_fields_equal_IR226": true,
+  "production_disabled_pass_all_nontiming_fields_equal": true,
+  "same_compiler_funded_activations": {
+    "disabled": 0,
+    "enabled": 4700
+  },
+  "audit": "evidence/funding-audit-audit-summary.json",
+  "performance": "evidence/current-screen-report.json"
 }

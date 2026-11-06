@@ -1,0 +1,14 @@
+after-4 original and decoded all13 bundle files exact
+after-8 original and decoded all13 bundle files exact
+compact-4 original and decoded all13 bundle files exact
+compact-8 original and decoded all13 bundle files exact
+after-4-independent built, native link audited,31 exact edges
+after-8-independent built, native link audited,31 exact edges
+after-4-json built, native link audited,31 exact edges
+after-8-json built, native link audited,31 exact edges
+after-4-full-catalog built, native link audited,31 exact edges
+compact-4-independent built, native link audited,31 exact edges
+compact-8-independent built, native link audited,31 exact edges
+compact-4-json built, native link audited,31 exact edges
+compact-8-json built, native link audited,31 exact edges
+compact-4-full-catalog built, native link audited,31 exact edges
