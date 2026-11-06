@@ -1,5 +1,51 @@
 # Native compression milestone
 
+**R165 completes the separately measured histogram-reuse source experiment.**
+The compiler remains byte-identical to R164 and the pinned source stays the
+default. In this fresh matched cohort, the explicit variant improves natural32KB
+**4.577225× → 4.445344× Roc** (2.881238%), repeated32KB5.729042× →5.460320×
+(4.690520%), periodic33KB6.451039× →6.147931× (4.698585%), and eight bytes
+4.719510× →4.690838× (0.607531%). These are source gains, kept separate from the
+compiler gains below. All20 gates and exact streams pass:17 faster/3 slower,
+1.878198% geometric elapsed improvement; worst stored-only regression1.077931%.
+
+Block planning reuses the all-literal histogram instead of counting the same
+input bytes again. The original default-cost entry is unchanged. Search/pass
+limits, ties, block decisions, tables, real scratch capacities, EOF rules,
+allocator, input aliases, output reservation/clear/reuse and evaluate_into remain
+fixed. Source/MBC have their own pins and per-case work values. Neither earlier
+zero-trip nor independent-cost-table variants are combined.
+
+The actual source variant retains four vector cost reductions. Fifteen instruction
+medians fall/five rise, including repeated and periodic +about0.8% despite faster
+elapsed; nineteen cycle medians fall/one rises. Requests fall10 or20 on optimal
+paths, requested bytes fall6920–11608B, and incremental heap peaks fall16384–17832B.
+Text grows37188B and entry stack shrinks320B. Fresh large-case samples remain
+80–83% generated code. No instruction-partition, input-streaming or total-copy
+claim is made. See the [R165 source report](../../benchmarks/mech-deflate/source-variants/histogram-reuse.md)
+for all20 timings, contrary cohorts, exact source/compiler pins and commands.
+
+Fresh R165 validation:7 focused tests (including shifted slices and original/
+decoded failure/retry),236 unchanged components/8 composition/1 real-capacity
+path, all20 actual restored linked cases, warnings denied and formatting.
+R164's compiler/scalar/architecture receipts apply to the identical library and
+are explicitly reused, not rerun. Source revisionc0ea51478d3dcfa66a361fe0c979695b04a1c3c3;
+compiler9017ab40d19047f39bf1832c5c85d05f00accb5d; IR/work/ABI/MBC184/107/39/14.
+One source optimization commit in #973; draft pending green CI and clean review.
+Ordinary CI is cancelled by instruction. Parity is not achieved.
+
+The brief's selected compiler experiment and one separate source experiment are
+implemented and measured. Match-extension unroll/wider comparison remains an
+unimplemented alternative and the next compiler candidate. Keep the pinned
+source baseline for compiler attribution; do not fold this source win into it.
+
+Publication:25 public archives/50 server SHA256 digests verified. Fresh downloads
+verify1703 file occurrences/274 paths/10 preserved historical versions and
+reproduce results.json and REPORT.md byte-for-byte. Replay round165 with the
+maintained experiment.py entry and experiments.json index.
+
+## R164 pinned-source compiler checkpoint
+
 **R164 completes the selected compact scalar/SIMD cost-loop experiment.**
 Natural32KB improves **5.242043× → 4.596870× Roc**
 (22.839583 → 20.028563 ms, **12.307670%**); natural16KB improves
