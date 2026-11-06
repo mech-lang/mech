@@ -25408,6 +25408,17 @@
           "files": 71,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-eight-literals-prefix-primary-4aa51d65aefe.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-case-seven-stored-prefix-primary-f182ba6e72c1.tar.gz",
+          "sha256": "f182ba6e72c166605562fb0fd46c7cfd9d40a074ece6317606d37a030f46c2d1",
+          "manifest_sha256": "3c38dead85fb179c837c18637e5a8e3b18ac762585de1a97f260f1e71a7829b5",
+          "bytes": 155913,
+          "files": 71,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-seven-stored-prefix-primary-f182ba6e72c1.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
