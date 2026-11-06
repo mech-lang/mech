@@ -25243,6 +25243,17 @@
           "files": 71,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-16384-distribution-change-primary-e29079f969ce.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-case-33027-periodic-window-primary-2f894ea6b746.tar.gz",
+          "sha256": "2f894ea6b7462e12369bb02f313e4026de3f7972f6b4574109face94de35df34",
+          "manifest_sha256": "386650075054e07da883a8f88c96d1e67bdc7329a86931dc37a208bc2b5490e2",
+          "bytes": 110239,
+          "files": 71,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-33027-periodic-window-primary-2f894ea6b746.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
