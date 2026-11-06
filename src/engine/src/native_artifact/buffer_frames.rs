@@ -131,29 +131,6 @@ super::program_image_proofs::image_enum!(Step {
     EnumPayload { ordinal: u32 },
     TupleItem { ordinal: u32 },
 });
-impl super::program_image_proofs::ImageRead for super::NativeScalarKind {
-    fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
-        #[derive(serde::Deserialize)]
-        enum Wire {
-            Bool,
-            U8,
-            U16,
-            U32,
-            U64,
-            I64,
-            F64,
-        }
-        Ok(match <Wire as serde::Deserialize>::deserialize(image)? {
-            Wire::Bool => Self::Bool,
-            Wire::U8 => Self::U8,
-            Wire::U16 => Self::U16,
-            Wire::U32 => Self::U32,
-            Wire::U64 => Self::U64,
-            Wire::I64 => Self::I64,
-            Wire::F64 => Self::F64,
-        })
-    }
-}
 impl super::program_image_proofs::ImageRead for Observation {
     fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
         #[derive(serde::Deserialize)]

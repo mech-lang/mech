@@ -4,7 +4,7 @@ use crate::native_artifact::program::prepare::{
     ProgramMetadata, call_cache, call_routes::LibraryCallRoute, cleanup_effects, composition,
     frame_retirement,
 };
-use mech_engine::native_artifact::NativeUnsignedBufferCall;
+use mech_engine::native_artifact::{NativeUniformWordCollection, NativeUnsignedBufferCall};
 use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Serialize)]
@@ -15,6 +15,7 @@ pub(super) struct Borrowed<'a> {
     frame_retirements: &'a frame_retirement::FrameRetirements,
     cleanup_effects: &'a cleanup_effects::Layout,
     compositions: composition::image::Borrowed<'a>,
+    uniform_word_collections: &'a [NativeUniformWordCollection],
 }
 impl<'a> From<&'a ProgramMetadata> for Borrowed<'a> {
     fn from(metadata: &'a ProgramMetadata) -> Self {
@@ -25,6 +26,7 @@ impl<'a> From<&'a ProgramMetadata> for Borrowed<'a> {
             frame_retirements: &metadata.frame_retirements,
             cleanup_effects: &metadata.cleanup_effects,
             compositions: metadata.compositions.image(),
+            uniform_word_collections: &metadata.uniform_word_collections,
         }
     }
 }
@@ -39,6 +41,32 @@ pub(super) struct Owned {
     pub frame_retirements: frame_retirement::FrameRetirements,
     pub cleanup_effects: cleanup_effects::Layout,
     pub compositions: composition::image::Owned,
+    // Missing only in genuine V4/V5 images. A present field must contain an
+    // array, including the empty inventory; null cannot impersonate absence.
+    #[serde(default, deserialize_with = "uniform_collections")]
+    pub uniform_word_collections: Option<Box<[NativeUniformWordCollection]>>,
+}
+fn uniform_collections<'de, D: Deserializer<'de>>(
+    image: D,
+) -> Result<Option<Box<[NativeUniformWordCollection]>>, D::Error> {
+    struct Collection(NativeUniformWordCollection);
+    impl<'de> Deserialize<'de> for Collection {
+        fn deserialize<D: Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
+            // SAFETY: confined checked-build loader only. Independent images
+            // rederive and compare every field before descriptor publication;
+            // bound images inherit the exact immutable same-Object association.
+            unsafe { NativeUniformWordCollection::from_build_owned_image_reader(image) }.map(Self)
+        }
+    }
+    Box::<[Collection]>::deserialize(image).map(|regions| {
+        Some(
+            regions
+                .into_vec()
+                .into_iter()
+                .map(|region| region.0)
+                .collect(),
+        )
+    })
 }
 fn buffers<'de, D: Deserializer<'de>>(
     image: D,

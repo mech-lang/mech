@@ -12,7 +12,7 @@ use std::collections::BTreeSet;
 /// selected range element, or retains the established `0..=limit, i < limit`
 /// prefix form. All outer words are already current before source preparation.
 /// This supplies no allocation, visit or range-error authority.
-#[derive(Clone, Debug, serde::Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeUniformWordCollection {
     collection: u32,
     iteration: u32,
@@ -24,6 +24,17 @@ pub struct NativeUniformWordCollection {
     filtered: bool,
     kind: NativeScalarKind,
 }
+crate::native_artifact::program_image_proofs::image_struct!(NativeUniformWordCollection {
+    collection: u32,
+    iteration: u32,
+    header: u32,
+    word: Value,
+    start: Value,
+    limit: Value,
+    inclusive: bool,
+    filtered: bool,
+    kind: NativeScalarKind,
+});
 impl NativeUniformWordCollection {
     pub const fn collection(&self) -> u32 {
         self.collection

@@ -107,6 +107,29 @@ primitives!(
     mech_core::SchemaId,
     mech_core::ProgramRevision
 );
+impl ImageRead for super::NativeScalarKind {
+    fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
+        #[derive(serde::Deserialize)]
+        enum Wire {
+            Bool,
+            U8,
+            U16,
+            U32,
+            U64,
+            I64,
+            F64,
+        }
+        Ok(match <Wire as serde::Deserialize>::deserialize(image)? {
+            Wire::Bool => Self::Bool,
+            Wire::U8 => Self::U8,
+            Wire::U16 => Self::U16,
+            Wire::U32 => Self::U32,
+            Wire::U64 => Self::U64,
+            Wire::I64 => Self::I64,
+            Wire::F64 => Self::F64,
+        })
+    }
+}
 impl ImageRead for NativeMatchValue {
     fn read<'de, D: Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
         u32::read(image).map(Self)

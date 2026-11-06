@@ -219,8 +219,8 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     let image: Image<'_> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
-        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5))
-        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5))
+        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6))
+        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5 | 6))
     {
         return Err("unsupported native descriptor image format".into());
     }
@@ -438,10 +438,38 @@ fn decode_inner<const OBJECT_BOUND: bool>(
         .into_iter()
         .map(Into::into)
         .collect::<Box<[_]>>();
-    let uniform_word_collections = plan
-        .facts()
-        .uniform_unsigned_collections()
-        .into_boxed_slice();
+    let mut static_layouts = w
+        .static_layouts
+        .take()
+        .map(|image| {
+            let mut reader = image.reader();
+            let layouts = super::super::static_layouts::Owned::deserialize(&mut reader)
+                .map_err(|error| error.to_string())?;
+            reader.end().map_err(|error| error.to_string())?;
+            Ok::<_, String>(layouts)
+        })
+        .transpose()?;
+    let image_uniform_collections = static_layouts
+        .as_mut()
+        .and_then(|layouts| layouts.uniform_word_collections.take());
+    if (image.version >= 6) != image_uniform_collections.is_some() {
+        return Err("native descriptor version differs from uniform collection inventory".into());
+    }
+    let uniform_word_collections = match image_uniform_collections {
+        Some(regions) if OBJECT_BOUND => regions,
+        image => {
+            let derived = plan
+                .facts()
+                .uniform_unsigned_collections()
+                .into_boxed_slice();
+            if image.is_some_and(|image| image != derived) {
+                return Err(
+                    "uniform native collections differ from independent source derivation".into(),
+                );
+            }
+            derived
+        }
+    };
     let base_visits = native::iteration_abi::control_visits(
         plan.blocks(),
         plan.iterations().iter().map(Into::into),
@@ -511,17 +539,6 @@ fn decode_inner<const OBJECT_BOUND: bool>(
         }
     }
 
-    let static_layouts = w
-        .static_layouts
-        .take()
-        .map(|image| {
-            let mut reader = image.reader();
-            let layouts = super::super::static_layouts::Owned::deserialize(&mut reader)
-                .map_err(|error| error.to_string())?;
-            reader.end().map_err(|error| error.to_string())?;
-            Ok::<_, String>(layouts)
-        })
-        .transpose()?;
     let (
         unsigned_buffer_calls,
         call_routes,

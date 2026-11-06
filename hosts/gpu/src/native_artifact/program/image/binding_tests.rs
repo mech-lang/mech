@@ -235,7 +235,7 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
             mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 5);
+        assert_eq!(image["version"], 6);
         let independent =
             unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }.unwrap();
         let bound = unsafe {
@@ -259,6 +259,10 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
             assert_eq!(restored.frame_retirements, original.frame_retirements);
             assert_eq!(restored.cleanup_effects, original.cleanup_effects);
             assert_eq!(restored.compositions, original.compositions);
+            assert_eq!(
+                restored.uniform_word_collections,
+                original.uniform_word_collections
+            );
         }
         // Public V2 descriptors keep their existing field inventory. V3 native
         // images continue to use independent derivation when no cache is present.
@@ -282,6 +286,9 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
             // selected templates, rather than relabeling a shared-table plan.
             legacy["descriptor"]["plan"] =
                 serde_json::to_value(LegacyPlan(object.descriptor().plan())).unwrap();
+            if let Some(layouts) = legacy["descriptor"]["static_layouts"].as_object_mut() {
+                layouts.remove("uniform_word_collections");
+            }
             if version == 3 {
                 legacy["descriptor"]
                     .as_object_mut()
@@ -381,7 +388,7 @@ fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
         .unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 5);
+        assert_eq!(image["version"], 6);
         let rows = image["descriptor"]["plan"]["values"].as_array().unwrap();
         assert!(
             rows.iter()
@@ -424,6 +431,127 @@ fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
                 }
                 .is_err()
             );
+        }
+    }
+}
+
+#[test]
+fn frozen_uniform_collections_preserve_fields_and_reject_changed_proofs() {
+    use serde::Deserialize;
+    let catalog = mech_stdlib::source_catalog();
+    for width in [8, 16, 32, 64] {
+        for filtered in [false, true] {
+            let source = if filtered {
+                format!("[word<u{width}> | i <- 0u64..=count<u64>, i < count]\n")
+            } else {
+                format!("[word<u{width}> | i <- 0u64..count<u64>]\n")
+            };
+            for artifact in artifacts(&source) {
+                let object = emit_program_object(&artifact, &catalog).unwrap();
+                let expected = &object.descriptor().metadata().uniform_word_collections;
+                assert_eq!(expected.len(), 1);
+                assert_eq!(expected[0].filtered(), filtered);
+                let bytes = object.native_metadata();
+                let mut reader =
+                    mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
+                let image = serde_json::Value::deserialize(&mut reader).unwrap();
+                reader.end().unwrap();
+                assert_eq!(image["version"], 6);
+                assert_eq!(
+                    image["descriptor"]["static_layouts"]["uniform_word_collections"]
+                        .as_array()
+                        .unwrap()
+                        .len(),
+                    1
+                );
+                // SAFETY: genuine immutable metadata from this checked Object.
+                // Neither loader authorizes a fabricated native entry here.
+                let independent =
+                    unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }
+                        .unwrap();
+                let bound = unsafe {
+                    NativeProgramDescriptor::decode_object_bound_image(
+                        bytes,
+                        &catalog,
+                        object.identity().bytes(),
+                        object.native_metadata_binding().bytes(),
+                    )
+                }
+                .unwrap();
+                for restored in [&independent, &bound] {
+                    assert_eq!(&restored.metadata().uniform_word_collections, expected);
+                    assert_eq!(
+                        restored.encode_build_owned_image().unwrap(),
+                        object.descriptor().encode_build_owned_image().unwrap()
+                    );
+                }
+                // Genuine V5 representation lacks this inventory and rederives
+                // it. Relabeling V6 while retaining its extra field must fail.
+                let mut legacy = image.clone();
+                legacy["version"] = 5.into();
+                legacy["descriptor"]["static_layouts"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("uniform_word_collections");
+                let legacy = mech_engine::native_artifact::encode_native_metadata_image(
+                    &serde_json::to_vec(&legacy).unwrap(),
+                )
+                .unwrap();
+                let restored =
+                    unsafe { NativeProgramDescriptor::decode_build_owned_image(&legacy, &catalog) }
+                        .unwrap();
+                assert_eq!(&restored.metadata().uniform_word_collections, expected);
+                for fault in 0..13 {
+                    let mut changed = image.clone();
+                    let layouts = &mut changed["descriptor"]["static_layouts"];
+                    let region = &mut layouts["uniform_word_collections"][0];
+                    match fault {
+                        0 => region["collection"] = u32::MAX.into(),
+                        1 => region["iteration"] = u32::MAX.into(),
+                        2 => region["header"] = u32::MAX.into(),
+                        3 => region["word"] = u32::MAX.into(),
+                        4 => region["start"] = u32::MAX.into(),
+                        5 => region["limit"] = u32::MAX.into(),
+                        6 => region["inclusive"] = (!region["inclusive"].as_bool().unwrap()).into(),
+                        7 => region["filtered"] = (!filtered).into(),
+                        8 => region["kind"] = "F64".into(),
+                        9 => layouts["uniform_word_collections"] = serde_json::json!([]),
+                        10 => {
+                            layouts
+                                .as_object_mut()
+                                .unwrap()
+                                .remove("uniform_word_collections");
+                        }
+                        11 => layouts["uniform_word_collections"] = serde_json::Value::Null,
+                        _ => changed["version"] = 5.into(),
+                    }
+                    let native = mech_engine::native_artifact::encode_native_metadata_image(
+                        &serde_json::to_vec(&changed).unwrap(),
+                    )
+                    .unwrap();
+                    // SAFETY: confined negative wire cases. Changed proofs
+                    // never reach native execution or acquire Object authority.
+                    assert!(
+                        unsafe {
+                            NativeProgramDescriptor::decode_build_owned_image(&native, &catalog)
+                        }
+                        .is_err(),
+                        "independent fault {fault}"
+                    );
+                    assert!(
+                        unsafe {
+                            NativeProgramDescriptor::decode_object_bound_image(
+                                &native,
+                                &catalog,
+                                object.identity().bytes(),
+                                object.native_metadata_binding().bytes(),
+                            )
+                        }
+                        .is_err(),
+                        "bound fault {fault}"
+                    );
+                }
+            }
         }
     }
 }
@@ -472,7 +600,7 @@ fn shared_template_definitions_preserve_sites_and_reject_foreign_rows_and_factor
                 mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
             let image = serde_json::Value::deserialize(&mut reader).unwrap();
             reader.end().unwrap();
-            assert_eq!(image["version"], 5);
+            assert_eq!(image["version"], 6);
             let definitions = image["descriptor"]["plan"]["template_definitions"]
                 .as_array()
                 .unwrap();
