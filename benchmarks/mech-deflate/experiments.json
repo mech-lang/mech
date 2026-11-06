@@ -24801,6 +24801,17 @@
           "files": 69,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-random-32769-primary-448a48e9399b.tar.gz"
+        },
+        {
+          "event": "case-repeated-32769-primary",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-case-repeated-32769-primary-4518d02e85d4.tar.gz",
+          "sha256": "4518d02e85d40be2d20249230632f975401213e8db5e3a7f3ad43233c3ad9793",
+          "manifest_sha256": "9ce1da7f6f20c7cbd749af19849787c70534954dd55213920a05c96a9059cde5",
+          "bytes": 108583,
+          "files": 69,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-repeated-32769-primary-4518d02e85d4.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
