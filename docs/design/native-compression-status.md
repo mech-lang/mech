@@ -1,5 +1,38 @@
 # Native compression milestone
 
+**R167 closes the direct-comparison experiment and identifies invariant nested phi state.**
+No compiler change is retained. All20 exact streams and unchanged1.05 gates pass,
+but the universal XOR-zero rewrite slows repeated32KB5.743583x to5.896412x
+and periodic33KB6.529916x to6.695008x. Natural32KB improves4.585363x to4.514501x
+(1.545377%), and natural16KB5.284359x to5.184130x (1.896709%); these gains remain
+archived. Fourteen medians improve/six worsen; geometric elapsed improves only
+0.095938%. Repeated/periodic instructions fall about0.9–1.0% while elapsed rises.
+All20 heap metrics stay equal. Code grows51148B; entry stack shrinks144B.
+
+Fresh current-binary profiling still finds guarded word reads, visit/balance work
+and stack accesses hot. A byte-identical retained-binary diagnostic maps78 word-
+loop header arguments and identifies74 invariant local phi chains anchored by
+one dominating outside phi. The four changing fields remain separate. A minimal
+JIT reproducer passes6 actual executions while retaining16 redundant child phi
+fields through the existing backend. This is a concrete general compiler target;
+no saved-copy count or speedup is yet claimed for phi simplification.
+
+The three prototype unit tests,20 measured restored compression cases, separate
+all20 instruction/heap cohorts and current profile are archived. Full GPU/scalar/
+component/architecture qualification was not repeated for the rejected candidate.
+Production and CI are restored byte-for-byte toad32f9a1ff; maintained versions
+remain184/107/39/14 (candidate186 is experimental). See the
+[R167 report](native-xor-comparison-experiment.md) for every timing, contrary
+counter cohort, repaired harness error, exact pins and next acceptance witness.
+#973 remains draft; ordinary CI is cancelled by instruction. Parity is not achieved.
+Publication:29 public archives/58 server digests verified. Fresh retrieval verifies
+1638 file occurrences/311 paths/13 historical versions and reproduces both reports
+byte-for-byte. The initially omitted replay entrypoint/output hashes are corrected
+in the index; replay succeeds in the required fresh directory. No compiler or
+compression execution is involved in replay.
+
+## Historical R166 rejected experiments
+
 **R166 rejects the captured-window prototypes and preserves the reviewed compiler.**
 The source and compiler checkpoints below remain retained. Fresh target screens
 of three compiler variants all regress on repeated and periodic input. The last
