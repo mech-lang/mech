@@ -25386,6 +25386,17 @@
           "files": 71,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-32-high-entropy-stored-primary-c30f759cd4c4.tar.gz"
+        },
+        {
+          "event": "case-eight-overlap-primary",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-case-eight-overlap-primary-956fb1139312.tar.gz",
+          "sha256": "956fb1139312720995923dacd98c0b01181563964cc581e1a7c22f7a3897d6ad",
+          "manifest_sha256": "63580f1e9f890e9ebe0d17f1673bea640f970e0474a11e8e23f03b9fa092c14c",
+          "bytes": 149609,
+          "files": 71,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-eight-overlap-primary-956fb1139312.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
