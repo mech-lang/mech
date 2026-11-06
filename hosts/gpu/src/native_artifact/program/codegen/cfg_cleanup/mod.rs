@@ -282,8 +282,14 @@ pub(in crate::native_artifact) fn optimize(
         context.eliminate_unreachable_code(isa).map_err(backend)?;
         context.remove_constant_phis(isa).map_err(backend)?;
         if controls.enabled(OptimizationPass::BooleanConditions) {
-            report.boolean_conditions_simplified +=
-                boolean_conditions::optimize(&mut context.func);
+            let simplified = boolean_conditions::optimize(&mut context.func);
+            report.boolean_conditions_simplified += simplified;
+            if simplified != 0 {
+                // Inverted tests swap successor order. Even with the same
+                // edge set, Cranelift's cached postorder must be refreshed.
+                context.compute_cfg();
+                context.compute_domtree();
+            }
         }
         report.rounds += 1;
         let removed = fold(&mut context.func);
