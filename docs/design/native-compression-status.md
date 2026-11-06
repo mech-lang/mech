@@ -4,6 +4,8 @@
 
 The [current report](native-array-read-facts.md) contains exact compiler/source/bytecode pins, all20 times and independent counter cohorts,595 GPU/174 CI-selected tests, original/decoded/error/finite controls and corrected validation paths. The current compiler is4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773, IR182/work107/ABI39/MBC14; base #986 is8ef1693a558b9a46544ce425ca2f222e10e3dddc. The [R159 report](native-u32-case-facts.md) remains historical evidence. Whole-loop entry windows, masked narrowing/totality, exact funding settlement, ordered reduction/SIMD and the separate source variant remain unfinished. Parity is not achieved; earlier published heads remain frozen.
 
+R161's complete-child window prototype is **not retained standalone**: natural32KB improves6.218368x to5.975507x reference (-3.905553%), but128-biased regresses7.169355% and fails the unchanged1.05 gate. Five of20 medians improve,15 worsen, geometric elapsed+0.725321%. Eight bytes regresses2.186978%. The guarded loop emits correctly in all four path copies and natural32KB instructions fall2.711783%; all20 correctness checks and unchanged heap counts pass. See [prototype, failure and next proof target](native-loop-read-windows.md). Keep R160/#987 as the retained checkpoint while a combined candidate addresses remaining masked narrowing in the existing CFG cleanup. Source, algorithms, capacities and timing boundaries remain pinned.
+
 The R154 checkpoint below remains as historical context for the reviewed base.
 
 | Checkpoint | Revision |
