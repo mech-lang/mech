@@ -393,7 +393,8 @@ fn selected_template(
 // IR229's query fresh-traversal probe emitted unchanged native text.
 // IR230 also integrates activation-current affine read-address bases from
 // PR973/IR197 without changing source operations, admission or visit prices.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 230;
+// IR231 preserves the exhausted source transition after an ordered reduction.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 231;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

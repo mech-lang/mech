@@ -156,14 +156,13 @@ impl Reduction {
         b.switch_to_block(done);
         let item = b.block_params(done)[0];
         let minimum = b.ins().uextend(types::I64, minimum);
-        let terminal = b.ins().iconst(types::I64, c.terminal as i64);
-        words.write(b, c.tag, terminal);
         words.write(b, c.induction, stop);
         words.write(b, self.best, minimum);
         words.write(b, self.item, item);
-        // Exact original prices/visits were already settled. The recorded
-        // terminal dependency proof excludes skipped private temporaries, and
-        // the original terminal traversal constructs the returned value.
+        // Exact original prices/visits were already settled, including the
+        // exhausted active visit and the terminal visit. Keep the active tag:
+        // the original exhausted transition may transform any payload field.
+        // Its source operations must run before the terminal traversal returns.
         b.ins().jump(ordinary, &[]);
     }
 }
