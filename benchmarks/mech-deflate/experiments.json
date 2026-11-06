@@ -25375,6 +25375,17 @@
           "files": 71,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-random-64-primary-faa1d5597de0.tar.gz"
+        },
+        {
+          "event": "case-32-high-entropy-stored-primary",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-case-32-high-entropy-stored-primary-c30f759cd4c4.tar.gz",
+          "sha256": "c30f759cd4c437fdb027a784ce443dbfccf5a203d4e38b3b245889eebf68af25",
+          "manifest_sha256": "0c715e3233d61f913a14550507ccc99dce35bf6a6b97ff836abd0e4c4375f806",
+          "bytes": 146621,
+          "files": 71,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-32-high-entropy-stored-primary-c30f759cd4c4.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
