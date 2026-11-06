@@ -82,7 +82,8 @@ fn cfg_cleanup_proves_masked_and_extended_widths_but_keeps_unknown_guards() {
         assert_eq!(
             report.constant_branches_removed > 0,
             proved,
-            "mode={mode} width={width} mask={mask:#x}: {report:?}"
+            "mode={mode} width={width} mask={mask:#x}: removed={}",
+            report.constant_branches_removed
         );
         context.verify(module.isa()).unwrap();
         module.define_function(id, &mut context).unwrap();
