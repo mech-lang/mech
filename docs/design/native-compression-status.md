@@ -1,5 +1,67 @@
 # Native compression milestone
 
+**R168 retains dominance-scoped invariant phi cleanup in native loops.**
+All20 final-source matched cases and unchanged1.05 gates pass:19 faster/1 slower,
+**2.639531% geometric elapsed improvement**. Natural32KB improves
+**4.574977× →4.352844× Roc** (4.855392%); repeated32KB5.748624× →5.416119×
+(5.784078%); periodic33KB6.443533× →6.105817× (5.241168%); natural16KB
+5.254551× →5.031433×; eight bytes4.721208× →4.650969× (1.487746%).
+Random64 is the contrary elapsed case, +1.341991%, preserved within the existing
+5% gate. These are fresh matched cohorts, not replacements for historical results.
+
+The pass treats changing outer SSA values as fixed current atoms during a child
+activation. It aliases phi-only local chains to one dominating outside value,
+removing10,180 redundant parameters across the actual compressor. The identified
+word-loop header falls78 to5 parameters before/after backend optimization;73 is
+an actual formal-parameter reduction, not a measured memory-copy count. Multiple
+seeds, true changes, effects, type mismatches and non-dominating entries retain
+the maintained path. No source operation, charge, CFG edge or error is removed.
+
+All20 retired-instruction medians fall. Repeated instructions fall141.125M to
+129.786M (8.034527%); periodic147.350M to135.869M (7.791342%); natural32KB
+259.835M to247.776M (4.640900%). Seven separate cycle medians rise; contrary
+cohorts remain. All20 allocation counts/bytes/reallocations/incremental heap peaks
+are equal. Text grows22,564B; entry stack shrinks688B. One outside-timer image
+restoration is36.839s before/37.549s after, with no startup speed claim.
+
+The final matrix has3968 primary/4048 total complete calls and exact streams,
+independent inflate, aliases, prefixes, capacities and cleanup zero. Initial and
+pre-layout cohorts remain separate, including a contrary eight-byte observation.
+Required Rust module relocation leaves the entire compressor Object identical
+but changes linked host text, so the authoritative20-case cohort was rerun on the
+final binary. Five current exact-Object profiles and18 hot-PC disassembly windows
+are retained. CPU-time samples do not partition retired instructions.
+
+Validation:4 focused JIT tests;619 compatible GPU tests with the same7 inherited
+exclusions; all202 CI-selected names actually passed in that suite;236 unchanged
+components/8 composition/1 real-capacity path;12 balanced original/decoded scalar
+controls under unchanged latency/allocation gates;132 workflow tests;15 architecture/
+catalog checks, runtime-only, formatting and warnings denied. Module path/layout
+and exact test-only unsafe registration failures are repaired without weakening
+checks. No unresolved introduced functional failure remains.
+
+Optimization parent4967229cd93b8acd7bd6f26fffa5d79f10e576d2; effective measured
+compilerf1c4b67e774f55255e2c72ea4422e27d36b6be3c; baseline compiler9017ab40d1
+(published8364514bd5). IR/work/ABI/MBC187/107/39/14. Frozen R145 Core/Engine/math/
+dependencies, pinned source/MBC/allocator/algorithm/real buffers and evaluate_into
+remain unchanged. The separate histogram source variant is excluded. The
+[full report](native-local-phi-cleanup.md) records exact pins,20 results, failures,
+skipped coverage and numerical replay. #973 stays draft; ordinary hosted CI is
+cancelled by standing instruction. Parity is not achieved.
+
+The brief's selected path-cost proof/scalar/funding/four-lane experiment and one
+separate source experiment are complete. Match-extension bounded unroll/wider
+comparison remains open. R168 removes demonstrated invariant state transport
+before another bounded experiment; no further implementation starts this round.
+
+Publication:61 public archives/122 server digests verified. Fresh retrieval
+verifies5840 file occurrences/1276 paths/22 historical versions and reconstructs
+results.json and REPORT.md byte-for-byte. Replay uses archived receipts only.
+Invariant IR is published once; transparent compaction preserves measured payload
+hashes and every superseded unpublished archive manifest/receipt, saving1.016GB.
+
+## Historical R167 checkpoint
+
 **R167 closes the direct-comparison experiment and identifies invariant nested phi state.**
 No compiler change is retained. All20 exact streams and unchanged1.05 gates pass,
 but the universal XOR-zero rewrite slows repeated32KB5.743583x to5.896412x

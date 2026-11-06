@@ -1,6 +1,7 @@
 //! Fold native branches proved by immutable integer SSA definitions, then retire
 //! unreachable blocks and their phi inputs before register allocation. Source
 //! work debits and runtime predicates without a word proof remain unchanged.
+mod local_phis;
 mod word_ranges;
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::control::CfgCleanup;
@@ -64,6 +65,7 @@ pub(in crate::native_artifact) fn optimize(
         after_instructions: before_instructions,
         fixed_point: !enabled,
         pre_codegen_data_passes: 0,
+        local_phi_parameters_removed: 0,
     };
     if !enabled {
         return Ok(report);
@@ -89,6 +91,8 @@ pub(in crate::native_artifact) fn optimize(
     context.compute_domtree();
     context.eliminate_unreachable_code(isa).map_err(backend)?;
     context.remove_constant_phis(isa).map_err(backend)?;
+    report.local_phi_parameters_removed =
+        local_phis::simplify(&mut context.func, &context.cfg, &context.domtree);
     let (blocks, instructions) = counts(&context.func);
     report.after_blocks = blocks;
     report.after_instructions = instructions;
