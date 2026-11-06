@@ -31,6 +31,7 @@ mod physical_exits;
 mod read_packs;
 mod record_lookup;
 mod resources;
+mod resumed_child;
 mod scalar_child;
 mod schema_key;
 mod virtual_retirement;
