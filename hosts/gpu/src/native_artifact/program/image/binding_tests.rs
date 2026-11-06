@@ -269,20 +269,34 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
                 .unwrap()
                 .contains_key("static_layouts")
         );
-        let mut legacy = image.clone();
-        legacy["version"] = 3.into();
-        legacy["descriptor"]
-            .as_object_mut()
-            .unwrap()
-            .remove("static_layouts");
-        let legacy = mech_engine::native_artifact::encode_native_metadata_image(
-            &serde_json::to_vec(&legacy).unwrap(),
-        )
-        .unwrap();
-        let legacy =
-            unsafe { NativeProgramDescriptor::decode_build_owned_image(&legacy, &catalog) }
-                .unwrap();
-        assert_eq!(legacy.encode_build_owned_image().unwrap(), public);
+        struct LegacyPlan<'a>(&'a mech_engine::native_artifact::NativeProgramArtifactPlan);
+        impl serde::Serialize for LegacyPlan<'_> {
+            fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+                self.0.serialize_build_owned_table_plan(serializer)
+            }
+        }
+        for version in [3, 4] {
+            let mut legacy = image.clone();
+            legacy["version"] = version.into();
+            // Reproduce the actual legacy representation, including full
+            // selected templates, rather than relabeling a shared-table plan.
+            legacy["descriptor"]["plan"] =
+                serde_json::to_value(LegacyPlan(object.descriptor().plan())).unwrap();
+            if version == 3 {
+                legacy["descriptor"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("static_layouts");
+            }
+            let legacy = mech_engine::native_artifact::encode_native_metadata_image(
+                &serde_json::to_vec(&legacy).unwrap(),
+            )
+            .unwrap();
+            let legacy =
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&legacy, &catalog) }
+                    .unwrap();
+            assert_eq!(legacy.encode_build_owned_image().unwrap(), public);
+        }
 
         for fault in 0..8 {
             let mut bad = image.clone();
