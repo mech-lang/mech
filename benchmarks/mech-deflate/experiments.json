@@ -25364,6 +25364,17 @@
           "files": 71,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-128-biased-dynamic-primary-ebb7d91766f7.tar.gz"
+        },
+        {
+          "event": "case-random-64-primary",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-case-random-64-primary-faa1d5597de0.tar.gz",
+          "sha256": "faa1d5597de00bf585da8841bfbed5f35f7f1af95f5d1c0020b5f7d6f20f38fa",
+          "manifest_sha256": "f6b2f117b2b893a349907d839809c76f5ad4aa469f0154feceea1e12415b29a0",
+          "bytes": 142864,
+          "files": 71,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-random-64-primary-faa1d5597de0.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
