@@ -25562,6 +25562,17 @@
           "files": 117,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-scalar-case-scalar-loop-0-decoded-310230f9d744.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-loop-64-original",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-scalar-case-scalar-loop-64-original-32c56ddec5e6.tar.gz",
+          "sha256": "32c56ddec5e65822d32c0ca14a59092926af4e5eef96f1f8b60c58926f607495",
+          "manifest_sha256": "4ba59cd1bc957e1c570bade63555437458f0a2fc2860cf7e2bf42cfaa9d0b7e5",
+          "bytes": 165849,
+          "files": 117,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-scalar-case-scalar-loop-64-original-32c56ddec5e6.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
