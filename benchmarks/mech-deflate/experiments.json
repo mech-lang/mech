@@ -24977,6 +24977,17 @@
           "files": 69,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-empty-primary-b1915b51b88e.tar.gz"
+        },
+        {
+          "event": "matrix-counters",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-matrix-counters-1cb4e7002d03.tar.gz",
+          "sha256": "1cb4e7002d036ec15c515bfff7d1975315a3e5c57e71528e75c0f87f1a5acfb3",
+          "manifest_sha256": "57bb754e22a3127165255eecfa7c086484cdfd7ebc44f2f2a10e330a5c3cdab7",
+          "bytes": 204763,
+          "files": 83,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-matrix-counters-1cb4e7002d03.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
@@ -24988,7 +24999,7 @@
         "private_abi": 39,
         "bytecode": 14
       },
-      "decision": "Whole selected-child current-window availability and scalar simplification; no performance claim yet.",
+      "decision": "Reject standalone retention:128-biased-dynamic regresses7.169354558607166% beyond unchanged1.05 gate. Preserve3.90555% natural32KB gain and all contrary observations; profile and fix costs before considering a combined candidate.",
       "retained": false,
       "release_tag": "evidence-native-compression-experiments-4",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
