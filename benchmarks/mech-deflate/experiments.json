@@ -25153,6 +25153,17 @@
           "files": 193,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-qualified-b01690aa6f62.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-closure-7944c42da551.tar.gz",
+          "sha256": "7944c42da551153c24643dd518e61eae72f23dcc04c78a03e2f8c47b1c4d00ee",
+          "manifest_sha256": "175a0fa4c2316ad756657a8bae1382d1ceb6c04f8934a325c1dfcd6d9b430c0c",
+          "bytes": 17126421,
+          "files": 1012,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-closure-7944c42da551.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
