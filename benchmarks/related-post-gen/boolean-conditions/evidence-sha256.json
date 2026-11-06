@@ -1,0 +1,21 @@
+{
+  "evidence/compiler-native-boolean-bit-tests-screen-20261106.json": "333fa1a924b19b4b481d660ce2912b753b94f0ea3739f7ee9b5e519c4ffd08a9",
+  "evidence/compiler-native-boolean-conditions-screen-20261106.json": "4ec32144e236255ef75343834ccfcb9b25ffa7d35816a40f7d2fb12e564b21cc",
+  "evidence/comparison-native-boolean-bit-tests-20261106-5000-m3.json": "da933becb61e9968732c0fdad3c226ed4a1dab9984d525310db594cb3515baf4",
+  "evidence/comparison-native-boolean-bit-tests-confirmation-20261106-5000-m3.json": "6cf4715bce379dba4b998b88e7baa6817517e602749ddb93fc7bb460adc54550",
+  "evidence/comparison-native-boolean-bit-tests-resources-20261106-5000-m3.json": "a32d263d337a8c0605975639659322925ba0c16fc532ecc5068ec63653be621a",
+  "evidence/profile-native-boolean-bit-tests-post-json-native-pcs-20261106.json": "d3b0df56eb0dedd8831a137543436e53925fc87ee9694f0a048b723916cf31ad",
+  "evidence/profile-native-boolean-bit-tests-worker-instructions-20261106.json": "31bc0009abe2a34d1378a6441717c11b79393aa316d61b70a10a6ba420452e1e",
+  "evidence/profile-native-boolean-bit-tests-post-json-all-symbols-20261106.json": "88d0ef06c13471d49f0d206bac9f68edfc671d723503343aeef7cdddf89481cb",
+  "evidence/size-native-boolean-bit-tests-20261106.json": "44319b2a11f6e3986ff71119bee45bf985b2927d4e89d7f07f4fc1b1049073ce",
+  "qualification/test-run.json": "19229434e5b95c75de07aa3a52c79e00a9975fe805af0bca4e8c0a3dc109aa06",
+  "qualification/test-run.stdout.log": "4b4b25d4be360ba80e13e8b9b8ff4b89177707285d473e796e60473978a30fc1",
+  "qualification/test-run.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "qualification/boolean-conditions-run.json": "57248b17c9308a0feb19cf9ee7e03b432f11f00605b648677ddaa77e73472253",
+  "qualification/boolean-conditions-run.stdout.log": "5c02312edda283d74b07ea0560ce5f4d3c75c30971bc6520fa3add461a79e01b",
+  "qualification/numeric-tree-run.json": "1d20e70a69ba459ea863c5253983f5fca7d509f24b6a402c3e4ba1aeedd870b9",
+  "qualification/scalar-comparison.json": "62db94765e3b46625f978109aa8e122e04b111fe800932b4a03e6a350fe1467d",
+  "qualification/one-kib-comparison.json": "074afdaf3cf586774120e5cfea7980d82d5047c963553e2d3fbd0c9320c3dd1b",
+  "evidence/query-bit-branch-comparison.json": "b3b7172d16bb3d51e584caab4bbe6c2e0d6aff219a4d4082ed37fb66cc3a0d8d",
+  "evidence/native-code-comparison.json": "f0f2c6bff1a97bf87c174363e5ace677e5e6aa57fa18d485acdf6a284781eb45"
+}

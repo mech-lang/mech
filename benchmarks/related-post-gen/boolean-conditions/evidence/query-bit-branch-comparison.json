@@ -1,0 +1,44 @@
+{
+  "parent": {
+    "code_bytes": 29196,
+    "stack_bytes": 688,
+    "instructions": 7299,
+    "opcodes": {
+      "uxtb": 47,
+      "cbnz": 8,
+      "cbz": 0,
+      "tbnz": 0,
+      "tbz": 0,
+      "and": 30,
+      "cmp": 182
+    }
+  },
+  "direct": {
+    "code_bytes": 28908,
+    "stack_bytes": 704,
+    "instructions": 7227,
+    "opcodes": {
+      "uxtb": 11,
+      "cbnz": 14,
+      "cbz": 0,
+      "tbnz": 0,
+      "tbz": 0,
+      "and": 30,
+      "cmp": 176
+    }
+  },
+  "bit": {
+    "code_bytes": 29024,
+    "stack_bytes": 688,
+    "instructions": 7256,
+    "opcodes": {
+      "uxtb": 47,
+      "cbnz": 8,
+      "cbz": 0,
+      "tbnz": 6,
+      "tbz": 0,
+      "and": 30,
+      "cmp": 176
+    }
+  }
+}
