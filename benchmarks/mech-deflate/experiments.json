@@ -24779,6 +24779,17 @@
           "files": 69,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-16384-distribution-change-primary-917207adadc0.tar.gz"
+        },
+        {
+          "event": "case-33027-periodic-window-primary",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-case-33027-periodic-window-primary-6f9f8330b0d0.tar.gz",
+          "sha256": "6f9f8330b0d0d9d94aba131046162c1ab0b0ccf3a70606f42d01b7f2e89f7c06",
+          "manifest_sha256": "d3cf9c55537701008470f18e0ec467bcb356652ecd0dbf18b061c7238f5eea8f",
+          "bytes": 105990,
+          "files": 69,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-33027-periodic-window-primary-6f9f8330b0d0.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
