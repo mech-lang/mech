@@ -235,7 +235,7 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
             mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 6);
+        assert_eq!(image["version"], 7);
         let independent =
             unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }.unwrap();
         let bound = unsafe {
@@ -282,6 +282,10 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
         for version in [3, 4] {
             let mut legacy = image.clone();
             legacy["version"] = version.into();
+            legacy["descriptor"]
+                .as_object_mut()
+                .unwrap()
+                .remove("numeric_maps");
             // Reproduce the actual legacy representation, including full
             // selected templates, rather than relabeling a shared-table plan.
             legacy["descriptor"]["plan"] =
@@ -388,7 +392,7 @@ fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
         .unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 6);
+        assert_eq!(image["version"], 7);
         let rows = image["descriptor"]["plan"]["values"].as_array().unwrap();
         assert!(
             rows.iter()
@@ -491,7 +495,7 @@ fn frozen_uniform_collections_preserve_fields_and_reject_changed_proofs() {
                     mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
                 let image = serde_json::Value::deserialize(&mut reader).unwrap();
                 reader.end().unwrap();
-                assert_eq!(image["version"], 6);
+                assert_eq!(image["version"], 7);
                 assert_eq!(
                     image["descriptor"]["static_layouts"]["uniform_word_collections"]
                         .as_array()
@@ -524,6 +528,10 @@ fn frozen_uniform_collections_preserve_fields_and_reject_changed_proofs() {
                 // it. Relabeling V6 while retaining its extra field must fail.
                 let mut legacy = image.clone();
                 legacy["version"] = 5.into();
+                legacy["descriptor"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("numeric_maps");
                 legacy["descriptor"]["static_layouts"]
                     .as_object_mut()
                     .unwrap()
@@ -635,7 +643,7 @@ fn shared_template_definitions_preserve_sites_and_reject_foreign_rows_and_factor
                 mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
             let image = serde_json::Value::deserialize(&mut reader).unwrap();
             reader.end().unwrap();
-            assert_eq!(image["version"], 6);
+            assert_eq!(image["version"], 7);
             let definitions = image["descriptor"]["plan"]["template_definitions"]
                 .as_array()
                 .unwrap();
@@ -896,6 +904,118 @@ fn frozen_frames_preserve_metadata_and_independent_legacy_validation() {
                     "case {mode}"
                 );
             }
+        }
+    }
+}
+#[test]
+fn native_numeric_map_inventory_matches_source_and_rejects_changed_proofs_and_unfunded_headers() {
+    use serde::Deserialize;
+    let text = "byte(x<u64>) => (out<u8>) :=\n  result<u8> := x\n  out := result.\n[byte(x) | x <- words<[u64]>]\n";
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(text) {
+        let object = crate::native_artifact::emit_program_object_with_limits(
+            &artifact,
+            &catalog,
+            crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let bytes = object.native_metadata();
+        let mut reader =
+            mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
+        let image = serde_json::Value::deserialize(&mut reader).unwrap();
+        reader.end().unwrap();
+        assert_eq!(image["version"], 7);
+        let expected = &object.descriptor().metadata().numeric_maps;
+        assert_eq!(expected.regions.len(), 1);
+        for bound in [false, true] {
+            let restored = if bound {
+                unsafe {
+                    NativeProgramDescriptor::decode_object_bound_image(
+                        bytes,
+                        &catalog,
+                        object.identity().bytes(),
+                        object.native_metadata_binding().bytes(),
+                    )
+                }
+            } else {
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }
+            }
+            .unwrap();
+            assert_eq!(&restored.metadata().numeric_maps, expected);
+        }
+        // A real V6 representation omits this inventory; its ordinary source
+        // plan remains authoritative and must rederive the same facts.
+        let mut legacy = image.clone();
+        legacy["version"] = 6.into();
+        legacy["descriptor"]
+            .as_object_mut()
+            .unwrap()
+            .remove("numeric_maps");
+        let legacy = mech_engine::native_artifact::encode_native_metadata_image(
+            &serde_json::to_vec(&legacy).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            &unsafe { NativeProgramDescriptor::decode_build_owned_image(&legacy, &catalog) }
+                .unwrap()
+                .metadata()
+                .numeric_maps,
+            expected
+        );
+        for mutation in 0..16 {
+            let mut changed = image.clone();
+            let maps = &mut changed["descriptor"]["numeric_maps"];
+            match mutation {
+                0 => maps["regions"][0]["collection"] = 999.into(),
+                1 => maps["regions"][0]["iteration"] = 999.into(),
+                2 => maps["regions"][0]["header"] = 999.into(),
+                3 => maps["regions"][0]["source"] = 999.into(),
+                4 => maps["regions"][0]["result"] = 999.into(),
+                5 => maps["regions"][0]["input_width"] = 3.into(),
+                6 => maps["regions"][0]["output_width"] = 8.into(),
+                7 => maps["regions"][0]["steps"] = serde_json::json!([]),
+                8 => maps["regions"][0]["captures"] = serde_json::json!([999]),
+                9 => maps["headers"] = serde_json::json!([]),
+                10 => {
+                    changed["descriptor"]
+                        .as_object_mut()
+                        .unwrap()
+                        .remove("numeric_maps");
+                }
+                11 => changed["descriptor"]["numeric_maps"] = serde_json::Value::Null,
+                12 => changed["version"] = 6.into(),
+                13 => {
+                    changed["descriptor"]["numeric_maps"] =
+                        serde_json::json!({"regions":[],"headers":[]})
+                }
+                14 => {
+                    changed["descriptor"]["visits"][expected.regions[0].header as usize]["work"] =
+                        0.into()
+                }
+                15 => maps["regions"][0]["sites"] = serde_json::json!([]),
+                _ => unreachable!(),
+            }
+            let changed = mech_engine::native_artifact::encode_native_metadata_image(
+                &serde_json::to_vec(&changed).unwrap(),
+            )
+            .unwrap();
+            assert!(
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&changed, &catalog) }
+                    .is_err(),
+                "independent mutation {mutation}"
+            );
+            assert!(
+                unsafe {
+                    NativeProgramDescriptor::decode_object_bound_image(
+                        &changed,
+                        &catalog,
+                        object.identity().bytes(),
+                        object.native_metadata_binding().bytes(),
+                    )
+                }
+                .is_err(),
+                "bound mutation {mutation}"
+            );
         }
     }
 }

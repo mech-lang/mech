@@ -503,3 +503,5 @@ fn composition_native_parent_resumes_after_an_ordinary_empty_child() {
 }
 
 mod uniform_fill;
+
+mod numeric_maps;

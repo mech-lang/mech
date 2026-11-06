@@ -281,7 +281,7 @@ impl NativeProgramObject {
         metadata["native_metadata_binding_symbol"] =
             serde_json::json!(self.native_metadata_binding.symbol());
         metadata["native_metadata_format"] = serde_json::json!("mech.typed-build-image.v3");
-        metadata["native_descriptor_version"] = serde_json::json!(6);
+        metadata["native_descriptor_version"] = serde_json::json!(7);
         metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
             self.descriptor
                 .metadata()
@@ -308,6 +308,8 @@ impl NativeProgramObject {
         metadata["compiled_count_value_loops"] = serde_json::json!(&self.codegen.count_value_loops);
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
         metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
+        metadata["compiled_numeric_map_regions"] =
+            serde_json::to_value(&self.descriptor.metadata().numeric_maps.regions).unwrap();
         metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);
         metadata["readonly_numeric_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| !p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         metadata["numeric_write_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());

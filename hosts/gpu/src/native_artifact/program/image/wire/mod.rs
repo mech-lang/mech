@@ -168,6 +168,8 @@ struct Descriptor<'a> {
     map_owner_words: Option<NativeMapOwnerWords>,
     borrowed_record_maps: native::program::prepare::borrowed_record_map::Layout,
     utf8_reads: native::program::prepare::utf8_reads::Layout,
+    #[serde(default, deserialize_with = "present_numeric_maps")]
+    numeric_maps: Option<native::program::prepare::numeric_maps::Layout>,
     frozen_maps: native::program::prepare::frozen_map::Layout,
     map_admission: native::program::prepare::map_admission::Layout,
     parallel: native::program::prepare::parallel::Layout,
@@ -189,6 +191,12 @@ struct Image<'a> {
     version: u32,
     #[serde(borrow)]
     descriptor: Descriptor<'a>,
+}
+
+fn present_numeric_maps<'de, D: Deserializer<'de>>(
+    reader: D,
+) -> Result<Option<native::program::prepare::numeric_maps::Layout>, D::Error> {
+    native::program::prepare::numeric_maps::Layout::deserialize(reader).map(Some)
 }
 
 fn present_raw<'de, D: Deserializer<'de>>(
@@ -219,8 +227,8 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     let image: Image<'_> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
-        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6))
-        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5 | 6))
+        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7))
+        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5 | 6 | 7))
     {
         return Err("unsupported native descriptor image format".into());
     }
@@ -432,6 +440,20 @@ fn decode_inner<const OBJECT_BOUND: bool>(
         }
         derived
     };
+    if (image.version >= 7) != w.numeric_maps.is_some() {
+        return Err("native descriptor version differs from numeric map inventory".into());
+    }
+    let numeric_maps = match w.numeric_maps {
+        Some(layout) if OBJECT_BOUND => layout,
+        image => {
+            let derived = native::program::prepare::numeric_maps::Layout::derive(&plan)
+                .map_err(str::to_owned)?;
+            if image.is_some_and(|image| image != derived) {
+                return Err("numeric map proof differs from independent source derivation".into());
+            }
+            derived
+        }
+    };
     let visits: Box<[native::iteration_abi::NativeIterationVisit]> = w
         .visits
         .into_vec()
@@ -488,6 +510,22 @@ fn decode_inner<const OBJECT_BOUND: bool>(
             .ok_or("native UTF8 lookup header price overflows")?;
         if visits.get(site).is_none_or(|visit| visit.work < required) {
             return Err("native UTF8 lookup header template is not funded".into());
+        }
+    }
+    for region in &numeric_maps.regions {
+        let required = base_visits
+            .get(region.header as usize)
+            .and_then(|visit| {
+                visit
+                    .work
+                    .checked_add(native::program::prepare::numeric_maps::HEADER_WORK)
+            })
+            .ok_or("numeric map header price overflows")?;
+        if visits
+            .get(region.header as usize)
+            .is_none_or(|visit| visit.work < required)
+        {
+            return Err("numeric map header template is not funded".into());
         }
     }
     for region in &uniform_word_collections {
@@ -648,6 +686,7 @@ fn decode_inner<const OBJECT_BOUND: bool>(
             map_owner_words,
             borrowed_record_maps,
             utf8_reads,
+            numeric_maps,
             frozen_maps,
             map_admission: w.map_admission,
             parallel: w.parallel,

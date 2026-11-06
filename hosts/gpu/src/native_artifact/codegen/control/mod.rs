@@ -1101,6 +1101,31 @@ impl<'plan> CfgDefinition<'plan> {
                     )?;
             }
             #[cfg(feature = "canonical-native-program")]
+            if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
+                plan
+                && let NativeIterationTerminator::Header {
+                    iteration, exit, ..
+                } = block.terminator()
+                && controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::NumericCollections,
+                )
+                && let Some(region) = prepared.metadata().numeric_maps.at_header(index)
+            {
+                crate::native_artifact::program::codegen::numeric_map::emit_entry(
+                    b,
+                    locals,
+                    index,
+                    hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("numeric map lacks owner hooks"))?,
+                    region,
+                    prepared.plan(),
+                    plan.value_count() + iteration as usize,
+                    blocks[exit as usize].expect("reachable numeric map exit"),
+                    error,
+                )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
             if let NativeIterationTerminator::Header {
                 iteration, exit, ..
             } = block.terminator()

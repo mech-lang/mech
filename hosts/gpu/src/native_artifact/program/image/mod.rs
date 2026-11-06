@@ -32,7 +32,7 @@ impl NativeProgramDescriptor {
     ) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
         let mut fields =
-            serializer.serialize_struct("NativeProgramDescriptor", if TABLES { 29 } else { 28 })?;
+            serializer.serialize_struct("NativeProgramDescriptor", if TABLES { 30 } else { 28 })?;
         if TABLES {
             fields.serialize_field("plan", &TablePlan(&self.metadata.plan))?;
         } else {
@@ -68,6 +68,9 @@ impl NativeProgramDescriptor {
         fields.serialize_field("map_owner_words", &self.metadata.map_owner_words)?;
         fields.serialize_field("borrowed_record_maps", &self.metadata.borrowed_record_maps)?;
         fields.serialize_field("utf8_reads", &self.metadata.utf8_reads)?;
+        if TABLES {
+            fields.serialize_field("numeric_maps", &self.metadata.numeric_maps)?;
+        }
         fields.serialize_field("frozen_maps", &self.metadata.frozen_maps)?;
         fields.serialize_field("map_admission", &self.metadata.map_admission)?;
         fields.serialize_field("parallel", &self.metadata.parallel)?;
@@ -103,6 +106,7 @@ impl NativeProgramDescriptor {
             &metadata.frozen_maps,
             &metadata.borrowed_record_maps,
             &metadata.utf8_reads,
+            &metadata.numeric_maps,
             &metadata.string_map_regions,
         );
         Self {

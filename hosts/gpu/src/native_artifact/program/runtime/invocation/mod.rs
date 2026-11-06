@@ -12,6 +12,7 @@ mod captured_numeric;
 pub(super) mod continuation;
 mod helper_fallbacks;
 mod histogram;
+mod numeric_map;
 mod numeric_segments;
 mod numeric_tree;
 mod numeric_writes;
@@ -485,6 +486,15 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("helper while native fill loan is active"));
         }
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|state| state.has_numeric_map())
+            && tag != GlobalHelper::NumericMapFinish
+        {
+            return Err(invalid("helper while native numeric map loan is active"));
+        }
         if tag == GlobalHelper::MapOwnerConstructorCheck {
             return self.retained_constructor_check(site, args);
         }
@@ -645,6 +655,11 @@ impl Invocation<'_, '_, '_> {
             GlobalHelper::UniformFillPrepare | GlobalHelper::UniformFillFinish
         ) {
             self.uniform_fill_helper(site, tag, args)
+        } else if matches!(
+            tag,
+            GlobalHelper::NumericMapPrepare | GlobalHelper::NumericMapFinish
+        ) {
+            self.numeric_map_helper(site, tag, args)
         } else if tag == GlobalHelper::Collection {
             if self.state.consumed || args[2] != 0 {
                 return Err(invalid("duplicate collection helper"));
@@ -681,6 +696,16 @@ impl Invocation<'_, '_, '_> {
             .is_some_and(|state| state.has_uniform_fill())
         {
             return Err(invalid("source visit while native fill loan is active"));
+        }
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|state| state.has_numeric_map())
+        {
+            return Err(invalid(
+                "source visit while native numeric map loan is active",
+            ));
         }
         if self
             .prefix

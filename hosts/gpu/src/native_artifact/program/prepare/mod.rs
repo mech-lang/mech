@@ -79,6 +79,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) uniform_word_collections:
         Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
     pub(in crate::native_artifact) utf8_reads: utf8_reads::Layout,
+    pub(in crate::native_artifact) numeric_maps: numeric_maps::Layout,
     pub(in crate::native_artifact) window_regions:
         Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(in crate::native_artifact) string_map_regions:
@@ -141,6 +142,7 @@ impl PreparedNativeProgram {
             native::program::prepare::selected_join::Layout::derive(&plan, &string_map_regions)?;
         let line_matrices = native::program::prepare::line_matrix::Layout::derive(&plan)?;
         let utf8_reads = utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
+        let numeric_maps = numeric_maps::Layout::derive(&plan).map_err(str::to_owned)?;
         let mut analysis_visits = native::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
@@ -165,6 +167,8 @@ impl PreparedNativeProgram {
             |site| {
                 Ok(if utf8_reads.at_header(site).is_some() {
                     utf8_reads::HEADER_WORK
+                } else if numeric_maps.at_header(site).is_some() {
+                    numeric_maps::HEADER_WORK
                 } else {
                     0
                 })
@@ -392,6 +396,7 @@ impl PreparedNativeProgram {
             max_library_inputs,
             uniform_word_collections,
             utf8_reads,
+            numeric_maps,
             unsigned_buffer_calls,
             buffer_frames,
             frame_retirements,
@@ -539,5 +544,6 @@ pub(in crate::native_artifact) mod selected_join;
 pub(in crate::native_artifact) mod tail;
 pub(in crate::native_artifact) mod window_histogram;
 
+pub(in crate::native_artifact) mod numeric_maps;
 pub(in crate::native_artifact) mod query_stages;
 pub(in crate::native_artifact) mod utf8_reads;

@@ -50,6 +50,8 @@ pub(in crate::native_artifact) enum GlobalHelper {
     Utf8ReadFinish,
     UniformFillPrepare,
     UniformFillFinish,
+    NumericMapPrepare,
+    NumericMapFinish,
     HistogramPrepare,
     HistogramFinish,
 }
@@ -99,6 +101,8 @@ impl GlobalHelper {
             value if value == u64::MAX - 36 => Self::Utf8ReadFinish,
             value if value == u64::MAX - 37 => Self::UniformFillPrepare,
             value if value == u64::MAX - 38 => Self::UniformFillFinish,
+            value if value == u64::MAX - 41 => Self::NumericMapPrepare,
+            value if value == u64::MAX - 42 => Self::NumericMapFinish,
             value if value == u64::MAX - 39 => Self::HistogramPrepare,
             value if value == u64::MAX - 40 => Self::HistogramFinish,
             value => Self::Output(OutputIndex(value - 3)),
@@ -148,6 +152,8 @@ impl GlobalHelper {
             Self::Utf8ReadFinish => u64::MAX - 36,
             Self::UniformFillPrepare => u64::MAX - 37,
             Self::UniformFillFinish => u64::MAX - 38,
+            Self::NumericMapPrepare => u64::MAX - 41,
+            Self::NumericMapFinish => u64::MAX - 42,
             Self::HistogramPrepare => u64::MAX - 39,
             Self::HistogramFinish => u64::MAX - 40,
         }
@@ -164,3 +170,22 @@ impl GlobalHelper {
 
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod abi;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[test]
+fn collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space() {
+    let tags = [
+        GlobalHelper::UniformFillPrepare,
+        GlobalHelper::UniformFillFinish,
+        GlobalHelper::HistogramPrepare,
+        GlobalHelper::HistogramFinish,
+        GlobalHelper::NumericMapPrepare,
+        GlobalHelper::NumericMapFinish,
+    ];
+    let mut codes = std::collections::BTreeSet::new();
+    for tag in tags {
+        assert!(codes.insert(tag.raw()));
+        assert_eq!(GlobalHelper::decode(tag.raw()), tag);
+        assert!(GlobalHelper::output(tag.raw() - 3).is_none());
+    }
+}

@@ -28,6 +28,7 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     allocation::exact_capacity(values, count, reason)
 }
 mod data;
+pub(in crate::native_artifact) mod numeric_map;
 mod row_blocks;
 pub(in crate::native_artifact) mod uniform_words;
 mod utf8_read;
@@ -118,6 +119,7 @@ pub(in crate::native_artifact::program::runtime) struct State {
     current: Option<u32>,
     native_read: Option<Box<utf8_read::Loan>>,
     native_fill: Option<Box<uniform_words::Loan>>,
+    native_map: Option<Box<numeric_map::Loan>>,
     live_bytes: u64,
     // Genuine query scalar roots stay in the arena after token cleanup.
     // Keep their complete bound in every later collection workspace peak.
@@ -257,6 +259,10 @@ impl State {
                 0
             } else {
                 size_of::<Option<Box<uniform_words::Loan>>>()
+            } + if descriptor.metadata().numeric_maps.regions.is_empty() {
+                0
+            } else {
+                size_of::<Option<Box<numeric_map::Loan>>>()
             } + size_of::<[u64; 6]>()
                 + size_of::<Vec<Option<string_span::Lane>>>()
                 + size_of::<Vec<Option<string_map_entry::Lane>>>()) as u64
@@ -324,6 +330,7 @@ impl State {
             current: None,
             native_read: None,
             native_fill: None,
+            native_map: None,
             live_bytes: bytes,
             query_scalar_bytes: 0,
             query_scalar_nodes: 0,

@@ -53,6 +53,8 @@ pub(in crate::native_artifact) mod utf8_lookup;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod constant_fill;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_map;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod utf8_histogram;

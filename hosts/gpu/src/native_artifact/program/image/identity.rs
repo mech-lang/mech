@@ -315,7 +315,7 @@ fn selected_template(
 // IR179 binds complete descriptor bytes to an additional read-only Object symbol.
 // IR203 emits a checked bulk UTF8 histogram at its original library visit.
 // IR204 emits word hashing and prepaid adaptive native histogram passes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 209;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 210;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -597,6 +597,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
     frozen_maps: &crate::native_artifact::program::prepare::frozen_map::Layout,
     borrowed_record_maps: &crate::native_artifact::program::prepare::borrowed_record_map::Layout,
     utf8_reads: &crate::native_artifact::program::prepare::utf8_reads::Layout,
+    numeric_maps: &crate::native_artifact::program::prepare::numeric_maps::Layout,
     string_maps: &[mech_engine::native_artifact::NativeStringMapRegion],
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
@@ -636,6 +637,9 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
     bytes(&mut hash, b"mech.native-utf8-map-read-layout.v1");
     serde_json::to_writer(ProofDigest(&mut hash), utf8_reads)
         .expect("native UTF8 lookup proof contains only finite ordered integer fields");
+    bytes(&mut hash, b"mech.native-numeric-map-layout.v1");
+    serde_json::to_writer(ProofDigest(&mut hash), numeric_maps)
+        .expect("numeric map proof contains only finite ordered integer fields");
     word(&mut hash, frontiers.len() as u64);
     for frontier in frontiers {
         word(&mut hash, u64::from(frontier.iteration()));

@@ -44,6 +44,7 @@ fn hash(descriptor: &NativeProgramDescriptor, borrowed: &Layout) -> [u8; 32] {
         &metadata.frozen_maps,
         borrowed,
         &metadata.utf8_reads,
+        &metadata.numeric_maps,
         &metadata.string_map_regions,
     )
 }
