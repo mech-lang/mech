@@ -2,6 +2,104 @@ use crate::native_artifact::program::codegen::cfg_cleanup::*;
 use cranelift_codegen::ir::{AbiParam, MemFlags, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{Linkage, Module, default_libcall_names};
+
+#[test]
+fn cfg_cleanup_proves_masked_and_extended_widths_but_keeps_unknown_guards() {
+    use cranelift_codegen::ir::condcodes::IntCC;
+    for (width, mode, mask, proved) in [
+        (8, 0, 255u64, true),
+        (16, 0, 65535, true),
+        (32, 0, 4294967295, true),
+        (32, 0, 8589934591, false),
+        (32, 0, u64::MAX, false),
+        (8, 1, 255, true),
+        (16, 1, 65535, true),
+        (32, 1, 4294967295, true),
+    ] {
+        let mut module = cranelift_jit::JITModule::new(
+            cranelift_jit::JITBuilder::with_flags(
+                &[("opt_level", "speed")],
+                default_libcall_names(),
+            )
+            .unwrap(),
+        );
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(types::I64); 2];
+        context.func.signature.returns = vec![AbiParam::new(types::I64)];
+        let id = module
+            .declare_function(
+                "width_range_effects",
+                Linkage::Local,
+                &context.func.signature,
+            )
+            .unwrap();
+        let mut fc = FunctionBuilderContext::new();
+        let maximum = u64::MAX >> (64 - width);
+        {
+            let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+            let entry = b.create_block();
+            let yes = b.create_block();
+            let no = b.create_block();
+            let join = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.append_block_param(join, types::I64);
+            b.switch_to_block(entry);
+            let pointer = b.block_params(entry)[0];
+            let input = b.block_params(entry)[1];
+            let value = if mode == 0 {
+                let mask = b.ins().iconst(types::I64, mask as i64);
+                b.ins().band(input, mask)
+            } else {
+                let ty = match width {
+                    8 => types::I8,
+                    16 => types::I16,
+                    _ => types::I32,
+                };
+                let small = b.ins().ireduce(ty, input);
+                b.ins().uextend(types::I64, small)
+            };
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, value, maximum as i64);
+            b.ins().brif(valid, yes, &[], no, &[]);
+            b.switch_to_block(yes);
+            b.ins().store(MemFlags::new(), value, pointer, 0);
+            b.ins().jump(join, &[value.into()]);
+            b.switch_to_block(no);
+            let bad = b.ins().iconst(types::I64, 0xbad);
+            b.ins().store(MemFlags::new(), bad, pointer, 0);
+            b.ins().jump(join, &[bad.into()]);
+            b.switch_to_block(join);
+            let result = b.block_params(join)[0];
+            b.ins().return_(&[result]);
+            b.seal_all_blocks();
+            b.finalize();
+        }
+        let controls = CompilationControls::new(
+            crate::native_artifact::codegen::options::OptimizationOptions::default(),
+        );
+        let report = optimize(&controls, &mut context, module.isa()).unwrap();
+        assert_eq!(
+            report.constant_branches_removed > 0,
+            proved,
+            "mode={mode} width={width} mask={mask:#x}: {report:?}"
+        );
+        context.verify(module.isa()).unwrap();
+        module.define_function(id, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        // SAFETY: the owned JIT function has exactly this pointer/word ABI;
+        // each output is valid through the synchronous call and module lives.
+        let entry: unsafe extern "C" fn(*mut u64, u64) -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+        for input in [0, 1, maximum, maximum + 1, u64::MAX] {
+            let value = input & mask;
+            let expected = if value <= maximum { value } else { 0xbad };
+            let mut output = 0;
+            assert_eq!(unsafe { entry(&mut output, input) }, expected);
+            assert_eq!(output, expected);
+        }
+    }
+}
 #[test]
 fn cfg_cleanup_executes_only_selected_effects_and_keeps_dynamic_branches_and_block_arguments() {
     for (enabled, literal) in [false, true]
