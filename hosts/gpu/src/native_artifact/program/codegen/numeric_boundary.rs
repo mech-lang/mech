@@ -16,7 +16,11 @@ pub(super) fn materialize(
     incoming: Value,
     hooks: &Hooks,
     error: Block,
+    fuel_debits: Option<&super::super::numeric_fuel_debits::Anchors>,
 ) -> Result<(), NativeCompileError> {
+    if let Some(anchors) = fuel_debits {
+        anchors.publish(b, words);
+    }
     let shadow = region
         .shadow
         .ok_or_else(|| backend("numeric materialization lacks scratch home"))?;
@@ -149,5 +153,8 @@ pub(super) fn materialize(
     words.write(b, region.words, one);
     b.ins()
         .store(MemFlags::new(), one, locals, offset(region.words)?);
+    if let Some(anchors) = fuel_debits {
+        anchors.refresh(b, words);
+    }
     Ok(())
 }

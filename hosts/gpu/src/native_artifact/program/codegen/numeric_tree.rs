@@ -59,8 +59,14 @@ pub(super) fn debit(
     tree: &Proof,
     node: usize,
     projected: bool,
+    fuel_derived: bool,
 ) {
     if projected && tree.projected_child_debits() && node != 0 {
+        if fuel_derived {
+            // Every original fuel debit remains above this call. Its exact
+            // child total is reconstructed before any observable boundary.
+            return;
+        }
         let selected = &tree.nodes[node];
         for (slot, cost) in [
             (tree.child_compute(), selected.compute),

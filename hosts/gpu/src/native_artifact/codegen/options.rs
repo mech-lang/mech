@@ -35,6 +35,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Keep per-node counters in tests; settle their exact weighted projection
     /// only at cold boundaries instead of maintaining it in the native loop.
     ProjectedNumericDebits,
+    /// Derive projected child totals from the unchanged native fuel ledger.
+    FuelDerivedNumericDebits,
     /// Emission-only ablation retains the ordinary collection error path.
     UniformWords,
     NumericCollections,

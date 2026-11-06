@@ -90,8 +90,17 @@ fn check_frontier_emission(pass: OptimizationPass) {
                     .collect::<Vec<_>>()
             );
         } else {
-            assert_eq!(pass, OptimizationPass::ProjectedNumericDebits);
+            assert!(matches!(
+                pass,
+                OptimizationPass::ProjectedNumericDebits
+                    | OptimizationPass::FuelDerivedNumericDebits
+            ));
             assert_eq!(after, before);
+            let field = if pass == OptimizationPass::FuelDerivedNumericDebits {
+                "fuel_derived_child_debit_nodes"
+            } else {
+                "projected_child_debit_nodes"
+            };
             let projected_nodes = |metadata: &serde_json::Value| {
                 [
                     "compiled_numeric_write_loops",
@@ -99,7 +108,7 @@ fn check_frontier_emission(pass: OptimizationPass) {
                 ]
                 .into_iter()
                 .flat_map(|key| metadata[key].as_array().unwrap())
-                .map(|r| r["projected_child_debit_nodes"].as_u64().unwrap())
+                .map(|r| r[field].as_u64().unwrap())
                 .sum::<u64>()
             };
             assert!(projected_nodes(&object.metadata()) > 0);
@@ -341,7 +350,27 @@ fn numeric_tree_projected_debit_ablation_keeps_exact_reports_errors_and_retry() 
 }
 
 #[test]
+fn numeric_tree_fuel_derived_debits_keep_exact_reports_cold_growth_errors_and_retry() {
+    check_frontier_emission(OptimizationPass::FuelDerivedNumericDebits);
+}
+
+#[test]
 fn numeric_tree_projected_priced_children_keep_nonzero_comparisons_errors_and_retry() {
+    check_emission_ablation_source(
+        OptimizationPass::ProjectedNumericDebits,
+        &priced_children_source(),
+    );
+}
+
+#[test]
+fn numeric_tree_fuel_derived_priced_children_keep_comparisons_errors_and_retry() {
+    check_emission_ablation_source(
+        OptimizationPass::FuelDerivedNumericDebits,
+        &priced_children_source(),
+    );
+}
+
+fn priced_children_source() -> String {
     let original =
         "process := (more? | true => #TreeProbe(data, base, width, rank.1.1) | false => false)";
     let source = SOURCE.replace(
@@ -353,7 +382,7 @@ fn numeric_tree_projected_priced_children_keep_nonzero_comparisons_errors_and_re
         ),
     );
     assert_ne!(source, SOURCE);
-    check_emission_ablation_source(OptimizationPass::ProjectedNumericDebits, &source);
+    source
 }
 
 #[test]
@@ -492,7 +521,10 @@ fn check_emission_ablation_source(pass: OptimizationPass, source: &str) {
             JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
                 .unwrap();
         let conservative = JitProgramArtifact::compile_for_test(&artifact, &catalog, pass).unwrap();
-        if pass == OptimizationPass::ProjectedNumericDebits {
+        if matches!(
+            pass,
+            OptimizationPass::ProjectedNumericDebits | OptimizationPass::FuelDerivedNumericDebits
+        ) {
             assert!(
                 native
                     .descriptor()
@@ -835,8 +867,16 @@ fn numeric_tree_projected_debits_keep_each_finite_ordinary_continuation() {
     check_numeric_tree_finite_fuel(Some(OptimizationPass::ProjectedNumericDebits));
 }
 
+#[test]
+fn numeric_tree_fuel_derived_debits_keep_each_finite_ordinary_continuation() {
+    check_numeric_tree_finite_fuel(Some(OptimizationPass::FuelDerivedNumericDebits));
+}
+
 fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {
-    let projected = pass == Some(OptimizationPass::ProjectedNumericDebits);
+    let projected = matches!(
+        pass,
+        Some(OptimizationPass::ProjectedNumericDebits | OptimizationPass::FuelDerivedNumericDebits)
+    );
     let source = if projected {
         ZERO_APPEND_FRONTIER_SOURCE
     } else {

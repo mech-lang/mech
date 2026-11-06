@@ -48,6 +48,7 @@ pub(in crate::native_artifact) struct Report {
     pub runtime_scalar_path_walks: usize,
     pub tree_nodes: Vec<usize>,
     pub projected_child_debit_nodes: usize,
+    pub fuel_derived_child_debit_nodes: usize,
     pub direct_child_edges: Vec<(usize, usize, usize)>,
     // Compiler-local SSA facts, regenerated from checked typed-view recipes.
     // They are never serialized or accepted from a descriptor/image caller.
@@ -255,6 +256,17 @@ pub(in crate::native_artifact) fn emit_entry(
             }
         }
     }
+    let fuel_debits = region
+        .numeric_tree
+        .as_ref()
+        .filter(|tree| {
+            controls.enabled(OptimizationPass::FuelDerivedNumericDebits)
+                && controls.enabled(OptimizationPass::ProjectedNumericDebits)
+                && tree.projected_child_debits()
+        })
+        .map(|tree| {
+            super::numeric_fuel_debits::Anchors::new(b, &words, region.words, shadow, tree)
+        });
     // Every ordinary scalar operand home is retained conservatively. Private
     // virtual-frame intermediates have no cold consumer: reconciliation reads
     // only current carrier/result leaves and exact view/flag/capacity lanes.
@@ -395,6 +407,13 @@ pub(in crate::native_artifact) fn emit_entry(
                 0
             }
         }),
+        fuel_derived_child_debit_nodes: region.numeric_tree.as_ref().map_or(0, |tree| {
+            if fuel_debits.is_some() {
+                tree.nodes.len() - 1
+            } else {
+                0
+            }
+        }),
         direct_child_edges: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
             tree.nodes
                 .iter()
@@ -496,6 +515,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     region.numeric_tree.as_ref().unwrap(),
                     node,
                     controls.enabled(OptimizationPass::ProjectedNumericDebits),
+                    fuel_debits.is_some(),
                 );
             }
         }
@@ -537,8 +557,20 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.switch_to_block(materialize);
                 let index = b.ins().iadd_imm(length, 1);
                 boundary::materialize(
-                    controls, b, &words, region, proof, *array, site, frame, locals, index,
-                    incoming, hooks, error,
+                    controls,
+                    b,
+                    &words,
+                    region,
+                    proof,
+                    *array,
+                    site,
+                    frame,
+                    locals,
+                    index,
+                    incoming,
+                    hooks,
+                    error,
+                    fuel_debits.as_ref(),
                 )?;
                 b.ins().jump(done, &[]);
                 b.switch_to_block(store);
@@ -652,8 +684,20 @@ pub(in crate::native_artifact) fn emit_entry(
                         b.ins().brif(private, store, &[], materialize, &[]);
                         b.switch_to_block(materialize);
                         boundary::materialize(
-                            controls, b, &words, region, proof, *array, site, frame, locals, index,
-                            incoming, hooks, error,
+                            controls,
+                            b,
+                            &words,
+                            region,
+                            proof,
+                            *array,
+                            site,
+                            frame,
+                            locals,
+                            index,
+                            incoming,
+                            hooks,
+                            error,
+                            fuel_debits.as_ref(),
                         )?;
                         b.ins().jump(done, &[]);
                         b.switch_to_block(store);
@@ -718,6 +762,9 @@ pub(in crate::native_artifact) fn emit_entry(
         report.terminal_scalar_words_omitted = report
             .terminal_scalar_words_omitted
             .max(live_before - live.len());
+        if let Some(anchors) = &fuel_debits {
+            anchors.publish(b, &words);
+        }
         words.spill_live(b, locals, &live)?;
         b.ins().jump(failed, &[status.into()]);
         let instructions = b.func.dfg.num_insts() - before;
@@ -730,6 +777,9 @@ pub(in crate::native_artifact) fn emit_entry(
     let boundary = b.func.dfg.num_insts();
     for (&site, &bailout) in &bailouts {
         b.switch_to_block(bailout);
+        if let Some(anchors) = &fuel_debits {
+            anchors.publish(b, &words);
+        }
         words.spill_live(b, locals, &live_at(site))?;
         let header = b.ins().iconst(types::I64, site as i64);
         tail::leave(
@@ -753,6 +803,9 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     }
     b.switch_to_block(exit);
+    if let Some(anchors) = &fuel_debits {
+        anchors.publish(b, &words);
+    }
     words.spill_live(b, locals, &live_at(region.tail.exit() as usize))?;
     b.ins()
         .jump(ordinary_blocks[region.tail.exit() as usize].unwrap(), &[]);

@@ -321,7 +321,9 @@ fn selected_template(
 // fixed arenas, retaining complete shared admission and fresh opaque identities.
 // IR224 proves zero/one native SSA values across every incoming loop edge
 // before replacing equality-to-Boolean branches with direct native tests.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 224;
+// IR225 derives projected child debit totals from the same checked remaining
+// fuel and root traversal count, publishing exact totals at cold boundaries.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 225;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

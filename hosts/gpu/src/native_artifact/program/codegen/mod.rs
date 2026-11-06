@@ -11,6 +11,7 @@ pub(in crate::native_artifact) mod bound_shim;
 pub(in crate::native_artifact) mod captured_numeric;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod cfg_cleanup;
+mod numeric_fuel_debits;
 pub(in crate::native_artifact) mod hooks;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod join_map;
