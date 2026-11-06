@@ -25342,6 +25342,17 @@
           "files": 71,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-320-overlap-primary-3b1515379f7b.tar.gz"
+        },
+        {
+          "event": "case-random-256-primary",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-case-random-256-primary-f9789f9de620.tar.gz",
+          "sha256": "f9789f9de62026276dc151bf8142fe3a3ed06352ccd06a3af10d08f3e26ff6dc",
+          "manifest_sha256": "36c0cb2cb2c71708a0666044b281e84534e7de75c86f2ef5b1ed918b5bca687d",
+          "bytes": 136135,
+          "files": 71,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-random-256-primary-f9789f9de620.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
