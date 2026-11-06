@@ -1,0 +1,4 @@
+results/** linguist-generated=true
+review/** linguist-generated=true
+fixtures/** linguist-generated=true
+rust-controls/**/Cargo.lock linguist-generated=true

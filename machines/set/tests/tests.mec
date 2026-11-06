@@ -1,0 +1,95 @@
+# ---------- Setup universes for complement ------------------------------------
+U := {"a", "b", "c", "d", "e"}
+A := {"b", "d"}
+B := {"b", "c", "f"}    
+
+# ---------- union --------------------------------------------------------------
+# Overlap + order stability
+set/union({"a", "b"}, {"b", "c"}) === {"a", "b", "c"}
+# Duplicates ignored in inputs
+set/union({1, 1, 2}, {2, 3}) === {1, 2, 3}
+# Identity with empty set
+set/union({}, {"x"}) === {"x"}
+set/union({"x"}, {}) === {"x"}
+# Operator form (minimal redundancy)
+({"q"} ∪ {"q", "r"}) === {"q", "r"}
+
+# ---------- intersection -------------------------------------------------------
+# Overlap + order follows first set
+set/intersection({"x", "y", "z"}, {"z", "x"}) === {"x", "z"}
+# Disjoint -> empty
+set/intersection({1, 2}, {3, 4}) === {}
+# Intersection with empty
+set/intersection({"k"}, {}) === {}
+# Operator form
+({"m", "n"} ∩ {"n", "o"}) === {"n"}
+
+# ---------- difference ---------------------------------------------------------
+# A minus B keeps A's order
+set/difference({"x", "y", "z"}, {"y"}) === {"x", "z"}
+# A minus A -> {}
+set/difference({1, 2}, {1, 2}) === {}
+# Difference with empty
+set/difference({"a"}, {}) === {"a"}
+# Operator form
+({"p", "q"} ∖ {"q"}) === {"p"}
+
+# ---------- complement ---------------------------------------------------------
+# Complement relative to explicit universe (U)
+set/complement(U, A) === {"a", "c", "e"}
+# Complement where A has values outside U should ignore non-U elements in result scope
+set/complement(U, B) === {"a", "d", "e"}
+# Difference equivalence: U ∖ A == complement(U, A)
+(U ∖ A) === set/complement(U, A)
+# Shorthand (if default universe is configured). Keep one compact check.
+A∁ === {"a", "c", "e"}  
+A'  === {"a", "c", "e"}  
+
+# ---------- subset / superset --------------------------------------------------
+# Equal sets: subset and superset true, proper variants false
+set/subset({1,2,3}, {1,2,3}) === true
+set/superset({1,2,3}, {1,2,3}) === true
+set/proper_subset({1,2,3}, {1,2,3}) === false
+set/proper_superset({1,2,3}, {1,2,3}) === false
+# Proper subset/superset
+set/proper_subset({1,2}, {1,2,3}) === true
+set/proper_superset({1,2,3}, {1,2}) === true
+# Non-subset
+set/subset({1,4}, {1,2,3}) === false
+# Operator forms (single targeted checks)
+({1,2} ⊆ {1,2,3}) === true
+({1,2,3} ⊇ {1,2}) === true
+({1,2} ⊊ {1,2,3}) === true
+({1,2,3} ⊋ {1,2}) === true
+
+# ---------- element_of / not_element_of ---------------------------------------
+# True and false cases
+set/element_of("a", {"a","b"}) === true
+set/element_of("c", {"a","b"}) === false
+set/not_element_of("c", {"a","b"}) === true
+set/not_element_of("a", {"a","b"}) === false
+# Operator forms
+("a" ∈ {"a","b"}) === true
+("c" ∉ {"a","b"}) === true
+
+# ---------- mixed type safety --------------------------------------------------
+# Strings vs numbers distinct
+set/union({"1"}, {1}) === {"1", 1}
+# Membership respects type
+set/element_of(1, {"1", 2}) === false
+set/element_of(2, {"1", 2}) === true
+
+# ---------- empty set edge cases ----------------------------------------------
+# Subset relations with empty set
+set/subset({}, {1}) === true
+set/superset({}, {1}) === false
+set/subset({}, {}) === true
+set/superset({}, {}) === true
+set/proper_subset({}, {1}) === true
+set/proper_superset({1}, {}) === true
+
+# ---------- order stability checks --------------------------------------------
+# Ensure union keeps A's order and appends new-from-B in B's order
+set/union({"b","a"}, {"a","c"}) === {"b","a","c"}
+# Ensure intersection follows A's order
+set/intersection({"b","a","c"}, {"a","b","d"}) === {"b","a"}
