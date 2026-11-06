@@ -9,6 +9,7 @@ mod bounds_retry;
 mod bulk_bytes;
 mod child_cleanup;
 mod child_fuel;
+mod child_prepayment;
 mod cold_child;
 mod cold_intervals;
 mod collection_lifetime;

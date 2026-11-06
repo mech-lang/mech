@@ -1,5 +1,51 @@
 # Native compression milestone
 
+**R163 settles exact visits once for proved complete native children.** All20
+matched medians improve; geometric elapsed falls1.559354%, and the unchanged1.05
+case and scalar gates pass. Natural32KB moves5.350369× to5.255555× reference
+(23.274105→22.861667ms); natural16KB6.025953× to5.899914×. Repeated32KB is
+5.955420× to5.876018×, periodic33KB6.612460× to6.514746×, and eight bytes
+4.710214× to4.642000× (1.356542→1.336896ms). These are fresh matched cohorts.
+
+The parent phase was already fully funded. The new source proof establishes a
+complete, total two-tag unit-step child under current immutable windows and
+charges its unchanged traversal prices and exact header visits once. Refusal
+keeps the original child. Four static copies qualify; actual machine inspection
+confirms removal of the repeated debit/counter update. Existing helper, read and
+narrowing simplifications remain. Source/MBC, work prices, capacities, algorithm,
+allocator, aliases and timing boundary stay pinned. Core/Engine/math are frozen.
+
+Separate counters show16 instruction reductions and4 increases;11 cycle medians
+rise. Natural32KB instructions fall1.634155%; eight-byte instructions fall0.027074%
+while cycles rise2.418798%. All20 heap request/byte/reallocation/incremental peak
+measurements remain equal. Text shrinks60,624B and entry stack grows16B. The
+contrary cohorts are retained in the [full R163 report](native-child-visit-settlement.md).
+
+Exact-PC profiles attribute at least13.284% of natural32KB time to path-length
+selection and12.675% of repeated32KB to word extension. Native origins remain
+unattributed for42.570% and54.883%, respectively. These CPU-time samples do not
+partition instructions. Fresh reference disassembly shows an eleven-instruction
+scalar cost loop; Mech still has duplicate control, masks and spills. Ordered
+reduction/SIMD and one separately pinned source experiment remain unfinished.
+
+Measured compiler19cebb4ca84a611c149ba9ac5d652156cf4042a5; consolidated parent
+27081b4000d1f1764c14df32245bd3938984ed3f; retained R162 emitter
+3ef813384ab5a1df7a90818ea89506c62ad03375. IR/work/ABI/MBC184/107/39/14.
+Final formatting/tests/CI/docs/evidence are folded into the same optimization
+commit on **#973 only**, with byte-identical diagnostic Object proof after
+formatting. Passing receipts:609 GPU with the same7 exclusions;21 focused;
+192 CI-selected and executed;236 components/8 composition/1 real-capacity path;
+132 workflow;15 architecture; runtime-only, formatting and warnings denied;
+12 scalar controls. Hosted ordinary CI is cancelled by request. #973 stays draft
+pending green hosted CI and clean exact-head review. Parity is not achieved.
+
+Publication:38 public archives and76 server SHA256 digests verified. Fresh
+public retrieval verifies4548 file occurrences/1056 paths/15 preserved historical
+versions and reproduces results.json and REPORT.md byte-for-byte. Replay with
+`python3 benchmarks/mech-deflate/experiment.py replay-round --index benchmarks/mech-deflate/experiments.json --round 163 --output /tmp/r163-replay`.
+
+## Historical R162 checkpoint
+
 **R162 retains unsigned word proofs together with the guarded child windows.**
 Against qualified R160, natural32KB improves6.223658x to5.341214x reference
 (-14.178867%) and natural16KB6.964642x to6.004294x (-13.788912%). Repeated32KB

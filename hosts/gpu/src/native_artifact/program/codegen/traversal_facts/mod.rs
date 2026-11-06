@@ -8,13 +8,17 @@ use mech_engine::native_artifact::{
     NativeScalarAggregates, NativeScalarKind, NativeScalarOp as Op,
 };
 use std::collections::{BTreeMap, BTreeSet};
+mod completion;
+mod entry;
 mod flow;
 mod loop_windows;
 mod operations;
+mod ranges;
 mod scope;
 mod windows;
-pub(super) use flow::with_windows;
+pub(super) use completion::{Candidate, Completed};
 pub(super) use flow::{Step, derive};
+pub(super) use flow::{with_completion, with_windows};
 pub(super) use loop_windows::Window;
 use operations::{aggregate, scalar};
 pub(super) use scope::Scope;
@@ -43,6 +47,8 @@ enum Expr {
     ArrayLength(usize),
     Initial(usize),
     Definition(usize, usize),
+    Bounded(usize, usize, u64),
+    Boolean(usize, usize),
     Phi(usize, usize),
     Arithmetic(Arithmetic, Id, Id),
     Wrapping(Arithmetic, Id, Id),
@@ -79,7 +85,7 @@ impl Terms {
     fn boolean(&self, mut id: Id) -> bool {
         for _ in 0..MAX_TERMS {
             match self.terms[id] {
-                Expr::Compare(..) | Expr::Constant(0 | 1) => return true,
+                Expr::Compare(..) | Expr::Boolean(..) | Expr::Constant(0 | 1) => return true,
                 Expr::Not(value) => id = value,
                 _ => return false,
             }
@@ -237,60 +243,6 @@ impl State {
             _ => Some(true),
         }
     }
-    fn upper(&self, terms: &Terms, value: Id) -> u64 {
-        if let Some(value) = self.constant(terms, value) {
-            return value;
-        }
-        // A single established strict upper edge suffices for x+1. Do not
-        // recursively chase relations or infer a bound from one phi arm.
-        let mut upper = u64::MAX;
-        for &(relation, a, b) in &self.relations {
-            if a == value {
-                match relation {
-                    Relation::Eq | Relation::Le => {
-                        upper = upper.min(terms.value(b).unwrap_or(u64::MAX));
-                    }
-                    Relation::Lt => {
-                        upper = upper.min(terms.value(b).unwrap_or(u64::MAX).saturating_sub(1));
-                    }
-                    Relation::Ne => {}
-                }
-            } else if b == value && relation == Relation::Eq {
-                upper = upper.min(terms.value(a).unwrap_or(u64::MAX));
-            }
-        }
-        upper
-    }
-    fn safe(&self, terms: &Terms, op: Arithmetic, a: Id, b: Id) -> bool {
-        if self.successful.contains(&(op, a, b))
-            || (op == Arithmetic::Add && self.successful.contains(&(op, b, a)))
-        {
-            return true;
-        }
-        match op {
-            Arithmetic::Sub => self.truth(terms, Relation::Le, b, a) == Some(true),
-            Arithmetic::Add => {
-                if u128::from(self.upper(terms, a)) + u128::from(self.upper(terms, b))
-                    <= u128::from(u64::MAX)
-                {
-                    return true;
-                }
-                // After a successful checked difference d=n-i, w<=d proves
-                // i+w<=n. The exact i identity must match the subtraction.
-                self.relations.iter().any(|&(relation, width, difference)| {
-                    if !matches!(relation, Relation::Le | Relation::Lt | Relation::Eq) {
-                        return false;
-                    }
-                    let Expr::Arithmetic(Arithmetic::Sub, n, index) = terms.terms[difference]
-                    else {
-                        return false;
-                    };
-                    self.successful.contains(&(Arithmetic::Sub, n, index))
-                        && ((width == a && index == b) || (width == b && index == a))
-                })
-            }
-        }
-    }
     fn merge(&mut self, other: &Self, site: usize, terms: &mut Terms) -> Option<()> {
         for (&slot, value) in &mut self.words {
             if other.words.get(&slot) != Some(&*value) {
@@ -309,6 +261,7 @@ pub(super) struct Proof {
     guards: BTreeSet<(usize, u32, usize, u32)>,
     arithmetic: BTreeMap<usize, (Op, Vec<NativeMatchValue>)>,
     reads: BTreeSet<(usize, usize, u32)>,
+    pub(super) completed: Option<Completed>,
     pub(super) windows: BTreeSet<Window>,
     pub(super) successors: BTreeMap<usize, u32>,
     pub(super) predicates: BTreeMap<usize, bool>,

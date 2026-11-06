@@ -389,6 +389,7 @@ pub(in crate::native_artifact) fn emit_entry(
             phase.loops.iter().find(|loop_| {
                 loop_.header == site
                     && (!phase.checked_children || loop_.header == region.tail.header() as usize)
+                    && !version.is_some_and(|v| v.header == site && v.prepaid.is_some())
             })
         }) {
             if site != region.tail.header() as usize {
@@ -703,7 +704,14 @@ pub(in crate::native_artifact) fn emit_entry(
         if version.is_none()
             && let Some(window) = versions.iter().find(|v| v.initialize == site)
         {
-            window.gate(b, &words, shadow, proof, target(window.header as u32));
+            window.gate(
+                b,
+                &words,
+                shadow,
+                proof,
+                region.words,
+                target(window.header as u32),
+            );
         } else {
             terminators::emit_source_terminator(
                 b,
