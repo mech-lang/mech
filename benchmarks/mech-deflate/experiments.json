@@ -24768,6 +24768,17 @@
           "files": 68,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-eight-literals-primary-0354ccfb202b.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-case-16384-distribution-change-primary-917207adadc0.tar.gz",
+          "sha256": "917207adadc0d408e48cf86d25cd2e854c6fb0393d6f7650840f7f88143d5c89",
+          "manifest_sha256": "51da9c02f92b6c9ea52ac051ab0888e522e7452c448b7c4b8860089b82fbefec",
+          "bytes": 104683,
+          "files": 69,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-16384-distribution-change-primary-917207adadc0.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
