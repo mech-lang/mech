@@ -78,7 +78,7 @@ The flat build-owned image contains the canonical plan and selected inventories.
 
 The unsafe linked loader requires the same checked build/Object identity and code provenance. Descriptor reconstruction does not authenticate arbitrary code. Codegen reports, footprint counts and serialized eligibility do not grant a raw buffer view. Current runtime admission still runs after successful image validation.
 
-Restoration currently repeats expensive reachability/liveness analysis. Its35–37s cost is a known usability regression, not compression time. A future remedy must preserve independent reconstruction and exact predicate/root/cut contexts; no global permission cache or validation bypass is authorized.
+Within one derivation, freshness and header-boundary construction share their exact full header-liveness result: immutable plan, root, facts and empty predicate context are identical. The owned set stays within that call; exit-specific queries and independent image reconstruction remain. This removes duplicate computation without a persistent cache or new authority. Residual reachability/liveness work leaves image admission near 34.6 s, a known usability cost outside compression timing. Further reuse must preserve exact predicate/root/cut contexts and validation.
 
 ## Feature and verification boundaries
 
