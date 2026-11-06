@@ -1,8 +1,9 @@
 //! Retain canonical zero/one facts across SSA joins and loop-carried words.
 //! This runs after unreachable-code removal. It never trusts a source kind,
 //! raw input, memory load or call result. Every incoming phi edge participates.
+use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::ir::{
-    Function, InstructionData as D, Opcode as O, Value, ValueDef, condcodes::IntCC,
+    Function, InstBuilder, InstructionData as D, Opcode as O, Value, ValueDef, condcodes::IntCC,
 };
 use std::collections::VecDeque;
 
@@ -198,10 +199,30 @@ pub(super) fn optimize(f: &mut Function) -> usize {
         })
         .collect::<Vec<_>>();
     for &(inst, value, positive) in &changes {
+        // Only bit zero matters for a proved zero/one value. Expose that
+        // predicate to the backend's native bit-test branch rule, avoiding
+        // narrow-word normalization on its ordinary full-word branch route.
+        // Unsigned extensions preserve that bit, including an I8 producer's
+        // otherwise unspecified high physical register bits.
+        let mut value = value;
+        for _ in 0..8 {
+            let ValueDef::Result(definition, 0) = f.dfg.value_def(value) else {
+                break;
+            };
+            let D::Unary {
+                opcode: O::Uextend,
+                arg,
+            } = f.dfg.insts[definition]
+            else {
+                break;
+            };
+            value = f.dfg.resolve_aliases(arg);
+        }
+        let bit = FuncCursor::new(f).at_inst(inst).ins().band_imm(value, 1);
         let D::Brif { arg, blocks, .. } = &mut f.dfg.insts[inst] else {
             unreachable!()
         };
-        *arg = value;
+        *arg = bit;
         if !positive {
             blocks.swap(0, 1);
         }
