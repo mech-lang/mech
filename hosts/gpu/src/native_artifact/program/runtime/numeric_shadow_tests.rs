@@ -64,6 +64,7 @@ fn inputs(
     artifact: &mech_engine::ProgramArtifact,
     memory: &ManagedMemoryBudget,
     row: Case,
+    dimensions: [u64; 2],
 ) -> Vec<Value> {
     let (a, b, steps, other, seed, expected, target, at, allowed) = row;
     artifact
@@ -73,7 +74,14 @@ fn inputs(
             let name = mech_engine::decode_source_input_name(&input.name).unwrap();
             let data = match name.as_str() {
                 "a" | "b" => ValueDataDraft::Matrix(
-                    vec![ValueDataDraft::U32(if name == "a" { a } else { b })].into(),
+                    (0..dimensions[0] * dimensions[1])
+                        .map(|at| {
+                            ValueDataDraft::U32(
+                                (if name == "a" { a } else { b }) + u32::try_from(at).unwrap(),
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .into(),
                 ),
                 "steps" => ValueDataDraft::U64(steps),
                 "other" => ValueDataDraft::U64(other),
@@ -87,7 +95,7 @@ fn inputs(
             let shape_values = if matches!(data, ValueDataDraft::Matrix(_)) {
                 mech_core::shape_for_resolved_extents(
                     artifact.schemas().get(input.schema).unwrap(),
-                    &[1, 1],
+                    &dimensions,
                 )
                 .unwrap()
                 .parameter_values()
@@ -123,7 +131,7 @@ fn shared_scratch_refreshes_views_arguments_and_recovers_after_failure() {
         )
         .unwrap();
         let mut published = vec![None; artifact.outputs().len()];
-        for (row, result, error) in [
+        let mut cases = vec![
             ((3, 7, 2, 3, 0, 6, 21, 1, true), Some((true, true)), None),
             ((4, 5, 1, 2, 1, 4, 99, 1, true), Some((true, false)), None),
             ((4, 5, 1, 2, 1, 4, 99, 0, false), None, Some("Integrity")),
@@ -135,8 +143,51 @@ fn shared_scratch_refreshes_views_arguments_and_recovers_after_failure() {
             ),
             ((4, 5, 1, 0, 9, 4, 9, 0, true), Some((true, true)), None),
             ((9, 2, 3, 4, 0, 27, 8, 1, true), Some((true, true)), None),
-        ] {
-            let args = inputs(&artifact, &memory, row);
+        ]
+        .into_iter()
+        .map(|case| ([1, 1], case))
+        .collect::<Vec<_>>();
+        // One prepared program must use each invocation's current geometry.
+        // Independent column/row enumeration defines source linear order over
+        // these row-major cells, including both vector orientations.
+        for dimensions @ [rows, columns] in [[2, 3], [1, 6], [3, 2], [6, 1], [1, 1]] {
+            let mut at = 1;
+            for column in 0..columns {
+                for row in 0..rows {
+                    let expected = 10 + row * columns + column;
+                    cases.push((
+                        dimensions,
+                        (
+                            (3, 10, 1, 1, 0, 3, expected, at, true),
+                            Some((true, true)),
+                            None,
+                        ),
+                    ));
+                    at += 1;
+                }
+            }
+            for at in [0, rows * columns + 1] {
+                cases.push((dimensions, ((3, 10, 1, 1, 0, 3, 0, at, true), None, None)));
+                cases.push((
+                    dimensions,
+                    ((3, 10, 1, 0, 9, 3, 9, at, true), Some((true, true)), None),
+                ));
+            }
+        }
+        for dimensions in [[0, 6], [6, 0], [0, 1], [1, 0]] {
+            cases.push((
+                dimensions,
+                ((3, 10, 0, 0, 9, 0, 9, 0, true), Some((true, true)), None),
+            ));
+            cases.push((dimensions, ((3, 10, 0, 1, 9, 0, 9, 1, true), None, None)));
+        }
+        // Retry with a rectangular owner after both empty-vector orientations.
+        cases.push((
+            [2, 3],
+            ((3, 10, 1, 1, 0, 3, 14, 4, true), Some((true, true)), None),
+        ));
+        for (dimensions, (row, result, error)) in cases {
+            let args = inputs(&artifact, &memory, row, dimensions);
             let aliases = args.clone();
             let contents = args
                 .iter()

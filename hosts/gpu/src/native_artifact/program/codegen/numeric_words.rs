@@ -4,6 +4,7 @@ use crate::native_artifact::codegen::common::{aggregates, ssa_words::Words};
 use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::compiler::backend;
 use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation};
+use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{InstBuilder, Value, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
@@ -185,6 +186,18 @@ pub(super) fn linear_address(
     let physical = if vector {
         ordinal
     } else {
+        // Generic schemas can still carry a current row or column vector.
+        // The caller has checked this admitted view's bounds, so either unit
+        // dimension makes the physical ordinal identical to source order.
+        let one_row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
+        let one_column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
+        let contiguous = b.ins().bor(one_row, one_column);
+        let general = b.create_block();
+        let done = b.create_block();
+        b.append_block_param(done, types::I64);
+        b.ins()
+            .brif(contiguous, done, &[ordinal.into()], general, &[]);
+        b.switch_to_block(general);
         let column = b.ins().udiv(ordinal, rows);
         // Bounds on the admitted view prove rows > 0. Reuse the quotient:
         // column * rows <= ordinal, so this internal remainder cannot overflow.
@@ -192,7 +205,10 @@ pub(super) fn linear_address(
         let consumed = b.ins().imul(column, rows);
         let row = b.ins().isub(ordinal, consumed);
         let row = b.ins().imul(row, columns);
-        b.ins().iadd(row, column)
+        let physical = b.ins().iadd(row, column);
+        b.ins().jump(done, &[physical.into()]);
+        b.switch_to_block(done);
+        b.block_params(done)[0]
     };
     let at = b.ins().imul_imm(physical, i64::from(width));
     let base = base(b);

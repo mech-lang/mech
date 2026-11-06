@@ -103,7 +103,17 @@ fn general_numeric_addresses_emit_one_machine_division() {
 fn native_numeric_addresses_follow_independent_column_order() {
     for width in [1u8, 2, 4, 8] {
         let (_module, address, _) = native_address(width);
-        for (rows, columns) in [(1u64, 1u64), (1, 6), (6, 1), (2, 3), (3, 2), (7, 13)] {
+        for (rows, columns) in [
+            (1u64, 1u64),
+            (1, 6),
+            (6, 1),
+            (2, 3),
+            (3, 2),
+            (7, 13),
+            (1, 17),
+            (11, 13),
+            (17, 1),
+        ] {
             let mut ordinal = 0;
             for column in 0..columns {
                 for row in 0..rows {
@@ -117,11 +127,14 @@ fn native_numeric_addresses_follow_independent_column_order() {
         }
         // Exercise exact integer division above floating-point integer precision.
         // These are arithmetic-only addresses, never allocated or dereferenced.
-        let rows = u64::MAX / u64::from(width);
-        let ordinal = rows - 1;
-        // SAFETY: the same live function computes words with a nonzero row count.
-        let observed = unsafe { address(ordinal, rows, 1, 0) };
-        assert_eq!(observed, ordinal * u64::from(width));
+        let length = u64::MAX / u64::from(width);
+        let ordinal = length - 1;
+        for (rows, columns) in [(length, 1), (1, length)] {
+            // SAFETY: the same live function only computes words; each row
+            // count is nonzero and no allocation is read.
+            let observed = unsafe { address(ordinal, rows, columns, 0) };
+            assert_eq!(observed, ordinal * u64::from(width));
+        }
     }
 }
 

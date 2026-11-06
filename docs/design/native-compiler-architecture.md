@@ -1,6 +1,6 @@
 # Native compiler architecture
 
-The maintained path is source/bytecode → canonical `ProgramArtifact` → checked native plan → shared JIT/Object emission → current execution. Engine owns language semantics. Native preparation selects representations; runtime image restoration independently reconstructs their source facts. The current retained versions are **IR168 / work107 / private ABI39 / bytecode14**. [Current milestone and qualification](native-compression-status.md).
+The maintained path is source/bytecode → canonical `ProgramArtifact` → checked native plan → shared JIT/Object emission → current execution. Engine owns language semantics. Native preparation selects representations; runtime image restoration independently reconstructs their source facts. The current retained versions are **IR171 / work107 / private ABI39 / bytecode14**. [Current milestone and qualification](native-compression-status.md).
 
 ## Responsibilities and authority
 
@@ -42,7 +42,7 @@ Numeric regions require source definitions, versions, scopes, confined uses and 
 
 The shared word emitter owns scalar arithmetic. Unsigned full-width addition uses the wrapping result plus `sum>=left` as its checked guard; subtraction checks `left>=right`. Signed/narrow arithmetic and multiplication retain their maintained rules. Original failure origin, funding and publication semantics remain.
 
-General numeric matrix addressing preserves column-major selection over row-major storage: one quotient gives the column; subtraction gives the row. Schema-proved unit dimensions retain their division-free route. Admission/valid selection establishes nonzero rows and the safe remainder. Reads, writes and segments use the same helper.
+General numeric matrix addressing preserves column-major selection over row-major storage: one quotient gives the column; subtraction gives the row. Schema-proved unit dimensions retain their division-free route. Generic schemas also use the physical ordinal directly when the current admitted view has one row or one column; rectangular views keep the same general formula. Caller bounds precede this calculation, establishing nonzero rows on a selected load/store and the safe remainder. The current geometry test grants no new permission or static fact. Reads, writes and segments use the same helper; image reconstruction preserves the same independently derived facts, with emission identity distinguishing changed code.
 
 Freshness analysis removes historical SSA contents only for lexical locals wholly defined/read in the selected traversal and dead at entry. Captures, carriers, constants, escaping values and partially selected definitions retain their state. Internal temporaries are defined by their source actions.
 
