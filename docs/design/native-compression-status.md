@@ -1,5 +1,63 @@
 # Native compression milestone
 
+**R176 retains simpler scalar reduction entry and exit control.** Natural32KB
+improves **4.301808× → 4.220265× Roc** (1.895541%, all eight blocks improve),
+natural16KB **5.105361× → 5.011239×** (1.843595%), and repeated32KB
+**3.268479× → 3.199856×** (2.099534%). Across all 20 cases, 15 medians improve
+and five worsen; geometric elapsed improves 0.588763%. Random32KB worsens
+0.080022%; the three stored-only cases worsen 1.158304–1.277927%. All unchanged
+1.05 elapsed gates pass. Every contrary pair remains in the full report.
+
+The selected entry already proves a nonempty interval. Short intervals now enter
+the scalar body directly, and each reached body tests its backedge after advancing.
+An empty vector remainder goes directly to finish. The inspected continuing visit
+stays 19 instructions (reference 11); one physical short kernel saves six
+instructions per activation. No dynamic activation census or whole-call partition
+is inferred from that local count. The vector threshold, arithmetic, strict ties,
+source prices, checked fallback, current-window proof and allocation behavior
+remain unchanged. No source or runtime ABI change is introduced.
+
+Natural32 retired instructions fall 1.011277%, natural16 0.812969%; seven instruction
+medians and ten cycle medians rise across the full matrix. All 20 allocation and
+usable-live-heap metrics remain exactly equal. Eight literals still use 3,354
+requests and 15,279,752 B incremental peak usable heap. Code grows 3,952 B to
+8,955,736 B; entry stack stays 15,792 B. The optional R172 source variant and
+rejected R175 permutation are excluded from this compiler-only comparison.
+
+Five fresh exact-worker profiles cover 16,727 complete calls. A byte-identical
+Object with compilation-only labels distinguishes reduction phases in four source
+copies. Natural32 has 82.63% inside the generated entry, including 37.28% unknown
+native attribution. Outside-entry samples include other generated helpers and
+validation; they are not all removable runtime overhead. Sampling is independent
+of the retired-instruction cohort.
+
+All 14 focused and 632 GPU tests pass, with the same seven inherited exclusions;
+all 215 selected CI names execute. Fresh qualification passes 236 components,
+eight compositions and one real-capacity path, with unchanged values/allowances.
+All 12 scalar controls pass existing gates, but the eight pure scalar medians are
+0.44–1.10% slower. All 15 architecture/catalog checks, 132 workflow tests,
+runtime-only, formatting and warnings denied pass. Largest input 33,027 B;
+complete-call reference bytes, independent inflate, aliases, prefixes, real
+capacities and final cleanup zero pass on every case.
+
+Parent `1584097e757cecf1e3eaaff7e3eb18b9fbb8c31f`; measured compiler/test source
+`0996d5ef649029e2be5de49f150619a222ef26a5`. IR/work/ABI/MBC 196/107/39/14,
+frozen R145 dependencies. The final review commit adds docs/index with measured
+source hashes unchanged. See the [R176 design and all results](native-scalar-reduction-backedge.md)
+for exact commands, pins, profiles, tradeoffs and skipped coverage. Ordinary hosted
+CI is cancelled by instruction; review stays enabled and #973 stays draft.
+
+The requested mutable-parent fact project remains unfinished: this round uses
+an already available local entry fact. The previous child-setup audit did not meet
+the brief's research hurdle. A separate bounded address-geometry experiment is
+proposed from current assembly; no future saving is claimed. Parity remains active.
+
+Publication verifies 37 public archives / 74 server digests. Fresh retrieval verifies
+4,161 file occurrences / 1,024 paths / eight historical versions and reconstructs
+results.json and REPORT.md byte-for-byte without compiling or compressing.
+
+## Historical R175 checkpoint
+
 **R175 rejects a reverse-input permutation experiment.** Natural32KB improves
 4.327658× →4.303257× Roc (0.563841%) and natural16KB5.135407× →5.099904×
 (0.691339%), but all20 elapsed medians regress0.224967% geometrically:7 faster,

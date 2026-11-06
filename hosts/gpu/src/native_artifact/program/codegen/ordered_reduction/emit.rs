@@ -42,9 +42,13 @@ impl Reduction {
         let best = words.read(b, self.best);
         let best = b.ins().ireduce(types::I32, best);
         let inputs = super::cost::Inputs::new(b, words, proof, shadow, &self.cost);
-        let scalar = b.create_block();
+        let scalar_body = b.create_block();
         for ty in [types::I64, types::I32, types::I32] {
-            b.append_block_param(scalar, ty);
+            b.append_block_param(scalar_body, ty);
+        }
+        let scalar_finish = b.create_block();
+        for _ in 0..2 {
+            b.append_block_param(scalar_finish, types::I32);
         }
         let vector = b.create_block();
         let missing = b.ins().iconst(types::I32, -1);
@@ -55,7 +59,7 @@ impl Reduction {
             long,
             vector,
             &[],
-            scalar,
+            scalar_body,
             &[start.into(), best.into(), missing.into()],
         );
         b.switch_to_block(vector);
@@ -101,26 +105,37 @@ impl Reduction {
         let winners = minimum_splat(b, indices);
         let minimum = b.ins().extractlane(minima, 0);
         let winner = b.ins().extractlane(winners, 0);
-        b.ins()
-            .jump(scalar, &[end.into(), minimum.into(), winner.into()]);
-        b.switch_to_block(scalar);
-        let params = b.block_params(scalar).to_vec();
-        let body = b.create_block();
-        let finish = b.create_block();
-        let more = b.ins().icmp(IntCC::UnsignedLessThan, params[0], stop);
-        b.ins().brif(more, body, &[], finish, &[]);
-        b.switch_to_block(body);
+        let more = b.ins().icmp(IntCC::UnsignedLessThan, end, stop);
+        b.ins().brif(
+            more,
+            scalar_body,
+            &[end.into(), minimum.into(), winner.into()],
+            scalar_finish,
+            &[minimum.into(), winner.into()],
+        );
+        // Short entries are already nonempty at admission. Vector entries
+        // reach this body only with a remainder. Advance before testing the
+        // backedge so each reached candidate needs no separate header hop.
+        b.switch_to_block(scalar_body);
+        let params = b.block_params(scalar_body).to_vec();
         let cost = inputs.scalar(b, proof, &self.cost, params[0]);
         let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, params[1]);
         let minimum = b.ins().umin(cost, params[1]);
         let index = b.ins().ireduce(types::I32, params[0]);
         let winner = b.ins().select(less, index, params[2]);
         let next = b.ins().iadd_imm(params[0], 1);
-        b.ins()
-            .jump(scalar, &[next.into(), minimum.into(), winner.into()]);
-        b.switch_to_block(finish);
-        let minimum = params[1];
-        let winner = params[2];
+        let more = b.ins().icmp(IntCC::UnsignedLessThan, next, stop);
+        b.ins().brif(
+            more,
+            scalar_body,
+            &[next.into(), minimum.into(), winner.into()],
+            scalar_finish,
+            &[minimum.into(), winner.into()],
+        );
+        b.switch_to_block(scalar_finish);
+        let params = b.block_params(scalar_finish).to_vec();
+        let minimum = params[0];
+        let winner = params[1];
         let selected = b.create_block();
         let done = b.create_block();
         b.append_block_param(done, types::I64);

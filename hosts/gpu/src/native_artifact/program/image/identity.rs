@@ -341,7 +341,9 @@ fn selected_template(
 // IR189 also merges activation entries before invariant local-phi analysis.
 // IR193's empty-block experiment was rejected. IR194 gates bounded immutable
 // children once for maximum funding while retaining exact per-visit debits.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 194;
+// IR195's reverse-input permutation experiment was rejected. IR196 consumes
+// selected nonempty-entry facts in the compact scalar reduction's backedge.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 196;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
