@@ -25474,6 +25474,17 @@
           "files": 117,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-scalar-case-scalar-bool-0-decoded-5d4543439fa2.tar.gz"
+        },
+        {
+          "event": "scalar-case-scalar-u64-0-original",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-scalar-case-scalar-u64-0-original-09dd60fe18a3.tar.gz",
+          "sha256": "09dd60fe18a3519ac810f782eea6072e7e8f16db8462bf61d04a812072802c17",
+          "manifest_sha256": "3c1e9089753492f41d29db7be0810590a7e572236ea826be11560b57759bf326",
+          "bytes": 162933,
+          "files": 117,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-scalar-case-scalar-u64-0-original-09dd60fe18a3.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
