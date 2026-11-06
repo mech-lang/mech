@@ -608,6 +608,28 @@ pub(in crate::native_artifact) fn primitive(
             guard(b, valid, error, STATUS_ARITHMETIC);
             value
         }
+        U32Mul => {
+            // Exact-width inputs make the complete product fit this U64 lane.
+            // Check the semantic U32 result before any publication.
+            let value = b.ins().imul(a, c);
+            let valid =
+                b.ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, value, i64::from(u32::MAX));
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            value
+        }
+        U32Div | U32Rem => {
+            let nonzero = b.ins().icmp_imm(IntCC::NotEqual, c, 0);
+            guard(b, nonzero, error, STATUS_ARITHMETIC);
+            let left = b.ins().ireduce(types::I32, a);
+            let right = b.ins().ireduce(types::I32, c);
+            let value = if op == U32Div {
+                b.ins().udiv(left, right)
+            } else {
+                b.ins().urem(left, right)
+            };
+            b.ins().uextend(types::I64, value)
+        }
         U64Mul => {
             // A full-width product fits iff its unsigned high half is zero.
             let high = b.ins().umulhi(a, c);

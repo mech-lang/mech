@@ -436,6 +436,41 @@ fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
 }
 
 #[test]
+fn native_u32_arithmetic_images_preserve_selected_checked_operations() {
+    use mech_engine::native_artifact::{
+        NativeIterationAction as Action, NativeMatchAction as Scalar, NativeScalarOp as Op,
+    };
+    let catalog = mech_stdlib::source_catalog();
+    for (operator, expected) in [("*", Op::U32Mul), ("/", Op::U32Div), ("%", Op::U32Rem)] {
+        for artifact in artifacts(&format!("left<u32> {operator} right<u32>\n")) {
+            let object = emit_program_object(&artifact, &catalog).unwrap();
+            assert!(object.descriptor().plan().blocks().iter().any(|block| matches!(block.action(), Action::Scalar(Scalar::Primitive { op, .. }) if *op == expected)));
+            let image = object.native_metadata();
+            // SAFETY: exact bytes and symbols from this checked Object. No
+            // decoded metadata is executed through a fabricated native entry.
+            let independent =
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(image, &catalog) }
+                    .unwrap();
+            let bound = unsafe {
+                NativeProgramDescriptor::decode_object_bound_image(
+                    image,
+                    &catalog,
+                    object.identity().bytes(),
+                    object.native_metadata_binding().bytes(),
+                )
+            }
+            .unwrap();
+            for restored in [&independent, &bound] {
+                assert_eq!(
+                    restored.encode_build_owned_image().unwrap(),
+                    object.descriptor().encode_build_owned_image().unwrap()
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn frozen_uniform_collections_preserve_fields_and_reject_changed_proofs() {
     use serde::Deserialize;
     let catalog = mech_stdlib::source_catalog();
