@@ -1,6 +1,6 @@
 # Related-post native compiler review
 
-Current integration: [related-post compiler plus latest #973](integration/README.md), **IR226 / work115 / ABI41 / image9**. The compiler builds; four variants retain53 native numeric functions and pass124 output fixtures, and133 scalar/DEFLATE controls match IR225 exactly in all non-timing fields. Complete qualification and new timings are pending. The timing tables below describe their recorded historical compilers.
+Current integration: [related-post compiler plus latest #973](integration/README.md), **IR227 / work115 / ABI41 / image9**. The compiler builds; four variants retain53 native numeric functions and pass124 output fixtures,839 GPU tests retain two inherited failures,289 Engine checks and runtime/application checks pass. All128 scalar controls remain exact; the compression output is exact but its changed route/accounting remains under audit. No integrated timing or adoption claim. Historical timing tables below retain their recorded compiler revisions.
 
 
 This branch contains the accepted compiler optimization series for

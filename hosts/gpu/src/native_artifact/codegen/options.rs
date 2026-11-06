@@ -51,6 +51,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     UnsignedGuardFacts,
     DisjointState,
     NontrappingHomes,
+    ChildFunding,
 }
 #[cfg(feature = "canonical-native-program")]
 impl OptimizationOptions {

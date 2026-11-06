@@ -474,6 +474,7 @@ impl Hooks {
             }))
         }
     }
+    #[cfg(feature = "canonical-native-program")]
     pub fn library(
         &self,
         b: &mut FunctionBuilder<'_>,

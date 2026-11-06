@@ -1,0 +1,20 @@
+{
+  "status": "unselected_accounting_audit_pending",
+  "identity": "IR227/work115/ABI41/image9",
+  "scalar_cases_exact_all_nontiming": 128,
+  "compression_output_identical": true,
+  "compression_probe_exit": 0,
+  "comparison": "IR225",
+  "changed_compression_fields": [
+    "work",
+    "comparison_work",
+    "visits",
+    "transport_bytes",
+    "allocation_requests",
+    "requested_bytes"
+  ],
+  "compression_difference_receipt": "evidence/current-control-one-kib-comparison.json",
+  "timing_claim": false,
+  "selected_speed_compiler": "c3a6925108ad3523f4e29022b66f1c17b92c9878",
+  "next": "Explain the changed DEFLATE route/accounting using same-compiler child-funding ablation before allowing the new benchmark cohorts."
+}

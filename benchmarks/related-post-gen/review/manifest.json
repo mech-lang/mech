@@ -3834,8 +3834,8 @@
       "publication_generated": true
     },
     "README.md": {
-      "sha256": "ff90651f5687a126ee6ffbc37a221b66cb13823c95bf24f5ba94e3fd4e4cd198",
-      "bytes": 9520
+      "sha256": "e306a969c01613eb6d847b1adc4d8d61da663074cc96244fe3cbc869155a7301",
+      "bytes": 9655
     },
     "review/history-bridge.json": {
       "sha256": "c86df5628c3c2e2b87f99fe3c009db907cdbb6b57e7bb8c617f33cece7b59dae",
@@ -3881,20 +3881,20 @@
       "recorded_source": "/private/tmp/mech-related-publish-review-20261106/pr973-integration-preview.json"
     },
     "integration/native-code-comparison.json": {
-      "sha256": "2836ff82eca4e2d28de9866d401732e421c8764f4afb37726225e50e37882d02",
+      "sha256": "2476ab8ff7fbf23e87032a50437c6f7b816e93b96928a58a581a811980b79b89",
       "bytes": 44519
     },
     "integration/source-inventory.json": {
-      "sha256": "50dd7ea131fb86abf142ba74679aa192390547b16629e96d8b9fb22136feb875",
-      "bytes": 306313
+      "sha256": "f3d9568a65e2f2e24df57a92e70b9f31d55a9cc721f560cef6faec7c8b95a1ad",
+      "bytes": 306771
     },
     "integration/compiler-build.json": {
-      "sha256": "22b768e2dd17b9e45ebcc1cabdc34bfdcfcaef14779c378e1454a367fdfbfae9",
-      "bytes": 75813
+      "sha256": "92b67918cb475b9704086794c73257fc1818d88e7b45de0405ccad98ae9eff1e",
+      "bytes": 76024
     },
     "integration/README.md": {
-      "sha256": "578149a0879667187204a782db12fe802ab458b61fbf53150835d064e7297c2c",
-      "bytes": 3120
+      "sha256": "c7a26ac9c5b8b2316f9322b32547db61f75cb34974409dd3622a26fd943dea55",
+      "bytes": 4021
     },
     "integration/evidence/size-native-fuel-derived-debits-20261106.json": {
       "sha256": "3ad02f64e2500b47f6f068654b6a38baf414869a2be7eff4381e716129fb390f",
@@ -3952,10 +3952,6 @@
       "sha256": "e6db189be9f55efb5ad099cf83602570ae51e34326d7599fa08d9213c5f40d9d",
       "bytes": 6586
     },
-    "integration/control-source-equivalence.json": {
-      "sha256": "28d39751b4fda3eab983c44bdf7e7bdf086dd973d60fb9f5fbc39468dffacad0",
-      "bytes": 727
-    },
     "integration/evidence/focus-huffman_parent_cleanup.json": {
       "sha256": "7e2f42fe22925c7911a3bd57a31dfafb9c8ad2572891441293961f6a1fca13b9",
       "bytes": 236
@@ -3987,6 +3983,170 @@
     "integration/evidence/test-run.json": {
       "sha256": "e078a6307b0934caea6668edd1205473c2ad20dfa652e98575dd57f9541859bb",
       "bytes": 635
+    },
+    "integration/ir226-control-source-equivalence.json": {
+      "sha256": "28d39751b4fda3eab983c44bdf7e7bdf086dd973d60fb9f5fbc39468dffacad0",
+      "bytes": 727
+    },
+    "integration/open-controls.json": {
+      "sha256": "ce90a0a5403f9c5c36328e3aeccf5b0a9851928f053de882f088b9c52a4abfd6",
+      "bytes": 727
+    },
+    "integration/evidence/runtime-hosted-generation.json": {
+      "sha256": "abfe35b85a73588c1388c1a9dc02c45147ee390c23f5349fdc17740b04b5bec6",
+      "bytes": 8998
+    },
+    "integration/evidence/runtime-program-runtime.json": {
+      "sha256": "7ae18e20413b2298677b5b41c27634ec0ba1f68576d6d3a12dce410af1f0d4d9",
+      "bytes": 8759
+    },
+    "integration/evidence/runtime-hosted-build.json": {
+      "sha256": "de5a4226a5ebfa562894d15fe36f5eb66eb826a5a0cf09002740eb928e59b298",
+      "bytes": 76340
+    },
+    "integration/evidence/engine-mech_engine-build.json": {
+      "sha256": "87e71303ccbc628609b4b3e3166e8ddb8e8d87592101250b5f078054c5c86024",
+      "bytes": 11013
+    },
+    "integration/evidence/gpu-source-inventory.json": {
+      "sha256": "de83586fddf77879541afdce0ed4123d655e7cc333d4e11723133182538e900f",
+      "bytes": 306688
+    },
+    "integration/evidence/current-control-one-kib-comparison.json": {
+      "sha256": "a4a940ab66ca8cc1f3cda2e029b5d1d640fcf2fd78125e4982ff09a6524c7d3c",
+      "bytes": 6006
+    },
+    "integration/evidence/runtime-managed-audit-input-correction.json": {
+      "sha256": "f2ff5af12e2785b93c31b36745ab97914f26494940c1aa3a8f50e340900284a1",
+      "bytes": 495
+    },
+    "integration/evidence/current-control-scalar-comparison.json": {
+      "sha256": "e6db189be9f55efb5ad099cf83602570ae51e34326d7599fa08d9213c5f40d9d",
+      "bytes": 6586
+    },
+    "integration/evidence/runtime-generate-standard-app.json": {
+      "sha256": "b6e0ccf56f10b304df981737634cf0ad1c0f96e2bdda6d23535d37dd8bef246d",
+      "bytes": 491
+    },
+    "integration/evidence/feature-program-runtime.json": {
+      "sha256": "631e39f8215bdf9b9762f9941235d0d4c02130453d8f0d01437e3ff59cfcaec3",
+      "bytes": 8972
+    },
+    "integration/evidence/runtime-runtime-full5000.json": {
+      "sha256": "cb5678319ec8f20edcdfb009dedcf9fca51429e8a907ad464ab6ab753084f055",
+      "bytes": 1616
+    },
+    "integration/evidence/gpu-focus-virtual_retirement.json": {
+      "sha256": "a76de77e9fd0c0b66e69ec126e6e29219392d0070496196b604bdfaf1d41d62a",
+      "bytes": 231
+    },
+    "integration/evidence/current-control-one-kib-run.json": {
+      "sha256": "15aee5323173276f80bafd85bcf5ed5862dc0a1cb363a84abb39a4ee5b1d62f8",
+      "bytes": 3258
+    },
+    "integration/evidence/runtime-summary.json": {
+      "sha256": "55e9e6e51463fba61ce680161d50445ce547eb10f0028b1a0eaa2bd974ac6258",
+      "bytes": 2312
+    },
+    "integration/evidence/gpu-focus-nested_phase.json": {
+      "sha256": "23b085df4edaf44fe4f7514063a5d1b5b3abd21be9e1ca28fc8670057edb26de",
+      "bytes": 225
+    },
+    "integration/evidence/current-control-scalar-run.json": {
+      "sha256": "ec4403c188f4065fe6a3681ae7ee1582556949a386dc5b572a273406b1f7effc",
+      "bytes": 39522
+    },
+    "integration/evidence/runtime-generate-standard-app.build.json": {
+      "sha256": "478907a58dbce2cec8a0e59f5ce741d98288131b2c8bcf7ad03eeaabc185be26",
+      "bytes": 10483
+    },
+    "integration/evidence/runtime-managed-main-audit.json": {
+      "sha256": "6de67d6c28140274a6e53f130bf498081da1440afc7cd0d7b1e3da302892ff3f",
+      "bytes": 866
+    },
+    "integration/evidence/current-control-scalar.build.json": {
+      "sha256": "3b7aac63ecf6d00653891a647f7aba0e2b914eb7d86eef130c143f6ff57d08f4",
+      "bytes": 2520
+    },
+    "integration/evidence/gpu-focus-phase_descendants.json": {
+      "sha256": "7f22f1433b6f8e7d1f16bdbb1c4d01cc97f0fb2cf8a576a95bc6b16d6bd18f7a",
+      "bytes": 228
+    },
+    "integration/evidence/gpu-focus-huffman_parent_cleanup.json": {
+      "sha256": "eaffcba69c4ae552eaaaa881e95d317c6ad0f5d47e0092affb172e66dc3fe3a1",
+      "bytes": 235
+    },
+    "integration/evidence/engine-mech_engine-run-2.json": {
+      "sha256": "161c65cc9286cb94e7b82b0f8344e45ae1e583d8a0bf374b4ec7e2b6900ef630",
+      "bytes": 239
+    },
+    "integration/evidence/gpu-mech_gpu-build.json": {
+      "sha256": "d915c383c04f10d817067ad71a37305709cc0f481d2408827f9f096f76d52f4e",
+      "bytes": 8775
+    },
+    "integration/evidence/runtime-runtime-runner-audit.json": {
+      "sha256": "3573591c40a4c8a4794c543bd994779ec2f97d4c3776faa8163b75aa66aef65b",
+      "bytes": 864
+    },
+    "integration/evidence/engine-mech_engine-run-1.json": {
+      "sha256": "d4484e05de02b94cc164304ac93c7cd355e203aaf64216214728b3bdbee8f445",
+      "bytes": 221
+    },
+    "integration/evidence/runtime-runtime-runner-build.json": {
+      "sha256": "20c71f6a7185fb84f764d249af408838e74fc576ce5aec31fedd2a4c420d9204",
+      "bytes": 2933
+    },
+    "integration/evidence/gpu-test-run.json": {
+      "sha256": "3c565392ed48e9e87bd162173c16dbeb83f46ca68df8f6895191849c3e6c0255",
+      "bytes": 635
+    },
+    "integration/evidence/runtime-runtime-images.json": {
+      "sha256": "23509cc12e4864cf80ccc9e299481a00fe05590a1ba5a85318e572d0a1779d21",
+      "bytes": 6068
+    },
+    "integration/evidence/gpu-focus-native_argument_bank_numeric.json": {
+      "sha256": "e91190e93df824d7093a46c5813d259933c8d82920ba69a99fd1232120d7a29a",
+      "bytes": 241
+    },
+    "integration/evidence/feature-scalar-compiler.json": {
+      "sha256": "1bf54a957ce017435e9d1a4a93e37608c6b25ec598c7db5ee09b55d8cf10d2e9",
+      "bytes": 8991
+    },
+    "integration/evidence/runtime-program-runtime-build.json": {
+      "sha256": "a36e97ca1ac7243d8d92798ecd6468d45dcd8f67a6bc99ce50453674ac8cdd24",
+      "bytes": 75855
+    },
+    "integration/evidence/engine-mech_engine-run-0.json": {
+      "sha256": "269303a1cfc3eb7a03e71f593ad1675bbbeeac46076a999e52e7359d69c98057",
+      "bytes": 219
+    },
+    "integration/evidence/runtime-managed-main-build.json": {
+      "sha256": "e9e529649acc93e995e35ffe19bc57029d4714b087ec6337b61c787661543559",
+      "bytes": 845
+    },
+    "integration/evidence/current-control-one-kib.build.json": {
+      "sha256": "37932a320d0fdee442df052683a0ca5325608a4bd4812af4b40887fcf0da1528",
+      "bytes": 4728
+    },
+    "integration/evidence/runtime-runtime-first10.json": {
+      "sha256": "4865687454b34ccfecffd7d36ae5371097cdc72d9238b4c379321ad6b482835d",
+      "bytes": 1625
+    },
+    "integration/evidence/runtime-scalar-runtime.json": {
+      "sha256": "0e31935c88924d687ce356c729faeae0f4c39f2fa1c702f6de2474d517dc714e",
+      "bytes": 8692
+    },
+    "integration/evidence/gpu-focus-child_funding.json": {
+      "sha256": "15c3907bbec7170980acbddb374b0a440543aae6fd4e99c09a5df118198a8fd1",
+      "bytes": 226
+    },
+    "integration/evidence/gpu-focus-named_managed_fields_decline.json": {
+      "sha256": "d2182a8350e3ed80d398bacb5754f0e6176bb0173cfd6cd6b164e93b25232aff",
+      "bytes": 241
+    },
+    "integration/evidence/runtime-generator-build.json": {
+      "sha256": "b6910c9e4db9f1c993363c0e87fa8f588a619553f51732b76e7e56c94a67d54c",
+      "bytes": 713
     }
   },
   "limitations": [
@@ -3998,11 +4158,13 @@
   "active_integration": {
     "target_pr": 973,
     "target_branch": "codex/level12-compression-consolidated",
-    "incoming": "fb37ded7af3dd59bb6cd5f13f5044aa29e91833e",
-    "identity": "IR226/work115/ABI41/image9",
+    "incoming": "1584097e757cecf1e3eaaff7e3eb18b9fbb8c31f",
+    "identity": "IR227/work115/ABI41/image9",
     "source_inventory": "integration/source-inventory.json",
     "speed_measured": false,
-    "gpu_tests_passed": 836,
-    "inherited_gpu_failures": 2
+    "gpu_tests_passed": 839,
+    "inherited_gpu_failures": 2,
+    "source_engine_tests_passed": 289,
+    "control_audit": "integration/open-controls.json"
   }
 }

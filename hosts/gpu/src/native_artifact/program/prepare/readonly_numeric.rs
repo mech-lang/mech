@@ -312,6 +312,7 @@ impl Proof {
             .find(|(s, _)| *s == site)
             .map(|(_, action)| action)
     }
+    #[cfg(any(feature = "canonical-native-program", test))]
     pub fn fields(&self, value: u32) -> Option<&[Option<usize>]> {
         self.frames
             .iter()

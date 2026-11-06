@@ -450,7 +450,14 @@ pub(in crate::native_artifact) fn emit_entry(
     let boolean_successors =
         super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     let traversal = super::numeric_traversal::derive(code, proof, shadow);
-    let versions = super::numeric_loop_windows::derive(code, proof, shadow, b, &read_packs);
+    let versions = super::numeric_loop_windows::derive(
+        code,
+        proof,
+        shadow,
+        b,
+        &read_packs,
+        controls.enabled(OptimizationPass::ChildFunding),
+    );
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
@@ -632,7 +639,12 @@ pub(in crate::native_artifact) fn emit_entry(
                 words.write(b, slot, zero);
             }
         }
-        if let Some(count) = child_fuel::emit(
+        if let Some(funding) = version
+            .filter(|v| v.header == site)
+            .and_then(|v| v.funding.as_ref())
+        {
+            funding.header(b, &words, region.words, shadow);
+        } else if let Some(count) = child_fuel::emit(
             b,
             controls.options(),
             &words,

@@ -1,5 +1,83 @@
 # Native compression milestone
 
+**R175 rejects a reverse-input permutation experiment.** Natural32KB improves
+4.327658× →4.303257× Roc (0.563841%) and natural16KB5.135407× →5.099904×
+(0.691339%), but all20 elapsed medians regress0.224967% geometrically:7 faster,
+13 slower. Eight literals worsen0.896254%, repeated32KB0.505027%; all contrary
+observations are retained. The production compiler remains exactly R174/IR194.
+Four lane-specific high-half/tie regression patterns remain; the rejected patch
+is exported for independent reuse rather than discarded.
+
+The actual vector body stays26 instructions: mask-load/TBL becomes UZP1/REV64.
+Four literal pools shrink code64B, stack unchanged;19 instruction medians rise,
+14 cycle medians rise. All20 heap/requested-byte/reallocation metrics remain equal.
+Five fresh exact-candidate profiles cover16587 complete calls without applying an
+old source map to changed code. All20 exact streams/inflate/source work/aliases/
+capacities/cleanup and existing1.05 gates pass.
+
+An address audit of the retained R174 baseline puts8.864469% of natural samples
+in one scalar condition/routing segment versus0.384615% in its vector body.
+Fresh inspection of the pinned reference finds an11-instruction scalar loop,
+versus19 on the selected Mech path. Next bounded target: consume the existing
+nonempty-entry fact and test the compact scalar loop at its bottom. This is
+proposed work, with no saving yet claimed.
+
+Final restored production passes14 focused/632 GPU tests with the same7 inherited
+exclusions; all215 selected CI names execute. All15 architecture/catalog checks,
+132 workflow tests, runtime-only, formatting and warnings denied pass. Existing
+236 components/8 composition/1 real-capacity path and12 scalar controls are explicitly
+reused from the identical R174 production. Largest input33027B. See the
+[R175 report](native-reverse-input-experiment.md) for exact pins, all20 results,
+candidate-versus-final coverage and replay. One experiment commit in draft #973;
+ordinary CI cancelled by instruction, review retained. Parity remains active.
+
+Publication verifies26 archives/52 server digests. Fresh public retrieval verifies
+2970 file occurrences/443 paths/11 historical versions and reconstructs results.json
+and REPORT.md byte-for-byte without compiling or compressing.
+
+**R174 retains one current funding gate for affine child loops.** Repeated32KB
+improves **3.682374× →3.241896× Roc** (11.961799%); periodic33KB
+**4.227835× →3.764477×** (10.959703%). All eight blocks improve in each case.
+Across all20 cases,13 medians improve/7 worsen; geometric elapsed improves1.427851%.
+Natural32KB regresses **4.247301× →4.305974×** (+1.381432%, all eight adverse).
+Eight literals4.830847× →4.762135×, with3 improving/5 adverse blocks. All20
+unchanged1.05 elapsed gates pass; contrary results remain retained.
+
+The selected steady matching-word path falls25 →19 machine instructions
+(reference10), with funding/visit machinery10 →4. Three stack reads remain.
+Repeated instructions fall7.174753%, periodic6.726526%. All20 allocation/requested
+byte/reallocation/usable-live-heap metrics remain equal. Initial adverse RSS readings
+do not reproduce in a fresh ABBA diagnostic (RSS+0.035486%, physical+0.010519%);
+both cohorts remain available. Generated text falls22532B and stack48B.
+
+All632 GPU tests pass with the same7 inherited exclusions; all215 CI-selected
+names execute. The unchanged236-component/8-composition/1-real-capacity-path
+qualification,12 scalar controls,15 architecture/catalog checks,132 workflow tests,
+runtime-only, formatting and warnings-as-errors pass. Five fresh current-executable
+profiles cover16506 complete calls. Natural32 remains84.12% inside the native entry;
+word extension is0.64%, with substantial unknown native attribution retained.
+
+The gate proves current maximum compute/comparison/counter space after visit one
+is already paid. Every actual visit still debits its original charge; fallible source
+operations, checked fallback, current windows, ownership and failure semantics remain.
+No source algorithm/allocation change, prepayment, deferred settlement or new ABI.
+The separate R172 source variant is not combined. Latest brief is partly addressed:
+early-exit funding is improved; mutation-aware parent facts remain unimplemented
+because the measured child-setup opportunity did not meet its research hurdle.
+
+Parent fb37ded7af3dd59bb6cd5f13f5044aa29e91833e; measured compiler/test source
+65021c3593137219762477ccde0f2d3ad7993977. IR/work/ABI/MBC194/107/39/14;
+frozen R145 dependencies, original source/MBC, capacities, aliases, allocator and
+full evaluate_into boundary. Largest input33027B. See the
+[R174 design and complete report](native-child-funding.md). Next bounded inquiry is
+the hot DP initializer/reduction continuation and its state/control transport.
+One optimization commit in draft #973; ordinary hosted CI cancelled by instruction.
+Compiler parity remains active.
+
+Publication verifies38 archives/76 server digests. Fresh public retrieval verifies
+5025 file occurrences/1147 paths/17 historical versions and reconstructs results.json
+and REPORT.md byte-for-byte without compilation or compression.
+
 **R173 rejects an empty-block compiler experiment.** It removes112720 empty
 intermediate blocks, but generated code grows47336B and every retired-instruction
 median increases. Twenty-case elapsed regresses0.943248% geometrically:5 faster,

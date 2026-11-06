@@ -1,10 +1,10 @@
 {
   "schema": "mech.related-post-gen.dependent-compiler-build.v1",
   "source": "/private/tmp/mech-related-latest-deflate-integration-compiler-20261106",
-  "source_sha256": "402bb588e11a8aeb95e83b65a80b509d2b9b17396169fc2149b07a1466db8c72",
+  "source_sha256": "63f960c05c80c42005ba4fd0fc8678de99ecf7c2cfef2184b6e48d9614bf55ad",
   "opt_level": "3",
-  "base_build": "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v12/build.json",
-  "base_build_sha256": "6f702e04a5923f9a0fe5cb040ec78156c556d5a5466f020a76e628339662f9f9",
+  "base_build": "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v14/build.json",
+  "base_build_sha256": "489cfca275f5386fe37b76500ea3cc5ec3c658fbeca9bfd95a4f6483617d449e",
   "stages": [
     {
       "crate": "mech_core",
@@ -1966,6 +1966,10 @@
       "command": [
         "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
         "-L",
+        "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v15",
+        "-L",
+        "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v14",
+        "-L",
         "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v13",
         "-L",
         "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v12",
@@ -2074,7 +2078,7 @@
         "-C",
         "embed-bitcode=no",
         "-C",
-        "metadata=related_dependent_402bb588e11a8aeb_mech_gpu",
+        "metadata=related_dependent_63f960c05c80c420_mech_gpu",
         "-D",
         "warnings",
         "-L",
@@ -2141,7 +2145,7 @@
         "tempfile=/private/tmp/mech-related-retained-deps/libtempfile-cd3db811e0a0846f.rlib",
         "/private/tmp/mech-related-latest-deflate-integration-compiler-20261106/hosts/gpu/src/lib.rs",
         "-o",
-        "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v13/libmech_gpu.rlib"
+        "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v15/libmech_gpu.rlib"
       ],
       "environment": {
         "RUSTC_BOOTSTRAP": "1",
@@ -2153,11 +2157,11 @@
         "CARGO_PKG_VERSION_PATCH": "5",
         "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
       },
-      "source_sha256": "402bb588e11a8aeb95e83b65a80b509d2b9b17396169fc2149b07a1466db8c72",
+      "source_sha256": "63f960c05c80c42005ba4fd0fc8678de99ecf7c2cfef2184b6e48d9614bf55ad",
       "reused": false,
       "exit": 0,
-      "seconds": 29.310388959012926,
-      "library_sha256": "d1f700dbb5c1458ca9149bc69ad9054018d4d5b787ca7a9bf5cf8014d98c4fc9"
+      "seconds": 55.14638558309525,
+      "library_sha256": "cd04f7d9a611e8f72dbbed931d3a7e726ec11f0c24425263090c32843fc2fcda"
     }
   ],
   "reuse_policy": "A crate reuses its library only when every recorded Rust/manifest source under its manifest directory matches and none of its Mech dependencies rebuilt. All reused and rebuilt library hashes are verified."

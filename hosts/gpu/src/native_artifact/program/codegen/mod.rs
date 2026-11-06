@@ -5,7 +5,6 @@ pub(in crate::native_artifact) mod ascii_map;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod borrowed;
 #[cfg(feature = "canonical-native-program")]
-#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod bound_shim;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod captured_numeric;
@@ -16,6 +15,7 @@ pub(in crate::native_artifact) mod hooks;
 pub(in crate::native_artifact) mod join_map;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod map_owner;
+#[cfg(feature = "canonical-native-program")]
 mod numeric_fuel_debits;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod packed_loop;
@@ -40,6 +40,7 @@ pub(in crate::native_artifact) mod word_collections;
 
 #[cfg(feature = "canonical-native-program")]
 mod numeric_branches;
+#[cfg(feature = "canonical-native-program")]
 mod numeric_fuel;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_read_packs;
@@ -51,9 +52,11 @@ pub(in crate::native_artifact) mod numeric_tree;
 pub(in crate::native_artifact) mod numeric_words;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod ordinary_helpers;
+#[cfg(feature = "canonical-native-program")]
 mod private_liveness;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod readonly_numeric;
+#[cfg(feature = "canonical-native-program")]
 mod source_liveness;
 
 #[cfg(feature = "canonical-native-program")]
@@ -70,8 +73,13 @@ pub(in crate::native_artifact) mod utf8_histogram;
 #[cfg(feature = "canonical-native-program")]
 mod traversal_facts;
 
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_child_funding;
+#[cfg(feature = "canonical-native-program")]
 mod numeric_loop_prepayment;
+#[cfg(feature = "canonical-native-program")]
 mod numeric_loop_windows;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_traversal;
+#[cfg(feature = "canonical-native-program")]
 mod ordered_reduction;
