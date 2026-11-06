@@ -23,6 +23,7 @@ pub(super) struct Version {
     pub blocks: BTreeMap<u32, Block>,
     pub prepaid: Option<super::numeric_loop_prepayment::Prepayment>,
     pub reduction: Option<super::ordered_reduction::Reduction>,
+    pub funding: Option<super::numeric_child_funding::Funding>,
 }
 
 #[derive(serde::Serialize)]
@@ -36,6 +37,7 @@ pub(in crate::native_artifact) struct Report {
     captured_windows: Vec<super::traversal_facts::CapturedWindow>,
     pub prepaid: Option<serde_json::Value>,
     pub reduction: Option<serde_json::Value>,
+    pub funding: Option<serde_json::Value>,
 }
 
 pub(super) fn derive(
@@ -44,6 +46,7 @@ pub(super) fn derive(
     shadow: usize,
     b: &mut FunctionBuilder<'_>,
     packs: &[super::numeric_read_packs::Pack],
+    child_funding: bool,
 ) -> Vec<Version> {
     let CodePlan::Program(program) = code else {
         return Vec::new();
@@ -144,9 +147,10 @@ pub(super) fn derive(
             facts,
             prepaid,
             reduction,
+            funding: None,
         });
     }
-    let captured = captured::derive(code, proof, shadow, b, packs, &versions);
+    let captured = captured::derive(code, proof, shadow, b, packs, &versions, child_funding);
     versions.extend(captured);
     versions
 }
@@ -191,6 +195,10 @@ impl Version {
                 .reduction
                 .as_ref()
                 .map(|r| serde_json::to_value(r).unwrap()),
+            funding: self
+                .funding
+                .as_ref()
+                .map(|r| serde_json::to_value(r).unwrap()),
         }
     }
 
@@ -206,7 +214,7 @@ impl Version {
         checked: Block,
     ) {
         if !self.captures.is_empty() {
-            captured::gate(self, b, words, shadow, proof, checked);
+            captured::gate(self, b, words, shadow, proof, state, checked);
             return;
         }
         let mut enough = b.ins().iconst(cranelift_codegen::ir::types::I8, 1);

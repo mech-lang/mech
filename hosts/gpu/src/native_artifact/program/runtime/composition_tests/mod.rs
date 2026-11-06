@@ -11,6 +11,7 @@ mod captured_window_handoffs;
 mod captured_windows;
 mod child_cleanup;
 mod child_fuel;
+mod child_funding;
 mod child_prepayment;
 mod cold_child;
 mod cold_intervals;

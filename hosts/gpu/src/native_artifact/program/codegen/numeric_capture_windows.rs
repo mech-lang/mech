@@ -13,6 +13,7 @@ pub(super) fn derive(
     b: &mut FunctionBuilder<'_>,
     packs: &[super::super::numeric_read_packs::Pack],
     existing: &[Version],
+    child_funding: bool,
 ) -> Vec<Version> {
     let CodePlan::Program(program) = code else {
         return Vec::new();
@@ -88,6 +89,16 @@ pub(super) fn derive(
             Some((scope, captures, facts))
         })();
         if let Some((scope, captures, facts)) = candidate {
+            let funding = child_funding
+                .then(|| {
+                    super::super::numeric_child_funding::Funding::derive(
+                        proof,
+                        scope.header,
+                        &captures,
+                        b,
+                    )
+                })
+                .flatten();
             versions.push(Version {
                 initialize: tail.initialize() as usize,
                 header: scope.header,
@@ -102,6 +113,7 @@ pub(super) fn derive(
                 facts,
                 prepaid: None,
                 reduction: None,
+                funding,
             });
         }
     }
@@ -164,6 +176,7 @@ pub(super) fn gate(
     words: &Words,
     shadow: usize,
     proof: &Proof,
+    state: usize,
     checked: Block,
 ) {
     let mut enough = b.ins().iconst(types::I8, 1);
@@ -197,6 +210,10 @@ pub(super) fn gate(
         for valid in [ordered, long, safe, inside, fits, flat] {
             enough = b.ins().band(enough, valid);
         }
+    }
+    if let Some(funding) = &version.funding {
+        funding.gate(b, words, state, shadow, enough, checked);
+        return;
     }
     b.ins().brif(
         enough,
