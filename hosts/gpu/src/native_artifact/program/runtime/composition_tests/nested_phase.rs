@@ -209,7 +209,22 @@ fn qualify_nested_inventory(jit: &JitProgramArtifact) {
             .collect::<std::collections::BTreeSet<_>>(),
         forest.sites
     );
-    assert!(jit.descriptor().metadata().compositions.parents.is_empty());
+    let parents = &jit.descriptor().metadata().compositions.parents;
+    // State-call variants may retain ordinary fallback; the dedicated
+    // phase-descendant witness proves non-vacuous selection and execution.
+    assert!(
+        parents.iter().all(|parent| {
+            parent.iteration != regions[0].iteration
+                && parent.segments.iter().all(|piece| {
+                    piece.prepaid_region.is_none()
+                        && piece
+                            .sites
+                            .iter()
+                            .all(|site| forest.sites.contains(&(*site as usize)))
+                })
+        }),
+        "the complete root stays unsplit and descendants keep the full source price"
+    );
     let metadata = jit.descriptor().metadata();
     assert!(
         forest

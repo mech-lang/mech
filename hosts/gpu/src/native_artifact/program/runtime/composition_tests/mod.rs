@@ -25,6 +25,7 @@ mod nested_phase_growing;
 mod nested_phase_handoff;
 pub(super) mod observe;
 mod pack;
+mod phase_descendants;
 mod physical_exits;
 mod read_packs;
 mod record_lookup;

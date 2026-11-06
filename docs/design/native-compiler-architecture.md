@@ -1,6 +1,6 @@
 # Native compiler architecture
 
-The maintained path is source/bytecode → canonical `ProgramArtifact` → checked native plan → shared JIT/Object emission → current execution. Engine owns language semantics. Native preparation selects representations; runtime image restoration independently reconstructs their source facts. The current retained versions are **IR172 / work107 / private ABI39 / bytecode14**. [Current milestone and qualification](native-compression-status.md).
+The maintained path is source/bytecode → canonical `ProgramArtifact` → checked native plan → shared JIT/Object emission → current execution. Engine owns language semantics. Native preparation selects representations; runtime image restoration independently reconstructs their source facts. The current retained versions are **IR173 / work107 / private ABI39 / bytecode14**. [Current milestone and qualification](native-compression-status.md).
 
 ## Responsibilities and authority
 
@@ -42,6 +42,8 @@ Numeric codegen may combine a complete confined little-endian byte expression in
 
 Numeric regions require source definitions, versions, scopes, confined uses and supported operations. Nested synchronous Tail children use current-account fuel; unsupported or non-Tail work exits through the exact ordinary continuation. Membership in a native region and membership in the current prepaid traversal are separate facts.
 
+Existing acyclic parent pieces also cover eligible ordinary descendants of a selected numeric phase. Same-root whole phases remain unsplit. Descendant pieces retain the full ordinary source price and carry no prepaid-region recipe; current overlap with any paid source member declines to ordinary execution. The existing numeric/frame proof, admission, scalar emitter and child frontiers remain the only execution machinery for these pieces.
+
 The shared word emitter owns scalar arithmetic. Unsigned full-width addition uses the wrapping result plus `sum>=left` as its checked guard; subtraction checks `left>=right`. Signed/narrow arithmetic and multiplication retain their maintained rules. Original failure origin, funding and publication semantics remain.
 
 General numeric matrix addressing preserves column-major selection over row-major storage: one quotient gives the column; subtraction gives the row. Schema-proved unit dimensions retain their division-free route. Generic schemas also use the physical ordinal directly when the current admitted view has one row or one column; rectangular views keep the same general formula. Caller bounds precede this calculation, establishing nonzero rows on a selected load/store and the safe remainder. The current geometry test grants no new permission or static fact. Reads, writes and segments use the same helper; image reconstruction preserves the same independently derived facts, with emission identity distinguishing changed code.
@@ -70,13 +72,15 @@ Actual exclusivity is always checked by Core. Static last-use facts supply candi
 
 Current owner/schema keys, account membership, geometry, capacity, aliases and funding remain dynamic. Entry previews can decline to the ordinary path. First change, exact child funding, cold export and final publication retain their original charge/error order. Paid native prefixes do not authorize a later invocation.
 
+A native cold handoff stages the exact active tracked-child marker independently of paid depth. Preparation derives each native root's outer context privately from validated ancestry; runtime checks that context and walks only the already bounded active-to-root chain before restoring control. The marker grants neither ownership nor fuel. Parents whose child completion is a native cold predecessor remain ordinary, preserving pending-return consumption without a second completion protocol. Worker and ordinary scalar paths retain their existing behavior.
+
 Finite failure preserves previously published outputs and input aliases; abort cleans private state and later independent evaluation can retry. Consumed execution-state transitions remain terminal where specified. Owners drop before the arena; backing storage drops before the reservation funding it. No successful-return guard restores a failed consumed state.
 
 Owner protocol tags and global helper tags remain separate typed domains. Preparation, emission and runtime share their maintained ABI definitions. Frame/map transitions retain their current modes and ignored-lane/error-order contracts; naming a tag does not prove a stronger memory effect.
 
 ## Image reconstruction
 
-The flat build-owned image contains the canonical plan and selected inventories. Restoration validates revisions, type slots, source constants, calls, frames and layouts. It independently rederives and compares closed numeric recipes, scalar aggregate lanes, pointwise collections, map admission and selected owner associations, reconstructing the frontiers/prices needed for those checks. Several other layouts and visits remain serialized under the same-build/Object contract. Malformed or older revisions are rejected strictly.
+The flat build-owned image contains the canonical plan and selected inventories. Restoration validates revisions, type slots, source constants, calls, frames and layouts. It independently rederives and compares closed numeric recipes, scalar aggregate lanes, pointwise collections, map admission and selected owner associations, reconstructing the frontiers/prices needed for those checks. Parent-piece selection and native-root continuation contexts use the same pure derivation from that validated plan; the private context bank is not serialized authority. Several other layouts and visits remain serialized under the same-build/Object contract. Malformed or older revisions are rejected strictly.
 
 The unsafe linked loader requires the same checked build/Object identity and code provenance. Descriptor reconstruction does not authenticate arbitrary code. Codegen reports, footprint counts and serialized eligibility do not grant a raw buffer view. Current runtime admission still runs after successful image validation.
 
