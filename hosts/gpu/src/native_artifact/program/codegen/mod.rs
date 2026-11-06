@@ -52,6 +52,7 @@ pub(in crate::native_artifact) mod readonly_numeric;
 #[cfg(feature = "canonical-native-program")]
 mod traversal_facts;
 
+pub(in crate::native_artifact) mod numeric_child_funding;
 mod numeric_loop_prepayment;
 mod numeric_loop_windows;
 #[cfg(feature = "canonical-native-program")]

@@ -339,7 +339,9 @@ fn selected_template(
 // invariant phi chains without changing source operations or their prices.
 // IR188 rederives activation-current affine read windows after local-phi cleanup.
 // IR189 also merges activation entries before invariant local-phi analysis.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 192;
+// IR193's empty-block experiment was rejected. IR194 gates bounded immutable
+// children once for maximum funding while retaining exact per-visit debits.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 194;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
