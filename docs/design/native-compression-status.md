@@ -1,5 +1,34 @@
 # Native compression milestone
 
+**R166 rejects the captured-window prototypes and preserves the reviewed compiler.**
+The source and compiler checkpoints below remain retained. Fresh target screens
+of three compiler variants all regress on repeated and periodic input. The last
+screen is repeated5.737719x to18.922838x reference and periodic6.434306x to20.524145x;
+these failed candidates are archived and removed from maintained code. Natural
+text also regresses about2%; the contrary small-input observations remain.
+
+Current binary profiles expose extensive native stack transport despite removal
+of access checks. An explicit steady matching-word path has246 instructions,
+including222 stack loads/stores around2 input loads. A scalar reference pattern
+has10 instructions. These are static path counts, not retired counters. Dead-child
+SSA resets leave the whole compressor Object identical and are also rejected.
+The next diagnostic must identify which block parameters cause these transfers.
+
+All1536 primary/1596 total screen calls have exact streams, independent inflate,
+unchanged logical work, real buffers/allocator/timing and zero final managed
+storage. Five development cases were measured per variant; a failed target
+screen did not advance to full20/scalar/component qualification. Focused original/
+decoded/current-limit/handoff/finite-error tests pass. Production and CI inventory
+are restored byte-for-byte to49e280b056; retained IR/work/ABI/MBC184/107/39/14.
+See the [R166 rejected-experiment report](native-captured-window-experiment.md)
+for every timing, source/Object pins, failure dispositions and skipped coverage.
+Parity remains unachieved. #973 stays draft; ordinary CI is cancelled by request.
+Publication:20 archives/40 server digests verified. Fresh public retrieval verifies
+1761 file occurrences/434 paths/25 historical versions and reconstructs both
+R166 reports byte-for-byte, without compiling or compressing.
+
+## R165 retained source experiment
+
 **R165 completes the separately measured histogram-reuse source experiment.**
 The compiler remains byte-identical to R164 and the pinned source stays the
 default. In this fresh matched cohort, the explicit variant improves natural32KB
