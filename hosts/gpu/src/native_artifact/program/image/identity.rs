@@ -312,7 +312,9 @@ fn selected_template(
 // IR166 shares the checked view's matrix-address quotient and remainder.
 // IR167 emits checked unsigned add/sub directly as exact word comparisons.
 // IR168 lowers checked bulk little-endian byte appends in private numeric loops.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 168;
+// IR169/170 were rejected refusal/private-store experiments. IR171 checks
+// current unit-dimension geometry in the shared numeric address emitter.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 171;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
