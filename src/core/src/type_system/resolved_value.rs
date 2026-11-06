@@ -66,8 +66,18 @@ impl ResolvedValueDescriptor {
     }
 
     pub fn from_schema(schema: Schema, shape: ShapeInstance) -> Result<Self, TypeResolutionError> {
+        // The schema is this constructor's sole type authority. Canonicalize
+        // the supplied shape and derive its type once; `new` must instead
+        // rederive and compare because it also accepts an independent type.
+        let shape = schema
+            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+            .map_err(TypeResolutionError::semantic)?;
         let resolved_type = ResolvedType::from_schema(&schema, &shape)?;
-        Self::new(resolved_type, schema, shape)
+        Ok(Self {
+            resolved_type,
+            schema,
+            shape,
+        })
     }
 
     /// Reuse this schema's validated semantic type with a fresh shape. Type
