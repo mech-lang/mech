@@ -4,10 +4,12 @@
 //! These are internal wrapping words: the identity holds modulo 2^64 even if
 //! an intermediate anchor sum wraps. It reproduces the original word exactly;
 //! the existing runtime still independently validates exact funded totals.
+use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::program::prepare::numeric_tree::Proof;
 use cranelift_codegen::ir::{InstBuilder, types};
 use cranelift_frontend::{FunctionBuilder, Variable};
+use std::collections::BTreeSet;
 
 struct Lane {
     anchor: Variable,
@@ -19,6 +21,21 @@ struct Lane {
 pub(super) struct Anchors {
     root_count: usize,
     lanes: Vec<Lane>,
+}
+
+/// All native state escapes use the same settlement before synchronization,
+/// including the separate invalid-index path that invokes the source error.
+pub(super) fn spill_live(
+    anchors: Option<&Anchors>,
+    b: &mut FunctionBuilder<'_>,
+    words: &Words,
+    locals: cranelift_codegen::ir::Value,
+    live: &BTreeSet<usize>,
+) -> Result<(), NativeCompileError> {
+    if let Some(anchors) = anchors {
+        anchors.publish(b, words);
+    }
+    words.spill_live(b, locals, live)
 }
 
 impl Anchors {

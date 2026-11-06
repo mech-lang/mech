@@ -618,7 +618,13 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.ins().brif(valid, good, &[], bad, &[]);
                 b.switch_to_block(bad);
                 set_origin(b, frame, site as u64);
-                words.spill_live(b, locals, &live_at(site))?;
+                super::numeric_fuel_debits::spill_live(
+                    fuel_debits.as_ref(),
+                    b,
+                    &words,
+                    locals,
+                    &live_at(site),
+                )?;
                 // Ordinary source sites retain their deepest independent leaf
                 // proof for a declined outer tree. This generated path owns
                 // the known root loan, so reconcile that exact region instead
@@ -762,10 +768,7 @@ pub(in crate::native_artifact) fn emit_entry(
         report.terminal_scalar_words_omitted = report
             .terminal_scalar_words_omitted
             .max(live_before - live.len());
-        if let Some(anchors) = &fuel_debits {
-            anchors.publish(b, &words);
-        }
-        words.spill_live(b, locals, &live)?;
+        super::numeric_fuel_debits::spill_live(fuel_debits.as_ref(), b, &words, locals, &live)?;
         b.ins().jump(failed, &[status.into()]);
         let instructions = b.func.dfg.num_insts() - before;
         report.maximum_source_instructions = report.maximum_source_instructions.max(instructions);
@@ -777,10 +780,13 @@ pub(in crate::native_artifact) fn emit_entry(
     let boundary = b.func.dfg.num_insts();
     for (&site, &bailout) in &bailouts {
         b.switch_to_block(bailout);
-        if let Some(anchors) = &fuel_debits {
-            anchors.publish(b, &words);
-        }
-        words.spill_live(b, locals, &live_at(site))?;
+        super::numeric_fuel_debits::spill_live(
+            fuel_debits.as_ref(),
+            b,
+            &words,
+            locals,
+            &live_at(site),
+        )?;
         let header = b.ins().iconst(types::I64, site as i64);
         tail::leave(
             controls.options(),
@@ -803,10 +809,13 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     }
     b.switch_to_block(exit);
-    if let Some(anchors) = &fuel_debits {
-        anchors.publish(b, &words);
-    }
-    words.spill_live(b, locals, &live_at(region.tail.exit() as usize))?;
+    super::numeric_fuel_debits::spill_live(
+        fuel_debits.as_ref(),
+        b,
+        &words,
+        locals,
+        &live_at(region.tail.exit() as usize),
+    )?;
     b.ins()
         .jump(ordinary_blocks[region.tail.exit() as usize].unwrap(), &[]);
     b.switch_to_block(failed);
