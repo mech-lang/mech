@@ -25221,6 +25221,17 @@
           "files": 65,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-clean-parent-512472b74180.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-case-eight-literals-primary-07f21c5f49e8.tar.gz",
+          "sha256": "07f21c5f49e803ccbe40cc7951552fd22613726dc168c35b177e6eb6f486e169",
+          "manifest_sha256": "bf8fc7f652c3ea018f58679924e771ce818aa110ddbac11b8e843eb3f0e3c42e",
+          "bytes": 110186,
+          "files": 70,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-eight-literals-primary-07f21c5f49e8.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
