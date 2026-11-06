@@ -3834,8 +3834,8 @@
       "publication_generated": true
     },
     "README.md": {
-      "sha256": "3b51071cec467274c8d98facad90fb4df241fdcb80879f6030b58dfb8a530302",
-      "bytes": 8735,
+      "sha256": "10e82a71c6520bd117f9de2e72d3d2a65d30f4ba0a62bc96ccba924600395b08",
+      "bytes": 9097,
       "recorded_source": null,
       "publication_generated": true
     },
@@ -3878,6 +3878,11 @@
       "recorded_source": "/private/tmp/mech-related-native-fixed-frame-arenas-runners-20261106-v2/compact-8/build/metadata.json",
       "compression": "gzip",
       "uncompressed_sha256": "689dcc39325a4900990f507ab2cb7809e3d9a32c8c315180ff57060c44f230ab"
+    },
+    "review/pr973-integration-preview.json": {
+      "sha256": "3b028a25104010b03fd74c11c9b522a169104412557e92bd52a381d1b4c30779",
+      "bytes": 2673,
+      "recorded_source": "/private/tmp/mech-related-publish-review-20261106/pr973-integration-preview.json"
     }
   },
   "limitations": [

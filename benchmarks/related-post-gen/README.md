@@ -107,6 +107,12 @@ These results qualify the pinned measured compiler, not a new merge of the
 latest changes on #973. Hosted CI and integration with concurrent #973 changes
 are not claimed by this publication.
 
+The publication merge preview against #973 head `dcc09ee9e75...` identifies
+36 conflicting compiler files. Their exact names and compared revisions are
+recorded in [the integration preview](review/pr973-integration-preview.json).
+The PR is a draft for review of this measured checkpoint; resolving and
+qualifying the combined compiler remains integration work.
+
 ## Evidence and reproduction
 
 - [Candidate report](results/compiler-native-fixed-frame-arenas-candidate-20261106.json)
