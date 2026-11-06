@@ -25320,6 +25320,17 @@
           "files": 71,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-repeated-1024-primary-5c2cc6fbce00.tar.gz"
+        },
+        {
+          "event": "case-reymont-prefix-1024-primary",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-case-reymont-prefix-1024-primary-873676f854bc.tar.gz",
+          "sha256": "873676f854bc3930befb988a5668ad0a0d78ecc05e0628cf9b5e2d8dcfe2982e",
+          "manifest_sha256": "3bef89363e5d7dccc7d4273e709d9ae43c48525d039614a872a64211581a4bd5",
+          "bytes": 128861,
+          "files": 71,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-reymont-prefix-1024-primary-873676f854bc.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
