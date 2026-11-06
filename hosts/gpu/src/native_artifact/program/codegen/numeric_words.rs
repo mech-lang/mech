@@ -101,16 +101,19 @@ pub(super) fn source_slots(
     }
     Ok(slots)
 }
-/// Emit the same scalar frame words for a leaf or an acyclic parent piece.
-/// Managed fields remain in the owning checked frame/array recipes.
-pub(super) fn frame_words(
-    b: &mut FunctionBuilder<'_>,
-    words: &Words,
+/// Original read/write ordering, shared with the current-traversal analysis.
+pub(super) struct FrameWordMoves {
+    pub assignments: Vec<(usize, usize)>,
+    pub parallel: bool,
+}
+
+/// Exact scalar lane assignments; managed fields retain their checked recipes.
+pub(super) fn frame_word_moves(
     shadow: usize,
     code: CodePlan<'_>,
     site: usize,
     recipes: &[FrameWords],
-) -> Result<(), NativeCompileError> {
+) -> Result<FrameWordMoves, NativeCompileError> {
     let CodePlan::Program(program) = code else {
         return Err(backend("numeric frame lacks managed plan"));
     };
@@ -127,39 +130,64 @@ pub(super) fn frame_words(
         .action(site)
         .ok_or_else(|| backend("numeric frame lost fields"))?
         .operation();
-    match operation {
+    let assignments = match operation {
         Frame::Pack { output } => {
             let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
                 return Err(backend("numeric pack lost operands"));
             };
-            for (field, operand) in fields(output.get())?.iter().zip(operands) {
-                if let Some(field) = field {
-                    let value = words.read(b, operand.get() as usize);
-                    words.write(b, shadow + field, value);
-                }
-            }
-        }
-        Frame::Copy { source, output } => {
-            // Read every old scalar before writing any next-state lane.
-            let copied = fields(source.get())?
+            fields(output.get())?
                 .iter()
-                .zip(fields(output.get())?)
-                .filter_map(|(from, to)| from.zip(*to))
-                .map(|(from, to)| (to, words.read(b, shadow + from)))
-                .collect::<Vec<_>>();
-            for (to, value) in copied {
-                words.write(b, shadow + to, value);
-            }
+                .zip(operands)
+                .filter_map(|(field, operand)| {
+                    field.map(|field| (shadow + field, operand.get() as usize))
+                })
+                .collect()
         }
+        Frame::Copy { source, output } => fields(source.get())?
+            .iter()
+            .zip(fields(output.get())?)
+            .filter_map(|(from, to)| from.zip(*to))
+            .map(|(from, to)| (shadow + to, shadow + from))
+            .collect(),
         Frame::Project {
             source,
             ordinal,
             output,
-        } => {
-            if let Some(field) = fields(source.get())?[*ordinal] {
-                let value = words.read(b, shadow + field);
-                words.write(b, output.get() as usize, value);
-            }
+        } => fields(source.get())?[*ordinal]
+            .map(|field| (output.get() as usize, shadow + field))
+            .into_iter()
+            .collect(),
+    };
+    Ok(FrameWordMoves {
+        assignments,
+        parallel: matches!(operation, Frame::Copy { .. }),
+    })
+}
+
+/// Preserve the original Pack/Project and overlapping Copy emission order.
+pub(super) fn frame_words(
+    b: &mut FunctionBuilder<'_>,
+    words: &Words,
+    shadow: usize,
+    code: CodePlan<'_>,
+    site: usize,
+    recipes: &[FrameWords],
+) -> Result<(), NativeCompileError> {
+    let moves = frame_word_moves(shadow, code, site, recipes)?;
+    if moves.parallel {
+        // Copy must read every old scalar before writing any next-state lane.
+        let copied = moves
+            .assignments
+            .into_iter()
+            .map(|(to, from)| (to, words.read(b, from)))
+            .collect::<Vec<_>>();
+        for (to, value) in copied {
+            words.write(b, to, value);
+        }
+    } else {
+        for (to, from) in moves.assignments {
+            let value = words.read(b, from);
+            words.write(b, to, value);
         }
     }
     Ok(())

@@ -48,3 +48,9 @@ pub(in crate::native_artifact) mod numeric_words;
 pub(in crate::native_artifact) mod ordinary_helpers;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod readonly_numeric;
+
+#[cfg(feature = "canonical-native-program")]
+mod traversal_facts;
+
+#[cfg(feature = "canonical-native-program")]
+mod numeric_traversal;
