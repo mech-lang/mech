@@ -24944,6 +24944,17 @@
           "files": 69,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-eight-literals-prefix-primary-573fc8f21110.tar.gz"
+        },
+        {
+          "event": "case-seven-stored-prefix-primary",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-case-seven-stored-prefix-primary-6a4a3fc61227.tar.gz",
+          "sha256": "6a4a3fc612276560431c46360ffd431a758414340d78df6021e7a56a6a192dac",
+          "manifest_sha256": "81f08d3db7fe4e4f3f2e09770b01bc0a33e914074df6c5951395cf3f3601c8cb",
+          "bytes": 152365,
+          "files": 69,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-seven-stored-prefix-primary-6a4a3fc61227.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
