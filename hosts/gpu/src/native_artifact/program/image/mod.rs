@@ -32,7 +32,7 @@ impl NativeProgramDescriptor {
     ) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
         let mut fields =
-            serializer.serialize_struct("NativeProgramDescriptor", if TABLES { 30 } else { 28 })?;
+            serializer.serialize_struct("NativeProgramDescriptor", if TABLES { 31 } else { 28 })?;
         if TABLES {
             fields.serialize_field("plan", &TablePlan(&self.metadata.plan))?;
         } else {
@@ -86,6 +86,10 @@ impl NativeProgramDescriptor {
             fields.serialize_field(
                 "static_layouts",
                 &static_layouts::Borrowed::from(&self.metadata),
+            )?;
+            fields.serialize_field(
+                "schema_templates",
+                &TableSchemaTemplates(&self.metadata.schemas),
             )?;
         }
         fields.end()
@@ -202,6 +206,13 @@ pub(in crate::native_artifact) mod packing;
 
 // Serialization wrappers only. No new public deserializer or proof constructor.
 struct TablePlan<'a>(&'a NativeProgramArtifactPlan);
+
+struct TableSchemaTemplates<'a>(&'a SchemaTable);
+impl serde::Serialize for TableSchemaTemplates<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        mech_engine::native_artifact::NativeDescriptorTemplatePool::serialize_build_owned_schema_templates(self.0, s)
+    }
+}
 impl serde::Serialize for TablePlan<'_> {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         self.0.serialize_build_owned_shared_template_plan(s)

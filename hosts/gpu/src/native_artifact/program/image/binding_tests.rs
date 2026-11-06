@@ -290,7 +290,7 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
             mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 7);
+        assert_eq!(image["version"], 8);
         let independent =
             unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }.unwrap();
         let bound = unsafe {
@@ -337,6 +337,10 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
         for version in [3, 4] {
             let mut legacy = image.clone();
             legacy["version"] = version.into();
+            legacy["descriptor"]
+                .as_object_mut()
+                .unwrap()
+                .remove("schema_templates");
             legacy["descriptor"]
                 .as_object_mut()
                 .unwrap()
@@ -447,7 +451,7 @@ fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
         .unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 7);
+        assert_eq!(image["version"], 8);
         let rows = image["descriptor"]["plan"]["values"].as_array().unwrap();
         assert!(
             rows.iter()
@@ -550,7 +554,7 @@ fn frozen_uniform_collections_preserve_fields_and_reject_changed_proofs() {
                     mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
                 let image = serde_json::Value::deserialize(&mut reader).unwrap();
                 reader.end().unwrap();
-                assert_eq!(image["version"], 7);
+                assert_eq!(image["version"], 8);
                 assert_eq!(
                     image["descriptor"]["static_layouts"]["uniform_word_collections"]
                         .as_array()
@@ -583,6 +587,10 @@ fn frozen_uniform_collections_preserve_fields_and_reject_changed_proofs() {
                 // it. Relabeling V6 while retaining its extra field must fail.
                 let mut legacy = image.clone();
                 legacy["version"] = 5.into();
+                legacy["descriptor"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("schema_templates");
                 legacy["descriptor"]
                     .as_object_mut()
                     .unwrap()
@@ -698,7 +706,7 @@ fn shared_template_definitions_preserve_sites_and_reject_foreign_rows_and_factor
                 mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
             let image = serde_json::Value::deserialize(&mut reader).unwrap();
             reader.end().unwrap();
-            assert_eq!(image["version"], 7);
+            assert_eq!(image["version"], 8);
             let definitions = image["descriptor"]["plan"]["template_definitions"]
                 .as_array()
                 .unwrap();
@@ -905,6 +913,10 @@ fn frozen_frames_preserve_metadata_and_independent_legacy_validation() {
             legacy["descriptor"]
                 .as_object_mut()
                 .unwrap()
+                .remove("schema_templates");
+            legacy["descriptor"]
+                .as_object_mut()
+                .unwrap()
                 .remove("buffer_frames");
             // Build-side compatibility conversion only; no changed image is
             // paired with an entry or allowed to bypass Object provenance.
@@ -979,7 +991,7 @@ fn native_numeric_map_inventory_matches_source_and_rejects_changed_proofs_and_un
             mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 7);
+        assert_eq!(image["version"], 8);
         let expected = &object.descriptor().metadata().numeric_maps;
         assert_eq!(expected.regions.len(), 1);
         for bound in [false, true] {
@@ -1002,6 +1014,10 @@ fn native_numeric_map_inventory_matches_source_and_rejects_changed_proofs_and_un
         // plan remains authoritative and must rederive the same facts.
         let mut legacy = image.clone();
         legacy["version"] = 6.into();
+        legacy["descriptor"]
+            .as_object_mut()
+            .unwrap()
+            .remove("schema_templates");
         legacy["descriptor"]
             .as_object_mut()
             .unwrap()
@@ -1070,6 +1086,103 @@ fn native_numeric_map_inventory_matches_source_and_rejects_changed_proofs_and_un
                 }
                 .is_err(),
                 "bound mutation {mutation}"
+            );
+        }
+    }
+}
+
+#[test]
+fn frozen_schema_templates_preserve_public_metadata_and_reject_type_evidence_forgery() {
+    use serde::Deserialize;
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(include_str!(
+        "../../../../tests/fixtures/native/numeric-parent-child.mec"
+    )) {
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let mut reader = mech_engine::native_artifact::BuildOwnedImageReader::from_image(
+            object.native_metadata(),
+        )
+        .unwrap();
+        let image = serde_json::Value::deserialize(&mut reader).unwrap();
+        reader.end().unwrap();
+        assert_eq!(image["version"], 8);
+        let templates = image["descriptor"]["schema_templates"].as_array().unwrap();
+        assert_eq!(
+            templates.len(),
+            object.descriptor().metadata().schemas.len()
+        );
+        let at = templates
+            .iter()
+            .position(|t| t["evidence"].as_array().is_some_and(|e| !e.is_empty()))
+            .unwrap();
+        let expected = object.descriptor().encode_build_owned_image().unwrap();
+        let independent = unsafe {
+            NativeProgramDescriptor::decode_build_owned_image(object.native_metadata(), &catalog)
+        }
+        .unwrap();
+        assert_eq!(independent.encode_build_owned_image().unwrap(), expected);
+        let mut legacy = image.clone();
+        legacy["version"] = 7.into();
+        legacy["descriptor"]
+            .as_object_mut()
+            .unwrap()
+            .remove("schema_templates");
+        let legacy = mech_engine::native_artifact::encode_native_metadata_image(
+            &serde_json::to_vec(&legacy).unwrap(),
+        )
+        .unwrap();
+        let legacy =
+            unsafe { NativeProgramDescriptor::decode_build_owned_image(&legacy, &catalog) }
+                .unwrap();
+        assert_eq!(legacy.encode_build_owned_image().unwrap(), expected);
+        for fault in 0..9 {
+            let mut changed = image.clone();
+            let rows = &mut changed["descriptor"]["schema_templates"];
+            match fault {
+                0 => {
+                    rows.as_array_mut().unwrap().pop();
+                }
+                1 => {
+                    rows.as_array_mut().unwrap().push(serde_json::Value::Null);
+                }
+                2 => rows[at] = serde_json::Value::Null,
+                3 => rows[at]["evidence"] = serde_json::json!([]),
+                4 => {
+                    let bits = rows[at]["evidence"][0][1].as_u64().unwrap();
+                    rows[at]["evidence"][0][1] = (bits ^ 1).into();
+                }
+                5 => rows[at]["kind"] = serde_json::json!("Wildcard"),
+                6 => rows[at]["extra"] = true.into(),
+                7 => {
+                    changed["descriptor"]
+                        .as_object_mut()
+                        .unwrap()
+                        .remove("schema_templates");
+                }
+                _ => changed["version"] = 7.into(),
+            }
+            let changed = mech_engine::native_artifact::encode_native_metadata_image(
+                &serde_json::to_vec(&changed).unwrap(),
+            )
+            .unwrap();
+            // SAFETY: confined negative loader tests. No fabricated metadata
+            // reaches an executable descriptor or invokes a native entry.
+            assert!(
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&changed, &catalog) }
+                    .is_err(),
+                "independent fault {fault}"
+            );
+            assert!(
+                unsafe {
+                    NativeProgramDescriptor::decode_object_bound_image(
+                        &changed,
+                        &catalog,
+                        object.identity().bytes(),
+                        object.native_metadata_binding().bytes(),
+                    )
+                }
+                .is_err(),
+                "bound fault {fault}"
             );
         }
     }

@@ -184,6 +184,8 @@ struct Descriptor<'a, Frame> {
     identity: [u8; 32],
     #[serde(borrow, default, deserialize_with = "present_raw")]
     static_layouts: Option<BuildOwnedImageRecord<'a>>,
+    #[serde(borrow, default, deserialize_with = "present_raw")]
+    schema_templates: Option<BuildOwnedImageRecord<'a>>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -210,24 +212,29 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     bytes: &[u8],
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
-    decode_inner::<false, FrameWords>(bytes, catalog)
+    decode_inner::<false, false, FrameWords>(bytes, catalog)
 }
 
 pub(in crate::native_artifact::program::image::decode) fn decode_verified(
     verified: &super::super::binding::VerifiedObjectImage<'_>,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
-    decode_inner::<true, FrameWords>(verified.bytes(), catalog)
+    decode_inner::<true, false, FrameWords>(verified.bytes(), catalog)
 }
 
 pub(in crate::native_artifact::program::image::decode) fn decode_compiled_verified(
     verified: &super::super::binding::VerifiedObjectImage<'static>,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
-    decode_inner::<true, CompiledFrame>(verified.bytes(), catalog)
+    decode_inner::<true, true, CompiledFrame>(verified.bytes(), catalog)
 }
 
-fn decode_inner<'a, const OBJECT_BOUND: bool, Frame: Deserialize<'a> + Into<FrameWords>>(
+fn decode_inner<
+    'a,
+    const OBJECT_BOUND: bool,
+    const COMPILED: bool,
+    Frame: Deserialize<'a> + Into<FrameWords>,
+>(
     bytes: &'a [u8],
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
@@ -235,8 +242,8 @@ fn decode_inner<'a, const OBJECT_BOUND: bool, Frame: Deserialize<'a> + Into<Fram
     let image: Image<'a, Frame> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
-        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7))
-        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5 | 6 | 7))
+        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7 | 8))
+        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8))
     {
         return Err("unsupported native descriptor image format".into());
     }
@@ -247,6 +254,9 @@ fn decode_inner<'a, const OBJECT_BOUND: bool, Frame: Deserialize<'a> + Into<Fram
     }
     if (image.version >= 4) != w.static_layouts.is_some() {
         return Err("native descriptor version differs from its static layout inventory".into());
+    }
+    if (image.version >= 8) != w.schema_templates.is_some() {
+        return Err("native descriptor version differs from its type-template inventory".into());
     }
     // This is selected only by the private verified-byte borrow, never by an
     // untrusted field. V1 remains available through independent reconstruction;
@@ -266,7 +276,20 @@ fn decode_inner<'a, const OBJECT_BOUND: bool, Frame: Deserialize<'a> + Into<Fram
     } else {
         unsafe { decode_build_owned_native_plan_record(w.plan, &schemas, catalog)? }
     };
-    let mut descriptor_templates = NativeDescriptorTemplatePool::default();
+    let mut descriptor_templates = match w.schema_templates {
+        Some(record) if COMPILED => {
+            // SAFETY: only decode_compiled_verified selects this monomorph;
+            // its private witness binds these process-lifetime bytes to the
+            // genuine checked compiled module. No image field selects it.
+            unsafe {
+                NativeDescriptorTemplatePool::from_build_owned_schema_templates(record, &schemas)?
+            }
+        }
+        Some(record) => {
+            NativeDescriptorTemplatePool::from_independent_schema_templates(record, &schemas)?
+        }
+        None => NativeDescriptorTemplatePool::default(),
+    };
     let mut calls = w
         .calls
         .iter()

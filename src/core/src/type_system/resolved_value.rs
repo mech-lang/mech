@@ -46,6 +46,30 @@ pub struct ResolvedValueDescriptor {
 }
 
 impl ResolvedValueDescriptor {
+    /// Restore immutable neutral-shape metadata emitted by the checked compiler.
+    /// Current Values must still pass ordinary fresh-shape construction and all
+    /// runtime admission; this constructor grants neither.
+    ///
+    /// # Safety
+    /// The complete normalized type, including predicate evidence, must be
+    /// established as this exact canonical schema's compiler-derived type under
+    /// the same genuine checked Object provenance as the enclosing descriptor.
+    /// Confine both inputs until that association is established. An ID, digest
+    /// or successful wire parse is not semantic authority.
+    pub unsafe fn from_build_owned_neutral_type(
+        schema: Schema,
+        resolved_type: ResolvedType,
+    ) -> Result<Self, TypeResolutionError> {
+        let shape = schema
+            .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
+            .map_err(TypeResolutionError::semantic)?;
+        Ok(Self {
+            resolved_type,
+            schema,
+            shape,
+        })
+    }
+
     pub fn new(
         resolved_type: ResolvedType,
         schema: Schema,

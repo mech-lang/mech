@@ -18,6 +18,9 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+#[path = "native_collection_descriptor_image.rs"]
+mod descriptor_image;
+
 #[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
 #[path = "native_collection_prepared_capacity_tests.rs"]
 mod capacity_tests;
@@ -84,9 +87,7 @@ fn descriptors_for_schemas(
         .map(Arc::from)
 }
 
-fn descriptor_for_schema(
-    schema: &mech_core::Schema,
-) -> Option<mech_core::ResolvedValueDescriptor> {
+fn descriptor_for_schema(schema: &mech_core::Schema) -> Option<mech_core::ResolvedValueDescriptor> {
     let shape = schema
         .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
         .ok()?;
@@ -293,14 +294,18 @@ mod descriptor_template_pool_tests {
             .for_schemas(vec![u, i], std::slice::from_ref(&unsigned), &signed)
             .unwrap();
         let second = pool
-            .for_schemas(vec![i, u, u], &[signed.clone(), unsigned.clone()], &unsigned)
+            .for_schemas(
+                vec![i, u, u],
+                &[signed.clone(), unsigned.clone()],
+                &unsigned,
+            )
             .unwrap();
         assert_eq!(pool.schemas.len(), 2);
         assert!(pool.schemas.values().all(|entries| entries.len() == 1));
         assert_eq!(&first[0], &second[1]);
         assert!(!core::ptr::eq(&first[0], &second[1]));
-        let expected = descriptors_for_schemas(&[signed.clone(), unsigned.clone()], &unsigned)
-            .unwrap();
+        let expected =
+            descriptors_for_schemas(&[signed.clone(), unsigned.clone()], &unsigned).unwrap();
         assert_eq!(second.as_ref(), expected.as_ref());
         let foreign = pool
             .for_schemas(vec![u, u], std::slice::from_ref(&unsigned), &signed)
@@ -309,7 +314,11 @@ mod descriptor_template_pool_tests {
         assert_eq!(foreign[1].schema(), &signed);
         assert_eq!(pool.schemas[&u].len(), 2);
         let again = pool
-            .for_schemas(vec![i, u, u], &[signed.clone(), unsigned.clone()], &unsigned)
+            .for_schemas(
+                vec![i, u, u],
+                &[signed.clone(), unsigned.clone()],
+                &unsigned,
+            )
             .unwrap();
         assert!(Arc::ptr_eq(&second, &again));
     }
