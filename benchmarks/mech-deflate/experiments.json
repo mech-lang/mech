@@ -24900,6 +24900,17 @@
           "files": 69,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-128-biased-dynamic-primary-df041dc4d947.tar.gz"
+        },
+        {
+          "event": "case-random-64-primary",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-case-random-64-primary-a9a96bb55ef3.tar.gz",
+          "sha256": "a9a96bb55ef3baa0e463033dc6569ee3ce65a4121c85070f1a0b52ed0819b6d1",
+          "manifest_sha256": "e3b666c18f31ca176024e052c8ee4b03d38fc19c467b5a530d3748a076552183",
+          "bytes": 138710,
+          "files": 69,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-random-64-primary-a9a96bb55ef3.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
