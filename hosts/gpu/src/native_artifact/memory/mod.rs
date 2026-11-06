@@ -1,7 +1,7 @@
 //! Actual typed native transport arenas, distinct from semantic schemas.
 use crate::native_artifact::runtime::NativeExecutionError;
 use mech_core::{
-    FixedHostArenaPlan, IntegerWidth, ManagedMemoryBudget, MemoryDomain, PlannedArenaElement,
+    FixedHostArenaPlan, IntegerWidth, ManagedMemoryBudget, PlannedArenaElement,
     PlannedArenaProjection, PlannedSlotKind, ScalarMemoryKind,
 };
 
@@ -67,7 +67,8 @@ impl<T: PlannedArenaElement> NativeTypedStorage<T> {
             .ok_or(NativeExecutionError::Descriptor {
                 reason: "native typed transport size overflows",
             })?;
-        MemoryDomain::host_arena_admission_bytes(bytes).map_err(NativeExecutionError::from)
+        mech_core::MemoryDomain::host_arena_admission_bytes(bytes)
+            .map_err(NativeExecutionError::from)
     }
 
     fn for_slot(
