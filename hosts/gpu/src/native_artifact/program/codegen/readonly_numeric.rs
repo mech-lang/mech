@@ -33,6 +33,7 @@ pub(in crate::native_artifact) struct Report {
     pub typed_loads: Vec<(usize, u8)>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub source_guarded_read_packs: Vec<usize>,
+    pub proven_projection_guards: Vec<(usize, u32, usize, u32)>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
@@ -173,6 +174,7 @@ pub(in crate::native_artifact) fn emit_entry(
     let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
     let boolean_successors =
         super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
+    let traversal = super::numeric_traversal::derive(code, proof, shadow);
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
@@ -185,6 +187,7 @@ pub(in crate::native_artifact) fn emit_entry(
             .iter()
             .map(|(&site, &next)| (site, next))
             .collect(),
+        proven_projection_guards: Vec::new(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
         cold_exits: proof
@@ -399,7 +402,11 @@ pub(in crate::native_artifact) fn emit_entry(
                     layout,
                     action,
                     fail,
-                    &mut aggregates::CheckedGuards,
+                    &mut super::numeric_traversal::Guards {
+                        site,
+                        facts: &traversal,
+                        emitted: &mut report.proven_projection_guards,
+                    },
                 )?;
             }
             Some(Operation::Frame) => {

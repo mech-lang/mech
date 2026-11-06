@@ -1,4 +1,40 @@
-use crate::native_artifact::program::codegen::packed_loop::edge_facts::*;
+use super::*;
+
+#[test]
+fn overlapping_assignments_keep_current_tag_versions_in_the_emitted_order() {
+    let mut terms = Terms::default();
+    let zero = terms.constant(0).unwrap();
+    let one = terms.constant(1).unwrap();
+    let mut initial = State::default();
+    initial.words.extend([(0, zero), (1, one), (2, zero)]);
+    let moves = [(0, 1), (1, 0)];
+    let mut packed = initial.clone();
+    packed.assign(&moves, false).unwrap();
+    let mut copied = initial.clone();
+    copied.assign(&moves, true).unwrap();
+    assert_eq!(
+        packed.truth(&terms, Relation::Eq, packed.read(1).unwrap(), one),
+        Some(true)
+    );
+    assert_eq!(
+        copied.truth(&terms, Relation::Eq, copied.read(1).unwrap(), zero),
+        Some(true)
+    );
+    assert_eq!(
+        packed.truth(&terms, Relation::Eq, packed.read(1).unwrap(), zero),
+        Some(false)
+    );
+    assert_eq!(
+        copied.read(2),
+        Some(zero),
+        "an unmodified alias retains its version"
+    );
+    assert_eq!(
+        initial.read(0),
+        Some(zero),
+        "a fresh traversal has no previous assignments"
+    );
+}
 
 #[test]
 fn unsigned_bounds_use_exact_current_values_and_successful_difference() {
