@@ -25207,6 +25207,36 @@
         "bytecode": false,
         "receipt_sha256": "4026cddfaaaf9ae00283ecc9ada6d5e804b9ce2c918fdff7267a3cebe7e11876"
       }
+    },
+    "162": {
+      "base": "d597f5468c83f6547013e0007e4ab3bd380969e0",
+      "events": [
+        {
+          "event": "clean-parent",
+          "source_revision": "6036cbb059047be57ade160e0beb36213f60ae12",
+          "asset": "r162-clean-parent-512472b74180.tar.gz",
+          "sha256": "512472b741806767608149d6019c1524ebea0a6e673c8c286b2f52b4ed219ebe",
+          "manifest_sha256": "75e68f5d4410dd1e4219c347e352d8470dc2de3b3cf7e834b774ed1c5eab1dda",
+          "bytes": 98003,
+          "files": 65,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-clean-parent-512472b74180.tar.gz"
+        }
+      ],
+      "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+      "compiler_source": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+      "before_compiler_source": "4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773",
+      "versions": {
+        "typed_ir": 184,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Unsigned word bounds in existing early CFG cleanup; no performance claim yet. Final retention compares against qualified R160.",
+      "retained": false,
+      "release_tag": "evidence-native-compression-experiments-4",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
+      "archive_publication": "local evidence; publication pending"
     }
   },
   "repository": "mech-lang/mech",
