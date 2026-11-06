@@ -85,7 +85,7 @@ fn resumed_child_images_reconstruct_entries_ownership_offsets_and_prices() {
             u64::from_le_bytes(identity.bytes()[16..24].try_into().unwrap()),
             crate::native_artifact::NATIVE_PROGRAM_TYPED_IR_VERSION
         );
-        for old_revision in [175u64, 176] {
+        for old_revision in [175u64, 176, 177] {
             let mut old = *identity.bytes();
             old[16..24].copy_from_slice(&old_revision.to_le_bytes());
             assert!(
