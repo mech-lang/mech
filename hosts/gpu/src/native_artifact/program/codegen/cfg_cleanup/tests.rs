@@ -12,6 +12,10 @@ fn cfg_cleanup_proves_masked_and_extended_widths_but_keeps_unknown_guards() {
         (32, 0, 4294967295, true),
         (32, 0, 8589934591, false),
         (32, 0, u64::MAX, false),
+        (8, 2, 255, true),
+        (16, 2, 65535, true),
+        (32, 2, 4294967295, true),
+        (32, 2, 8589934591, false),
         (8, 1, 255, true),
         (16, 1, 65535, true),
         (32, 1, 4294967295, true),
@@ -46,7 +50,9 @@ fn cfg_cleanup_proves_masked_and_extended_widths_but_keeps_unknown_guards() {
             b.switch_to_block(entry);
             let pointer = b.block_params(entry)[0];
             let input = b.block_params(entry)[1];
-            let value = if mode == 0 {
+            let value = if mode == 2 {
+                b.ins().band_imm(input, mask as i64)
+            } else if mode == 0 {
                 let mask = b.ins().iconst(types::I64, mask as i64);
                 b.ins().band(input, mask)
             } else {

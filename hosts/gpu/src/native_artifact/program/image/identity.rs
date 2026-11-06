@@ -334,7 +334,8 @@ fn selected_template(
 // relations before omitting an exact one-based scalar-read bounds guard.
 // IR183 rederives activation-current complete child read windows and paired
 // checked/native bodies. No persisted guard grants execution authority.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 183;
+// IR184 also reconstructs bounded unsigned SSA word facts for early CFG cleanup.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 184;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

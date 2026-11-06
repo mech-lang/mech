@@ -10,7 +10,7 @@ use mech_engine::native_artifact::{
     NativeProgramReadRole as Read, NativeScalarKind,
 };
 use std::collections::{BTreeMap, BTreeSet};
-mod bounds;
+pub(in crate::native_artifact) mod bounds;
 
 #[derive(Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]

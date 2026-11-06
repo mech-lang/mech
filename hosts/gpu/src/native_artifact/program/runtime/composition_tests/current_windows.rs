@@ -217,7 +217,17 @@ fn numeric_current_windows_preserve_default_zero_errors_and_fresh_recovery() {
             mode.compilation(),
         )
         .unwrap();
-        for (reference, jit) in [(true, &ordinary), (false, &native)] {
+        let without_cleanup = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            OptimizationPass::CfgCleanup,
+        )
+        .unwrap();
+        for (reference, jit) in [
+            (true, &ordinary),
+            (false, &without_cleanup),
+            (false, &native),
+        ] {
             for restored in [false, true] {
                 let memory = mode.memory_budget();
                 let mut output = vec![None; artifact.outputs().len()];
