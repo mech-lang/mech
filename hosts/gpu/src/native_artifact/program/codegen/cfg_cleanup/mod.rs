@@ -1,12 +1,13 @@
-//! Fold literal native branches after data optimization, then retire unreachable
-//! blocks and their phi inputs before register allocation. No runtime predicate,
-//! source operation, failure or work debit is assumed away.
+//! Fold native branches proved by immutable integer SSA definitions, then retire
+//! unreachable blocks and their phi inputs before register allocation. Source
+//! work debits and runtime predicates without a word proof remain unchanged.
+mod word_ranges;
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::control::CfgCleanup;
 use crate::native_artifact::codegen::options::{CompilationControls, OptimizationPass};
 use crate::native_artifact::compiler::backend;
 use cranelift_codegen::Context;
-use cranelift_codegen::ir::{Function, InstBuilder, InstructionData, Opcode, Value, ValueDef};
+use cranelift_codegen::ir::{Function, InstBuilder, InstructionData};
 use cranelift_codegen::isa::TargetIsa;
 
 const MAX_ROUNDS: usize = 8;
@@ -21,29 +22,8 @@ fn counts(function: &Function) -> (usize, usize) {
             .sum(),
     )
 }
-fn constant_condition(function: &Function, value: Value) -> Option<bool> {
-    let value = function.dfg.resolve_aliases(value);
-    let ty = function.dfg.value_type(value);
-    if !ty.is_int() || ty.bits() > 64 {
-        return None;
-    }
-    let ValueDef::Result(inst, 0) = function.dfg.value_def(value) else {
-        return None;
-    };
-    let InstructionData::UnaryImm {
-        opcode: Opcode::Iconst,
-        imm,
-        ..
-    } = function.dfg.insts[inst]
-    else {
-        return None;
-    };
-    // Iconst's immediate is sign extended; branch truth uses only the actual
-    // integer type's low bits, including noncanonical nonzero boolean words.
-    let mask = u64::MAX >> (64 - ty.bits());
-    Some(imm.bits() as u64 & mask != 0)
-}
 fn fold(function: &mut Function) -> usize {
+    let mut facts = word_ranges::Facts::new(function);
     let changes = function
         .layout
         .blocks()
@@ -52,7 +32,7 @@ fn fold(function: &mut Function) -> usize {
             let InstructionData::Brif { arg, blocks, .. } = &function.dfg.insts[inst] else {
                 return None;
             };
-            let selected = &blocks[usize::from(!constant_condition(function, *arg)?)];
+            let selected = &blocks[usize::from(!facts.condition(*arg)?)];
             Some((
                 inst,
                 selected.block(&function.dfg.value_lists),
@@ -88,7 +68,7 @@ pub(in crate::native_artifact) fn optimize(
     if !enabled {
         return Ok(report);
     }
-    // Retire literal source specializations BEFORE data optimization. Running
+    // Retire proved source specializations BEFORE data optimization. Running
     // the egraph repeatedly here and once again in define_function can change
     // placement/rematerialization and increase register pressure. Leave exactly
     // one ordinary data/speed pass to the final backend compilation.

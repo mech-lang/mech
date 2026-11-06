@@ -36,6 +36,7 @@ pub(in crate::native_artifact) struct Report {
     pub proven_projection_guards: Vec<(usize, u32, usize, u32)>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
     pub proven_scalar_read_guards: Vec<(usize, usize, u32)>,
+    pub guarded_loop_windows: Vec<super::numeric_loop_windows::Report>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
@@ -176,6 +177,7 @@ pub(in crate::native_artifact) fn emit_entry(
     let boolean_successors =
         super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     let traversal = super::numeric_traversal::derive(code, proof, shadow);
+    let versions = super::numeric_loop_windows::derive(code, proof, shadow, b);
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
@@ -190,6 +192,7 @@ pub(in crate::native_artifact) fn emit_entry(
             .collect(),
         proven_projection_guards: Vec::new(),
         proven_scalar_read_guards: Vec::new(),
+        guarded_loop_windows: versions.iter().map(|v| v.report(proof)).collect(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
         cold_exits: proof
@@ -210,7 +213,25 @@ pub(in crate::native_artifact) fn emit_entry(
         maximum_source_instructions: 0,
         fixed_template_instructions: 0,
     };
-    for &site in &proof.sites {
+    // Both bodies share the same admitted SSA homes and loan. A guard is
+    // evaluated afresh only at the canonical initialize edge. Each version's
+    // latch returns to its own header; exits rejoin the existing parent.
+    let emitted_sites = proof.sites.iter().map(|&site| (None, site)).chain(
+        versions
+            .iter()
+            .flat_map(|version| version.sites.iter().map(move |&site| (Some(version), site))),
+    );
+    for (version, site) in emitted_sites {
+        let target = |site| {
+            if let Some(block) = version.and_then(|v| v.blocks.get(&site)) {
+                *block
+            } else if site == region.tail.exit() {
+                exit
+            } else {
+                blocks[&site]
+            }
+        };
+        let traversal = version.map_or(&traversal, |v| &v.facts);
         b.switch_to_block(target(site as u32));
         if matches!(proof.action(site), Some(Operation::Fallback)) {
             boundaries.insert(target(site as u32));
@@ -406,7 +427,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     fail,
                     &mut super::numeric_traversal::Guards {
                         site,
-                        facts: &traversal,
+                        facts: traversal,
                         emitted: &mut report.proven_projection_guards,
                     },
                 )?;
@@ -668,27 +689,39 @@ pub(in crate::native_artifact) fn emit_entry(
                         .iter()
                         .map(|v| words.read(b, v.get() as usize))
                         .collect::<Vec<_>>();
-                    let value = primitive(b, *op, &args, fail);
+                    let value = if let Some(&known) = traversal.predicates.get(&site) {
+                        b.ins().iconst(types::I64, i64::from(known))
+                    } else {
+                        primitive(b, *op, &args, fail)
+                    };
                     words.write(b, output.get() as usize, value);
                     report.scalar_operations += 1;
                 }
                 _ => return Err(backend("numeric proof contains unsupported action")),
             },
         }
-        terminators::emit_source_terminator(
-            b,
-            &words,
-            code,
-            boolean_successors
-                .get(&site)
-                .map_or(code.blocks()[site].terminator(), |&next| {
-                    mech_engine::native_artifact::NativeIterationTerminator::Scalar(
-                        mech_engine::native_artifact::NativeMatchTerminator::Jump(next),
-                    )
-                }),
-            fail,
-            target,
-        );
+        if version.is_none()
+            && let Some(window) = versions.iter().find(|v| v.initialize == site)
+        {
+            window.gate(b, &words, shadow, proof, target(window.header as u32));
+        } else {
+            terminators::emit_source_terminator(
+                b,
+                &words,
+                code,
+                traversal
+                    .successors
+                    .get(&site)
+                    .or_else(|| boolean_successors.get(&site))
+                    .map_or(code.blocks()[site].terminator(), |&next| {
+                        mech_engine::native_artifact::NativeIterationTerminator::Scalar(
+                            mech_engine::native_artifact::NativeMatchTerminator::Jump(next),
+                        )
+                    }),
+                fail,
+                target,
+            );
+        }
         b.switch_to_block(fail);
         let status = b.block_params(fail)[0];
         set_origin(b, frame, site as u64);

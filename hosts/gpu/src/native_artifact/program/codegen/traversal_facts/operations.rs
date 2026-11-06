@@ -89,14 +89,21 @@ pub(super) fn scalar(
                 .map(|v| state.read(v.get() as usize))
                 .collect::<Option<Vec<_>>>()?;
             let value = match *op {
-                Op::U64WrappingAdd => {
+                Op::U64WrappingAdd | Op::U64WrappingSub => {
                     let [a, b] = args.as_slice() else {
                         return None;
                     };
-                    if state.safe(terms, Arithmetic::Add, *a, *b) {
-                        terms.intern(Expr::Arithmetic(Arithmetic::Add, *a, *b))?
+                    let arithmetic = if *op == Op::U64WrappingAdd {
+                        Arithmetic::Add
                     } else {
-                        terms.intern(Expr::Definition(site, output.get() as usize))?
+                        Arithmetic::Sub
+                    };
+                    if state.safe(terms, arithmetic, *a, *b) {
+                        terms.intern(Expr::Arithmetic(arithmetic, *a, *b))?
+                    } else {
+                        // A ring expression alone is never a mathematical
+                        // range proof. It only preserves exact source identity.
+                        terms.intern(Expr::Wrapping(arithmetic, *a, *b))?
                     }
                 }
                 Op::U64Add | Op::U64Sub => {

@@ -1,6 +1,99 @@
 use super::*;
 
 #[test]
+fn whole_windows_need_the_current_selected_interval_and_exact_views() {
+    let mut terms = Terms::default();
+    let k = terms.intern(Expr::Initial(0)).unwrap();
+    let count = terms.intern(Expr::Initial(1)).unwrap();
+    let other = terms.intern(Expr::Initial(2)).unwrap();
+    let three = terms.constant(3).unwrap();
+    let length = terms.intern(Expr::ArrayLength(0)).unwrap();
+    let nodes = terms.intern(Expr::ArrayLength(1)).unwrap();
+    let at = terms
+        .intern(Expr::Wrapping(Arithmetic::Add, k, three))
+        .unwrap();
+    let back = terms
+        .intern(Expr::Wrapping(Arithmetic::Sub, nodes, at))
+        .unwrap();
+    let mut state = State::default();
+    state.windows = [false, true]
+        .into_iter()
+        .map(|reverse| Window {
+            induction: 0,
+            count: 1,
+            array: usize::from(reverse),
+            delta: 3,
+            reverse,
+        })
+        .collect();
+    assert_eq!(state.truth(&terms, Relation::Lt, at, length), None);
+    let mut changed = state.clone();
+    changed.assume(&terms, Relation::Lt, k, other).unwrap();
+    assert_eq!(changed.truth(&terms, Relation::Lt, at, length), None);
+    state.assume(&terms, Relation::Lt, k, count).unwrap();
+    assert_eq!(state.truth(&terms, Relation::Lt, at, length), Some(true));
+    assert_eq!(state.truth(&terms, Relation::Le, length, at), Some(false));
+    assert_eq!(state.truth(&terms, Relation::Eq, at, length), Some(false));
+    assert_eq!(state.truth(&terms, Relation::Ne, at, length), Some(true));
+    assert_eq!(state.truth(&terms, Relation::Lt, back, nodes), Some(true));
+    assert_eq!(state.truth(&terms, Relation::Lt, at, nodes), None);
+    let new_at = terms
+        .intern(Expr::Wrapping(Arithmetic::Add, other, three))
+        .unwrap();
+    assert_eq!(state.truth(&terms, Relation::Lt, new_at, length), None);
+    assert_eq!(
+        State::default().truth(&terms, Relation::Lt, at, length),
+        None
+    );
+}
+
+#[test]
+fn whole_window_admission_implies_initialized_one_based_indices() {
+    let check = |count: u64, delta: u64, length: u64, reverse: bool, k: u64| {
+        let Some(end) = count.checked_add(delta) else {
+            return;
+        };
+        let required = end - u64::from(reverse);
+        if length < required || k >= count {
+            return;
+        }
+        let forward = k.wrapping_add(delta);
+        let at = if reverse {
+            length.wrapping_sub(forward)
+        } else {
+            forward
+        };
+        assert!(
+            at < length,
+            "count={count} delta={delta} length={length} k={k} reverse={reverse}"
+        );
+        let index = at.wrapping_add(1);
+        assert!(index != 0 && index <= length);
+    };
+    for reverse in [false, true] {
+        for count in 0..16 {
+            for delta in 1..8 {
+                for length in 0..40 {
+                    for k in 0..count {
+                        check(count, delta, length, reverse, k);
+                    }
+                }
+            }
+        }
+        for delta in [1, 3, 258, u64::MAX] {
+            for count in [0, 1, u64::MAX - delta, u64::MAX] {
+                for length in [0, 1, u64::MAX - 1, u64::MAX] {
+                    check(count, delta, length, reverse, 0);
+                    if count > 0 {
+                        check(count, delta, length, reverse, count - 1);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn current_array_windows_follow_selected_literals_aliases_and_word_versions() {
     let mut terms = Terms::default();
     let at = terms.intern(Expr::Initial(0)).unwrap();

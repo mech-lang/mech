@@ -31,12 +31,24 @@ pub(in crate::native_artifact::program::codegen) fn derive<'a>(
     tag: Option<usize>,
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
+    with_windows(code, scope, slots, tag, &[], step)
+}
+
+pub(in crate::native_artifact::program::codegen) fn with_windows<'a>(
+    code: CodePlan<'_>,
+    scope: &Scope,
+    slots: &BTreeSet<usize>,
+    tag: Option<usize>,
+    windows: &[Window],
+    step: impl Fn(usize) -> Option<Step<'a>>,
+) -> Option<Proof> {
     if slots.len() > MAX_WORDS {
         return None;
     }
     let ordered = scope.order(code)?;
     let mut terms = Terms::default();
     let mut initial = State::default();
+    initial.windows.extend_from_slice(windows);
     for &slot in slots {
         initial
             .words
@@ -92,6 +104,15 @@ pub(in crate::native_artifact::program::codegen) fn derive<'a>(
         .collect();
     *incoming.get_mut(&(scope.header))? = partitions.into_iter().map(Some).collect();
     let mut proof = Proof::default();
+    let mut written = BTreeSet::new();
+    for &site in &ordered {
+        loop_windows::writes(step(site)?, &mut written)?;
+    }
+    // A gate is checked once at activation. A capture changed on a latch
+    // cannot inherit that gate on later visits, even if its home is reused.
+    if windows.iter().any(|window| written.contains(&window.count)) {
+        return None;
+    }
     for site in ordered {
         let mut states = incoming.remove(&site)?;
         if states.iter().all(Option::is_none) {
@@ -128,6 +149,44 @@ pub(in crate::native_artifact::program::codegen) fn derive<'a>(
                 }
             }
             Step::Scalar(action) => {
+                if let Scalar::Primitive {
+                    op: Op::U64Lt,
+                    operands,
+                    ..
+                } = action
+                    && operands.len() == 2
+                {
+                    for state in states.iter().flatten() {
+                        if let Some(window) = state.discover_window(
+                            &terms,
+                            state.read(operands[0].get() as usize)?,
+                            state.read(operands[1].get() as usize)?,
+                        ) && !written.contains(&window.count)
+                        {
+                            proof.windows.insert(window);
+                        }
+                    }
+                    if !windows.is_empty() {
+                        let outcomes = states
+                            .iter()
+                            .flatten()
+                            .map(|state| {
+                                state.truth(
+                                    &terms,
+                                    Relation::Lt,
+                                    state.read(operands[0].get() as usize)?,
+                                    state.read(operands[1].get() as usize)?,
+                                )
+                            })
+                            .collect::<Option<Vec<_>>>();
+                        if let Some(outcomes) = outcomes
+                            && let Some(&value) = outcomes.first()
+                            && outcomes.iter().all(|&v| v == value)
+                        {
+                            proof.predicates.insert(site, value);
+                        }
+                    }
+                }
                 if let Scalar::Primitive { op, operands, .. } = action
                     && matches!(op, Op::U64Add | Op::U64Sub)
                     && operands.len() == 2
@@ -193,14 +252,13 @@ pub(in crate::native_artifact::program::codegen) fn derive<'a>(
         if site == scope.latch {
             continue;
         }
-        for (branch, next) in scope::successors(block.terminator())?
-            .into_iter()
-            .enumerate()
-        {
-            if next == scope.exit {
-                continue;
-            }
-            let target = incoming.get_mut(&(next as usize))?;
+        let successors = scope::successors(block.terminator())?;
+        let branch_count = successors.len();
+        let mut reached = Vec::new();
+        for (branch, next) in successors.into_iter().enumerate() {
+            let mut edge_reached = false;
+            let mut outgoing = states.clone();
+            let target = &mut outgoing;
             for (target, state) in target.iter_mut().zip(&states) {
                 let Some(mut state) = state.clone() else {
                     continue;
@@ -225,14 +283,30 @@ pub(in crate::native_artifact::program::codegen) fn derive<'a>(
                     _ => true,
                 };
                 if !reachable {
+                    *target = None;
                     continue;
                 }
-                if let Some(target) = target {
-                    target.merge(&state, next as usize, &mut terms)?;
-                } else {
-                    *target = Some(state);
+                edge_reached = true;
+                *target = Some(state);
+            }
+            if edge_reached {
+                reached.push(next);
+            }
+            if next != scope.exit {
+                for (target, state) in incoming.get_mut(&(next as usize))?.iter_mut().zip(outgoing)
+                {
+                    if let Some(state) = state {
+                        if let Some(target) = target {
+                            target.merge(&state, next as usize, &mut terms)?;
+                        } else {
+                            *target = Some(state);
+                        }
+                    }
                 }
             }
+        }
+        if !windows.is_empty() && branch_count == 2 && reached.len() == 1 {
+            proof.successors.insert(site, reached[0]);
         }
     }
     Some(proof)
