@@ -394,7 +394,11 @@ fn selected_template(
 // IR230 also integrates activation-current affine read-address bases from
 // PR973/IR197 without changing source operations, admission or visit prices.
 // IR231 preserves the exhausted source transition after an ordered reduction.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 231;
+// IR232/233's direct Boolean experiments remain unselected source patches.
+// IR234 integrates PR973/IR198's explicit exhausted-payload identity proof.
+// Only proved identity edges are bypassed; other payloads keep native source
+// traversal and the independently proved complete-child funding path.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 234;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

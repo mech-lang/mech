@@ -16,6 +16,7 @@ fn graph(nodes: Vec<Node>) -> Graph {
     Graph {
         nodes,
         advances: vec![BTreeMap::new()],
+        exhausted: Vec::new(),
         written: BTreeSet::from([100, 101, 102, 103, 150]),
         terminal_inputs: Some(BTreeSet::new()),
     }
@@ -131,4 +132,37 @@ fn ordered_reduction_requires_every_terminal_dependency_to_survive_elision() {
     assert!(!terminal_local(&g, 100, 4));
     g.terminal_inputs = None;
     assert!(!terminal_local(&g, 100, 4));
+}
+
+#[test]
+fn ordered_reduction_requires_every_exhausted_payload_on_every_path() {
+    let mut g = graph(vec![
+        Node::Initial(101),
+        Node::Initial(102),
+        Node::Initial(103),
+        Node::Constant(0),
+        Node::Unknown,
+    ]);
+    assert!(!exhaustion_preserves_payload(&g, 100, 104, 4));
+    let identity = BTreeMap::from([(105, 0), (106, 1), (107, 2)]);
+    g.exhausted.push(identity.clone());
+    assert!(exhaustion_preserves_payload(&g, 100, 104, 4));
+    for slot in 105..108 {
+        for replacement in [None, Some(3), Some(4), Some(usize::MAX)] {
+            let mut edge = identity.clone();
+            if let Some(id) = replacement {
+                edge.insert(slot, id);
+            } else {
+                edge.remove(&slot);
+            }
+            g.exhausted.push(edge);
+            assert!(
+                !exhaustion_preserves_payload(&g, 100, 104, 4),
+                "slot={slot}, replacement={replacement:?}"
+            );
+            g.exhausted.pop();
+        }
+    }
+    g.exhausted.push(identity);
+    assert!(exhaustion_preserves_payload(&g, 100, 104, 4));
 }

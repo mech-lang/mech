@@ -51,19 +51,24 @@ fn numeric_ordered_reduction_preserves_exhausted_payload_updates() {
             )
             .unwrap();
             let metadata = object.metadata();
-            assert!(
-                [
-                    "compiled_readonly_numeric_loops",
-                    "compiled_numeric_write_loops"
-                ]
-                .into_iter()
-                .flat_map(|key| metadata[key].as_array().into_iter().flatten())
-                .flat_map(|region| region["guarded_loop_windows"]
+            let windows = [
+                "compiled_readonly_numeric_loops",
+                "compiled_numeric_write_loops",
+            ]
+            .into_iter()
+            .flat_map(|key| metadata[key].as_array().into_iter().flatten())
+            .flat_map(|region| {
+                region["guarded_loop_windows"]
                     .as_array()
                     .into_iter()
-                    .flatten())
-                .any(|window| !window["reduction"].is_null()),
-                "the optimized reduction must remain selected: case={case}"
+                    .flatten()
+            })
+            .collect::<Vec<_>>();
+            assert!(
+                !windows.is_empty()
+                    && windows.iter().all(|window| window["reduction"].is_null())
+                    && windows.iter().any(|window| window["prepaid"].is_object()),
+                "changed payloads keep the funded native source loop: case={case}"
             );
             let native = JitProgramArtifact::compile_with_limits(
                 &artifact,
