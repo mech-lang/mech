@@ -8,13 +8,17 @@ struct Kernel {
 }
 impl Kernel {
     fn new(vectorized: bool) -> Self {
+        Self::funded(vectorized, Funding::Metered)
+    }
+    fn funded(vectorized: bool, funding: Funding) -> Self {
         let builder = cranelift_jit::JITBuilder::with_flags(
             &[("opt_level", "speed")],
             default_libcall_names(),
         )
         .unwrap();
         let mut module = cranelift_jit::JITModule::new(builder);
-        let (id, _, _) = define(&mut module, "borrowed_utf8_histogram", vectorized).unwrap();
+        let (id, _, _) =
+            define(&mut module, "borrowed_utf8_histogram", vectorized, funding).unwrap();
         module.finalize_definitions().unwrap();
         // SAFETY: the live module owns the complete one-pointer leaf ABI.
         let entry = unsafe {
@@ -56,6 +60,7 @@ fn frame(cells: &[Cell], slots: &mut [Slot]) -> Frame {
         count: cells.len() as u64,
         slots: slots.as_mut_ptr() as u64,
         capacity: slots.len() as u64,
+        limit: slots.len() as u64,
         fuel: u64::MAX,
         comparison: u64::MAX,
         completed: 0,
@@ -77,6 +82,7 @@ fn cells(texts: &[&str]) -> Vec<Cell> {
 fn generated_histogram_scalar_and_wide_reads_preserve_utf8_counts_and_every_tail() {
     let scalar = Kernel::new(false);
     let wide = Kernel::new(true);
+    let prepaid = Kernel::funded(true, Funding::Prepaid);
     let mut owned = vec![
         "".to_owned(),
         "a\0".into(),
@@ -92,7 +98,7 @@ fn generated_histogram_scalar_and_wide_reads_preserve_utf8_counts_and_every_tail
             .map(|i| owned[(i * 37 + i / 7) % owned.len()].as_str())
             .collect::<Vec<_>>();
         let cells = cells(&texts);
-        for kernel in [&scalar, &wide] {
+        for kernel in [&scalar, &wide, &prepaid] {
             let guard = Slot {
                 hash: 0x123456789,
                 count: 17,
@@ -165,4 +171,59 @@ fn full_banks_terminate_and_malformed_headers_never_commit_a_row() {
         assert_eq!(f.completed, 0);
         assert!(slots.iter().all(|s| s.row_plus_one == 0));
     }
+}
+
+#[test]
+fn exact_pass_bound_covers_metered_work_and_prepaid_output_at_every_occupancy() {
+    let metered = Kernel::new(true);
+    let prepaid = Kernel::funded(true, Funding::Prepaid);
+    for count in [0, 1, 2, 3, 47, 48, 49, 64, 65, 127, 257, 1024] {
+        let owned = (0..count)
+            .map(|i| format!("{}é\0{}", "x".repeat(i % 71), i % 89))
+            .collect::<Vec<_>>();
+        let texts = owned.iter().map(String::as_str).collect::<Vec<_>>();
+        let cells = cells(&texts);
+        let bytes = texts.iter().map(|s| s.len() as u64).sum::<u64>();
+        for capacity in [4, 16, 64, 256, 2048] {
+            let (fuel, comparison) =
+                crate::native_artifact::program::runtime::maps::utf8_histogram::pass_work(
+                    count as u64,
+                    bytes,
+                    capacity,
+                )
+                .unwrap();
+            let mut prior = None;
+            for kernel in [&metered, &prepaid] {
+                let mut slots = vec![Slot::default(); capacity as usize];
+                let mut f = frame(&cells, &mut slots);
+                f.limit =
+                    crate::native_artifact::program::runtime::maps::utf8_histogram::bank_limit(
+                        capacity as usize,
+                    );
+                f.fuel = fuel;
+                f.comparison = comparison;
+                // SAFETY: this full native pass is funded from its complete
+                // checked input-byte/probe bound, with genuine disjoint owners.
+                let status = unsafe { (kernel.entry)(&mut f) };
+                assert!(matches!(status, COMPLETE | FULL));
+                verify(&f, &slots, &texts);
+                assert!(f.fuel <= fuel && f.comparison <= comparison);
+                let result = (status, f.completed, f.distinct, f.payload, slots);
+                if let Some(prior) = &prior {
+                    assert_eq!(&result, prior);
+                }
+                prior = Some(result);
+            }
+        }
+    }
+    use crate::native_artifact::program::runtime::maps::utf8_histogram::{
+        bank_limit, maximum_capacity, pass_work,
+    };
+    for count in 0..4096 {
+        let cap = maximum_capacity(count).unwrap();
+        assert!(bank_limit(cap) >= count as u64);
+    }
+    assert!(maximum_capacity(usize::MAX).is_none());
+    assert!(pass_work(u64::MAX, 1, 4).is_none());
+    assert!(pass_work(1, u64::MAX, 4).is_none());
 }

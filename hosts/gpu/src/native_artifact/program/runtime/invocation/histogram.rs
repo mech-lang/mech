@@ -6,7 +6,7 @@ use crate::native_artifact::NativeValueHandle;
 use crate::native_artifact::program::protocol::GlobalHelper;
 use crate::native_artifact::program::runtime::collections::{fixed_box, fixed_slice};
 use crate::native_artifact::program::runtime::maps::utf8_histogram::{
-    COLD, COMPLETE, FULL, Frame, Slot,
+    COLD, COMPLETE, FULL, Frame, Slot, bank_limit, maximum_capacity, pass_work,
 };
 use crate::native_artifact::program::runtime::maps::utf8_read::Cell;
 use mech_core::snapshot::{
@@ -31,6 +31,8 @@ pub(in crate::native_artifact::program::runtime) struct Loan {
     compute: u64,
     comparison: u64,
     original_bytes: u64,
+    source_bytes: u64,
+    maximum_capacity: usize,
     prior: ResourceDemand,
     _reservation: ManagedMemoryReservation,
     _nodes: ManagedNodeReservation,
@@ -146,14 +148,13 @@ impl Invocation<'_, '_, '_> {
             };
             drop(validation);
             let count = strings.len();
-            // Capacity exceeds all possible distinct keys. FULL therefore
-            // cannot occur for this input-sized loan, irrespective of hashes.
-            let Some(capacity) = count
-                .checked_add(1)
-                .and_then(|n| n.max(4).checked_next_power_of_two())
-            else {
+            // Start small; only an actual native FULL result can grow this
+            // private bank. The largest bank can hold every input key below
+            // the selected three-quarter occupancy limit.
+            let Some(maximum_capacity) = maximum_capacity(count) else {
                 return Ok(Some(0));
             };
+            let capacity = maximum_capacity.min(64);
             let Some(physical) = (count as u64)
                 .checked_mul(size_of::<Cell>() as u64)
                 .and_then(|n| {
@@ -166,19 +167,7 @@ impl Invocation<'_, '_, '_> {
             let Some(prepare) = physical.checked_mul(8).and_then(|n| n.checked_add(4096)) else {
                 return Ok(Some(0));
             };
-            // Every row hashes at most its length; each of at most capacity
-            // probes reads fixed metadata and compares at most that row's
-            // length. Equal lengths are proved before any byte comparison.
-            let Some(comparison) = (capacity as u64).checked_mul(source_bytes) else {
-                return Ok(Some(0));
-            };
-            let Some(fuel) = (count as u64)
-                .checked_mul(16)
-                .and_then(|n| n.checked_add(source_bytes))
-                .and_then(|n| {
-                    n.checked_add((capacity as u64).checked_mul((count as u64).checked_mul(8)?)?)
-                })
-                .and_then(|n| n.checked_add(comparison))
+            let Some((fuel, comparison)) = pass_work(count as u64, source_bytes, capacity as u64)
             else {
                 return Ok(Some(0));
             };
@@ -232,6 +221,7 @@ impl Invocation<'_, '_, '_> {
                 count: count as u64,
                 slots: slots.as_mut_ptr() as u64,
                 capacity: capacity as u64,
+                limit: bank_limit(capacity),
                 fuel,
                 comparison,
                 completed: 0,
@@ -249,6 +239,8 @@ impl Invocation<'_, '_, '_> {
                 compute,
                 comparison,
                 original_bytes: physical,
+                source_bytes,
+                maximum_capacity,
                 prior,
                 _reservation: reservation,
                 _nodes: nodes,
@@ -273,6 +265,7 @@ impl Invocation<'_, '_, '_> {
             || loan.frame.slots != loan.slots.as_ptr() as u64
             || loan.frame.count != loan.cells.len() as u64
             || loan.frame.capacity != loan.slots.len() as u64
+            || loan.frame.limit != bank_limit(loan.slots.len())
         {
             return Err(invalid("compiled histogram loan identity changed"));
         }
@@ -287,7 +280,99 @@ impl Invocation<'_, '_, '_> {
             return Ok(Some(0));
         }
         if args[1] == FULL {
-            return Err(invalid("input-sized histogram bank unexpectedly full"));
+            if loan.frame.distinct != loan.frame.limit || loan.frame.completed >= loan.frame.count {
+                return Err(invalid(
+                    "compiled histogram FULL lacks an exact native prefix",
+                ));
+            }
+            let Some(capacity) = loan
+                .slots
+                .len()
+                .checked_mul(2)
+                .filter(|&n| n <= loan.maximum_capacity)
+            else {
+                return Err(invalid(
+                    "compiled histogram exceeded complete input capacity",
+                ));
+            };
+            let Some(bank_bytes) = (capacity as u64).checked_mul(size_of::<Slot>() as u64) else {
+                return Ok(Some(0));
+            };
+            let Some(coexisting) = loan.original_bytes.checked_add(bank_bytes) else {
+                return Ok(Some(0));
+            };
+            let Some(peak) = loan.prior.turn_peak_bytes.checked_add(coexisting) else {
+                return Ok(Some(0));
+            };
+            let Some(nodes) = loan.prior.retained_nodes.checked_add(5) else {
+                return Ok(Some(0));
+            };
+            let Some(prepare) = bank_bytes.checked_mul(8).and_then(|n| n.checked_add(4096)) else {
+                return Ok(Some(0));
+            };
+            let Some((fuel, comparison)) =
+                pass_work(loan.frame.count, loan.source_bytes, capacity as u64)
+            else {
+                return Ok(Some(0));
+            };
+            let Some(additional_compute) = prepare.checked_add(fuel) else {
+                return Ok(Some(0));
+            };
+            let Some(compute) = loan.compute.checked_add(additional_compute) else {
+                return Ok(Some(0));
+            };
+            let Some(total_comparison) = loan.comparison.checked_add(comparison) else {
+                return Ok(Some(0));
+            };
+            if !fits(peak, self.limits.max_temporary_bytes)
+                || !fits(nodes, self.limits.max_retained_nodes)
+                || !fits(compute, self.limits.max_compute_work)
+                || !fits(total_comparison, self.limits.max_comparison_work)
+                || self
+                    .state
+                    .library
+                    .unscoped_remaining()
+                    .is_none_or(|(c, p)| c < additional_compute || p < comparison)
+            {
+                return Ok(Some(0));
+            }
+            let memory = self.state.library.memory_budget();
+            // Old/new banks coexist during allocation. Neither old bytes nor
+            // their node disappear from admission until the old owner drops.
+            if loan._reservation.resize_capacity(coexisting).is_err() {
+                return Ok(Some(0));
+            }
+            let Ok(extra_node) = memory.reserve_nodes(1) else {
+                return Ok(Some(0));
+            };
+            self.state
+                .library
+                .charge(additional_compute, comparison)
+                .map_err(|error| library_error(NativeCollectionInvocationError::Kernel(error)))?;
+            let Some(slots) = fixed_slice(capacity, Slot::default()) else {
+                return Ok(Some(0));
+            };
+            let old_bytes = (loan.slots.len() * size_of::<Slot>()) as u64;
+            let old = std::mem::replace(&mut loan.slots, slots);
+            drop(old);
+            drop(extra_node);
+            loan.original_bytes = coexisting - old_bytes;
+            loan._reservation.resize_capacity(loan.original_bytes)?;
+            loan.compute = compute;
+            loan.comparison = total_comparison;
+            // Replay the immutable input in native code into the fresh bank.
+            // Previously spent work stays spent; no host rehash/count loop.
+            loan.frame.slots = loan.slots.as_mut_ptr() as u64;
+            loan.frame.capacity = capacity as u64;
+            loan.frame.limit = bank_limit(capacity);
+            loan.frame.fuel = fuel;
+            loan.frame.comparison = comparison;
+            loan.frame.completed = 0;
+            loan.frame.distinct = 0;
+            loan.frame.payload = 0;
+            let pointer = (&mut loan.frame as *mut Frame) as u64;
+            self.histogram = Some(loan);
+            return Ok(Some(pointer));
         }
         if args[1] != COMPLETE
             || loan.frame.completed != loan.frame.count

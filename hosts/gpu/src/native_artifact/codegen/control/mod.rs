@@ -286,36 +286,41 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let report = &mut self.report;
         #[cfg(feature = "canonical-native-program")]
-        let histogram_function = if let plan::CodePlan::Program(program) = plan {
-            let metadata = program.metadata();
-            let sites = (0..metadata.plan.blocks().len())
-                .filter(|&site| {
-                    crate::native_artifact::program::codegen::utf8_histogram::selected(
-                        metadata, site,
-                    )
-                })
-                .collect::<Vec<_>>();
-            if sites.is_empty() {
-                None
-            } else {
-                let symbol = format!("{entry_symbol}_utf8_histogram");
-                let (id, stack, code) =
+        let histogram_function =
+            if let plan::CodePlan::Program(program) = plan {
+                let metadata = program.metadata();
+                let sites = (0..metadata.plan.blocks().len())
+                    .filter(|&site| {
+                        crate::native_artifact::program::codegen::utf8_histogram::selected(
+                            metadata, site,
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                if sites.is_empty() {
+                    None
+                } else {
+                    let symbol = format!("{entry_symbol}_utf8_histogram");
+                    let (id, stack, code) =
                     crate::native_artifact::program::codegen::utf8_histogram::define(
                         module, &symbol, true,
+                        crate::native_artifact::program::codegen::utf8_histogram::Funding::Prepaid,
                     )?;
-                report.utf8_histogram = Some(
-                    crate::native_artifact::codegen::control::codegen_report::Utf8Histogram {
-                        symbol,
-                        stack_bytes: stack,
-                        code_bytes: code,
-                        sites,
-                    },
-                );
-                Some((id, stack, code))
-            }
-        } else {
-            None
-        };
+                    report.utf8_histogram = Some(
+                        crate::native_artifact::codegen::control::codegen_report::Utf8Histogram {
+                            symbol,
+                            stack_bytes: stack,
+                            code_bytes: code,
+                            sites,
+                            funding: "complete_original_call_pass_prepayment",
+                            hash: "bounded_word_mix",
+                            bank: "adaptive_three_quarter_occupancy",
+                        },
+                    );
+                    Some((id, stack, code))
+                }
+            } else {
+                None
+            };
         #[cfg(feature = "canonical-native-program")]
         let window_functions =
             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(program) = plan

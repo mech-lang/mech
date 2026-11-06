@@ -70,12 +70,15 @@ fn emitted_scanner_uses_no_matrix_and_preserves_owner_over_activation_and_errors
                 u64::from_le_bytes(identity[16..24].try_into().unwrap()),
                 crate::native_artifact::program::image::identity::NATIVE_PROGRAM_TYPED_IR_VERSION
             );
-            assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 39);
+            assert_eq!(u64::from_le_bytes(identity[24..32].try_into().unwrap()), 40);
             assert_eq!(
                 u64::from_le_bytes(identity[32..40].try_into().unwrap()),
                 crate::native_artifact::program::image::identity::NATIVE_PROGRAM_WORK_POLICY_VERSION
             );
             for (offset, preceding) in [
+                (16, 203),
+                (24, 39),
+                (32, 113),
                 (16, 197),
                 (24, 38),
                 (32, 111),

@@ -84,7 +84,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                113
+                114
             );
             // Policies107/108/110/111 add fills, recursive frames, worker
             // transport and selected String-matrix scalar projections.

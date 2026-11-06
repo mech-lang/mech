@@ -3,7 +3,7 @@
 //! Entry/finalization must admit and retain both owners for the entire call.
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::compiler::backend;
-use crate::native_artifact::program::runtime::maps::utf8_read::{Cell, HASH_OFFSET, HASH_PRIME};
+use crate::native_artifact::program::runtime::maps::utf8_read::{Cell, HASH_OFFSET};
 use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{FuncId, Linkage, Module};
@@ -12,6 +12,15 @@ use std::mem::{offset_of, size_of};
 use crate::native_artifact::program::runtime::maps::utf8_histogram::{
     COLD, COMPLETE, FULL, Frame, INVALID, Slot,
 };
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub(in crate::native_artifact) enum Funding {
+    #[cfg(test)]
+    Metered,
+    // Only the genuine original-call loan may choose this specialization.
+    // Its checked pass_work bound has already been spent on the same account.
+    Prepaid,
+}
 
 /// Static eligibility is the exact same maintained selected-call proof that
 /// runtime rechecks before lending a source. No extra image authority exists.
@@ -42,10 +51,12 @@ pub(in crate::native_artifact) fn entry<M: Module>(
     hooks.call(b, site, GlobalHelper::HistogramPrepare, [zero; 3], error);
     let frame = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     let native = b.create_block();
+    b.append_block_param(native, types::I64);
     let ordinary = b.create_block();
     let done = b.create_block();
-    b.ins().brif(frame, native, &[], ordinary, &[]);
+    b.ins().brif(frame, native, &[frame.into()], ordinary, &[]);
     b.switch_to_block(native);
+    let frame = b.block_params(native)[0];
     let function = module.declare_func_in_func(function, b.func);
     let call = b.ins().call(function, &[frame]);
     let status = b.inst_results(call)[0];
@@ -57,7 +68,11 @@ pub(in crate::native_artifact) fn entry<M: Module>(
         error,
     );
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-    b.ins().brif(ready, done, &[], ordinary, &[]);
+    let finished = b.ins().icmp_imm(IntCC::Equal, ready, 1);
+    let retry = b.create_block();
+    b.ins().brif(finished, done, &[], retry, &[]);
+    b.switch_to_block(retry);
+    b.ins().brif(ready, native, &[ready.into()], ordinary, &[]);
     b.switch_to_block(ordinary);
     done
 }
@@ -76,7 +91,11 @@ fn spend(
     variable: Variable,
     units: i64,
     cold: cranelift_codegen::ir::Block,
+    funding: Funding,
 ) {
+    if funding == Funding::Prepaid {
+        return;
+    }
     let available = b.use_var(variable);
     let enough = b
         .ins()
@@ -92,10 +111,13 @@ fn spend(
 /// The caller must provide valid, aligned, disjoint banks, immutable cells and
 /// UTF8 byte owners, and truthful prefix state. Header checks are defensive;
 /// they do not establish the provenance of arbitrary native pointers.
+/// Prepaid emission additionally requires the complete checked pass allowance
+/// to have been spent before entry. Its frame counters are not reusable credit.
 pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     symbol: &str,
     vectorized: bool,
+    funding: Funding,
 ) -> Result<(FuncId, u64, u64), NativeCompileError> {
     if module.target_config().pointer_type() != types::I64 {
         return Err(NativeCompileError::UnsupportedHost);
@@ -121,7 +143,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
         b.append_block_params_for_function_params(entry);
         b.switch_to_block(entry);
         let frame = b.block_params(entry)[0];
-        emit(&mut b, frame, vectorized);
+        emit(&mut b, frame, vectorized, funding);
         b.seal_all_blocks();
         b.finalize();
     }
@@ -147,7 +169,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     ))
 }
 
-fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool) {
+fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool, funding: Funding) {
     let complete = b.create_block();
     let cold = b.create_block();
     let full = b.create_block();
@@ -176,6 +198,13 @@ fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool) {
     let count = get(b, frame, offset_of!(Frame, count));
     let slots = get(b, frame, offset_of!(Frame, slots));
     let capacity = get(b, frame, offset_of!(Frame, capacity));
+    let limit = get(b, frame, offset_of!(Frame, limit));
+    let nonzero_limit = b.ins().icmp_imm(IntCC::NotEqual, limit, 0);
+    let bounded_limit = b
+        .ins()
+        .icmp(IntCC::UnsignedLessThanOrEqual, limit, capacity);
+    let good_limit = b.ins().band(nonzero_limit, bounded_limit);
+    require(b, good_limit, invalid);
     let mask = b.ins().iadd_imm(capacity, -1);
     let power = b.ins().band(capacity, mask);
     let power = b.ins().icmp_imm(IntCC::Equal, power, 0);
@@ -198,6 +227,8 @@ fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool) {
     let good = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, at, count);
     require(b, good, invalid);
     let n = b.use_var(distinct);
+    let good = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, n, limit);
+    require(b, good, invalid);
     let good = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, n, at);
     require(b, good, invalid);
     let aligned = b.ins().band_imm(slots, 7);
@@ -216,7 +247,7 @@ fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool) {
     let header = b.create_block();
     let query = b.create_block();
     let hash_head = b.create_block();
-    let hash_byte = b.create_block();
+    let hash_read = b.create_block();
     let hashed = b.create_block();
     let probe = b.create_block();
     let inspect = b.create_block();
@@ -239,33 +270,61 @@ fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool) {
     let more = b.ins().icmp(IntCC::UnsignedLessThan, at, count);
     b.ins().brif(more, query, &[], complete, &[]);
     b.switch_to_block(query);
-    spend(b, fuel, 16, cold);
+    spend(b, fuel, 16, cold, funding);
     let offset = b.ins().imul_imm(at, size_of::<Cell>() as i64);
     let cell = b.ins().iadd(cells, offset);
     let address = get(b, cell, offset_of!(Cell, address));
     let bytes = get(b, cell, offset_of!(Cell, bytes));
-    let first = b.ins().iconst(types::I64, HASH_OFFSET as i64);
+    let seed = b.ins().iconst(types::I64, HASH_OFFSET as i64);
+    let first = b.ins().bxor(seed, bytes);
     b.def_var(hash, first);
     b.def_var(byte_at, zero);
     b.ins().jump(hash_head, &[]);
     b.switch_to_block(hash_head);
     let at_byte = b.use_var(byte_at);
     let more = b.ins().icmp(IntCC::UnsignedLessThan, at_byte, bytes);
-    b.ins().brif(more, hash_byte, &[], hashed, &[]);
-    b.switch_to_block(hash_byte);
-    spend(b, fuel, 1, cold);
-    let pointer = b.ins().iadd(address, at_byte);
-    let byte = b.ins().load(types::I8, MemFlags::new(), pointer, 0);
-    let byte = b.ins().uextend(types::I64, byte);
-    let word = b.use_var(hash);
-    let word = b.ins().bxor(word, byte);
-    let word = b.ins().imul_imm(word, HASH_PRIME as i64);
-    b.def_var(hash, word);
-    let next = b.ins().iadd_imm(at_byte, 1);
-    b.def_var(byte_at, next);
-    b.ins().jump(hash_head, &[]);
+    b.ins().brif(more, hash_read, &[], hashed, &[]);
+    b.switch_to_block(hash_read);
+    let remaining = b.ins().isub(bytes, at_byte);
+    for (width, ty) in [
+        (8i64, types::I64),
+        (4, types::I32),
+        (2, types::I16),
+        (1, types::I8),
+    ] {
+        let read = b.create_block();
+        let next = b.create_block();
+        let enough = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, width);
+        b.ins().brif(enough, read, &[], next, &[]);
+        b.switch_to_block(read);
+        spend(b, fuel, width * 2, cold, funding);
+        let pointer = b.ins().iadd(address, at_byte);
+        let word = b.ins().load(ty, MemFlags::new(), pointer, 0);
+        let word = if width == 8 {
+            word
+        } else {
+            b.ins().uextend(types::I64, word)
+        };
+        let prior = b.use_var(hash);
+        let mixed = b.ins().bxor(prior, word);
+        let mixed = b.ins().imul_imm(mixed, 0x9e3779b185ebca87u64 as i64);
+        let mixed = b.ins().rotl_imm(mixed, 27);
+        b.def_var(hash, mixed);
+        let after = b.ins().iadd_imm(at_byte, width);
+        b.def_var(byte_at, after);
+        b.ins().jump(hash_head, &[]);
+        b.switch_to_block(next);
+    }
+    b.ins().jump(invalid, &[]);
     b.switch_to_block(hashed);
     let word = b.use_var(hash);
+    let upper = b.ins().ushr_imm(word, 33);
+    let word = b.ins().bxor(word, upper);
+    let word = b.ins().imul_imm(word, 0xff51afd7ed558ccdu64 as i64);
+    let upper = b.ins().ushr_imm(word, 33);
+    let word = b.ins().bxor(word, upper);
     let first = b.ins().band(word, mask);
     b.def_var(probe_at, first);
     b.def_var(probes, zero);
@@ -275,7 +334,7 @@ fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool) {
     let room = b.ins().icmp(IntCC::UnsignedLessThan, tried, capacity);
     b.ins().brif(room, inspect, &[], full, &[]);
     b.switch_to_block(inspect);
-    spend(b, fuel, 8, cold);
+    spend(b, fuel, 8, cold, funding);
     let position = b.use_var(probe_at);
     let offset = b.ins().imul_imm(position, size_of::<Slot>() as i64);
     let slot = b.ins().iadd(slots, offset);
@@ -319,8 +378,8 @@ fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool) {
             .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, *width);
         b.ins().brif(enough, read, &[], next, &[]);
         b.switch_to_block(read);
-        spend(b, fuel, *width, cold);
-        spend(b, comparison, *width, cold);
+        spend(b, fuel, *width, cold, funding);
+        spend(b, comparison, *width, cold, funding);
         let source = b.ins().iadd(address, offset);
         let target = b.ins().iadd(old_address, offset);
         let ty = match width {
@@ -366,6 +425,11 @@ fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool) {
         .store(MemFlags::new(), next, slot, offset_of!(Slot, count) as i32);
     b.ins().jump(commit, &[]);
     b.switch_to_block(insert);
+    let current_distinct = b.use_var(distinct);
+    let room = b
+        .ins()
+        .icmp(IntCC::UnsignedLessThan, current_distinct, limit);
+    require(b, room, full);
     let old_payload = b.use_var(payload);
     let (next_payload, overflow) = b.ins().uadd_overflow(old_payload, bytes);
     let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);

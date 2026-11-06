@@ -340,3 +340,80 @@ fn histogram_prepare_and_finish_refusal_keep_original_errors_and_allow_clean_ret
         }
     }
 }
+
+#[test]
+fn adaptive_histogram_growth_and_refusal_replay_only_native_work_and_preserve_input() {
+    for artifact in artifacts("[string]") {
+        let jit = crate::native_artifact::JitProgramArtifact::compile(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap();
+        let unique = (0..257)
+            .map(|i| format!("{}é\0{i:04}", "x".repeat(i % 71)))
+            .collect::<Vec<_>>();
+        let texts = unique
+            .iter()
+            .chain(unique.iter().rev())
+            .cloned()
+            .collect::<Vec<_>>();
+        let memory = ManagedMemoryBudget::new(256 << 20);
+        let args = [input(&artifact, &texts, 1, &memory)];
+        let original = args[0]
+            .canonical_snapshot_bytes(artifact.schemas())
+            .unwrap();
+        let baseline = (memory.used_bytes(), memory.retained_snapshot_nodes());
+        for refuse_growth in [false, true, false] {
+            let mut limits = caps();
+            if refuse_growth {
+                let source_bytes = args[0].memory_budget_retained_bytes(&memory).unwrap();
+                limits.library.max_comparison_work =
+                    Some(source_bytes.checked_mul(64 + 128).unwrap() - 1);
+            }
+            let mut output = vec![None];
+            let (result, seen) = observed(
+                &jit,
+                jit.descriptor(),
+                &args,
+                &mut output,
+                limits,
+                &memory,
+                0,
+            );
+            result.unwrap_or_else(|error| panic!("refuse={refuse_growth}, {seen:?}: {error:?}"));
+            assert_ne!(seen[0].result, 0);
+            if refuse_growth {
+                assert_eq!(seen.len(), 2, "{seen:?}");
+                assert_eq!(
+                    seen[1].result, 0,
+                    "growth must decline without publishing private counts"
+                );
+            } else {
+                assert!(
+                    seen.len() >= 5,
+                    "native FULL must trigger multiple paid passes: {seen:?}"
+                );
+                assert!(
+                    seen[1..seen.len() - 1]
+                        .iter()
+                        .all(|r| r.operation == GlobalHelper::HistogramFinish
+                            && r.result > 1
+                            && r.status == STATUS_OK)
+                );
+                assert_eq!(seen.last().unwrap().result, 1);
+            }
+            assert_counts(&output, &texts);
+            assert_eq!(
+                args[0]
+                    .canonical_snapshot_bytes(artifact.schemas())
+                    .unwrap(),
+                original
+            );
+            drop(output);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                baseline
+            );
+        }
+    }
+}

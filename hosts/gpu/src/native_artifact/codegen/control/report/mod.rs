@@ -695,4 +695,7 @@ pub(in crate::native_artifact) struct Utf8Histogram {
     pub stack_bytes: u64,
     pub code_bytes: u64,
     pub sites: Vec<usize>,
+    pub funding: &'static str,
+    pub hash: &'static str,
+    pub bank: &'static str,
 }
