@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import random
 import re
 import shutil
 import statistics
@@ -15,6 +16,24 @@ import time
 
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def cohort_orders(variants, samples, mode='alternating', seed=None):
+    """Predeclare every round; only a local seeded generator changes order."""
+    if mode not in ('alternating', 'randomized'):
+        raise ValueError('Unknown cohort ordering')
+    if (mode == 'randomized') != (seed is not None):
+        raise ValueError('A seed is required exactly when ordering is randomized')
+    generator = random.Random(seed) if mode == 'randomized' else None
+    orders = []
+    for sample in range(samples):
+        order = list(variants)
+        if generator is not None:
+            generator.shuffle(order)
+        elif sample % 2:
+            order.reverse()
+        orders.append(order)
+    return orders
 
 
 def retain_output_copy(source, destination, objects):
@@ -120,6 +139,8 @@ def main():
     parser.add_argument('--timeout', type=float, default=600)
     parser.add_argument('--resources', action='store_true', help='Record macOS whole-process resource counters separately from processing-window measurements.')
     parser.add_argument('--deduplicate-outputs', action='store_true', help='Retain immutable content-addressed output copies after each timed process exits.')
+    parser.add_argument('--order', choices=['alternating', 'randomized'], default='alternating', help='Predeclare alternating or seeded randomized variant order.')
+    parser.add_argument('--seed', type=int, help='Required with --order randomized; the full generated order is retained.')
     args = parser.parse_args()
     config = json.loads(args.config.read_text())
     if args.resources and platform.system() != 'Darwin':
@@ -127,6 +148,10 @@ def main():
     variants = config['implementations']
     names = [v['name'] for v in variants]
     assert len(set(names)) == len(names) and config['reference'] in names
+    try:
+        orders = cohort_orders(variants, args.samples, args.order, args.seed)
+    except ValueError as error:
+        parser.error(str(error))
     input_path = args.input.resolve()
     args.work.mkdir(parents=True, exist_ok=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -150,6 +175,15 @@ def main():
         'input': {'path': str(input_path), 'sha256': sha(input_path), 'posts': len(json.loads(input_path.read_text()))},
         'implementations': [], 'samples': [], 'summary': {},
     }
+    report['execution_order'] = {
+        'mode': args.order, 'seed': args.seed,
+        'python_version': platform.python_version(),
+        'rounds': [[variant['name'] for variant in order] for order in orders],
+    }
+    if args.order == 'randomized':
+        report['protocol'] = report['protocol'].replace(
+            'reverse order on alternate rounds',
+            'seeded randomized order, predeclared and retained for every round')
     if args.deduplicate_outputs:
         report['output_retention'] = 'After process timing ends, identical output files share read-only content-addressed copies. Producer paths never alias the retained store. Measured commands, outputs and timing boundaries are unchanged.'
     if args.resources:
@@ -184,8 +218,7 @@ def main():
     def save():
         args.output.write_text(json.dumps(report, indent=2) + '\n')
 
-    for sample in range(args.samples):
-        order = variants if sample % 2 == 0 else list(reversed(variants))
+    for sample, order in enumerate(orders):
         outputs, rows = {}, []
         for variant in order:
             name = variant['name']
