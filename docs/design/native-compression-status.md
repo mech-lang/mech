@@ -1,5 +1,76 @@
 # Native compression milestone
 
+**R177 retains current affine read-address geometry.** All 20 complete-call
+elapsed medians improve, with 1.255563% geometric improvement and unchanged
+1.05 gates. Natural32KB improves **4.242162× → 4.177357× Roc** (1.527657%),
+natural16KB **5.015910× → 4.955960×** (1.195194%), random32KB
+**5.428153× → 5.375515×** (0.969728%), and distribution16KB
+**7.034618× → 6.933858×** (1.432342%). Eight literals improve
+4.630497× → 4.619792× (0.231182%). Periodic33KB still has four improving/four
+adverse paired blocks. No contrary observation is discarded or gain compounded
+with another cohort or the optional R172 source variant.
+
+The emitter derives current forward/reverse bases from the existing admitted
+immutable windows, then adds/subtracts the current scaled induction. The inspected
+continuing scalar visit falls **19 → 16 instructions**, with its length stack
+reload **one → zero**. Four setup instructions run once; at N=1 this address
+segment is one instruction worse. The vector body falls 26 → 25 instructions,
+while its length reload remains. Reference scalar counterpart: 11 instructions.
+There is no dynamic activation census or whole-call saving inferred from samples.
+Code shrinks 512 B to 8,955,224 B; stack stays 15,792 B. The source algorithm,
+reads, threshold, ties, current proof, prices, fallbacks and allocation sites stay
+unchanged. No runtime ABI, ownership or source change is introduced.
+
+Natural32 instructions fall 1.289263%, natural16 1.235343%; 19 of 20 instruction
+medians fall. Ten cycle medians rise, including random32 and repeated32. All 20
+allocation/requested-byte/reallocation/usable-live-heap metrics stay equal. Initial
+CPU/heap cohorts have higher absolute RSS. A separate fresh-session ABBA check
+(40 full eight-byte calls, exact output/cleanup) does not reproduce the increase:
+RSS −0.017717%, physical footprint −0.070080%. Initial readings and memory maps
+remain available; their cause is not proved. No memory improvement is claimed.
+
+Five fresh exact-worker profiles cover 16,803 complete calls. Independently
+byte-identical compilation-only maps distinguish reduction phases. Natural32 has
+83.23% inside the main generated entry, with 37.27% unknown native attribution;
+eight bytes has 11.13% inside. Outside-entry includes other generated helpers and
+validation. These are CPU-time samples, separate from retired instructions.
+
+Corrected qualification passes 14 focused/632 GPU tests with the same seven
+inherited exclusions; all 215 selected CI names execute. The independent oracle
+now covers all U32/U64 forward/reverse width pairs, offsets 1/7, fresh current
+lengths/values, thresholds/tails, original/decoded, direct/restored and aliases.
+Fresh 236-component/eight-composition/one-real-capacity-path qualification,
+12 scalar controls, all 15 architecture/catalog checks, 132 workflow tests,
+runtime-only, formatting and warnings denied pass, with unchanged expectations
+and allowances. Some scalar medians worsen, up to 0.646576%, within the existing
+gate. The introduced test-module layout violation and provenance-attribute
+assertion are repaired and retained with their original failed receipts.
+
+**An inherited correctness finding remains open.** Review comment 4489282114
+identifies an exhausted active-to-terminal payload update that the reduction
+bypasses. The generic reproducer returns native (9,1,18) versus resident (0,1,18)
+on both retained R176 and this candidate, for original and decoded artifacts.
+All 20 pinned compression cases still match the reference. The finding blocks
+readiness; the next task is its bounded proof/transport fix with this reproducer,
+before another performance experiment. This address patch does not repair it.
+
+Parent `0bca6a54cdc2d69df71ca2763a6f36993448fe02`; measured compiler
+`379e7e140453265675df9230f4e3fedcc18290fa`; corrected test source
+`5276932c5eb76dadf95e1735acfdbb1d90dd9ebf`. Production files are byte-identical
+across the test-only layout correction. IR/work/ABI/MBC 197/107/39/14; frozen R145
+dependencies, source/MBC/real buffers/allocator/full API boundary pinned. Largest
+input 33,027 B. See the [complete R177 report](native-affine-read-addresses.md)
+for all results, exact commands/pins, failures, profiles, memory confirmation and
+skipped coverage. The broader mutable-parent fact project remains unfinished.
+One optimization commit in existing draft #973; ordinary CI cancelled by standing
+instruction and review preserved. Parity remains active.
+
+Publication verifies 39 public archives / 78 server digests. Fresh retrieval verifies
+5,124 file occurrences / 1,121 paths / 19 historical versions and reconstructs
+results.json and REPORT.md byte-for-byte without compiling or compressing.
+
+## Historical R176 checkpoint
+
 **R176 retains simpler scalar reduction entry and exit control.** Natural32KB
 improves **4.301808× → 4.220265× Roc** (1.895541%, all eight blocks improve),
 natural16KB **5.105361× → 5.011239×** (1.843595%), and repeated32KB
