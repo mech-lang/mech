@@ -144,7 +144,7 @@ struct Key {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Leaf<'a> {
+pub(super) struct Leaf<'a> {
     selected_key: Key,
     primitive: Json,
     #[serde(borrow)]
@@ -154,7 +154,7 @@ struct Leaf<'a> {
     contract: ResolvedOperationContract,
     implementation_memory: Json,
 }
-fn leaf(
+pub(super) fn leaf(
     wire: Leaf<'_>,
     catalog: &FunctionCatalog,
     schemas: &mech_core::SchemaTable,
@@ -217,12 +217,12 @@ fn leaf(
 }
 
 #[derive(Deserialize)]
-enum Source {
+pub(super) enum Source {
     Constant(u32),
     Slot(CellSlotId),
 }
 impl Source {
-    fn source(self) -> ArtifactSource {
+    pub(super) fn source(self) -> ArtifactSource {
         match self {
             Self::Constant(id) => ArtifactSource::Constant(mech_core::ConstantId::new(id)),
             Self::Slot(id) => ArtifactSource::Slot(id),
@@ -284,24 +284,24 @@ impl NativeCollectionOperationTemplate {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-enum Control {
+pub(super) enum Control {
     Constant(u32),
     Parameter { block: u32, ordinal: u16 },
     Local { block: u32, node: u32 },
 }
 #[derive(Deserialize)]
-enum Comprehension {
+pub(super) enum Comprehension {
     Constant(u32),
     Input(u16),
     Local(u32),
 }
 #[derive(Deserialize)]
-enum LexicalSource {
+pub(super) enum LexicalSource {
     Control(Control),
     Comprehension(Comprehension),
 }
 impl LexicalSource {
-    fn source(self) -> NativeCollectionLexicalSource {
+    pub(super) fn source(self) -> NativeCollectionLexicalSource {
         use crate::{ComprehensionValue as V, ControlBlockId as B, ControlValue as C};
         match self {
             Self::Control(c) => NativeCollectionLexicalSource::Control(match c {

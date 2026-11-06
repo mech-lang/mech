@@ -1,7 +1,6 @@
 //! Private reconstruction of immutable loop metadata, not loop execution.
 use super::{WireOrigin, library};
 use crate::native_artifact::*;
-use mech_core::{FunctionCatalog, SchemaTable};
 use serde::{Deserialize, Deserializer};
 
 #[derive(Deserialize)]
@@ -103,8 +102,7 @@ pub(super) fn scope<'de, D: Deserializer<'de>>(
 /// established unchanged compiler/Object provenance. Parsing is not CFG proof.
 pub(super) unsafe fn control_loop<'de, D: Deserializer<'de>>(
     image: D,
-    catalog: &FunctionCatalog,
-    schemas: &SchemaTable,
+    templates: &library::Templates<'_>,
 ) -> Result<NativeControlLoop, String> {
     let wire = Loop::deserialize(image).map_err(|e| e.to_string())?;
     Ok(match wire {
@@ -146,9 +144,7 @@ pub(super) unsafe fn control_loop<'de, D: Deserializer<'de>>(
                 Source::U64Range(range) => NativeCollectionSource::U64Range(NativeU64RangeCursor {
                     prepare: range.prepare,
                     // SAFETY: delegate the same enclosing build-image obligation.
-                    template: unsafe {
-                        library::template_record(range.template, catalog, schemas)?
-                    },
+                    template: unsafe { templates.read(range.template)? },
                     operands: range.operands.map(NativeMatchValue),
                     output: NativeMatchValue(range.output),
                     before_collection_begin: range.before_collection_begin,
@@ -219,10 +215,12 @@ mod tests {
         ];
         let catalog = mech_core::FunctionCatalogBuilder::new().build().unwrap();
         let schemas = mech_core::SchemaTableBuilder::new().finish().unwrap().table;
+        // SAFETY: metadata-only tests, with no library selections or entry.
+        let templates = unsafe { library::Templates::new(None, &catalog, &schemas) }.unwrap();
         for original in loops {
             let image = serde_json::to_value(original).unwrap();
             // SAFETY: metadata-only round trip; synthetic graph indices never execute.
-            let decoded = unsafe { control_loop(&image, &catalog, &schemas) }.unwrap();
+            let decoded = unsafe { control_loop(&image, &templates) }.unwrap();
             assert_eq!(serde_json::to_value(decoded).unwrap(), image);
         }
         for original in [

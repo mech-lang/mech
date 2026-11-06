@@ -200,7 +200,7 @@ pub(in crate::native_artifact) mod packing;
 struct TablePlan<'a>(&'a NativeProgramArtifactPlan);
 impl serde::Serialize for TablePlan<'_> {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        self.0.serialize_build_owned_table_plan(s)
+        self.0.serialize_build_owned_shared_template_plan(s)
     }
 }
 struct TableBinding<'a>(&'a mech_engine::native_artifact::NativePreparedLibraryCall);

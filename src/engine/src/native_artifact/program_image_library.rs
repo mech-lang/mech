@@ -8,6 +8,50 @@ use mech_core::{FunctionCatalog, NodeId, ProgramRevision, ResolvedOperationContr
 use serde::Deserialize;
 use serde_json::Value;
 
+/// One immutable template-definition table, private to this plan restoration.
+/// Legacy images retain their full independent template reconstruction path.
+pub(super) struct Templates<'a> {
+    catalog: &'a FunctionCatalog,
+    schemas: &'a SchemaTable,
+    shared: Option<
+        crate::resident::general::native_collection_templates::NativeCollectionTemplateTable,
+    >,
+}
+impl<'a> Templates<'a> {
+    /// # Safety
+    /// All unchanged-build confinement and source-site duties of
+    /// `template_record` apply to the complete enclosing plan and table.
+    pub(super) unsafe fn new(
+        shared: Option<BuildOwnedImageRecord<'_>>,
+        catalog: &'a FunctionCatalog,
+        schemas: &'a SchemaTable,
+    ) -> Result<Self, String> {
+        let shared = shared.map(|record| unsafe {
+            crate::resident::general::native_collection_templates::NativeCollectionTemplateTable::from_build_record(
+                record, catalog, schemas,
+            )
+        }).transpose()?;
+        Ok(Self {
+            catalog,
+            schemas,
+            shared,
+        })
+    }
+    /// # Safety
+    /// Each record must be the unchanged source header from this exact plan's
+    /// checked image. The table confers no visit or invocation authority.
+    pub(super) unsafe fn read(
+        &self,
+        record: BuildOwnedImageRecord<'_>,
+    ) -> Result<NativeProgramLibraryTemplate, String> {
+        if let Some(table) = &self.shared {
+            unsafe { table.template_record(record) }
+        } else {
+            unsafe { template_record(record, self.catalog, self.schemas) }
+        }
+    }
+}
+
 #[derive(Deserialize)]
 struct Origin {
     node: NodeId,

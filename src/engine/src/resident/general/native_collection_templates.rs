@@ -3,6 +3,8 @@
 use super::{node_inputs, node_output_slot};
 #[path = "native_collection_template_image.rs"]
 mod image;
+#[path = "native_collection_shared_templates.rs"]
+mod shared_image;
 use crate::native_artifact::NativeArtifactLoweringError as Error;
 pub use crate::resident::native_collection_semantics::NativeCollectionPrimitive;
 use crate::{ArtifactSource, ExecutableNodeBody, OperationReference, ProgramArtifact};
@@ -10,6 +12,7 @@ use mech_core::{
     CellSlotId, FunctionCatalog, ImplementationMemoryClass, NodeId, OperationContractId,
     ProgramRevision, ResidentOperationKey, ResolvedOperationContract, Schema, SchemaBody, SchemaId,
 };
+pub(crate) use shared_image::NativeCollectionTemplateTable;
 use std::sync::Arc;
 
 /// This read-only record certifies the exact selected library implementation

@@ -235,7 +235,7 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
             mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 4);
+        assert_eq!(image["version"], 5);
         let independent =
             unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }.unwrap();
         let bound = unsafe {
@@ -367,7 +367,7 @@ fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
         .unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 4);
+        assert_eq!(image["version"], 5);
         let rows = image["descriptor"]["plan"]["values"].as_array().unwrap();
         assert!(
             rows.iter()
@@ -412,6 +412,146 @@ fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
             );
         }
     }
+}
+
+#[test]
+fn shared_template_definitions_preserve_sites_and_reject_foreign_rows_and_factories() {
+    use serde::Deserialize;
+    let catalog = mech_stdlib::source_catalog();
+    fn headers(value: &serde_json::Value, path: &str, found: &mut Vec<String>) {
+        match value {
+            serde_json::Value::Object(fields) => {
+                if value["leaf"].is_u64()
+                    && value["sources"]
+                        .as_array()
+                        .is_some_and(|sources| !sources.is_empty())
+                {
+                    found.push(path.to_owned());
+                    return;
+                }
+                for (key, value) in fields {
+                    let key = key.replace('~', "~0").replace('/', "~1");
+                    headers(value, &format!("{path}/{key}"), found);
+                }
+            }
+            serde_json::Value::Array(values) => {
+                for (index, value) in values.iter().enumerate() {
+                    headers(value, &format!("{path}/{index}"), found);
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut observed_sharing = false;
+    for source in [
+        "+> sequence\nleft := sequence/length(first<[string]>)\nright := sequence/length(second<[string]>)\nleft + right\n",
+        include_str!("../../../../tests/fixtures/native/numeric-parent-child.mec"),
+        include_str!("../../../../tests/fixtures/native/window-histogram.mec"),
+        "+> sequence\n[at + 1u64 | at <- 0u64..=limit<u64>]\n",
+        "+> text\n+> map\nentries := {\"a\": \"A\", \"b\": \"B\"}\ntext/join([entries{ch} | ch <- seed<string>], \"\")\n",
+    ] {
+        for artifact in artifacts(source) {
+            let object = emit_program_object(&artifact, &catalog).unwrap();
+            let expected = object.descriptor().encode_build_owned_image().unwrap();
+            let bytes = object.native_metadata();
+            let mut reader =
+                mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
+            let image = serde_json::Value::deserialize(&mut reader).unwrap();
+            reader.end().unwrap();
+            assert_eq!(image["version"], 5);
+            let definitions = image["descriptor"]["plan"]["template_definitions"]
+                .as_array()
+                .unwrap();
+            assert!(!definitions.is_empty());
+            let library_sites = object
+                .descriptor()
+                .plan()
+                .blocks()
+                .iter()
+                .filter(|block| {
+                    matches!(
+                        block.action(),
+                        mech_engine::native_artifact::NativeIterationAction::LibraryCall { .. }
+                    )
+                })
+                .count();
+            observed_sharing |= library_sites > definitions.len();
+            // SAFETY: exact genuine checked Object metadata; both loaders must
+            // reconstruct every original source header and the full semantic
+            // descriptor. Neither assertion executes a fabricated native entry.
+            let independent =
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }
+                    .unwrap();
+            let bound = unsafe {
+                NativeProgramDescriptor::decode_object_bound_image(
+                    bytes,
+                    &catalog,
+                    object.identity().bytes(),
+                    object.native_metadata_binding().bytes(),
+                )
+            }
+            .unwrap();
+            assert_eq!(independent.encode_build_owned_image().unwrap(), expected);
+            assert_eq!(bound.encode_build_owned_image().unwrap(), expected);
+            let mut sites = Vec::new();
+            headers(&image["descriptor"]["plan"], "/descriptor/plan", &mut sites);
+            let path = sites
+                .first()
+                .expect("fixture has no nonempty template header");
+            let definition = image.pointer(path).unwrap()["leaf"].as_u64().unwrap() as usize;
+            for fault in 0..8 {
+                let mut changed = image.clone();
+                let plan = &mut changed["descriptor"]["plan"];
+                match fault {
+                    0 => changed.pointer_mut(path).unwrap()["leaf"] = u32::MAX.into(),
+                    1 => changed.pointer_mut(path).unwrap()["sources"] = serde_json::json!([]),
+                    2 => {
+                        plan["template_definitions"][definition]["selected_key"]["operation_name"] =
+                            "unlinked-template-definition".into()
+                    }
+                    3 => {
+                        plan["template_definitions"][definition]["primitive"] =
+                            "ForeignPrimitive".into()
+                    }
+                    4 => {
+                        plan["template_definitions"][definition]["implementation_memory"] =
+                            "ForeignMemoryClass".into()
+                    }
+                    5 => plan["template_definitions"][definition]["inputs"] = serde_json::json!([]),
+                    6 => {
+                        plan.as_object_mut().unwrap().remove("template_definitions");
+                    }
+                    _ => changed["version"] = 4.into(),
+                }
+                let json = serde_json::to_vec(&changed).unwrap();
+                let native =
+                    mech_engine::native_artifact::encode_native_metadata_image(&json).unwrap();
+                // SAFETY: confined negative wire tests; altered metadata can
+                // neither escape these checks nor authorize any native entry.
+                assert!(
+                    unsafe { NativeProgramDescriptor::decode_build_owned_image(&native, &catalog) }
+                        .is_err(),
+                    "independent fault {fault}"
+                );
+                assert!(
+                    unsafe {
+                        NativeProgramDescriptor::decode_object_bound_image(
+                            &native,
+                            &catalog,
+                            object.identity().bytes(),
+                            object.native_metadata_binding().bytes(),
+                        )
+                    }
+                    .is_err(),
+                    "bound fault {fault}"
+                );
+            }
+        }
+    }
+    assert!(
+        observed_sharing,
+        "fixture did not exercise repeated definitions"
+    );
 }
 
 #[test]

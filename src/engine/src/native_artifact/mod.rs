@@ -80,6 +80,7 @@ pub use program_image_read::values::schemas_record as decode_native_schema_recor
 pub use program_image_read::{
     decode_build_owned_native_plan_body, decode_build_owned_native_plan_image,
     decode_build_owned_native_plan_record, decode_build_owned_native_plan_value,
+    decode_build_owned_native_shared_table_plan_record,
     decode_build_owned_native_table_plan_record,
 };
 

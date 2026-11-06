@@ -1,5 +1,5 @@
 //! Reassemble the same compiler-produced plan, never an alternative lowering.
-use super::{collections, iteration, loops, nodes};
+use super::{collections, iteration, library, loops, nodes};
 use crate::native_artifact::{
     BuildOwnedImageReader, BuildOwnedImageRecord, NativeProgramArtifactPlan,
 };
@@ -38,6 +38,8 @@ struct Plan<'a> {
     entry: u32,
     activation_nodes: Box<[NodeId]>,
     activation_boundary: Option<u32>,
+    #[serde(borrow, default)]
+    template_definitions: Option<BuildOwnedImageRecord<'a>>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -141,7 +143,22 @@ pub unsafe fn decode_build_owned_native_table_plan_record(
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, String> {
     let plan = image.decode().map_err(|error| error.to_string())?;
-    restore_inner::<true>(plan, schemas, catalog)
+    restore_inner::<true, false>(plan, schemas, catalog)
+}
+
+/// Restore shared immutable library definitions and exact per-site headers.
+///
+/// # Safety
+/// All unchanged checked Object/image provenance, confinement and runtime
+/// admission duties of `decode_build_owned_native_table_plan_record` apply.
+/// Only the enclosing descriptor's explicit shared-table version selects this.
+pub unsafe fn decode_build_owned_native_shared_table_plan_record(
+    image: BuildOwnedImageRecord<'_>,
+    schemas: &SchemaTable,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramArtifactPlan, String> {
+    let plan = image.decode().map_err(|error| error.to_string())?;
+    restore_inner::<true, true>(plan, schemas, catalog)
 }
 
 fn records<T>(
@@ -164,14 +181,21 @@ fn restore(
     schemas: &SchemaTable,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, String> {
-    restore_inner::<false>(w, schemas, catalog)
+    restore_inner::<false, false>(w, schemas, catalog)
 }
 
-fn restore_inner<const TABLES: bool>(
+fn restore_inner<const TABLES: bool, const SHARED_TEMPLATES: bool>(
     w: Plan<'_>,
     schemas: &SchemaTable,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, String> {
+    if w.template_definitions.is_some() != SHARED_TEMPLATES {
+        return Err("plan image version differs from its template definitions".into());
+    }
+    // SAFETY: this constructor remains inside the unchanged checked-build
+    // loader. The table validates the actual linked factory and canonical
+    // schemas for every definition; each source header remains independent.
+    let templates = unsafe { library::Templates::new(w.template_definitions, catalog, schemas)? };
     let resource_requirements = records(w.resource_requirements, |reader| nodes::request(reader))?;
     let inputs = records(w.inputs, |v| nodes::input(v, schemas))?;
     let observations = records(w.observations, |v| nodes::observation(v, schemas))?;
@@ -194,16 +218,14 @@ fn restore_inner<const TABLES: bool>(
     let value_scopes = records(w.value_scopes, |reader| loops::scope(reader))?;
     let outputs = records(w.outputs, |v| nodes::output(v, schemas))?;
     // SAFETY: each private reader inherits the enclosing build-owned contract.
-    let blocks = records(w.blocks, |v| unsafe {
-        iteration::block(v, catalog, schemas)
-    })?;
+    let blocks = records(w.blocks, |v| unsafe { iteration::block(v, &templates) })?;
     // SAFETY: same confined image, schemas and selected registry.
     let iterations = records(w.iterations, |v| unsafe {
-        loops::control_loop(v, catalog, schemas)
+        loops::control_loop(v, &templates)
     })?;
     // SAFETY: same confined image, schemas and selected registry.
     let collections = records(w.collections, |v| unsafe {
-        collections::collection(v, catalog, schemas)
+        collections::collection(v, &templates)
     })?;
     let plan = NativeProgramArtifactPlan {
         // An image contains semantic selection, not its producer's budget.

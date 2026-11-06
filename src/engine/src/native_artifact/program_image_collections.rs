@@ -1,7 +1,6 @@
 //! Private collection reconstruction. No producer, consumer, or kernel runs here.
 use super::{WireOrigin, library};
 use crate::native_artifact::*;
-use mech_core::{FunctionCatalog, SchemaTable};
 use serde::{Deserialize, Deserializer};
 
 #[path = "program_image_sinks.rs"]
@@ -74,8 +73,7 @@ struct Collection<'a> {
 /// has unchanged compiler/Object provenance. Parsing is not escape analysis.
 pub(super) unsafe fn collection<'de, D: Deserializer<'de>>(
     image: D,
-    catalog: &FunctionCatalog,
-    schemas: &SchemaTable,
+    templates: &library::Templates<'_>,
 ) -> Result<NativeProgramCollection, String> {
     let wire = Collection::deserialize(image).map_err(|e| e.to_string())?;
     let kind = match wire.kind {
@@ -101,13 +99,9 @@ pub(super) unsafe fn collection<'de, D: Deserializer<'de>>(
                 range_site: s.range_site,
                 selection_site: s.selection_site,
                 // SAFETY: propagate the enclosing unchanged build-image obligation.
-                range_template: unsafe {
-                    library::template_record(s.range_template, catalog, schemas)?
-                },
+                range_template: unsafe { templates.read(s.range_template)? },
                 // SAFETY: same confined image and selected catalog.
-                selection_template: unsafe {
-                    library::template_record(s.selection_template, catalog, schemas)?
-                },
+                selection_template: unsafe { templates.read(s.selection_template)? },
                 operands: s.operands.map(NativeMatchValue),
                 source: NativeMatchValue(s.source),
                 selector: NativeMatchValue(s.selector),
@@ -127,9 +121,7 @@ pub(super) unsafe fn collection<'de, D: Deserializer<'de>>(
                 element: NativeMatchValue(s.element),
                 output: NativeMatchValue(s.output),
                 // SAFETY: propagate the enclosing unchanged build-image obligation.
-                selection_template: unsafe {
-                    library::template_record(s.selection_template, catalog, schemas)?
-                },
+                selection_template: unsafe { templates.read(s.selection_template)? },
             })
         })
         .transpose()?;
@@ -144,7 +136,7 @@ pub(super) unsafe fn collection<'de, D: Deserializer<'de>>(
         kind,
         output: NativeMatchValue(wire.output),
         // SAFETY: result metadata belongs to the same confined collection image.
-        result: unsafe { sinks::result(&mut wire.result.reader(), catalog, schemas)? },
+        result: unsafe { sinks::result(&mut wire.result.reader(), templates)? },
         string_span_projection: span,
         string_element_map_projection: map,
         generators: wire.generators,

@@ -1,7 +1,6 @@
 //! Private wire reconstruction of native iteration blocks; never a scheduler.
 use super::{WireAction, WireOrigin, WireTerminator, action, library, terminator};
 use crate::native_artifact::*;
-use mech_core::{FunctionCatalog, SchemaTable};
 use serde::{Deserialize, Deserializer};
 
 #[derive(Deserialize)]
@@ -105,8 +104,7 @@ struct Block<'a> {
 /// unchanged compiler/Object provenance, including all loop and value indices.
 pub(super) unsafe fn block<'de, D: Deserializer<'de>>(
     image: D,
-    catalog: &FunctionCatalog,
-    schemas: &SchemaTable,
+    templates: &library::Templates<'_>,
 ) -> Result<NativeIterationBlock, String> {
     let wire = Block::deserialize(image).map_err(|e| e.to_string())?;
     use NativeIterationAction as N;
@@ -145,7 +143,7 @@ pub(super) unsafe fn block<'de, D: Deserializer<'de>>(
             output,
         } => N::LibraryCall {
             // SAFETY: propagate the enclosing build-image confinement contract.
-            template: unsafe { library::template_record(template, catalog, schemas)? },
+            template: unsafe { templates.read(template)? },
             operands: operands
                 .into_vec()
                 .into_iter()
@@ -237,6 +235,8 @@ mod tests {
         ];
         let catalog = mech_core::FunctionCatalogBuilder::new().build().unwrap();
         let schemas = mech_core::SchemaTableBuilder::new().finish().unwrap().table;
+        // SAFETY: metadata-only tests, with no library selections or entry.
+        let templates = unsafe { library::Templates::new(None, &catalog, &schemas) }.unwrap();
         for action in actions {
             let original = NativeIterationBlock {
                 origin: NativeMatchOrigin {
@@ -254,7 +254,7 @@ mod tests {
             };
             let image = serde_json::to_value(original).unwrap();
             // SAFETY: confined metadata round-trip test; synthetic indices never execute.
-            let loaded = unsafe { block(&image, &catalog, &schemas) }.unwrap();
+            let loaded = unsafe { block(&image, &templates) }.unwrap();
             assert_eq!(serde_json::to_value(loaded).unwrap(), image);
         }
     }

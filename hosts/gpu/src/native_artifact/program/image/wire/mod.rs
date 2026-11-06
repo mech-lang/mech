@@ -219,8 +219,8 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     let image: Image<'_> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
-        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4))
-        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4))
+        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5))
+        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5))
     {
         return Err("unsupported native descriptor image format".into());
     }
@@ -239,7 +239,11 @@ fn decode_inner<const OBJECT_BOUND: bool>(
     let schemas = Arc::new(decode_native_schema_record(w.schemas)?);
     // SAFETY: only the enclosing unsafe descriptor loader reaches this private
     // reader; it retains all metadata until exact checked-build provenance holds.
-    let plan = if table_rows {
+    let plan = if image.version >= 5 {
+        // SAFETY: the explicit image version selects the shared table reader;
+        // provenance and independent validation retain the same policy.
+        unsafe { decode_build_owned_native_shared_table_plan_record(w.plan, &schemas, catalog)? }
+    } else if table_rows {
         // SAFETY: same confined checked image; V3 changes wire representation,
         // never the Object-bound/independent proof-selection policy below.
         unsafe { decode_build_owned_native_table_plan_record(w.plan, &schemas, catalog)? }

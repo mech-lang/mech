@@ -77,8 +77,7 @@ enum Sink<'a> {
 /// The enclosing collection decoder's unchanged build-image confinement applies.
 pub(super) unsafe fn result<'de, D: Deserializer<'de>>(
     image: D,
-    catalog: &FunctionCatalog,
-    schemas: &SchemaTable,
+    templates: &library::Templates<'_>,
 ) -> Result<NativeCollectionResult, String> {
     let sink = Sink::deserialize(image).map_err(|e| e.to_string())?;
     Ok(match sink {
@@ -88,13 +87,13 @@ pub(super) unsafe fn result<'de, D: Deserializer<'de>>(
             separator: NativeMatchValue(w.separator),
             output: NativeMatchValue(w.output),
             // SAFETY: same confined image and selected catalog.
-            template: unsafe { library::template_record(w.template, catalog, schemas)? },
+            template: unsafe { templates.read(w.template)? },
         }),
         Sink::Histogram(w) => NativeCollectionResult::Histogram(NativeHistogramSink {
             consumer: w.consumer,
             output: NativeMatchValue(w.output),
             // SAFETY: same confined image and selected catalog.
-            template: unsafe { library::template_record(w.template, catalog, schemas)? },
+            template: unsafe { templates.read(w.template)? },
         }),
         Sink::GuardedHistogramQuery(w) => {
             let steps = w
@@ -125,7 +124,7 @@ pub(super) unsafe fn result<'de, D: Deserializer<'de>>(
                         .template
                         .map(|t| {
                             // SAFETY: same confined image and selected catalog.
-                            unsafe { library::template_record(t, catalog, schemas) }
+                            unsafe { templates.read(t) }
                         })
                         .transpose()?;
                     Ok(NativeHistogramQueryStep {
