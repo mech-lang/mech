@@ -62,6 +62,12 @@ impl Invocation<'_, '_, '_> {
             .ok_or_else(|| invalid("parent numeric proof missing"))?;
         if self.numeric_prepaid.is_some()
             && self.numeric_prepaid_region() != segment.prepaid_region
+            // Every segment site has its parent's iteration. Validated parent
+            // IDs decrease, so an iteration newer than the paid deepest cannot
+            // overlap. Older IDs still need the exact source/ancestry scan.
+            && self
+                .numeric_prepaid
+                .is_some_and(|route| route.may_include_iteration(Some(parent.iteration)))
             && segment
                 .sites
                 .iter()

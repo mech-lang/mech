@@ -13,6 +13,8 @@ mod helper_fallbacks;
 mod numeric_exits;
 mod numeric_segments;
 mod numeric_writes;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod paid_iterations;
 mod readonly_numeric;
 mod selected_calls;
 mod unsigned_buffers;
@@ -163,6 +165,13 @@ pub(super) struct NumericPrepaid {
     region: usize,
     /// Deepest active traversal already paid before an exact cold edge.
     deepest: u32,
+}
+impl NumericPrepaid {
+    /// Validated parents have smaller IDs, so no paid ancestor can be newer
+    /// than the deepest paid iteration. This negative grants no source credit.
+    fn may_include_iteration(self, wanted: Option<u32>) -> bool {
+        wanted.is_some_and(|wanted| wanted <= self.deepest)
+    }
 }
 
 pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visit, 'plan> {
