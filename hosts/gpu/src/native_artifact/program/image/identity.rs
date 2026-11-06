@@ -387,8 +387,10 @@ fn selected_template(
 // IR188 rederives activation-current affine read windows after local-phi cleanup.
 // IR189 also merges activation entries before invariant local-phi analysis.
 // IR226 combines both compiler histories and their independently checked metadata.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 227;
 // IR227 also integrates current child-funding gates from PR973/IR194.
+// IR228 consumes selected nonempty-entry facts in the compact scalar reduction
+// backedge from PR973/IR196. The earlier reverse-input experiment was rejected.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 228;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
