@@ -1,4 +1,4 @@
-//! Prove checked unsigned additions from dominating tests and intrinsic ranges.
+//! Prove checked unsigned guards from dominating tests and intrinsic ranges.
 //! Only an impossible failure edge is removed. No operation, debit, memory
 //! access, failure ordering or caller-provided value is speculated.
 use cranelift_codegen::Context;
@@ -7,6 +7,8 @@ use cranelift_codegen::ir::{
     Block, Function, InstBuilder, InstructionData as D, Opcode as O, Value, ValueDef, types,
 };
 use std::collections::BTreeMap;
+
+mod intervals;
 
 const MAX_FACTS: usize = 4096;
 
@@ -49,12 +51,6 @@ impl Operand {
         match self {
             Self::Value(v) => constant(f, v),
             Self::Constant(v) => Some(v),
-        }
-    }
-    fn upper(self, f: &Function) -> u64 {
-        match self {
-            Self::Value(v) => intrinsic_upper_bound(f, v, 8),
-            Self::Constant(v) => v,
         }
     }
     fn word(self, f: &Function) -> bool {
@@ -286,6 +282,32 @@ fn insert_bound(
     true
 }
 
+fn insert_lower(
+    lower: &mut BTreeMap<Value, Vec<(Block, u64)>>,
+    facts: &mut usize,
+    value: Value,
+    at: Block,
+    bound: u64,
+) -> bool {
+    if bound == 0 {
+        return false;
+    }
+    let entries = lower.entry(value).or_default();
+    if let Some((_, old)) = entries.iter_mut().find(|(block, _)| *block == at) {
+        if bound > *old {
+            *old = bound;
+            return true;
+        }
+        return false;
+    }
+    if *facts == MAX_FACTS {
+        return false;
+    }
+    entries.push((at, bound));
+    *facts += 1;
+    true
+}
+
 /// `known` is emitted only from validated packed numeric extent recipes;
 /// no serialized field or caller-supplied array payload grants a range fact.
 pub(in crate::native_artifact) fn optimize_with_bounds(
@@ -306,6 +328,7 @@ pub(in crate::native_artifact) fn optimize_with_bounds(
         }
     }
     let mut upper = BTreeMap::<Value, Vec<(Block, u64)>>::new();
+    let mut lower = BTreeMap::<Value, Vec<(Block, u64)>>::new();
     let mut facts = 0;
     let mut known_ranges = BTreeMap::<Value, u64>::new();
     for &(value, bound) in known {
@@ -317,23 +340,22 @@ pub(in crate::native_artifact) fn optimize_with_bounds(
                 .or_insert(bound);
         }
     }
-    let at_bound = |operand: Operand, at: Block, upper: &BTreeMap<Value, Vec<(Block, u64)>>| {
-        let mut bound = operand.upper(function);
-        if let Some(value) = operand.value() {
-            if let Some(&known) = known_ranges.get(&value) {
-                bound = bound.min(known);
-            }
-            if let Some(entries) = upper.get(&value) {
-                for &(origin, high) in entries {
-                    if context.domtree.block_dominates(origin, at) {
-                        bound = bound.min(high);
-                    }
-                }
-            }
+    let at_range = |operand: Operand,
+                    at: Block,
+                    upper: &BTreeMap<Value, Vec<(Block, u64)>>,
+                    lower: &BTreeMap<Value, Vec<(Block, u64)>>| {
+        intervals::Query {
+            function,
+            domtree: &context.domtree,
+            known: &known_ranges,
+            upper,
+            lower,
+            at,
         }
-        bound
+        .operand(operand)
     };
     let mut ranges = Vec::new();
+    let mut lower_ranges = Vec::new();
     let mut checked_adds = Vec::new();
     for block in function.layout.blocks() {
         let Some(inst) = function.layout.last_inst(block) else {
@@ -392,6 +414,20 @@ pub(in crate::native_artifact) fn optimize_with_bounds(
                     }
                 }
             }
+            let lower_relation = match cond {
+                IntCC::UnsignedGreaterThan => Some((a, b, true)),
+                IntCC::UnsignedGreaterThanOrEqual | IntCC::Equal => Some((a, b, false)),
+                IntCC::UnsignedLessThan => Some((b, a, true)),
+                IntCC::UnsignedLessThanOrEqual => Some((b, a, false)),
+                IntCC::NotEqual if b.constant(function) == Some(0) => Some((a, b, true)),
+                IntCC::NotEqual if a.constant(function) == Some(0) => Some((b, a, true)),
+                _ => None,
+            };
+            if let Some((base, bound, strict)) = lower_relation {
+                if let Some(base) = base.value() {
+                    lower_ranges.push((block, target, base, bound, strict));
+                }
+            }
             let (base, bound, strict) = match cond {
                 IntCC::UnsignedLessThan => (a, b, true),
                 IntCC::UnsignedLessThanOrEqual => (a, b, false),
@@ -415,8 +451,19 @@ pub(in crate::native_artifact) fn optimize_with_bounds(
     for _ in 0..8 {
         let mut changed = false;
         for &(source, target, base, bound, strict) in &ranges {
-            if let Some(limit) = at_bound(bound, source, &upper).checked_sub(u64::from(strict)) {
+            if let Some(limit) = at_range(bound, source, &upper, &lower)
+                .high
+                .checked_sub(u64::from(strict))
+            {
                 changed |= insert_bound(&mut upper, &mut facts, base, target, limit);
+            }
+        }
+        for &(source, target, base, bound, strict) in &lower_ranges {
+            if let Some(limit) = at_range(bound, source, &upper, &lower)
+                .low
+                .checked_add(u64::from(strict))
+            {
+                changed |= insert_lower(&mut lower, &mut facts, base, target, limit);
             }
         }
         // A checked one-based read tests (index-1)<length. Invert that
@@ -462,6 +509,19 @@ pub(in crate::native_artifact) fn optimize_with_bounds(
         let Some((cond, a, b)) = comparison(function, arg, true, 8) else {
             continue;
         };
+        if let Some(truth) = intervals::decide(
+            cond,
+            at_range(a, block, &upper, &lower),
+            at_range(b, block, &upper, &lower),
+        ) {
+            let call = blocks[usize::from(!truth)];
+            changes.push((
+                inst,
+                call.block(&function.dfg.value_lists),
+                call.args(&function.dfg.value_lists).collect::<Vec<_>>(),
+            ));
+            continue;
+        }
         let (Some(a), Some(b)) = (a.value(), b.value()) else {
             continue;
         };
@@ -476,7 +536,7 @@ pub(in crate::native_artifact) fn optimize_with_bounds(
             continue;
         };
         let limit = u64::MAX - increment;
-        if at_bound(Operand::Value(base), block, &upper) <= limit {
+        if at_range(Operand::Value(base), block, &upper, &lower).high <= limit {
             let call = blocks[success];
             changes.push((
                 inst,
@@ -495,5 +555,7 @@ pub(in crate::native_artifact) fn optimize_with_bounds(
     changes.len()
 }
 
+#[cfg(test)]
+mod arithmetic_tests;
 #[cfg(test)]
 mod tests;
