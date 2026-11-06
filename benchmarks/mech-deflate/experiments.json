@@ -25131,6 +25131,17 @@
           "files": 107,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-profiles-current-3b02ea7f285c.tar.gz"
+        },
+        {
+          "event": "mapping",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-mapping-2bfcab237e9f.tar.gz",
+          "sha256": "2bfcab237e9f351b0d0b1563e017cbd20dbc83214eed02c383e5700cfd6f7b38",
+          "manifest_sha256": "536ce67a8619389302853f15584a4fc29902140c181571420bf451e253e6f46a",
+          "bytes": 3503057,
+          "files": 78,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-mapping-2bfcab237e9f.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
@@ -25142,7 +25153,7 @@
         "private_abi": 39,
         "bytecode": 14
       },
-      "decision": "Reject standalone retention:128-biased-dynamic regresses7.169354558607166% beyond unchanged1.05 gate. Preserve3.90555% natural32KB gain and all contrary observations; profile and fix costs before considering a combined candidate.",
+      "decision": "Do not retain standalone: unchanged 1.05 gate fails on128-biased-dynamic (+7.169355%); geometric elapsed regresses0.725321%. Preserve the whole-window implementation and natural16/32KB gains for a separately measured combined candidate. Retained checkpoint remains R160/#987.",
       "retained": false,
       "release_tag": "evidence-native-compression-experiments-4",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-4",
