@@ -1,5 +1,50 @@
 # Native compression milestone
 
+**R170 retains corrected vector minimum selection.** Natural32KB improves
+**4.430760× → 4.347484× Roc** (1.879497%), and natural16KB
+**5.165119× → 5.088877×** (1.476092%). All20 unchanged1.05 gates pass:
+11 faster/9 slower medians,0.226285% geometric improvement. Repeated32KB rises
+0.477787%, periodic33KB0.172251%, and eight literals0.264176%. These costs remain.
+
+The first vector version is rejected (+0.400464% geometric elapsed). Actual
+machine code revealed TBL with literal masks for a same-input rotation. A minimal
+independent Object proves equivalent concatenated indices select one EXT instead;
+the corrected full compressor confirms the EXT sequence. Incoming-best and global
+earliest-index ties, the scalar remainder, threshold, prices and admission stay
+on the existing proof/path. This is compiler lowering, with the pinned source and
+separate histogram source experiment excluded from the comparison.
+
+Hardware work remains a tradeoff:11 instruction medians rise, including about0.8%
+on natural32KB despite its elapsed win. All20 heap request/byte/realloc/incremental
+peak metrics remain equal. Corrected text grows53,088B and entry stack112B;
+correcting the first masks removes864B of that version's frame growth. The
+[full report](native-vector-minimum-experiment.md) retains both complete cohorts,
+all adverse counters, six exact-binary profiles across the two sources, C/NEON
+and Cranelift instruction witnesses and replayable observations.
+
+Qualification:626 GPU tests with the same7 inherited exclusions; all209 selected
+CI names actually pass;3 focused ordered-reduction tests;236 unchanged components/
+8 composition/1 real-capacity path;12 original/decoded scalar controls;132 workflow
+tests;15 architecture/catalog checks, runtime-only, formatting and warnings denied.
+Fixture/dependency setup faults and replay assumptions are corrected and recorded.
+No unresolved introduced functional failure remains. Every compression case has
+exact reference bytes, independent inflate, aliases/capacities/work preserved and
+zero final managed bytes/nodes. Largest input33027B.
+
+Parent86dc8106cfa571b56c5a0ae0485cef1f68c49ea9; corrected measured source
+3a3ae5dca4aa4eda77b928a9073110949295770d; comparison fdb1c5c4e7 (retained R169).
+IR/work/ABI/MBC191/107/39/14. Source/MBC/allocator/algorithm/real buffers and
+complete evaluate_into remain fixed; frozen R145 dependencies avoid a math rebuild.
+#973 stays draft, ordinary hosted CI cancelled by instruction. Parity is not achieved.
+
+Publication:58 archives/116 server digests verified in evidence release5. Fresh
+retrieval verifies5132 file occurrences/1201 paths/20 historical versions and
+reconstructs both variant results and REPORT.md byte-for-byte without compiling
+or compressing. The archive scan additionally checks58 manifest files, accounting
+for5190 total archived files.
+
+## Historical R169 checkpoint
+
 **R169 retains current affine-window admission with general native loop-entry normalization.**
 Repeated32KB improves **5.415459× → 3.845247× Roc** (28.995002%);
 periodic33KB **6.123566× → 4.424907×** (27.739703%). Natural32KB rises
