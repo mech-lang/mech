@@ -25595,6 +25595,17 @@
           "files": 100,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-profiles-current-42508188ac2d.tar.gz"
+        },
+        {
+          "event": "mapping",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-mapping-c5949afb66d9.tar.gz",
+          "sha256": "c5949afb66d9867b21d00a1cb5accee7e2a0cd25a164db2f066b833e41f346d9",
+          "manifest_sha256": "e2e7d853b16100eba1f5e4d2cfab22f8ba5545a650b03dce1c5279c698bf7377",
+          "bytes": 3463791,
+          "files": 71,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-mapping-c5949afb66d9.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
