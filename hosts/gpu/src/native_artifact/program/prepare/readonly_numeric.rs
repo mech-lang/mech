@@ -718,10 +718,16 @@ fn derive_with_children(
     } else {
         None
     };
-    let fresh_values =
+    let (fresh_values, live_at_header) =
         exits::fresh_values(plan, tail, frames, aggregates, &forest, provenance.facts)?;
-    let boundary_values =
-        exits::boundary_values(plan, tail, provenance.facts, &forest, &frame_words)?;
+    let boundary_values = exits::boundary_values(
+        plan,
+        tail,
+        provenance.facts,
+        &forest,
+        &frame_words,
+        live_at_header,
+    )?;
     Ok(Proof {
         arrays,
         frames: frame_words,

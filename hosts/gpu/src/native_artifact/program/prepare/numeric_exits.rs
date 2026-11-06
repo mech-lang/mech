@@ -352,6 +352,7 @@ pub(super) fn boundary_values(
     facts: &NativeProgramFacts<'_>,
     forest: &super::super::numeric_phase::Forest,
     frames: &[FrameWords],
+    header: BTreeSet<u32>,
 ) -> Result<super::super::numeric_plan::BoundaryValues, &'static str> {
     let mut candidates = frames
         .iter()
@@ -408,9 +409,7 @@ pub(super) fn boundary_values(
     let known = BTreeMap::new();
     Ok(super::super::numeric_plan::BoundaryValues {
         candidates: candidates.iter().copied().collect(),
-        header: live_before(plan, tail, facts, tail.header() as usize, &known)?
-            .into_iter()
-            .collect(),
+        header: header.into_iter().collect(),
         exit: live_query(
             plan,
             tail,
@@ -428,6 +427,8 @@ pub(super) fn boundary_values(
 /// selected traversal can lose their historical private SSA contents. This
 /// changes neither canonical values nor source definitions. A live capture,
 /// carrier, escaped output or partially selected definition is never freshened.
+/// Return the same header query for boundary construction in this derivation;
+/// its plan, root and empty predicate context have not changed between uses.
 pub(super) fn fresh_values(
     plan: &Plan,
     tail: &NativeTailLoop,
@@ -435,7 +436,7 @@ pub(super) fn fresh_values(
     aggregates: &NativeScalarAggregates,
     forest: &super::super::numeric_phase::Forest,
     facts: &NativeProgramFacts<'_>,
-) -> Result<Vec<u32>, &'static str> {
+) -> Result<(Vec<u32>, BTreeSet<u32>), &'static str> {
     use mech_engine::native_artifact::{
         NativeIterationValueScope as Scope, NativeProgramReadRole as Read,
     };
@@ -479,5 +480,5 @@ pub(super) fn fresh_values(
         }
         fresh.push(value);
     }
-    Ok(fresh)
+    Ok((fresh, live))
 }
