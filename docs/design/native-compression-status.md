@@ -1,5 +1,56 @@
 # Native compression milestone
 
+**R169 retains current affine-window admission with general native loop-entry normalization.**
+Repeated32KB improves **5.415459× → 3.845247× Roc** (28.995002%);
+periodic33KB **6.123566× → 4.424907×** (27.739703%). Natural32KB rises
+4.371874× → 4.449700× (+1.780137%); eight literals4.727993× → 4.768340×
+(+0.853361%). The confirmation has6 faster/14 slower medians and2.690497%
+geometric improvement; all20 unchanged1.05 gates pass.
+
+The initial full20 cohort failed the32B high-entropy gate (+5.679977%). A single
+predeclared full20 confirmation uses identical binaries/counts/gates and passes.
+Both cohorts remain separate; timing variation has no established cause. The
+window-only prototype is rejected (+69%/+66% repeated/periodic). Merging distinct
+activation entries once before the loop makes its current arguments invariant
+within that activation, enabling the existing SSA cleanup.32 preheaders permit
+16,298 redundant phi removals; the identified matching path falls70 to25 machine
+instructions and19 to3 stack accesses, with the same2 input loads. These are
+static counts, not hardware instructions retired by a complete compression.
+
+Separate retired-instruction medians fall35.923226% repeated and34.472107%
+periodic;15 other instruction medians rise. All20 allocation-request/byte/realloc/
+incremental live-heap metrics are equal. Text shrinks5480B and entry stack64B.
+Six fresh current-Object profiles execute73,481 complete calls. Word extension
+still consumes21.445390% of repeated running-timer samples; other native scopes
+dominate natural text. Samples are not an exact host/native instruction split.
+
+Validation:626 compatible GPU tests with the same7 inherited exclusions; all209
+selected CI names actually pass;6 focused phi and5 current captured-window tests;
+236 unchanged components/8 composition/1 real-capacity path;12 original/decoded
+scalar controls with unchanged gates;132 workflow tests;15 architecture/catalog
+checks, runtime-only, formatting and warnings denied. All timings preserve exact
+reference bytes, independent inflate, aliases, capacities, logical work and zero
+final managed bytes/nodes. Largest input33027B. No full multi-megabyte claim.
+
+Parent4ab701de9b4ca994a1ae151259d5a697132f1210; measured effective compiler
+fdb1c5c4e738ad3bb69233ef92448efcf075aa81; comparison is retained R168, not the
+failed window-only variant. IR/work/ABI/MBC189/107/39/14. Frozen R145 dependencies,
+source/MBC/allocator/algorithm/tables/real buffers and evaluate_into stay pinned.
+The separate R165 histogram source gain is excluded. The [full report](native-affine-loop-windows.md)
+records20 results, all cohorts, errors, exact pins and skipped coverage. #973 stays
+draft; ordinary hosted CI is cancelled by instruction. Parity is not achieved.
+
+The selected path-cost milestone and separate source experiment are complete.
+Word-loop funding/paid-flag work and bounded wider comparison remain candidates;
+neither is an established new saving. Finish publication before another compiler
+implementation.
+
+Publication:67 archives/134 server digests verified in evidence release5. Fresh
+retrieval verifies5603 file occurrences/1255 paths/22 historical versions and
+reconstructs results.json and REPORT.md byte-for-byte, without native execution.
+
+## Historical R168 checkpoint
+
 **R168 retains dominance-scoped invariant phi cleanup in native loops.**
 All20 final-source matched cases and unchanged1.05 gates pass:19 faster/1 slower,
 **2.639531% geometric elapsed improvement**. Natural32KB improves

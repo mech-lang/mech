@@ -10,12 +10,15 @@ use mech_engine::native_artifact::{
     NativeControlLoop, NativeIterationTerminator as Term, NativeMatchTerminator as Branch,
 };
 use std::collections::BTreeMap;
+#[path = "numeric_capture_windows.rs"]
+mod captured;
 
 pub(super) struct Version {
     pub initialize: usize,
     pub header: usize,
     pub sites: Vec<usize>,
     pub windows: Vec<Window>,
+    pub captures: Vec<super::traversal_facts::CapturedWindow>,
     pub facts: Facts,
     pub blocks: BTreeMap<u32, Block>,
     pub prepaid: Option<super::numeric_loop_prepayment::Prepayment>,
@@ -30,6 +33,7 @@ pub(in crate::native_artifact) struct Report {
     pub source_successors: Vec<(usize, u32)>,
     pub read_sites: Vec<usize>,
     pub count: usize,
+    captured_windows: Vec<super::traversal_facts::CapturedWindow>,
     pub prepaid: Option<serde_json::Value>,
     pub reduction: Option<serde_json::Value>,
 }
@@ -39,6 +43,7 @@ pub(super) fn derive(
     proof: &Proof,
     shadow: usize,
     b: &mut FunctionBuilder<'_>,
+    packs: &[super::numeric_read_packs::Pack],
 ) -> Vec<Version> {
     let CodePlan::Program(program) = code else {
         return Vec::new();
@@ -60,6 +65,7 @@ pub(super) fn derive(
             header: tail.header() as usize,
             latch: tail.latch() as usize,
             exit: tail.exit(),
+            outside: Default::default(),
             sites: proof
                 .sites
                 .iter()
@@ -134,11 +140,14 @@ pub(super) fn derive(
                 .collect(),
             sites: scope.sites,
             windows,
+            captures: Vec::new(),
             facts,
             prepaid,
             reduction,
         });
     }
+    let captured = captured::derive(code, proof, shadow, b, packs, &versions);
+    versions.extend(captured);
     versions
 }
 
@@ -147,7 +156,12 @@ impl Version {
         Report {
             initialize: self.initialize,
             header: self.header,
-            views: self.windows.iter().map(|w| w.array).collect(),
+            views: self
+                .windows
+                .iter()
+                .map(|w| w.array)
+                .chain(self.captures.iter().map(|w| w.array))
+                .collect(),
             source_successors: self
                 .facts
                 .successors
@@ -164,7 +178,11 @@ impl Version {
                     self.facts.read(site, *array, *index).then_some(site)
                 })
                 .collect(),
-            count: self.windows[0].count,
+            count: self
+                .windows
+                .first()
+                .map_or_else(|| self.captures[0].limit, |w| w.count),
+            captured_windows: self.captures.clone(),
             prepaid: self
                 .prepaid
                 .as_ref()
@@ -187,6 +205,10 @@ impl Version {
         state: usize,
         checked: Block,
     ) {
+        if !self.captures.is_empty() {
+            captured::gate(self, b, words, shadow, proof, checked);
+            return;
+        }
         let mut enough = b.ins().iconst(cranelift_codegen::ir::types::I8, 1);
         for window in &self.windows {
             let count = words.read(b, window.count);

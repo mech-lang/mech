@@ -15,6 +15,9 @@ pub(in crate::native_artifact::program::codegen) struct Scope {
     pub latch: usize,
     pub exit: u32,
     pub sites: Vec<usize>,
+    /// Edges leave the cloned version and resume original checked code. They
+    /// never carry facts into a later source continuation.
+    pub outside: BTreeSet<u32>,
 }
 impl Scope {
     pub fn order(&self, code: CodePlan<'_>) -> Option<Vec<usize>> {
@@ -31,7 +34,7 @@ impl Scope {
                 continue;
             }
             for next in successors(code.blocks()[site].terminator())? {
-                if next != self.exit {
+                if next != self.exit && !self.outside.contains(&next) {
                     *incoming.get_mut(&(next as usize))? += 1;
                 }
             }
@@ -47,7 +50,7 @@ impl Scope {
                 continue;
             }
             for next in successors(code.blocks()[site].terminator())? {
-                if next == self.exit {
+                if next == self.exit || self.outside.contains(&next) {
                     continue;
                 }
                 let count = incoming.get_mut(&(next as usize))?;

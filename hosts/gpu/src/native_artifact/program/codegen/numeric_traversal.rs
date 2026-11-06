@@ -36,6 +36,7 @@ pub(super) fn derive(code: CodePlan<'_>, numeric: &Numeric, shadow: usize) -> Pr
             latch: tail.latch() as usize,
             exit: tail.exit(),
             sites,
+            outside: BTreeSet::new(),
         };
         if let Some(proof) = local(code, numeric, shadow, &scope, &[]) {
             facts.extend(proof);
@@ -51,7 +52,17 @@ pub(super) fn local(
     scope: &Scope,
     windows: &[traversal_facts::Window],
 ) -> Option<Proof> {
-    analyze(code, numeric, shadow, scope, windows, None)
+    analyze(code, numeric, shadow, scope, windows, &[], None)
+}
+
+pub(super) fn captured_version(
+    code: CodePlan<'_>,
+    numeric: &Numeric,
+    shadow: usize,
+    scope: &Scope,
+    windows: &[traversal_facts::CapturedWindow],
+) -> Option<Proof> {
+    analyze(code, numeric, shadow, scope, &[], windows, None)
 }
 
 pub(super) fn complete(
@@ -62,7 +73,7 @@ pub(super) fn complete(
     windows: &[traversal_facts::Window],
     candidate: traversal_facts::Candidate,
 ) -> Option<Proof> {
-    analyze(code, numeric, shadow, scope, windows, Some(candidate))
+    analyze(code, numeric, shadow, scope, windows, &[], Some(candidate))
 }
 
 fn analyze(
@@ -71,6 +82,7 @@ fn analyze(
     shadow: usize,
     scope: &Scope,
     windows: &[traversal_facts::Window],
+    captures: &[traversal_facts::CapturedWindow],
     candidate: Option<traversal_facts::Candidate>,
 ) -> Option<Proof> {
     let CodePlan::Program(program) = code else {
@@ -80,7 +92,7 @@ fn analyze(
     // An outside edge may only enter at the fresh header. In particular no
     // skipped case selection or cold resume can inherit a predecessor fact.
     for (site, visit) in program.metadata().visits.iter().enumerate() {
-        if sites.contains(&site) {
+        if sites.contains(&site) || !captures.is_empty() {
             continue;
         }
         if visit
@@ -146,7 +158,9 @@ fn analyze(
             },
         }
     };
-    if let Some(candidate) = candidate {
+    if !captures.is_empty() {
+        traversal_facts::with_captured_windows(code, scope, &slots, captures, step)
+    } else if let Some(candidate) = candidate {
         traversal_facts::with_completion(code, scope, &slots, windows, candidate, step)
     } else {
         traversal_facts::with_windows(code, scope, &slots, None, windows, step)

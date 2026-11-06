@@ -13,6 +13,7 @@ impl State {
             Expr::Compare(..) | Expr::Boolean(..) => 1,
             _ => u64::MAX,
         };
+        upper = upper.min(self.capture_upper(terms, value).unwrap_or(u64::MAX));
         for &(relation, a, b) in &self.relations {
             if a == value {
                 match relation {
@@ -39,6 +40,9 @@ impl State {
         match op {
             Arithmetic::Sub => self.truth(terms, Relation::Le, b, a) == Some(true),
             Arithmetic::Add => {
+                if self.capture_add(terms, a, b) {
+                    return true;
+                }
                 if u128::from(self.upper(terms, a)) + u128::from(self.upper(terms, b))
                     <= u128::from(u64::MAX)
                 {
