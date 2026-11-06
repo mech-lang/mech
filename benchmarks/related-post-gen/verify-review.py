@@ -96,6 +96,26 @@ if screen_path.exists():
     assert screen['paired']['extended']['mech-before-4']['wall_seconds']['wins'] == 19
     assert screen['selected'] is False and screen['goal_complete'] is False
 
+latest_path = evidence / 'ir228-screen-report.json'
+if latest_path.exists():
+    latest = json.loads(latest_path.read_text())
+    assert latest['identity'] == 'IR228/work115/ABI41/image9'
+    for phase, count in (('initial', 405), ('confirmation', 675), ('resources', 357)):
+        report = json.loads(gzip.decompress((evidence / f'ir228-{phase}.json.gz').read_bytes()))
+        assert len(report['samples']) == count
+        assert all(row['exit'] == 0 and row['exact_rust_output']
+                   for row in report['samples'])
+        if phase == 'confirmation':
+            assert report['summary'] == latest['confirmation_15_rounds']
+    assert latest['qualification']['genuine_old_objects_rejected'] == 26
+    assert latest['qualification']['cohort_outputs_exact'] == 1437
+    assert all(row['complete_native_text_byte_identical']
+               for row in latest['native_text_equivalence'].values())
+    for kind in ('scalar', 'one-kib'):
+        result = json.loads((evidence / f'ir228-control-{kind}-comparison.json').read_text())
+        assert result['all_nontiming_fields_equal_IR227']
+    assert latest['selected'] is False and latest['goal_complete'] is False
+
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833
 assert report['matched_native_reference']['median_seconds'] == 0.001651875

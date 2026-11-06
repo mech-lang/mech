@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-deflate-reduction-integration-runtime-check-20261106-v1/generate-standard-app",
+    "/private/tmp/mech-related-deflate-reduction-integration-compiler-20261106",
+    "/private/tmp/mech-related-deflate-reduction-integration-runtime-check-20261106-v1/managed-app"
+  ],
+  "exit": 0,
+  "seconds": 1.732544417027384,
+  "stdout": "generated\n",
+  "stderr": "",
+  "compiler_source_sha256": "ff786a9f9160b29ef24aba52ed08641d78daae1ad5af6c498e4e9430eef8fa8b"
+}

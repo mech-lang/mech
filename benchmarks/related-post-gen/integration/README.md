@@ -1,6 +1,29 @@
 # Related-post compiler integration with #973
 
-This branch combines the related-post compiler series with #973 at `1584097e757cecf1e3eaaff7e3eb18b9fbb8c31f`. Its combined identity is **IR227 / work115 / ABI41 / image9**. It targets `codex/level12-compression-consolidated` through [PR990](https://github.com/mech-lang/mech/pull/990).
+The current compiler merges #973 through **0bca6a54cdc2d69df71ca2763a6f36993448fe02** and the related-post compiler series. Compiler commit **29838b0e08b5ba66bbad5b7f7565fc354a4e9490** is **IR228 / work115 / ABI41 / image9**. [PR990](https://github.com/mech-lang/mech/pull/990) targets `codex/level12-compression-consolidated` (#973).
+
+The new DEFLATE nonempty scalar-reduction optimization is integrated and its boundary cases pass. All four related-post complete native text sections, containing **212 numeric functions**, are **byte-identical to IR227**. This pass does not select the related query trees; its inclusion is not a new query-kernel speedup.
+
+The latest15-round balanced comparison uses the same complete continuous post-JSON boundary and fresh launch-through-exit boundary:
+
+| Mech variant | Post-JSON | × fastest matched Rust | Whole process | × fastest whole-process Rust |
+|---|---:|---:|---:|---:|
+| Original,4 native workers |2.948625 ms|1.801879×|42.281416 ms|1.637997×|
+| Compact U8/U32,4 workers |3.020833 ms|1.846004×|41.481833 ms|1.607021×|
+| Original,8 workers |3.147916 ms|1.923664×|37.962750 ms|1.470691×|
+| Compact U8/U32,8 workers |3.235208 ms|1.977007×|40.692459 ms|1.576440×|
+
+Fastest matched Rust is the single-threaded streaming control at **1.636417 ms**. Fastest whole-process Rust is `rust-preinitialized`, **25.812875 ms**: this parent timer includes all setup before the implementation's narrower internal timer. That narrower timer does not qualify as a matched post-JSON reference. All variants compute all5000 posts and produce exact standard-Rust output.
+
+Four-worker post-JSON is effectively unchanged from same-cohort IR227 **2.947792 ms**. Its smaller multiple than the prior31-round result reflects the changed fastest Rust reference. **Whole-process four-worker time is adverse** versus IR22739.918583 ms and selected IR20839.827916 ms; it wins only3/15 whole-process pairs against each. Original-eight has faster whole-process results but slower post-JSON results. Those intervals must not be combined into one Mech result. The cause of the whole-process variation is not established by the post-JSON profile. The integration remains **unselected**; IR208 stays selected and both Rust parity targets remain unmet.
+
+The separate resource cohort records **57,049,727 post-JSON instructions versus matched Rust19,654,219**, **3,858 allocation requests versus57**, requested bytes8,044,006 versus6,803,175, and peak live requested heap13,616,163 versus7,640,671. Per-stage restore/JSON counters, residency, file/text sizes and all raw resource samples are in the packet. Native program bytes remain908,464 with a528-byte query frame. Native instructions are only one part of the process; the profile also retains host snapshot, data-element and preparation work.
+
+Current qualification passes **839 GPU tests**, with the same two inherited failures; all **128 scalar and5 compression rows match IR227 in every non-timing field**, including allocations. There are **434 loader fixtures**,52 byte-identical original/decoded bundle files,48 exact finite denials,12 finite small/full successes,16 forged-frontier rejections and **26 genuine old-Object checks**, including same-ABI IR227. Scalar-only compilation, runtime-only full5000 output and unmodified Managed success/error/denial checks pass. Unchanged Core/Engine sources and libraries retain the prior391/289 checks. The current cohorts contain **1,437 exact outputs**, and fresh profiles execute **2,000 exact invocations**.
+
+See `evidence/ir228-screen-report.json`, compressed complete cohort/profile/size reports, current source/build inventory, `native-text-equivalence.json` and `latest-local-archive-index.json`. The current local archive verifies 2282 files and1,473 completed output copies. Raw archives are retained locally, not remotely uploaded. The IR227 control-summary correction and funding ablation below remain explicitly labeled historical evidence.
+
+## Retained IR227 screen and audit
 
 The production compiler builds with the pinned optimized dependency closure. Original and compact sources with four and eight workers each retain **53 native numeric functions** and pass **31 exact-output fixtures per variant (124 total)**. The original-four native code decreases from **930,772 to 908,464 bytes**. Seven additional unsigned guards are proved per variant. The measured comparisons below use this exact compiler.
 
@@ -12,7 +35,7 @@ The latest combined source passes **839 GPU tests**, with exactly the two inheri
 
 The feature-boundary repair also keeps the efficient scalar-only compiler available. Runtime-only, Managed generation, warnings-as-errors, and the current full GPU checks pass. The additional loader, finite-budget and old-Object qualification below now passes.
 
-The latest31-round balanced comparison measures the complete continuous post-JSON interval, including input admission, setup and worker creation/run/join, and fresh launch through exit separately. Every variant computes all5000 posts and its output exactly matches standard Rust. The fastest matched Rust control is single-threaded.
+The retained IR22731-round balanced comparison measures the complete continuous post-JSON interval, including input admission, setup and worker creation/run/join, and fresh launch through exit separately. Every variant computes all5000 posts and its output exactly matches standard Rust. The fastest matched Rust control is single-threaded.
 
 | Variant | Post-JSON | × fastest matched Rust | Whole process | × fastest whole process |
 |---|---:|---:|---:|---:|

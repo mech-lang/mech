@@ -1,10 +1,10 @@
 {
   "schema": "mech.related-post-gen.dependent-compiler-build.v1",
-  "source": "/private/tmp/mech-related-latest-deflate-integration-compiler-20261106",
-  "source_sha256": "63f960c05c80c42005ba4fd0fc8678de99ecf7c2cfef2184b6e48d9614bf55ad",
+  "source": "/private/tmp/mech-related-deflate-reduction-integration-compiler-20261106",
+  "source_sha256": "ff786a9f9160b29ef24aba52ed08641d78daae1ad5af6c498e4e9430eef8fa8b",
   "opt_level": "3",
-  "base_build": "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v14/build.json",
-  "base_build_sha256": "489cfca275f5386fe37b76500ea3cc5ec3c658fbeca9bfd95a4f6483617d449e",
+  "base_build": "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v15/build.json",
+  "base_build_sha256": "92b67918cb475b9704086794c73257fc1818d88e7b45de0405ccad98ae9eff1e",
   "stages": [
     {
       "crate": "mech_core",
@@ -1966,6 +1966,8 @@
       "command": [
         "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
         "-L",
+        "dependency=/private/tmp/mech-related-deflate-reduction-integration-opt-20261106-v1",
+        "-L",
         "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v15",
         "-L",
         "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v14",
@@ -2078,7 +2080,7 @@
         "-C",
         "embed-bitcode=no",
         "-C",
-        "metadata=related_dependent_63f960c05c80c420_mech_gpu",
+        "metadata=related_dependent_ff786a9f9160b29e_mech_gpu",
         "-D",
         "warnings",
         "-L",
@@ -2143,13 +2145,13 @@
         "mech_stdlib=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1/libmech_stdlib.rlib",
         "--extern",
         "tempfile=/private/tmp/mech-related-retained-deps/libtempfile-cd3db811e0a0846f.rlib",
-        "/private/tmp/mech-related-latest-deflate-integration-compiler-20261106/hosts/gpu/src/lib.rs",
+        "/private/tmp/mech-related-deflate-reduction-integration-compiler-20261106/hosts/gpu/src/lib.rs",
         "-o",
-        "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v15/libmech_gpu.rlib"
+        "/private/tmp/mech-related-deflate-reduction-integration-opt-20261106-v1/libmech_gpu.rlib"
       ],
       "environment": {
         "RUSTC_BOOTSTRAP": "1",
-        "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-latest-deflate-integration-compiler-20261106/hosts/gpu",
+        "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-deflate-reduction-integration-compiler-20261106/hosts/gpu",
         "CARGO_PKG_NAME": "mech-gpu",
         "CARGO_PKG_VERSION": "0.3.5",
         "CARGO_PKG_VERSION_MAJOR": "0",
@@ -2157,11 +2159,11 @@
         "CARGO_PKG_VERSION_PATCH": "5",
         "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
       },
-      "source_sha256": "63f960c05c80c42005ba4fd0fc8678de99ecf7c2cfef2184b6e48d9614bf55ad",
+      "source_sha256": "ff786a9f9160b29ef24aba52ed08641d78daae1ad5af6c498e4e9430eef8fa8b",
       "reused": false,
       "exit": 0,
-      "seconds": 55.14638558309525,
-      "library_sha256": "cd04f7d9a611e8f72dbbed931d3a7e726ec11f0c24425263090c32843fc2fcda"
+      "seconds": 29.02786058280617,
+      "library_sha256": "9676e94619bcbd19d4b9afdce0502725712aac2573fd7e5dc5c57ce0164caa14"
     }
   ],
   "reuse_policy": "A crate reuses its library only when every recorded Rust/manifest source under its manifest directory matches and none of its Mech dependencies rebuilt. All reused and rebuilt library hashes are verified."

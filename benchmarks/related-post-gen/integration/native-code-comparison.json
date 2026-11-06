@@ -2,62 +2,62 @@
   "after-4": {
     "files": {
       "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
-      "image-binding.bin": "ab39e3f0ef59356a68b16fe43206efb618be9fc920f2b5f96c5136d304588b2b",
+      "image-binding.bin": "7a70fcd93bb8b583260758dc377c05f26883173e5a50e621b94251cdb28c3317",
       "frame-summary.json": "aab2e3f78a45f66bf5b8442360f780a13c2dc96ad486e71c66447698a93083a9",
       "artifact.mecb": "8c1cf10b07a51c8dc04aaf90d1d0b862615c7bf36fcf7ec83298bfba0d87fb1a",
       "source.mec": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
-      "metadata.json": "8f135cebc592bc26de745bbd8e6dba7456d19369fa8799c5085ace75e8a82851",
+      "metadata.json": "505d87c8a224608d393ea7a9c968b13bc8ee1dbfc6db3a860a2235e5d9516439",
       "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
-      "native-metadata-binding.bin": "1ed21d7e9203a9c351568e2be9961ec7f272ec1346a456a8838d91f139dba3ea",
-      "native-metadata.bin": "a740e47f2e91034f67d4ba7e1c7b488a79ec3a6190d8f8bd244d2d50d9e89312",
-      "linked.rs": "a8f843c452c632cffd189f46c1f7d79467eb15e9e292ca82996c5453e4eda245",
-      "object.o": "fc7be868c3b6bbb74938abf19e674e648abbca6642a73c10c906095f70d3ebb3",
-      "descriptor.json": "9677356c20a5cfb12f5ca14f19cb0ee246d98c1ffd8238d4159948a89e7b7d05",
+      "native-metadata-binding.bin": "179994bab9f63a8f516a0e4353a9a901934eee302c0dafec094ca2d300cff3b1",
+      "native-metadata.bin": "bdbd82e20687d8fdb58ebb099fc2bf832aaaac7127f432c493b1f910b0472c3e",
+      "linked.rs": "f455c30e594fbd864d57996b871c20248a38833d808200f49da9f80f9d8d2c44",
+      "object.o": "a61bda144339d23339f9f1dba1d62c2313284c6d8c141c5f6d63dc838f7465ae",
+      "descriptor.json": "bf05e59f3926f89ab56e4e0a74ec042a47b0b2e3236fae2cef49db09e7d20aee",
       "map-facts.txt": "d5be89e6e3005de483d8cd80055e4f6f1042d84c36696cb08ae9ecd6038868dc"
     },
     "source_artifact_catalog_frames_unchanged": true,
     "numeric_functions": 53,
     "projected_child_debit_nodes": 34,
-    "before_unsigned_guards_folded": 165,
+    "before_unsigned_guards_folded": 172,
     "after_unsigned_guards_folded": 172,
     "constant_branches_folded": 31,
     "neutral_operations_removed": 9295,
-    "before_code_bytes": 930772,
+    "before_code_bytes": 908464,
     "after_code_bytes": 908464,
     "functions": [
       {
         "header": 101,
-        "before_code_bytes": 6732,
+        "before_code_bytes": 6736,
         "after_code_bytes": 6736,
-        "before_stack_bytes": 160,
+        "before_stack_bytes": 176,
         "after_stack_bytes": 176
       },
       {
         "header": 139,
-        "before_code_bytes": 1048,
+        "before_code_bytes": 1020,
         "after_code_bytes": 1020,
         "before_stack_bytes": 80,
         "after_stack_bytes": 80
       },
       {
         "header": 233,
-        "before_code_bytes": 14560,
+        "before_code_bytes": 13056,
         "after_code_bytes": 13056,
-        "before_stack_bytes": 432,
+        "before_stack_bytes": 352,
         "after_stack_bytes": 352
       },
       {
         "header": 258,
-        "before_code_bytes": 9328,
+        "before_code_bytes": 8348,
         "after_code_bytes": 8348,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 224,
         "after_stack_bytes": 224
       },
       {
         "header": 281,
-        "before_code_bytes": 6648,
+        "before_code_bytes": 6432,
         "after_code_bytes": 6432,
-        "before_stack_bytes": 192,
+        "before_stack_bytes": 176,
         "after_stack_bytes": 176
       },
       {
@@ -69,7 +69,7 @@
       },
       {
         "header": 476,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -83,9 +83,9 @@
       },
       {
         "header": 589,
-        "before_code_bytes": 5496,
+        "before_code_bytes": 5396,
         "after_code_bytes": 5396,
-        "before_stack_bytes": 256,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
@@ -97,44 +97,44 @@
       },
       {
         "header": 688,
-        "before_code_bytes": 3556,
+        "before_code_bytes": 3480,
         "after_code_bytes": 3480,
-        "before_stack_bytes": 160,
+        "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 710,
-        "before_code_bytes": 1508,
+        "before_code_bytes": 1504,
         "after_code_bytes": 1504,
         "before_stack_bytes": 96,
         "after_stack_bytes": 96
       },
       {
         "header": 818,
-        "before_code_bytes": 21852,
+        "before_code_bytes": 19636,
         "after_code_bytes": 19636,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 432,
         "after_stack_bytes": 432
       },
       {
         "header": 843,
-        "before_code_bytes": 15568,
+        "before_code_bytes": 13700,
         "after_code_bytes": 13700,
-        "before_stack_bytes": 384,
+        "before_stack_bytes": 304,
         "after_stack_bytes": 304
       },
       {
         "header": 866,
-        "before_code_bytes": 12628,
+        "before_code_bytes": 11508,
         "after_code_bytes": 11508,
-        "before_stack_bytes": 304,
+        "before_stack_bytes": 256,
         "after_stack_bytes": 256
       },
       {
         "header": 891,
-        "before_code_bytes": 9392,
+        "before_code_bytes": 9012,
         "after_code_bytes": 9012,
-        "before_stack_bytes": 224,
+        "before_stack_bytes": 208,
         "after_stack_bytes": 208
       },
       {
@@ -146,7 +146,7 @@
       },
       {
         "header": 1160,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -160,9 +160,9 @@
       },
       {
         "header": 1273,
-        "before_code_bytes": 5496,
+        "before_code_bytes": 5396,
         "after_code_bytes": 5396,
-        "before_stack_bytes": 256,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
@@ -174,84 +174,84 @@
       },
       {
         "header": 1372,
-        "before_code_bytes": 3572,
+        "before_code_bytes": 3636,
         "after_code_bytes": 3636,
         "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 1396,
-        "before_code_bytes": 1048,
+        "before_code_bytes": 1020,
         "after_code_bytes": 1020,
         "before_stack_bytes": 80,
         "after_stack_bytes": 80
       },
       {
         "header": 1471,
-        "before_code_bytes": 29692,
+        "before_code_bytes": 28448,
         "after_code_bytes": 28448,
-        "before_stack_bytes": 672,
+        "before_stack_bytes": 528,
         "after_stack_bytes": 528
       },
       {
         "header": 1500,
-        "before_code_bytes": 7840,
+        "before_code_bytes": 7784,
         "after_code_bytes": 7784,
-        "before_stack_bytes": 352,
+        "before_stack_bytes": 288,
         "after_stack_bytes": 288
       },
       {
         "header": 1530,
-        "before_code_bytes": 2960,
+        "before_code_bytes": 2940,
         "after_code_bytes": 2940,
         "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 1711,
-        "before_code_bytes": 6280,
+        "before_code_bytes": 6264,
         "after_code_bytes": 6264,
-        "before_stack_bytes": 320,
+        "before_stack_bytes": 272,
         "after_stack_bytes": 272
       },
       {
         "header": 1742,
-        "before_code_bytes": 1944,
+        "before_code_bytes": 1952,
         "after_code_bytes": 1952,
-        "before_stack_bytes": 176,
+        "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 1979,
-        "before_code_bytes": 18256,
+        "before_code_bytes": 17772,
         "after_code_bytes": 17772,
-        "before_stack_bytes": 496,
+        "before_stack_bytes": 416,
         "after_stack_bytes": 416
       },
       {
         "header": 2005,
-        "before_code_bytes": 6688,
+        "before_code_bytes": 6468,
         "after_code_bytes": 6468,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
         "header": 2033,
-        "before_code_bytes": 2600,
+        "before_code_bytes": 2596,
         "after_code_bytes": 2596,
         "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 2119,
-        "before_code_bytes": 2548,
+        "before_code_bytes": 2540,
         "after_code_bytes": 2540,
         "before_stack_bytes": 208,
         "after_stack_bytes": 208
       },
       {
         "header": 2317,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -265,9 +265,9 @@
       },
       {
         "header": 2417,
-        "before_code_bytes": 5576,
+        "before_code_bytes": 5524,
         "after_code_bytes": 5524,
-        "before_stack_bytes": 272,
+        "before_stack_bytes": 256,
         "after_stack_bytes": 256
       },
       {
@@ -279,63 +279,63 @@
       },
       {
         "header": 2538,
-        "before_code_bytes": 75984,
+        "before_code_bytes": 65308,
         "after_code_bytes": 65308,
-        "before_stack_bytes": 960,
+        "before_stack_bytes": 896,
         "after_stack_bytes": 896
       },
       {
         "header": 2573,
-        "before_code_bytes": 6688,
+        "before_code_bytes": 6468,
         "after_code_bytes": 6468,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
         "header": 2601,
-        "before_code_bytes": 2600,
+        "before_code_bytes": 2596,
         "after_code_bytes": 2596,
         "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 2687,
-        "before_code_bytes": 2548,
+        "before_code_bytes": 2540,
         "after_code_bytes": 2540,
         "before_stack_bytes": 208,
         "after_stack_bytes": 208
       },
       {
         "header": 2840,
-        "before_code_bytes": 5464,
+        "before_code_bytes": 4388,
         "after_code_bytes": 4388,
-        "before_stack_bytes": 224,
+        "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 2865,
-        "before_code_bytes": 2188,
+        "before_code_bytes": 2084,
         "after_code_bytes": 2084,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 2931,
-        "before_code_bytes": 9732,
+        "before_code_bytes": 9256,
         "after_code_bytes": 9256,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 464,
         "after_stack_bytes": 464
       },
       {
         "header": 2988,
-        "before_code_bytes": 3504,
+        "before_code_bytes": 3500,
         "after_code_bytes": 3500,
         "before_stack_bytes": 304,
         "after_stack_bytes": 304
       },
       {
         "header": 3287,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -349,9 +349,9 @@
       },
       {
         "header": 3387,
-        "before_code_bytes": 5576,
+        "before_code_bytes": 5524,
         "after_code_bytes": 5524,
-        "before_stack_bytes": 272,
+        "before_stack_bytes": 256,
         "after_stack_bytes": 256
       },
       {
@@ -363,35 +363,35 @@
       },
       {
         "header": 3498,
-        "before_code_bytes": 37448,
+        "before_code_bytes": 36480,
         "after_code_bytes": 36480,
-        "before_stack_bytes": 816,
+        "before_stack_bytes": 784,
         "after_stack_bytes": 784
       },
       {
         "header": 3524,
-        "before_code_bytes": 5464,
+        "before_code_bytes": 4388,
         "after_code_bytes": 4388,
-        "before_stack_bytes": 224,
+        "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 3549,
-        "before_code_bytes": 2188,
+        "before_code_bytes": 2084,
         "after_code_bytes": 2084,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 3615,
-        "before_code_bytes": 9732,
+        "before_code_bytes": 9256,
         "after_code_bytes": 9256,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 464,
         "after_stack_bytes": 464
       },
       {
         "header": 3672,
-        "before_code_bytes": 3504,
+        "before_code_bytes": 3500,
         "after_code_bytes": 3500,
         "before_stack_bytes": 304,
         "after_stack_bytes": 304
@@ -403,74 +403,74 @@
   "compact-4": {
     "files": {
       "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
-      "image-binding.bin": "97f45962dd1a5e882e1efb1ca449b3ff04649ba4a02ff9e82a05bc3b055a0a0d",
+      "image-binding.bin": "448fbfce621ebf17cfd0cec76db370119cd8a11b33d2477e0b1eb37d99fe201f",
       "frame-summary.json": "7b1e251c0bec64f2c3578a656a860ae3b75fffba8c973d6ed72853f87eacc5e2",
       "artifact.mecb": "f8a0467970f7f8a935cd6f11bf27f55b75d997dacdfcc5a119c12809acf55728",
       "source.mec": "86c064828f10fb9cf8ff2f1daf630a50eea98c646f87bab9041344cd988688b1",
-      "metadata.json": "c392c794182a60a3ad4093de4506ef0975edf0c9dfc9bbf1374312a62a4e4ce0",
+      "metadata.json": "d7b8ff93809ad8c3b9b08c388581e4400e568dc9677f5ad6868dcff3524d42a5",
       "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
-      "native-metadata-binding.bin": "7f52e8b0879c7afd293b8f25bedfbcccf1c94ecc2680155a5e07d2fd97e7177c",
-      "native-metadata.bin": "3006e02823a4fbbb01a1c935aa871c86f21a4679253dbc5f5e95be6344a728ce",
-      "linked.rs": "517af4dd968d8ef6c161c4aef01df758d167d2836aecfa314d76531d4c9a5004",
-      "object.o": "276d6c59638875e72ecd3b5ca62ac304b19edffcec32f296d2d6a6a9b1f9ddf5",
-      "descriptor.json": "4f1983295143ebf35e2b09bca321fb75ed504f591b4cefc8fcde58cc104ffcbb",
+      "native-metadata-binding.bin": "74fd5379f9995a80fb3df7d333af9d687022ef3db04c1a897ec3f7c9d9ff22a0",
+      "native-metadata.bin": "03c250a79b483bcf8f8bb36c14b7b39b7821019e3a92c44cf50e01abd492a6d3",
+      "linked.rs": "d252edacb4c66bf4444be676c3364c8a1408e511096e229c540a9a21d53091bf",
+      "object.o": "5b337cdfa19aa7cd194930e20ad2dce6c01cae18bb71b1fba9e2cad0da7b9902",
+      "descriptor.json": "850708b28aefdfa73dce00c4ed4d90d60c5890f6e7ab2d31052569d9a11b2341",
       "map-facts.txt": "b07244903d2d0b0146726034638f507928f29a35d9af65cb6a447f8e81dc6d45"
     },
     "source_artifact_catalog_frames_unchanged": true,
     "numeric_functions": 53,
     "projected_child_debit_nodes": 34,
-    "before_unsigned_guards_folded": 181,
+    "before_unsigned_guards_folded": 188,
     "after_unsigned_guards_folded": 188,
     "constant_branches_folded": 31,
     "neutral_operations_removed": 9257,
-    "before_code_bytes": 927380,
+    "before_code_bytes": 904848,
     "after_code_bytes": 904848,
     "functions": [
       {
         "header": 101,
-        "before_code_bytes": 6732,
+        "before_code_bytes": 6736,
         "after_code_bytes": 6736,
-        "before_stack_bytes": 160,
+        "before_stack_bytes": 176,
         "after_stack_bytes": 176
       },
       {
         "header": 139,
-        "before_code_bytes": 1048,
+        "before_code_bytes": 1020,
         "after_code_bytes": 1020,
         "before_stack_bytes": 80,
         "after_stack_bytes": 80
       },
       {
         "header": 239,
-        "before_code_bytes": 13572,
+        "before_code_bytes": 12412,
         "after_code_bytes": 12412,
-        "before_stack_bytes": 416,
+        "before_stack_bytes": 368,
         "after_stack_bytes": 368
       },
       {
         "header": 262,
-        "before_code_bytes": 8688,
+        "before_code_bytes": 7776,
         "after_code_bytes": 7776,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 224,
         "after_stack_bytes": 224
       },
       {
         "header": 281,
-        "before_code_bytes": 6216,
+        "before_code_bytes": 5816,
         "after_code_bytes": 5816,
-        "before_stack_bytes": 208,
+        "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 301,
-        "before_code_bytes": 3800,
+        "before_code_bytes": 3680,
         "after_code_bytes": 3680,
         "before_stack_bytes": 144,
         "after_stack_bytes": 144
       },
       {
         "header": 476,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -484,9 +484,9 @@
       },
       {
         "header": 589,
-        "before_code_bytes": 5496,
+        "before_code_bytes": 5396,
         "after_code_bytes": 5396,
-        "before_stack_bytes": 256,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
@@ -498,56 +498,56 @@
       },
       {
         "header": 688,
-        "before_code_bytes": 3548,
+        "before_code_bytes": 3476,
         "after_code_bytes": 3476,
-        "before_stack_bytes": 160,
+        "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 710,
-        "before_code_bytes": 1508,
+        "before_code_bytes": 1504,
         "after_code_bytes": 1504,
         "before_stack_bytes": 96,
         "after_stack_bytes": 96
       },
       {
         "header": 813,
-        "before_code_bytes": 22428,
+        "before_code_bytes": 20052,
         "after_code_bytes": 20052,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 432,
         "after_stack_bytes": 432
       },
       {
         "header": 836,
-        "before_code_bytes": 16168,
+        "before_code_bytes": 14288,
         "after_code_bytes": 14288,
-        "before_stack_bytes": 400,
+        "before_stack_bytes": 320,
         "after_stack_bytes": 320
       },
       {
         "header": 855,
-        "before_code_bytes": 13080,
+        "before_code_bytes": 11980,
         "after_code_bytes": 11980,
-        "before_stack_bytes": 320,
+        "before_stack_bytes": 272,
         "after_stack_bytes": 272
       },
       {
         "header": 875,
-        "before_code_bytes": 9700,
+        "before_code_bytes": 9272,
         "after_code_bytes": 9272,
-        "before_stack_bytes": 240,
+        "before_stack_bytes": 224,
         "after_stack_bytes": 224
       },
       {
         "header": 896,
-        "before_code_bytes": 5992,
+        "before_code_bytes": 5768,
         "after_code_bytes": 5768,
-        "before_stack_bytes": 144,
+        "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 1144,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -561,9 +561,9 @@
       },
       {
         "header": 1257,
-        "before_code_bytes": 5496,
+        "before_code_bytes": 5396,
         "after_code_bytes": 5396,
-        "before_stack_bytes": 256,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
@@ -575,84 +575,84 @@
       },
       {
         "header": 1356,
-        "before_code_bytes": 3572,
+        "before_code_bytes": 3636,
         "after_code_bytes": 3636,
         "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 1380,
-        "before_code_bytes": 1048,
+        "before_code_bytes": 1020,
         "after_code_bytes": 1020,
         "before_stack_bytes": 80,
         "after_stack_bytes": 80
       },
       {
         "header": 1455,
-        "before_code_bytes": 29692,
+        "before_code_bytes": 28448,
         "after_code_bytes": 28448,
-        "before_stack_bytes": 672,
+        "before_stack_bytes": 528,
         "after_stack_bytes": 528
       },
       {
         "header": 1484,
-        "before_code_bytes": 7840,
+        "before_code_bytes": 7784,
         "after_code_bytes": 7784,
-        "before_stack_bytes": 352,
+        "before_stack_bytes": 288,
         "after_stack_bytes": 288
       },
       {
         "header": 1514,
-        "before_code_bytes": 2960,
+        "before_code_bytes": 2940,
         "after_code_bytes": 2940,
         "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 1695,
-        "before_code_bytes": 6280,
+        "before_code_bytes": 6264,
         "after_code_bytes": 6264,
-        "before_stack_bytes": 320,
+        "before_stack_bytes": 272,
         "after_stack_bytes": 272
       },
       {
         "header": 1726,
-        "before_code_bytes": 1944,
+        "before_code_bytes": 1952,
         "after_code_bytes": 1952,
-        "before_stack_bytes": 176,
+        "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 1963,
-        "before_code_bytes": 18256,
+        "before_code_bytes": 17772,
         "after_code_bytes": 17772,
-        "before_stack_bytes": 496,
+        "before_stack_bytes": 416,
         "after_stack_bytes": 416
       },
       {
         "header": 1989,
-        "before_code_bytes": 6688,
+        "before_code_bytes": 6468,
         "after_code_bytes": 6468,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
         "header": 2017,
-        "before_code_bytes": 2600,
+        "before_code_bytes": 2596,
         "after_code_bytes": 2596,
         "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 2103,
-        "before_code_bytes": 2548,
+        "before_code_bytes": 2540,
         "after_code_bytes": 2540,
         "before_stack_bytes": 208,
         "after_stack_bytes": 208
       },
       {
         "header": 2301,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -666,9 +666,9 @@
       },
       {
         "header": 2401,
-        "before_code_bytes": 5576,
+        "before_code_bytes": 5524,
         "after_code_bytes": 5524,
-        "before_stack_bytes": 272,
+        "before_stack_bytes": 256,
         "after_stack_bytes": 256
       },
       {
@@ -680,63 +680,63 @@
       },
       {
         "header": 2522,
-        "before_code_bytes": 75984,
+        "before_code_bytes": 65308,
         "after_code_bytes": 65308,
-        "before_stack_bytes": 960,
+        "before_stack_bytes": 896,
         "after_stack_bytes": 896
       },
       {
         "header": 2557,
-        "before_code_bytes": 6688,
+        "before_code_bytes": 6468,
         "after_code_bytes": 6468,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
         "header": 2585,
-        "before_code_bytes": 2600,
+        "before_code_bytes": 2596,
         "after_code_bytes": 2596,
         "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 2671,
-        "before_code_bytes": 2548,
+        "before_code_bytes": 2540,
         "after_code_bytes": 2540,
         "before_stack_bytes": 208,
         "after_stack_bytes": 208
       },
       {
         "header": 2824,
-        "before_code_bytes": 5464,
+        "before_code_bytes": 4388,
         "after_code_bytes": 4388,
-        "before_stack_bytes": 224,
+        "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 2849,
-        "before_code_bytes": 2188,
+        "before_code_bytes": 2084,
         "after_code_bytes": 2084,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 2915,
-        "before_code_bytes": 9732,
+        "before_code_bytes": 9256,
         "after_code_bytes": 9256,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 464,
         "after_stack_bytes": 464
       },
       {
         "header": 2972,
-        "before_code_bytes": 3504,
+        "before_code_bytes": 3500,
         "after_code_bytes": 3500,
         "before_stack_bytes": 304,
         "after_stack_bytes": 304
       },
       {
         "header": 3271,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -750,9 +750,9 @@
       },
       {
         "header": 3371,
-        "before_code_bytes": 5576,
+        "before_code_bytes": 5524,
         "after_code_bytes": 5524,
-        "before_stack_bytes": 272,
+        "before_stack_bytes": 256,
         "after_stack_bytes": 256
       },
       {
@@ -764,35 +764,35 @@
       },
       {
         "header": 3482,
-        "before_code_bytes": 37448,
+        "before_code_bytes": 36480,
         "after_code_bytes": 36480,
-        "before_stack_bytes": 816,
+        "before_stack_bytes": 784,
         "after_stack_bytes": 784
       },
       {
         "header": 3508,
-        "before_code_bytes": 5464,
+        "before_code_bytes": 4388,
         "after_code_bytes": 4388,
-        "before_stack_bytes": 224,
+        "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 3533,
-        "before_code_bytes": 2188,
+        "before_code_bytes": 2084,
         "after_code_bytes": 2084,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 3599,
-        "before_code_bytes": 9732,
+        "before_code_bytes": 9256,
         "after_code_bytes": 9256,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 464,
         "after_stack_bytes": 464
       },
       {
         "header": 3656,
-        "before_code_bytes": 3504,
+        "before_code_bytes": 3500,
         "after_code_bytes": 3500,
         "before_stack_bytes": 304,
         "after_stack_bytes": 304
@@ -804,62 +804,62 @@
   "after-8": {
     "files": {
       "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
-      "image-binding.bin": "cad963008a011ec3dfc67659275d55c88d06fb1730f104df74630e01ef22bc7f",
+      "image-binding.bin": "65e2540cf10cf5f225d56ba6410f32aaa1174215864053881aa05e64e4709b55",
       "frame-summary.json": "2dc6d27892d444b37e4d6e22f3932dbc57cceeb4a79322bb74d3fa38c748dac0",
       "artifact.mecb": "f511fde667b147c96ee84aee0b99558b218053d04ca8befc3d6d3c6c5475d59c",
       "source.mec": "3ea66a55689037fc8fcb8c293cc84b40b07c9d19f2061b8b40313583970670c3",
-      "metadata.json": "8d91df9d011eaf95b35cd5c38e1bc4c9a6161b34cc87c01de6747e658b18a5f8",
+      "metadata.json": "e122c7d11fb93d1c4d6663e1172f3da6a5badea52217198803fa2dda1bd59a9d",
       "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
-      "native-metadata-binding.bin": "092b7fcd0114bc90e350e58b70475ea6050cb72718282565854d1290e40f4289",
-      "native-metadata.bin": "2128a99654d0a8ab4c48aca9f1cdf6e329ea287617fccbd952aefa8ee71e6f2e",
-      "linked.rs": "23a0e137379aef18e56902f8762765e97aa5d4133a9970c7950869bfe5b6ca9a",
-      "object.o": "ea15ceb29bd995c5b317e72bbdd5a3f5459fa10abb192dd2c759fe7a92cbaa28",
-      "descriptor.json": "dc11d1c93bacb70e1a8628d06e5a66b342986d06a514910d746e794258075b8d",
+      "native-metadata-binding.bin": "57a393d08fffff0be3fa2df2b1d5239da9550b6171e9374c498d0cb14e3ea9fd",
+      "native-metadata.bin": "d464146a65ec617804dd0358b0327e318c969551284ae39913b04b8a62e17727",
+      "linked.rs": "df4923eef2d8647ca1ce26ace9d104216e35608bbbe3cd7e41de594d9c75de75",
+      "object.o": "1ea3b372d954a3d25bc5f9936012e793ca1621232e26d017a61cb40d906a23b8",
+      "descriptor.json": "08045d698fc975c7031fb4c46479e2b5efd2c121b684b4049b992280ef1f9ab5",
       "map-facts.txt": "520b1f96a6cfff2dbbdd0649e904b113476750d769c142e286320ba9eddcc2e9"
     },
     "source_artifact_catalog_frames_unchanged": true,
     "numeric_functions": 53,
     "projected_child_debit_nodes": 34,
-    "before_unsigned_guards_folded": 165,
+    "before_unsigned_guards_folded": 172,
     "after_unsigned_guards_folded": 172,
     "constant_branches_folded": 31,
     "neutral_operations_removed": 9295,
-    "before_code_bytes": 930776,
+    "before_code_bytes": 908468,
     "after_code_bytes": 908468,
     "functions": [
       {
         "header": 101,
-        "before_code_bytes": 6736,
+        "before_code_bytes": 6740,
         "after_code_bytes": 6740,
-        "before_stack_bytes": 160,
+        "before_stack_bytes": 176,
         "after_stack_bytes": 176
       },
       {
         "header": 139,
-        "before_code_bytes": 1048,
+        "before_code_bytes": 1020,
         "after_code_bytes": 1020,
         "before_stack_bytes": 80,
         "after_stack_bytes": 80
       },
       {
         "header": 233,
-        "before_code_bytes": 14560,
+        "before_code_bytes": 13056,
         "after_code_bytes": 13056,
-        "before_stack_bytes": 432,
+        "before_stack_bytes": 352,
         "after_stack_bytes": 352
       },
       {
         "header": 258,
-        "before_code_bytes": 9328,
+        "before_code_bytes": 8348,
         "after_code_bytes": 8348,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 224,
         "after_stack_bytes": 224
       },
       {
         "header": 281,
-        "before_code_bytes": 6648,
+        "before_code_bytes": 6432,
         "after_code_bytes": 6432,
-        "before_stack_bytes": 192,
+        "before_stack_bytes": 176,
         "after_stack_bytes": 176
       },
       {
@@ -871,7 +871,7 @@
       },
       {
         "header": 476,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -885,9 +885,9 @@
       },
       {
         "header": 589,
-        "before_code_bytes": 5496,
+        "before_code_bytes": 5396,
         "after_code_bytes": 5396,
-        "before_stack_bytes": 256,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
@@ -899,44 +899,44 @@
       },
       {
         "header": 688,
-        "before_code_bytes": 3556,
+        "before_code_bytes": 3480,
         "after_code_bytes": 3480,
-        "before_stack_bytes": 160,
+        "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 710,
-        "before_code_bytes": 1508,
+        "before_code_bytes": 1504,
         "after_code_bytes": 1504,
         "before_stack_bytes": 96,
         "after_stack_bytes": 96
       },
       {
         "header": 818,
-        "before_code_bytes": 21852,
+        "before_code_bytes": 19636,
         "after_code_bytes": 19636,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 432,
         "after_stack_bytes": 432
       },
       {
         "header": 843,
-        "before_code_bytes": 15568,
+        "before_code_bytes": 13700,
         "after_code_bytes": 13700,
-        "before_stack_bytes": 384,
+        "before_stack_bytes": 304,
         "after_stack_bytes": 304
       },
       {
         "header": 866,
-        "before_code_bytes": 12628,
+        "before_code_bytes": 11508,
         "after_code_bytes": 11508,
-        "before_stack_bytes": 304,
+        "before_stack_bytes": 256,
         "after_stack_bytes": 256
       },
       {
         "header": 891,
-        "before_code_bytes": 9392,
+        "before_code_bytes": 9012,
         "after_code_bytes": 9012,
-        "before_stack_bytes": 224,
+        "before_stack_bytes": 208,
         "after_stack_bytes": 208
       },
       {
@@ -948,7 +948,7 @@
       },
       {
         "header": 1160,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -962,9 +962,9 @@
       },
       {
         "header": 1273,
-        "before_code_bytes": 5496,
+        "before_code_bytes": 5396,
         "after_code_bytes": 5396,
-        "before_stack_bytes": 256,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
@@ -976,84 +976,84 @@
       },
       {
         "header": 1372,
-        "before_code_bytes": 3572,
+        "before_code_bytes": 3636,
         "after_code_bytes": 3636,
         "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 1396,
-        "before_code_bytes": 1048,
+        "before_code_bytes": 1020,
         "after_code_bytes": 1020,
         "before_stack_bytes": 80,
         "after_stack_bytes": 80
       },
       {
         "header": 1471,
-        "before_code_bytes": 29692,
+        "before_code_bytes": 28448,
         "after_code_bytes": 28448,
-        "before_stack_bytes": 672,
+        "before_stack_bytes": 528,
         "after_stack_bytes": 528
       },
       {
         "header": 1500,
-        "before_code_bytes": 7840,
+        "before_code_bytes": 7784,
         "after_code_bytes": 7784,
-        "before_stack_bytes": 352,
+        "before_stack_bytes": 288,
         "after_stack_bytes": 288
       },
       {
         "header": 1530,
-        "before_code_bytes": 2960,
+        "before_code_bytes": 2940,
         "after_code_bytes": 2940,
         "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 1711,
-        "before_code_bytes": 6280,
+        "before_code_bytes": 6264,
         "after_code_bytes": 6264,
-        "before_stack_bytes": 320,
+        "before_stack_bytes": 272,
         "after_stack_bytes": 272
       },
       {
         "header": 1742,
-        "before_code_bytes": 1944,
+        "before_code_bytes": 1952,
         "after_code_bytes": 1952,
-        "before_stack_bytes": 176,
+        "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 1979,
-        "before_code_bytes": 18256,
+        "before_code_bytes": 17772,
         "after_code_bytes": 17772,
-        "before_stack_bytes": 496,
+        "before_stack_bytes": 416,
         "after_stack_bytes": 416
       },
       {
         "header": 2005,
-        "before_code_bytes": 6688,
+        "before_code_bytes": 6468,
         "after_code_bytes": 6468,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
         "header": 2033,
-        "before_code_bytes": 2600,
+        "before_code_bytes": 2596,
         "after_code_bytes": 2596,
         "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 2119,
-        "before_code_bytes": 2548,
+        "before_code_bytes": 2540,
         "after_code_bytes": 2540,
         "before_stack_bytes": 208,
         "after_stack_bytes": 208
       },
       {
         "header": 2317,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -1067,9 +1067,9 @@
       },
       {
         "header": 2417,
-        "before_code_bytes": 5576,
+        "before_code_bytes": 5524,
         "after_code_bytes": 5524,
-        "before_stack_bytes": 272,
+        "before_stack_bytes": 256,
         "after_stack_bytes": 256
       },
       {
@@ -1081,63 +1081,63 @@
       },
       {
         "header": 2538,
-        "before_code_bytes": 75984,
+        "before_code_bytes": 65308,
         "after_code_bytes": 65308,
-        "before_stack_bytes": 960,
+        "before_stack_bytes": 896,
         "after_stack_bytes": 896
       },
       {
         "header": 2573,
-        "before_code_bytes": 6688,
+        "before_code_bytes": 6468,
         "after_code_bytes": 6468,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
         "header": 2601,
-        "before_code_bytes": 2600,
+        "before_code_bytes": 2596,
         "after_code_bytes": 2596,
         "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 2687,
-        "before_code_bytes": 2548,
+        "before_code_bytes": 2540,
         "after_code_bytes": 2540,
         "before_stack_bytes": 208,
         "after_stack_bytes": 208
       },
       {
         "header": 2840,
-        "before_code_bytes": 5464,
+        "before_code_bytes": 4388,
         "after_code_bytes": 4388,
-        "before_stack_bytes": 224,
+        "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 2865,
-        "before_code_bytes": 2188,
+        "before_code_bytes": 2084,
         "after_code_bytes": 2084,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 2931,
-        "before_code_bytes": 9732,
+        "before_code_bytes": 9256,
         "after_code_bytes": 9256,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 464,
         "after_stack_bytes": 464
       },
       {
         "header": 2988,
-        "before_code_bytes": 3504,
+        "before_code_bytes": 3500,
         "after_code_bytes": 3500,
         "before_stack_bytes": 304,
         "after_stack_bytes": 304
       },
       {
         "header": 3287,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -1151,9 +1151,9 @@
       },
       {
         "header": 3387,
-        "before_code_bytes": 5576,
+        "before_code_bytes": 5524,
         "after_code_bytes": 5524,
-        "before_stack_bytes": 272,
+        "before_stack_bytes": 256,
         "after_stack_bytes": 256
       },
       {
@@ -1165,35 +1165,35 @@
       },
       {
         "header": 3498,
-        "before_code_bytes": 37448,
+        "before_code_bytes": 36480,
         "after_code_bytes": 36480,
-        "before_stack_bytes": 816,
+        "before_stack_bytes": 784,
         "after_stack_bytes": 784
       },
       {
         "header": 3524,
-        "before_code_bytes": 5464,
+        "before_code_bytes": 4388,
         "after_code_bytes": 4388,
-        "before_stack_bytes": 224,
+        "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 3549,
-        "before_code_bytes": 2188,
+        "before_code_bytes": 2084,
         "after_code_bytes": 2084,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 3615,
-        "before_code_bytes": 9732,
+        "before_code_bytes": 9256,
         "after_code_bytes": 9256,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 464,
         "after_stack_bytes": 464
       },
       {
         "header": 3672,
-        "before_code_bytes": 3504,
+        "before_code_bytes": 3500,
         "after_code_bytes": 3500,
         "before_stack_bytes": 304,
         "after_stack_bytes": 304
@@ -1205,74 +1205,74 @@
   "compact-8": {
     "files": {
       "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
-      "image-binding.bin": "9542365d2cfcff1e4892e0381756d93fcc338c452de5bc763d36e2f81c2b6170",
+      "image-binding.bin": "88946f8722dfd2bcd89df0ca231fb8dfa71d4fe44e1ecdc920b00f860d01a70d",
       "frame-summary.json": "f7db4079514d12082aafdabe5dc65e2699e3897787ca5cdda07c0d097fc4091c",
       "artifact.mecb": "8ce9cd4d4032a81b2934a9c9fd8657606dc4f95b6d136baac13bdff2149b6f63",
       "source.mec": "5754c0c5e47067358c0e70ba7dafb8e754302b15634d0ac2d60891b74e042327",
-      "metadata.json": "bd6bcfa8fdc56500e17b0a6a624ed377ab5c190cd6ed0606fa1b893f13dc667b",
+      "metadata.json": "44f33cbc144042009f9e40cc9632158b5d3799f73920cf9c9593571c5fbe591b",
       "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
-      "native-metadata-binding.bin": "3ac707a10e4995010dda5930920b4b3ae7a73b71b50e5ae559bd86780685f6f1",
-      "native-metadata.bin": "1138148ff94806b8dcba9d0245d47dd8bac339cf2a5b3e057a98ad9394b2da21",
-      "linked.rs": "6502ac2625f34033999297d4679967cd80dc64c5974b1dc6d3e81c3b6a20eaff",
-      "object.o": "c02b978f43408673c5f030682720ecee045cdd029962adcac3e87e7c5cf6c254",
-      "descriptor.json": "cf3f17a7930c84dc21fb826d764327d2cefef84a757fe441589e6a5eb3481e8a",
+      "native-metadata-binding.bin": "c3658158a2bfba7eb169b4fadf2de869f774eae67d49758425d4743e41d1aec6",
+      "native-metadata.bin": "eeb214ead88649eb341a2b2ea18699f87c4183d00388d3f214a909aa5932eeab",
+      "linked.rs": "adf3e2daa3958e9a07dc10c6af7ff4b390a0d45584b0f27db62176bd7a8ba45f",
+      "object.o": "ca16377623148ae68e0cd2003b45dac09d01f26c15971d9ff30384911e968cab",
+      "descriptor.json": "bcadcdb786ddceb4b294d2c7c48c21f3f01a787367e72a896c82e0f3a7aad496",
       "map-facts.txt": "fec09c0d868299c4695d9a418f8659e42a21dd4dc679b5d6cc25533d925f7dd1"
     },
     "source_artifact_catalog_frames_unchanged": true,
     "numeric_functions": 53,
     "projected_child_debit_nodes": 34,
-    "before_unsigned_guards_folded": 181,
+    "before_unsigned_guards_folded": 188,
     "after_unsigned_guards_folded": 188,
     "constant_branches_folded": 31,
     "neutral_operations_removed": 9257,
-    "before_code_bytes": 927384,
+    "before_code_bytes": 904852,
     "after_code_bytes": 904852,
     "functions": [
       {
         "header": 101,
-        "before_code_bytes": 6736,
+        "before_code_bytes": 6740,
         "after_code_bytes": 6740,
-        "before_stack_bytes": 160,
+        "before_stack_bytes": 176,
         "after_stack_bytes": 176
       },
       {
         "header": 139,
-        "before_code_bytes": 1048,
+        "before_code_bytes": 1020,
         "after_code_bytes": 1020,
         "before_stack_bytes": 80,
         "after_stack_bytes": 80
       },
       {
         "header": 239,
-        "before_code_bytes": 13572,
+        "before_code_bytes": 12412,
         "after_code_bytes": 12412,
-        "before_stack_bytes": 416,
+        "before_stack_bytes": 368,
         "after_stack_bytes": 368
       },
       {
         "header": 262,
-        "before_code_bytes": 8688,
+        "before_code_bytes": 7776,
         "after_code_bytes": 7776,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 224,
         "after_stack_bytes": 224
       },
       {
         "header": 281,
-        "before_code_bytes": 6216,
+        "before_code_bytes": 5816,
         "after_code_bytes": 5816,
-        "before_stack_bytes": 208,
+        "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 301,
-        "before_code_bytes": 3800,
+        "before_code_bytes": 3680,
         "after_code_bytes": 3680,
         "before_stack_bytes": 144,
         "after_stack_bytes": 144
       },
       {
         "header": 476,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -1286,9 +1286,9 @@
       },
       {
         "header": 589,
-        "before_code_bytes": 5496,
+        "before_code_bytes": 5396,
         "after_code_bytes": 5396,
-        "before_stack_bytes": 256,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
@@ -1300,56 +1300,56 @@
       },
       {
         "header": 688,
-        "before_code_bytes": 3548,
+        "before_code_bytes": 3476,
         "after_code_bytes": 3476,
-        "before_stack_bytes": 160,
+        "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 710,
-        "before_code_bytes": 1508,
+        "before_code_bytes": 1504,
         "after_code_bytes": 1504,
         "before_stack_bytes": 96,
         "after_stack_bytes": 96
       },
       {
         "header": 813,
-        "before_code_bytes": 22428,
+        "before_code_bytes": 20052,
         "after_code_bytes": 20052,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 432,
         "after_stack_bytes": 432
       },
       {
         "header": 836,
-        "before_code_bytes": 16168,
+        "before_code_bytes": 14288,
         "after_code_bytes": 14288,
-        "before_stack_bytes": 400,
+        "before_stack_bytes": 320,
         "after_stack_bytes": 320
       },
       {
         "header": 855,
-        "before_code_bytes": 13080,
+        "before_code_bytes": 11980,
         "after_code_bytes": 11980,
-        "before_stack_bytes": 320,
+        "before_stack_bytes": 272,
         "after_stack_bytes": 272
       },
       {
         "header": 875,
-        "before_code_bytes": 9700,
+        "before_code_bytes": 9272,
         "after_code_bytes": 9272,
-        "before_stack_bytes": 240,
+        "before_stack_bytes": 224,
         "after_stack_bytes": 224
       },
       {
         "header": 896,
-        "before_code_bytes": 5992,
+        "before_code_bytes": 5768,
         "after_code_bytes": 5768,
-        "before_stack_bytes": 144,
+        "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 1144,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -1363,9 +1363,9 @@
       },
       {
         "header": 1257,
-        "before_code_bytes": 5496,
+        "before_code_bytes": 5396,
         "after_code_bytes": 5396,
-        "before_stack_bytes": 256,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
@@ -1377,84 +1377,84 @@
       },
       {
         "header": 1356,
-        "before_code_bytes": 3572,
+        "before_code_bytes": 3636,
         "after_code_bytes": 3636,
         "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 1380,
-        "before_code_bytes": 1048,
+        "before_code_bytes": 1020,
         "after_code_bytes": 1020,
         "before_stack_bytes": 80,
         "after_stack_bytes": 80
       },
       {
         "header": 1455,
-        "before_code_bytes": 29692,
+        "before_code_bytes": 28448,
         "after_code_bytes": 28448,
-        "before_stack_bytes": 672,
+        "before_stack_bytes": 528,
         "after_stack_bytes": 528
       },
       {
         "header": 1484,
-        "before_code_bytes": 7840,
+        "before_code_bytes": 7784,
         "after_code_bytes": 7784,
-        "before_stack_bytes": 352,
+        "before_stack_bytes": 288,
         "after_stack_bytes": 288
       },
       {
         "header": 1514,
-        "before_code_bytes": 2960,
+        "before_code_bytes": 2940,
         "after_code_bytes": 2940,
         "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 1695,
-        "before_code_bytes": 6280,
+        "before_code_bytes": 6264,
         "after_code_bytes": 6264,
-        "before_stack_bytes": 320,
+        "before_stack_bytes": 272,
         "after_stack_bytes": 272
       },
       {
         "header": 1726,
-        "before_code_bytes": 1944,
+        "before_code_bytes": 1952,
         "after_code_bytes": 1952,
-        "before_stack_bytes": 176,
+        "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 1963,
-        "before_code_bytes": 18256,
+        "before_code_bytes": 17772,
         "after_code_bytes": 17772,
-        "before_stack_bytes": 496,
+        "before_stack_bytes": 416,
         "after_stack_bytes": 416
       },
       {
         "header": 1989,
-        "before_code_bytes": 6688,
+        "before_code_bytes": 6468,
         "after_code_bytes": 6468,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
         "header": 2017,
-        "before_code_bytes": 2600,
+        "before_code_bytes": 2596,
         "after_code_bytes": 2596,
         "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 2103,
-        "before_code_bytes": 2548,
+        "before_code_bytes": 2540,
         "after_code_bytes": 2540,
         "before_stack_bytes": 208,
         "after_stack_bytes": 208
       },
       {
         "header": 2301,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -1468,9 +1468,9 @@
       },
       {
         "header": 2401,
-        "before_code_bytes": 5576,
+        "before_code_bytes": 5524,
         "after_code_bytes": 5524,
-        "before_stack_bytes": 272,
+        "before_stack_bytes": 256,
         "after_stack_bytes": 256
       },
       {
@@ -1482,63 +1482,63 @@
       },
       {
         "header": 2522,
-        "before_code_bytes": 75984,
+        "before_code_bytes": 65308,
         "after_code_bytes": 65308,
-        "before_stack_bytes": 960,
+        "before_stack_bytes": 896,
         "after_stack_bytes": 896
       },
       {
         "header": 2557,
-        "before_code_bytes": 6688,
+        "before_code_bytes": 6468,
         "after_code_bytes": 6468,
-        "before_stack_bytes": 288,
+        "before_stack_bytes": 240,
         "after_stack_bytes": 240
       },
       {
         "header": 2585,
-        "before_code_bytes": 2600,
+        "before_code_bytes": 2596,
         "after_code_bytes": 2596,
         "before_stack_bytes": 160,
         "after_stack_bytes": 160
       },
       {
         "header": 2671,
-        "before_code_bytes": 2548,
+        "before_code_bytes": 2540,
         "after_code_bytes": 2540,
         "before_stack_bytes": 208,
         "after_stack_bytes": 208
       },
       {
         "header": 2824,
-        "before_code_bytes": 5464,
+        "before_code_bytes": 4388,
         "after_code_bytes": 4388,
-        "before_stack_bytes": 224,
+        "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 2849,
-        "before_code_bytes": 2188,
+        "before_code_bytes": 2084,
         "after_code_bytes": 2084,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 2915,
-        "before_code_bytes": 9732,
+        "before_code_bytes": 9256,
         "after_code_bytes": 9256,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 464,
         "after_stack_bytes": 464
       },
       {
         "header": 2972,
-        "before_code_bytes": 3504,
+        "before_code_bytes": 3500,
         "after_code_bytes": 3500,
         "before_stack_bytes": 304,
         "after_stack_bytes": 304
       },
       {
         "header": 3271,
-        "before_code_bytes": 2064,
+        "before_code_bytes": 2060,
         "after_code_bytes": 2060,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
@@ -1552,9 +1552,9 @@
       },
       {
         "header": 3371,
-        "before_code_bytes": 5576,
+        "before_code_bytes": 5524,
         "after_code_bytes": 5524,
-        "before_stack_bytes": 272,
+        "before_stack_bytes": 256,
         "after_stack_bytes": 256
       },
       {
@@ -1566,35 +1566,35 @@
       },
       {
         "header": 3482,
-        "before_code_bytes": 37448,
+        "before_code_bytes": 36480,
         "after_code_bytes": 36480,
-        "before_stack_bytes": 816,
+        "before_stack_bytes": 784,
         "after_stack_bytes": 784
       },
       {
         "header": 3508,
-        "before_code_bytes": 5464,
+        "before_code_bytes": 4388,
         "after_code_bytes": 4388,
-        "before_stack_bytes": 224,
+        "before_stack_bytes": 192,
         "after_stack_bytes": 192
       },
       {
         "header": 3533,
-        "before_code_bytes": 2188,
+        "before_code_bytes": 2084,
         "after_code_bytes": 2084,
         "before_stack_bytes": 128,
         "after_stack_bytes": 128
       },
       {
         "header": 3599,
-        "before_code_bytes": 9732,
+        "before_code_bytes": 9256,
         "after_code_bytes": 9256,
-        "before_stack_bytes": 528,
+        "before_stack_bytes": 464,
         "after_stack_bytes": 464
       },
       {
         "header": 3656,
-        "before_code_bytes": 3504,
+        "before_code_bytes": 3500,
         "after_code_bytes": 3500,
         "before_stack_bytes": 304,
         "after_stack_bytes": 304
