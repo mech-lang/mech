@@ -319,7 +319,9 @@ fn selected_template(
 // compiled-module provenance; independent images rederive complete evidence.
 // IR223 lowers closed native transport allocation plans directly to typed
 // fixed arenas, retaining complete shared admission and fresh opaque identities.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 223;
+// IR224 proves zero/one native SSA values across every incoming loop edge
+// before replacing equality-to-Boolean branches with direct native tests.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 224;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

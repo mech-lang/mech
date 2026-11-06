@@ -15,6 +15,8 @@ const MAX_ROUNDS: usize = 8;
 const MAX_CONSTANT_DEPTH: usize = 16;
 const MAX_CONSTANT_STEPS: usize = 64;
 
+mod boolean_conditions;
+
 fn counts(function: &Function) -> (usize, usize) {
     (
         function.layout.blocks().count(),
@@ -256,6 +258,7 @@ pub(in crate::native_artifact) fn optimize(
         rounds: 0,
         constant_branches_removed: 0,
         neutral_operations_removed: 0,
+        boolean_conditions_simplified: 0,
         before_blocks,
         before_instructions,
         after_blocks: before_blocks,
@@ -278,6 +281,10 @@ pub(in crate::native_artifact) fn optimize(
         context.compute_domtree();
         context.eliminate_unreachable_code(isa).map_err(backend)?;
         context.remove_constant_phis(isa).map_err(backend)?;
+        if controls.enabled(OptimizationPass::BooleanConditions) {
+            report.boolean_conditions_simplified +=
+                boolean_conditions::optimize(&mut context.func);
+        }
         report.rounds += 1;
         let removed = fold(&mut context.func);
         report.constant_branches_removed += removed;
