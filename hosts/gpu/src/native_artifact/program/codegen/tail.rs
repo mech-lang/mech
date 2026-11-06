@@ -1,6 +1,6 @@
 //! Native finite fuel for closed scalar/map Tail bodies, inside the same round.
 use crate::native_artifact::NativeCompileError;
-use crate::native_artifact::codegen::options::OptimizationOptions;
+use crate::native_artifact::codegen::options::{OptimizationOptions, OptimizationPass};
 use crate::native_artifact::compiler::{backend, offset};
 use crate::native_artifact::program::codegen::hooks::Hooks;
 use crate::native_artifact::program::prepare::tail::{Layout, Region};
@@ -128,7 +128,7 @@ pub(in crate::native_artifact) fn leave(
                 }
             }
             // Every cold boundary carries the sealed generated ancestry and
-            // exact per-node debits. Inactive carrier words grant no authority;
+            // exact debit projection. Inactive carrier words grant no authority;
             // runtime reifies only the checked active path.
             if mode != 3 {
                 for node in &tree.nodes {
@@ -143,8 +143,17 @@ pub(in crate::native_artifact) fn leave(
                     }
                 }
             }
+            let settled = super::numeric_tree::settled_debits(
+                b,
+                tree,
+                options.enabled(OptimizationPass::ProjectedNumericDebits),
+                |b, slot| load(options, b, locals, region, shadow + slot),
+            )?;
             for slot in tree.counters..tree.bank() {
-                let value = load(options, b, locals, region, shadow + slot)?;
+                let value = match settled.get(&slot) {
+                    Some(&value) => value,
+                    None => load(options, b, locals, region, shadow + slot)?,
+                };
                 b.ins()
                     .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
             }

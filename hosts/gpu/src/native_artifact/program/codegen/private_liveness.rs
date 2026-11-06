@@ -33,6 +33,7 @@ pub(super) fn at(
     tree: Option<&numeric_tree::Proof>,
     site: usize,
     exit: usize,
+    projected_debits: bool,
 ) -> Result<BTreeSet<usize>, NativeCompileError> {
     // Both the cold root-carrier reconciliation and successful scalar-bank
     // export consume these leaves. Terminal result leaves are success-only.
@@ -65,9 +66,13 @@ pub(super) fn at(
     );
     if let Some(tree) = tree {
         words.extend(carrier_words(tree, site)?);
-        // Completed siblings still contribute debit history. Their counters
-        // and inactive flags are always retained, even when carriers are dead.
-        words.extend(tree.counters..tree.bank());
+        // Completed siblings still contribute debit history. Keep the root
+        // count, weighted child totals and every inactive flag even when their
+        // source carriers are dead; unused counter lanes are constant zero.
+        words.extend(
+            (tree.counters..tree.bank())
+                .filter(|&word| tree.live_counter_word(word, projected_debits)),
+        );
     }
     Ok(words)
 }

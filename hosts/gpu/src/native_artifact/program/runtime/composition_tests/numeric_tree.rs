@@ -51,14 +51,16 @@ fn frontier_arguments(
 
 #[test]
 fn zero_append_frontiers_remove_only_empty_guards_and_preserve_growth_errors_and_retry() {
+    check_frontier_emission(OptimizationPass::ZeroAppendFrontiers);
+}
+
+fn check_frontier_emission(pass: OptimizationPass) {
     for artifact in artifacts(ZERO_APPEND_FRONTIER_SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
         let catalog = mech_stdlib::source_catalog();
         let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
         let old_object = crate::native_artifact::program::compiler::emit_program_object_for_test(
-            &artifact,
-            &catalog,
-            OptimizationPass::ZeroAppendFrontiers,
+            &artifact, &catalog, pass,
         )
         .unwrap();
         let guards = |metadata: &serde_json::Value| {
@@ -74,27 +76,39 @@ fn zero_append_frontiers_remove_only_empty_guards_and_preserve_growth_errors_and
         };
         let before = guards(&old_object.metadata());
         let after = guards(&object.metadata());
-        assert!(
-            before.iter().any(|(_, count)| *count == 0),
-            "exercise a real zero-append child frontier"
-        );
-        assert!(after.iter().all(|(_, count)| *count > 0));
-        assert_eq!(
-            after,
-            before
+        if pass == OptimizationPass::ZeroAppendFrontiers {
+            assert!(
+                before.iter().any(|(_, count)| *count == 0),
+                "exercise a real zero-append child frontier"
+            );
+            assert!(after.iter().all(|(_, count)| *count > 0));
+            assert_eq!(
+                after,
+                before
+                    .into_iter()
+                    .filter(|(_, count)| *count > 0)
+                    .collect::<Vec<_>>()
+            );
+        } else {
+            assert_eq!(pass, OptimizationPass::ProjectedNumericDebits);
+            assert_eq!(after, before);
+            let projected_nodes = |metadata: &serde_json::Value| {
+                [
+                    "compiled_numeric_write_loops",
+                    "compiled_readonly_numeric_loops",
+                ]
                 .into_iter()
-                .filter(|(_, count)| *count > 0)
-                .collect::<Vec<_>>()
-        );
+                .flat_map(|key| metadata[key].as_array().unwrap())
+                .map(|r| r["projected_child_debit_nodes"].as_u64().unwrap())
+                .sum::<u64>()
+            };
+            assert!(projected_nodes(&object.metadata()) > 0);
+            assert_eq!(projected_nodes(&old_object.metadata()), 0);
+        }
         let native =
             JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
                 .unwrap();
-        let old = JitProgramArtifact::compile_for_test(
-            &artifact,
-            &catalog,
-            OptimizationPass::ZeroAppendFrontiers,
-        )
-        .unwrap();
+        let old = JitProgramArtifact::compile_for_test(&artifact, &catalog, pass).unwrap();
         let ordinary = JitProgramArtifact::compile_for_test(
             &artifact,
             &catalog,
@@ -124,6 +138,7 @@ fn zero_append_frontiers_remove_only_empty_guards_and_preserve_growth_errors_and
                     let aliases = args.clone();
                     let original = contents(&args);
                     let mut errors = Vec::new();
+                    let mut reports = Vec::new();
                     for (jit, output) in [&native, &old, &ordinary].into_iter().zip(&mut outputs) {
                         let prior = output.clone();
                         let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
@@ -149,6 +164,9 @@ fn zero_append_frontiers_remove_only_empty_guards_and_preserve_growth_errors_and
                                 .into(),
                             );
                             assert_eq!(last(output), expected);
+                            if !core::ptr::eq(jit, &ordinary) {
+                                reports.push(result.unwrap());
+                            }
                             if core::ptr::eq(jit, &native)
                                 && rounds > 0
                                 && passes > 0
@@ -177,6 +195,9 @@ fn zero_append_frontiers_remove_only_empty_guards_and_preserve_growth_errors_and
                         errors.windows(2).all(|pair| pair[0] == pair[1]),
                         "{errors:?}"
                     );
+                    if pass == OptimizationPass::ProjectedNumericDebits && accepts {
+                        assert_eq!(reports[0], reports[1]);
+                    }
                     assert_eq!(contents(&args), original);
                     assert_eq!(contents(&aliases), original);
                 }
@@ -315,6 +336,27 @@ fn numeric_tree_outlining_ablation_keeps_outputs_errors_and_retry() {
 }
 
 #[test]
+fn numeric_tree_projected_debit_ablation_keeps_exact_reports_errors_and_retry() {
+    check_frontier_emission(OptimizationPass::ProjectedNumericDebits);
+}
+
+#[test]
+fn numeric_tree_projected_priced_children_keep_nonzero_comparisons_errors_and_retry() {
+    let original =
+        "process := (more? | true => #TreeProbe(data, base, width, rank.1.1) | false => false)";
+    let source = SOURCE.replace(
+        original,
+        &format!(
+            "{}\n  {}\n  process := process-first || process-second",
+            original.replacen("process :=", "process-first :=", 1),
+            original.replacen("process :=", "process-second :=", 1)
+        ),
+    );
+    assert_ne!(source, SOURCE);
+    check_emission_ablation_source(OptimizationPass::ProjectedNumericDebits, &source);
+}
+
+#[test]
 fn numeric_tree_outlining_admits_total_stack_code_and_boundary_templates() {
     for artifact in artifacts(SOURCE) {
         let catalog = mech_stdlib::source_catalog();
@@ -439,13 +481,34 @@ fn boolean_branch_proof_keeps_unknown_inputs_library_words_and_integer_matches()
 }
 
 fn check_emission_ablation(pass: OptimizationPass) {
-    for artifact in artifacts(SOURCE) {
+    check_emission_ablation_source(pass, SOURCE);
+}
+
+fn check_emission_ablation_source(pass: OptimizationPass, source: &str) {
+    for artifact in artifacts(source) {
         let mode = NativeProgramLimitMode::NoLimits;
         let catalog = mech_stdlib::source_catalog();
         let native =
             JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
                 .unwrap();
         let conservative = JitProgramArtifact::compile_for_test(&artifact, &catalog, pass).unwrap();
+        if pass == OptimizationPass::ProjectedNumericDebits {
+            assert!(
+                native
+                    .descriptor()
+                    .metadata()
+                    .closed_tails
+                    .regions
+                    .iter()
+                    .any(|r| {
+                        r.numeric_tree.as_ref().is_some_and(|tree| {
+                            tree.projected_child_debits()
+                                && tree.nodes.iter().skip(1).any(|n| n.comparison != 0)
+                        })
+                    }),
+                "exercise a real wider tree with priced comparison work"
+            );
+        }
         if pass == OptimizationPass::PrivateLiveness {
             let optimized = crate::native_artifact::emit_program_object(&artifact, &catalog)
                 .unwrap()
@@ -767,8 +830,19 @@ fn numeric_tree_outlining_finite_fuel_keeps_each_ordinary_continuation() {
     check_numeric_tree_finite_fuel(Some(OptimizationPass::NumericOutlining));
 }
 
+#[test]
+fn numeric_tree_projected_debits_keep_each_finite_ordinary_continuation() {
+    check_numeric_tree_finite_fuel(Some(OptimizationPass::ProjectedNumericDebits));
+}
+
 fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {
-    for artifact in artifacts(SOURCE) {
+    let projected = pass == Some(OptimizationPass::ProjectedNumericDebits);
+    let source = if projected {
+        ZERO_APPEND_FRONTIER_SOURCE
+    } else {
+        SOURCE
+    };
+    for artifact in artifacts(source) {
         let mode = NativeProgramLimitMode::NoLimits;
         let catalog = mech_stdlib::source_catalog();
         let jit = match pass {
@@ -785,17 +859,31 @@ fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {
             .regions
             .iter()
             .find(|region| {
-                region
-                    .numeric_tree
-                    .as_ref()
-                    .is_some_and(|tree| tree.nodes.len() >= 3)
+                region.numeric_tree.as_ref().is_some_and(|tree| {
+                    tree.nodes.len() >= 3 && (!projected || tree.projected_child_debits())
+                })
             })
             .expect("exercise the complete numeric tree");
         let tree = region.numeric_tree.as_ref().unwrap();
         for restored in [false, true] {
             let memory = mode.memory_budget();
             let bytes = [7, 12, 12, 2, 31, 31, 3, 9, 11, 19, 27, 5];
-            let args = arguments(&artifact, &memory, &bytes, 3, 4, 17);
+            let args = if projected {
+                frontier_arguments(&artifact, &memory, &[2, 3, 5], 3, 2, 3, 8)
+            } else {
+                arguments(&artifact, &memory, &bytes, 3, 4, 17)
+            };
+            let expected_result = if projected {
+                Data::Tuple(
+                    vec![
+                        Data::Matrix(vec![Data::U64(40), Data::U64(41), Data::U64(42)].into()),
+                        Data::Matrix(vec![Data::U64(2), Data::U64(3), Data::U64(5)].into()),
+                    ]
+                    .into(),
+                )
+            } else {
+                expected(&bytes, 3, 4, 17)
+            };
             let aliases = args.clone();
             let before = contents(&args);
             let mut output = vec![None; artifact.outputs().len()];
@@ -850,7 +938,7 @@ fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {
                         reached.insert(row[0]);
                     }
                     if result.is_ok() {
-                        assert_eq!(last(&trial), expected(&bytes, 3, 4, 17));
+                        assert_eq!(last(&trial), expected_result);
                     } else {
                         for (now, old) in trial.iter().zip(&prior) {
                             assert!(
@@ -876,7 +964,7 @@ fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {
             );
             jit.evaluate_into(&args, &mut output, mode.execution(), &memory)
                 .unwrap();
-            assert_eq!(last(&output), expected(&bytes, 3, 4, 17));
+            assert_eq!(last(&output), expected_result);
             drop((args, aliases, output, prior));
             assert_eq!(
                 (memory.used_bytes(), memory.retained_snapshot_nodes()),

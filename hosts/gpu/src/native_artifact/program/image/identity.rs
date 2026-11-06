@@ -315,7 +315,7 @@ fn selected_template(
 // IR179 binds complete descriptor bytes to an additional read-only Object symbol.
 // IR203 emits a checked bulk UTF8 histogram at its original library visit.
 // IR204 emits word hashing and prepaid adaptive native histogram passes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 214;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 217;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

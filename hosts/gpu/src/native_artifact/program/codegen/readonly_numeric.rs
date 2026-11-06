@@ -47,6 +47,7 @@ pub(in crate::native_artifact) struct Report {
     pub terminal_scalar_words_omitted: usize,
     pub runtime_scalar_path_walks: usize,
     pub tree_nodes: Vec<usize>,
+    pub projected_child_debit_nodes: usize,
     pub direct_child_edges: Vec<(usize, usize, usize)>,
     // Compiler-local SSA facts, regenerated from checked typed-view recipes.
     // They are never serialized or accepted from a descriptor/image caller.
@@ -299,6 +300,7 @@ pub(in crate::native_artifact) fn emit_entry(
                         region.numeric_tree.as_ref(),
                         site,
                         region.tail.exit() as usize,
+                        controls.enabled(OptimizationPass::ProjectedNumericDebits),
                     )?,
                 ))
             })
@@ -383,6 +385,15 @@ pub(in crate::native_artifact) fn emit_entry(
                 .iter()
                 .map(|n| n.tail.header() as usize)
                 .collect()
+        }),
+        projected_child_debit_nodes: region.numeric_tree.as_ref().map_or(0, |tree| {
+            if controls.enabled(OptimizationPass::ProjectedNumericDebits)
+                && tree.projected_child_debits()
+            {
+                tree.nodes.len() - 1
+            } else {
+                0
+            }
         }),
         direct_child_edges: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
             tree.nodes
@@ -484,6 +495,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     shadow,
                     region.numeric_tree.as_ref().unwrap(),
                     node,
+                    controls.enabled(OptimizationPass::ProjectedNumericDebits),
                 );
             }
         }

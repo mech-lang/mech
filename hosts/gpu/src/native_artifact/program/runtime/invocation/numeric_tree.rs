@@ -18,6 +18,13 @@ fn traversal_debits(terms: impl IntoIterator<Item = (u64, u64, u64)>) -> Option<
     })
 }
 
+fn add_debits(root: (u64, u64), children: (u64, u64)) -> Option<(u64, u64)> {
+    Some((
+        root.0.checked_add(children.0)?,
+        root.1.checked_add(children.1)?,
+    ))
+}
+
 /// The selected nodes are parent-before-child. A cold active set must be one
 /// exact ancestry path, never two siblings or an orphaned descendant.
 fn on_path(
@@ -173,7 +180,9 @@ impl Invocation<'_, '_, '_> {
             }
         };
         // All validation precedes progress/publication changes. Each body debit
-        // is counted at its own header, including its terminal traversal.
+        // is counted at its own header, including its terminal traversal. Wider
+        // trees carry the child counters' exact weighted projection instead
+        // of retaining a distribution with no independent cold consumer.
         let mut compute = 0u64;
         let mut comparison = 0u64;
         for (index, selected) in tree.nodes.iter().enumerate() {
@@ -194,15 +203,21 @@ impl Invocation<'_, '_, '_> {
                     "numeric tree active nodes differ from its source ancestry",
                 ));
             }
-            let traversals = self.read_borrowed_word(2 + tree.traversals(index))?;
-            let debit = traversal_debits([(traversals, selected.compute, selected.comparison)])
-                .ok_or_else(|| invalid("numeric tree traversal debit overflows"))?;
-            compute = compute
-                .checked_add(debit.0)
-                .ok_or_else(|| invalid("numeric tree compute debit overflows"))?;
-            comparison = comparison
-                .checked_add(debit.1)
-                .ok_or_else(|| invalid("numeric tree comparison debit overflows"))?;
+            if index == 0 || !tree.projected_child_debits() {
+                let traversals = self.read_borrowed_word(2 + tree.traversals(index))?;
+                let debit = traversal_debits([(traversals, selected.compute, selected.comparison)])
+                    .ok_or_else(|| invalid("numeric tree traversal debit overflows"))?;
+                (compute, comparison) = add_debits((compute, comparison), debit)
+                    .ok_or_else(|| invalid("numeric tree debit total overflows"))?;
+            }
+        }
+        if tree.projected_child_debits() {
+            let children = (
+                self.read_borrowed_word(2 + tree.child_compute())?,
+                self.read_borrowed_word(2 + tree.child_comparison())?,
+            );
+            (compute, comparison) = add_debits((compute, comparison), children)
+                .ok_or_else(|| invalid("numeric tree projected debit total overflows"))?;
         }
         if state.remaining.0.checked_sub(args[0]) != Some(compute)
             || state.remaining.1.checked_sub(args[1]) != Some(comparison)
@@ -449,7 +464,30 @@ impl Invocation<'_, '_, '_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{on_path, traversal_debits};
+    use super::{add_debits, on_path, traversal_debits};
+
+    #[test]
+    fn projected_child_debits_preserve_both_exact_totals_and_checked_overflow() {
+        let values = [0, 1, 2, 3, 17, (1u64 << 32) - 1, 1u64 << 63, u64::MAX];
+        for count in values {
+            for compute in values {
+                for comparison in values {
+                    let root = (count, compute, comparison);
+                    let children = [(3, 7, 2), (5, 11, 0), (2, 13, 19)];
+                    let all = [root, children[0], children[1], children[2]];
+                    let projected = traversal_debits([root])
+                        .and_then(|root| add_debits(root, traversal_debits(children)?));
+                    assert_eq!(projected, traversal_debits(all));
+                }
+            }
+        }
+        assert_eq!(add_debits((u64::MAX, 0), (1, 0)), None);
+        assert_eq!(add_debits((0, u64::MAX), (0, 1)), None);
+        assert_eq!(
+            add_debits((u64::MAX - 1, u64::MAX - 2), (1, 2)),
+            Some((u64::MAX, u64::MAX))
+        );
+    }
 
     #[test]
     fn independent_node_debits_preserve_both_finite_accounts_and_reject_overflow() {

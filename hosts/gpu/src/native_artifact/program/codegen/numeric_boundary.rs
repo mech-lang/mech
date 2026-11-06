@@ -57,8 +57,17 @@ pub(super) fn materialize(
                 );
             }
         }
+        let settled = super::super::numeric_tree::settled_debits(
+            b,
+            tree,
+            controls.enabled(OptimizationPass::ProjectedNumericDebits),
+            |b, slot| Ok(words.read(b, shadow + slot)),
+        )?;
         for slot in tree.counters..tree.bank() {
-            let value = words.read(b, shadow + slot);
+            let value = settled
+                .get(&slot)
+                .copied()
+                .unwrap_or_else(|| words.read(b, shadow + slot));
             b.ins()
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
@@ -116,12 +125,19 @@ pub(super) fn materialize(
     }
     if let Some(tree) = &region.numeric_tree {
         for slot in tree.counters..tree.bank() {
-            let value = b.ins().load(
-                types::I64,
-                MemFlags::new(),
-                hooks.arguments,
-                offset(2 + slot)?,
-            );
+            let value = if tree.live_counter_word(
+                slot,
+                controls.enabled(OptimizationPass::ProjectedNumericDebits),
+            ) {
+                b.ins().load(
+                    types::I64,
+                    MemFlags::new(),
+                    hooks.arguments,
+                    offset(2 + slot)?,
+                )
+            } else {
+                b.ins().iconst(types::I64, 0)
+            };
             words.write(b, shadow + slot, value);
         }
         let bank = b

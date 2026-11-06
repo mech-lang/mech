@@ -8,7 +8,9 @@ use mech_engine::native_artifact::{
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The counters are private transport, not source values or entry authority.
-/// Traversals price each loop independently, including its terminal traversal.
+/// Every header, including its terminal traversal, retains its original price.
+/// Wider trees project child counts into their two weighted debit totals; the
+/// root count and every active/backedge flag keep their independent meanings.
 pub(in crate::native_artifact) const NODE_WORDS: usize = 3;
 
 #[derive(Clone, Debug, serde::Serialize)]
@@ -48,6 +50,33 @@ impl Proof {
     }
     pub fn traversals(&self, node: usize) -> usize {
         self.counters + node * NODE_WORDS
+    }
+    pub fn projected_child_debits(&self) -> bool {
+        self.nodes.len() >= 4
+            || (self.nodes.len() >= 3 && self.nodes[1..].iter().all(|n| n.comparison == 0))
+    }
+    pub fn child_compute(&self) -> usize {
+        self.traversals(1)
+    }
+    pub fn child_comparison(&self) -> usize {
+        self.traversals(2)
+    }
+    /// Actual native SSA consumers after projecting the child history. The
+    /// physical layout stays fixed; ignored transport lanes are exported zero.
+    #[cfg(feature = "canonical-native-program")]
+    pub fn live_counter_word(&self, word: usize, projected: bool) -> bool {
+        if !projected || !self.projected_child_debits() {
+            return (self.counters..self.bank()).contains(&word);
+        }
+        let Some(relative) = word.checked_sub(self.counters) else {
+            return false;
+        };
+        if relative >= self.nodes.len() * NODE_WORDS {
+            return false;
+        }
+        relative % NODE_WORDS != 0
+            || relative / NODE_WORDS < 2
+            || (relative / NODE_WORDS == 2 && self.nodes[1..].iter().any(|n| n.comparison != 0))
     }
     pub fn active(&self, node: usize) -> usize {
         self.traversals(node) + 1

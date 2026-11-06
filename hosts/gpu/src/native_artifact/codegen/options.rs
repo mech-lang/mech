@@ -31,6 +31,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// ablate only their emission to exercise the independently proved smaller
     /// parent pieces and leaf loans retained on the ordinary fallback route.
     NumericTrees,
+    /// Keep per-node counters in tests; settle their exact weighted projection
+    /// only at cold boundaries instead of maintaining it in the native loop.
+    ProjectedNumericDebits,
     /// Emission-only ablation retains the ordinary collection error path.
     UniformWords,
     NumericCollections,
