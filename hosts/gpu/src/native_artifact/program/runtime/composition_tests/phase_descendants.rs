@@ -4,7 +4,7 @@ use super::*;
 const SOURCE: &str =
     include_str!("../../../../../tests/fixtures/native/phase-descendant-pieces.mec");
 
-fn arguments(
+pub(super) fn arguments(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,
     nonce: u8,

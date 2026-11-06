@@ -21,7 +21,11 @@ pub(super) fn source_failure(
     let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
         return Err(backend("numeric rejection lost selected call"));
     };
-    if closed.sites.get(site).copied().flatten() != Some(id) {
+    if !closed.regions[id]
+        .numeric
+        .as_ref()
+        .is_some_and(|proof| proof.sites.binary_search(&site).is_ok())
+    {
         return Err(backend("numeric rejection differs from its active region"));
     }
     let region = &closed.regions[id];
@@ -42,7 +46,17 @@ pub(super) fn source_failure(
         )
         .collect::<BTreeSet<_>>();
     words.spill_live(b, locals, &live)?;
-    tail::failure(controls.options(), b, locals, closed, site, hooks, error)?;
+    let origin = b.ins().iconst(types::I64, site as i64);
+    tail::leave(
+        controls.options(),
+        b,
+        locals,
+        region,
+        origin,
+        2,
+        hooks,
+        error,
+    )?;
     hooks.library(b, site, operands, locals, |v| code.kind(v).is_some(), error)?;
     let status = b.ins().iconst(types::I64, STATUS_ABI as i64);
     b.ins().jump(error, &[status.into()]);

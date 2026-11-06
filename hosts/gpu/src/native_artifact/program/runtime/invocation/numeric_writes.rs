@@ -12,13 +12,14 @@ impl Invocation<'_, '_, '_> {
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
         let metadata = self.descriptor.metadata();
-        let id = metadata
-            .closed_tails
-            .sites
-            .get(site)
-            .copied()
-            .flatten()
-            .ok_or_else(|| invalid("numeric materialization outside proved region"))?;
+        let Some(super::tail::State {
+            region: super::tail::Region::Tail(id),
+            ..
+        }) = self.closed_tail.as_ref()
+        else {
+            return Err(invalid("numeric materialization outside active region"));
+        };
+        let id = *id;
         let region = &metadata.closed_tails.regions[id];
         let proof = region
             .numeric

@@ -6,10 +6,10 @@ use crate::native_artifact::program::runtime::buffer_frames::Field;
 use mech_engine::native_artifact::NativeIterationAction as Action;
 
 impl Invocation<'_, '_, '_> {
-    pub(super) fn begin_numeric_views(&mut self, region: usize) -> Result<bool, Error> {
+    pub(super) fn begin_numeric_views(&mut self, id: usize) -> Result<bool, Error> {
         let descriptor = self.descriptor;
         let metadata = descriptor.metadata();
-        let region = &metadata.closed_tails.regions[region];
+        let region = &metadata.closed_tails.regions[id];
         let proof = region
             .numeric
             .as_ref()
@@ -215,8 +215,6 @@ impl Invocation<'_, '_, '_> {
             } else {
                 None
             };
-            let id = metadata.closed_tails.sites[region.tail.header() as usize]
-                .ok_or_else(|| invalid("numeric region lost layout"))?;
             if !self.state.buffer_frames.prepare_private(
                 id,
                 proof.arrays.len(),

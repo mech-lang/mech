@@ -65,11 +65,29 @@ impl Invocation<'_, '_, '_> {
         }
         let layout = &self.descriptor.metadata().closed_tails;
         let proof = &layout.regions[region];
+        let primary = layout.sites[proof.tail.header() as usize];
+        if primary != Some(region) && self.numeric_prepaid.map(|route| route.region) != primary {
+            // Secondary code is only an entry into an exported primary
+            // continuation. Ordinary execution with a declined primary keeps
+            // its existing child route and resource admission.
+            return Ok(Some(0));
+        }
         if self.numeric_prepaid.is_some()
             && proof
                 .numeric
                 .as_ref()
                 .is_some_and(|proof| !proof.exits.is_empty())
+        {
+            return Ok(Some(0));
+        }
+        // A complete secondary contains only its root and descendants. Their
+        // validated IDs exceed every paid ancestor when this is negative.
+        // Conservatively refuse a possible overlap, including unrelated older
+        // IDs, without scanning source inventories or granting source credit.
+        if primary != Some(region)
+            && self
+                .numeric_prepaid
+                .is_some_and(|route| route.may_include_iteration(Some(proof.iteration)))
         {
             return Ok(Some(0));
         }
@@ -242,7 +260,10 @@ impl Invocation<'_, '_, '_> {
                     proof.tail.latch()
                 }
             }
-            2 | 3 if layout.sites.get(site).copied().flatten() == Some(region) => site as u32,
+            2 | 3 if proof.numeric.as_ref().map_or_else(
+                || layout.sites.get(site).copied().flatten() == Some(region),
+                |proof| proof.sites.binary_search(&site).is_ok(),
+            ) => site as u32,
             5 if proof.numeric.as_ref().and_then(|p| p.action(site)).is_some_and(|a| matches!(a,
                 crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. }
                 | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. }
