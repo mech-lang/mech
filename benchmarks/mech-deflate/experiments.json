@@ -24757,6 +24757,17 @@
           "files": 63,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-screen-reymont-prefix-32769-primary-949a05868133.tar.gz"
+        },
+        {
+          "event": "case-eight-literals-primary",
+          "source_revision": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
+          "asset": "r161-case-eight-literals-primary-0354ccfb202b.tar.gz",
+          "sha256": "0354ccfb202bf3b50f8ae810f7df2d58de67042959ba8a6cd3ec340f38a425ec",
+          "manifest_sha256": "1d2d9dfce51c774e12f4cfdd695a31dead990d1161a40c7aa7768db786111cd6",
+          "bytes": 105704,
+          "files": 68,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-loop-read-windows-round161-20261105/archives/r161-case-eight-literals-primary-0354ccfb202b.tar.gz"
         }
       ],
       "production": "98ec9d62b257ee89b867d3b469e54a64c19fcd8d",
