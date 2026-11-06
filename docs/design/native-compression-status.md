@@ -1,5 +1,57 @@
 # Native compression milestone
 
+**R172 retains a separate convergence-frequency source variant.** On unchanged
+R170 compiler libraries, eight literals improve **4.668385× → 4.279426× Roc**
+(8.331763%), distribution16KB **7.147809× → 6.830304×** (4.441991%), and
+random32KB6.102742× →5.972756× (2.129949%). All20 unchanged1.05 elapsed gates
+pass:19 faster/1 slower;5.297718% geometric improvement. Natural32KB rises0.319922%.
+This is optional source work, separate from the pinned source and compiler-only
+R171 results below. The gains are not combined or compounded.
+
+The reference diagnostic ledger finds56 dynamic passes across20 blocks, zero
+unchanged-model improvements,18 equal-frequency convergence passes across17 inputs,
+eight static replays and zero saved replays. The variant keeps every current path
+and tally, reusing prior deterministic codes/price only on exact frequency equality.
+The original combined tally remains for other callers. Code sizes, search/EOF/tie
+rules, real buffers, current ownership, input aliases, allocator and complete
+API timing stay fixed apart from the explicit source-work removal.
+
+Eight-byte instructions fall10.775886%, allocations3354 →3109. Distribution
+instructions fall4.671398%, allocations5679 →5086. Requests fall on all17 compression
+cases and stay equal on stored-only cases; reallocations stay equal. Peak live heap
+rises117168–122880B on all20 cases, up to3.598825% on stored-only input. This memory
+cost is retained. Generated text rises34800B; entry stack falls160B. Five fresh
+exact-binary CPU profiles cover16792 complete calls with no inherited source map.
+
+The proposed mutation-aware compiler project has **not** been implemented. Current
+R170 child-setup samples are0% random/distribution,1.034671% repeated and0.237140%
+natural; unknown native origins remain explicit. The requested approximately10%
+research hurdle is not established. Scope size, nested-child edges and terminal
+IntegrityFailure also obstruct these parents; supporting writes alone is insufficient.
+The [full source report](../../benchmarks/mech-deflate/source-variants/frequency-reuse.md)
+contains actual disassembly, the source ledger, all20 timings/counters, exact pins,
+remaining compiler work and every repaired setup fault.
+
+Qualification:3 new original/decoded tests, including rejection at half the observed work,
+unchanged publication/alias contents, immediate cleanup and successful retry;
+236 unchanged components/8 composition/1 real-capacity path rerun;15 architecture/
+catalog checks and132 workflow tests pass. Existing R170/R171 GPU/scalar/runtime
+qualification is explicitly reused with the same7 inherited exclusions. Source
+regeneration is byte-identical to the measured source. No expected value or
+existing allowance changes; no unresolved introduced functional failure remains.
+
+Base2364305438e87c0a3e19fb5964af6d98401ea288; measured source generator6b622d5700;
+compiler before/after3a3ae5dca4a (R170), IR/work/ABI/MBC191/107/39/14. Frozen R145
+Core/Engine/math/dependencies. Current pinned-source compiler remains R171/IR192.
+One optimization commit in #973, draft kept; ordinary hosted CI cancelled by
+instruction. Largest timed input33027B. Compiler parity is not achieved.
+
+Publication:29 archives/58 server digests verified. Fresh public retrieval verifies
+2916 file occurrences/593 paths/10 historical versions and reproduces
+results.json and REPORT.md byte-for-byte without compilation or compression.
+
+## Pinned-source R171 checkpoint
+
 **R171 retains generic vector clamped-subtraction maps.** Random32KB improves
 **6.103196× → 5.411240× Roc** (11.337597%); repeated32KB
 **3.899690× → 3.678737×** (5.665892%); periodic33KB
