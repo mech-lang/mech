@@ -11,12 +11,15 @@ use mech_engine::native_artifact::{
     NativeProgramFacts, NativeProgramReadRole as Read, NativeScalarOp as Op,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[path = "numeric_pack_window.rs"]
+mod window;
 
 pub(super) struct Pack {
     pub first: usize,
     pub last: usize,
     pub next: u32,
     pub width: u8,
+    pub source_window: bool,
     array: usize,
     base: NativeMatchValue,
     offset: u64,
@@ -231,18 +234,21 @@ impl Finder<'_, '_> {
         }) {
             return None;
         }
-        Some(Pack {
+        let mut pack = Pack {
             first,
             last,
             next,
             width,
+            source_window: false,
             array,
             base,
             offset,
             end,
             output: root,
             sites,
-        })
+        };
+        pack.source_window = window::derive(self, &pack);
+        Some(pack)
     }
 }
 
@@ -327,7 +333,6 @@ pub(super) fn emit(
     next: Block,
 ) {
     let view = shadow + proof.view(pack.array);
-    let length = words.read(b, view + 1);
     let rows = words.read(b, view + 2);
     let columns = words.read(b, view + 3);
     let base = words.read(b, pack.base.get() as usize);
@@ -336,17 +341,21 @@ pub(super) fn emit(
     let vector = b.ins().bor(row, column);
     // base+end<=logical length without overflowing either the source's
     // checked additions or this guard. Spare allocation capacity is irrelevant.
-    let end = b.ins().iconst(types::I64, pack.end as i64);
-    let enough = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, length, end);
-    let available = b.ins().isub(length, end);
-    let fits = b
-        .ins()
-        .icmp(IntCC::UnsignedLessThanOrEqual, base, available);
-    let mut valid = b.ins().band(vector, enough);
-    valid = b.ins().band(valid, fits);
-    if pack.offset == 0 {
-        let nonzero = b.ins().icmp_imm(IntCC::NotEqual, base, 0);
-        valid = b.ins().band(valid, nonzero);
+    let mut valid = vector;
+    if !pack.source_window {
+        let length = words.read(b, view + 1);
+        let end = b.ins().iconst(types::I64, pack.end as i64);
+        let enough = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, length, end);
+        let available = b.ins().isub(length, end);
+        let fits = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, base, available);
+        valid = b.ins().band(valid, enough);
+        valid = b.ins().band(valid, fits);
+        if pack.offset == 0 {
+            let nonzero = b.ins().icmp_imm(IntCC::NotEqual, base, 0);
+            valid = b.ins().band(valid, nonzero);
+        }
     }
     let fast = b.create_block();
     let original = b.create_block();
@@ -376,3 +385,7 @@ pub(super) fn emit(
     b.ins().jump(next, &[]);
     b.switch_to_block(original);
 }
+
+#[cfg(test)]
+#[path = "numeric_pack_window_tests.rs"]
+mod tests;

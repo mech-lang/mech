@@ -32,6 +32,7 @@ pub(in crate::native_artifact) struct Report {
     pub source_sites: Vec<usize>,
     pub typed_loads: Vec<(usize, u8)>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
+    pub source_guarded_read_packs: Vec<usize>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
@@ -179,6 +180,7 @@ pub(in crate::native_artifact) fn emit_entry(
         source_sites: proof.sites.clone(),
         typed_loads: Vec::new(),
         read_pack_sites: Vec::new(),
+        source_guarded_read_packs: Vec::new(),
         proven_boolean_successors: boolean_successors
             .iter()
             .map(|(&site, &next)| (site, next))
@@ -377,6 +379,9 @@ pub(in crate::native_artifact) fn emit_entry(
         }
         if let Some(pack) = read_packs.iter().find(|pack| pack.first == site) {
             super::numeric_read_packs::emit(b, &words, shadow, proof, pack, target(pack.next));
+            if pack.source_window {
+                report.source_guarded_read_packs.push(pack.first);
+            }
             report
                 .read_pack_sites
                 .push((pack.first, pack.last, pack.width));
