@@ -8,6 +8,87 @@ use mech_syntax::document::{
 };
 
 #[test]
+fn numeric_current_case_proves_fresh_u32_comparison_results() {
+    let source = include_str!("../../../../tests/fixtures/native/numeric-current-case.mec");
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x55333242), Revision(0), source).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+    let original = mech_engine::CanonicalSourceFrontend
+        .compile_document_with_catalog(
+            &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            mech_stdlib::source_catalog(),
+        )
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+    )
+    .unwrap();
+    for artifact in [&original, &decoded] {
+        let native = JitProgramArtifact::compile_with_limits(
+            artifact,
+            &mech_stdlib::source_catalog(),
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let metadata = native.descriptor().metadata();
+        let facts = metadata.plan.facts();
+        let mut proven = BTreeSet::new();
+        for proof in metadata
+            .closed_tails
+            .regions
+            .iter()
+            .filter_map(|region| region.numeric.as_ref())
+        {
+            for (site, _) in derive(&facts, proof) {
+                let &[previous] = facts.predecessors(site as u32).unwrap() else {
+                    panic!("a current case needs one predecessor");
+                };
+                let &[producer] = facts.predecessors(previous).unwrap() else {
+                    panic!("the comparison must be fresh");
+                };
+                if matches!(
+                    facts.plan().blocks()[producer as usize].action(),
+                    Action::Scalar(Scalar::Primitive { op: Op::U32Lt, .. })
+                ) {
+                    proven.insert(site);
+                    let mut missing = proof.clone();
+                    missing.sites.retain(|&at| at != producer as usize);
+                    assert!(!derive(&facts, &missing).contains_key(&site));
+                }
+            }
+        }
+        assert!(
+            proven.len() >= 2,
+            "both strict U32 choices need their own fresh normalized result: {proven:?}"
+        );
+        let object = crate::native_artifact::emit_program_object_with_limits(
+            artifact,
+            &mech_stdlib::source_catalog(),
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let emitted_metadata = object.metadata();
+        let emitted = [
+            "compiled_readonly_numeric_loops",
+            "compiled_numeric_write_loops",
+        ]
+        .into_iter()
+        .flat_map(|name| emitted_metadata[name].as_array().unwrap())
+        .flat_map(|region| region["proven_boolean_successors"].as_array().unwrap())
+        .map(|row| row[0].as_u64().unwrap() as usize)
+        .collect::<BTreeSet<_>>();
+        assert!(
+            proven.is_subset(&emitted),
+            "the emitter must use the current proof"
+        );
+    }
+}
+
+#[test]
 fn complementary_cases_refuse_missing_members_and_region_frontiers() {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x424f4f4c), Revision(1),

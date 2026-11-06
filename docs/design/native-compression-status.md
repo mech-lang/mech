@@ -1,6 +1,6 @@
 # Native compression milestone
 
-**R157 retains shared current-traversal projection facts for numeric lowering.** The direct 20-case comparison against reviewed R154 passes unchanged gates: natural32KB improves7.719026x to6.733391x reference time; the all-case geometric mean improves1.789001%. Allocation counts and incremental live heap remain equal. Periodic/repeated instructions increase1.91%/1.99%, an unresolved performance tradeoff. See the [current report](native-numeric-traversal-facts.md) for exact pins, contrary observations,589 GPU/168 CI tests and remaining loop work. Parity is not achieved; earlier published heads remain frozen.
+**R159 retains fresh U32 comparison facts in native numeric cases.** The direct 20-case comparison against reviewed R157 passes unchanged gates: natural32KB improves6.734905x to6.472978x reference time; the all-case geometric mean improves1.134760%. Eighteen cases improve, while periodic/repeated elapsed regress2.71%/2.57%. Natural32KB instructions fall1.50%; allocation counts and incremental live heap remain equal. Text grows50,432 bytes and entry stack falls80 bytes. See the [current report](native-u32-case-facts.md) for exact pins, contrary observations,590 GPU/169 CI tests and remaining loop work. Parity is not achieved; earlier published heads remain frozen.
 
 The R154 checkpoint below remains as historical context for the reviewed base.
 
