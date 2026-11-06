@@ -25254,6 +25254,17 @@
           "files": 71,
           "publication": "local evidence; publication pending",
           "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-33027-periodic-window-primary-2f894ea6b746.tar.gz"
+        },
+        {
+          "event": "case-random-32769-primary",
+          "source_revision": "3ef813384ab5a1df7a90818ea89506c62ad03375",
+          "asset": "r162-case-random-32769-primary-ffb4d58c4091.tar.gz",
+          "sha256": "ffb4d58c4091e9de23cf785d9bd28b59bccaf50f2d793ace5fcbc09c9b1480ef",
+          "manifest_sha256": "0ddb7bc6c340e5bbeb5cf3727c2af8f8ff866e0943dd6fb4c8d9d97984905565",
+          "bytes": 111628,
+          "files": 71,
+          "publication": "local evidence; publication pending",
+          "local_archive": "/private/tmp/mech-word-range-round162-20261105/archives/r162-case-random-32769-primary-ffb4d58c4091.tar.gz"
         }
       ],
       "production": "3ef813384ab5a1df7a90818ea89506c62ad03375",
