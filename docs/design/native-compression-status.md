@@ -1,5 +1,37 @@
 # Native compression milestone
 
+**R162 retains unsigned word proofs together with the guarded child windows.**
+Against qualified R160, natural32KB improves6.223658x to5.341214x reference
+(-14.178867%) and natural16KB6.964642x to6.004294x (-13.788912%). Repeated32KB
+is6.037883x to5.895288x; periodic33KB6.792514x to6.636364x. Eight cases improve,
+twelve worsen; geometric elapsed improves1.165633%, and every unchanged1.05
+case/scalar gate passes. Eight bytes worsens4.613971x to4.689157x (+1.629548%);
+the contrary observation remains. These fresh matched ratios do not replace
+earlier cohorts or explain R161's failed biased128 result.
+
+The existing early native branch cleanup now reuses unsigned SSA word bounds
+to remove602 statically proved branches, including all three repeated masked
+width checks in the guarded path loop. All20 retired-instruction counts fall;
+natural32KB309.933474M to279.098834M (-9.948793%), with cycles-13.313405%.
+All20 allocation requests, requested bytes, reallocations and incremental live
+heap peaks stay equal. Text shrinks69,480B against R160; entry stack grows400B.
+Actual current profiles place84.39% of natural32KB samples in generated code,
+versus13.27% for eight bytes. Samples are not instruction partitions.
+
+The [R162 report](native-word-range-cleanup.md) gives all20 timings, independent
+counter/heap cohorts, exact source/bytecode pins and repaired build/check
+failures. Compiler3ef813384ab5a1df7a90818ea89506c62ad03375; published base #988
+d597f5468c83f6547013e0007e4ab3bd380969e0; IR184/work107/ABI39/MBC14. Passing
+controls:602 compatible GPU tests (same7 exclusions),22 focused,185 scheduled
+and executed,236 components/8 composition/1 real-capacity path,132 workflow,
+15 architecture, runtime-only/format/warnings,12 scalar. Source, algorithms,
+capacities, allocator and timing boundaries remain unchanged. Whole-body
+totality, exact existing-loan settlement, ordered reduction/SIMD and the separate
+source variant remain unfinished. Parity is not achieved. Ordinary hosted CI
+is cancelled by request; the change remains draft pending green CI and review.
+
+## Historical R160 and standalone R161 checkpoints
+
 **R160 retains current immutable-array read facts in native numeric loops.** The matched comparison against reviewed #986 removes109 static duplicate read guards, including both path-loop loads in each clone. Natural32KB improves6.470792x to6.225117x reference time (-3.796679%); repeated6.422834x to6.109911x (-4.872034%); periodic7.131085x to6.836043x (-4.137400%). Fourteen of20 medians improve, six worsen (worst+0.949648%); geometric elapsed improves0.935680%, with all unchanged1.05 gates passing. Eight bytes is4.854203x to4.842748x (-0.235988% in this matched cohort). Every case's retired instructions fall, with natural32KB -4.199070%. Heap counts/bytes/reallocations/incremental live peaks stay equal. Generated text shrinks85,520 bytes and entry stack64 bytes.
 
 The [current report](native-array-read-facts.md) contains exact compiler/source/bytecode pins, all20 times and independent counter cohorts,595 GPU/174 CI-selected tests, original/decoded/error/finite controls and corrected validation paths. The current compiler is4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773, IR182/work107/ABI39/MBC14; base #986 is8ef1693a558b9a46544ce425ca2f222e10e3dddc. The [R159 report](native-u32-case-facts.md) remains historical evidence. Whole-loop entry windows, masked narrowing/totality, exact funding settlement, ordered reduction/SIMD and the separate source variant remain unfinished. Parity is not achieved; earlier published heads remain frozen.
