@@ -35,6 +35,7 @@ pub(in crate::native_artifact) struct Report {
     pub source_guarded_read_packs: Vec<usize>,
     pub proven_projection_guards: Vec<(usize, u32, usize, u32)>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
+    pub proven_scalar_read_guards: Vec<(usize, usize, u32)>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
@@ -188,6 +189,7 @@ pub(in crate::native_artifact) fn emit_entry(
             .map(|(&site, &next)| (site, next))
             .collect(),
         proven_projection_guards: Vec::new(),
+        proven_scalar_read_guards: Vec::new(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
         cold_exits: proof
@@ -555,23 +557,28 @@ pub(in crate::native_artifact) fn emit_entry(
                 let index = words.read(b, *index as usize);
                 let length = words.read(b, view + 1);
                 let ordinal = b.ins().iadd_imm(index, -1);
-                let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, length);
-                let good = b.create_block();
-                let bad = b.create_block();
-                b.set_cold_block(bad);
-                boundaries.insert(bad);
-                b.ins().brif(valid, good, &[], bad, &[]);
-                b.switch_to_block(bad);
-                // This edge settles the current loan and invokes the original
-                // selected operation, then terminates. No ordinary instruction
-                // resumes. Managed operands come from the synchronized arena;
-                // only exact settlement inputs and current scalar operands
-                // need their local homes here.
-                let spilled = boundary::source_failure(
-                    b, controls, &words, frame, locals, code, closed, id, site, hooks, error,
-                )?;
-                report.bounds_error_spill_words.push((site, spilled));
-                b.switch_to_block(good);
+                if let Operation::Read { array, index, .. } = operation
+                    && traversal.read(site, *array, *index)
+                {
+                    report
+                        .proven_scalar_read_guards
+                        .push((site, *array, *index));
+                } else {
+                    let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, length);
+                    let good = b.create_block();
+                    let bad = b.create_block();
+                    b.set_cold_block(bad);
+                    boundaries.insert(bad);
+                    b.ins().brif(valid, good, &[], bad, &[]);
+                    b.switch_to_block(bad);
+                    // Preserve the exact original source-failure path whenever
+                    // no current selected-view proof justifies this read.
+                    let spilled = boundary::source_failure(
+                        b, controls, &words, frame, locals, code, closed, id, site, hooks, error,
+                    )?;
+                    report.bounds_error_spill_words.push((site, spilled));
+                    b.switch_to_block(good);
+                }
                 // Canonical storage is row-major; source linear selection is
                 // one-based column-major. A valid ordinal proves rows > 0.
                 let rows = words.read(b, view + 2);

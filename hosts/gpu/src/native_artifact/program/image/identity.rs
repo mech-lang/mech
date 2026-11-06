@@ -330,7 +330,9 @@ fn selected_template(
 // Project and parallel Copy recipe, including overlapping private word homes.
 // IR181 recognizes fresh normalized U32 comparisons at the same confined
 // numeric complementary cases; arbitrary raw Bool homes retain their defaults.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 181;
+// IR182 rederives current immutable-view lengths and selected normalized Bool
+// relations before omitting an exact one-based scalar-read bounds guard.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 182;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
