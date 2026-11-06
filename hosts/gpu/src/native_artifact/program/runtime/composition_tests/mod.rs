@@ -45,6 +45,7 @@ mod numeric_induction;
 mod numeric_tree;
 pub(super) mod observe;
 mod ordered_reduction;
+mod ordered_reduction_geometry;
 mod pack;
 mod phase_descendants;
 mod physical_exits;

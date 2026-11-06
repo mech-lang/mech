@@ -30,6 +30,7 @@ fn numeric_ordered_reduction_selects_current_total_source_recipe() {
             "{windows:?}"
         );
     }
+    super::ordered_reduction_geometry::check_current_windows();
 }
 
 #[test]

@@ -390,7 +390,10 @@ fn selected_template(
 // IR227 also integrates current child-funding gates from PR973/IR194.
 // IR228 consumes selected nonempty-entry facts in the compact scalar reduction
 // backedge from PR973/IR196. The earlier reverse-input experiment was rejected.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 228;
+// IR229's query fresh-traversal probe emitted unchanged native text.
+// IR230 also integrates activation-current affine read-address bases from
+// PR973/IR197 without changing source operations, admission or visit prices.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 230;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

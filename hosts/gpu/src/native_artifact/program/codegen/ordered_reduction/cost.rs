@@ -16,7 +16,7 @@ pub(super) fn constant(b: &mut FunctionBuilder<'_>, values: [u32; 4]) -> Value {
 
 pub(super) struct Inputs {
     words: BTreeMap<usize, Value>,
-    views: BTreeMap<usize, (Value, Value)>,
+    bases: BTreeMap<Window, Value>,
 }
 impl Inputs {
     pub fn new(
@@ -28,7 +28,7 @@ impl Inputs {
     ) -> Self {
         let mut out = Self {
             words: BTreeMap::new(),
-            views: BTreeMap::new(),
+            bases: BTreeMap::new(),
         };
         out.capture(b, words, proof, shadow, cost);
         out
@@ -50,9 +50,25 @@ impl Inputs {
                 });
             }
             Cost::Read(w) => {
-                self.views.entry(w.array).or_insert_with(|| {
+                self.bases.entry(*w).or_insert_with(|| {
                     let view = shadow + proof.view(w.array);
-                    (words.read(b, view), words.read(b, view + 1))
+                    let base = words.read(b, view);
+                    let ordinal = if w.reverse {
+                        let length = words.read(b, view + 1);
+                        b.ins().iadd_imm(length, (w.delta as i64).wrapping_neg())
+                    } else {
+                        b.ins().iconst(types::I64, w.delta as i64)
+                    };
+                    let shift = if proof.arrays[w.array].width == 8 {
+                        3
+                    } else {
+                        2
+                    };
+                    let offset = b.ins().ishl_imm(ordinal, shift);
+                    // The current entry already admits every reached read.
+                    // This is integer address geometry, with no load at the
+                    // adjusted base and no retained authority across entries.
+                    b.ins().iadd(base, offset)
                 });
             }
             Cost::Add(a, c) | Cost::And(a, c) | Cost::Or(a, c) | Cost::Xor(a, c) => {
@@ -87,22 +103,28 @@ impl Inputs {
             }
         }
     }
+    fn pointer(&self, b: &mut FunctionBuilder<'_>, proof: &Proof, w: Window, k: Value) -> Value {
+        let shift = if proof.arrays[w.array].width == 8 {
+            3
+        } else {
+            2
+        };
+        let offset = b.ins().ishl_imm(k, shift);
+        let base = self.bases[&w];
+        if w.reverse {
+            b.ins().isub(base, offset)
+        } else {
+            b.ins().iadd(base, offset)
+        }
+    }
     fn read(&self, b: &mut FunctionBuilder<'_>, proof: &Proof, w: Window, k: Value) -> Value {
-        let (base, length) = self.views[&w.array];
-        let at = b.ins().iadd_imm(k, w.delta as i64);
-        let ordinal = if w.reverse {
-            b.ins().isub(length, at)
-        } else {
-            at
-        };
-        let ordinal = if w.reverse {
-            b.ins().iadd_imm(ordinal, -3)
-        } else {
-            ordinal
-        };
+        let pointer = self.pointer(b, proof, w, k);
         let width = proof.arrays[w.array].width;
-        let offset = b.ins().ishl_imm(ordinal, if width == 8 { 3 } else { 2 });
-        let pointer = b.ins().iadd(base, offset);
+        let pointer = if w.reverse {
+            b.ins().iadd_imm(pointer, -3 * width as i64)
+        } else {
+            pointer
+        };
         // Every lane lies in the original initialized window. Alignment is not
         // inferred from allocation capacity or the vector load's width.
         let flags = MemFlags::new().with_notrap();
@@ -147,20 +169,7 @@ impl Inputs {
             Cost::Word(slot) => self.words[slot],
             Cost::Index => b.ins().ireduce(types::I32, k),
             Cost::Read(w) => {
-                let (base, length) = self.views[&w.array];
-                let at = b.ins().iadd_imm(k, w.delta as i64);
-                let ordinal = if w.reverse {
-                    b.ins().isub(length, at)
-                } else {
-                    at
-                };
-                let shift = if proof.arrays[w.array].width == 8 {
-                    3
-                } else {
-                    2
-                };
-                let offset = b.ins().ishl_imm(ordinal, shift);
-                let pointer = b.ins().iadd(base, offset);
+                let pointer = self.pointer(b, proof, *w, k);
                 b.ins()
                     .load(types::I32, MemFlags::new().with_notrap(), pointer, 0)
             }
