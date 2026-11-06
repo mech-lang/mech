@@ -11,6 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod flow;
 mod operations;
 mod scope;
+mod windows;
 pub(super) use flow::{Step, derive};
 use operations::{aggregate, scalar};
 pub(super) use scope::Scope;
@@ -36,6 +37,7 @@ enum Arithmetic {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 enum Expr {
     Constant(u64),
+    ArrayLength(usize),
     Initial(usize),
     Definition(usize, usize),
     Phi(usize, usize),
@@ -295,11 +297,13 @@ impl State {
 pub(super) struct Proof {
     guards: BTreeSet<(usize, u32, usize, u32)>,
     arithmetic: BTreeMap<usize, (Op, Vec<NativeMatchValue>)>,
+    reads: BTreeSet<(usize, usize, u32)>,
 }
 impl Proof {
     pub(super) fn extend(&mut self, other: Self) {
         self.guards.extend(other.guards);
         self.arithmetic.extend(other.arithmetic);
+        self.reads.extend(other.reads);
     }
 
     pub fn guard(
@@ -315,6 +319,9 @@ impl Proof {
         self.arithmetic
             .get(&site)
             .is_some_and(|(proved, inputs)| *proved == op && inputs == operands)
+    }
+    pub fn read(&self, site: usize, array: usize, index: u32) -> bool {
+        self.reads.contains(&(site, array, index))
     }
 }
 

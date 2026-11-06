@@ -96,9 +96,19 @@ fn local(code: CodePlan<'_>, numeric: &Numeric, shadow: usize, scope: &Scope) ->
                 })
             }
             Some(Operation::ArrayCopy) => Some(Step::Keep),
-            Some(Operation::Read { output, .. } | Operation::Length { output, .. }) => {
-                Some(Step::Define(*output as usize))
-            }
+            Some(Operation::Read {
+                array,
+                index,
+                output,
+            }) => Some(Step::Read {
+                array: *array,
+                index: *index,
+                output: *output as usize,
+            }),
+            Some(Operation::Length { array, output }) => Some(Step::Length {
+                array: *array,
+                output: *output as usize,
+            }),
             // Mutable arrays, unsupported actions and cold boundaries decline
             // this whole local analysis. The original guarded emitter remains.
             Some(_) => None,

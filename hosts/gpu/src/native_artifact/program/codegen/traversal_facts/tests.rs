@@ -1,6 +1,83 @@
 use super::*;
 
 #[test]
+fn current_array_windows_follow_selected_literals_aliases_and_word_versions() {
+    let mut terms = Terms::default();
+    let at = terms.intern(Expr::Initial(0)).unwrap();
+    let length = terms.intern(Expr::ArrayLength(0)).unwrap();
+    let other_length = terms.intern(Expr::ArrayLength(1)).unwrap();
+    let one = terms.constant(1).unwrap();
+    let predicate = terms
+        .intern(Expr::Compare(Relation::Lt, at, length))
+        .unwrap();
+    let index = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, at, one))
+        .unwrap();
+    let mut selected = State::default();
+    assert!(selected.literal(&terms, predicate, one, true).unwrap());
+    assert!(selected.safe(&terms, Arithmetic::Add, at, one));
+    assert!(selected.readable(&terms, index, length));
+    assert!(
+        !selected.readable(&terms, index, other_length),
+        "equal kinds do not identify a view"
+    );
+    selected.words.insert(0, index);
+    selected.assign(&[(1, 0)], true).unwrap();
+    let changed = terms.intern(Expr::Definition(7, 0)).unwrap();
+    selected.words.insert(0, changed);
+    assert!(!selected.readable(&terms, selected.read(0).unwrap(), length));
+    assert!(
+        selected.readable(&terms, selected.read(1).unwrap(), length),
+        "an unchanged alias keeps its own current expression"
+    );
+    let mut unselected = State::default();
+    assert!(unselected.literal(&terms, predicate, one, false).unwrap());
+    assert!(!unselected.readable(&terms, index, length));
+    let mut joined = selected.clone();
+    joined.merge(&State::default(), 8, &mut terms).unwrap();
+    assert!(
+        !joined.readable(&terms, index, length),
+        "a one-arm fact cannot cross the join"
+    );
+    assert!(
+        !State::default().readable(&terms, index, length),
+        "a fresh visit starts without old window facts"
+    );
+}
+
+#[test]
+fn literal_bool_propagation_keeps_raw_remainder_and_overflow_unknown() {
+    let mut terms = Terms::default();
+    let raw = terms.intern(Expr::Initial(0)).unwrap();
+    let zero = terms.constant(0).unwrap();
+    let one = terms.constant(1).unwrap();
+    let maximum = terms.constant(u64::MAX).unwrap();
+    let length = terms.intern(Expr::ArrayLength(0)).unwrap();
+    let mut state = State::default();
+    assert!(state.literal(&terms, raw, one, false).unwrap());
+    assert_eq!(state.truth(&terms, Relation::Eq, raw, zero), None);
+    assert!(!state.safe(&terms, Arithmetic::Add, maximum, one));
+    assert!(!state.readable(&terms, maximum, length));
+    let predicate = terms
+        .intern(Expr::Compare(Relation::Lt, raw, length))
+        .unwrap();
+    let mut selected_false = State::default();
+    assert!(
+        selected_false
+            .literal(&terms, zero, predicate, true)
+            .unwrap()
+    );
+    assert_eq!(
+        selected_false.truth(&terms, Relation::Le, length, raw),
+        Some(true)
+    );
+    assert_eq!(
+        selected_false.truth(&terms, Relation::Lt, raw, length),
+        Some(false)
+    );
+}
+
+#[test]
 fn overlapping_assignments_keep_current_tag_versions_in_the_emitted_order() {
     let mut terms = Terms::default();
     let zero = terms.constant(0).unwrap();

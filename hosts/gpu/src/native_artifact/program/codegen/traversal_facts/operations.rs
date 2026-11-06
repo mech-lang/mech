@@ -89,6 +89,16 @@ pub(super) fn scalar(
                 .map(|v| state.read(v.get() as usize))
                 .collect::<Option<Vec<_>>>()?;
             let value = match *op {
+                Op::U64WrappingAdd => {
+                    let [a, b] = args.as_slice() else {
+                        return None;
+                    };
+                    if state.safe(terms, Arithmetic::Add, *a, *b) {
+                        terms.intern(Expr::Arithmetic(Arithmetic::Add, *a, *b))?
+                    } else {
+                        terms.intern(Expr::Definition(site, output.get() as usize))?
+                    }
+                }
                 Op::U64Add | Op::U64Sub => {
                     let op = if *op == Op::U64Add {
                         Arithmetic::Add
