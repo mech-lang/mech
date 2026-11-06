@@ -4,9 +4,10 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 #[test]
 fn cfg_cleanup_executes_only_selected_effects_and_keeps_dynamic_branches_and_block_arguments() {
-    for (enabled, literal) in [false, true]
+    for (enabled, literal, wrapped) in [false, true]
         .into_iter()
         .flat_map(|enabled| [0i64, -128].map(|literal| (enabled, literal)))
+        .flat_map(|(enabled, literal)| [false, true].map(|wrapped| (enabled, literal, wrapped)))
     {
         let mut module = cranelift_jit::JITModule::new(
             cranelift_jit::JITBuilder::with_flags(
@@ -39,7 +40,16 @@ fn cfg_cleanup_executes_only_selected_effects_and_keeps_dynamic_branches_and_blo
             b.switch_to_block(entry);
             let pointer = b.block_params(entry)[0];
             let input = b.block_params(entry)[1];
-            let constant = b.ins().iconst(types::I8, literal);
+            let mut constant = b.ins().iconst(types::I8, literal);
+            if wrapped {
+                // The real primitive's nonzero-divisor guard, combined with
+                // a wrapped Bool comparison, must fold before the data pass.
+                let divisor = b.ins().iconst(types::I64, 6);
+                let valid = b.ins().icmp_imm(IntCC::NotEqual, divisor, 0);
+                let value = b.ins().icmp_imm(IntCC::NotEqual, constant, 0);
+                constant = b.ins().band(valid, value);
+                constant = b.ins().uextend(types::I64, constant);
+            }
             b.ins().brif(constant, live, &[], dead, &[]);
             b.switch_to_block(dead);
             let bad = b.ins().iconst(types::I64, 999);
@@ -88,4 +98,145 @@ fn cfg_cleanup_executes_only_selected_effects_and_keeps_dynamic_branches_and_blo
             assert_eq!(output, expected);
         }
     }
+}
+
+#[test]
+fn cfg_constant_integer_comparisons_match_native_execution_at_all_widths() {
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut cases = Vec::new();
+    for ty in [types::I8, types::I16, types::I32, types::I64] {
+        let bits = ty.bits();
+        let mask = integer_mask(bits).unwrap();
+        let high = 1u64 << (bits - 1);
+        for (left, right) in [
+            (0, 0),
+            (0, 1),
+            (1, 0),
+            (mask, 0),
+            (high, mask),
+            (mask, high),
+            (high, 0),
+            (mask, mask),
+        ] {
+            for condition in [
+                IntCC::Equal,
+                IntCC::NotEqual,
+                IntCC::SignedLessThan,
+                IntCC::SignedGreaterThanOrEqual,
+                IntCC::SignedGreaterThan,
+                IntCC::SignedLessThanOrEqual,
+                IntCC::UnsignedLessThan,
+                IntCC::UnsignedGreaterThanOrEqual,
+                IntCC::UnsignedGreaterThan,
+                IntCC::UnsignedLessThanOrEqual,
+            ] {
+                for immediate in [false, true] {
+                    let mut context = module.make_context();
+                    context.func.signature.returns = vec![AbiParam::new(types::I64)];
+                    let id = module
+                        .declare_function(
+                            &format!("constant_compare_{}", cases.len()),
+                            Linkage::Local,
+                            &context.func.signature,
+                        )
+                        .unwrap();
+                    let mut fc = FunctionBuilderContext::new();
+                    let expression;
+                    {
+                        let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+                        let entry = b.create_block();
+                        b.switch_to_block(entry);
+                        let a = b.ins().iconst(ty, signed_word(left, bits));
+                        let test = if immediate {
+                            b.ins().icmp_imm(condition, a, signed_word(right, bits))
+                        } else {
+                            let c = b.ins().iconst(ty, signed_word(right, bits));
+                            b.ins().icmp(condition, a, c)
+                        };
+                        let extended = b.ins().uextend(types::I64, test);
+                        expression = b.ins().ireduce(types::I8, extended);
+                        let output = b.ins().uextend(types::I64, expression);
+                        b.ins().return_(&[output]);
+                        b.seal_all_blocks();
+                        b.finalize();
+                    }
+                    let predicted = constant_condition(&context.func, expression).unwrap();
+                    // Do not run our fold: the independent backend emits and
+                    // executes the original comparison and type conversions.
+                    module.define_function(id, &mut context).unwrap();
+                    cases.push((id, predicted));
+                }
+            }
+        }
+    }
+    module.finalize_definitions().unwrap();
+    assert_eq!(cases.len(), 640);
+    for (id, predicted) in cases {
+        // SAFETY: each owned function has this exact zero-input word ABI.
+        let entry: unsafe extern "C" fn() -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+        assert_eq!(unsafe { entry() }, u64::from(predicted));
+    }
+}
+
+#[test]
+fn cfg_constant_integer_rejects_dynamic_memory_traps_and_exhausted_expressions() {
+    let mut context = cranelift_codegen::Context::new();
+    context.func.signature.params = vec![AbiParam::new(types::I64)];
+    context.func.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut fc = FunctionBuilderContext::new();
+    let (dynamic, loaded, divided, deep, wide, wrapped, selected, signed);
+    {
+        let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let parameter = b.block_params(entry)[0];
+        dynamic = b.ins().icmp_imm(IntCC::NotEqual, parameter, 0);
+        let value = b.ins().load(
+            types::I64,
+            MemFlags::new()
+                .with_notrap()
+                .with_readonly()
+                .with_can_move(),
+            parameter,
+            0,
+        );
+        loaded = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
+        let one = b.ins().iconst(types::I64, 1);
+        let zero = b.ins().iconst(types::I64, 0);
+        let invalid = b.ins().udiv(one, zero);
+        divided = b.ins().icmp_imm(IntCC::NotEqual, invalid, 0);
+        let mut value = one;
+        for _ in 0..MAX_CONSTANT_DEPTH + 2 {
+            value = b.ins().iadd_imm(value, 1);
+        }
+        deep = value;
+        let mut value = one;
+        for _ in 0..7 {
+            value = b.ins().band(value, value);
+        }
+        wide = value;
+        let byte = b.ins().iconst(types::I8, -1);
+        let byte_one = b.ins().iconst(types::I8, 1);
+        wrapped = b.ins().iadd(byte, byte_one);
+        selected = b.ins().select(wrapped, one, zero);
+        signed = b.ins().sextend(types::I64, byte);
+        b.ins().return_(&[zero]);
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    for value in [dynamic, loaded, divided, deep, wide] {
+        assert_eq!(constant_condition(&context.func, value), None);
+    }
+    assert_eq!(constant_condition(&context.func, wrapped), Some(false));
+    assert_eq!(constant_condition(&context.func, selected), Some(false));
+    let mut steps = MAX_CONSTANT_STEPS;
+    assert_eq!(
+        constant_integer(&context.func, signed, MAX_CONSTANT_DEPTH, &mut steps),
+        Some(u64::MAX)
+    );
 }
