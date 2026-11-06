@@ -21,6 +21,10 @@ pub(super) struct Counts {
     pub replacement_backings: Vec<(u64, usize, usize)>,
     pub terminal_backings: Vec<(usize, usize)>,
     pub prepaid_segment_charges: Vec<(u64, u64)>,
+    pub segment_charges: Vec<(u64, u64, u64, bool, bool)>,
+    pub paid_segment_declines: BTreeMap<usize, u64>,
+    pub parent_marker_handoffs: Vec<(u32, u32, Option<usize>, Option<usize>, u64)>,
+    pub completed_parent_children: Vec<(u32, u32)>,
     prepaid_segment_entry_work: Option<u64>,
     pub phase_settlements: Vec<(u64, u64, u64, u64)>,
     pub cold_private_arrays: Vec<usize>,
@@ -71,6 +75,37 @@ thread_local! {
 }
 pub(in crate::native_artifact::program::runtime) fn prepaid_segment_entry_work(entry: u64) {
     COUNTS.with(|v| v.borrow_mut().prepaid_segment_entry_work = Some(entry));
+}
+pub(in crate::native_artifact::program::runtime) fn paid_segment_decline(site: usize) {
+    COUNTS.with(|v| {
+        *v.borrow_mut()
+            .paid_segment_declines
+            .entry(site)
+            .or_default() += 1
+    });
+}
+pub(in crate::native_artifact::program::runtime) fn parent_marker_handoff(
+    root: u32,
+    active: u32,
+    old: Option<usize>,
+    next: Option<usize>,
+    mode: u64,
+) {
+    COUNTS.with(|v| {
+        v.borrow_mut()
+            .parent_marker_handoffs
+            .push((root, active, old, next, mode))
+    });
+}
+pub(in crate::native_artifact::program::runtime) fn parent_child_completed(
+    child: u32,
+    parent: u32,
+) {
+    COUNTS.with(|v| {
+        v.borrow_mut()
+            .completed_parent_children
+            .push((child, parent))
+    });
 }
 fn private_homes(
     metadata: &crate::native_artifact::program::prepare::ProgramMetadata,
@@ -230,16 +265,15 @@ unsafe extern "C" fn helper(
         let layout = &ctx.descriptor.metadata().compositions;
         layout.entry(site as usize).and_then(|id| {
             let (_, segment) = layout.region(id)?;
-            (ctx.numeric_prepaid.is_some()
-                && ctx.numeric_prepaid_region() == segment.prepaid_region)
-                .then(|| {
-                    let proof = segment.numeric.as_ref().unwrap();
-                    assert!(proof.source_work > 0);
-                    (
-                        ctx.state.library.used().0,
-                        proof.compute - proof.source_work,
-                    )
-                })
+            let paid = ctx.numeric_prepaid.is_some()
+                && ctx.numeric_prepaid_region() == segment.prepaid_region;
+            let proof = segment.numeric.as_ref().unwrap();
+            Some((
+                ctx.state.library.used().0,
+                proof.compute - if paid { proof.source_work } else { 0 },
+                paid,
+                ctx.numeric_prepaid.is_some(),
+            ))
         })
     } else {
         None
@@ -457,7 +491,7 @@ unsafe extern "C" fn helper(
         // SAFETY: the original helper has successfully filled its live result.
         let selected = unsafe { *out };
         if selected == 1
-            && let Some((before, expected)) = prepaid_segment
+            && let Some((before, expected, paid, ancestor)) = prepaid_segment
         {
             // SAFETY: the callback returned, and this same Invocation retains
             // its current account. Observe the actual debit without changing it.
@@ -469,8 +503,13 @@ unsafe extern "C" fn helper(
                 // entry work. Credit removes only original source prices.
                 let entry = counts.prepaid_segment_entry_work.take().unwrap();
                 counts
-                    .prepaid_segment_charges
-                    .push((charged, expected + entry));
+                    .segment_charges
+                    .push((site, charged, expected + entry, paid, ancestor));
+                if paid {
+                    counts
+                        .prepaid_segment_charges
+                        .push((charged, expected + entry));
+                }
             });
         }
         if selected == 1 && POISON_UNUSED_EXIT.with(Cell::get) {

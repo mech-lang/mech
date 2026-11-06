@@ -315,7 +315,9 @@ fn selected_template(
 // IR169/170 were rejected refusal/private-store experiments. IR171 checks
 // current unit-dimension geometry in the shared numeric address emitter.
 // IR172 emits guarded whole-word loads for confined source byte packs.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 172;
+// IR173 restores exact cold child markers and selects fully charged ordinary
+// descendant parent pieces; current paid overlaps retain ordinary execution.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 173;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
