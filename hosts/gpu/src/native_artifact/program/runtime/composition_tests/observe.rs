@@ -24,8 +24,10 @@ pub(super) struct Counts {
     pub tail_boundaries: Vec<TailBoundary>,
     // Admission attempts include visits composed inside zero-word helpers.
     pub admits: BTreeMap<u64, u64>,
+    pub admission_callbacks: BTreeMap<u64, u64>,
     pub helpers: BTreeMap<(u64, u64), u64>,
     pub selected: u64,
+    pub fused_numeric_entries: u64,
     pub phases: u64,
     pub phase_sites: BTreeMap<u64, u64>,
     pub phase_initial_fuel: Vec<u64>,
@@ -48,6 +50,9 @@ pub(super) struct Counts {
     pub child_fuel_exits: Vec<(u64, bool)>,
     pub prepaid_source_visits: BTreeMap<usize, u64>,
     pub selected_sites: BTreeMap<u64, u64>,
+    pub closed_tail_exits: Vec<[u64; 4]>,
+    pub closed_tail_work: BTreeMap<u64, u64>,
+    pub callback_work: Vec<(u64, u64, u64, u64)>,
     pub segment_retirements: BTreeMap<(u32, u32), u64>,
     pub virtual_retirements: BTreeMap<u32, u64>,
 }
@@ -86,6 +91,43 @@ thread_local! {
     static HELPER: Cell<Option<Helper>> = const { Cell::new(None) };
     static FIRST_CHANGE_COPY_LIMIT: Cell<Option<u64>> = const { Cell::new(None) };
     static FIRST_CHANGE_COPY_TARGET: Cell<Option<usize>> = const { Cell::new(None) };
+    static TRACE_WORK: Cell<bool> = const { Cell::new(false) };
+}
+pub(super) fn with_work_trace<T>(run: impl FnOnce() -> T) -> T {
+    struct Reset(bool);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            TRACE_WORK.with(|trace| trace.set(self.0));
+        }
+    }
+    let _reset = Reset(TRACE_WORK.with(|trace| trace.replace(true)));
+    run()
+}
+unsafe fn before_work(context: *mut c_void) -> Option<u64> {
+    TRACE_WORK.with(Cell::get).then(|| {
+        // SAFETY: observation runs only while this same checked callback is suspended.
+        unsafe { &*context.cast::<Invocation<'_, '_, '_>>() }
+            .state
+            .control
+            .work
+            .used()
+    })
+}
+unsafe fn after_work(context: *mut c_void, site: u64, op: u64, before: Option<u64>) {
+    if let Some(before) = before {
+        // SAFETY: the delegated callback has ended its synchronous mutable borrow.
+        let after = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() }
+            .state
+            .control
+            .work
+            .used();
+        COUNTS.with(|counts| {
+            counts
+                .borrow_mut()
+                .callback_work
+                .push((site, op, before, after))
+        });
+    }
 }
 pub(in crate::native_artifact::program::runtime) fn prepaid_segment_entry_work(entry: u64) {
     COUNTS.with(|v| v.borrow_mut().prepaid_segment_entry_work = Some(entry));
@@ -133,9 +175,16 @@ fn private_homes(
     unsafe { locals.add(start) }
 }
 unsafe extern "C" fn admit(context: *mut c_void, site: u64) -> u64 {
-    COUNTS.with(|v| *v.borrow_mut().admits.entry(site).or_default() += 1);
+    let before = unsafe { before_work(context) };
+    COUNTS.with(|v| {
+        let mut counts = v.borrow_mut();
+        *counts.admits.entry(site).or_default() += 1;
+        *counts.admission_callbacks.entry(site).or_default() += 1;
+    });
     // SAFETY: run retains and restores this same synchronous callback/context.
-    unsafe { ADMIT.with(Cell::get).unwrap()(context, site) }
+    let result = unsafe { ADMIT.with(Cell::get).unwrap()(context, site) };
+    unsafe { after_work(context, site, u64::MAX, before) };
+    result
 }
 unsafe extern "C" fn helper(
     context: *mut c_void,
@@ -146,13 +195,33 @@ unsafe extern "C" fn helper(
     c: u64,
     out: *mut u64,
 ) -> u64 {
+    let before = unsafe { before_work(context) };
     if matches!(
         GlobalHelper::decode(op),
-        GlobalHelper::AdmitMove | GlobalHelper::AdmitStructuralObservation
+        GlobalHelper::AdmitMove
+            | GlobalHelper::AdmitStructuralObservation
+            | GlobalHelper::AdmitNumericSegmentBegin
     ) {
         COUNTS.with(|v| *v.borrow_mut().admits.entry(site).or_default() += 1);
     }
-    COUNTS.with(|v| *v.borrow_mut().helpers.entry((site, op)).or_default() += 1);
+    let fused_numeric = op == GlobalHelper::AdmitNumericSegmentBegin.raw();
+    if fused_numeric {
+        COUNTS.with(|v| v.borrow_mut().fused_numeric_entries += 1);
+    }
+    let logical_op = if fused_numeric {
+        GlobalHelper::NumericSegmentBegin.raw()
+    } else {
+        op
+    };
+    COUNTS.with(|v| {
+        *v.borrow_mut()
+            .helpers
+            .entry((site, logical_op))
+            .or_default() += 1
+    });
+    if op == GlobalHelper::ClosedTailEnd.raw() {
+        COUNTS.with(|v| v.borrow_mut().closed_tail_exits.push([site, a, b, c]));
+    }
     // A secondary entry shares source membership with its primary parent.
     // Observe the actual loan, never infer it from that primary mapping.
     let (active_tail, prior_route) = {
@@ -317,25 +386,23 @@ unsafe extern "C" fn helper(
         // retained across its synchronous terminal synchronization callback.
         let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
         let metadata = ctx.descriptor.metadata();
-        metadata.closed_tails.exits[site as usize].and_then(|id| {
+        active_tail.and_then(|id| {
             let region = &metadata.closed_tails.regions[id];
             let proof = region.numeric.as_ref()?;
-            let frame = proof.result.frame()?;
-            let fields = &proof.frames.iter().find(|f| f.value == frame)?.arrays;
-            let pointers = fields
+            let frame = proof.frame(proof.result.frame()?)?;
+            let pointers = frame
+                .array_bindings
                 .iter()
-                .enumerate()
-                .filter_map(|(ordinal, array)| {
-                    let array = &proof.arrays[(*array)?];
-                    let owner = ctx.state.buffer_frames.managed_owner(
-                        &metadata.buffer_frames,
-                        region.tail.carrier(),
-                        array.field,
-                    )?;
+                .filter_map(|&(physical, array)| {
+                    let array = &proof.arrays[array];
+                    if array.width == 0 {
+                        return None;
+                    }
+                    let owner = ctx.numeric_array_owner(array).unwrap()?;
                     let mech_core::ValueData::Matrix(matrix) = owner.data() else {
                         return None;
                     };
-                    Some((ordinal, address(matrix.elements())))
+                    Some((physical, array.schema, address(matrix.elements())))
                 })
                 .collect::<Vec<_>>();
             Some((id, pointers))
@@ -388,13 +455,8 @@ unsafe extern "C" fn helper(
             panic!("first change requires a numeric store");
         };
         let owner = ctx
-            .state
-            .buffer_frames
-            .managed_owner(
-                &metadata.buffer_frames,
-                region.tail.carrier(),
-                proof.arrays[*array].field,
-            )
+            .numeric_array_owner(&proof.arrays[*array])
+            .unwrap()
             .unwrap();
         let mech_core::ValueData::Matrix(matrix) = owner.data() else {
             panic!("numeric store requires packed words");
@@ -413,13 +475,8 @@ unsafe extern "C" fn helper(
             let metadata = ctx.descriptor.metadata();
             let region = &metadata.closed_tails.regions[id];
             let owner = ctx
-                .state
-                .buffer_frames
-                .managed_owner(
-                    &metadata.buffer_frames,
-                    region.tail.carrier(),
-                    region.numeric.as_ref().unwrap().arrays[array].field,
-                )
+                .numeric_array_owner(&region.numeric.as_ref().unwrap().arrays[array])
+                .unwrap()
                 .unwrap()
                 .clone();
             let before = owner.canonical_data_draft().unwrap();
@@ -442,6 +499,17 @@ unsafe extern "C" fn helper(
     };
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    unsafe { after_work(context, site, op, before) };
+    if op == GlobalHelper::ClosedTailEnd.raw() && c == 0 && status == 0 {
+        // SAFETY: the delegated callback has returned and ended its exclusive
+        // borrow of this same live Invocation. Observe the actual settled work.
+        let invocation = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        COUNTS.with(|v| {
+            v.borrow_mut()
+                .closed_tail_work
+                .insert(site, invocation.state.library.used().0)
+        });
+    }
     if let Some((id, owner, before)) = retained_alias {
         assert_eq!(owner.canonical_data_draft().unwrap(), before);
         // SAFETY: the owning helper returned; no generated code is running.
@@ -478,13 +546,12 @@ unsafe extern "C" fn helper(
         // SAFETY: the callback has finished; its returned frame still owns the
         // managed fields. No Value clone or new ownership pin is introduced.
         let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
-        let metadata = ctx.descriptor.metadata();
-        let region = &metadata.closed_tails.regions[id];
-        for (ordinal, before) in pointers {
+        let _ = id;
+        for (physical, schema, before) in pointers {
             let owner = ctx
                 .state
                 .buffer_frames
-                .managed_owner(&metadata.buffer_frames, region.tail.returned(), ordinal)
+                .numeric_owner(physical, schema)
                 .unwrap();
             let mech_core::ValueData::Matrix(matrix) = owner.data() else {
                 panic!("terminal managed array")
@@ -594,11 +661,9 @@ unsafe extern "C" fn helper(
             });
         }
     }
-    if op == crate::native_artifact::program::protocol::GlobalHelper::NumericSegmentBegin.raw()
-        && status == 0
-    {
+    if logical_op == GlobalHelper::NumericSegmentBegin.raw() && status == 0 {
         // SAFETY: the original helper has successfully filled its live result.
-        let selected = unsafe { *out };
+        let selected = unsafe { *out } >> u32::from(fused_numeric);
         if selected == 1
             && let Some((before, expected, paid, ancestor)) = prepaid_segment
         {

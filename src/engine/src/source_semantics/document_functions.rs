@@ -453,12 +453,6 @@ impl SemanticBuilder {
                 )
             })?;
         if self.active_functions.iter().any(|active| active == name) {
-            if self.comprehension_depth != 0 {
-                return Err(error(
-                    "source-semantics/recursive-comprehension",
-                    format!("recursive function {name} cannot be called inside a comprehension"),
-                ));
-            }
             if self
                 .active_functions
                 .last()
@@ -477,12 +471,12 @@ impl SemanticBuilder {
                     ),
                 ));
             }
-            let (expected, root_depth) = self
+            let (expected, root_depth, comprehension_depth) = self
                 .active_recursive_outputs
                 .iter()
                 .rev()
-                .find_map(|(active, output, root_depth)| {
-                    (active == name).then_some((output.clone(), *root_depth))
+                .find_map(|(active, output, root_depth, comprehension_depth)| {
+                    (active == name).then_some((output.clone(), *root_depth, *comprehension_depth))
                 })
                 .ok_or_else(|| {
                     error(
@@ -490,6 +484,12 @@ impl SemanticBuilder {
                         format!("function {name} has no active callable frame"),
                     )
                 })?;
+            if self.comprehension_depth != comprehension_depth {
+                return Err(error(
+                    "source-semantics/recursive-comprehension",
+                    format!("recursive function {name} cannot cross a comprehension invocation"),
+                ));
+            }
             let ancestor = self
                 .match_depth
                 .checked_sub(root_depth)
@@ -1236,6 +1236,7 @@ impl SemanticBuilder {
             name.to_owned(),
             expected.clone(),
             self.match_depth + 1,
+            self.comprehension_depth,
         ));
         let result = self.lower_match_expression(
             scrutinee,

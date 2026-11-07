@@ -1,9 +1,7 @@
 //! Private reconstruction of immutable loop metadata, not loop execution.
 use super::{WireOrigin, library};
 use crate::native_artifact::*;
-use mech_core::{FunctionCatalog, SchemaTable};
-use serde::Deserialize;
-use serde_json::Value as Json;
+use serde::{Deserialize, Deserializer};
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -40,25 +38,27 @@ struct Tail {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Range {
+struct Range<'a> {
     prepare: u32,
-    template: Json,
+    #[serde(borrow)]
+    template: BuildOwnedImageRecord<'a>,
     operands: [u32; 2],
     output: u32,
     before_collection_begin: bool,
 }
 #[derive(Deserialize)]
-enum Source {
+enum Source<'a> {
     Value(u32),
-    U64Range(Range),
+    U64Range(#[serde(borrow)] Range<'a>),
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Collection {
+struct Collection<'a> {
     origin: WireOrigin,
     parent: Option<u32>,
     collection: u32,
-    source: Source,
+    #[serde(borrow)]
+    source: Source<'a>,
     element: Option<u32>,
     initialize: u32,
     header: u32,
@@ -67,9 +67,9 @@ struct Collection {
     exit: u32,
 }
 #[derive(Deserialize)]
-enum Loop {
+enum Loop<'a> {
     Iteration(Counted),
-    Collection(Collection),
+    Collection(#[serde(borrow)] Collection<'a>),
     Tail(Tail),
 }
 #[derive(Deserialize)]
@@ -86,7 +86,9 @@ fn origin(wire: WireOrigin) -> NativeMatchOrigin {
         local: wire.local,
     }
 }
-pub(super) fn scope(image: &Json) -> Result<NativeIterationValueScope, String> {
+pub(super) fn scope<'de, D: Deserializer<'de>>(
+    image: D,
+) -> Result<NativeIterationValueScope, String> {
     Ok(
         match Scope::deserialize(image).map_err(|e| e.to_string())? {
             Scope::Immutable { iteration } => NativeIterationValueScope::Immutable { iteration },
@@ -98,10 +100,9 @@ pub(super) fn scope(image: &Json) -> Result<NativeIterationValueScope, String> {
 /// # Safety
 /// Keep decoded indices/loop ownership confined until the enclosing loader has
 /// established unchanged compiler/Object provenance. Parsing is not CFG proof.
-pub(super) unsafe fn control_loop(
-    image: &Json,
-    catalog: &FunctionCatalog,
-    schemas: &SchemaTable,
+pub(super) unsafe fn control_loop<'de, D: Deserializer<'de>>(
+    image: D,
+    templates: &library::Templates<'_>,
 ) -> Result<NativeControlLoop, String> {
     let wire = Loop::deserialize(image).map_err(|e| e.to_string())?;
     Ok(match wire {
@@ -143,7 +144,7 @@ pub(super) unsafe fn control_loop(
                 Source::U64Range(range) => NativeCollectionSource::U64Range(NativeU64RangeCursor {
                     prepare: range.prepare,
                     // SAFETY: delegate the same enclosing build-image obligation.
-                    template: unsafe { library::template(&range.template, catalog, schemas)? },
+                    template: unsafe { templates.read(range.template)? },
                     operands: range.operands.map(NativeMatchValue),
                     output: NativeMatchValue(range.output),
                     before_collection_begin: range.before_collection_begin,
@@ -214,10 +215,12 @@ mod tests {
         ];
         let catalog = mech_core::FunctionCatalogBuilder::new().build().unwrap();
         let schemas = mech_core::SchemaTableBuilder::new().finish().unwrap().table;
+        // SAFETY: metadata-only tests, with no library selections or entry.
+        let templates = unsafe { library::Templates::new(None, &catalog, &schemas) }.unwrap();
         for original in loops {
             let image = serde_json::to_value(original).unwrap();
             // SAFETY: metadata-only round trip; synthetic graph indices never execute.
-            let decoded = unsafe { control_loop(&image, &catalog, &schemas) }.unwrap();
+            let decoded = unsafe { control_loop(&image, &templates) }.unwrap();
             assert_eq!(serde_json::to_value(decoded).unwrap(), image);
         }
         for original in [

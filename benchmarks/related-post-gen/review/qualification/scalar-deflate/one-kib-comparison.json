@@ -1,0 +1,61 @@
+{
+  "rows": 5,
+  "all_nonallocation_nontiming_fields_equal_IR222": true,
+  "allocation_requests_and_bytes_never_regress": true,
+  "allocation_changes": [
+    {
+      "row": 0,
+      "metrics": {}
+    },
+    {
+      "row": 1,
+      "metrics": {
+        "allocation_requests": {
+          "before": 23738,
+          "after": 23540,
+          "delta": -198
+        },
+        "requested_bytes": {
+          "before": 1432052980,
+          "after": 1431708052,
+          "delta": -344928
+        }
+      }
+    },
+    {
+      "row": 2,
+      "metrics": {
+        "allocation_requests": {
+          "before": 23545,
+          "after": 23347,
+          "delta": -198
+        },
+        "requested_bytes": {
+          "before": 1432040628,
+          "after": 1431695700,
+          "delta": -344928
+        }
+      }
+    },
+    {
+      "row": 3,
+      "metrics": {
+        "allocation_requests": {
+          "before": 23545,
+          "after": 23347,
+          "delta": -198
+        },
+        "requested_bytes": {
+          "before": 1432040628,
+          "after": 1431695700,
+          "delta": -344928
+        }
+      }
+    },
+    {
+      "row": 4,
+      "metrics": {}
+    }
+  ],
+  "differences": []
+}

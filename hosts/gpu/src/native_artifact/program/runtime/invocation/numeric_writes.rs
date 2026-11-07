@@ -12,12 +12,15 @@ impl Invocation<'_, '_, '_> {
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
         let metadata = self.descriptor.metadata();
+        // A selected complete tree and its ordinary fallback leaves have
+        // overlapping source sites. Only the current exclusive loan identifies
+        // which independently proved owner bank is live at this exact store.
         let Some(super::tail::State {
             region: super::tail::Region::Tail(id),
             ..
         }) = self.closed_tail.as_ref()
         else {
-            return Err(invalid("numeric materialization outside active region"));
+            return Err(invalid("numeric materialization has no current Tail loan"));
         };
         let id = *id;
         let region = &metadata.closed_tails.regions[id];
@@ -76,10 +79,11 @@ impl Invocation<'_, '_, '_> {
                 .and_then(|n| n.checked_add(64))
                 .ok_or_else(|| invalid("numeric ownership work overflows"))?,
         )?;
-        let source = self.state.buffer_frames.take_managed_owner(
-            &metadata.buffer_frames,
-            region.tail.carrier(),
-            proof.arrays[*array].field,
+        let source = self.state.buffer_frames.take_numeric_owner(
+            proof.arrays[*array]
+                .physical()
+                .ok_or_else(|| invalid("captured array cannot receive a mutable owner"))?,
+            proof.arrays[*array].schema,
         )?;
         // The same source-site proof used by ordinary replacement/append
         // admits only dead canonical aliases. A skipped private projection does

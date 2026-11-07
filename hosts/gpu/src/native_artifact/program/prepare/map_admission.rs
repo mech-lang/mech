@@ -85,6 +85,13 @@ impl Layout {
             let helper = owner.is_some_and(|owner| {
                 let owners = owners.unwrap();
                 owners.call_region(site) == Some(owner)
+                    || (owners.action_region(site) == Some(owner)
+                        && !matches!(plan.values()[owners.regions()[owner].tail().returned().get() as usize]
+                            .definition().body(), mech_core::SchemaBody::Map { .. })
+                        && matches!(block.action(), Action::LibraryCall { template, .. }
+                            if matches!(template.primitive(),
+                                mech_engine::native_artifact::NativeCollectionPrimitive::CompositePack(_)
+                                | mech_engine::native_artifact::NativeCollectionPrimitive::EnumPack)))
                     || owners
                         .span_site(site)
                         .is_some_and(|id| owners.spans()[id].region() == owner)

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-child-entry-facts-integration-opt-20261107-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/managed-app/src/main.rs",
+    "--out",
+    "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/managed-app/runner-standard",
+    "--bundle",
+    "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/managed-app/audit-bundle",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 1.1701821670867503,
+  "stdout": "{\"seconds\": 0.5388032090850174, \"exit\": 0}\n",
+  "stderr": "",
+  "compiler_source_sha256": "e0757f4724e4237faa11bcac16c2ee0b8866b7f4d13b13ef0989b60b0e4fad63"
+}

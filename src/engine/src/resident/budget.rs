@@ -39,7 +39,7 @@ mod workers;
 #[cfg(feature = "native-artifact")]
 pub use workers::{
     NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics,
-    NativeWorkerWorkLoan,
+    NativeWorkerNativeFuel, NativeWorkerWorkLoan,
 };
 
 #[path = "word_draft_expansion.rs"]
@@ -941,7 +941,11 @@ fn checked_control_account_work_at_limits(
     let next = checked_local_control_account_work_at_limits(account, compute, comparison, limits)?;
     #[cfg(feature = "native-artifact")]
     if let Some(worker) = &account.worker {
-        worker.preview(compute, comparison)?;
+        worker.preview(
+            compute,
+            comparison,
+            account.reserved.compute == 0 && account.reserved.comparison == 0,
+        )?;
     }
     Ok(next)
 }
@@ -971,7 +975,11 @@ fn charge_control_account_at_limits(
     if let Some(worker) = &account.worker {
         // Local call caps were checked first. Both shared dimensions commit
         // together before the infallible local-counter assignment.
-        worker.charge(compute, comparison)?;
+        worker.charge(
+            compute,
+            comparison,
+            account.reserved.compute == 0 && account.reserved.comparison == 0,
+        )?;
     }
     account.used = next;
     Ok(())
@@ -2593,12 +2601,32 @@ pub(crate) struct BorrowedFootprintSchemaProof {
     supported: bool,
 }
 
-/// A bounded binding-time proof for the common scalar/packed-matrix layouts.
-/// It inspects at most two schema variants, allocates nothing and grants no
-/// concrete value footprint. Other schemas retain the metered recursive proof.
+/// A binding-time proof for common scalar/packed-matrix layouts. The layout
+/// check is shallow; schemas outside a finalized table still derive their key
+/// normally. This grants no concrete value footprint or admission.
 pub(crate) fn shallow_borrowed_footprint_schema_proof(
     schema: &mech_core::Schema,
 ) -> Option<BorrowedFootprintSchemaProof> {
+    shallow_borrowed_footprint_schema_supported(schema).then(|| BorrowedFootprintSchemaProof {
+        key: schema.key(),
+        supported: true,
+    })
+}
+
+/// The same bounded proof using the finalized entry's actual stored key.
+/// No caller-supplied key or serialized supported flag can enter this path.
+pub(crate) fn shallow_borrowed_footprint_schema_entry_proof(
+    entry: &mech_core::SchemaEntry,
+) -> Option<BorrowedFootprintSchemaProof> {
+    shallow_borrowed_footprint_schema_supported(entry.schema()).then_some(
+        BorrowedFootprintSchemaProof {
+            key: entry.key(),
+            supported: true,
+        },
+    )
+}
+
+fn shallow_borrowed_footprint_schema_supported(schema: &mech_core::Schema) -> bool {
     let scalar = |body: &SchemaBody| {
         matches!(
             body,
@@ -2614,12 +2642,8 @@ pub(crate) fn shallow_borrowed_footprint_schema_proof(
                 | SchemaBody::Atom(_)
         )
     };
-    let supported = scalar(schema.body())
-        || matches!(schema.body(), SchemaBody::Matrix { element, .. } if scalar(element));
-    supported.then_some(BorrowedFootprintSchemaProof {
-        key: schema.key(),
-        supported,
-    })
+    scalar(schema.body())
+        || matches!(schema.body(), SchemaBody::Matrix { element, .. } if scalar(element))
 }
 
 fn borrowed_footprint_schema_supported(
@@ -2768,6 +2792,24 @@ pub(crate) fn measure_borrowed_canonical_value_footprint(
 ) -> Result<ValueFootprint, ResidentKernelError> {
     let mut proof = None;
     measure_borrowed_canonical_value_footprint_with_proof(meter, value, schemas, &mut proof)
+}
+
+/// Same logical footprint/debits as a closed canonical child Value, without
+/// allocating a wrapper. The caller must prove that this immutable component
+/// belongs to its current admitted root and exact selected output schema.
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+pub(crate) fn measure_borrowed_canonical_component_footprint(
+    meter: &mut ResidentBudgetMeter,
+    body: &SchemaBody,
+    data: &ValueData,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
+    if !borrowed_footprint_schema_supported(meter, body, 0)? {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    meter.charge_retained_nodes(1)?;
+    let data = measure_proven_borrowed_canonical_data_footprint(meter, body, data, true)?;
+    projected_canonical_value_footprint(data, 0)
 }
 
 /// The snapshot-access source alone may reuse a complete DATA-only summary

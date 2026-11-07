@@ -1,4 +1,4 @@
-//! Private tuple/record frames with native scalar leaves and admitted managed owners.
+//! Private structural frames with native scalar leaves and admitted managed owners.
 //! The complete connected component must have only pack/copy/project uses.
 use super::{
     NativeCollectionPrimitive as Primitive, NativeControlLoop as Loop,
@@ -9,9 +9,23 @@ use super::{
 };
 use mech_core::{IntegerWidth, SchemaBody, SchemaId};
 
-#[derive(Clone, Debug)]
+#[path = "buffer_frames_tagged.rs"]
+mod tagged;
+
+#[derive(Clone, Debug, serde::Serialize)]
 pub enum NativeBufferFrameOperation {
     Pack {
+        output: Value,
+    },
+    EnumPack {
+        output: Value,
+        payload: Value,
+        ordinal: u32,
+    },
+    Observe {
+        source: Value,
+        path: Box<[Step]>,
+        observation: Observation,
         output: Value,
     },
     Copy {
@@ -24,7 +38,7 @@ pub enum NativeBufferFrameOperation {
         output: Value,
     },
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeBufferFrameAction {
     operation: NativeBufferFrameOperation,
     retire: Box<[Value]>,
@@ -38,7 +52,7 @@ impl NativeBufferFrameAction {
     }
 }
 /// An immutable field recipe derived from exact same-component leaf schemas.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeBufferFrameLane {
     Scalar {
         at: usize,
@@ -47,13 +61,20 @@ pub enum NativeBufferFrameLane {
     Managed {
         at: usize,
     },
+    /// A tag and disjoint variant payload spans. The tag has a separate
+    /// current-visit validity word, just like a scalar lane.
+    Tagged {
+        tag: usize,
+        at: usize,
+        count: usize,
+    },
     /// A structural span in this same layout, never a canonical owner lane.
     Composite {
         at: usize,
         count: usize,
     },
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, serde::Serialize)]
 pub struct NativeBufferFrameField {
     schema: SchemaId,
     lane: NativeBufferFrameLane,
@@ -66,7 +87,7 @@ impl NativeBufferFrameField {
         self.lane
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct NativeBufferFrames {
     slots: Box<[Option<(usize, usize)>]>,
     actions: Box<[Option<NativeBufferFrameAction>]>,
@@ -75,7 +96,74 @@ pub struct NativeBufferFrames {
     scalar_fields: usize,
     managed_fields: usize,
 }
+// Immutable compiler recipes only. Keep decoding private and confined by the
+// same unsafe checked-build contract as the other native image proofs.
+super::program_image_proofs::image_enum!(NativeBufferFrameOperation {
+    Pack { output: Value },
+    EnumPack { output: Value, payload: Value, ordinal: u32 },
+    Observe { source: Value, path: Box<[Step]>, observation: Observation, output: Value },
+    Copy { source: Value, output: Value },
+    Project { source: Value, ordinal: usize, output: Value },
+});
+super::program_image_proofs::image_enum!(NativeBufferFrameLane {
+    Scalar { at: usize, kind: super::NativeScalarKind },
+    Managed { at: usize },
+    Tagged { tag: usize, at: usize, count: usize },
+    Composite { at: usize, count: usize },
+});
+super::program_image_proofs::image_struct!(NativeBufferFrameAction {
+    operation: NativeBufferFrameOperation,
+    retire: Box<[Value]>,
+});
+super::program_image_proofs::image_struct!(NativeBufferFrameField {
+    schema: SchemaId,
+    lane: NativeBufferFrameLane,
+});
+super::program_image_proofs::image_struct!(NativeBufferFrames {
+    slots: Box<[Option<(usize, usize)>]>,
+    actions: Box<[Option<NativeBufferFrameAction>]>,
+    elements: usize,
+    fields: Box<[NativeBufferFrameField]>,
+    scalar_fields: usize,
+    managed_fields: usize,
+});
+super::program_image_proofs::image_enum!(Step {
+    EnumPayload { ordinal: u32 },
+    TupleItem { ordinal: u32 },
+});
+impl super::program_image_proofs::ImageRead for Observation {
+    fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
+        #[derive(serde::Deserialize)]
+        #[serde(deny_unknown_fields)]
+        enum Wire {
+            EnumOrdinal { ordinal: u32 },
+            U64,
+            CanonicalValue,
+            StringEqual { peer: u32 },
+        }
+        Ok(match <Wire as serde::Deserialize>::deserialize(image)? {
+            Wire::EnumOrdinal { ordinal } => Self::EnumOrdinal { ordinal },
+            Wire::U64 => Self::U64,
+            Wire::CanonicalValue => Self::CanonicalValue,
+            Wire::StringEqual { peer } => Self::StringEqual { peer: Value(peer) },
+        })
+    }
+}
 impl NativeBufferFrames {
+    /// Restore typed frame recipes without an intermediate JSON object tree.
+    ///
+    /// # Safety
+    /// Keep the result confined until the enclosing loader establishes the
+    /// unchanged SAME checked compiler/Object provenance. These indices are
+    /// compiler proof output, not fresh runtime owner or visit permission.
+    pub unsafe fn from_build_owned_image_bytes(bytes: &[u8]) -> Result<Self, String> {
+        let mut reader = serde_json::Deserializer::from_slice(bytes);
+        let frames = <Self as super::program_image_proofs::ImageRead>::read(&mut reader)
+            .map_err(|e| e.to_string())?;
+        reader.end().map_err(|e| e.to_string())?;
+        Ok(frames)
+    }
+
     pub fn slot(&self, value: Value) -> Option<(usize, usize)> {
         self.slot_at(value.get() as usize)
     }
@@ -103,10 +191,149 @@ impl NativeBufferFrames {
         self.fields.get(at..at + count)
     }
     pub fn children(&self, field: NativeBufferFrameField) -> Option<&[NativeBufferFrameField]> {
-        let NativeBufferFrameLane::Composite { at, count } = field.lane else {
+        let (NativeBufferFrameLane::Composite { at, count }
+        | NativeBufferFrameLane::Tagged { at, count, .. }) = field.lane
+        else {
             return None;
         };
-        self.fields.get(at..at + count)
+        self.fields.get(at..at.checked_add(count)?)
+    }
+    pub fn tagged_variant(
+        &self,
+        field: NativeBufferFrameField,
+        ordinal: u32,
+    ) -> Option<NativeBufferFrameField> {
+        if !matches!(field.lane, NativeBufferFrameLane::Tagged { .. }) {
+            return None;
+        }
+        self.children(field)?.get(ordinal as usize).copied()
+    }
+}
+
+#[cfg(test)]
+mod image_tests {
+    use super::*;
+
+    #[test]
+    fn frame_wire_covers_scalar_kinds_structural_lanes_and_operations() {
+        // Wire-only fixture: never attached to a descriptor or native entry.
+        // Private reading here grants no source proof or execution authority.
+        let fields = [
+            super::super::NativeScalarKind::Bool,
+            super::super::NativeScalarKind::U8,
+            super::super::NativeScalarKind::U16,
+            super::super::NativeScalarKind::U32,
+            super::super::NativeScalarKind::U64,
+            super::super::NativeScalarKind::I64,
+            super::super::NativeScalarKind::F64,
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(at, kind)| NativeBufferFrameField {
+            schema: SchemaId::new(at as u32),
+            lane: NativeBufferFrameLane::Scalar { at, kind },
+        })
+        .chain([
+            NativeBufferFrameField {
+                schema: SchemaId::new(7),
+                lane: NativeBufferFrameLane::Managed { at: 0 },
+            },
+            NativeBufferFrameField {
+                schema: SchemaId::new(8),
+                lane: NativeBufferFrameLane::Tagged {
+                    tag: 7,
+                    at: 0,
+                    count: 7,
+                },
+            },
+            NativeBufferFrameField {
+                schema: SchemaId::new(9),
+                lane: NativeBufferFrameLane::Composite { at: 0, count: 8 },
+            },
+        ])
+        .collect();
+        let operations = [
+            NativeBufferFrameOperation::Pack { output: Value(1) },
+            NativeBufferFrameOperation::EnumPack {
+                output: Value(1),
+                payload: Value(0),
+                ordinal: u32::MAX,
+            },
+            NativeBufferFrameOperation::Copy {
+                source: Value(0),
+                output: Value(1),
+            },
+            NativeBufferFrameOperation::Project {
+                source: Value(0),
+                ordinal: 2,
+                output: Value(1),
+            },
+        ]
+        .into_iter()
+        .chain(
+            [
+                Observation::EnumOrdinal { ordinal: 3 },
+                Observation::U64,
+                Observation::CanonicalValue,
+                Observation::StringEqual { peer: Value(1) },
+            ]
+            .into_iter()
+            .map(|observation| NativeBufferFrameOperation::Observe {
+                source: Value(0),
+                path: Box::new([
+                    Step::EnumPayload { ordinal: 1 },
+                    Step::TupleItem { ordinal: 2 },
+                ]),
+                observation,
+                output: Value(1),
+            }),
+        );
+        let original = NativeBufferFrames {
+            slots: Box::new([Some((0, 10)), None]),
+            actions: operations
+                .map(|operation| {
+                    Some(NativeBufferFrameAction {
+                        operation,
+                        retire: Box::new([Value(0)]),
+                    })
+                })
+                .collect(),
+            elements: 1,
+            fields,
+            scalar_fields: 8,
+            managed_fields: 1,
+        };
+        let bytes = serde_json::to_vec(&original).unwrap();
+        let mut reader = serde_json::Deserializer::from_slice(&bytes);
+        let restored = <NativeBufferFrames as super::super::program_image_proofs::ImageRead>::read(
+            &mut reader,
+        )
+        .unwrap();
+        reader.end().unwrap();
+        assert_eq!(
+            serde_json::to_value(&restored).unwrap(),
+            serde_json::to_value(&original).unwrap()
+        );
+        for mode in 0..3 {
+            let mut changed = serde_json::to_value(&original).unwrap();
+            match mode {
+                0 => {
+                    changed["fields"][0]["lane"]["Scalar"]["kind"] = "Unknown".into();
+                }
+                1 => {
+                    changed["fields"][0]["extra"] = true.into();
+                }
+                _ => {
+                    changed["actions"][0]["operation"] = serde_json::json!({"Pack": {}});
+                }
+            }
+            assert!(
+                <NativeBufferFrames as super::super::program_image_proofs::ImageRead>::read(
+                    &changed
+                )
+                .is_err()
+            );
+        }
     }
 }
 
@@ -126,6 +353,9 @@ fn composable(plan: &Plan, value: Value) -> bool {
         match body {
             SchemaBody::Tuple(fields) => fields.iter().all(|f| visit(f, bound)),
             SchemaBody::Record(fields) => fields.iter().all(|f| visit(&f.schema, bound)),
+            SchemaBody::Enum { variants, .. } => variants
+                .iter()
+                .all(|v| v.payload.as_ref().is_some_and(|p| visit(p, bound))),
             SchemaBody::Matrix {
                 element,
                 dimensions,
@@ -179,6 +409,28 @@ fn composition_shape_matches(
             {
                 a.iter().map(|f| &f.schema).collect()
             }
+            (
+                SchemaBody::Enum {
+                    key: ak,
+                    variants: a,
+                },
+                SchemaBody::Enum {
+                    key: bk,
+                    variants: b,
+                },
+            ) if ak == bk
+                && a.len() == b.len()
+                && a.iter().zip(b).all(|(a, b)| a.name == b.name) =>
+            {
+                let Some(payloads) = a
+                    .iter()
+                    .map(|v| v.payload.as_ref())
+                    .collect::<Option<Vec<_>>>()
+                else {
+                    return false;
+                };
+                payloads
+            }
             _ => return false,
         };
         let Some(children) = layouts.get(&actual) else {
@@ -207,7 +459,7 @@ fn composition_shape_matches(
     }
 }
 
-fn fields(plan: &Plan, value: Value) -> Option<usize> {
+fn field_shape(plan: &Plan, value: Value) -> Option<(usize, bool)> {
     // Activation shape histories retain their ordinary bound-factory owner.
     // A private frame carries only fixed or freshly resolved Turn geometry.
     if plan.values()[value.get() as usize]
@@ -217,6 +469,9 @@ fn fields(plan: &Plan, value: Value) -> Option<usize> {
         .any(|parameter| parameter.lifetime() != mech_core::DimensionLifetime::Turn)
     {
         return None;
+    }
+    if let Some(variants) = tagged::schemas(plan, value) {
+        return Some((variants.len(), true));
     }
     let fields = match plan.values()[value.get() as usize].definition().body() {
         SchemaBody::Tuple(fields) => fields.iter().collect::<Vec<_>>(),
@@ -245,6 +500,16 @@ fn fields(plan: &Plan, value: Value) -> Option<usize> {
             {
                 eligible = true
             }
+            // Immutable Strings retain their canonical typed owner. They do
+            // not enter the unsigned packed bank, but an invariant String
+            // matrix must not force its whole recursive frame to be rebuilt.
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2 && matches!(element.as_ref(), SchemaBody::String) => {
+                eligible = true
+            }
+            body if tagged::opaque_map(body) => eligible = true,
             // Candidate compound siblings may remain opaque canonical Values.
             // The complete shape/use proof below selects structural spans only
             // when the child can stay private through every composition edge.
@@ -259,7 +524,14 @@ fn fields(plan: &Plan, value: Value) -> Option<usize> {
             _ => return None,
         }
     }
-    eligible.then_some(fields.len())
+    // A closed scalar child may be a structural span of a mixed frame. Its
+    // complete copy/composition component must reach an existing mixed-frame
+    // root before it is selected below; standalone scalar aggregates retain
+    // their ordinary scalar-aggregate owner and instruction recipes.
+    (!fields.is_empty()).then_some((fields.len(), eligible))
+}
+fn fields(plan: &Plan, value: Value) -> Option<usize> {
+    field_shape(plan, value).map(|(count, _)| count)
 }
 fn pack(plan: &Plan, action: &Action) -> Option<(Value, Vec<SchemaId>)> {
     let Action::LibraryCall {
@@ -336,7 +608,36 @@ fn last_use(facts: &Facts<'_>, value: Value, frontier: u32) -> bool {
 
 impl Facts<'_> {
     /// Recomputed from the same validated plan on independent image loading.
+    /// Existing retained-map transport has priority over canonical-owner lanes.
     pub fn buffer_frames(&self) -> NativeBufferFrames {
+        #[cfg(feature = "map_ops")]
+        {
+            self.buffer_frame_owner_layouts()
+                .map(|(frames, _)| frames)
+                .unwrap_or_default()
+        }
+        #[cfg(not(feature = "map_ops"))]
+        self.buffer_frames_excluding(&[])
+    }
+
+    /// Derive both owners from this exact immutable plan borrow. No supplied
+    /// or serialized exclusion set can authorize a competing representation.
+    /// The map proof grants optional native ownership; a canonical frame may
+    /// not simultaneously demand a canonical Value for any private map root.
+    #[cfg(feature = "map_ops")]
+    pub fn buffer_frame_owner_layouts(
+        &self,
+    ) -> Result<(NativeBufferFrames, super::NativeMapOwnerWords), &'static str> {
+        let owners = self.map_owner_words()?;
+        let excluded = owners
+            .regions()
+            .iter()
+            .flat_map(|region| region.values().iter().copied())
+            .collect::<Vec<_>>();
+        Ok((self.buffer_frames_excluding(&excluded), owners))
+    }
+
+    fn buffer_frames_excluding(&self, excluded: &[Value]) -> NativeBufferFrames {
         let plan = self.plan();
         let count = plan.values().len();
         let mut bad = (0..count)
@@ -352,6 +653,12 @@ impl Facts<'_> {
         let mut schemas = vec![None::<Vec<SchemaId>>; count];
         let mut by_schema = std::collections::BTreeMap::new();
         let mut ambiguous = std::collections::BTreeSet::new();
+        for (i, layout) in schemas.iter_mut().enumerate() {
+            if let Some(fields) = tagged::schemas(plan, Value(i as u32)) {
+                by_schema.insert(plan.values()[i].schema(), fields.clone());
+                *layout = Some(fields);
+            }
+        }
         for action in actions.iter() {
             if let Some((value, fields)) = pack(plan, action) {
                 let schema = plan.values()[value.get() as usize].schema();
@@ -431,6 +738,12 @@ impl Facts<'_> {
             }
         };
         for action in actions.iter() {
+            if let Some((output, payload, _)) = tagged::pack(plan, action) {
+                link(output, payload);
+            }
+            if let Some((source, output)) = tagged::observation(plan, action) {
+                link(source, output);
+            }
             if let Some((output, _)) = pack(plan, action) {
                 let Action::LibraryCall { operands, .. } = action else {
                     unreachable!()
@@ -449,9 +762,66 @@ impl Facts<'_> {
                 }
             }
         }
+        // Scalar-only children participate in the same exact shape/use proof,
+        // but do not establish an independent buffer-frame component. Keep
+        // the scalar-aggregate specialization authoritative unless a selected
+        // mixed frame actually embeds the child through composition edges.
+        let mut rooted = vec![false; count];
+        let mut pending = (0..count)
+            .filter(|&i| {
+                !bad[i] && field_shape(plan, Value(i as u32)).is_some_and(|(_, mixed)| mixed)
+            })
+            .collect::<Vec<_>>();
+        while let Some(i) = pending.pop() {
+            if std::mem::replace(&mut rooted[i], true) {
+                continue;
+            }
+            pending.extend(
+                edges[i]
+                    .iter()
+                    .chain(&composition[i])
+                    .copied()
+                    .filter(|&j| !bad[j]),
+            );
+        }
+        for (i, rejected) in bad.iter_mut().enumerate() {
+            *rejected |= !rooted[i];
+        }
         let connected = |parent: Value, child: Value| {
             composition[parent.get() as usize].contains(&(child.get() as usize))
         };
+        // Build every shape/copy/composition edge BEFORE applying owner
+        // conflicts. Otherwise rejecting a parent early could hide its edge to
+        // a child and leave a private child feeding a canonical fallback pack.
+        let mut owned = vec![false; count];
+        for value in excluded {
+            let Some(slot) = owned.get_mut(value.get() as usize) else {
+                return NativeBufferFrames::default();
+            };
+            *slot = true;
+        }
+        let mut conflicts = owned.clone();
+        for action in actions.iter() {
+            if let Some((output, _)) = pack(plan, action) {
+                let Action::LibraryCall { operands, .. } = action else {
+                    unreachable!()
+                };
+                conflicts[output.get() as usize] |=
+                    operands.iter().any(|value| owned[value.get() as usize]);
+            }
+            if let Some((output, payload, _)) = tagged::pack(plan, action) {
+                conflicts[output.get() as usize] |= owned[payload.get() as usize];
+            }
+            if let Some((source, _, output)) = projection(plan, action) {
+                conflicts[source.get() as usize] |= owned[output.get() as usize];
+            }
+            if let Some((source, output)) = tagged::observation(plan, action) {
+                conflicts[source.get() as usize] |= owned[output.get() as usize];
+            }
+        }
+        for (rejected, conflict) in bad.iter_mut().zip(conflicts) {
+            *rejected |= conflict;
+        }
         for i in 0..count {
             if bad[i] {
                 continue;
@@ -468,6 +838,10 @@ impl Facts<'_> {
                 Producer::Library | Producer::Structural => d.site().is_none_or(|site| {
                     let action = &actions[site as usize];
                     pack(plan, action).is_none()
+                        && tagged::pack(plan, action).is_none()
+                        && !tagged::observation(plan, action).is_some_and(|(source, output)| {
+                            output == value && connected(source, output)
+                        })
                         && !projection(plan, action).is_some_and(|(source, _, output)| {
                             output == value && connected(source, output)
                         })
@@ -495,6 +869,10 @@ impl Facts<'_> {
                                 && fields.get(ordinal).is_some_and(|schema| {
                                     *schema == plan.values()[output.get() as usize].schema()
                                 })
+                        } else if let Some((source, _)) = tagged::observation(plan, action) {
+                            source == value
+                        } else if let Some((output, payload, _)) = tagged::pack(plan, action) {
+                            payload == value && connected(output, value)
                         } else if let Some((output, _)) = pack(plan, action) {
                             connected(output, value)
                         } else {
@@ -546,6 +924,10 @@ impl Facts<'_> {
             .iter()
             .map(|ty| (ty.schema(), ty.scalar_kind()))
             .collect::<std::collections::BTreeMap<_, _>>();
+        let tagged_schemas = (0..count)
+            .filter(|&i| !bad[i] && tagged::schemas(plan, Value(i as u32)).is_some())
+            .map(|i| plan.values()[i].schema())
+            .collect::<std::collections::BTreeSet<_>>();
         let mut scalar_fields = 0;
         let mut managed_fields = 0;
         let mut field_layout = Vec::new();
@@ -557,6 +939,7 @@ impl Facts<'_> {
             schemas: &[SchemaId],
             compose: bool,
             nested: &std::collections::BTreeSet<SchemaId>,
+            tagged_schemas: &std::collections::BTreeSet<SchemaId>,
             by_schema: &std::collections::BTreeMap<SchemaId, Vec<SchemaId>>,
             kinds: &std::collections::BTreeMap<SchemaId, Option<super::NativeScalarKind>>,
             field_layout: &mut Vec<NativeBufferFrameField>,
@@ -578,13 +961,20 @@ impl Facts<'_> {
                         &by_schema[schema],
                         true,
                         nested,
+                        tagged_schemas,
                         by_schema,
                         kinds,
                         field_layout,
                         scalar_fields,
                         managed_fields,
                     );
-                    NativeBufferFrameLane::Composite { at, count }
+                    if tagged_schemas.contains(schema) {
+                        let tag = *scalar_fields;
+                        *scalar_fields += 1;
+                        NativeBufferFrameLane::Tagged { tag, at, count }
+                    } else {
+                        NativeBufferFrameLane::Composite { at, count }
+                    }
                 } else {
                     let at = *managed_fields;
                     *managed_fields += 1;
@@ -599,10 +989,16 @@ impl Facts<'_> {
                 if bad[i] {
                     return None;
                 }
+                let root = [plan.values()[i].schema()];
                 Some(layout(
-                    schemas[i].as_ref()?,
+                    if tagged_schemas.contains(&root[0]) {
+                        &root
+                    } else {
+                        schemas[i].as_ref()?
+                    },
                     composable[i],
                     &nested,
+                    &tagged_schemas,
                     &by_schema,
                     &kinds,
                     &mut field_layout,
@@ -627,6 +1023,37 @@ impl Facts<'_> {
                         (
                             NativeBufferFrameOperation::Pack { output },
                             operands.to_vec(),
+                            output,
+                        )
+                    } else if let Some((output, payload, ordinal)) =
+                        tagged::pack(plan, action).filter(|(v, _, _)| selected(*v))
+                    {
+                        (
+                            NativeBufferFrameOperation::EnumPack {
+                                output,
+                                payload,
+                                ordinal,
+                            },
+                            vec![payload],
+                            output,
+                        )
+                    } else if let Some((source, output)) =
+                        tagged::observation(plan, action).filter(|(v, _)| selected(*v))
+                    {
+                        let Action::Structural {
+                            path, observation, ..
+                        } = action
+                        else {
+                            unreachable!()
+                        };
+                        (
+                            NativeBufferFrameOperation::Observe {
+                                source,
+                                path: path.clone(),
+                                observation: *observation,
+                                output,
+                            },
+                            vec![source],
                             output,
                         )
                     } else if let Some((source, output)) =
@@ -673,3 +1100,7 @@ impl Facts<'_> {
         }
     }
 }
+
+#[cfg(all(test, feature = "source", feature = "record", feature = "tuple"))]
+#[path = "buffer_frames_tests.rs"]
+mod tests;

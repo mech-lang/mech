@@ -472,5 +472,9 @@ impl NativePreparedLibraryCall {
             .as_ref()
             .and_then(|geometry| geometry.shape.as_ref())
             .is_some_and(|recipe| recipe.is_identity_forwarding())
+            || self
+                .frame_composition
+                .as_ref()
+                .is_some_and(|recipe| recipe.is_identity_forwarding())
     }
 }

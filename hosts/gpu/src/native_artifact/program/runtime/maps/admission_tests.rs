@@ -41,14 +41,15 @@ fn note(f: impl FnOnce(&mut Observation)) {
     OBS.with(|v| f(&mut v.borrow_mut()));
 }
 
-unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
-    // SAFETY: this is the exact callback/context supplied by the checked entry.
-    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
-    let group = ctx.descriptor.metadata().map_admission.group(site as usize);
-    let native = group
-        .and_then(|group| group.owner)
-        .is_some_and(|owner| ctx.state.map_owners.has_retained_binding(owner));
-    let scalar = group.filter(|group| group.owner.is_none());
+// Fault injection belongs before the logical admission, including the fused
+// helper which intentionally has no physical standalone admit callback.
+fn restrict_scalar_group(ctx: &mut Invocation<'_, '_, '_>, site: u64) -> bool {
+    let scalar = ctx
+        .descriptor
+        .metadata()
+        .map_admission
+        .group(site as usize)
+        .filter(|group| group.owner.is_none());
     let scalar_limited = scalar.is_some_and(|group| {
         group.start() as u64 == site
             && group.sites.iter().any(|&s| {
@@ -79,6 +80,18 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
         }
         note(|r| r.scalar_limited = true);
     }
+    scalar_limited
+}
+
+unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
+    // SAFETY: this is the exact callback/context supplied by the checked entry.
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
+    let scalar_limited = restrict_scalar_group(ctx, site);
+    let group = ctx.descriptor.metadata().map_admission.group(site as usize);
+    let native = group
+        .and_then(|group| group.owner)
+        .is_some_and(|owner| ctx.state.map_owners.has_retained_binding(owner));
+    let scalar = group.filter(|group| group.owner.is_none());
     note(|r| {
         r.calls += 1;
         if let Some(group) = group {
@@ -209,6 +222,8 @@ unsafe extern "C" fn observe_helper(
     result: *mut u64,
 ) -> u64 {
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
+    let scalar_limited = operation == GlobalHelper::AdmitNumericSegmentBegin.raw()
+        && restrict_scalar_group(ctx, site);
     let previous = ctx.limits;
     let fused = (operation == crate::native_artifact::program::protocol::abi::MAP_OWNER_CALL
         && ctx.retained_native_call(site as usize))
@@ -257,8 +272,10 @@ unsafe extern "C" fn observe_helper(
     };
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     ctx.limits = previous;
-    if operation == GlobalHelper::NumericSegmentBegin.raw()
-        && status == STATUS_OK
+    if matches!(
+        GlobalHelper::decode(operation),
+        GlobalHelper::NumericSegmentBegin | GlobalHelper::AdmitNumericSegmentBegin
+    ) && status == STATUS_OK
         && ctx
             .descriptor
             .metadata()
@@ -267,8 +284,16 @@ unsafe extern "C" fn observe_helper(
             .is_some_and(|group| group.owner.is_none() && u64::from(group.start()) == site)
     {
         // SAFETY: the real successful helper has filled this checked result.
-        let declined = unsafe { *result == 0 };
+        let selected = unsafe { *result }
+            >> u32::from(operation == GlobalHelper::AdmitNumericSegmentBegin.raw());
+        let declined = selected == 0;
         let unfunded = ctx.state.scalar_path.is_none();
+        if scalar_limited && (!declined || !unfunded) {
+            note(|r| {
+                r.errors
+                    .push("underfunded fused scalar group bypassed ordered visits")
+            });
+        }
         note(|r| {
             r.parent_attempts += 1;
             r.unfunded_parent_declines += usize::from(declined && unfunded);

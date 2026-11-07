@@ -14,6 +14,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     LoopBounds,
     LookupFacts,
     CfgCleanup,
+    EarlyIdentities,
+    BooleanConditions,
     LoopOutlining,
     LoopInvariants,
     PreservingCalls,
@@ -26,6 +28,27 @@ pub(in crate::native_artifact) enum OptimizationPass {
     CandidateValues,
     PairedCandidates,
     ScalarLoops,
+    /// Public compilation enables both current-funded numeric trees and proved phases. Tests may
+    /// ablate only their emission to exercise the independently proved smaller
+    /// parent pieces and leaf loans retained on the ordinary fallback route.
+    NumericTrees,
+    /// Keep per-node counters in tests; settle their exact weighted projection
+    /// only at cold boundaries instead of maintaining it in the native loop.
+    ProjectedNumericDebits,
+    /// Derive projected child totals from the unchanged native fuel ledger.
+    FuelDerivedNumericDebits,
+    /// Emission-only ablation retains the ordinary collection error path.
+    UniformWords,
+    NumericCollections,
+    /// Omit capacity guards at a proved frontier with no append operation.
+    ZeroAppendFrontiers,
+    SourceLiveness,
+    PrivateLiveness,
+    NumericOutlining,
+    BooleanBranches,
+    BitCounts,
+    ScalarSelects,
+    UnsignedGuardFacts,
     DisjointState,
     NontrappingHomes,
     ChildFunding,
@@ -52,6 +75,8 @@ pub(in crate::native_artifact) struct EmissionCounters {
     pub loop_bounds: (usize, usize),
     pub lookup_facts: (usize, usize),
     pub cfg_cleanup: (usize, usize),
+    pub scalar_selects: usize,
+    pub unsigned_guards: usize,
     pub loop_outlining: usize,
     pub loop_invariants: (usize, usize, usize),
     pub preserving_calls: usize,
@@ -70,6 +95,7 @@ pub(in crate::native_artifact) struct CompilationControls {
     options: OptimizationOptions,
     packed_regions: std::cell::Cell<usize>,
     scalar_regions: std::cell::Cell<usize>,
+    scalar_captures: std::cell::RefCell<std::collections::BTreeSet<usize>>,
     invariant: EmissionBudget,
     mutation: EmissionBudget,
     count_value: EmissionBudget,
@@ -82,6 +108,7 @@ impl CompilationControls {
             options,
             packed_regions: Default::default(),
             scalar_regions: Default::default(),
+            scalar_captures: Default::default(),
             invariant: Default::default(),
             mutation: Default::default(),
             count_value: Default::default(),
@@ -127,6 +154,20 @@ impl CompilationControls {
     }
     pub fn emitted_scalar_region(&self) {
         self.scalar_regions.set(self.scalar_regions.get() + 1);
+    }
+    pub fn reserve_scalar_capture(&self, header: usize) -> bool {
+        if self.scalar_captures.borrow().contains(&header) {
+            return true;
+        }
+        if !self.scalar_region_available() {
+            return false;
+        }
+        self.emitted_scalar_region();
+        self.scalar_captures.borrow_mut().insert(header);
+        true
+    }
+    pub fn scalar_capture_selected(&self, header: usize) -> bool {
+        self.scalar_captures.borrow().contains(&header)
     }
     pub fn reserve_invariant_region(&self, records: usize) -> bool {
         self.invariant.reserve(records)

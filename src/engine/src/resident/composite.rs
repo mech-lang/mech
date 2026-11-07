@@ -8,6 +8,26 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+/// Shared logical constructor envelope. Child clone bytes include the
+/// ValueData slot as well as the maintained canonical child footprint. Fixed
+/// native owners use this same calculation without cloning their payload.
+pub(crate) fn constructor_output_envelope(
+    root_bytes: usize,
+    child_clone_bytes: usize,
+) -> Option<(usize, usize)> {
+    Some((
+        root_bytes.checked_add(child_clone_bytes)?,
+        child_clone_bytes,
+    ))
+}
+
+pub(crate) fn constructor_child_clone_bytes(
+    container_bytes: usize,
+    payload_bytes: usize,
+) -> Option<usize> {
+    container_bytes.checked_add(payload_bytes)
+}
+
 #[derive(Clone, Debug)]
 struct CompositeChildPlan {
     matrix_dimensions: Option<Box<[DimensionExpr]>>,
@@ -702,8 +722,7 @@ fn enum_pack(
     )
     .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>()))
     .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_bytes = root_bytes
-        .checked_add(payload_bytes)
+    let (output_bytes, payload_bytes) = constructor_output_envelope(root_bytes, payload_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_nodes = super::budget::checked_u64(payload_nodes)?
         .checked_add(2)
@@ -1056,8 +1075,7 @@ fn resident_child_clone_cost(
             .ok_or(ResidentKernelError::InvalidShape)?;
     }
     Ok((
-        container
-            .checked_add(payload)
+        constructor_child_clone_bytes(container, payload)
             .and_then(|bytes| bytes.checked_add(dynamic_overhead))
             .ok_or(ResidentKernelError::InvalidShape)?,
         nodes
@@ -1231,8 +1249,7 @@ fn composite_pack(
         .len()
         .checked_mul(core::mem::size_of::<mech_core::Value>() + core::mem::size_of::<ValueData>())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_bytes = child_bytes
-        .checked_add(output_containers)
+    let (output_bytes, child_bytes) = constructor_output_envelope(output_containers, child_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
     // These phases can coexist: typed native children, cloned canonical output,
     // native drafts, and key normalization / table packing scratch. Payload

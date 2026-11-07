@@ -1,9 +1,7 @@
 //! Private collection reconstruction. No producer, consumer, or kernel runs here.
 use super::{WireOrigin, library};
 use crate::native_artifact::*;
-use mech_core::{FunctionCatalog, SchemaTable};
-use serde::Deserialize;
-use serde_json::Value as Json;
+use serde::{Deserialize, Deserializer};
 
 #[path = "program_image_sinks.rs"]
 mod sinks;
@@ -25,11 +23,13 @@ enum CollectionImageKind {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Span {
+struct Span<'a> {
     range_site: u32,
     selection_site: u32,
-    range_template: Json,
-    selection_template: Json,
+    #[serde(borrow)]
+    range_template: BuildOwnedImageRecord<'a>,
+    #[serde(borrow)]
+    selection_template: BuildOwnedImageRecord<'a>,
     operands: [u32; 2],
     source: u32,
     selector: u32,
@@ -37,7 +37,7 @@ struct Span {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct MapProjection {
+struct MapProjection<'a> {
     iteration: u32,
     element_site: u32,
     selection_site: u32,
@@ -45,19 +45,23 @@ struct MapProjection {
     map: u32,
     element: u32,
     output: u32,
-    selection_template: Json,
+    #[serde(borrow)]
+    selection_template: BuildOwnedImageRecord<'a>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Collection {
+struct Collection<'a> {
     origin: WireOrigin,
     parent: Option<u32>,
     parent_collection: Option<u32>,
     kind: CollectionImageKind,
     output: u32,
-    result: Json,
-    string_span_projection: Option<Span>,
-    string_element_map_projection: Option<MapProjection>,
+    #[serde(borrow)]
+    result: BuildOwnedImageRecord<'a>,
+    #[serde(borrow)]
+    string_span_projection: Option<Span<'a>>,
+    #[serde(borrow)]
+    string_element_map_projection: Option<MapProjection<'a>>,
     generators: Box<[u32]>,
     begin: u32,
     push: u32,
@@ -67,10 +71,9 @@ struct Collection {
 /// # Safety
 /// Keep all reconstructed collection proofs confined until the enclosing image
 /// has unchanged compiler/Object provenance. Parsing is not escape analysis.
-pub(super) unsafe fn collection(
-    image: &Json,
-    catalog: &FunctionCatalog,
-    schemas: &SchemaTable,
+pub(super) unsafe fn collection<'de, D: Deserializer<'de>>(
+    image: D,
+    templates: &library::Templates<'_>,
 ) -> Result<NativeProgramCollection, String> {
     let wire = Collection::deserialize(image).map_err(|e| e.to_string())?;
     let kind = match wire.kind {
@@ -96,11 +99,9 @@ pub(super) unsafe fn collection(
                 range_site: s.range_site,
                 selection_site: s.selection_site,
                 // SAFETY: propagate the enclosing unchanged build-image obligation.
-                range_template: unsafe { library::template(&s.range_template, catalog, schemas)? },
+                range_template: unsafe { templates.read(s.range_template)? },
                 // SAFETY: same confined image and selected catalog.
-                selection_template: unsafe {
-                    library::template(&s.selection_template, catalog, schemas)?
-                },
+                selection_template: unsafe { templates.read(s.selection_template)? },
                 operands: s.operands.map(NativeMatchValue),
                 source: NativeMatchValue(s.source),
                 selector: NativeMatchValue(s.selector),
@@ -120,9 +121,7 @@ pub(super) unsafe fn collection(
                 element: NativeMatchValue(s.element),
                 output: NativeMatchValue(s.output),
                 // SAFETY: propagate the enclosing unchanged build-image obligation.
-                selection_template: unsafe {
-                    library::template(&s.selection_template, catalog, schemas)?
-                },
+                selection_template: unsafe { templates.read(s.selection_template)? },
             })
         })
         .transpose()?;
@@ -137,7 +136,7 @@ pub(super) unsafe fn collection(
         kind,
         output: NativeMatchValue(wire.output),
         // SAFETY: result metadata belongs to the same confined collection image.
-        result: unsafe { sinks::result(&wire.result, catalog, schemas)? },
+        result: unsafe { sinks::result(&mut wire.result.reader(), templates)? },
         string_span_projection: span,
         string_element_map_projection: map,
         generators: wire.generators,

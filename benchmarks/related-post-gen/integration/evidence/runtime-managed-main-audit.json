@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-latest-deflate-integration-runtime-check-20261106-v1/managed-app/audit-bundle/object.o",
+    "--executable",
+    "/private/tmp/mech-related-latest-deflate-integration-runtime-check-20261106-v1/managed-app/runner-standard",
+    "--output",
+    "/private/tmp/mech-related-latest-deflate-integration-runtime-check-20261106-v1/managed-app/native-link-audit.json"
+  ],
+  "exit": 0,
+  "seconds": 0.09947729203850031,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 1, \"normalized_text_sha256\": \"537feb783b833e3dad9b1cc224c9526e7c09c32a600c3a6996aa9d085c8bf42b\"}\n",
+  "stderr": "",
+  "compiler_source_sha256": "63f960c05c80c42005ba4fd0fc8678de99ecf7c2cfef2184b6e48d9614bf55ad"
+}

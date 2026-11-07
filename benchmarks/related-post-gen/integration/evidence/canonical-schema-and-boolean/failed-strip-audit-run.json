@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/reuse-4-full-catalog/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/reuse-4-full-catalog/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/reuse-4-full-catalog/native-link-audit.json"
+  ],
+  "exit": 1,
+  "seconds": 0.0507403330411762,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py\", line 323, in <module>\n    main()\n    ~~~~^^\n  File \"/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py\", line 316, in main\n    result = audit(args.object, args.executable)\n  File \"/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py\", line 39, in audit\n    eb, es, linked_symbols = macho(executable_path)\n                             ~~~~~^^^^^^^^^^^^^^^^^\n  File \"/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py\", line 13, in macho\n    assert magic == 0xfeedfacf and cpu == 0x100000c, 'Expected AArch64 Mach-O'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Expected AArch64 Mach-O\n"
+}

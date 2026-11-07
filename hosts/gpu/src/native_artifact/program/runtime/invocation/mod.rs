@@ -8,16 +8,23 @@ use mech_core::{MemoryBudgetLimits, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 
 mod buffer_frames;
+mod captured_numeric;
 pub(super) mod continuation;
 mod helper_fallbacks;
+mod histogram;
 mod numeric_exits;
+mod numeric_map;
 mod numeric_segments;
+mod numeric_tree;
 mod numeric_writes;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod paid_iterations;
 mod readonly_numeric;
 mod selected_calls;
+mod string_reads;
+mod uniform_fill;
 mod unsigned_buffers;
+mod utf8_read;
 mod word_collections;
 mod word_reads;
 mod word_updates;
@@ -194,9 +201,11 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
     pub(in crate::native_artifact::program::runtime) error: Option<NativeProgramExecutionError>,
     pub(in crate::native_artifact::program::runtime) activation_phase: bool,
     pub(in crate::native_artifact::program::runtime) execution_limits: NativeExecutionLimits,
-    pub(in crate::native_artifact::program::runtime) worker: Option<parallel::Worker>,
+    // Worker-only receipts stay off the scalar caller's charged inline layout.
+    pub(in crate::native_artifact::program::runtime) worker: Option<Box<parallel::Worker>>,
     pub(in crate::native_artifact::program::runtime) parallel_batch: Option<parallel::Batch>,
     pub(in crate::native_artifact::program::runtime) window_region: Option<(u32, u64)>,
+    pub(in crate::native_artifact::program::runtime) histogram: Option<Box<histogram::Loan>>,
     pub(in crate::native_artifact::program::runtime) window_hashes: Option<
         Box<crate::native_artifact::program::runtime::invocation::window::hashes::WindowHashes>,
     >,
@@ -472,6 +481,9 @@ impl Invocation<'_, '_, '_> {
         args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
         let tag = GlobalHelper::decode(operation);
+        if self.histogram.is_some() && tag != GlobalHelper::HistogramFinish {
+            return Err(invalid("helper while compiled histogram loan is active"));
+        }
         if self
             .prefix
             .as_ref()
@@ -537,9 +549,57 @@ impl Invocation<'_, '_, '_> {
             return Err(invalid("helper outside exact admitted visit"));
         }
         let site = site as usize;
+        if matches!(
+            tag,
+            GlobalHelper::HistogramPrepare | GlobalHelper::HistogramFinish
+        ) {
+            return self.histogram_helper(site, tag, args);
+        }
         #[cfg(all(test, feature = "canonical-native-program"))]
         crate::native_artifact::program::runtime::collections::before_span_helper(self, site)?;
         let descriptor = self.descriptor;
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|collections| collections.has_utf8_read())
+            && tag != GlobalHelper::Utf8ReadFinish
+        {
+            return Err(invalid("helper while native String lookup loan is active"));
+        }
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|state| state.has_uniform_fill())
+            && tag != GlobalHelper::UniformFillFinish
+        {
+            return Err(invalid("helper while native fill loan is active"));
+        }
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|state| state.has_numeric_map())
+            && tag != GlobalHelper::NumericMapFinish
+        {
+            return Err(invalid("helper while native numeric map loan is active"));
+        }
+        if tag == GlobalHelper::MapOwnerConstructorCheck {
+            return self.retained_constructor_check(site, args);
+        }
+        if matches!(
+            tag,
+            GlobalHelper::BorrowedRecordMapProject | GlobalHelper::BorrowedRecordMapRead
+        ) {
+            return self.borrowed_record_map_helper(site, tag, args);
+        }
+        if tag == GlobalHelper::Library && self.borrowed_record_map_pending(site) {
+            return Err(invalid("ordinary helper at borrowed Record Map read"));
+        }
+        if tag == GlobalHelper::ClosedTailBegin {
+            return self.begin_closed_tail(site, args);
+        }
         if tag == GlobalHelper::NumericSegmentBegin {
             return self.begin_numeric_segment(site, args);
         }
@@ -679,6 +739,21 @@ impl Invocation<'_, '_, '_> {
             }
             self.state.consumed = true;
             Ok(None)
+        } else if matches!(
+            tag,
+            GlobalHelper::Utf8ReadPrepare | GlobalHelper::Utf8ReadFinish
+        ) {
+            self.utf8_read_helper(site, tag, args)
+        } else if matches!(
+            tag,
+            GlobalHelper::UniformFillPrepare | GlobalHelper::UniformFillFinish
+        ) {
+            self.uniform_fill_helper(site, tag, args)
+        } else if matches!(
+            tag,
+            GlobalHelper::NumericMapPrepare | GlobalHelper::NumericMapFinish
+        ) {
+            self.numeric_map_helper(site, tag, args)
         } else if tag == GlobalHelper::Collection {
             if self.state.consumed || args[2] != 0 {
                 return Err(invalid("duplicate collection helper"));
@@ -692,6 +767,40 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         site: u64,
     ) -> Result<(), NativeProgramExecutionError> {
+        if self.histogram.is_some() {
+            return Err(invalid(
+                "source visit while compiled histogram loan is active",
+            ));
+        }
+
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|collections| collections.has_utf8_read())
+        {
+            return Err(invalid(
+                "source visit while native String lookup loan is active",
+            ));
+        }
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|state| state.has_uniform_fill())
+        {
+            return Err(invalid("source visit while native fill loan is active"));
+        }
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|state| state.has_numeric_map())
+        {
+            return Err(invalid(
+                "source visit while native numeric map loan is active",
+            ));
+        }
         if self
             .prefix
             .as_ref()
@@ -1099,6 +1208,18 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
         )
     }
     #[inline]
+    pub(in crate::native_artifact::program::runtime) fn arena_entry_is_current(
+        &self,
+        slot: u32,
+    ) -> Result<bool, Error> {
+        Ok(self
+            .invocation
+            .state
+            .arena
+            .native_entry_preview(slot, &self.invocation.state.control.work)?
+            .is_some())
+    }
+    #[inline]
     pub(in crate::native_artifact::program::runtime) fn arena_copy_current(
         &mut self,
         slot: u32,
@@ -1173,7 +1294,9 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
         self.invocation.frozen_retirement_work()
     }
     #[inline]
-    pub(in crate::native_artifact::program::runtime) fn worker(&self) -> &Option<parallel::Worker> {
+    pub(in crate::native_artifact::program::runtime) fn worker(
+        &self,
+    ) -> &Option<Box<parallel::Worker>> {
         &self.invocation.worker
     }
     #[inline]

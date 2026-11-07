@@ -11,6 +11,9 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+mod result;
+use result::ResultLayout;
+
 /// Complete simultaneous caller geometry, INCLUDING this retained table and
 /// any prior output. A future native caller must derive this from its live
 /// frame/owners; these descriptive numbers confer no publication authority.
@@ -50,11 +53,15 @@ pub(in crate::native_artifact) fn string_u64_schema(
     if !target.dimension_parameters().is_empty() {
         return Err(Error::Publication("parameterized output schema"));
     }
+    string_u64_body(target.body(), count)
+}
+
+fn string_u64_body(body: &SchemaBody, count: u64) -> Result<(), Error> {
     let SchemaBody::Map {
         key,
         value,
         cardinality,
-    } = target.body()
+    } = body
     else {
         return Err(Error::Publication("output is not a map"));
     };
@@ -108,12 +115,24 @@ pub(in crate::native_artifact) fn logical_map_limits(
     )
 }
 impl<S: BuildHasher> OwnedStringMap<S> {
+    #[cfg(test)]
     fn publication_plan(
         &self,
         schemas: &Arc<SchemaTable>,
         schema: SchemaId,
         geometry: Geometry,
         limits: MemoryBudgetLimits,
+    ) -> Result<Plan, Error> {
+        let result = ResultLayout::new(schemas, schema, &[])?;
+        self.publication_plan_result(schemas, geometry, limits, &result)
+    }
+
+    fn publication_plan_result(
+        &self,
+        schemas: &Arc<SchemaTable>,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+        result: &ResultLayout<'_>,
     ) -> Result<Plan, Error> {
         for limit in [
             limits.max_output_elements,
@@ -132,7 +151,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
             return Err(Error::Publication("caller geometry omits retained owner"));
         }
         self.work.charge(128, 0)?;
-        string_u64_schema(schemas, schema, count)?;
+        result.validate_map(count)?;
         // Sharing the schema arena still imports its complete ownership.
         let schema_bytes = schemas
             .clone_allocation_bound_bytes_with_precharge(|bytes| self.work.charge(bytes, 0))
@@ -143,12 +162,18 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         let payload = self.keys.capacity_bytes();
         // Exact narrow canonical layout, matching Value::retained_footprint:
         // Value + root ValueData + MapEntryValue + two child ValueDatas/key.
-        let published = logical_map_bytes(count, payload)?;
-        let nodes = add(mul(count, 2)?, 2)?;
-        let drafts = mul(
-            count,
-            (size_of::<MapEntryDraft>() + 2 * size_of::<ValueDataDraft>() + size_of::<String>())
-                as u64,
+        let published = add(
+            logical_map_bytes(count, payload)?,
+            result.extra_value_bytes()?,
+        )?;
+        let nodes = add(add(mul(count, 2)?, 2)?, result.extra_nodes())?;
+        let drafts = add(
+            mul(
+                count,
+                (size_of::<MapEntryDraft>() + 2 * size_of::<ValueDataDraft>() + size_of::<String>())
+                    as u64,
+            )?,
+            result.extra_draft_bytes()?,
         )?;
         let order = mul(count, size_of::<(&str, u64)>() as u64)?;
         let owner = mul(
@@ -178,8 +203,12 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         )?;
         // Sorted drafts take the core finalizer's ordered append route. Each
         // adjacent String comparison is covered by three total payload scans.
-        let finalization = add(add(mul(payload, 3)?, mul(count, 8)?)?, 8)?;
-        let compute = add(mul(workspace, 16)?, 256)?;
+        let result_finalization = result.extra_finalization()?;
+        let finalization = add(
+            add(add(mul(payload, 3)?, mul(count, 8)?)?, 8)?,
+            result_finalization,
+        )?;
+        let compute = add(add(mul(workspace, 16)?, 256)?, mul(result_finalization, 8)?)?;
         Ok(Plan {
             workspace,
             finalization,
@@ -191,6 +220,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
     /// Copy one complete current table into an independently owned immutable
     /// map. The table stays intact on success and every denial/failure. The
     /// caller must still prove the exact native site, owner and live geometry.
+    #[cfg(test)]
     pub(in crate::native_artifact) fn publish(
         &self,
         schemas: &Arc<SchemaTable>,
@@ -198,10 +228,26 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         geometry: crate::native_artifact::program::runtime::maps::string::PublicationGeometry,
         limits: MemoryBudgetLimits,
     ) -> Result<Value, Error> {
+        self.publish_result(schemas, schema, &[], geometry, limits)
+    }
+
+    /// Publish the one retained Map and its fixed scalar companions together.
+    /// The schema-directed recipe is bounded and no intermediate canonical Map
+    /// is created or exposed before the complete result is admitted.
+    pub(in crate::native_artifact) fn publish_result(
+        &self,
+        schemas: &Arc<SchemaTable>,
+        schema: SchemaId,
+        words: &[u64],
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<Value, Error> {
         let compute = required(limits.max_compute_work)?;
         let comparison = required(limits.max_comparison_work)?;
         self.work.with_call_limits(compute, comparison, || {
-            let plan = self.publication_plan(schemas, schema, geometry, limits)?;
+            let result = ResultLayout::new(schemas, schema, words)?;
+            self.work.charge(mul(result.extra_nodes(), 64)?, 0)?;
+            let plan = self.publication_plan_result(schemas, geometry, limits, &result)?;
             self.work.charge(plan.compute, plan.finalization)?;
             let memory = self.metadata.budget().with_limits(
                 required(limits.max_temporary_bytes)?,
@@ -237,7 +283,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
             let value = ValueDraft {
                 schema,
                 shape_values: Box::new([]),
-                data: ValueDataDraft::Map(entries.into_boxed_slice()),
+                data: result.wrap(ValueDataDraft::Map(entries.into_boxed_slice()), words)?,
             }
             .finalize(&context)
             .map_err(|_| Error::Publication("canonical finalization"))?;

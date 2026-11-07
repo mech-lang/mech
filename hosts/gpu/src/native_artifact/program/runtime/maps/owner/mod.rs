@@ -13,6 +13,7 @@ use crate::native_artifact::{
 use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation, Value};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMapOwnerRegion};
 
+pub(in crate::native_artifact::program::runtime) mod borrowed_records;
 mod caller_geometry;
 mod closed;
 pub(in crate::native_artifact::program::runtime) mod frozen;
@@ -191,6 +192,7 @@ pub(in crate::native_artifact::program::runtime) struct State<'plan> {
     caller: Option<caller_geometry::Caller>,
     reservation: ManagedMemoryReservation,
     _nodes: ManagedNodeReservation,
+    borrowed_records: borrowed_records::Lanes,
 }
 
 fn storage_error(error: StorageError) -> Error {
@@ -245,7 +247,10 @@ impl<'plan> State<'plan> {
             amount(
                 count,
                 (2 * core::mem::size_of::<Slot<'plan>>()) as u64,
-                (core::mem::size_of::<Self>() + 128) as u64,
+                // Two generation/visit witnesses fit the existing fixed
+                // header slack; they retain no payload or allocation.
+                (core::mem::size_of::<Self>() - core::mem::size_of::<borrowed_records::Lanes>()
+                    + 128) as u64,
             )?,
             amount(
                 span_count,
@@ -292,6 +297,7 @@ impl<'plan> State<'plan> {
             caller: None,
             reservation,
             _nodes: nodes,
+            borrowed_records: borrowed_records::Lanes::default(),
         }))
     }
 
@@ -383,6 +389,32 @@ impl<'plan> State<'plan> {
             || self.slots[index].frozen.is_some()
         {
             return Err(invalid("retained map entry overlaps another live owner"));
+        }
+        // Refuse optional ownership before any private mutation if a later
+        // selected constructor's fixed arity cannot fit. The canonical path
+        // then preserves that constructor's original denial and origin.
+        let plan = &self.descriptor.metadata().plan;
+        let layout = self.descriptor.metadata().map_owner_words.as_ref().unwrap();
+        let max_elements = ctx.limits().max_output_elements.unwrap_or(0);
+        let compound_result = !matches!(
+            plan.values()[region.tail().returned().get() as usize]
+                .definition()
+                .body(),
+            mech_core::SchemaBody::Map { .. }
+        );
+        if compound_result {
+            ctx.work()
+                .charge(Phase::Setup, amount(plan.blocks().len(), 64, 128)?)?;
+        }
+        if compound_result && plan.blocks().iter().enumerate().any(|(site, block)| {
+            layout.action_region(site) == Some(index)
+                && matches!(block.action(), Action::LibraryCall { template, .. }
+                    if matches!(template.primitive(),
+                        mech_engine::native_artifact::NativeCollectionPrimitive::CompositePack(arity)
+                        if arity as u64 > max_elements))
+        }) {
+            self.last_owned_visit = Some(ctx.control().visits);
+            return Ok(None);
         }
         let Some(geometry) = self.geometry(ctx, site)? else {
             self.last_owned_visit = Some(ctx.control().visits);
@@ -525,11 +557,43 @@ impl<'plan> State<'plan> {
         Ok(result)
     }
 
+    pub(in crate::native_artifact::program::runtime) fn constructor_statistics(
+        &mut self,
+        ctx: &mut MapExecution<'_, '_, '_, '_>,
+        site: usize,
+        token: u64,
+    ) -> Result<(u64, u64), Error> {
+        self.guard(ctx, site)?;
+        let layout = self
+            .descriptor
+            .metadata()
+            .map_owner_words
+            .as_ref()
+            .ok_or_else(|| invalid("retained constructor layout missing"))?;
+        let index = layout
+            .action_region(site)
+            .ok_or_else(|| invalid("retained constructor is not selected"))?;
+        if ctx.control().current != Some(layout.regions()[index].iteration()) {
+            return Err(invalid("retained constructor outside owning iteration"));
+        }
+        ctx.work()
+            .charge(Phase::Setup, amount(layout.regions().len(), 128, 128)?)?;
+        let result = self.slots[index]
+            .binding
+            .as_ref()
+            .ok_or_else(|| invalid("retained constructor lacks current owner"))?
+            .constructor_statistics(site, token)
+            .map_err(storage_error)?;
+        self.last_owned_visit = Some(ctx.control().visits);
+        Ok(result)
+    }
+
     pub(in crate::native_artifact::program::runtime) fn publish_retained(
         &mut self,
         ctx: &mut MapExecution<'_, '_, '_, '_>,
         site: usize,
         token: u64,
+        words: &[u64],
     ) -> Result<Publication, Error> {
         self.guard(ctx, site)?;
         let index = self
@@ -577,9 +641,10 @@ impl<'plan> State<'plan> {
         } else {
             Publication::Canonical(
                 binding
-                    .finish(
+                    .finish_words(
                         site,
                         token,
+                        words,
                         &self.descriptor.metadata().schemas,
                         geometry,
                         ctx.limits(),

@@ -16,6 +16,142 @@ impl Invocation<'_, '_, '_> {
         };
         let mut result = None;
         match action.operation() {
+            Operation::EnumPack {
+                output,
+                payload,
+                ordinal,
+            } if tag == GlobalHelper::Library => {
+                let NativeIterationAction::LibraryCall {
+                    operands,
+                    output: expected,
+                    ..
+                } = descriptor.metadata().plan.blocks()[site].action()
+                else {
+                    return Err(invalid("private enum pack outside selected call"));
+                };
+                if expected != output
+                    || operands.len() != 2
+                    || operands[1] != *payload
+                    || words.len() != 2
+                {
+                    return Err(invalid("private enum pack operands differ"));
+                }
+                for (index, operand) in operands.iter().enumerate() {
+                    self.state.call_inputs.values_mut()[index] = if let Some(kind) =
+                        descriptor.metadata().plan.values()[operand.get() as usize].scalar_kind()
+                    {
+                        if !kind.accepts_bits(words[index]) {
+                            return Err(invalid("private enum scalar bits differ"));
+                        }
+                        None
+                    } else {
+                        if words[index] != 0 {
+                            return Err(invalid("private enum managed input has native bits"));
+                        }
+                        if layout.fields(*operand).is_some() {
+                            None
+                        } else {
+                            Some(
+                                self.state
+                                    .arena
+                                    .copy_current(operand.get(), &mut self.state.control.work)?,
+                            )
+                        }
+                    };
+                }
+                let call = descriptor.metadata().calls[site]
+                    .as_ref()
+                    .ok_or_else(|| invalid("private enum lost selected factory"))?;
+                let coexistence = self.selected_join_coexistence(None)?;
+                let admitted = call.admit_buffer_frame_composition(
+                    &self.state.call_inputs.values()[..2],
+                    words,
+                    |field| self.state.buffer_frames.current_leaf(field),
+                    None,
+                    self.limits,
+                    &self.state.library,
+                    coexistence,
+                );
+                if let Err(error) = admitted {
+                    self.state.call_inputs.values_mut()[..2].fill(None);
+                    return Err(Error::Library {
+                        origin: descriptor.metadata().plan.blocks()[site].origin(),
+                        error,
+                    });
+                }
+                let packed = self.state.buffer_frames.enum_pack(
+                    layout,
+                    *output,
+                    *payload,
+                    *ordinal,
+                    &mut self.state.call_inputs.values_mut()[1],
+                    words[1],
+                    &mut self.state.control.work,
+                );
+                self.state.call_inputs.values_mut()[..2].fill(None);
+                packed?;
+            }
+            Operation::Observe {
+                source,
+                path,
+                observation,
+                output,
+            } if tag == GlobalHelper::StructuralObservation && words.is_empty() => {
+                let NativeIterationAction::Structural {
+                    source: expected_source,
+                    path: expected_path,
+                    observation: expected_observation,
+                    output: expected_output,
+                } = descriptor.metadata().plan.blocks()[site].action()
+                else {
+                    return Err(invalid(
+                        "private enum observation outside structural action",
+                    ));
+                };
+                if source != expected_source
+                    || output != expected_output
+                    || path != expected_path
+                    || observation != expected_observation
+                {
+                    return Err(invalid(
+                        "private enum observation differs from current visit",
+                    ));
+                }
+                let observed = self.state.buffer_frames.observe(
+                    layout,
+                    *source,
+                    path,
+                    *observation,
+                    *output,
+                    &mut self.state.control.work,
+                )?;
+                let ty = &descriptor.metadata().plan.values()[output.get() as usize];
+                match observed {
+                    None => {}
+                    Some(super::super::buffer_frames::Field::Scalar { schema, value }) => {
+                        let tag_test = matches!(observation,
+                            mech_engine::native_artifact::NativeStructuralObservation::EnumOrdinal { .. });
+                        if (!tag_test && schema != ty.schema())
+                            || ty.scalar_kind() != Some(value.kind())
+                        {
+                            return Err(invalid("private enum scalar observation schema differs"));
+                        }
+                        result = Some(value.to_bits());
+                    }
+                    Some(super::super::buffer_frames::Field::Managed(value)) => {
+                        let slot = &descriptor.metadata().types[output.get() as usize];
+                        if value.schema() != slot.schema
+                            || value.schema_key() != slot.key
+                            || ty.scalar_kind().is_some()
+                        {
+                            return Err(invalid("private enum managed observation schema differs"));
+                        }
+                        self.state
+                            .arena
+                            .put(output.get(), &value, &mut self.state.control.work)?;
+                    }
+                }
+            }
             Operation::Pack { output } if tag == GlobalHelper::Library => {
                 let NativeIterationAction::LibraryCall {
                     operands,

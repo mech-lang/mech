@@ -1,0 +1,556 @@
+diff --git a/hosts/gpu/src/native_artifact/codegen/common/boolean_branches.rs b/hosts/gpu/src/native_artifact/codegen/common/boolean_branches.rs
+index 2131600d7d..d5435bb066 100644
+--- a/hosts/gpu/src/native_artifact/codegen/common/boolean_branches.rs
++++ b/hosts/gpu/src/native_artifact/codegen/common/boolean_branches.rs
+@@ -5,10 +5,10 @@ use crate::native_artifact::codegen::options::{OptimizationOptions, Optimization
+ use mech_engine::native_artifact::{
+     NativeIterationAction as Action, NativeIterationTerminator as Term,
+     NativeMatchAction as Scalar, NativeMatchTerminator as Branch, NativeMatchValue as Value,
+-    NativeScalarKind as Kind, NativeScalarOp as Op,
++    NativeScalarKind as Kind,
+ };
+ 
+-fn boolean_constant(code: CodePlan<'_>, value: Value) -> Option<bool> {
++pub(super) fn boolean_constant(code: CodePlan<'_>, value: Value) -> Option<bool> {
+     if code.kind(value) != Some(Kind::Bool) {
+         return None;
+     }
+@@ -60,55 +60,16 @@ fn native_boolean(
+     }
+     match definition {
+         Scalar::Copy { source, .. } => native_boolean(code, facts, *source, depth - 1),
+-        Scalar::Primitive { op, operands, .. } => match op {
+-            Op::BoolAnd | Op::BoolOr | Op::BoolXor | Op::BoolNot => operands
++        Scalar::Primitive { op, operands, .. } => super::canonical_booleans::primitive(*op, || {
++            operands
+                 .iter()
+-                .all(|&operand| native_boolean(code, facts, operand, depth - 1)),
+-            Op::U8Eq
+-            | Op::U8Ne
+-            | Op::U8Lt
+-            | Op::U8Le
+-            | Op::U8Gt
+-            | Op::U8Ge
+-            | Op::U16Eq
+-            | Op::U16Ne
+-            | Op::U16Lt
+-            | Op::U16Le
+-            | Op::U16Gt
+-            | Op::U16Ge
+-            | Op::U32Eq
+-            | Op::U32Ne
+-            | Op::U32Lt
+-            | Op::U32Le
+-            | Op::U32Gt
+-            | Op::U32Ge
+-            | Op::U64Eq
+-            | Op::U64Ne
+-            | Op::U64Lt
+-            | Op::U64Le
+-            | Op::U64Gt
+-            | Op::U64Ge
+-            | Op::I64Eq
+-            | Op::I64Ne
+-            | Op::I64Lt
+-            | Op::I64Le
+-            | Op::I64Gt
+-            | Op::I64Ge
+-            | Op::F64Eq
+-            | Op::F64Ne
+-            | Op::F64Lt
+-            | Op::F64Le
+-            | Op::F64Gt
+-            | Op::F64Ge
+-            | Op::BoolEq
+-            | Op::BoolNe => true,
+-            _ => false,
+-        },
++                .all(|&operand| native_boolean(code, facts, operand, depth - 1))
++        }),
+         _ => false,
+     }
+ }
+ 
+-fn literal(code: CodePlan<'_>, left: Value, right: Value) -> Option<(Value, bool)> {
++pub(super) fn literal(code: CodePlan<'_>, left: Value, right: Value) -> Option<(Value, bool)> {
+     boolean_constant(code, right)
+         .map(|constant| (left, constant))
+         .or_else(|| boolean_constant(code, left).map(|constant| (right, constant)))
+diff --git a/hosts/gpu/src/native_artifact/codegen/common/canonical_booleans.rs b/hosts/gpu/src/native_artifact/codegen/common/canonical_booleans.rs
+new file mode 100644
+index 0000000000..f9a286233e
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/codegen/common/canonical_booleans.rs
+@@ -0,0 +1,122 @@
++//! Producer-derived zero/one facts for direct literal Boolean branches.
++//! Types alone, current sample bits and previous invocations grant no fact.
++use super::super::control::plan::CodePlan;
++use super::boolean_branches::{boolean_constant, literal};
++use crate::native_artifact::codegen::options::{OptimizationOptions, OptimizationPass};
++use mech_engine::native_artifact::{
++    NativeIterationAction as Action, NativeMatchAction as Scalar, NativeMatchValue as Value,
++    NativeProgramFacts, NativeProgramProducerRole as Role, NativeScalarKind as Kind,
++    NativeScalarOp as Op,
++};
++
++pub(super) fn primitive(op: Op, operands: impl FnOnce() -> bool) -> bool {
++    match op {
++        Op::BoolAnd | Op::BoolOr | Op::BoolXor | Op::BoolNot => operands(),
++        Op::U8Eq
++        | Op::U8Ne
++        | Op::U8Lt
++        | Op::U8Le
++        | Op::U8Gt
++        | Op::U8Ge
++        | Op::U16Eq
++        | Op::U16Ne
++        | Op::U16Lt
++        | Op::U16Le
++        | Op::U16Gt
++        | Op::U16Ge
++        | Op::U32Eq
++        | Op::U32Ne
++        | Op::U32Lt
++        | Op::U32Le
++        | Op::U32Gt
++        | Op::U32Ge
++        | Op::U64Eq
++        | Op::U64Ne
++        | Op::U64Lt
++        | Op::U64Le
++        | Op::U64Gt
++        | Op::U64Ge
++        | Op::I64Eq
++        | Op::I64Ne
++        | Op::I64Lt
++        | Op::I64Le
++        | Op::I64Gt
++        | Op::I64Ge
++        | Op::F64Eq
++        | Op::F64Ne
++        | Op::F64Lt
++        | Op::F64Le
++        | Op::F64Gt
++        | Op::F64Ge
++        | Op::BoolEq
++        | Op::BoolNe => true,
++        _ => false,
++    }
++}
++
++fn canonical(
++    code: CodePlan<'_>,
++    facts: &NativeProgramFacts<'_>,
++    value: Value,
++    depth: usize,
++    fuel: &mut usize,
++) -> bool {
++    if depth == 0 || *fuel == 0 || code.kind(value) != Some(Kind::Bool) {
++        return false;
++    }
++    *fuel -= 1;
++    if boolean_constant(code, value).is_some() {
++        return true;
++    }
++    let Ok(definitions) = facts.definition_sites(value.get()) else {
++        return false;
++    };
++    // All producers must be known scalar definitions. Raw inputs, library
++    // results, structural projections and carrier entry/latch state decline.
++    // A cycle exhausts the bounded proof and keeps the original literal test.
++    !definitions.is_empty()
++        && definitions.iter().all(|definition| {
++            if definition.role() != Role::Scalar {
++                return false;
++            }
++            let Some(site) = definition.site() else {
++                return false;
++            };
++            let Some(block) = code.blocks().get(site as usize) else {
++                return false;
++            };
++            match block.action() {
++                Action::Scalar(Scalar::Copy { source, output }) if *output == value => {
++                    canonical(code, facts, *source, depth - 1, fuel)
++                }
++                Action::Scalar(Scalar::Primitive {
++                    op,
++                    operands,
++                    output,
++                    ..
++                }) if *output == value => primitive(*op, || {
++                    operands
++                        .iter()
++                        .all(|&operand| canonical(code, facts, operand, depth - 1, fuel))
++                }),
++                _ => false,
++            }
++        })
++}
++
++pub(in crate::native_artifact) fn direct_literal(
++    code: CodePlan<'_>,
++    options: OptimizationOptions,
++    left: Value,
++    right: Value,
++) -> Option<(Value, bool)> {
++    if !options.enabled(OptimizationPass::CanonicalBooleanBranches) {
++        return None;
++    }
++    let CodePlan::Program(prepared) = code else {
++        return None;
++    };
++    let (condition, expected) = literal(code, left, right)?;
++    canonical(code, &prepared.plan().facts(), condition, 32, &mut 256)
++        .then_some((condition, expected))
++}
+diff --git a/hosts/gpu/src/native_artifact/codegen/common/mod.rs b/hosts/gpu/src/native_artifact/codegen/common/mod.rs
+index 9fdd031aa9..e0b3f80e0f 100644
+--- a/hosts/gpu/src/native_artifact/codegen/common/mod.rs
++++ b/hosts/gpu/src/native_artifact/codegen/common/mod.rs
+@@ -10,6 +10,8 @@ pub(in crate::native_artifact) mod unsigned_guard_facts;
+ #[cfg(feature = "canonical-native-program")]
+ pub(in crate::native_artifact) mod boolean_branches;
+ #[cfg(feature = "canonical-native-program")]
++pub(in crate::native_artifact) mod canonical_booleans;
++#[cfg(feature = "canonical-native-program")]
+ pub(in crate::native_artifact) mod ssa_words;
+ #[cfg(feature = "canonical-native-program")]
+ pub(in crate::native_artifact) mod terminators;
+diff --git a/hosts/gpu/src/native_artifact/codegen/common/terminators.rs b/hosts/gpu/src/native_artifact/codegen/common/terminators.rs
+index cda438e21d..767179ce0d 100644
+--- a/hosts/gpu/src/native_artifact/codegen/common/terminators.rs
++++ b/hosts/gpu/src/native_artifact/codegen/common/terminators.rs
+@@ -35,6 +35,14 @@ pub(in crate::native_artifact) fn emit_source_terminator(
+             yes,
+             no,
+         }) => {
++            if let Some((condition, expected)) =
++                super::canonical_booleans::direct_literal(code, options, left, right)
++            {
++                let condition = words.read(b, condition.get() as usize);
++                let (yes, no) = if expected { (yes, no) } else { (no, yes) };
++                b.ins().brif(condition, target(yes), &[], target(no), &[]);
++                return;
++            }
+             let kind = code.kind(left).unwrap();
+             let left = words.read(b, left.get() as usize);
+             let right = words.read(b, right.get() as usize);
+diff --git a/hosts/gpu/src/native_artifact/codegen/options.rs b/hosts/gpu/src/native_artifact/codegen/options.rs
+index c3c7a91230..2bf5ad2085 100644
+--- a/hosts/gpu/src/native_artifact/codegen/options.rs
++++ b/hosts/gpu/src/native_artifact/codegen/options.rs
+@@ -52,6 +52,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
+     DisjointState,
+     NontrappingHomes,
+     ChildFunding,
++    CanonicalBooleanBranches,
+ }
+ #[cfg(feature = "canonical-native-program")]
+ impl OptimizationOptions {
+diff --git a/hosts/gpu/src/native_artifact/program/image/identity.rs b/hosts/gpu/src/native_artifact/program/image/identity.rs
+index 2aaeaee78a..a85dc39e2b 100644
+--- a/hosts/gpu/src/native_artifact/program/image/identity.rs
++++ b/hosts/gpu/src/native_artifact/program/image/identity.rs
+@@ -394,7 +394,8 @@ fn selected_template(
+ // IR230 also integrates activation-current affine read-address bases from
+ // PR973/IR197 without changing source operations, admission or visit prices.
+ // IR231 preserves the exhausted source transition after an ordered reduction.
+-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 231;
++// IR232 directly branches on producer-proven canonical Boolean literals.
++pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 232;
+ // Shared immutable schema arenas and the admitted two-phase entry protocol
+ // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
+ // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/composition_tests/boolean_edges.rs b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/boolean_edges.rs
+index 09c4db136f..8406c5bcd1 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/composition_tests/boolean_edges.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/boolean_edges.rs
+@@ -179,7 +179,7 @@ fn complementary_read_guards_keep_current_windows_errors_and_retry() {
+     }
+ }
+ 
+-fn alternate_source(true_first: bool, joined: bool) -> String {
++pub(super) fn alternate_source(true_first: bool, joined: bool) -> String {
+     let ready = if joined {
+         "(gate? | true => at <= length - 8u64 | false => at < length - 8u64)"
+     } else {
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/composition_tests/canonical_boolean_edges.rs b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/canonical_boolean_edges.rs
+new file mode 100644
+index 0000000000..3a10d7ce3c
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/canonical_boolean_edges.rs
+@@ -0,0 +1,152 @@
++//! Same-compiler branch-emission ablation preserves source work and cold exits.
++use super::*;
++use crate::native_artifact::codegen::options::OptimizationPass;
++
++fn arguments(
++    artifact: &ProgramArtifact,
++    memory: &ManagedMemoryBudget,
++    at: u64,
++    gate: bool,
++) -> Vec<Value> {
++    inputs(
++        artifact,
++        &[
++            (
++                "bytes",
++                Data::Matrix(
++                    (0u8..32)
++                        .map(|i| Data::U8(i.wrapping_mul(37).wrapping_add(29)))
++                        .collect(),
++                ),
++            ),
++            ("at", Data::U64(at)),
++            ("steps", Data::U64(2)),
++            ("seed", Data::U64(29)),
++            ("gate", Data::Bool(gate)),
++        ],
++        memory,
++    )
++}
++
++#[test]
++fn canonical_boolean_branches_preserve_exact_work_errors_aliases_and_retry() {
++    let mode = NativeProgramLimitMode::NoLimits;
++    for true_first in [false, true] {
++        for joined in [false, true] {
++            for artifact in artifacts(&boolean_edges::alternate_source(true_first, joined)) {
++                let pair = [
++                    JitProgramArtifact::compile_with_limits(
++                        &artifact,
++                        &mech_stdlib::source_catalog(),
++                        mode.compilation(),
++                    )
++                    .unwrap(),
++                    JitProgramArtifact::compile_for_test(
++                        &artifact,
++                        &mech_stdlib::source_catalog(),
++                        OptimizationPass::CanonicalBooleanBranches,
++                    )
++                    .unwrap(),
++                ];
++                for restored in [false, true] {
++                    let memory = mode.memory_budget();
++                    let mut published = [
++                        vec![None; artifact.outputs().len()],
++                        vec![None; artifact.outputs().len()],
++                    ];
++                    let good = arguments(&artifact, &memory, 0, true);
++                    let run = |jit: &JitProgramArtifact,
++                               args: &[Value],
++                               output: &mut [Option<Value>],
++                               limits| {
++                        if restored {
++                            observe::run_restored(jit, args, output, limits, &memory).0
++                        } else {
++                            observe::run(jit, args, output, limits, &memory).0
++                        }
++                    };
++                    let mut work = 0;
++                    for side in 0..2 {
++                        let report =
++                            run(&pair[side], &good, &mut published[side], mode.execution())
++                                .unwrap();
++                        if side == 0 {
++                            work = report.work;
++                        } else {
++                            assert_eq!(report.work, work);
++                        }
++                    }
++                    for (at, gate, denial) in [
++                        (0, true, "none"),
++                        (0, false, "none"),
++                        (24, true, "none"),
++                        (24, false, "none"),
++                        (25, true, "none"),
++                        (u64::MAX, true, "none"),
++                        (0, true, "work"),
++                        (0, true, "late-work"),
++                        (0, true, "compute"),
++                        (0, true, "comparison"),
++                    ] {
++                        let args = arguments(&artifact, &memory, at, gate);
++                        let aliases = args.clone();
++                        let before = contents(&args);
++                        let mut limits = mode.execution();
++                        match denial {
++                            "work" => limits.execution.max_work = 0,
++                            "late-work" => limits.execution.max_work = work - 1,
++                            "compute" => limits.library.max_compute_work = Some(0),
++                            "comparison" => limits.library.max_comparison_work = Some(0),
++                            _ => {}
++                        }
++                        let mut results = Vec::new();
++                        for side in 0..2 {
++                            let previous = published[side].clone();
++                            let held = (memory.used_bytes(), memory.retained_snapshot_nodes());
++                            let result = run(&pair[side], &args, &mut published[side], limits);
++                            match result {
++                                Ok(report) => {
++                                    results.push(Ok((report.work, report.comparison_work)))
++                                }
++                                Err(error) => {
++                                    read_packs::unchanged_publication(&published[side], &previous);
++                                    assert_eq!(
++                                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
++                                        held
++                                    );
++                                    results.push(Err(format!("{error:?}")));
++                                }
++                            }
++                        }
++                        assert_eq!(
++                            results[0], results[1],
++                            "at={at}, gate={gate}, denial={denial}, restored={restored}"
++                        );
++                        assert_eq!(contents(&args), before);
++                        assert_eq!(contents(&aliases), before);
++                        let output = |side: usize| {
++                            published[side]
++                                .iter()
++                                .map(|v| v.as_ref().unwrap().canonical_data_draft().unwrap())
++                                .collect::<Vec<_>>()
++                        };
++                        assert_eq!(output(0), output(1));
++                        let mut retries = Vec::new();
++                        for side in 0..2 {
++                            let report =
++                                run(&pair[side], &good, &mut published[side], mode.execution())
++                                    .unwrap();
++                            retries.push((report.work, report.comparison_work));
++                        }
++                        assert_eq!(retries[0], retries[1]);
++                    }
++                    drop((good, published));
++                    assert_eq!(
++                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
++                        (0, 0)
++                    );
++                }
++            }
++        }
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/composition_tests/canonical_boolean_proofs.rs b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/canonical_boolean_proofs.rs
+new file mode 100644
+index 0000000000..e865625c6b
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/canonical_boolean_proofs.rs
+@@ -0,0 +1,102 @@
++//! Exercise real source producers rather than inferring facts from Bool types.
++use super::*;
++use crate::native_artifact::codegen::{
++    common::canonical_booleans::direct_literal,
++    control::plan::CodePlan,
++    options::{OptimizationOptions, OptimizationPass},
++};
++use crate::native_artifact::program::prepare::PreparedNativeProgram;
++use mech_engine::native_artifact::{
++    NativeIterationAction as Action, NativeMatchAction as Scalar, NativeScalarKind,
++};
++
++#[test]
++fn canonical_boolean_literal_proofs_cover_copies_joins_and_refuse_raw_or_mixed_inputs() {
++    for true_first in [false, true] {
++        for mixed in [false, true] {
++            let mut source = boolean_edges::alternate_source(true_first, true);
++            if mixed {
++                let old = "false => at < length - 8u64";
++                assert_eq!(source.matches(old).count(), 1);
++                source = source.replace(old, "false => gate");
++            }
++            for artifact in artifacts(&source) {
++                let catalog = mech_stdlib::source_catalog();
++                let native = JitProgramArtifact::compile_with_limits(
++                    &artifact,
++                    &catalog,
++                    NativeProgramLimitMode::NoLimits.compilation(),
++                )
++                .unwrap();
++                let prepared = PreparedNativeProgram::prepare(
++                    &artifact,
++                    &catalog,
++                    native.descriptor().metadata().plan.clone(),
++                )
++                .unwrap();
++                let code = CodePlan::Program(&prepared);
++                let facts = prepared.plan().facts();
++                let constant = (0..code.constant_count())
++                    .find_map(|index| {
++                        let (value, word) = code.constant(index).ok()?;
++                        (code.kind(value) == Some(NativeScalarKind::Bool) && word == Some(1))
++                            .then_some(value)
++                    })
++                    .unwrap();
++                let enabled = OptimizationOptions::default();
++                let disabled =
++                    OptimizationOptions::without(OptimizationPass::CanonicalBooleanBranches);
++                let mut raw_inputs = 0;
++                for index in 0..code.input_count() {
++                    let input = code.input(index);
++                    if code.kind(input) == Some(NativeScalarKind::Bool) {
++                        raw_inputs += 1;
++                        assert!(direct_literal(code, enabled, input, constant).is_none());
++                    }
++                }
++                assert!(raw_inputs > 0);
++                let (mut copies, mut joins, mut rejected_joins) = (0, 0, 0);
++                for block in code.blocks() {
++                    let (Action::Scalar(Scalar::Copy { output, .. })
++                    | Action::Scalar(Scalar::Primitive { output, .. })) = block.action()
++                    else {
++                        continue;
++                    };
++                    if code.kind(*output) != Some(NativeScalarKind::Bool) {
++                        continue;
++                    }
++                    let result = direct_literal(code, enabled, *output, constant);
++                    assert!(direct_literal(code, disabled, *output, constant).is_none());
++                    if result.is_some()
++                        && matches!(block.action(), Action::Scalar(Scalar::Copy { .. }))
++                    {
++                        copies += 1;
++                    }
++                    if facts.definition_sites(output.get()).unwrap().len() > 1 {
++                        if result.is_some() {
++                            joins += 1;
++                        } else {
++                            rejected_joins += 1;
++                        }
++                    }
++                }
++                if mixed {
++                    assert!(
++                        rejected_joins > 0,
++                        "one unknown reaching producer must decline"
++                    );
++                    assert_eq!(
++                        joins, 0,
++                        "a raw reaching producer must keep its literal test"
++                    );
++                } else {
++                    assert!(copies > 0, "canonical copies must survive");
++                    assert!(joins > 0, "all-proved reaching producers must select");
++                }
++                println!(
++                    "canonical-boolean-proof true_first={true_first} mixed={mixed} raw_inputs={raw_inputs} copies={copies} joins={joins} rejected_joins={rejected_joins}"
++                );
++            }
++        }
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs
+index 6abd6a71b9..0310b3dede 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs
+@@ -12,6 +12,8 @@ mod bulk_bytes;
+ mod captured_numeric;
+ mod captured_window_handoffs;
+ mod captured_windows;
++mod canonical_boolean_proofs;
++mod canonical_boolean_edges;
+ mod child_cleanup;
+ mod child_fuel;
+ mod child_funding;

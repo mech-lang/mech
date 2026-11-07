@@ -1,0 +1,12 @@
+{
+  "input_sha256": "500530b81cb81c5b1a5e48aa30de6a89ba0a350460ad826c4c7bb023e6e46cb8",
+  "posts": 5000,
+  "tags": 22538,
+  "vocabulary": 28,
+  "ordered_unique_rows": 5000,
+  "triple_keys": 35228,
+  "quartet_keys": 15152,
+  "numbering": "Sorted distinct string tags, matching ordered map/keys histogram discovery in the maintained Mech source.",
+  "timing_or_native_speedup_claim": false,
+  "updated_utc": "2026-11-06T23:07:23.595575+00:00"
+}

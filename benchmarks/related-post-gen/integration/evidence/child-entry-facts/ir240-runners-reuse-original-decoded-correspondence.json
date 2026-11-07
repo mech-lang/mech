@@ -1,0 +1,18 @@
+{
+  "all13_bundle_files_byte_identical": true,
+  "files": {
+    "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+    "image-binding.bin": "cac009105839eecfd3a435bbff1601f8d3ec3911c5dfda9f97ff61969969594a",
+    "frame-summary.json": "f1472782f21c422fa4f593ee3daa84342a6df9e9dbfa01f4b7fdd7aeecb4e6b2",
+    "artifact.mecb": "49612ff092b1b4c8b7ec9ae91a18d812803f4a6dbde804406835bc81780a19b0",
+    "source.mec": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+    "metadata.json": "ebb77128eed89e5e3c68b843ceb1d7493a5d39667003a2e55dbcfec658d47db2",
+    "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+    "native-metadata-binding.bin": "87514023cd7eac8ea8c4ae09d93d641e050d450d820c8785c0006672ef24a26b",
+    "native-metadata.bin": "989cf73bfab262879108c3777cfa45d1b52710956050c34fb16c5fb2f0abe224",
+    "linked.rs": "322de1b3f510e441889719ee10dd0427af29415768125ecbe358e3f8cffbc883",
+    "object.o": "a9593bc8a85288d5a280f98ae0b27254661e75aeeb40a766ae68a957c030590a",
+    "descriptor.json": "50b6195c6dbfb99b93181c089e1d6b9ab87ef3ff283a6c89271a8d2c05d55ea6",
+    "map-facts.txt": "e40dbb83004557a250b45b00bd4aefb748612bf0ceb3b1204b51a6efa573ee64"
+  }
+}

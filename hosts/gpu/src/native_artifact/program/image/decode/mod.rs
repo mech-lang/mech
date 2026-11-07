@@ -6,6 +6,14 @@ use serde::{Serialize, Serializer};
 #[path = "../wire/mod.rs"]
 pub(in crate::native_artifact::program::image::decode) mod wire;
 
+#[cfg(test)]
+pub(in crate::native_artifact::program::image) fn decode_compiled_for_test(
+    verified: &super::binding::VerifiedObjectImage<'static>,
+    catalog: &mech_core::FunctionCatalog,
+) -> Result<NativeProgramDescriptor, String> {
+    wire::decode_compiled_verified(verified, catalog)
+}
+
 pub(in crate::native_artifact::program::image) fn serialize_schemas<S: Serializer>(
     schemas: &SchemaTable,
     serializer: S,
@@ -14,10 +22,50 @@ pub(in crate::native_artifact::program::image) fn serialize_schemas<S: Serialize
 }
 
 impl NativeProgramDescriptor {
+    /// # Safety
+    /// Both slices must be immutable data reached by genuine same-Object
+    /// compiler module relocations. No external image bytes may use this path.
+    pub(in crate::native_artifact) unsafe fn decode_compiled_module_image(
+        image: &'static [u8],
+        catalog: &mech_core::FunctionCatalog,
+        binding: &'static [u8; super::binding::NATIVE_PROGRAM_IMAGE_BINDING_BYTES],
+    ) -> Result<Self, String> {
+        // SAFETY: caller establishes stronger immutable-data provenance.
+        let verified = unsafe { super::binding::from_compiled_module(image, binding)? };
+        wire::decode_compiled_verified(&verified, catalog)
+    }
+
+    /// Restore exact metadata sealed by the SAME trusted checked native Object.
+    /// The independent loader below remains available for unbound image checks.
+    ///
+    /// # Safety
+    /// Identity and binding must be genuine read-only symbols from that Object,
+    /// whose complete checked code/build provenance the caller has established.
+    /// A caller-supplied digest is not authentication. Actual catalog factories,
+    /// runtime admission and current-owner checks remain mandatory.
+    pub(in crate::native_artifact) unsafe fn decode_object_bound_image(
+        image: &[u8],
+        catalog: &mech_core::FunctionCatalog,
+        identity: &[u8; super::identity::NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
+        binding: &[u8; super::binding::NATIVE_PROGRAM_IMAGE_BINDING_BYTES],
+    ) -> Result<Self, String> {
+        let unpacked;
+        let image = if image.starts_with(super::packing::MAGIC) {
+            unpacked = super::packing::unpack(image)?;
+            unpacked.as_slice()
+        } else {
+            image
+        };
+        // SAFETY: delegated genuine same-Object symbols and checked build.
+        let verified = unsafe { super::binding::verify(image, identity, binding)? };
+        wire::decode_verified(&verified, catalog)
+    }
     /// Export the already-validated plan, layouts, selected-call metadata and
     /// canonical schemas. No pointers or invocation-local cache identities are
     /// persisted. Only the unsafe build-owned loader may restore its compiler
     /// proofs, and it must retain the exact checked Object's provenance.
+    /// V2 includes frozen frame recipes. Only the exact Object-bound path may
+    /// reuse them without source analysis; independent loading rederives them.
     pub fn encode_build_owned_image(&self) -> Result<Vec<u8>, serde_json::Error> {
         #[derive(Serialize)]
         struct Image<'a> {
@@ -27,9 +75,30 @@ impl NativeProgramDescriptor {
         }
         serde_json::to_vec(&Image {
             format: "mech.build-owned-native-descriptor",
-            version: 1,
+            version: 2,
             descriptor: self,
         })
+    }
+
+    /// Emit the same checked descriptor with canonical type-reference and
+    /// prepared-binding rows and frozen static layouts. Only a genuine bound
+    /// Object may reuse the compiler analysis; independent images rederive it.
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn encode_build_owned_table_image(
+        &self,
+    ) -> Result<Vec<u8>, serde_json::Error> {
+        #[derive(Serialize)]
+        struct Image<'a> {
+            format: &'static str,
+            version: u32,
+            descriptor: super::TableDescriptor<'a>,
+        }
+        let json = serde_json::to_vec(&Image {
+            format: "mech.build-owned-native-descriptor",
+            version: 9,
+            descriptor: super::TableDescriptor(self),
+        })?;
+        mech_engine::native_artifact::encode_native_metadata_image(&json)
     }
 
     /// Restore build-prepared metadata without artifact lowering or resource

@@ -10,13 +10,15 @@ pub(crate) fn word_matrix(body: &SchemaBody) -> bool {
             && matches!(element.as_ref(), SchemaBody::UnsignedInteger(_)))
 }
 
-/// Canonical argument matrices also admit fixed record/tuple elements. Keep
-/// this separate from `word_matrix`: aggregate cells need the budgeted snapshot
+/// Canonical argument matrices also admit Strings and fixed record/tuple elements. Keep
+/// this separate from `word_matrix`: these cells need the budgeted snapshot
 /// constructor, not the packed unsigned-buffer copy path.
 pub(crate) fn carrier_matrix(body: &SchemaBody) -> bool {
     word_matrix(body)
         || matches!(body, SchemaBody::Matrix {element, dimensions}
-        if dimensions.len() == 2 && crate::is_control_fixed_aggregate_element(element))
+        if dimensions.len() == 2
+            && (matches!(element.as_ref(), SchemaBody::String)
+                || crate::is_control_fixed_aggregate_element(element)))
 }
 
 /// Symbolic component compatibility for tuple/record construction. Matrix
@@ -65,6 +67,36 @@ pub(crate) fn carrier_component_matches(expected: &SchemaBody, actual: &SchemaBo
 mod tests {
     use super::*;
     use mech_core::{DimensionExpr as D, DimensionParameterId, IntegerWidth, SchemaField};
+
+    #[test]
+    fn string_matrix_components_close_their_own_axes_without_packed_word_authority() {
+        let matrix = |element, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![D::Constant(1), columns].into(),
+        };
+        let a = matrix(
+            SchemaBody::String,
+            D::Parameter(DimensionParameterId::new(0)),
+        );
+        let b = matrix(
+            SchemaBody::String,
+            D::Parameter(DimensionParameterId::new(2)),
+        );
+        assert!(carrier_matrix(&a));
+        assert!(carrier_component_matches(&a, &b));
+        assert!(!word_matrix(&a));
+        assert!(!carrier_component_matches(
+            &matrix(SchemaBody::String, D::Constant(2)),
+            &matrix(SchemaBody::String, D::Constant(3)),
+        ));
+        assert!(!carrier_component_matches(
+            &a,
+            &matrix(
+                SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                D::Parameter(DimensionParameterId::new(0))
+            ),
+        ));
+    }
 
     #[test]
     fn record_matrix_component_arenas_keep_constant_extents_and_field_kinds() {

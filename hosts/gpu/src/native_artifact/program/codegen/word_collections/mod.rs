@@ -19,6 +19,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     code: CodePlan<'_>,
     region: &Region,
+    options: crate::native_artifact::codegen::options::OptimizationOptions,
 ) -> Result<(FuncId, u64, u64), NativeCompileError> {
     let mut signature = module.make_signature();
     // Immutable scalar homes, immutable source, private sink, count.
@@ -140,9 +141,16 @@ pub(in crate::native_artifact) fn define<M: Module>(
                 }
                 _ => return Err(backend("word collection escaped its scalar proof")),
             }
-            emit_source_terminator(&mut b, &words, code, block.terminator(), failed, |target| {
-                blocks[&target]
-            });
+            emit_source_terminator(
+                &mut b,
+                &words,
+                code,
+                site as usize,
+                options,
+                block.terminator(),
+                failed,
+                |target| blocks[&target],
+            );
         }
         b.switch_to_block(done);
         let status = b.ins().iconst(types::I64, STATUS_OK as i64);

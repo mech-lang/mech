@@ -53,12 +53,7 @@ fn multiple_child_boundaries_keep_current_owners_ordered_errors_and_retry() {
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
-        let jit = JitProgramArtifact::compile_with_limits(
-            &artifact,
-            &mech_stdlib::source_catalog(),
-            mode.compilation(),
-        )
-        .unwrap();
+        let jit = compile_parent_pieces(&artifact, &mech_stdlib::source_catalog()).unwrap();
         for restored in [false, true] {
             let mut published = vec![None; artifact.outputs().len()];
             for (steps, flag, first, second, divisor, empty, rejection) in [
@@ -128,12 +123,7 @@ fn multiple_child_parent_pieces_are_selected_and_execute() {
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
-        let jit = JitProgramArtifact::compile_with_limits(
-            &artifact,
-            &mech_stdlib::source_catalog(),
-            mode.compilation(),
-        )
-        .unwrap();
+        let jit = compile_parent_pieces(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let plan = jit.descriptor().plan();
         let parent_id = plan
             .iterations()

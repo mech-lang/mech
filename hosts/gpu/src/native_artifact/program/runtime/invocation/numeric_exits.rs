@@ -36,13 +36,7 @@ impl Invocation<'_, '_, '_> {
                     )?;
                 } else if let Some(array) = array {
                     let owner = self
-                        .state
-                        .buffer_frames
-                        .managed_owner(
-                            &metadata.buffer_frames,
-                            region.tail.carrier(),
-                            proof.arrays[*array].field,
-                        )
+                        .numeric_array_owner(&proof.arrays[*array])?
                         .ok_or_else(|| invalid("cold frame lost its current buffer owner"))?
                         .clone();
                     self.state.buffer_frames.synchronize_managed_at(
@@ -58,13 +52,7 @@ impl Invocation<'_, '_, '_> {
         }
         for &(value, array) in &exit.aliases {
             let owner = self
-                .state
-                .buffer_frames
-                .managed_owner(
-                    &metadata.buffer_frames,
-                    region.tail.carrier(),
-                    proof.arrays[array].field,
-                )
+                .numeric_array_owner(&proof.arrays[array])?
                 .ok_or_else(|| invalid("cold alias lost its current buffer owner"))?
                 .clone();
             self.state

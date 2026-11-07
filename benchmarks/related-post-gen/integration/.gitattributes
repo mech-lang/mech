@@ -1,0 +1,9 @@
+# Keep raw test output and unified patch context byte-exact for SHA verification.
+evidence/*.log whitespace=-blank-at-eof
+evidence/local-facts-and-metadata/*.patch whitespace=-blank-at-eol
+# Preserve the new raw output, patch context and recorded recipes byte-for-byte.
+evidence/canonical-schema-and-boolean/*.log whitespace=-blank-at-eof
+evidence/child-entry-facts/*.log whitespace=-blank-at-eof
+evidence/canonical-schema-and-boolean/*.patch whitespace=-blank-at-eol
+evidence/canonical-schema-and-boolean/*.py whitespace=-blank-at-eol
+evidence/child-entry-facts/*.py whitespace=-blank-at-eol

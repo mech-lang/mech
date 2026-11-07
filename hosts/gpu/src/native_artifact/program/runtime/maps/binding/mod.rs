@@ -70,6 +70,9 @@ fn width(schema: &SchemaBody) -> Result<usize, Error> {
         SchemaBody::Tuple(items) => items.iter().try_fold(0usize, |n, item| {
             n.checked_add(width(item)?).ok_or(Error::Overflow)
         }),
+        SchemaBody::Record(fields) => fields.iter().try_fold(0usize, |n, field| {
+            n.checked_add(width(&field.schema)?).ok_or(Error::Overflow)
+        }),
         SchemaBody::Enum { variants, .. } => variants
             .iter()
             .try_fold(0usize, |n, variant| -> Result<usize, Error> {
@@ -109,6 +112,13 @@ fn seed<'a>(
         (SchemaBody::Tuple(fields), ValueData::Tuple(items)) if fields.len() == items.len() => {
             for (field, item) in fields.iter().zip(items.iter()) {
                 seed(field, item, words, at, map)?;
+            }
+        }
+        (SchemaBody::Record(fields), ValueData::Record(value))
+            if fields.len() == value.fields().len() =>
+        {
+            for (field, item) in fields.iter().zip(value.fields()) {
+                seed(&field.schema, item, words, at, map)?;
             }
         }
         (SchemaBody::Enum { variants, .. }, ValueData::Enum(value)) => {
@@ -327,6 +337,28 @@ impl<'plan> Binding<'plan> {
             return Err(Error::Binding("stale or foreign map reference"));
         }
         self.map.as_ref().ok_or(Error::Binding("closed owner"))
+    }
+    pub(in crate::native_artifact) fn constructor_statistics(
+        &self,
+        site: usize,
+        token: u64,
+    ) -> Result<(u64, u64), Error> {
+        let map = self.current(token)?;
+        let Some(Action::LibraryCall {
+            template, output, ..
+        }) = self.plan.blocks().get(site).map(|block| block.action())
+        else {
+            return Err(Error::Binding("constructor action missing"));
+        };
+        if !self.region.values().contains(output)
+            || !matches!(
+                template.primitive(),
+                Primitive::CompositePack(_) | Primitive::EnumPack
+            )
+        {
+            return Err(Error::Binding("unselected owner constructor"));
+        }
+        Ok((map.len() as u64, map.key_bytes()))
     }
     pub(in crate::native_artifact) fn retained_bytes(&self) -> Result<u64, Error> {
         add(
@@ -671,10 +703,23 @@ impl<'plan> Binding<'plan> {
         Ok(ty.schema())
     }
 
+    #[cfg(test)]
     pub(in crate::native_artifact) fn finish(
         &mut self,
         site: usize,
         token: u64,
+        schemas: &Arc<SchemaTable>,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<Value, Error> {
+        self.finish_words(site, token, &[token], schemas, geometry, limits)
+    }
+
+    pub(in crate::native_artifact) fn finish_words(
+        &mut self,
+        site: usize,
+        token: u64,
+        words: &[u64],
         schemas: &Arc<SchemaTable>,
         geometry: Geometry,
         limits: MemoryBudgetLimits,
@@ -693,6 +738,22 @@ impl<'plan> Binding<'plan> {
                 if schemas.get(ty.schema()) != Some(ty.definition()) {
                     return Err(Error::Binding("result schema context"));
                 }
+                let map_word = match ty.definition().body() {
+                    SchemaBody::Map { .. } => Some(0),
+                    SchemaBody::Tuple(fields) => fields
+                        .iter()
+                        .position(|field| matches!(field, SchemaBody::Map { .. })),
+                    SchemaBody::Record(fields) => fields
+                        .iter()
+                        .position(|field| matches!(field.schema, SchemaBody::Map { .. })),
+                    _ => None,
+                }
+                .ok_or(Error::Binding("result map field"))?;
+                if words.len() != width(ty.definition().body())?
+                    || words.get(map_word).copied() != Some(token)
+                {
+                    return Err(Error::Binding("result word shape/token"));
+                }
                 let map = self.current(token)?;
                 self.geometry(
                     token,
@@ -702,7 +763,7 @@ impl<'plan> Binding<'plan> {
                     map.key_bytes(),
                     map.key_bytes(),
                 )?;
-                let value = map.publish(schemas, ty.schema(), geometry, limits)?;
+                let value = map.publish_result(schemas, ty.schema(), words, geometry, limits)?;
                 self.token = 0;
                 drop(self.map.take());
                 Ok(value)

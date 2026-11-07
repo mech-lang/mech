@@ -91,6 +91,8 @@ mod iteration_runtime;
 mod program;
 
 #[cfg(feature = "canonical-native-program-runtime")]
+pub use crate::native_artifact::program::compiled_module::NativeProgramModule;
+#[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::program::linked::LinkedProgramArtifact;
 
 pub use crate::native_artifact::iteration_abi::{NativeIterationDescriptor, NativeIterationVisit};
@@ -126,6 +128,10 @@ pub use crate::native_artifact::program::compiler::{
 };
 #[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::program::image::NativeProgramDescriptor;
+#[cfg(feature = "canonical-native-program-runtime")]
+pub use crate::native_artifact::program::image::binding::{
+    NATIVE_PROGRAM_IMAGE_BINDING_BYTES, NativeProgramImageBinding,
+};
 #[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::program::image::identity::{
     NATIVE_PROGRAM_LINK_IDENTITY_BYTES, NATIVE_PROGRAM_TYPED_IR_VERSION,

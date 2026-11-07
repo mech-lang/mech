@@ -5,7 +5,7 @@
 mod ir;
 pub use crate::resident::budget::{
     NativeLibraryWorkBudget, NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError,
-    NativeWorkerCreditStatistics, NativeWorkerWorkLoan,
+    NativeWorkerCreditStatistics, NativeWorkerNativeFuel, NativeWorkerWorkLoan,
 };
 pub use crate::resident::general::native_lowering::{
     NativeArtifactLoweringError, NativeArtifactPlan, lower_pure_native_artifact,
@@ -51,7 +51,12 @@ pub use buffer_frames::{
     NativeBufferFrameAction, NativeBufferFrameField, NativeBufferFrameLane,
     NativeBufferFrameOperation, NativeBufferFrames,
 };
+mod build_image;
 mod program_factory_linkage;
+pub use build_image::{
+    BuildOwnedImageReader, BuildOwnedImageRecord, NATIVE_METADATA_IMAGE_MAGIC,
+    encode_native_metadata_image,
+};
 mod program_image;
 #[cfg(any(
     feature = "pure_text",
@@ -66,6 +71,7 @@ pub use crate::resident::general::native_match_lowering::{
 pub use program::*;
 pub use program_image::encode_native_program_plan_image;
 pub use program_image_read::values::schemas as decode_native_schema_image;
+pub use program_image_read::values::schemas_record as decode_native_schema_record;
 #[cfg(any(
     feature = "pure_text",
     feature = "map_ops",
@@ -73,7 +79,9 @@ pub use program_image_read::values::schemas as decode_native_schema_image;
 ))]
 pub use program_image_read::{
     decode_build_owned_native_plan_body, decode_build_owned_native_plan_image,
-    decode_build_owned_native_plan_value,
+    decode_build_owned_native_plan_record, decode_build_owned_native_plan_value,
+    decode_build_owned_native_shared_table_plan_record,
+    decode_build_owned_native_table_plan_record,
 };
 
 #[cfg(any(
@@ -141,6 +149,11 @@ pub use crate::resident::general::native_collection_calls::{
     NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
     NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
+#[cfg(feature = "sequence_buffers")]
+pub use crate::resident::general::native_collection_calls::{
+    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeStringMatrixKeyView,
+};
 #[cfg(feature = "pure_text")]
 pub use selected_text_join::{NativeSelectedTextJoin, NativeSelectedTextJoinRange};
 
@@ -174,10 +187,11 @@ pub use crate::resident::general::native_collection_templates::{
     feature = "sequence_buffers"
 ))]
 pub use crate::resident::general::native_collection_calls::{
-    NativeCollectionCall, NativeCollectionInvocationError, NativePreparedLibraryCall,
-    NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
+    NativeCollectionCall, NativeCollectionInvocationError, NativeDescriptorTemplatePool,
+    NativePreparedLibraryCall, NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
     bind_native_collection_lexical, bind_native_collection_operation,
     bind_native_program_library_call, prepare_native_program_library_call,
+    prepare_native_program_library_call_with_descriptors,
 };
 
 #[cfg(any(

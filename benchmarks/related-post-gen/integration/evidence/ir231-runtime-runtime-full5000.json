@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-reduction-terminal-transition-runtime-check-20261106-v1/runtime-runner/runner-aot",
+    "/private/tmp/mech-related-native-reduction-terminal-transition-runtime-check-20261106-v1/runtime-runner/build/source.mec",
+    "/private/tmp/mech-related-post-rust-local-20261102/posts.json",
+    "/private/tmp/mech-related-native-reduction-terminal-transition-runtime-check-20261106-v1/runtime-runner/full5000-output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.033858791925013065,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.010434709,\"input_admission_seconds\":0.000182166,\"json_read_and_parse_seconds\":0.002499667,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":8,\"parallel_numeric_work\":24693182666,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":4,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.0039065,\"posts\":5000,\"processing_plus_admission_seconds\":0.0038960830000000003,\"retained_bytes\":931048,\"sample\":0,\"seconds\":0.003713917,\"work\":53549890130}\n",
+  "stderr": "",
+  "compiler_source_sha256": "e808b1bb2009ae37bdd8bc10eda03ba9538c038a566cc08e272ab66f1fac80d3"
+}

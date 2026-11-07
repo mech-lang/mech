@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/reuse-4-full-catalog/runner.rs",
+    "--out",
+    "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/reuse-4-full-catalog/runner-aot",
+    "--bundle",
+    "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/reuse-4-full-catalog/build",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 2.0355268749408424,
+  "stdout": "warning: function `linked_catalog` is never used\n --> /private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/reuse-4-full-catalog/build/catalog.rs:1:4\n  |\n1 | fn linked_catalog() -> Result<mech_core::FunctionCatalog,String> {\n  |    ^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/reuse-4-full-catalog/build/linked.rs:3:146\n  |\n3 | ...1770cd61daf349b49e30503_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_MODULE` is never used\n --> /private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/reuse-4-full-catalog/build/linked.rs:7:143\n  |\n7 | ...08c74a1770cd61daf349b49e30503_compiled_module_v1\"] static LINKED_MODULE:mech_gpu::native_artifact::NativeProgramModule;\n  |                                                              ^^^^^^^^^^^^^\n\nwarning: stripping debug info with `rust-objcopy` failed: exit status: 1\n  |\n  = note: LLVM ERROR: IO failure on output stream: No space left on device\n          \n\nwarning: 4 warnings emitted\n\n{\"seconds\": 1.5289243748411536, \"exit\": 0}\n",
+  "stderr": ""
+}

@@ -189,6 +189,11 @@ pub struct NativeProgramObject {
     bytes: Vec<u8>,
     descriptor: NativeProgramDescriptor,
     identity: NativeProgramObjectIdentity,
+    image_binding: super::image::binding::NativeProgramImageBinding,
+    native_metadata: Vec<u8>,
+    native_metadata_symbol: String,
+    compiled_module_symbol: String,
+    native_metadata_binding: super::image::binding::NativeProgramImageBinding,
     codegen: crate::native_artifact::codegen::control::CodegenReport,
 }
 impl NativeProgramObject {
@@ -200,6 +205,23 @@ impl NativeProgramObject {
     }
     pub fn identity(&self) -> &NativeProgramObjectIdentity {
         &self.identity
+    }
+    pub fn image_binding(&self) -> &super::image::binding::NativeProgramImageBinding {
+        &self.image_binding
+    }
+    /// Compiler-resolved typed values, also exported as read-only Object data.
+    /// These bytes contain no pointers, owner epochs or invocation caches.
+    pub fn native_metadata(&self) -> &[u8] {
+        &self.native_metadata
+    }
+    pub fn compiled_module_symbol(&self) -> &str {
+        &self.compiled_module_symbol
+    }
+    pub fn native_metadata_symbol(&self) -> &str {
+        &self.native_metadata_symbol
+    }
+    pub fn native_metadata_binding(&self) -> &super::image::binding::NativeProgramImageBinding {
+        &self.native_metadata_binding
     }
     pub fn metadata(&self) -> serde_json::Value {
         let mut metadata = serde_json::json!({
@@ -243,6 +265,23 @@ impl NativeProgramObject {
             "compiled_loop_invariants": &self.codegen.loop_invariants,
             "linked": false, "executed": false, "timing_samples": 0,
         });
+        if let Some(histogram) = &self.codegen.utf8_histogram {
+            metadata["compiled_utf8_histogram"] = serde_json::json!(histogram);
+        }
+        metadata["compiled_numeric_functions"] = serde_json::json!(&self.codegen.numeric_functions);
+        metadata["compiled_scalar_selects"] = serde_json::json!(self.codegen.scalar_selects);
+        metadata["compiled_unsigned_guards"] = serde_json::json!(self.codegen.unsigned_guards);
+        metadata["compiled_borrowed_record_maps"] =
+            serde_json::json!(&self.descriptor.metadata().borrowed_record_maps.regions);
+        metadata["image_binding_symbol"] = serde_json::json!(self.image_binding.symbol());
+        metadata["native_metadata_symbol"] = serde_json::json!(self.native_metadata_symbol);
+        metadata["compiled_module_symbol"] = serde_json::json!(self.compiled_module_symbol);
+        metadata["compiled_module_version"] = serde_json::json!(1);
+        metadata["native_metadata_bytes"] = serde_json::json!(self.native_metadata.len());
+        metadata["native_metadata_binding_symbol"] =
+            serde_json::json!(self.native_metadata_binding.symbol());
+        metadata["native_metadata_format"] = serde_json::json!("mech.typed-build-image.v3");
+        metadata["native_descriptor_version"] = serde_json::json!(9);
         metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
             self.descriptor
                 .metadata()
@@ -269,6 +308,8 @@ impl NativeProgramObject {
         metadata["compiled_count_value_loops"] = serde_json::json!(&self.codegen.count_value_loops);
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
         metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
+        metadata["compiled_numeric_map_regions"] =
+            serde_json::to_value(&self.descriptor.metadata().numeric_maps.regions).unwrap();
         metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);
         metadata["readonly_numeric_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| !p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         metadata["numeric_write_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
@@ -279,6 +320,19 @@ impl NativeProgramObject {
             let result = crate::native_artifact::program::prepare::readonly_numeric::derive(&prepared.plan, tail, &prepared.buffer_frames, &prepared.scalar_aggregates, &prepared.calls, &prepared.visits);
             Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"origin":tail.origin(),"proof_eligible":result.is_ok(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize == iteration && region.numeric.is_some()),"rejection":result.err()}))
         }).collect::<Vec<_>>());
+        metadata["captured_numeric_candidates"] = serde_json::json!(prepared.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
+            let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
+            let result = crate::native_artifact::program::prepare::captured_numeric::derive(&prepared.plan, tail, &prepared.calls);
+            Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"scalar_carrier_words":prepared.scalar_aggregates.slot(tail.carrier()),"native_initializer":prepared.scalar_aggregates.action(tail.initialize() as usize).is_some(),"proof_eligible":result.is_ok(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize == iteration && region.captures.is_some()),"rejection":result.err()}))
+        }).collect::<Vec<_>>());
+        let tree_discovery =
+            crate::native_artifact::program::prepare::numeric_tree::Discovery::new(&prepared.plan);
+        metadata["numeric_tree_candidates"] = serde_json::json!(prepared.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
+            let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
+            let result = tree_discovery.as_ref().map_err(|error| *error).and_then(|discovery| discovery.discover(tail))
+                .and_then(|tree| crate::native_artifact::program::prepare::readonly_numeric::derive_tree(&prepared.plan,tail,&prepared.buffer_frames,&prepared.scalar_aggregates,&prepared.calls,&tree).map(|_|tree.nodes.len()));
+            Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"proof_eligible":result.is_ok(),"nodes":result.as_ref().ok(),"rejection":result.err(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize==iteration && region.numeric_tree.is_some())}))
+        }).collect::<Vec<_>>());
         metadata["numeric_parent_partitions"] = serde_json::json!(prepared.compositions);
         metadata["compiled_numeric_segments"] = serde_json::json!(&self.codegen.numeric_segments);
         metadata["compiled_readonly_numeric_loops"] =
@@ -286,6 +340,8 @@ impl NativeProgramObject {
         metadata["compiled_numeric_write_loops"] =
             serde_json::json!(&self.codegen.numeric_write_loops);
         metadata["compiled_scalar_loops"] = serde_json::json!(&self.codegen.scalar_loops);
+        metadata["compiled_captured_numeric_loops"] =
+            serde_json::json!(&self.codegen.captured_numeric_loops);
         metadata
     }
 }
@@ -323,7 +379,7 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     let mut module = codegen_backend::object("mech_canonical_program", PROGRAM_CODEGEN_FLAGS)?;
     preflight(&plan, &module, limits)?;
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
-    let (_, stack, code, codegen) = crate::native_artifact::codegen::control::define_cfg(
+    let (entry, stack, code, codegen) = crate::native_artifact::codegen::control::define_cfg(
         CodePlan::Program(&prepared),
         ENTRY,
         VERSION,
@@ -339,17 +395,75 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
         },
     );
     let identity = NativeProgramObjectIdentity::from_descriptor(&descriptor).map_err(backend)?;
-    let id = module
+    let identity_id = module
         .declare_data(identity.symbol(), Linkage::Export, false, false)
         .map_err(backend)?;
     let mut data = DataDescription::new();
     data.define(identity.bytes().to_vec().into_boxed_slice());
     data.set_align(8);
-    module.define_data(id, &data).map_err(backend)?;
+    module.define_data(identity_id, &data).map_err(backend)?;
+    // All plan/layout proofs were established by PreparedNativeProgram before
+    // emission. Bind their exact serialized bytes to this same checked Object;
+    // no runtime-supplied digest can manufacture this read-only build symbol.
+    let image = descriptor.encode_build_owned_image().map_err(backend)?;
+    let image_binding = super::image::binding::NativeProgramImageBinding::new(&image, &identity);
+    let binding_id = module
+        .declare_data(image_binding.symbol(), Linkage::Export, false, false)
+        .map_err(backend)?;
+    let mut binding_data = DataDescription::new();
+    binding_data.define(image_binding.bytes().to_vec().into_boxed_slice());
+    binding_data.set_align(8);
+    module
+        .define_data(binding_id, &binding_data)
+        .map_err(backend)?;
+    // Compile textual tokens to typed immutable values once, before linking.
+    // Both the data and its binding are genuine read-only exports from this
+    // exact checked Object. The inspectable JSON binding above remains intact.
+    let native_metadata = descriptor
+        .encode_build_owned_table_image()
+        .map_err(backend)?;
+    let native_metadata_symbol = format!("{}_native_metadata_v1", identity.symbol());
+    let native_metadata_binding =
+        super::image::binding::NativeProgramImageBinding::new_native_metadata(
+            &native_metadata,
+            &identity,
+        );
+    let mut native_ids = Vec::with_capacity(2);
+    for (symbol, bytes) in [
+        (native_metadata_symbol.as_str(), native_metadata.as_slice()),
+        (
+            native_metadata_binding.symbol(),
+            native_metadata_binding.bytes().as_slice(),
+        ),
+    ] {
+        let id = module
+            .declare_data(symbol, Linkage::Export, false, false)
+            .map_err(backend)?;
+        let mut data = DataDescription::new();
+        data.define(bytes.to_vec().into_boxed_slice());
+        data.set_align(8);
+        module.define_data(id, &data).map_err(backend)?;
+        native_ids.push(id);
+    }
+    let compiled_module_symbol = format!("{}_compiled_module_v1", identity.symbol());
+    super::compiled_module::define(
+        &mut module,
+        &compiled_module_symbol,
+        native_ids[0],
+        native_metadata.len(),
+        identity_id,
+        native_ids[1],
+        entry,
+    )?;
     Ok(NativeProgramObject {
         bytes: module.finish().emit().map_err(backend)?,
         descriptor,
         identity,
+        image_binding,
+        native_metadata,
+        native_metadata_symbol,
+        compiled_module_symbol,
+        native_metadata_binding,
         codegen,
     })
 }

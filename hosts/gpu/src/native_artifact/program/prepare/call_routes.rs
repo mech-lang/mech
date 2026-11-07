@@ -4,7 +4,7 @@ use mech_engine::native_artifact::{
     NativeProgramArtifactPlan, NativeUnsignedBufferCall,
 };
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub(in crate::native_artifact) enum LibraryCallRoute {
     Canonical,
     BufferFrame,
@@ -12,6 +12,7 @@ pub(in crate::native_artifact) enum LibraryCallRoute {
     RecordScalarField,
     UnsignedMatrixLength,
     UnsignedMatrixElement,
+    StringMatrixElement,
     UnsignedMatrixReplace,
 }
 
@@ -50,6 +51,8 @@ pub(in crate::native_artifact) fn derive(
                 LibraryCallRoute::UnsignedMatrixLength
             } else if call.supports_unsigned_matrix_element() {
                 LibraryCallRoute::UnsignedMatrixElement
+            } else if call.supports_string_matrix_element() {
+                LibraryCallRoute::StringMatrixElement
             } else {
                 LibraryCallRoute::Canonical
             }

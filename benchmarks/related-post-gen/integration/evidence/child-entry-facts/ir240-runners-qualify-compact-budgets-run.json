@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-child-entry-facts-integration-runners-20261107-v1/qualify-compact-budgets.py"
+  ],
+  "exit": 0,
+  "seconds": 20.451848583994433,
+  "stdout": "eight denials exact across three loaders\nfinite first10/full5000 outputs exact across three loaders\n",
+  "stderr": ""
+}
