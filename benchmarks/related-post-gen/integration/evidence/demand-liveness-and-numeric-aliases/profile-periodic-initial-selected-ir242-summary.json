@@ -1,0 +1,243 @@
+{
+  "scope": "Main-thread wall-clock snapshots inside post-JSON only; excludes worker stacks; includes blocking and sampler disturbances. Counts are not all-thread CPU-time shares.",
+  "records": 1793,
+  "categories": {
+    "emitted_native_code": {
+      "samples": 1363,
+      "percent": 76.01784718349136
+    },
+    "mech_host_code": {
+      "samples": 233,
+      "percent": 12.994980479643056
+    },
+    "waiting_or_kernel_message": {
+      "samples": 92,
+      "percent": 5.13106525376464
+    },
+    "other_host_or_system": {
+      "samples": 53,
+      "percent": 2.9559397657557165
+    },
+    "allocator_or_memory_copy": {
+      "samples": 52,
+      "percent": 2.9001673173452316
+    }
+  },
+  "top_leaf_symbols": [
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_256",
+      "samples": 475,
+      "percent": 26.49191299498048
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1",
+      "samples": 235,
+      "percent": 13.106525376464027
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_572",
+      "samples": 229,
+      "percent": 12.771890686001116
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_459",
+      "samples": 159,
+      "percent": 8.86781929726715
+    },
+    {
+      "symbol": "__ulock_wait",
+      "samples": 92,
+      "percent": 5.13106525376464
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_801",
+      "samples": 88,
+      "percent": 4.9079754601226995
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_107",
+      "samples": 63,
+      "percent": 3.513664249860569
+    },
+    {
+      "symbol": "mech_gpu::native_artifact::program::runtime::collections::data::element",
+      "samples": 57,
+      "percent": 3.1790295593976574
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+      "samples": 37,
+      "percent": 2.0635805911879532
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1166",
+      "samples": 29,
+      "percent": 1.6174010039040714
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_671",
+      "samples": 24,
+      "percent": 1.3385387618516453
+    },
+    {
+      "symbol": "<mech_core::snapshot::sequence::SequenceStorage>::view",
+      "samples": 21,
+      "percent": 1.1712214166201895
+    },
+    {
+      "symbol": "_platform_memmove",
+      "samples": 15,
+      "percent": 0.8365867261572784
+    },
+    {
+      "symbol": "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_utf8_read",
+      "samples": 15,
+      "percent": 0.8365867261572784
+    },
+    {
+      "symbol": "_xzm_free",
+      "samples": 13,
+      "percent": 0.7250418293363079
+    },
+    {
+      "symbol": "mech_core::snapshot::encoding::visit_sequence_work::<mech_core::memory_plan::error::MemoryPlanError, <mech_engine::resident::general::live::InputDataMemo>::measure<mech_engine::resident::general::live::footprint_impl<mech_engine::resident::general::native_collection_calls::invocation::measurement::NativeMeasurementCheck>::{closure#3}>::{closure#0}>",
+      "samples": 12,
+      "percent": 0.6692693809258227
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_505",
+      "samples": 12,
+      "percent": 0.6692693809258227
+    },
+    {
+      "symbol": "<mech_gpu::native_artifact::program::runtime::collections::State>::push_row_block",
+      "samples": 10,
+      "percent": 0.5577244841048522
+    },
+    {
+      "symbol": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#2}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::Related, <alloc::vec::Vec<runner::Related>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#2}>>::{closure#0}>::{closure#0}>",
+      "samples": 10,
+      "percent": 0.5577244841048522
+    },
+    {
+      "symbol": "<mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+      "samples": 10,
+      "percent": 0.5577244841048522
+    },
+    {
+      "symbol": "mach_vm_reclaim_update_kernel_accounting_trap",
+      "samples": 9,
+      "percent": 0.501952035694367
+    },
+    {
+      "symbol": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+      "samples": 7,
+      "percent": 0.39040713887339656
+    },
+    {
+      "symbol": "xzm_malloc",
+      "samples": 7,
+      "percent": 0.39040713887339656
+    },
+    {
+      "symbol": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+      "samples": 7,
+      "percent": 0.39040713887339656
+    },
+    {
+      "symbol": "_kernelrpc_mach_vm_deallocate_trap",
+      "samples": 6,
+      "percent": 0.33463469046291133
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1099",
+      "samples": 6,
+      "percent": 0.33463469046291133
+    },
+    {
+      "symbol": "_xzm_xzone_malloc",
+      "samples": 6,
+      "percent": 0.33463469046291133
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1053",
+      "samples": 6,
+      "percent": 0.33463469046291133
+    },
+    {
+      "symbol": "_platform_memset",
+      "samples": 5,
+      "percent": 0.2788622420524261
+    },
+    {
+      "symbol": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<(), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_inputs::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<(), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+      "samples": 5,
+      "percent": 0.2788622420524261
+    }
+  ],
+  "native_functions": [
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_256",
+      "samples": 475,
+      "percent": 26.49191299498048
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1",
+      "samples": 235,
+      "percent": 13.106525376464027
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_572",
+      "samples": 229,
+      "percent": 12.771890686001116
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_459",
+      "samples": 159,
+      "percent": 8.86781929726715
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_801",
+      "samples": 88,
+      "percent": 4.9079754601226995
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_107",
+      "samples": 63,
+      "percent": 3.513664249860569
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+      "samples": 37,
+      "percent": 2.0635805911879532
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1166",
+      "samples": 29,
+      "percent": 1.6174010039040714
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_671",
+      "samples": 24,
+      "percent": 1.3385387618516453
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_505",
+      "samples": 12,
+      "percent": 0.6692693809258227
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1099",
+      "samples": 6,
+      "percent": 0.33463469046291133
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1053",
+      "samples": 6,
+      "percent": 0.33463469046291133
+    }
+  ],
+  "unresolved": 0,
+  "sampler_zero_failures": true,
+  "suspend_resume_balanced": true
+}

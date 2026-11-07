@@ -667,6 +667,107 @@ if current.exists():
             old=json.loads((evidence/f'child-entry-facts/ir240-{variant}-native-link-audit.json').read_text())
             assert audit['normalized_text_sha256']==old['normalized_text_sha256']
 
+# Unselected measured compiler trials keep their raw gates and source provenance.
+followup = packet / 'integration/evidence/demand-liveness-and-numeric-aliases'
+if followup.exists():
+    import statistics
+    import struct
+    trials = json.loads((followup / 'summary.json').read_text())
+    assert not trials['selected_changed'] and trials['all_new_timing_candidates_unselected']
+    assert not trials['goal_complete']
+    latency = json.loads(gzip.decompress((followup / 'latency.json.gz').read_bytes()))
+    resources = json.loads(gzip.decompress((followup / 'resources.json.gz').read_bytes()))
+    assert len(latency['samples']) == 310 and len(resources['samples']) == 77
+    assert latency['execution_order']['seed'] == 990245
+    assert resources['execution_order']['seed'] == 9902457
+    assert all(row['exact_rust_output'] for row in latency['samples'] + resources['samples'])
+    selected_rows = {row['sample']: row for row in latency['samples']
+                     if row['variant'] == 'mech-ir242-reuse-4'}
+    assert len(selected_rows) == 31
+    for name, trial in trials['trials'].items():
+        assert trial['timing'] == latency['summary'][name]
+        assert trial['resources'] == resources['summary'][name + '-instrumented']
+        rows = {row['sample']: row for row in latency['samples'] if row['variant'] == name}
+        assert rows.keys() == selected_rows.keys()
+        for field in ['post_json_seconds', 'wall_seconds']:
+            deltas = [rows[i][field] - selected_rows[i][field] for i in selected_rows]
+            paired = trial['paired_vs_selected_IR242'][field]
+            assert paired['wins'] == sum(delta < 0 for delta in deltas)
+            assert paired['ties'] == sum(delta == 0 for delta in deltas)
+            assert paired['median_paired_delta_seconds'] == statistics.median(deltas)
+        if name != 'mech-ir242-reuse-4':
+            assert not trial['selected']
+            assert any(trial['paired_vs_selected_IR242'][field]['wins'] < 21
+                       for field in ['post_json_seconds', 'wall_seconds'])
+    expected_failures = {
+        'batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable',
+        'native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map',
+    }
+    for ir, passed, selected_count in [(244, 868, 373), (245, 872, 377), (246, 872, 377)]:
+        inventory = json.loads((followup / f'IR{ir}-source-inventory.json').read_text())['files']
+        assert len(inventory) == 2470
+        overrides = json.loads((followup / f'IR{ir}-source-overrides.json').read_text())
+        for name, digest in inventory.items():
+            if name in overrides:
+                data = (followup / overrides[name]).read_bytes()
+                assert hashlib.sha256(data).hexdigest() == digest
+                actual = subprocess.check_output(
+                    ['git', '-c', 'gc.auto=0', 'show', trials['source_commits'][str(ir)] + ':' + name],
+                    cwd=packet.parent.parent)
+                assert data == actual
+            else:
+                assert source242[name] == digest
+        build = json.loads((followup / f'IR{ir}-build.json').read_text())
+        assert len(build['stages']) == 12 and all(stage['exit'] == 0 for stage in build['stages'])
+        assert sum(bool(stage.get('reused')) for stage in build['stages']) == 11
+        test = json.loads((followup / f'IR{ir}-tests-test-run.json').read_text())
+        assert test['expected_failures_exact'] and not test['new_failures']
+        assert set(test['failed_tests']) == expected_failures
+        stdout = gzip.decompress((followup / f'IR{ir}-tests-test-run.stdout.log.gz').read_bytes()).decode()
+        assert sum(line.startswith('test ') and line.endswith(' ... ok')
+                   for line in stdout.splitlines()) == passed
+        actual_ci = json.loads((followup / f'IR{ir}-tests-ci-selected-inventory-audit.json').read_text())
+        assert actual_ci['expected'] == actual_ci['listed'] == actual_ci['executed_passed'] == selected_count
+        assert actual_ci['all_names_match'] and len(set(actual_ci['names'])) == selected_count
+        for kind, count in [('scalar', 128), ('one-kib', 5)]:
+            control = json.loads((followup / f'IR{ir}-controls-{kind}-comparison.json').read_text())
+            assert control['rows'] == count and control['all_nontiming_fields_equal_IR240']
+            assert not control['all_field_differences']
+        fixtures = list(followup.glob(f'IR{ir}-edges-*.json'))
+        assert len(fixtures) == (4 if ir == 245 else 2)
+        for fixture in fixtures:
+            rows = json.loads(fixture.read_text())
+            assert len(rows) == 31 and all(row['exit'] == 0 and row.get(
+                'exact_rust_output', row.get('exact_expected_output', False)) for row in rows)
+        for variant in ['after-4', 'reuse-4']:
+            audit = json.loads((followup / f'IR{ir}-{variant}-native-link-audit.json').read_text())
+            assert audit['status'] == 'passed'
+    for variant in ['after-4', 'reuse-4']:
+        before = json.loads((followup / f'IR244-{variant}-native-link-audit.json').read_text())
+        after = json.loads((followup / f'IR246-{variant}-native-link-audit.json').read_text())
+        assert before['normalized_text_sha256'] == after['normalized_text_sha256']
+    for workers in [4, 8]:
+        source = gzip.decompress((followup / f'IR245-compact-reuse-{workers}-source.mec.gz').read_bytes())
+        change = json.loads((followup / f'IR245-compact-reuse-{workers}-source-change.json').read_text())
+        assert hashlib.sha256(source).hexdigest() == change['source_sha256']
+        assert change['workers'] == workers
+    for variant in ['selected-ir242', 'candidate-ir245']:
+        prefix = f'profile-jittered-{variant}-'
+        run = json.loads((followup / (prefix + 'run.json')).read_text())
+        summary = json.loads((followup / (prefix + 'summary.json')).read_text())
+        assert run['exit'] == 0 and run['iterations'] == 1500
+        assert run['every_iteration_indices_equal_rust'] and run['final_json_exact_rust']
+        assert run['first_and_last_full_json_checked_inside_host'] and run['profile_timings_excluded']
+        stats = run['sampler_stats']
+        assert stats['suspended'] == stats['resumed'] and summary['sampler_zero_failures']
+        assert stats['suspend_failures'] == stats['state_failures'] == stats['resume_failures'] == 0
+        samples = gzip.decompress((followup / (prefix + 'output.json.samples.bin.gz')).read_bytes())
+        assert len(samples) == struct.calcsize('<5Q2I64Q') * stats['records']
+        assert sum(group['samples'] for group in summary['categories'].values()) == stats['records']
+        address = json.loads((followup / (prefix + 'profile-code-and-address-audit.json')).read_text())
+        assert address['actual_macho_text_vmaddr'] == 0x100000000
+        assert address['native_text_exact_to_normal_runner'] and address['sampler_address_formula_verified']
+
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833
 assert report['matched_native_reference']['median_seconds'] == 0.001651875

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-numeric-aliases-tests-20261107-v1/mech_gpu-tests",
+    "cfg_cleanup",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 0.744181000161916
+}

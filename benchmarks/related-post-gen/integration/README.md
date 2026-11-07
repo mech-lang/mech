@@ -22,6 +22,24 @@ See evidence/conjoined-windows-and-shared-certificates/summary.json, ir242-revie
 
 The moving #973 branch advanced again to **65436c6b01d6939b9ad9cb3d479c1020c1c16287** after this qualification. That update is pending integration; the compiler and measurements above include #973 only through65034db.
 
+## Additional compiler trials: IR244, IR245 and IR246
+
+The selected compiler/source remains IR242 mask reuse with four native workers. A new31-round randomized cohort keeps all310 exact outputs and77 outputs from a separate resource cohort. Latest selected remeasurement is **2.848250ms /1.779972x fastest eligible Rust** and **34.993209ms /1.496449x fastest launch-to-exit Rust**. Rust U8/U32 is fastest at both scopes:1.600166ms and23.384166ms. This remeasurement does not replace the original selected checkpoint's cohort.
+
+IR244 integrates #973 through65436c6 and fixes a real interaction: demand cleanup must preserve alias records still referenced by the subsequent extent-proof pass. It passes868 GPU tests and all373 actually executed CI-selected names, with the same two inherited failures. Its2.852958ms /1.782914x and34.675875ms /1.482878x yield only11/31 processing and17/31 whole-process wins against selectedIR242. It is unselected.
+
+IR245 adds numeric input/output/private-bank memory classes under current owner/COW loans. It passes872 GPU tests and all377 selected names, plus shared-input, first-change, current-read, finite and retry checks. It changes only36B net native code versusIR244 and leaves hot preprocessing callees unchanged. Its2.831666ms /1.769608x and34.574792ms /1.478556x yield19/31 wins at both scopes, below the21/31 gate. Processing allocations remain3758; instructions rise slightly to54,873,158 and cycles rise to15,297,490 versus selected54,845,391 /15,100,208. It is unselected.
+
+Combining mask reuse and ordered keys with byte IDs/U32 ranks gives **2.815750ms /1.759661x**, but **35.346250ms /1.511546x whole process**. It wins22/31 processing but12/31 whole process and adds2107 restore requests /1,270,931B. Eight native workers give3.038875ms /1.899100x and36.227542ms /1.549234x. Both source variants retain the same eligibility and exact CSR fallback and pass31 edge cases each. Both are unselected.
+
+IR246 is a separate IR244-based candidate, excluding the alias experiment. Checked packed loads now carry a point-local nonfaulting fact after their logical bounds/current-window proof and valid retained-owner address translation; memory and control dependence remain. Tests prove removal of an actual unused load while retaining source bounds/arithmetic errors, prior output and retry. It passes872 GPU tests and377 actual selected names. This benchmark's original and mask native text remains byte-identical toIR244, so no kernel gain is claimed and no duplicate same-source kernel cohort is run.
+
+All three candidates preserve all128 scalar and five DEFLATE rows in every non-timing field, including allocation counts and bytes. Full runtime-only/feature/loader adoption qualification is not claimed for these unselected candidates. The source branches are codex/related-demand-liveness-integration-20261107, codex/related-native-numeric-aliases-20261107 and codex/related-native-guarded-load-demand-20261107.
+
+Fresh diagnostic profiles execute1500 complete5000-post calculations per build, each with fresh inputs/account and exact Rust indices, plus full JSON checks. The reported sampler uses declared250..1500us jitter to avoid the initial periodic sampler's phase aliasing; both initial runs remain. Selected main-thread snapshots are57.74% emitted native code,18.17% Mech host,14.70% waiting,4.91% allocator/copy and4.48% other. Worker stacks are omitted; these are not all-thread CPU-time shares or latency claims. Native-text and address audits match the normal executables. The same-source trial has a similar distribution. Hot native work includes UTF8 counting, triple/quadruple keys and posting construction. Remaining gains require better native loop/data lowering and cheaper compiled metadata restoration.
+
+See evidence/demand-liveness-and-numeric-aliases/summary.json and ir244-246-local-archive-index.json. Raw binaries remain local; no parity or hosted-CI-green claim. PR990 still targets #973; its selected source is unchanged.
+
 ## Historical IR238/240 evidence
 
 Historical IR240 compiler **deebf08df690e37ddf763635d70fd25aaf0bedb4**, **IR240 / work115 / ABI41 / image9**, integrates #973 through **54280db43e2d26e2554ff2651f24e929e11571c4**. PR990 targets `codex/level12-compression-consolidated` (#973). IR238's canonical-schema sink change and all prior related-post compiler work are retained; IR239's Boolean branch experiment is not applied.

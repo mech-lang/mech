@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-demand-liveness-integration-tests-20261107-v1/mech_gpu-tests",
+    "cfg_cleanup",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 1.9682451251428574
+}

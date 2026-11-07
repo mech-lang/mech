@@ -1,0 +1,15 @@
+{
+  "hosts/gpu/src/native_artifact/codegen/options.rs": "IR245-source-hosts__gpu__src__native_artifact__codegen__options.rs.txt",
+  "hosts/gpu/src/native_artifact/codegen/common/memory_regions.rs": "IR245-source-hosts__gpu__src__native_artifact__codegen__common__memory_regions.rs.txt",
+  "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs": "IR245-source-hosts__gpu__src__native_artifact__codegen__control__report__mod.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "IR245-source-hosts__gpu__src__native_artifact__program__codegen__numeric_read_packs.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_tree.rs": "IR245-source-hosts__gpu__src__native_artifact__program__codegen__numeric_tree.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "IR245-source-hosts__gpu__src__native_artifact__program__codegen__readonly_numeric.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": "IR245-source-hosts__gpu__src__native_artifact__program__codegen__cfg_cleanup__mod.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/dead_values/mod.rs": "IR245-source-hosts__gpu__src__native_artifact__program__codegen__cfg_cleanup__dead_values__mod.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/dead_values/tests.rs": "IR245-source-hosts__gpu__src__native_artifact__program__codegen__cfg_cleanup__dead_values__tests.rs.txt",
+  "hosts/gpu/src/native_artifact/program/image/identity.rs": "IR245-source-hosts__gpu__src__native_artifact__program__image__identity.rs.txt",
+  "hosts/gpu/src/native_artifact/program/runtime/composition_tests/fresh_traversals.rs": "IR245-source-hosts__gpu__src__native_artifact__program__runtime__composition_tests__fresh_traversals.rs.txt",
+  "hosts/gpu/src/native_artifact/program/runtime/composition_tests/invariant_numeric.rs": "IR245-source-hosts__gpu__src__native_artifact__program__runtime__composition_tests__invariant_numeric.rs.txt",
+  "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree.rs": "IR245-source-hosts__gpu__src__native_artifact__program__runtime__composition_tests__numeric_tree.rs.txt"
+}
