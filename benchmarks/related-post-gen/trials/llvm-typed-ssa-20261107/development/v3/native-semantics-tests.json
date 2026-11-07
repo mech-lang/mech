@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v3/gpu-tests",
+    "llvm_ssa_native",
+    "--ignored",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "MECH_LLVM_TEST_CLANG": "/opt/homebrew/opt/llvm/bin/clang",
+    "SDKROOT": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+  },
+  "exit": 101,
+  "seconds": 0.4011580829974264,
+  "stdout": "\nrunning 2 tests\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_floating_semantics ... FAILED\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_integer_boolean_and_vector_semantics ... FAILED\n\nfailures:\n\nfailures:\n    native_artifact::program::llvm_backend::tests::llvm_ssa_native_floating_semantics\n    native_artifact::program::llvm_backend::tests::llvm_ssa_native_integer_boolean_and_vector_semantics\n\ntest result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 898 filtered out; finished in 0.39s\n\n",
+  "stderr": "\nthread 'native_artifact::program::llvm_backend::tests::llvm_ssa_native_floating_semantics' (20855167) panicked at /private/tmp/mech-related-llvm-object-backend-compiler-20261107/hosts/gpu/src/native_artifact/program/llvm_backend/tests.rs:255:5:\nclang: warning: no such sysroot directory: '/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk' [-Wmissing-sysroot]\nclang: warning: using sysroot for 'macOS 26' but targeting 'arm64-apple-macosx26.0.0' [-Wincompatible-sysroot]\nclang: warning: using sysroot for 'macOS 26' but targeting 'arm64-apple-macosx26.0.0' [-Wincompatible-sysroot]\n/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/.tmpjqj1gk/check.c:2:10: fatal error: 'string.h' file not found\n    2 | #include <string.h>\n      |          ^~~~~~~~~~\n1 error generated.\n\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\nthread 'native_artifact::program::llvm_backend::tests::llvm_ssa_native_integer_boolean_and_vector_semantics' (20855174) panicked at /private/tmp/mech-related-llvm-object-backend-compiler-20261107/hosts/gpu/src/native_artifact/program/llvm_backend/tests.rs:255:5:\nclang: warning: no such sysroot directory: '/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk' [-Wmissing-sysroot]\nclang: warning: using sysroot for 'macOS 26' but targeting 'arm64-apple-macosx26.0.0' [-Wincompatible-sysroot]\nclang: warning: using sysroot for 'macOS 26' but targeting 'arm64-apple-macosx26.0.0' [-Wincompatible-sysroot]\n/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/.tmpLU8yyl/check.c:2:10: fatal error: 'string.h' file not found\n    2 | #include <string.h>\n      |          ^~~~~~~~~~\n1 error generated.\n\n"
+}

@@ -1,0 +1,41 @@
+{
+  "source_commit": "ca5366746ee5c3c8fcf0579519606a1393bf3d98",
+  "parent": "6d826b7613c24ffe6f12438a1c2cb657bed02db0",
+  "branch": "codex/related-llvm-object-backend-20261107",
+  "compiler_identity": "IR264/work115/ABI41/image9 default path only",
+  "LLVM_image_identity_not_implemented": true,
+  "source_inventory_sha256": "11df42a91ee3cd46625efb3b8b5a71cc7f8f00f06e4d0d90d86bde85a41804e8",
+  "toolchain": {
+    "opt": {
+      "path": "/opt/homebrew/opt/llvm/bin/opt",
+      "sha256": "534ddc15551edb51790a69f42f47e41cdc03129aa44e77faaa08d57b5bb536a6",
+      "version": "Homebrew LLVM version 23.1.4\n  Optimized build.\n  Default target: arm64-apple-darwin25.2.0\n  Host CPU: apple-m3\n"
+    },
+    "llc": {
+      "path": "/opt/homebrew/opt/llvm/bin/llc",
+      "sha256": "fd1f75356d050ef9abf161793e1aab6f170fb2972eeb33032c4ff1f2606ba8a4",
+      "version": "Homebrew LLVM version 23.1.4\n  Optimized build.\n  Default target: arm64-apple-darwin25.2.0\n  Host CPU: apple-m3\n\n  Registered Targets:\n    aarch64     - AArch64 (little endian)\n    aarch64_32  - AArch64 (little endian ILP32)\n    aarch64_be  - AArch64 (big endian)\n    amdgcn      - legacy name for amdgpu\n    amdgpu      - AMDGPU gfx6+\n    arm         - ARM\n    arm64       - ARM64 (little endian)\n    arm64_32    - ARM64 (little endian ILP32)\n    armeb       - ARM (big endian)\n    avr         - Atmel AVR Microcontroller\n    bpf         - BPF (host endian)\n    bpfeb       - BPF (big endian)\n    bpfel       - BPF (little endian)\n    hexagon     - Hexagon\n    lanai       - Lanai\n    loongarch32 - 32-bit LoongArch\n    loongarch64 - 64-bit LoongArch\n    mips        - MIPS (32-bit big endian)\n    mips64      - MIPS (64-bit big endian)\n    mips64el    - MIPS (64-bit little endian)\n    mipsel      - MIPS (32-bit little endian)\n    msp430      - MSP430 [experimental]\n    nvptx       - NVIDIA PTX 32-bit\n    nvptx64     - NVIDIA PTX 64-bit\n    ppc32       - PowerPC 32\n    ppc32le     - PowerPC 32 LE\n    ppc64       - PowerPC 64\n    ppc64le     - PowerPC 64 LE\n    r600        - AMD GPUs HD2XXX-HD6XXX\n    riscv32     - 32-bit RISC-V\n    riscv32be   - 32-bit big endian RISC-V\n    riscv64     - 64-bit RISC-V\n    riscv64be   - 64-bit big endian RISC-V\n    sparc       - Sparc\n    sparcel     - Sparc LE\n    sparcv9     - Sparc V9\n    spirv       - SPIR-V Logical\n    spirv32     - SPIR-V 32-bit\n    spirv64     - SPIR-V 64-bit\n    systemz     - SystemZ\n    thumb       - Thumb\n    thumbeb     - Thumb (big endian)\n    ve          - VE\n    wasm32      - WebAssembly 32-bit\n    wasm64      - WebAssembly 64-bit\n    x86         - 32-bit X86: Pentium-Pro and above\n    x86-64      - 64-bit X86: EM64T and AMD64\n    xcore       - XCore\n"
+    },
+    "clang": {
+      "path": "/opt/homebrew/opt/llvm/bin/clang",
+      "sha256": "5c51770b83a5407e507ad19fcfe1ec141deeb15f0d86312568915f3637f31f5a",
+      "version": "Homebrew clang version 23.1.4\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm/23.1.4/bin\nConfiguration file: /opt/homebrew/Cellar/llvm/23.1.4/etc/clang/arm64-apple-darwin25.cfg\n"
+    }
+  },
+  "selected_compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+  "selected_changed": false,
+  "upstream": {
+    "latest_fetched_upstream": "5f5740bd850c1a6875dac0f00ae392943079801c",
+    "integrated_production_code": "b6a42fde80dbc011dfefa9de5d9659be334411b0",
+    "changed_paths": [
+      "benchmarks/mech-deflate/experiments.json",
+      "docs/design/native-compression-status.md",
+      "docs/design/native-coupled-scalar-choice.md",
+      "docs/design/native-low-word-costs.md"
+    ],
+    "compiler_source_manifests_lock_flags_CI_unchanged": true,
+    "production_compiler_already_integrated": true,
+    "latest_scalar_cost_candidate_rejected": true,
+    "history_merge_required": false
+  }
+}

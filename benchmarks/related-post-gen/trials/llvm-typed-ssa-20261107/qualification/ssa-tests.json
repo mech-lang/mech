@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/gpu-tests",
+    "llvm_ssa",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.224809082923457,
+  "stdout": "\nrunning 5 tests\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_floating_semantics ... ignored, requires MECH_LLVM_TEST_CLANG and an Apple AArch64 host\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_integer_boolean_and_vector_semantics ... ignored, requires MECH_LLVM_TEST_CLANG and an Apple AArch64 host\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_pair_returns_indirect_calls_and_preserving_bridge ... ignored, requires MECH_LLVM_TEST_CLANG and an Apple AArch64 host\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_owned_context_and_parallel_edges ... ok\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_refuses_unowned_machine_bytes_and_missing_definition ... ok\n\ntest result: ok. 2 passed; 0 failed; 3 ignored; 0 measured; 896 filtered out; finished in 0.00s\n\n",
+  "stderr": ""
+}

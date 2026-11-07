@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/compiler-llvm-ir",
+    "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/after-4/build/source.mec",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/after-4/native.ll"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 5.63671979191713,
+  "stdout": "",
+  "stderr": ""
+}

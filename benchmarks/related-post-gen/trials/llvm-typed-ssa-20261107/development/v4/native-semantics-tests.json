@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v4/gpu-tests",
+    "llvm_ssa_native",
+    "--ignored",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "MECH_LLVM_TEST_CLANG": "/opt/homebrew/opt/llvm/bin/clang",
+    "SDKROOT": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+  },
+  "exit": 101,
+  "seconds": 1.3463750830851495,
+  "stdout": "\nrunning 2 tests\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_floating_semantics ... ok\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_integer_boolean_and_vector_semantics ... FAILED\n\nfailures:\n\nfailures:\n    native_artifact::program::llvm_backend::tests::llvm_ssa_native_integer_boolean_and_vector_semantics\n\ntest result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 898 filtered out; finished in 1.33s\n\n",
+  "stderr": "\nthread 'native_artifact::program::llvm_backend::tests::llvm_ssa_native_integer_boolean_and_vector_semantics' (20858089) panicked at /private/tmp/mech-related-llvm-object-backend-compiler-20261107/hosts/gpu/src/native_artifact/program/llvm_backend/tests.rs:263:5:\n/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/.tmp0I7Yx0/check.c:5:84: error: conflicting types for 'remainder'\n    5 | extern uint64_t choose(uint64_t,uint64_t,uint64_t), arithmetic(uint64_t,uint64_t), remainder(uint64_t,uint64_t), vectors(uint64_t,uint64_t);\n      |                                                                                    ^\n/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/math.h:505:15: note: previous declaration is here\n  505 | extern double remainder(double, double);\n      |               ^\n/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/.tmp0I7Yx0/check.c:14:38: warning: implicit conversion from 'unsigned long long' to 'double' changes value from 18446744073709551615 to 18446744073709551616 [-Wimplicit-const-int-float-conversion]\n   14 |   if(remainder(0x8000000000000000ULL,~0ULL)!=0)return 3;\n      |      ~~~~~~~~~                       ^~~~~\n/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/.tmp0I7Yx0/check.c:15:16: warning: implicit conversion from 'uint64_t' (aka 'unsigned long long') to 'double' changes value from 18446744073709551599 to 18446744073709551616 [-Wimplicit-const-int-float-conversion]\n   15 |   if(remainder((uint64_t)-17,5)!=(uint64_t)-2)return 4;\n      |      ~~~~~~~~~ ^~~~~~~~~~~~~\n/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/.tmp0I7Yx0/check.c:15:34: warning: implicit conversion from 'uint64_t' (aka 'unsigned long long') to 'double' changes value from 18446744073709551614 to 18446744073709551616 [-Wimplicit-const-int-float-conversion]\n   15 |   if(remainder((uint64_t)-17,5)!=(uint64_t)-2)return 4;\n      |                                ~~^~~~~~~~~~~~\n3 warnings and 1 error generated.\n\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+}

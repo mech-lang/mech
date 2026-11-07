@@ -1,0 +1,10 @@
+{
+  "initial_manifest_files": 110,
+  "initial_git_missing": [
+    "qualification/after-4/native.o",
+    "qualification/reuse-4/native.o"
+  ],
+  "cause": "repository *.o ignore; local file hash verification did not prove Git inclusion",
+  "corrected": "lossless gzip for machine Objects; every manifest file now checked against Git index before publication",
+  "initial_evidence_pushed": false
+}

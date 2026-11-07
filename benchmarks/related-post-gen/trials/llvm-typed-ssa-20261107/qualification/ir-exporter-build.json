@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-llvm-typed-ssa-opt-20261107-v6/build.json",
+    "--source",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/compiler-llvm-ir.rs",
+    "--out",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/compiler-llvm-ir"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.6068043338600546,
+  "stdout": "warning: unused import: `std::path::Path`\n --> /private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/compiler-llvm-ir.rs:7:5\n  |\n7 | use std::path::Path;\n  |     ^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nwarning: 1 warning emitted\n\n{\"seconds\": 1.067756958073005, \"exit\": 0}\n",
+  "stderr": ""
+}

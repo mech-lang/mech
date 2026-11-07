@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/opt/homebrew/opt/llvm/bin/opt",
+    "-passes=default<O3>",
+    "-mcpu=apple-m3",
+    "-S",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/reuse-4/native.ll",
+    "-o",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/reuse-4/optimized.ll"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 2.212618416873738,
+  "stdout": "",
+  "stderr": ""
+}

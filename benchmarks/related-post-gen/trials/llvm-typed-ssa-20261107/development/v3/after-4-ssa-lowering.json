@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v3/compiler-llvm-ir",
+    "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/after-4/build/source.mec",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v3/after-4/native.ll"
+  ],
+  "environment": {},
+  "exit": 101,
+  "seconds": 5.410198166966438,
+  "stdout": "",
+  "stderr": "\nthread '<unnamed>' (20855452) panicked at /private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v3/compiler-llvm-ir.rs:32:140:\ncalled `Result::unwrap()` on an `Err` value: Backend(\"unsupported LLVM multiple-return ABI\")\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\nthread 'main' (20855440) panicked at /private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v3/compiler-llvm-ir.rs:34:24:\ncalled `Result::unwrap()` on an `Err` value: Any { .. }\n"
+}

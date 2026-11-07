@@ -1,0 +1,637 @@
+{
+  "after-4": {
+    "source_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+    "LLVM_IR_sha256": "5880ff870d8d63b805510d389c23b691f06955abaf0fef9e3ecef1847a0f4a02",
+    "optimized_IR_sha256": "906f118d6805430fd0bfa8f2cd31b47acb27261caa5b78394de6f0abbc29414e",
+    "functions": 55,
+    "facts": {
+      "schema": "mech.llvm.native-machine-facts.v1",
+      "object_sha256": "c12c737ec74438e9322302d1a31e16e38662eaef8bb5671e882ac04cef638ba5",
+      "remarks_sha256": "fa415d6f2e21734805f2e6b44b1c1164d0d27dc85ab72f58c479a80a1060cecb",
+      "definition_count": 55,
+      "functions": {
+        "mech_canonical_program_entry_v1_utf8_histogram": {
+          "stack_bytes": 96,
+          "code_bytes": 896,
+          "text_offset": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_101": {
+          "stack_bytes": 192,
+          "code_bytes": 3456,
+          "text_offset": 896
+        },
+        "mech_canonical_program_entry_v1_numeric_139": {
+          "stack_bytes": 64,
+          "code_bytes": 512,
+          "text_offset": 4352
+        },
+        "mech_canonical_program_entry_v1_numeric_233": {
+          "stack_bytes": 416,
+          "code_bytes": 9856,
+          "text_offset": 4864
+        },
+        "mech_canonical_program_entry_v1_numeric_258": {
+          "stack_bytes": 256,
+          "code_bytes": 6400,
+          "text_offset": 14720
+        },
+        "mech_canonical_program_entry_v1_numeric_281": {
+          "stack_bytes": 208,
+          "code_bytes": 5120,
+          "text_offset": 21120
+        },
+        "mech_canonical_program_entry_v1_numeric_306": {
+          "stack_bytes": 176,
+          "code_bytes": 2688,
+          "text_offset": 26240
+        },
+        "mech_canonical_program_entry_v1_numeric_476": {
+          "stack_bytes": 112,
+          "code_bytes": 896,
+          "text_offset": 28928
+        },
+        "mech_canonical_program_entry_v1_numeric_522": {
+          "stack_bytes": 112,
+          "code_bytes": 768,
+          "text_offset": 29824
+        },
+        "mech_canonical_program_entry_v1_numeric_589": {
+          "stack_bytes": 304,
+          "code_bytes": 5376,
+          "text_offset": 30592
+        },
+        "mech_canonical_program_entry_v1_numeric_616": {
+          "stack_bytes": 192,
+          "code_bytes": 1536,
+          "text_offset": 35968
+        },
+        "mech_canonical_program_entry_v1_numeric_688": {
+          "stack_bytes": 208,
+          "code_bytes": 3584,
+          "text_offset": 37504
+        },
+        "mech_canonical_program_entry_v1_numeric_710": {
+          "stack_bytes": 64,
+          "code_bytes": 896,
+          "text_offset": 41088
+        },
+        "mech_canonical_program_entry_v1_numeric_818": {
+          "stack_bytes": 416,
+          "code_bytes": 12672,
+          "text_offset": 41984
+        },
+        "mech_canonical_program_entry_v1_numeric_843": {
+          "stack_bytes": 304,
+          "code_bytes": 8960,
+          "text_offset": 54656
+        },
+        "mech_canonical_program_entry_v1_numeric_866": {
+          "stack_bytes": 240,
+          "code_bytes": 7680,
+          "text_offset": 63616
+        },
+        "mech_canonical_program_entry_v1_numeric_891": {
+          "stack_bytes": 224,
+          "code_bytes": 6144,
+          "text_offset": 71296
+        },
+        "mech_canonical_program_entry_v1_numeric_918": {
+          "stack_bytes": 176,
+          "code_bytes": 3712,
+          "text_offset": 77440
+        },
+        "mech_canonical_program_entry_v1_numeric_1160": {
+          "stack_bytes": 112,
+          "code_bytes": 896,
+          "text_offset": 81152
+        },
+        "mech_canonical_program_entry_v1_numeric_1206": {
+          "stack_bytes": 112,
+          "code_bytes": 768,
+          "text_offset": 82048
+        },
+        "mech_canonical_program_entry_v1_numeric_1273": {
+          "stack_bytes": 304,
+          "code_bytes": 5376,
+          "text_offset": 82816
+        },
+        "mech_canonical_program_entry_v1_numeric_1300": {
+          "stack_bytes": 192,
+          "code_bytes": 1536,
+          "text_offset": 88192
+        },
+        "mech_canonical_program_entry_v1_numeric_1372": {
+          "stack_bytes": 272,
+          "code_bytes": 2816,
+          "text_offset": 89728
+        },
+        "mech_canonical_program_entry_v1_numeric_1396": {
+          "stack_bytes": 64,
+          "code_bytes": 512,
+          "text_offset": 92544
+        },
+        "mech_canonical_program_entry_v1_numeric_1471": {
+          "stack_bytes": 560,
+          "code_bytes": 23168,
+          "text_offset": 93056
+        },
+        "mech_canonical_program_entry_v1_numeric_1500": {
+          "stack_bytes": 320,
+          "code_bytes": 7296,
+          "text_offset": 116224
+        },
+        "mech_canonical_program_entry_v1_numeric_1530": {
+          "stack_bytes": 96,
+          "code_bytes": 1664,
+          "text_offset": 123520
+        },
+        "mech_canonical_program_entry_v1_numeric_1711": {
+          "stack_bytes": 288,
+          "code_bytes": 4992,
+          "text_offset": 125184
+        },
+        "mech_canonical_program_entry_v1_numeric_1742": {
+          "stack_bytes": 80,
+          "code_bytes": 1024,
+          "text_offset": 130176
+        },
+        "mech_canonical_program_entry_v1_numeric_1979": {
+          "stack_bytes": 448,
+          "code_bytes": 13184,
+          "text_offset": 131200
+        },
+        "mech_canonical_program_entry_v1_numeric_2005": {
+          "stack_bytes": 272,
+          "code_bytes": 5120,
+          "text_offset": 144384
+        },
+        "mech_canonical_program_entry_v1_numeric_2033": {
+          "stack_bytes": 144,
+          "code_bytes": 1408,
+          "text_offset": 149504
+        },
+        "mech_canonical_program_entry_v1_numeric_2119": {
+          "stack_bytes": 144,
+          "code_bytes": 1152,
+          "text_offset": 150912
+        },
+        "mech_canonical_program_entry_v1_numeric_2317": {
+          "stack_bytes": 112,
+          "code_bytes": 896,
+          "text_offset": 152064
+        },
+        "mech_canonical_program_entry_v1_numeric_2363": {
+          "stack_bytes": 112,
+          "code_bytes": 768,
+          "text_offset": 152960
+        },
+        "mech_canonical_program_entry_v1_numeric_2417": {
+          "stack_bytes": 320,
+          "code_bytes": 5376,
+          "text_offset": 153728
+        },
+        "mech_canonical_program_entry_v1_numeric_2444": {
+          "stack_bytes": 192,
+          "code_bytes": 1536,
+          "text_offset": 159104
+        },
+        "mech_canonical_program_entry_v1_numeric_2538": {
+          "stack_bytes": 912,
+          "code_bytes": 51072,
+          "text_offset": 160640
+        },
+        "mech_canonical_program_entry_v1_numeric_2573": {
+          "stack_bytes": 272,
+          "code_bytes": 5120,
+          "text_offset": 211712
+        },
+        "mech_canonical_program_entry_v1_numeric_2601": {
+          "stack_bytes": 144,
+          "code_bytes": 1408,
+          "text_offset": 216832
+        },
+        "mech_canonical_program_entry_v1_numeric_2687": {
+          "stack_bytes": 144,
+          "code_bytes": 1152,
+          "text_offset": 218240
+        },
+        "mech_canonical_program_entry_v1_numeric_2840": {
+          "stack_bytes": 208,
+          "code_bytes": 3328,
+          "text_offset": 219392
+        },
+        "mech_canonical_program_entry_v1_numeric_2865": {
+          "stack_bytes": 128,
+          "code_bytes": 1152,
+          "text_offset": 222720
+        },
+        "mech_canonical_program_entry_v1_numeric_2931": {
+          "stack_bytes": 464,
+          "code_bytes": 6656,
+          "text_offset": 223872
+        },
+        "mech_canonical_program_entry_v1_numeric_2988": {
+          "stack_bytes": 240,
+          "code_bytes": 3072,
+          "text_offset": 230528
+        },
+        "mech_canonical_program_entry_v1_numeric_3287": {
+          "stack_bytes": 112,
+          "code_bytes": 896,
+          "text_offset": 233600
+        },
+        "mech_canonical_program_entry_v1_numeric_3333": {
+          "stack_bytes": 112,
+          "code_bytes": 768,
+          "text_offset": 234496
+        },
+        "mech_canonical_program_entry_v1_numeric_3387": {
+          "stack_bytes": 320,
+          "code_bytes": 5376,
+          "text_offset": 235264
+        },
+        "mech_canonical_program_entry_v1_numeric_3414": {
+          "stack_bytes": 192,
+          "code_bytes": 1536,
+          "text_offset": 240640
+        },
+        "mech_canonical_program_entry_v1_numeric_3498": {
+          "stack_bytes": 832,
+          "code_bytes": 29824,
+          "text_offset": 242176
+        },
+        "mech_canonical_program_entry_v1_numeric_3524": {
+          "stack_bytes": 208,
+          "code_bytes": 3328,
+          "text_offset": 272000
+        },
+        "mech_canonical_program_entry_v1_numeric_3549": {
+          "stack_bytes": 128,
+          "code_bytes": 1152,
+          "text_offset": 275328
+        },
+        "mech_canonical_program_entry_v1_numeric_3615": {
+          "stack_bytes": 464,
+          "code_bytes": 6656,
+          "text_offset": 276480
+        },
+        "mech_canonical_program_entry_v1_numeric_3672": {
+          "stack_bytes": 240,
+          "code_bytes": 3072,
+          "text_offset": 283136
+        },
+        "mech_canonical_program_entry_v1": {
+          "stack_bytes": 640,
+          "code_bytes": 281180,
+          "text_offset": 286208
+        }
+      },
+      "text_bytes": 567388,
+      "machine_constant_bytes": 1188,
+      "code_bytes": 568576,
+      "maximum_function_stack_bytes": 912,
+      "padding_before_first_function_bytes": 0,
+      "excluded_link_and_unwind_sections": [
+        {
+          "name": "__compact_unwind",
+          "segment": "__LD",
+          "address": 568584,
+          "size": 1760,
+          "offset": 569232,
+          "alignment_power": 3,
+          "flags": 33554432
+        },
+        {
+          "name": "__eh_frame",
+          "segment": "__TEXT",
+          "address": 570344,
+          "size": 4656,
+          "offset": 570992,
+          "alignment_power": 3,
+          "flags": 1744830475
+        }
+      ],
+      "code_extent_policy": "Conservative per-function extent includes padding to the next sealed definition; total code includes all machine text and executable constants.",
+      "source_or_layout_authority_granted": false
+    },
+    "Mech_program_executed": false,
+    "native_descriptor_constructed": false,
+    "qualified_native_image": false
+  },
+  "reuse-4": {
+    "source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+    "LLVM_IR_sha256": "a66cea73c0c1bac84280863fb48a796fda6eddafd8e092694d642e0bb873b952",
+    "optimized_IR_sha256": "1f9b0e0a12b0a0aeb4ac00c72afda5e45a334a9c21e039baeb7f357897ca7132",
+    "functions": 53,
+    "facts": {
+      "schema": "mech.llvm.native-machine-facts.v1",
+      "object_sha256": "a3fd58f80c8475dd6ecf0b68fbb317e3f885ed1093d8a38ed3e0df67729e0f6e",
+      "remarks_sha256": "2f5cdd7e2028703b13e2acb21dbc21579a352f838df478ddf7da09463e109ea6",
+      "definition_count": 53,
+      "functions": {
+        "mech_canonical_program_entry_v1_utf8_histogram": {
+          "stack_bytes": 96,
+          "code_bytes": 896,
+          "text_offset": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_107": {
+          "stack_bytes": 240,
+          "code_bytes": 3840,
+          "text_offset": 896
+        },
+        "mech_canonical_program_entry_v1_numeric_146": {
+          "stack_bytes": 64,
+          "code_bytes": 640,
+          "text_offset": 4736
+        },
+        "mech_canonical_program_entry_v1_numeric_256": {
+          "stack_bytes": 400,
+          "code_bytes": 9216,
+          "text_offset": 5376
+        },
+        "mech_canonical_program_entry_v1_numeric_281": {
+          "stack_bytes": 240,
+          "code_bytes": 5760,
+          "text_offset": 14592
+        },
+        "mech_canonical_program_entry_v1_numeric_304": {
+          "stack_bytes": 192,
+          "code_bytes": 4608,
+          "text_offset": 20352
+        },
+        "mech_canonical_program_entry_v1_numeric_329": {
+          "stack_bytes": 160,
+          "code_bytes": 2432,
+          "text_offset": 24960
+        },
+        "mech_canonical_program_entry_v1_numeric_459": {
+          "stack_bytes": 112,
+          "code_bytes": 896,
+          "text_offset": 27392
+        },
+        "mech_canonical_program_entry_v1_numeric_505": {
+          "stack_bytes": 112,
+          "code_bytes": 768,
+          "text_offset": 28288
+        },
+        "mech_canonical_program_entry_v1_numeric_572": {
+          "stack_bytes": 304,
+          "code_bytes": 5376,
+          "text_offset": 29056
+        },
+        "mech_canonical_program_entry_v1_numeric_599": {
+          "stack_bytes": 192,
+          "code_bytes": 1536,
+          "text_offset": 34432
+        },
+        "mech_canonical_program_entry_v1_numeric_671": {
+          "stack_bytes": 208,
+          "code_bytes": 3584,
+          "text_offset": 35968
+        },
+        "mech_canonical_program_entry_v1_numeric_693": {
+          "stack_bytes": 64,
+          "code_bytes": 896,
+          "text_offset": 39552
+        },
+        "mech_canonical_program_entry_v1_numeric_801": {
+          "stack_bytes": 448,
+          "code_bytes": 13056,
+          "text_offset": 40448
+        },
+        "mech_canonical_program_entry_v1_numeric_826": {
+          "stack_bytes": 288,
+          "code_bytes": 9216,
+          "text_offset": 53504
+        },
+        "mech_canonical_program_entry_v1_numeric_849": {
+          "stack_bytes": 240,
+          "code_bytes": 8960,
+          "text_offset": 62720
+        },
+        "mech_canonical_program_entry_v1_numeric_874": {
+          "stack_bytes": 224,
+          "code_bytes": 7168,
+          "text_offset": 71680
+        },
+        "mech_canonical_program_entry_v1_numeric_901": {
+          "stack_bytes": 176,
+          "code_bytes": 3840,
+          "text_offset": 78848
+        },
+        "mech_canonical_program_entry_v1_numeric_1053": {
+          "stack_bytes": 112,
+          "code_bytes": 896,
+          "text_offset": 82688
+        },
+        "mech_canonical_program_entry_v1_numeric_1099": {
+          "stack_bytes": 112,
+          "code_bytes": 768,
+          "text_offset": 83584
+        },
+        "mech_canonical_program_entry_v1_numeric_1166": {
+          "stack_bytes": 304,
+          "code_bytes": 5376,
+          "text_offset": 84352
+        },
+        "mech_canonical_program_entry_v1_numeric_1193": {
+          "stack_bytes": 192,
+          "code_bytes": 1536,
+          "text_offset": 89728
+        },
+        "mech_canonical_program_entry_v1_numeric_1282": {
+          "stack_bytes": 560,
+          "code_bytes": 23168,
+          "text_offset": 91264
+        },
+        "mech_canonical_program_entry_v1_numeric_1311": {
+          "stack_bytes": 320,
+          "code_bytes": 7296,
+          "text_offset": 114432
+        },
+        "mech_canonical_program_entry_v1_numeric_1341": {
+          "stack_bytes": 96,
+          "code_bytes": 1664,
+          "text_offset": 121728
+        },
+        "mech_canonical_program_entry_v1_numeric_1522": {
+          "stack_bytes": 288,
+          "code_bytes": 4992,
+          "text_offset": 123392
+        },
+        "mech_canonical_program_entry_v1_numeric_1553": {
+          "stack_bytes": 80,
+          "code_bytes": 1024,
+          "text_offset": 128384
+        },
+        "mech_canonical_program_entry_v1_numeric_1790": {
+          "stack_bytes": 448,
+          "code_bytes": 13184,
+          "text_offset": 129408
+        },
+        "mech_canonical_program_entry_v1_numeric_1816": {
+          "stack_bytes": 272,
+          "code_bytes": 5120,
+          "text_offset": 142592
+        },
+        "mech_canonical_program_entry_v1_numeric_1844": {
+          "stack_bytes": 144,
+          "code_bytes": 1408,
+          "text_offset": 147712
+        },
+        "mech_canonical_program_entry_v1_numeric_1930": {
+          "stack_bytes": 144,
+          "code_bytes": 1152,
+          "text_offset": 149120
+        },
+        "mech_canonical_program_entry_v1_numeric_2128": {
+          "stack_bytes": 112,
+          "code_bytes": 896,
+          "text_offset": 150272
+        },
+        "mech_canonical_program_entry_v1_numeric_2174": {
+          "stack_bytes": 112,
+          "code_bytes": 768,
+          "text_offset": 151168
+        },
+        "mech_canonical_program_entry_v1_numeric_2228": {
+          "stack_bytes": 320,
+          "code_bytes": 5376,
+          "text_offset": 151936
+        },
+        "mech_canonical_program_entry_v1_numeric_2255": {
+          "stack_bytes": 192,
+          "code_bytes": 1536,
+          "text_offset": 157312
+        },
+        "mech_canonical_program_entry_v1_numeric_2349": {
+          "stack_bytes": 912,
+          "code_bytes": 51072,
+          "text_offset": 158848
+        },
+        "mech_canonical_program_entry_v1_numeric_2384": {
+          "stack_bytes": 272,
+          "code_bytes": 5120,
+          "text_offset": 209920
+        },
+        "mech_canonical_program_entry_v1_numeric_2412": {
+          "stack_bytes": 144,
+          "code_bytes": 1408,
+          "text_offset": 215040
+        },
+        "mech_canonical_program_entry_v1_numeric_2498": {
+          "stack_bytes": 144,
+          "code_bytes": 1152,
+          "text_offset": 216448
+        },
+        "mech_canonical_program_entry_v1_numeric_2651": {
+          "stack_bytes": 208,
+          "code_bytes": 3328,
+          "text_offset": 217600
+        },
+        "mech_canonical_program_entry_v1_numeric_2676": {
+          "stack_bytes": 128,
+          "code_bytes": 1152,
+          "text_offset": 220928
+        },
+        "mech_canonical_program_entry_v1_numeric_2742": {
+          "stack_bytes": 464,
+          "code_bytes": 6656,
+          "text_offset": 222080
+        },
+        "mech_canonical_program_entry_v1_numeric_2799": {
+          "stack_bytes": 240,
+          "code_bytes": 3072,
+          "text_offset": 228736
+        },
+        "mech_canonical_program_entry_v1_numeric_3098": {
+          "stack_bytes": 112,
+          "code_bytes": 896,
+          "text_offset": 231808
+        },
+        "mech_canonical_program_entry_v1_numeric_3144": {
+          "stack_bytes": 112,
+          "code_bytes": 768,
+          "text_offset": 232704
+        },
+        "mech_canonical_program_entry_v1_numeric_3198": {
+          "stack_bytes": 320,
+          "code_bytes": 5376,
+          "text_offset": 233472
+        },
+        "mech_canonical_program_entry_v1_numeric_3225": {
+          "stack_bytes": 192,
+          "code_bytes": 1536,
+          "text_offset": 238848
+        },
+        "mech_canonical_program_entry_v1_numeric_3309": {
+          "stack_bytes": 832,
+          "code_bytes": 29824,
+          "text_offset": 240384
+        },
+        "mech_canonical_program_entry_v1_numeric_3335": {
+          "stack_bytes": 208,
+          "code_bytes": 3328,
+          "text_offset": 270208
+        },
+        "mech_canonical_program_entry_v1_numeric_3360": {
+          "stack_bytes": 128,
+          "code_bytes": 1152,
+          "text_offset": 273536
+        },
+        "mech_canonical_program_entry_v1_numeric_3426": {
+          "stack_bytes": 464,
+          "code_bytes": 6656,
+          "text_offset": 274688
+        },
+        "mech_canonical_program_entry_v1_numeric_3483": {
+          "stack_bytes": 240,
+          "code_bytes": 3072,
+          "text_offset": 281344
+        },
+        "mech_canonical_program_entry_v1": {
+          "stack_bytes": 656,
+          "code_bytes": 269880,
+          "text_offset": 284416
+        }
+      },
+      "text_bytes": 554296,
+      "machine_constant_bytes": 1140,
+      "code_bytes": 555436,
+      "maximum_function_stack_bytes": 912,
+      "padding_before_first_function_bytes": 0,
+      "excluded_link_and_unwind_sections": [
+        {
+          "name": "__compact_unwind",
+          "segment": "__LD",
+          "address": 555448,
+          "size": 1696,
+          "offset": 556096,
+          "alignment_power": 3,
+          "flags": 33554432
+        },
+        {
+          "name": "__eh_frame",
+          "segment": "__TEXT",
+          "address": 557144,
+          "size": 4496,
+          "offset": 557792,
+          "alignment_power": 3,
+          "flags": 1744830475
+        }
+      ],
+      "code_extent_policy": "Conservative per-function extent includes padding to the next sealed definition; total code includes all machine text and executable constants.",
+      "source_or_layout_authority_granted": false
+    },
+    "Mech_program_executed": false,
+    "native_descriptor_constructed": false,
+    "qualified_native_image": false
+  },
+  "source_inventory_exact": true,
+  "full_GPU_summary": [
+    "test result: FAILED. 896 passed; 2 failed; 3 ignored; 0 measured; 0 filtered out; finished in 236.04s"
+  ],
+  "inherited_failures_exact": true,
+  "LLVM_program_qualified": false,
+  "performance_measured": false
+}

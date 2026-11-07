@@ -1,0 +1,14 @@
+{
+  "latest_fetched_upstream": "5f5740bd850c1a6875dac0f00ae392943079801c",
+  "integrated_production_code": "b6a42fde80dbc011dfefa9de5d9659be334411b0",
+  "changed_paths": [
+    "benchmarks/mech-deflate/experiments.json",
+    "docs/design/native-compression-status.md",
+    "docs/design/native-coupled-scalar-choice.md",
+    "docs/design/native-low-word-costs.md"
+  ],
+  "compiler_source_manifests_lock_flags_CI_unchanged": true,
+  "production_compiler_already_integrated": true,
+  "latest_scalar_cost_candidate_rejected": true,
+  "history_merge_required": false
+}

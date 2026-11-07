@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-llvm-object-backend-compiler-20261107/hosts/gpu/src/native_artifact/program/llvm_backend/machine_facts.py",
+    "--object",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/reuse-4/native.o",
+    "--remarks",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/reuse-4/remarks.yaml",
+    "--definitions",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/reuse-4/definitions.json",
+    "--output",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/reuse-4/machine-facts.json"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.05945262499153614,
+  "stdout": "{\"definitions\": 53, \"code_bytes\": 555436, \"maximum_function_stack_bytes\": 912, \"source_or_layout_authority_granted\": false}\n",
+  "stderr": ""
+}

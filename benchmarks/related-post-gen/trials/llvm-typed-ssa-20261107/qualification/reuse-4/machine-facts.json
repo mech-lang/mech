@@ -1,0 +1,300 @@
+{
+  "schema": "mech.llvm.native-machine-facts.v1",
+  "object_sha256": "a3fd58f80c8475dd6ecf0b68fbb317e3f885ed1093d8a38ed3e0df67729e0f6e",
+  "remarks_sha256": "2f5cdd7e2028703b13e2acb21dbc21579a352f838df478ddf7da09463e109ea6",
+  "definition_count": 53,
+  "functions": {
+    "mech_canonical_program_entry_v1_utf8_histogram": {
+      "stack_bytes": 96,
+      "code_bytes": 896,
+      "text_offset": 0
+    },
+    "mech_canonical_program_entry_v1_numeric_107": {
+      "stack_bytes": 240,
+      "code_bytes": 3840,
+      "text_offset": 896
+    },
+    "mech_canonical_program_entry_v1_numeric_146": {
+      "stack_bytes": 64,
+      "code_bytes": 640,
+      "text_offset": 4736
+    },
+    "mech_canonical_program_entry_v1_numeric_256": {
+      "stack_bytes": 400,
+      "code_bytes": 9216,
+      "text_offset": 5376
+    },
+    "mech_canonical_program_entry_v1_numeric_281": {
+      "stack_bytes": 240,
+      "code_bytes": 5760,
+      "text_offset": 14592
+    },
+    "mech_canonical_program_entry_v1_numeric_304": {
+      "stack_bytes": 192,
+      "code_bytes": 4608,
+      "text_offset": 20352
+    },
+    "mech_canonical_program_entry_v1_numeric_329": {
+      "stack_bytes": 160,
+      "code_bytes": 2432,
+      "text_offset": 24960
+    },
+    "mech_canonical_program_entry_v1_numeric_459": {
+      "stack_bytes": 112,
+      "code_bytes": 896,
+      "text_offset": 27392
+    },
+    "mech_canonical_program_entry_v1_numeric_505": {
+      "stack_bytes": 112,
+      "code_bytes": 768,
+      "text_offset": 28288
+    },
+    "mech_canonical_program_entry_v1_numeric_572": {
+      "stack_bytes": 304,
+      "code_bytes": 5376,
+      "text_offset": 29056
+    },
+    "mech_canonical_program_entry_v1_numeric_599": {
+      "stack_bytes": 192,
+      "code_bytes": 1536,
+      "text_offset": 34432
+    },
+    "mech_canonical_program_entry_v1_numeric_671": {
+      "stack_bytes": 208,
+      "code_bytes": 3584,
+      "text_offset": 35968
+    },
+    "mech_canonical_program_entry_v1_numeric_693": {
+      "stack_bytes": 64,
+      "code_bytes": 896,
+      "text_offset": 39552
+    },
+    "mech_canonical_program_entry_v1_numeric_801": {
+      "stack_bytes": 448,
+      "code_bytes": 13056,
+      "text_offset": 40448
+    },
+    "mech_canonical_program_entry_v1_numeric_826": {
+      "stack_bytes": 288,
+      "code_bytes": 9216,
+      "text_offset": 53504
+    },
+    "mech_canonical_program_entry_v1_numeric_849": {
+      "stack_bytes": 240,
+      "code_bytes": 8960,
+      "text_offset": 62720
+    },
+    "mech_canonical_program_entry_v1_numeric_874": {
+      "stack_bytes": 224,
+      "code_bytes": 7168,
+      "text_offset": 71680
+    },
+    "mech_canonical_program_entry_v1_numeric_901": {
+      "stack_bytes": 176,
+      "code_bytes": 3840,
+      "text_offset": 78848
+    },
+    "mech_canonical_program_entry_v1_numeric_1053": {
+      "stack_bytes": 112,
+      "code_bytes": 896,
+      "text_offset": 82688
+    },
+    "mech_canonical_program_entry_v1_numeric_1099": {
+      "stack_bytes": 112,
+      "code_bytes": 768,
+      "text_offset": 83584
+    },
+    "mech_canonical_program_entry_v1_numeric_1166": {
+      "stack_bytes": 304,
+      "code_bytes": 5376,
+      "text_offset": 84352
+    },
+    "mech_canonical_program_entry_v1_numeric_1193": {
+      "stack_bytes": 192,
+      "code_bytes": 1536,
+      "text_offset": 89728
+    },
+    "mech_canonical_program_entry_v1_numeric_1282": {
+      "stack_bytes": 560,
+      "code_bytes": 23168,
+      "text_offset": 91264
+    },
+    "mech_canonical_program_entry_v1_numeric_1311": {
+      "stack_bytes": 320,
+      "code_bytes": 7296,
+      "text_offset": 114432
+    },
+    "mech_canonical_program_entry_v1_numeric_1341": {
+      "stack_bytes": 96,
+      "code_bytes": 1664,
+      "text_offset": 121728
+    },
+    "mech_canonical_program_entry_v1_numeric_1522": {
+      "stack_bytes": 288,
+      "code_bytes": 4992,
+      "text_offset": 123392
+    },
+    "mech_canonical_program_entry_v1_numeric_1553": {
+      "stack_bytes": 80,
+      "code_bytes": 1024,
+      "text_offset": 128384
+    },
+    "mech_canonical_program_entry_v1_numeric_1790": {
+      "stack_bytes": 448,
+      "code_bytes": 13184,
+      "text_offset": 129408
+    },
+    "mech_canonical_program_entry_v1_numeric_1816": {
+      "stack_bytes": 272,
+      "code_bytes": 5120,
+      "text_offset": 142592
+    },
+    "mech_canonical_program_entry_v1_numeric_1844": {
+      "stack_bytes": 144,
+      "code_bytes": 1408,
+      "text_offset": 147712
+    },
+    "mech_canonical_program_entry_v1_numeric_1930": {
+      "stack_bytes": 144,
+      "code_bytes": 1152,
+      "text_offset": 149120
+    },
+    "mech_canonical_program_entry_v1_numeric_2128": {
+      "stack_bytes": 112,
+      "code_bytes": 896,
+      "text_offset": 150272
+    },
+    "mech_canonical_program_entry_v1_numeric_2174": {
+      "stack_bytes": 112,
+      "code_bytes": 768,
+      "text_offset": 151168
+    },
+    "mech_canonical_program_entry_v1_numeric_2228": {
+      "stack_bytes": 320,
+      "code_bytes": 5376,
+      "text_offset": 151936
+    },
+    "mech_canonical_program_entry_v1_numeric_2255": {
+      "stack_bytes": 192,
+      "code_bytes": 1536,
+      "text_offset": 157312
+    },
+    "mech_canonical_program_entry_v1_numeric_2349": {
+      "stack_bytes": 912,
+      "code_bytes": 51072,
+      "text_offset": 158848
+    },
+    "mech_canonical_program_entry_v1_numeric_2384": {
+      "stack_bytes": 272,
+      "code_bytes": 5120,
+      "text_offset": 209920
+    },
+    "mech_canonical_program_entry_v1_numeric_2412": {
+      "stack_bytes": 144,
+      "code_bytes": 1408,
+      "text_offset": 215040
+    },
+    "mech_canonical_program_entry_v1_numeric_2498": {
+      "stack_bytes": 144,
+      "code_bytes": 1152,
+      "text_offset": 216448
+    },
+    "mech_canonical_program_entry_v1_numeric_2651": {
+      "stack_bytes": 208,
+      "code_bytes": 3328,
+      "text_offset": 217600
+    },
+    "mech_canonical_program_entry_v1_numeric_2676": {
+      "stack_bytes": 128,
+      "code_bytes": 1152,
+      "text_offset": 220928
+    },
+    "mech_canonical_program_entry_v1_numeric_2742": {
+      "stack_bytes": 464,
+      "code_bytes": 6656,
+      "text_offset": 222080
+    },
+    "mech_canonical_program_entry_v1_numeric_2799": {
+      "stack_bytes": 240,
+      "code_bytes": 3072,
+      "text_offset": 228736
+    },
+    "mech_canonical_program_entry_v1_numeric_3098": {
+      "stack_bytes": 112,
+      "code_bytes": 896,
+      "text_offset": 231808
+    },
+    "mech_canonical_program_entry_v1_numeric_3144": {
+      "stack_bytes": 112,
+      "code_bytes": 768,
+      "text_offset": 232704
+    },
+    "mech_canonical_program_entry_v1_numeric_3198": {
+      "stack_bytes": 320,
+      "code_bytes": 5376,
+      "text_offset": 233472
+    },
+    "mech_canonical_program_entry_v1_numeric_3225": {
+      "stack_bytes": 192,
+      "code_bytes": 1536,
+      "text_offset": 238848
+    },
+    "mech_canonical_program_entry_v1_numeric_3309": {
+      "stack_bytes": 832,
+      "code_bytes": 29824,
+      "text_offset": 240384
+    },
+    "mech_canonical_program_entry_v1_numeric_3335": {
+      "stack_bytes": 208,
+      "code_bytes": 3328,
+      "text_offset": 270208
+    },
+    "mech_canonical_program_entry_v1_numeric_3360": {
+      "stack_bytes": 128,
+      "code_bytes": 1152,
+      "text_offset": 273536
+    },
+    "mech_canonical_program_entry_v1_numeric_3426": {
+      "stack_bytes": 464,
+      "code_bytes": 6656,
+      "text_offset": 274688
+    },
+    "mech_canonical_program_entry_v1_numeric_3483": {
+      "stack_bytes": 240,
+      "code_bytes": 3072,
+      "text_offset": 281344
+    },
+    "mech_canonical_program_entry_v1": {
+      "stack_bytes": 656,
+      "code_bytes": 269880,
+      "text_offset": 284416
+    }
+  },
+  "text_bytes": 554296,
+  "machine_constant_bytes": 1140,
+  "code_bytes": 555436,
+  "maximum_function_stack_bytes": 912,
+  "padding_before_first_function_bytes": 0,
+  "excluded_link_and_unwind_sections": [
+    {
+      "name": "__compact_unwind",
+      "segment": "__LD",
+      "address": 555448,
+      "size": 1696,
+      "offset": 556096,
+      "alignment_power": 3,
+      "flags": 33554432
+    },
+    {
+      "name": "__eh_frame",
+      "segment": "__TEXT",
+      "address": 557144,
+      "size": 4496,
+      "offset": 557792,
+      "alignment_power": 3,
+      "flags": 1744830475
+    }
+  ],
+  "code_extent_policy": "Conservative per-function extent includes padding to the next sealed definition; total code includes all machine text and executable constants.",
+  "source_or_layout_authority_granted": false
+}

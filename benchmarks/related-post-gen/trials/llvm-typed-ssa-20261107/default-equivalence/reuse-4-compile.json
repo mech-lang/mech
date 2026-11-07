@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-typed-ssa-opt-20261107-v6/compiler",
+    "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/reuse-4/build/source.mec",
+    "/private/tmp/mech-related-llvm-typed-ssa-default-equivalence-20261107-v6/reuse-4/build"
+  ],
+  "exit": 0,
+  "seconds": 5.014402874978259,
+  "stdout": "{\"code_bytes\":886344,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1536}\n",
+  "stderr": ""
+}

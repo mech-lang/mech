@@ -1,0 +1,550 @@
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_utf8_histogram
+Args:
+  - NumStackBytes:   '96'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_utf8_histogram
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_101
+Args:
+  - NumStackBytes:   '192'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_101
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_139
+Args:
+  - NumStackBytes:   '64'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_139
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_233
+Args:
+  - NumStackBytes:   '416'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_233
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_258
+Args:
+  - NumStackBytes:   '256'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_258
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_281
+Args:
+  - NumStackBytes:   '208'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_281
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_306
+Args:
+  - NumStackBytes:   '176'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_306
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_476
+Args:
+  - NumStackBytes:   '112'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_476
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_522
+Args:
+  - NumStackBytes:   '112'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_522
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_589
+Args:
+  - NumStackBytes:   '304'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_589
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_616
+Args:
+  - NumStackBytes:   '192'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_616
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_688
+Args:
+  - NumStackBytes:   '208'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_688
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_710
+Args:
+  - NumStackBytes:   '64'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_710
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_818
+Args:
+  - NumStackBytes:   '416'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_818
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_843
+Args:
+  - NumStackBytes:   '304'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_843
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_866
+Args:
+  - NumStackBytes:   '240'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_866
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_891
+Args:
+  - NumStackBytes:   '224'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_891
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_918
+Args:
+  - NumStackBytes:   '176'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_918
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1160
+Args:
+  - NumStackBytes:   '112'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1160
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1206
+Args:
+  - NumStackBytes:   '112'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1206
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1273
+Args:
+  - NumStackBytes:   '304'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1273
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1300
+Args:
+  - NumStackBytes:   '192'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1300
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1372
+Args:
+  - NumStackBytes:   '272'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1372
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1396
+Args:
+  - NumStackBytes:   '64'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1396
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1471
+Args:
+  - NumStackBytes:   '560'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1471
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1500
+Args:
+  - NumStackBytes:   '320'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1500
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1530
+Args:
+  - NumStackBytes:   '96'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1530
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1711
+Args:
+  - NumStackBytes:   '288'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1711
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1742
+Args:
+  - NumStackBytes:   '80'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1742
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_1979
+Args:
+  - NumStackBytes:   '448'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_1979
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2005
+Args:
+  - NumStackBytes:   '272'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2005
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2033
+Args:
+  - NumStackBytes:   '144'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2033
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2119
+Args:
+  - NumStackBytes:   '144'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2119
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2317
+Args:
+  - NumStackBytes:   '112'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2317
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2363
+Args:
+  - NumStackBytes:   '112'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2363
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2417
+Args:
+  - NumStackBytes:   '320'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2417
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2444
+Args:
+  - NumStackBytes:   '192'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2444
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2538
+Args:
+  - NumStackBytes:   '912'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2538
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2573
+Args:
+  - NumStackBytes:   '272'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2573
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2601
+Args:
+  - NumStackBytes:   '144'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2601
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2687
+Args:
+  - NumStackBytes:   '144'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2687
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2840
+Args:
+  - NumStackBytes:   '208'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2840
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2865
+Args:
+  - NumStackBytes:   '128'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2865
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2931
+Args:
+  - NumStackBytes:   '464'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2931
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_2988
+Args:
+  - NumStackBytes:   '240'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_2988
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_3287
+Args:
+  - NumStackBytes:   '112'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_3287
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_3333
+Args:
+  - NumStackBytes:   '112'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_3333
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_3387
+Args:
+  - NumStackBytes:   '320'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_3387
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_3414
+Args:
+  - NumStackBytes:   '192'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_3414
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_3498
+Args:
+  - NumStackBytes:   '832'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_3498
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_3524
+Args:
+  - NumStackBytes:   '208'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_3524
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_3549
+Args:
+  - NumStackBytes:   '128'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_3549
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_3615
+Args:
+  - NumStackBytes:   '464'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_3615
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1_numeric_3672
+Args:
+  - NumStackBytes:   '240'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1_numeric_3672
+  - String:          ''''
+...
+--- !Analysis
+Pass:            prolog-epilog
+Name:            StackSize
+Function:        mech_canonical_program_entry_v1
+Args:
+  - NumStackBytes:   '640'
+  - String:          ' stack bytes in function '''
+  - Function:        mech_canonical_program_entry_v1
+  - String:          ''''
+...

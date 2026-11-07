@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/opt/homebrew/opt/llvm/bin/llc",
+    "-O=3",
+    "-global-isel=0",
+    "-enable-machine-outliner=never",
+    "-mcpu=apple-m3",
+    "-relocation-model=pic",
+    "-filetype=obj",
+    "-pass-remarks-analysis=prologepilog",
+    "-pass-remarks-filter=prolog-epilog",
+    "-pass-remarks-output=/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/after-4/remarks.yaml",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/after-4/optimized.ll",
+    "-o",
+    "/private/tmp/mech-related-llvm-typed-ssa-qualification-20261107-v6/after-4/native.o"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 4.335883290972561,
+  "stdout": "",
+  "stderr": ""
+}

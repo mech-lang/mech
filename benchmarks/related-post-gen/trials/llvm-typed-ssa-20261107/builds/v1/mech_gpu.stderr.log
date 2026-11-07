@@ -1,0 +1,16 @@
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> /private/tmp/mech-related-llvm-object-backend-compiler-20261107/hosts/gpu/src/native_artifact/program/llvm_backend/lower.rs:149:52
+    |
+149 |                 for call in self.f.dfg.insts[inst].branch_destination(&self.f.dfg.jump_tables) {
+    |                                                    ^^^^^^^^^^^^^^^^^^------------------------- argument #2 of type `&PrimaryMap<cranelift_codegen::ir::ExceptionTable, ExceptionTableData>` is missing
+    |
+note: method defined here
+   --> /Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cranelift-codegen-0.131.3/src/ir/instructions.rs:426:11
+help: provide the argument
+    |
+149 |                 for call in self.f.dfg.insts[inst].branch_destination(&self.f.dfg.jump_tables, /* &PrimaryMap<cranelift_codegen::ir::ExceptionTable, ExceptionTableData> */) {
+    |                                                                                              ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0061`.
