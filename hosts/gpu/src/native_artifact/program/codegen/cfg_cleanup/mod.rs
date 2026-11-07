@@ -1,6 +1,7 @@
 //! Fold native branches proved by immutable integer SSA definitions, then retire
 //! unreachable blocks and their phi inputs before register allocation. Source
 //! work debits and runtime predicates without a word proof remain unchanged.
+mod boolean_words;
 mod dead_values;
 mod local_phis;
 mod preheaders;
@@ -65,6 +66,7 @@ pub(in crate::native_artifact) fn optimize(
         constant_branches_removed: 0,
         unsigned_intervals_combined: 0,
         selected_range_branches_removed: 0,
+        boolean_phi_values: 0,
         before_blocks,
         before_instructions,
         after_blocks: before_blocks,
@@ -110,8 +112,10 @@ pub(in crate::native_artifact) fn optimize(
     report.local_phi_parameters_removed =
         local_phis::simplify(&mut context.func, &context.cfg, &context.domtree);
     report.unsigned_intervals_combined = unsigned_intervals::combine(&mut context.func);
-    report.selected_range_branches_removed =
-        selected_ranges::fold(&mut context.func, &context.cfg, &context.domtree);
+    (
+        report.selected_range_branches_removed,
+        report.boolean_phi_values,
+    ) = selected_ranges::fold(&mut context.func, &context.cfg, &context.domtree);
     if report.selected_range_branches_removed != 0 {
         context.compute_cfg();
         context.compute_domtree();
