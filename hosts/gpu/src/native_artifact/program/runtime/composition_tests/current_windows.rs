@@ -53,11 +53,23 @@ fn changing_bound(source: &str) -> String {
         )
 }
 
-fn carried_forward_sources() -> [(String, usize); 2] {
+fn discarded_bound_sources() -> [(String, usize); 2] {
     direct_forward_sources().map(|(source, views)| {
         let carried = changing_bound(&source)
             .replace("    | k >= 8u64 -> :Done(k, best, item)\n", "")
             .replace("remaining + 2u64", "remaining");
+        (carried, views)
+    })
+}
+
+fn carried_forward_sources() -> [(String, usize); 2] {
+    discarded_bound_sources().map(|(source, views)| {
+        let carried = source
+            .replace(
+                ":Done(k<u64>, best<u32>, item<u64>)",
+                ":Done(k<u64>, best<u32>, item<u64>, remaining<u64>)",
+            )
+            .replace(":Done(k, best, item)", ":Done(k, best, item, remaining)");
         (carried, views)
     })
 }
@@ -84,6 +96,34 @@ fn numeric_forward_windows_preserve_bounds_through_invariant_carrier_copies() {
                 .any(|window| window["read_sites"].as_array().unwrap().len() >= views),
                 "an unchanged bound copied through the carrier must retain its gate"
             );
+        }
+    }
+    // Dropping the bound from a terminal payload does not preserve its raw
+    // home on every backedge. Until active-variant recurrence is proved, keep
+    // this shape on the checked route rather than granting a copied-word fact.
+    for (source, _) in discarded_bound_sources() {
+        for artifact in artifacts(&source) {
+            let object = crate::native_artifact::emit_program_object_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                NativeProgramLimitMode::NoLimits.compilation(),
+            )
+            .unwrap();
+            let metadata = object.metadata();
+            for region in [
+                "compiled_readonly_numeric_loops",
+                "compiled_numeric_write_loops",
+            ]
+            .into_iter()
+            .flat_map(|key| metadata[key].as_array().unwrap())
+            {
+                assert!(
+                    region["guarded_loop_windows"]
+                        .as_array()
+                        .unwrap()
+                        .is_empty()
+                );
+            }
         }
     }
 }
@@ -261,6 +301,7 @@ fn numeric_forward_windows_keep_zero_trip_errors_aliases_publication_and_recover
         .into_iter()
         .chain(direct_forward_sources())
         .chain(carried_forward_sources())
+        .chain(discarded_bound_sources())
     {
         for artifact in artifacts(&source) {
             let ordinary = JitProgramArtifact::compile_for_test(
@@ -350,6 +391,7 @@ fn numeric_forward_windows_keep_every_finite_boundary_and_retry() {
         .into_iter()
         .chain(direct_forward_sources())
         .chain(carried_forward_sources())
+        .chain(discarded_bound_sources())
     {
         resources::finite_boundaries(&source, |artifact, memory| {
             arguments(artifact, memory, 300, 0, 3, u32::MAX, u64::MAX)

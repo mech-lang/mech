@@ -76,3 +76,13 @@ ordinary traversal (no window assumptions; maximum recursive depth two).
 The new maintained source contract exercises invariant carrier copies for one
 and two direct-read views; the complete semantic/finite tests include both.
 Changing-bound refusals remain unchanged.
+
+The first IR264 fixture did not preserve its bound on every backedge: `Try`
+carried it while terminal `Done` erased the field. That original source remains
+as an explicit conservative-refusal case. The positive fixture now carries the
+unchanged field through both variants, matching the implemented all-backedge
+identity contract. Separate CLI emissions confirm both real hot-query gates and
+both all-backedge fixture gates. No benchmark source changed. Source/native
+errors, aliases, recovery and finite budgets cover all eight guarded, direct,
+invariant-carried and terminal-discarding source variants. A future active-only
+recurrence proof may admit terminal erasure; the current proof does not assume it.
