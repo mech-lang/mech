@@ -903,7 +903,7 @@ walk(original<[u64]>, data<[u64]>, i<u64>, end<u64>, total<u64>) => (out<u64>) :
   after := original[1u64]
   next-total := total + before + after + current
   out := ((i + 1u64 < end)? | true => walk(original,next,i + 1u64,end,next-total) | false => next-total).
-original := sequence/append(sequence/with-capacity(1u64),value<u64>)
+original := sequence/append(sequence/with-capacity(0u64,1u64),value<u64>)
 walk(original,original,0u64,steps<u64>,seed<u64>)
 "#;
     for artifact in artifacts(SOURCE) {
