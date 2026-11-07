@@ -6113,7 +6113,27 @@
     "evidence_records": 395,
     "source_branches_pushed_verified": true,
     "confirmation_rerun": false,
-    "LLVM_mandatory": false
+    "LLVM_mandatory": false,
+    "publication": {
+      "source_commits": {
+        "paired": "d18d25f699d3de7b655f2d4e1ff1e15197042597",
+        "compact": "43c194cd9f7f2f42f4afd142889d6eedba2cce36"
+      },
+      "evidence_commit": "ff675213e69e88605420099dca1f2f236b170199",
+      "evidence_records": 395,
+      "all_manifest_records_tracked": true,
+      "all995_cohort_output_references_verified": true,
+      "actual_machine_facts_rederived": true,
+      "bootstrap_decisions_recomputed": true,
+      "source_inventory_exact": true,
+      "upstream_audit_commit": "587f59d0a005af2229e0789f1883b288c5cfae2e",
+      "upstream973_head": "ee1146428eb873687bee8d28c850a2cd6193b9e5",
+      "selected_changed": false,
+      "PR990_head": "c39f78c403e3de12f4e65c222ddd0f2f7b227362",
+      "PR990_base": "codex/level12-compression-consolidated",
+      "PR990_body_verified": true,
+      "PR990_updated_at": "2026-11-07T18:34:42Z"
+    }
   },
   "latest_performance_cohort": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-paired-select-and-visit-work-20261107-5000-m3.json",
   "latest_resource_cohort": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-paired-select-and-visit-work-resources-20261107-5000-m3.json",
@@ -6154,5 +6174,7 @@
     "median_seconds": 0.023213000036776066,
     "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
   },
-  "latest_measurement_is_not_a_new_selected_compiler": true
+  "latest_measurement_is_not_a_new_selected_compiler": true,
+  "latest_upstream_973_audit": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/upstream-native-phase-entry-audit-20261107.json",
+  "latest_upstream_973_head": "ee1146428eb873687bee8d28c850a2cd6193b9e5"
 }
