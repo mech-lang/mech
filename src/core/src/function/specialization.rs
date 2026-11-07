@@ -699,9 +699,12 @@ impl BoundCall {
             }
         }
         Ok(Self {
+            operation: self.operation.clone(),
+            origin: self.origin.clone(),
             inputs,
             outputs,
-            ..self.clone()
+            implementation: self.implementation.clone(),
+            target: self.target,
         })
     }
 

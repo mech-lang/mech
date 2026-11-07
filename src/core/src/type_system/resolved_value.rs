@@ -75,8 +75,8 @@ impl ResolvedValueDescriptor {
         schema: Schema,
         shape: ShapeInstance,
     ) -> Result<Self, TypeResolutionError> {
-        let shape = schema
-            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+        schema
+            .validate_shape(&shape)
             .map_err(TypeResolutionError::semantic)?;
         let derived = ResolvedType::from_schema(&schema, &shape)?;
         if !exact_type_equal(&resolved_type, &derived) {
@@ -90,11 +90,11 @@ impl ResolvedValueDescriptor {
     }
 
     pub fn from_schema(schema: Schema, shape: ShapeInstance) -> Result<Self, TypeResolutionError> {
-        // The schema is this constructor's sole type authority. Canonicalize
+        // The schema is this constructor's sole type authority. Validate
         // the supplied shape and derive its type once; `new` must instead
         // rederive and compare because it also accepts an independent type.
-        let shape = schema
-            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+        schema
+            .validate_shape(&shape)
             .map_err(TypeResolutionError::semantic)?;
         let resolved_type = ResolvedType::from_schema(&schema, &shape)?;
         Ok(Self {
@@ -109,9 +109,8 @@ impl ResolvedValueDescriptor {
     /// on current parameter values. Bounds and all body extents are checked
     /// again; this retains no value or execution admission.
     pub fn with_current_shape(&self, shape: ShapeInstance) -> Result<Self, TypeResolutionError> {
-        let shape = self
-            .schema
-            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+        self.schema
+            .validate_shape(&shape)
             .map_err(TypeResolutionError::semantic)?;
         Ok(Self {
             resolved_type: self.resolved_type.clone(),
