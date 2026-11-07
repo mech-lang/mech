@@ -30,6 +30,47 @@ pub(in crate::native_artifact) struct Hooks {
 mod tests;
 impl Hooks {
     #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn numeric_outline_arguments(
+        &self,
+        frame: Value,
+        locals: Value,
+    ) -> [Value; 7] {
+        [
+            frame,
+            locals,
+            self.function,
+            self.context,
+            self.result,
+            self.arguments,
+            self.argument_capacity,
+        ]
+    }
+    /// Only the private compiler-emitted callee consumes these already-admitted
+    /// current entry words. Keep the caller's checked locals and hook snapshots;
+    /// reloading the root frame after a callback could observe replacements.
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn from_numeric_outline<M: Module>(
+        b: &mut FunctionBuilder<'_>,
+        module: &M,
+        args: [Value; 7],
+    ) -> Self {
+        let mut signature = module.make_signature();
+        signature.params = vec![cranelift_codegen::ir::AbiParam::new(types::I64); 7];
+        signature
+            .returns
+            .push(cranelift_codegen::ir::AbiParam::new(types::I64));
+        Self {
+            signature: b.import_signature(signature),
+            function: args[2],
+            context: args[3],
+            result: args[4],
+            arguments: args[5],
+            argument_capacity: args[6],
+            bound_shim: None,
+            bound_shim_calls: std::cell::Cell::new(0),
+        }
+    }
+    #[cfg(feature = "canonical-native-program")]
     pub(in crate::native_artifact) fn with_bound_shim<M: Module>(
         mut self,
         b: &mut FunctionBuilder<'_>,

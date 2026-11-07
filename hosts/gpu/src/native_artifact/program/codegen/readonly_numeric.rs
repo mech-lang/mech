@@ -96,20 +96,21 @@ pub(in crate::native_artifact) fn emit_entry(
     hooks: &Hooks,
     ordinary_blocks: &[Option<Block>],
     error: Block,
+    outline: super::numeric_outlined::Entry,
     reports: &mut CodegenReport,
-) -> Result<(), NativeCompileError> {
+) -> Result<bool, NativeCompileError> {
     if !controls.enabled(OptimizationPass::ScalarLoops) {
-        return Ok(());
+        return Ok(false);
     }
     let Some(id) = closed.header(site) else {
-        return Ok(());
+        return Ok(false);
     };
     let region = &closed.regions[id];
     let Some(proof) = &region.numeric else {
-        return Ok(());
+        return Ok(false);
     };
     if region.tail.header() as usize != site {
-        return Ok(());
+        return Ok(false);
     }
     let CodePlan::Program(program) = code else {
         return Err(backend("numeric leaf lacks managed program"));
@@ -127,6 +128,21 @@ pub(in crate::native_artifact) fn emit_entry(
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     b.ins().brif(ready, selected, &[], ordinary, &[]);
     b.switch_to_block(selected);
+    if let super::numeric_outlined::Entry::Call(function) = outline {
+        let gate_work = b.func.dfg.num_insts() - setup_start;
+        super::numeric_outlined::call(
+            b,
+            function,
+            frame,
+            locals,
+            hooks,
+            ordinary_blocks[region.tail.exit() as usize].unwrap(),
+            ordinary,
+            error,
+            gate_work,
+        )?;
+        return Ok(true);
+    }
     let shadow = region
         .shadow
         .ok_or_else(|| backend("numeric region lacks scratch home"))?;
@@ -884,13 +900,25 @@ pub(in crate::native_artifact) fn emit_entry(
         .boundary_spill_words
         .push(("failure", region.tail.header() as usize, count));
     b.ins().jump(error, &[status.into()]);
-    report.fixed_template_instructions = setup_work + b.func.dfg.num_insts() - boundary;
+    report.fixed_template_instructions = setup_work + b.func.dfg.num_insts() - boundary
+        + if matches!(outline, super::numeric_outlined::Entry::Body) {
+            super::numeric_outlined::ADDITIONAL_TEMPLATE_BOUND
+        } else {
+            0
+        };
     if report.fixed_template_instructions
         > proof
             .phase
             .as_ref()
             .map_or(FIXED_OVERHEAD, |p| p.boundary_work) as usize
     {
+        // Outlining is optional. A body fitting the original envelope may
+        // have insufficient headroom for the extra native call. Discard the
+        // temporary definition and retain the maintained inline route.
+        if matches!(outline, super::numeric_outlined::Entry::Body) {
+            b.switch_to_block(ordinary);
+            return Ok(false);
+        }
         return Err(backend("numeric leaf exceeds finite boundary envelope"));
     }
     // Inspect the actual emitted graph, stopping at the admitted cold/exit
@@ -919,5 +947,5 @@ pub(in crate::native_artifact) fn emit_entry(
         reports.readonly_numeric_loops.push(report);
     }
     b.switch_to_block(ordinary);
-    Ok(())
+    Ok(true)
 }

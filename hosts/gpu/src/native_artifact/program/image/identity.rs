@@ -359,7 +359,8 @@ fn selected_template(
 // IR205 consumes only dominating selected-edge bounds of immutable SSA words.
 // Facts leave scope at dominator joins; they never grant memory permissions.
 // IR206 preserves proved zero-or-one SSA transfers through current loop phis.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 206;
+// IR211 gives complete primary numeric phases an invocation-owned native call.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 211;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
