@@ -1,5 +1,15 @@
 # Native compression milestone
 
+## R198: invariant addresses in captured native reads
+
+The retained compressor source now runs faster on repeated 32 KB (**3.197971×→2.923528× Roc**, −8.58%) and periodic 33 KB (**3.743487×→3.579081×**, −4.39%). The compiler stages current buffer/base addresses once per captured child activation. Its hot matching loop falls **19→15 instructions** and three stack reloads→zero; source checks, finite debits and recovery remain. IR/work/ABI/MBC: **214/107/39/14**. No source rewrite is adopted.
+
+All 20 unchanged gates pass, with nine lower/eleven higher elapsed medians and geometric elapsed −0.183679%. Eight literals rise **4.805842×→4.871062×** (+1.36%), and eight overlap rises 2.46%; these tradeoffs remain explicit. Separate whole-call instructions fall 5.52%/5.04% on repeated/periodic, but sixteen instruction medians and three cycle medians rise. Allocation requests/bytes/reallocations/incremental usable peak remain equal in all 20 cases. Text grows 188 bytes; reported stack falls 192 bytes.
+
+Fresh current profiles retain 6,472 correct complete calls; the baseline has the same count. Generated code remains 64.48% of periodic, 70.65% repeated, 79.42% natural and 8.94% eight-byte wall-stack weights. A separate disjoint root-entry diagnostic localizes the eight-byte increase to native execution with its callbacks; setup and cleanup fall slightly. This is not a per-function instruction ledger. The next investigation must distinguish emitted work from callback machine code before broadening the optimization.
+
+675 native tests, two new maintained tests, nine focused checks, all 258 CI selections, unchanged 236 components/eight compositions/one real-capacity control, 1,724 native match controls, fifteen architecture checks and 132 workflow tests pass. The same seven inherited native exclusions remain. [Design, all twenty timings, counters, failure dispositions and immutable evidence](native-captured-read-addresses.md). Existing draft #973 only; parity remains incomplete.
+
 ## R197: immutable geometry survives enum-state loops
 
 The compiler now fully lowers12 word-pack occurrences in the three real424-block state machines, without requiring an affine trip proof. Source window checks, finite debits, checked arithmetic, publication, cleanup and retry remain. Native IR/work/ABI/bytecode213/107/39/14.

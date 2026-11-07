@@ -343,10 +343,10 @@ pub(super) fn emit(
     proof: &Proof,
     pack: &Pack,
     flat: bool,
+    staged_address: Option<cranelift_codegen::ir::Value>,
     next: Block,
 ) -> bool {
     let view = shadow + proof.view(pack.array);
-    let base = words.read(b, pack.base.get() as usize);
     let vector = if flat {
         b.ins().iconst(types::I8, 1)
     } else {
@@ -360,6 +360,7 @@ pub(super) fn emit(
     // checked additions or this guard. Spare allocation capacity is irrelevant.
     let mut valid = vector;
     if !pack.source_window {
+        let base = words.read(b, pack.base.get() as usize);
         let length = words.read(b, view + 1);
         let end = b.ins().iconst(types::I64, pack.end as i64);
         let enough = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, length, end);
@@ -384,9 +385,15 @@ pub(super) fn emit(
         b.switch_to_block(fast);
         Some(original)
     };
-    let ordinal = b.ins().iadd_imm(base, pack.offset.wrapping_sub(1) as i64);
-    let pointer = words.read(b, view);
-    let address = b.ins().iadd(pointer, ordinal);
+    let address = if let Some(address) = staged_address {
+        debug_assert!(complete && pack.offset == 1);
+        address
+    } else {
+        let base = words.read(b, pack.base.get() as usize);
+        let ordinal = b.ins().iadd_imm(base, pack.offset.wrapping_sub(1) as i64);
+        let pointer = words.read(b, view);
+        b.ins().iadd(pointer, ordinal)
+    };
     let ty = match pack.width {
         2 => types::I16,
         4 => types::I32,

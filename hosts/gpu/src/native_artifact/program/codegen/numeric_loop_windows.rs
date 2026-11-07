@@ -14,6 +14,9 @@ use std::collections::BTreeMap;
 mod captured;
 #[path = "numeric_geometry_windows.rs"]
 mod geometry;
+#[path = "numeric_read_addresses.rs"]
+mod read_addresses;
+use read_addresses::ReadAddress;
 
 pub(super) struct Version {
     pub initialize: usize,
@@ -22,6 +25,7 @@ pub(super) struct Version {
     pub windows: Vec<Window>,
     pub captures: Vec<super::traversal_facts::CapturedWindow>,
     pub geometry: Vec<usize>,
+    pub addresses: Vec<ReadAddress>,
     pub facts: Facts,
     pub blocks: BTreeMap<u32, Block>,
     pub prepaid: Option<super::numeric_loop_prepayment::Prepayment>,
@@ -149,6 +153,7 @@ pub(super) fn derive(
             windows,
             captures: Vec::new(),
             geometry: Vec::new(),
+            addresses: Vec::new(),
             facts,
             prepaid,
             reduction,

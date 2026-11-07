@@ -361,8 +361,8 @@ fn selected_template(
 // IR206 preserves proved zero-or-one SSA transfers through current loop phis.
 // IR211 gives complete primary numeric phases an invocation-owned native call.
 // IR212 admits nullary scalar states and preserves their exact child-fuel exits.
-// IR213 gates immutable enum-state packed reads by current view geometry alone.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 213;
+// IR214 stages captured packed-read addresses at each current child entry.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 214;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
