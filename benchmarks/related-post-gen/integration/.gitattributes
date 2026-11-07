@@ -7,3 +7,7 @@ evidence/child-entry-facts/*.log whitespace=-blank-at-eof
 evidence/canonical-schema-and-boolean/*.patch whitespace=-blank-at-eol
 evidence/canonical-schema-and-boolean/*.py whitespace=-blank-at-eol
 evidence/child-entry-facts/*.py whitespace=-blank-at-eol
+
+evidence/scalar-home-and-root-phases/*.log whitespace=-blank-at-eof
+evidence/scalar-home-and-root-phases/*.patch.txt whitespace=-blank-at-eol
+evidence/scalar-home-and-root-phases/*.py whitespace=-blank-at-eol

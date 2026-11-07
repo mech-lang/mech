@@ -3843,8 +3843,8 @@
       "publication_generated": true
     },
     "verify-review.py": {
-      "sha256": "10683df2960fc5ec675570d4fbbe58c01a35c7939e4ca87c50b21822e3c28ca2",
-      "bytes": 34355
+      "sha256": "1d1ac7c858aff2c874d91d5e1ba858f8303dd67e672a105c6ecc3df03a99073e",
+      "bytes": 38627
     },
     "review/native-metadata/after-4/metadata.json.gz": {
       "sha256": "6172681ef00ff2861529ff54dd9b29666bc8e923a397c9043f08a1d7b93b1e8a",
@@ -3892,8 +3892,8 @@
       "bytes": 78272
     },
     "integration/README.md": {
-      "sha256": "779b0d50f6b73bab906cab0b39f68ba4ac2390d541a4cb0c2affdebc334b8d9f",
-      "bytes": 41325
+      "sha256": "f177ac3766994120f0a44069063faaa3a13d3262c434185cbd16a6c66737c48a",
+      "bytes": 44594
     },
     "integration/evidence/size-native-fuel-derived-debits-20261106.json": {
       "sha256": "3ad02f64e2500b47f6f068654b6a38baf414869a2be7eff4381e716129fb390f",
@@ -9736,8 +9736,8 @@
       "bytes": 888
     },
     "integration/.gitattributes": {
-      "sha256": "2db8564f4867cf2658c80ca10394ba6e82a159d4e3941b7a9d5387d7241e194e",
-      "bytes": 593
+      "sha256": "2ed3c5e9d9120701198c64d25d13122d19b2cad836f1fff9eaf3aac08b939fb3",
+      "bytes": 803
     },
     "integration/evidence/local-facts-and-metadata/native-function-text-correspondence.json": {
       "sha256": "7a48fdb26aeed8a68bd73bddb98117ad1e0da44173cb45084e73eae2b54811e5",
@@ -11994,6 +11994,526 @@
     "integration/ir240-review-status.json": {
       "sha256": "c83e1e4f7fe9c062f93b5e19514133c4a58c2a6c5bb74b72ab462cddda64a129",
       "bytes": 4614
+    },
+    "integration/ir241-local-archive-index.json": {
+      "sha256": "08a4daed7175d752ebd6a0cbb63e43c575262454482f30714c9f0bcbd98595d8",
+      "bytes": 405360
+    },
+    "integration/evidence/scalar-home-and-root-phases/after-4-edge-fixtures.json": {
+      "sha256": "7cff299b01545631048f6f0de29648abeea2edfd302d3d1d97824a066bbb8596",
+      "bytes": 62644
+    },
+    "integration/evidence/scalar-home-and-root-phases/after-4-edge-run.json": {
+      "sha256": "d24177dec9eda0922f9a0d88005f7145feeaa2594cc7b323f67dd13988b81af0",
+      "bytes": 2852
+    },
+    "integration/evidence/scalar-home-and-root-phases/after-4-native-link-audit.json": {
+      "sha256": "70111a55329c69d9c2a7ae6a50d76cc90bf40a8d0dd09fa75d9a29b6daff48dc",
+      "bytes": 13181
+    },
+    "integration/evidence/scalar-home-and-root-phases/after-4-runner-aot.build.json": {
+      "sha256": "2b6dd3fca6fe13c81b91fa2f7b6f21a0d272816478c6d221dc303f154be9fbc4",
+      "bytes": 16490
+    },
+    "integration/evidence/scalar-home-and-root-phases/captures.json.gz": {
+      "sha256": "2a98c138eaf0428b9f75f320df6c0b5439f68ed9e065f48c6817a134469660b7",
+      "bytes": 3933,
+      "compression": "gzip",
+      "uncompressed_sha256": "341148dcc4a3d8498fe03075b72fd227bd3b403a666791040bea70040392fa1c"
+    },
+    "integration/evidence/scalar-home-and-root-phases/compiler-build.json": {
+      "sha256": "c205341c0402d10b5e37ae27a9617e0bf1ade6ed1655790daff4f874dee31881",
+      "bytes": 78352
+    },
+    "integration/evidence/scalar-home-and-root-phases/feature-check-driver.stdout.log": {
+      "sha256": "712988727b56dbcc68d68d329e818d45f894a215e62872029044c00f23510df5",
+      "bytes": 46
+    },
+    "integration/evidence/scalar-home-and-root-phases/feature-check-run.py": {
+      "sha256": "d40622eef632e3b71bbc13bd8221ddef490e4383aeca2954d2ae5fa574caf6fa",
+      "bytes": 1101
+    },
+    "integration/evidence/scalar-home-and-root-phases/feature-check-scalar-compiler.json": {
+      "sha256": "e26170559469b629c452af26792f80b471cbc900664caa087dfb0cc32fc730ff",
+      "bytes": 10433
+    },
+    "integration/evidence/scalar-home-and-root-phases/feature-check-scalar-compiler.spec.json": {
+      "sha256": "db892f1ffe26cdff76ea131b1ae360b8b9f6eee68a3842bbbbb178c03647b75b",
+      "bytes": 10357
+    },
+    "integration/evidence/scalar-home-and-root-phases/helper-captures.json.gz": {
+      "sha256": "7c56e5188b826efc4851dbc85783e492c346d3d090684cc2e4af342efff33cbb",
+      "bytes": 14717,
+      "compression": "gzip",
+      "uncompressed_sha256": "39a3437eb0f3737c47b708187a3c3bee8b9ce6ace486691078d0b570dc88b3df"
+    },
+    "integration/evidence/scalar-home-and-root-phases/ir240-base-source-inventory.json": {
+      "sha256": "c0061363a0f47084765247245e3bc8641289429a1772a9df8cab1d6151f4c6ce",
+      "bytes": 313523
+    },
+    "integration/evidence/scalar-home-and-root-phases/mech-related-phase-attribution-capture-20261107.py": {
+      "sha256": "2ce6a0ee46781de2d45c5bbb2ac20d53128ef164437607ad54e4df51d46034bf",
+      "bytes": 4295
+    },
+    "integration/evidence/scalar-home-and-root-phases/mech-related-root-helper-capture-20261107.py": {
+      "sha256": "e718841bf66ee4aa2efac180f2d056ee3771ad3efdcff4e85eda9ac0b867cb9e",
+      "bytes": 4158
+    },
+    "integration/evidence/scalar-home-and-root-phases/mech-related-scalar-home-and-phases-summarize-20261107.py": {
+      "sha256": "2fa9a851f8afccc25ebe18b808a1e78236bcf28f95d0e437f0368212713b28cf",
+      "bytes": 10766
+    },
+    "integration/evidence/scalar-home-and-root-phases/native-profile-text-proof.json": {
+      "sha256": "49c379223952260ccb1208458b25df11212b6f511a168c01432b16104675ee69",
+      "bytes": 486
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-IR241-unselected-source.patch.txt": {
+      "sha256": "b75745135495e162406e19a59fd3ed9ec38b114c3c5f4bbfdf4e5c38c689b778",
+      "bytes": 25479
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-after-diagnostic-only-source.patch.txt": {
+      "sha256": "4dcc88d9365b159d0fb16eae76f5e9799cba5034ff033f50f2c6de25f09fbd10",
+      "bytes": 10532
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-after-helpers-diagnostic-only-source.patch.txt": {
+      "sha256": "75bb17cdf293ede5302210ee3ff4355676cc87386b65d70bb08e4ce038b3fc63",
+      "bytes": 15953
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-after-helpers-host-build-run.json": {
+      "sha256": "a84f7e394e582105a1c1f17f32518276373ebb4c740ea6d7c3a1d5ab1585c96a",
+      "bytes": 2680
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-after-helpers-native-link-audit.json": {
+      "sha256": "4b0a9a11d5a5a9f9481a2c0583e7c12a1be4d1231a68ebca08863cd3b4c631b9",
+      "bytes": 12858
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-after-helpers-runner-aot.build.json": {
+      "sha256": "429875753dc303ff2c7374f6e449085be388bbc03032b2035fe93d36bc5e1eed",
+      "bytes": 16689
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-after-helpers-runner.rs.txt": {
+      "sha256": "5473155223c29cc45833e55af6838956ba6d7a6238d31ebc8663c2d72fd46687",
+      "bytes": 9003
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-after-host-build-run.json": {
+      "sha256": "68c2eba901d2faef9dc8a5f93b5976e5714db9678739a4dc47a0909f62aa6963",
+      "bytes": 2615
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-after-native-link-audit.json": {
+      "sha256": "cc87b87b76822a7b9fc5dfe7e694b36930798bc29adafa3329c10005bed5278b",
+      "bytes": 12850
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-after-runner-aot.build.json": {
+      "sha256": "822e62ffabeee318237aa2f5a96b93783126258bb1e607083203a166e81fab85",
+      "bytes": 16530
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-after-runner.rs.txt": {
+      "sha256": "5473155223c29cc45833e55af6838956ba6d7a6238d31ebc8663c2d72fd46687",
+      "bytes": 9003
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-before-diagnostic-only-source.patch.txt": {
+      "sha256": "4dcc88d9365b159d0fb16eae76f5e9799cba5034ff033f50f2c6de25f09fbd10",
+      "bytes": 10532
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-before-host-build-run.json": {
+      "sha256": "ce1097f2bc966cc866b1c63ddf9047cf5a59035a102b1606a1df29e2a68fac65",
+      "bytes": 2625
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-before-native-link-audit.json": {
+      "sha256": "38a2c2ea1b6daff5e93ae42ad653be474490b38c52667cbd1fbb02e3771fa65f",
+      "bytes": 12858
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-before-runner-aot.build.json": {
+      "sha256": "a4f9dadb4f95e52b92a5c1b02465635170133cc6c8a949f5db249a5e1375a0af",
+      "bytes": 16541
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-before-runner.rs.txt": {
+      "sha256": "5473155223c29cc45833e55af6838956ba6d7a6238d31ebc8663c2d72fd46687",
+      "bytes": 9003
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-captures.json": {
+      "sha256": "341148dcc4a3d8498fe03075b72fd227bd3b403a666791040bea70040392fa1c",
+      "bytes": 42660
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-helper-captures.json": {
+      "sha256": "39a3437eb0f3737c47b708187a3c3bee8b9ce6ace486691078d0b570dc88b3df",
+      "bytes": 213560
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-helper-schedule.json": {
+      "sha256": "966e46044d593cc8d804b3a8baa9429577af3cd0a53385027dadaf4259bec4c1",
+      "bytes": 324
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-schedule.json": {
+      "sha256": "87043db3f4f2bb40c60a5f951759bbc7fdc5220eb867011db4d959089ce75fac",
+      "bytes": 380
+    },
+    "integration/evidence/scalar-home-and-root-phases/profile-xctrace-unavailable.json": {
+      "sha256": "cf36e35358eaec8e74f248893a37b0af5bb59fa41ac92bd875ef9eada3a565ca",
+      "bytes": 400
+    },
+    "integration/evidence/scalar-home-and-root-phases/randomized.json.gz": {
+      "sha256": "e10c345076969ee2501250e82f32d76bd39f12d0b7eb97e4c91e55919f9df825",
+      "bytes": 30037,
+      "compression": "gzip",
+      "uncompressed_sha256": "a6fcea7dade14d7bac9eb56088547a3e7a232ebe0aec6bbe7f767999f0eba78a"
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-driver.stdout.log": {
+      "sha256": "6c2dd6de5c34cab1e27542f647ad56ad99ccd9b93134295f080fdc05543dd4ed",
+      "bytes": 451
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-one-kib-comparison-initial-against-IR238.json": {
+      "sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "bytes": 1422
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-one-kib-comparison.json": {
+      "sha256": "861e8470e13f51f01b0234c9a083e1deaba509ff37ea2b0a19ed6238d31edf55",
+      "bytes": 2008
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-one-kib-run.json": {
+      "sha256": "5b326185f9184f1dbdfc56097e370984b3d1635f0dcb3169b7b54b1c3c0498d3",
+      "bytes": 3248
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-one-kib.build.json": {
+      "sha256": "e819c55144c3d194f089d1d5051d84518a03920babb4069f318d595d30f35f8e",
+      "bytes": 4577
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-run.initial.py": {
+      "sha256": "ce2b3f558ee7dd6746dd4767d0c33761b2de74fb4b25bc1511b3304137ae6640",
+      "bytes": 3553
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-run.py": {
+      "sha256": "1a6c71f2e747d9c31679f2972ed389ab8d9926aeee0ac5095283bf0570b88e61",
+      "bytes": 3560
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-scalar-comparison-initial-against-IR238.json": {
+      "sha256": "67ccca05956db06a885ed0e4c066b8430497d497b8c3ed8affccb88bd39ed3ab",
+      "bytes": 35991
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-scalar-comparison.json": {
+      "sha256": "8908b4b4baccf2c3d618405f714dc33a4af1413e6e32ed8827cfd9b2852ead1a",
+      "bytes": 36575
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-scalar-run.json": {
+      "sha256": "c55bf2bb3b383f80699dc7250e18d98cb8856f5db3dbd189bcb0f373dea0ad6a",
+      "bytes": 39397
+    },
+    "integration/evidence/scalar-home-and-root-phases/regressions-scalar.build.json": {
+      "sha256": "6389c347f3193e9e799d4708b288806f7ee617f49de5ea9480b07af3234e15ad",
+      "bytes": 2378
+    },
+    "integration/evidence/scalar-home-and-root-phases/resources.json.gz": {
+      "sha256": "7ae8c84d94e9052d1912d8183718cc051b8d48cf00c5735d66624c6a03294888",
+      "bytes": 55752,
+      "compression": "gzip",
+      "uncompressed_sha256": "bf0bf9a137715df8efc84a3b5d2d664b05068bb63e1cce88768e016a6e1a4e2c"
+    },
+    "integration/evidence/scalar-home-and-root-phases/reuse-4-edge-fixtures.json": {
+      "sha256": "a8ed5358d85190d7325742c034bccdcd7411f4a73dce05334d2c4af3a60b3359",
+      "bytes": 62597
+    },
+    "integration/evidence/scalar-home-and-root-phases/reuse-4-edge-run.json": {
+      "sha256": "daad92ea4be177b28d2e7bbea460ed7935981db604bf682027842731f4550bfa",
+      "bytes": 2853
+    },
+    "integration/evidence/scalar-home-and-root-phases/reuse-4-native-link-audit.json": {
+      "sha256": "7213e8e99d0746e816671a8521c3385e17edb990adc4378729b24cc6360a5277",
+      "bytes": 12857
+    },
+    "integration/evidence/scalar-home-and-root-phases/reuse-4-runner-aot.build.json": {
+      "sha256": "3dabf29c22a8e147fc13d0377a8940de2ab0967e234bcd9f7b3cd42393931c25",
+      "bytes": 16489
+    },
+    "integration/evidence/scalar-home-and-root-phases/runners-comparison-config.json": {
+      "sha256": "7adfdba3454df1ad3bdae41572cbe06a4daef03cda219243a0bd416aa99ce948",
+      "bytes": 12729
+    },
+    "integration/evidence/scalar-home-and-root-phases/runners-metrics-build-run.json": {
+      "sha256": "c38df47c26cec71eae56755c707435900bbd5ed09ec82e2834b07b4ad8e1ff39",
+      "bytes": 685
+    },
+    "integration/evidence/scalar-home-and-root-phases/runners-resource-config.json": {
+      "sha256": "27da8367b7f728f2d80afa98e7dff80ed389de6fbe853e0f006f2188462842d3",
+      "bytes": 14517
+    },
+    "integration/evidence/scalar-home-and-root-phases/runners-selection-summary.json": {
+      "sha256": "16c41803bf4fff44bd61b132d7ec1747afbc575617a0eb8c8c3c5988b968d25a",
+      "bytes": 457
+    },
+    "integration/evidence/scalar-home-and-root-phases/sizes.json": {
+      "sha256": "7458fb73e99b79d1a2b571e5707c463757c48fb8345be287a6edc559a3fd9a00",
+      "bytes": 24551
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-hosts__gpu__src__native_artifact__codegen__options.rs.txt": {
+      "sha256": "2f1541929c80a017b2ac66fe23b8d9e136cfe12dc4e372957fa3d8ba3befccd4",
+      "bytes": 6683
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-hosts__gpu__src__native_artifact__program__codegen__mod.rs.txt": {
+      "sha256": "db316232fbddad24a1734c7f0707bed3d21deb760934d0660eaf1d7c4d18c120",
+      "bytes": 3418
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-hosts__gpu__src__native_artifact__program__codegen__numeric_boundary.rs.txt": {
+      "sha256": "fc6f8880ac2a7fdf6a64d9ae362e0c5da72f74a886be1fbcab3b24b0be8f4827",
+      "bytes": 7782
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-hosts__gpu__src__native_artifact__program__codegen__numeric_retirement.rs.txt": {
+      "sha256": "92c83d39fe8c9b305aa04fa52608774b241b986f27db2ddaad4b83f943da3cd8",
+      "bytes": 3157
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-hosts__gpu__src__native_artifact__program__codegen__numeric_retirement_tests.rs.txt": {
+      "sha256": "b746c4abbb97cdac2dae3d34b01eacb20f1556435aefa29edfc4471d9dc86082",
+      "bytes": 4789
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-hosts__gpu__src__native_artifact__program__codegen__numeric_tree.rs.txt": {
+      "sha256": "0af75cc0f55a8b60a76a07c4316e7cf213f7d33e18586acdd39249ce906ddea8",
+      "bytes": 5801
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-hosts__gpu__src__native_artifact__program__codegen__readonly_numeric.rs.txt": {
+      "sha256": "2751ac315b48bf9c620b4069086cc280c4b67881360592498271ff8e95977061",
+      "bytes": 55987
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-hosts__gpu__src__native_artifact__program__image__identity.rs.txt": {
+      "sha256": "ba75e0c3f2b71605e175e971b28d749c957d6b8b785c5f91760619883e201572",
+      "bytes": 80409
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-hosts__gpu__src__native_artifact__program__runtime__composition_tests__numeric_tree.rs.txt": {
+      "sha256": "046389ff12d09243b6399b6da1f21ea79f394cf4f6533d85ad10249c8e967951",
+      "bytes": 60211
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-inventory.json": {
+      "sha256": "b54db97cf77f958f866e567d5a41ad17e0c69c3d43350facb2ec43803ad77411",
+      "bytes": 313808
+    },
+    "integration/evidence/scalar-home-and-root-phases/source-overrides.json": {
+      "sha256": "bef0b32781ba1e8381cc0ed69cd96a16f834d7dc8b1c9ec7286a85a1c72ece26",
+      "bytes": 1376
+    },
+    "integration/evidence/scalar-home-and-root-phases/summary.json": {
+      "sha256": "c387eeded93736d1f9b903aa9a21f94e7c828208c3f76ddef392c14c76550fd8",
+      "bytes": 136595
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-build-and-test.py": {
+      "sha256": "d8f5a4d2308309ee488f0f3b85a6439f3ab19067cc57999d7a131d113a858992",
+      "bytes": 3022
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-ci-selected-inventory-audit.json": {
+      "sha256": "0c48d6cb8c000b5df325645b5c08d78767dff7ff059b608e2bc8b62665ab89a3",
+      "bytes": 56186
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-ci-selected-list.stdout.log": {
+      "sha256": "08dfd846d8fa8ee1eb05e2f7da3cf22122366f4ec3373eb320716807a95bc1a2",
+      "bytes": 52987
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-driver.stdout.log": {
+      "sha256": "f097dcd4e0bcfd559a40958bfd90c49d00e5657706766575dd9500a3e4d31c0d",
+      "bytes": 604
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-canonical_relation.json": {
+      "sha256": "d4ba4b2f748749d43545fd31e8906fa0153ff015a1f74b44479367d5cbf052e4",
+      "bytes": 227
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-canonical_relation.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-canonical_relation.stdout.log": {
+      "sha256": "7defec5b82a6e13209be457c6cca0adf3351a61ef81d8424299fbae6260b1426",
+      "bytes": 293
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-child_entry_checks.json": {
+      "sha256": "6a2629c024385c1c55ca0db9549163c5f7c51a6c7df4fa99994d333d4bf035e2",
+      "bytes": 225
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-child_entry_checks.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-child_entry_checks.stdout.log": {
+      "sha256": "c828fe64352729c90dac0a27d5d4e38e94687b463348121a41c6a6b83ce37272",
+      "bytes": 2182
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-child_funding.json": {
+      "sha256": "8d84f228a983d1a6f3456e71afdec42b37dc1cd92bf865d695d811e84c65b8a4",
+      "bytes": 220
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-child_funding.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-child_funding.stdout.log": {
+      "sha256": "e63084786f322de26c889696345e620f6e98ae58e3b3f15098992cff2ca33b4a",
+      "bytes": 600
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-completion_does_not_get_totality.json": {
+      "sha256": "0d5bfa48688b2ae2b527550d9f8c211b2655b073c551f7089073b473091750a8",
+      "bytes": 241
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-completion_does_not_get_totality.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-completion_does_not_get_totality.stdout.log": {
+      "sha256": "369076e61ea76eb8418195f349bb3b9e860af826338c8749b0ec8ba4cc58d0ed",
+      "bytes": 253
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-huffman_parent_cleanup.json": {
+      "sha256": "d4a7a6ed34d927798aeda8260a6ab084cd44d795de397b1750aa124b8454ed39",
+      "bytes": 231
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-huffman_parent_cleanup.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-huffman_parent_cleanup.stdout.log": {
+      "sha256": "268a9203ebaae5c5c869f39e90e43c0426f245ba8af4397a2b2ce80ab5315c99",
+      "bytes": 694
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-local_effects.json": {
+      "sha256": "93e40b3d17f90ad310294497841ec7088c49e61660fb43f79585517af16104ea",
+      "bytes": 221
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-local_effects.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-local_effects.stdout.log": {
+      "sha256": "5d8803d14875372faedc65f1bf8a709739209be194613f468b0dc34a533bcc54",
+      "bytes": 3734
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-named_managed_fields_decline.json": {
+      "sha256": "309da5fd3797063e6a389d3a07e6f09c4371e80d5a778eae763c7436d47f5ca1",
+      "bytes": 237
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-named_managed_fields_decline.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-named_managed_fields_decline.stdout.log": {
+      "sha256": "7525e1b54209981a7f6f24c274b510545f5246713eda9d682e299d6109b03333",
+      "bytes": 277
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-native_argument_bank_numeric.json": {
+      "sha256": "f7b994cacfbb69df189e99907bdcb33b04a5511ecaf060167012711e5788870c",
+      "bytes": 237
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-native_argument_bank_numeric.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-native_argument_bank_numeric.stdout.log": {
+      "sha256": "b22374efb28b3f9a31066e2b01198d316eba2cea9ec08fa36db966902eaaf5f9",
+      "bytes": 256
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-nested_phase.json": {
+      "sha256": "2367a4e8d3756d68018db5d696d63e2f596c5ababe0a4372c1d6837285ebd940",
+      "bytes": 219
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-nested_phase.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-nested_phase.stdout.log": {
+      "sha256": "1ea96877223238cf9a734f43177aafc86219ba19823b871e51923641383b53e6",
+      "bytes": 16307
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-numeric_boolean_relations.json": {
+      "sha256": "f620c61a265594304e3c490710a8da7a1754e3b2d9ce5cc708715e0677e162fe",
+      "bytes": 233
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-numeric_boolean_relations.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-numeric_boolean_relations.stdout.log": {
+      "sha256": "b89c470fbf10a1be858432b5b6b332c1c5d1b76385a47d10863e6ea72cb61182",
+      "bytes": 668589
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-ordered_reduction.json": {
+      "sha256": "34a32ef0e3ed35eb83a399c953ac6a853f2efd1ddb3231adc128c891965b4343",
+      "bytes": 224
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-ordered_reduction.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-ordered_reduction.stdout.log": {
+      "sha256": "f74c8458cfc64960f96024f6a788cb9eefbf52f591b39b8df84722c962e92731",
+      "bytes": 4987
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-phase_descendants.json": {
+      "sha256": "0eb02b43cc6c5f1c5240cc60d9d200774fccee008a7451eb245983bf2731af36",
+      "bytes": 225
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-phase_descendants.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-phase_descendants.stdout.log": {
+      "sha256": "55c194a6722a592da32bb81030cc2c947dca2699b188911b13ea2eec708e8d08",
+      "bytes": 1603
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-scalar_home_masks.json": {
+      "sha256": "14545ae9595b0cf319073b4ded12ab69eb4a3448de975e8b0fffe861507c1e9a",
+      "bytes": 224
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-scalar_home_masks.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-scalar_home_masks.stdout.log": {
+      "sha256": "a3b288703a72676aa35dc9d83976292800513e6c26e9bc48da775dca293fbd09",
+      "bytes": 261
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-scalar_home_retirement.json": {
+      "sha256": "eb0e61ad0c3732f601601286aeef4320f7bebf011f448ff760b853c07e5feaf0",
+      "bytes": 230
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-scalar_home_retirement.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-scalar_home_retirement.stdout.log": {
+      "sha256": "d09d5f5647fe6c0a704f4deeac6b30f8c51ae38338b4c0ecc6d083d9268a57d5",
+      "bytes": 432
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-virtual_retirement.json": {
+      "sha256": "ad5198331aa3a6d165096d6dbe036cceb03913efe2c673b3055d5a79cb5a8509",
+      "bytes": 226
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-virtual_retirement.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-focus-virtual_retirement.stdout.log": {
+      "sha256": "69a420f5f2dc49c76dc22c0324ecb1c0a22901c997a06a1a313a49d2bc08c867",
+      "bytes": 2646
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-mech_gpu-build.json": {
+      "sha256": "3f651579deded0a74853b0c0f60d4247a32655c19b16b76293e2f4e73c265d1c",
+      "bytes": 10075
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-mech_gpu-build.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-mech_gpu-build.stdout.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-source-inventory.json": {
+      "sha256": "b54db97cf77f958f866e567d5a41ad17e0c69c3d43350facb2ec43803ad77411",
+      "bytes": 313808
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-test-run.json": {
+      "sha256": "8c6d868d63c6ae449bc441a4e58bbebaaf135bacfaed4156219e1babd0d5a812",
+      "bytes": 630
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-test-run.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/scalar-home-and-root-phases/tests-test-run.stdout.log": {
+      "sha256": "fe766137d4c5a2a77cada89ee94bba02d8e460a66d22b140ca9f0d76f963bc56",
+      "bytes": 127308
     }
   },
   "limitations": [

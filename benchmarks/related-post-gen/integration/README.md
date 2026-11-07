@@ -20,6 +20,20 @@ The24-hour trend is IR197→IR238: processing3.327833→2.934250ms (−11.8%), w
 
 All first/adverse samples remain. Latency and resources are separate seeded randomized cohorts. See `ir238-review-status.json`, `ir240-review-status.json`, both evidence summaries, source inventories and lossless local archive indices. **Two inherited GPU failures remain; draft, no merge requested, hostedCI not claimed green; raw binary archives remain local.**
 
+The next checked #973 head is `65034db9ca9da4133355108e85784703cde7592b`, which advanced after IR240 qualification. Its integration is pending; none of the measurements below are attributed to that newer source.
+
+## Unselected IR241 experiment and fresh root/parallel attribution
+
+IR241 (`8f6516cd93410c75df18648ed10b9d335ca5311b`) keeps compiler-local dirty masks for scalar-bank homes. Every entry and resumable first-change helper marks all homes dirty. A child return clears homes only while its bit is set; no mask is persisted or accepted as authority. Source work, prices, finite admission and the runtime ABI remain unchanged. This branch's active compiler remains IR240; the experiment is not applied.
+
+It passes861 GPU tests with the same two inherited failures,366 selected names,133 scalar/compression rows exactly equal to IR240,62 source fixtures and387 exact cohort outputs. Full AOT loader/finite/runtime adoption qualification is deliberately not claimed. In31 randomized rounds, original/four reaches2.912834ms /1.806456× fastest matched Rust and36.164791ms /1.492670× fastest full-process Rust. ParentIR240 is2.945000ms /37.042541ms in that cohort. Against selectedIR238, paired wins are22/31 processing and14/31 whole process, so IR241 stays unselected. Processing instructions fall56,993,316→55,425,746; allocations stay3758. Mask reuse is2.854667ms /1.770382× Rust, but remains unselected for its narrower unordered-input fast path. Its cycle median is adverse despite fewer instructions. All adverse and first samples remain.
+
+Fresh diagnostic executables use the exact original linked Objects; actual native bytes and all21 outputs are verified. Seven paired fresh processes separate all-thread parallel counters from the outside interval. After cleanup, parallel execution is about0.449ms /13.99million instructions, while outside remains2.444ms /39.02million instructions. Root canonical-library calls total about0.243ms across five calls. A second observer finds a median0.830ms across serial native numeric loans,0.249ms in the emitted UTF-8 histogram,0.232ms in emitted UTF-8 lookup, and0.647ms in runtime callbacks outside parallel dispatch. Each total is computed within an invocation before summarizing. These diagnostic wall intervals include observer overhead and are not CPU-time shares or primary benchmark timings.
+
+This changes the priority toward serial native preprocessing/index construction and immutable runtime preparation. Accelerating only the parallel stage cannot close the processing gap. Existing runtime vector addressing already handles current unit rows/columns; it is not a new missing optimization. Existing complete-child funding also remains implemented. Broader funding or readonly/alias facts need actual completion, prefix, ownership and mutation proofs.
+
+All raw reports, source overrides, exact diagnostic-only patches, audit receipts and the verified local archive index are retained in `evidence/scalar-home-and-root-phases/` and `ir241-local-archive-index.json`. The unselected source branch is `codex/related-native-scalar-home-retirement-20261107`. Xcode Time Profiler is unavailable; the fallback uses the already SDK-verified process-counter layout. Raw binaries remain local. Parity is unmet.
+
 ## Retained IR236 and earlier evidence
 
 Compiler **67bdc1a3ec9e28accb2fd968f4292ca73d81b542**, **IR236 / work115 / ABI41 / image9**, integrates #973 through **40bba44acd7a60e28e3378dab012ee9d50007c66**. [PR990](https://github.com/mech-lang/mech/pull/990) targets `codex/level12-compression-consolidated` (#973).

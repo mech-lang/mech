@@ -506,6 +506,61 @@ if schema_evidence.exists():
         b = rows(current / f'ir240-regressions-{kind}-run.json')
         assert len(a) == len(b) == count and a == b
 
+experiment = evidence / 'scalar-home-and-root-phases'
+if experiment.exists():
+    summary = json.loads((experiment / 'summary.json').read_text())
+    assert summary['identity'] == 'IR241/work115/ABI41/image9'
+    assert not summary['selected'] and not summary['applied_to_public_compiler'] and not summary['goal_complete']
+    assert summary['qualification']['full_AOT_loader_finite_runtime_adoption_qualification_not_run']
+    for phase, expected in [('randomized',310),('resources',77)]:
+        run = json.loads(gzip.decompress((experiment / (phase+'.json.gz')).read_bytes()))
+        assert len(run['samples']) == expected and run['execution_order']['mode'] == 'randomized'
+        assert all(r['exit'] == 0 and r['exact_rust_output'] for r in run['samples'])
+        if phase == 'randomized':
+            by = {}
+            for r in run['samples']: by.setdefault(r['variant'],{})[r['sample']] = r
+            a, b = by['mech-ir241-original-4'], by['mech-ir238-original-4']
+            assert sum(a[i]['post_json_seconds'] < b[i]['post_json_seconds'] for i in a) == 22
+            assert sum(a[i]['wall_seconds'] < b[i]['wall_seconds'] for i in a) == 14
+    tests = json.loads((experiment / 'tests-test-run.json').read_text())
+    assert tests['expected_failures_exact'] and not tests['new_failures']
+    assert '861 passed; 2 failed' in tests['summary'][0]
+    ci = json.loads((experiment / 'tests-ci-selected-inventory-audit.json').read_text())
+    assert ci['current_selected_count'] == len(ci['selected_names']) == 366 and len(ci['new_names']) == 3
+    assert ci['all_selected_names_executed_and_passed_in_complete_gpu_run']
+    for kind, count in [('scalar',128),('one-kib',5)]:
+        before = rows(evidence / f'child-entry-facts/ir240-regressions-{kind}-run.json')
+        after = rows(experiment / f'regressions-{kind}-run.json')
+        assert len(before) == len(after) == count and before == after
+    for name in ['after-4','reuse-4']:
+        fixtures = json.loads((experiment / (name+'-edge-fixtures.json')).read_text())
+        assert len(fixtures) == 31
+        assert all(r['exit'] == 0 and r.get('exact_rust_output',r.get('exact_expected_output',False)) for r in fixtures)
+    base = json.loads((experiment / 'ir240-base-source-inventory.json').read_text())['files']
+    verify_git_inventory('deebf08df690e37ddf763635d70fd25aaf0bedb4', base)
+    prototype = json.loads((experiment / 'source-inventory.json').read_text())['files']
+    assert len(prototype) == 2470
+    overrides = json.loads((experiment / 'source-overrides.json').read_text())
+    for name, expected in prototype.items():
+        if name in overrides: verify(experiment, overrides[name], expected)
+        else: assert base[name] == expected, name
+    phases = json.loads(gzip.decompress((experiment / 'captures.json.gz').read_bytes()))
+    details = json.loads(gzip.decompress((experiment / 'helper-captures.json.gz').read_bytes()))
+    assert len(phases['rows']) == 14 and phases['all14_outputs_exact'] and phases['timings_excluded']
+    assert len(details['rows']) == 7 and details['all7_outputs_exact'] and details['timings_excluded']
+    for r in phases['rows'] + details['rows']:
+        assert r['exact_standard_rust_output'] and not r['primary_benchmark_timings']
+        total = r['profile']['post_json_hardware']['instructions_retired']
+        parallel = sum(w['hardware']['instructions_retired'] for w in r['profile']['parallel_run_windows'])
+        assert parallel == r['parallel_hardware_sum']['instructions_retired']
+        assert total - parallel == r['outside_parallel_hardware']['instructions_retired'] >= 0
+    assert all(r['profile']['site_overflow_count'] == 0 for r in details['rows'])
+    proof = json.loads((experiment / 'native-profile-text-proof.json').read_text())
+    for label in ['before','after','after-helpers']:
+        audit = json.loads((experiment / f'profile-{label}-native-link-audit.json').read_text())
+        expected = json.loads((experiment / 'reuse-4-native-link-audit.json').read_text()) if label != 'before' else json.loads((evidence / 'child-entry-facts/ir240-reuse-4-native-link-audit.json').read_text())
+        assert audit['normalized_text_sha256'] == expected['normalized_text_sha256'] == proof[label]['normalized_text_sha256']
+
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833
 assert report['matched_native_reference']['median_seconds'] == 0.001651875

@@ -1,0 +1,14 @@
+{
+  "before": {
+    "normalized_text_sha256": "1ea96b1f8d41e4c76064d51a3f0c1349d16d42da2a8a7677f0ca7aa4649c9c7a",
+    "matches_uninstrumented_Object": true
+  },
+  "after": {
+    "normalized_text_sha256": "4d710ad194424b163e681becaf3001bdb437b542380c726b3d03c281450b9443",
+    "matches_uninstrumented_Object": true
+  },
+  "after-helpers": {
+    "normalized_text_sha256": "4d710ad194424b163e681becaf3001bdb437b542380c726b3d03c281450b9443",
+    "matches_uninstrumented_Object": true
+  }
+}
