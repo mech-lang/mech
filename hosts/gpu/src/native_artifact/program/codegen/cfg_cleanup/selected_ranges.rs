@@ -7,7 +7,6 @@ use cranelift_codegen::ir::condcodes::{CondCode, IntCC};
 use cranelift_codegen::ir::{
     Block, Function, InstBuilder, InstructionData as Data, Opcode, Value, ValueDef,
 };
-use std::collections::BTreeMap;
 
 fn mask(f: &Function, value: Value) -> Option<u64> {
     let ty = f.dfg.value_type(value);
@@ -155,23 +154,28 @@ fn incoming(f: &Function, cfg: &ControlFlowGraph, block: Block) -> Vec<(Value, R
     facts
 }
 
-pub(super) fn fold(f: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTree) -> usize {
+pub(super) fn fold(
+    f: &mut Function,
+    cfg: &ControlFlowGraph,
+    dom: &DominatorTree,
+) -> (usize, usize) {
     if f.layout.blocks().any(|b| {
         f.layout
             .block_insts(b)
             .any(|i| f.dfg.insts[i].exception_table().is_some())
     }) {
-        return 0;
+        return (0, 0);
     }
     let Some(entry) = f.layout.entry_block() else {
-        return 0;
+        return (0, 0);
     };
     enum Step {
         Enter(Block),
         Leave(Vec<(Value, Option<Range>)>),
     }
     let mut steps = vec![Step::Enter(entry)];
-    let mut known = BTreeMap::<Value, Range>::new();
+    let mut known = super::boolean_words::derive(f, cfg);
+    let boolean_phi_values = known.len();
     let mut changes = Vec::new();
     while let Some(step) = steps.pop() {
         match step {
@@ -214,5 +218,5 @@ pub(super) fn fold(f: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTree
     for (inst, target, args) in &changes {
         f.dfg.replace(*inst).jump(*target, args);
     }
-    changes.len()
+    (changes.len(), boolean_phi_values)
 }

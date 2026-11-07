@@ -1,6 +1,32 @@
 # Native compression milestone
 
-## R185 — selected native ranges
+## R186 — Boolean facts through loop arguments
+
+The compiler proves245 zero-or-one scalar loop arguments and removes eight additional branch sites. Unrestricted entry aliases, fresh loads, arithmetic changes and unknown seeds remain unknown. Current selected-edge facts consume this proof; source checks, work, errors and atomic publication remain. IR/work/ABI/MBC206/107/39/14.
+
+Retain the general Boolean-phi proof for19 lower instruction medians, all12 scalar medians lower and432B less reported stack. Primary elapsed is mixed and geometrically0.103379% adverse (8 faster/11 slower/1equal); this is not an overall latency win. All contrary observations preserved.
+
+| Input | Before / Roc | Current / Roc |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.612096× | 3.627353× |
+| reymont-prefix-16384 | 4.351896× | 4.351045× |
+| random-32769 | 4.807445× | 4.762072× |
+| 16384-distribution-change | 6.347301× | 6.337910× |
+| repeated-32769 | 3.025987× | 3.010009× |
+| 33027-periodic-window | 3.508801× | 3.484471× |
+| eight-literals | 4.548636× | 4.590889× |
+
+Separate counters show **19 lower /one higher instruction medians**, with **five cycle medians higher**. Natural32 instructions fall **1.722476%** despite worse elapsed/cycles. All12 scalar medians improve and pass unchanged gates. Code shrinks448B and reported stack432B. Allocation requests/bytes/reallocations and incremental peak heap are equal. A fixed−16B usable-live offset is unexplained; no heap/RSS saving is claimed.
+
+**663 native tests /all246 CI-selected names execute and pass**, with the same seven inherited exclusions. Three new maintained native tests, unchanged236/8/1 component qualification,15architecture/catalog checks,132workflow tests, runtime-only, formatting and warnings denied pass. The16-row original/decoded source control agrees with resident execution but activates zero new Boolean-phi proofs; no false coverage claim. Actual compressor and native execution tests establish the new mechanism.
+
+Five current profiles complete **17,761 calls**. The entire current Object is repeated byte-for-byte by independent source-location compilation. Natural32 is **79.52%** in main, with **34.11%** native without a fine tag. These are CPU-time shares, not retired-instruction counts or removable-host estimates.
+
+Fresh public replay verifies37 immutable packets, **5,352 file occurrences /1,099 paths**, preserving 12 multiversion paths. All38 receipts and three output hashes match. One container plus one receipt bundle in the existing release; no new PR.
+
+[All20 timings, design, receipts and limitations](native-boolean-phi-experiment.md). Existing draft#973 only; exact-head review requested and ordinary CI cancelled without waiting. Parity remains unproved.
+
+## Historical R185 — selected native ranges
 
 The compiler carries unsigned range facts from a unique selected edge through its dominated native code. Facts belong to immutable SSA words; fresh loads, joins with other predecessors and shared branch targets keep their checks. Source assertions, checked arithmetic, effects, prices, errors and publication remain. **8,721 proved branch sites** are removed (a static count). IR/work/ABI/MBC: **205/107/39/14**.
 
