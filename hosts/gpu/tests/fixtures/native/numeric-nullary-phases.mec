@@ -1,0 +1,31 @@
++> sequence
+
+checked-word(values<[u32]>, at<u64>, allowed<bool>) => (out<u64>) :=
+  permitted! := allowed
+  out<u64> := values[at + 1u64].
+
+#Fold(values<[u32]>, stop<u64>, allowed<bool>, divisor<u64>, flag<bool>) => <u64>
+  | :Start
+  | :Prefix(at<u64>, total<u64>)
+  | :Suffix(at<u64>, total<u64>)
+  | :Done(total<u64>).
+#Fold(values, stop, allowed, divisor, flag) -> :Start
+  :Start -> :Prefix(0u64, 0u64)
+  :Prefix(at, total)
+    | at < stop -> {
+        word := checked-word(values, at, allowed)
+      } -> :Suffix(at + 1u64, total + word)
+    | * -> :Done(total)
+  :Suffix(at, total)
+    | at < stop -> {
+        word := checked-word(values, at, allowed)
+      } -> :Prefix(at + 1u64, total + word)
+    | * -> :Done(total)
+  :Done(total) => (flag? | true => total / divisor | false => total / divisor + 100u64).
+
+walk(values<[u32]>, stop<u64>, left<u64>, total<u64>, flag<bool>, allowed<bool>, divisor<u64>) => (out<u64>) :=
+  more := left > 0u64
+  child := (more? | true => #Fold(values, stop, allowed, divisor, flag) | false => 0u64)
+  out := (more? | true => walk(values, stop, left - 1u64, total + child, flag == false, allowed, divisor) | false => total).
+
+walk(values<[u32]>, stop<u64>, steps<u64>, 0u64, flag<bool>, allowed<bool>, divisor<u64>)

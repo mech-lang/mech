@@ -1,5 +1,8 @@
 # Idiomatic source experiment (R195)
 
+
+R196 follow-up: the nullary layout/constant fix and enum-specific child-fuel snapshots now keep the real machine inside the maintained native numeric computation. All20 complete cases agree exactly, all1724 match controls pass, but eight performance gates fail. The source remains an acceptance witness. See [native enum-state lowering](../../../docs/design/native-nullary-state-lowering.md) for the final compiler patch, complete ratios and the lost loop-versioning proofs. The historical R195 failure below remains evidence of the original compiler gap.
+
 The source variant replaces three recursive match-extension helpers with one Mech state machine. Input and limits are captures; only the current cursor and word difference travel between states. The original three phases, checks, load order and early exits remain. Tables, buffer capacities, allocations, search effort and output reuse are unchanged. This is an acceptance witness, **not the production source**.
 
 All 1,724 native controls pass across both source versions and original/decoded artifacts. All 862 candidate controls also agree with resident execution; the old source has 71 disclosed resident default-work denials per form. Native generation from original/decoded candidate artifacts produces identical images.
