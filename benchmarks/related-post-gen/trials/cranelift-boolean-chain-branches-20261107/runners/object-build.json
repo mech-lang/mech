@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-boolean-chain-branches-runners-20261107-v3/compiler",
+    "/private/tmp/mech-related-llvm-native-image-cranelift-control-20261107-v4/build/source.mec",
+    "/private/tmp/mech-related-boolean-chain-branches-runners-20261107-v3/build"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 15.406903124880046,
+  "stdout": "{\"code_bytes\":889892,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1520}\n",
+  "stderr": ""
+}

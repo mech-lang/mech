@@ -1,0 +1,6 @@
+{
+  "source_commit": "8b6074e1c2d536d33ebc19b585947b00c7b67304",
+  "diagnostic_only": true,
+  "not_for_production_merging": true,
+  "build": "/private/tmp/mech-related-restore-instruction-phases-opt-20261107-v2/build.json"
+}

@@ -1,0 +1,59 @@
+{
+  "schema": "mech.related-post-gen.boolean-chain-performance-decision.v1",
+  "rule_sha256": "8fe36e69d9a11f017add06a72650e3d1b9e4cabb5ddc64825d84be15bbb69dd6",
+  "source_commit": "8571f39921",
+  "candidate": "mech-ir265-reuse-4",
+  "paired": {
+    "mech-ir242-reuse-4": {
+      "post_json_seconds": {
+        "wins": 1,
+        "median_paired_relative_change": 0.01885531594256573,
+        "median_paired_delta_seconds": 5.3750999999999886e-05,
+        "two_sided_95_interval": [
+          0.016709859995080123,
+          0.024805915063704553
+        ],
+        "one_sided_95_upper": 0.024210372303560712
+      },
+      "wall_seconds": {
+        "wins": 4,
+        "median_paired_relative_change": 0.0792242370116576,
+        "median_paired_delta_seconds": 0.0026335841976106167,
+        "two_sided_95_interval": [
+          0.05839425636605955,
+          0.10288949799296021
+        ],
+        "one_sided_95_upper": 0.09893642354167986
+      }
+    },
+    "mech-ir264-cranelift-runtime-control": {
+      "post_json_seconds": {
+        "wins": 0,
+        "median_paired_relative_change": 0.03142594305387969,
+        "median_paired_delta_seconds": 8.837499999999991e-05,
+        "two_sided_95_interval": [
+          0.023804155087997936,
+          0.036636210414264125
+        ],
+        "one_sided_95_upper": 0.03512705530642757
+      },
+      "wall_seconds": {
+        "wins": 2,
+        "median_paired_relative_change": 0.08982896113403371,
+        "median_paired_delta_seconds": 0.003040249925106764,
+        "two_sided_95_interval": [
+          0.07837855743452504,
+          0.1025192815776681
+        ],
+        "one_sided_95_upper": 0.10003487829706392
+      }
+    }
+  },
+  "processing_superiority": false,
+  "processing_practical_threshold": false,
+  "selected": false,
+  "decision": "Reject this Boolean-chain branch distribution experiment. Keep the fixed IR242 selected compiler; preserve optional LLVM as a separate comparison. Do not rerun unchanged to seek a favorable cohort.",
+  "all_first_and_adverse_samples_retained": true,
+  "latency_full_outputs_exact": 744,
+  "resources_full_outputs_exact": 175
+}

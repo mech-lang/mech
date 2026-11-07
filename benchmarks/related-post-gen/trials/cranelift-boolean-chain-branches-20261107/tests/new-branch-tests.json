@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-related-boolean-chain-branches-tests-20261107-v3/gpu-tests",
+    "boolean_chains",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.2157869169022888,
+  "stdout": "\nrunning 2 tests\ntest native_artifact::program::codegen::cfg_cleanup::boolean_chains::tests::boolean_chains_keep_eager_effects_raw_words_widths_and_same_target_payloads ... ok\ntest native_artifact::program::codegen::cfg_cleanup::boolean_chains::tests::boolean_chains_refuse_a_noncanonical_loop_backedge ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 904 filtered out; finished in 0.01s\n\n",
+  "stderr": ""
+}

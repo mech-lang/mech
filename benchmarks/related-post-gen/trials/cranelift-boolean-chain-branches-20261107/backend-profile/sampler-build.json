@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cc",
+    "-O3",
+    "-c",
+    "/private/tmp/mech-related-cranelift-backend-gap-diagnostic-20261107-v1/sampler.c",
+    "-o",
+    "/private/tmp/mech-related-cranelift-backend-gap-diagnostic-20261107-v1/sampler.o"
+  ],
+  "exit": 0,
+  "seconds": 0.3968652088660747,
+  "stdout": "",
+  "stderr": "",
+  "diagnostic_timings_excluded": true
+}

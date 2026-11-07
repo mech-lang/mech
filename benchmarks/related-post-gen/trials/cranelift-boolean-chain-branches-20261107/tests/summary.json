@@ -1,0 +1,12 @@
+{
+  "new_branch_tests_passed": true,
+  "cfg_cleanup_passed": true,
+  "actual_CI_names_exact": true,
+  "actual_CI_passed": 401,
+  "inherited399_all_preserved": true,
+  "added_test_names": [
+    "native_artifact::program::codegen::cfg_cleanup::boolean_chains::tests::boolean_chains_keep_eager_effects_raw_words_widths_and_same_target_payloads",
+    "native_artifact::program::codegen::cfg_cleanup::boolean_chains::tests::boolean_chains_refuse_a_noncanonical_loop_backedge"
+  ],
+  "first_harness_assertion": "Expected399 names before accounting for two new maintained tests; actual401 names all executed."
+}

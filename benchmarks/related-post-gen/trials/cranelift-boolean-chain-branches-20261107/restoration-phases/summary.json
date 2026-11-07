@@ -1,0 +1,425 @@
+{
+  "schema": "mech.related-post-gen.exclusive-restoration-instructions.v1",
+  "selected_compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+  "samples": 7,
+  "full5000_outputs_exact": 7,
+  "original_native_Object_and_link_audited": true,
+  "eager_validation_unchanged": true,
+  "instruction_attribution": "Exclusive nested hardware-counter differences, not PC-sample percentages",
+  "total_exclusive_restore_instructions_mean": 129372663.71428572,
+  "enclosing_restore_instructions_mean": 131025585.28571428,
+  "unattributed_hook_setup_and_counter_gap_instructions_mean": 1652921.5714285714,
+  "restore_allocations_median": 26837,
+  "restore_requested_bytes_median": 12830999,
+  "first_evaluation_processing_allocations_median": 3758,
+  "first_evaluation_processing_requested_bytes_median": 8012356,
+  "first_evaluation_processing_instructions_median": 54827766,
+  "phases": [
+    {
+      "phase": 12,
+      "label": "outer_serde_materialization",
+      "mean": {
+        "instructions": 51233288.571428575,
+        "cycles": 12994259.714285715,
+        "allocation_requests": 2087,
+        "requested_bytes": 2601962,
+        "seconds": 0.004498791714285714
+      },
+      "median": {
+        "instructions": 49981570,
+        "cycles": 11154763,
+        "allocation_requests": 2087,
+        "requested_bytes": 2601962,
+        "seconds": 0.002893875
+      },
+      "share_of_exclusive_restore_instructions": 0.3960132465431431
+    },
+    {
+      "phase": 35,
+      "label": "plan_blocks_materialization",
+      "mean": {
+        "instructions": 19016779.57142857,
+        "cycles": 4850677.857142857,
+        "allocation_requests": 2129,
+        "requested_bytes": 2025460,
+        "seconds": 0.001527976142857143
+      },
+      "median": {
+        "instructions": 18997759,
+        "cycles": 4839498,
+        "allocation_requests": 2129,
+        "requested_bytes": 2025460,
+        "seconds": 0.001232458
+      },
+      "share_of_exclusive_restore_instructions": 0.14699225497456214
+    },
+    {
+      "phase": 80,
+      "label": "remaining_layouts_and_validation",
+      "mean": {
+        "instructions": 18516156.14285714,
+        "cycles": 3969872.4285714286,
+        "allocation_requests": 3923,
+        "requested_bytes": 847695,
+        "seconds": 0.001274375142857143
+      },
+      "median": {
+        "instructions": 18258258,
+        "cycles": 3798831,
+        "allocation_requests": 3923,
+        "requested_bytes": 847695,
+        "seconds": 0.001005792
+      },
+      "share_of_exclusive_restore_instructions": 0.14312263202487135
+    },
+    {
+      "phase": 50,
+      "label": "call_bindings_and_type_slots_materialization",
+      "mean": {
+        "instructions": 13333688.857142856,
+        "cycles": 3400976.8571428573,
+        "allocation_requests": 8473,
+        "requested_bytes": 5300851,
+        "seconds": 0.0010326905714285715
+      },
+      "median": {
+        "instructions": 13312707,
+        "cycles": 3373885,
+        "allocation_requests": 8473,
+        "requested_bytes": 5300851,
+        "seconds": 0.000874375
+      },
+      "share_of_exclusive_restore_instructions": 0.10306419048918841
+    },
+    {
+      "phase": 70,
+      "label": "buffer_frame_decoding_and_composition",
+      "mean": {
+        "instructions": 9082218.42857143,
+        "cycles": 2276521.8571428573,
+        "allocation_requests": 1461,
+        "requested_bytes": 594756,
+        "seconds": 0.0007296725714285715
+      },
+      "median": {
+        "instructions": 8908862,
+        "cycles": 2177100,
+        "allocation_requests": 1461,
+        "requested_bytes": 594756,
+        "seconds": 0.000562291
+      },
+      "share_of_exclusive_restore_instructions": 0.07020198987808693
+    },
+    {
+      "phase": 20,
+      "label": "schema_decoding",
+      "mean": {
+        "instructions": 4208619.571428572,
+        "cycles": 1553369.857142857,
+        "allocation_requests": 3582,
+        "requested_bytes": 474096,
+        "seconds": 0.0005070417142857143
+      },
+      "median": {
+        "instructions": 3840024,
+        "cycles": 1205385,
+        "allocation_requests": 3582,
+        "requested_bytes": 474096,
+        "seconds": 0.000312583
+      },
+      "share_of_exclusive_restore_instructions": 0.03253098027511544
+    },
+    {
+      "phase": 32,
+      "label": "plan_library_templates_factory_schema_validation",
+      "mean": {
+        "instructions": 4036998.1428571427,
+        "cycles": 1203939.857142857,
+        "allocation_requests": 2577,
+        "requested_bytes": 314578,
+        "seconds": 0.0004388691428571429
+      },
+      "median": {
+        "instructions": 3879320,
+        "cycles": 1103848,
+        "allocation_requests": 2577,
+        "requested_bytes": 314578,
+        "seconds": 0.000285584
+      },
+      "share_of_exclusive_restore_instructions": 0.03120441387658748
+    },
+    {
+      "phase": 34,
+      "label": "plan_value_types_scopes_outputs_materialization",
+      "mean": {
+        "instructions": 2963426.285714286,
+        "cycles": 691908.5714285715,
+        "allocation_requests": 462,
+        "requested_bytes": 143051,
+        "seconds": 0.00023094628571428572
+      },
+      "median": {
+        "instructions": 2938034,
+        "cycles": 681254,
+        "allocation_requests": 462,
+        "requested_bytes": 143051,
+        "seconds": 0.000175833
+      },
+      "share_of_exclusive_restore_instructions": 0.02290612406542771
+    },
+    {
+      "phase": 40,
+      "label": "descriptor_type_templates_restore",
+      "mean": {
+        "instructions": 2291523.8571428573,
+        "cycles": 611885.5714285715,
+        "allocation_requests": 1828,
+        "requested_bytes": 208818,
+        "seconds": 0.00019944057142857143
+      },
+      "median": {
+        "instructions": 2243788,
+        "cycles": 581014,
+        "allocation_requests": 1828,
+        "requested_bytes": 208818,
+        "seconds": 0.000152125
+      },
+      "share_of_exclusive_restore_instructions": 0.017712581555896497
+    },
+    {
+      "phase": 31,
+      "label": "plan_record_header_decode",
+      "mean": {
+        "instructions": 1263403.5714285714,
+        "cycles": 1379136.5714285714,
+        "allocation_requests": 8,
+        "requested_bytes": 193896,
+        "seconds": 0.0004777501428571428
+      },
+      "median": {
+        "instructions": 775317,
+        "cycles": 1184954,
+        "allocation_requests": 8,
+        "requested_bytes": 193896,
+        "seconds": 0.000306959
+      },
+      "share_of_exclusive_restore_instructions": 0.009765614583145222
+    },
+    {
+      "phase": 0,
+      "label": "module_provenance_entry_binding_and_returns",
+      "mean": {
+        "instructions": 1097083.5714285714,
+        "cycles": 341755.85714285716,
+        "allocation_requests": 37,
+        "requested_bytes": 578,
+        "seconds": 0.00011664942857142856
+      },
+      "median": {
+        "instructions": 1058723,
+        "cycles": 309180,
+        "allocation_requests": 37,
+        "requested_bytes": 578,
+        "seconds": 8.2626e-05
+      },
+      "share_of_exclusive_restore_instructions": 0.008480026150280371
+    },
+    {
+      "phase": 60,
+      "label": "inventory_type_and_constant_validation",
+      "mean": {
+        "instructions": 1000548.4285714285,
+        "cycles": 319593.14285714284,
+        "allocation_requests": 9,
+        "requested_bytes": 18472,
+        "seconds": 9.855342857142857e-05
+      },
+      "median": {
+        "instructions": 950236,
+        "cycles": 283316,
+        "allocation_requests": 9,
+        "requested_bytes": 18472,
+        "seconds": 7.2833e-05
+      },
+      "share_of_exclusive_restore_instructions": 0.007733847320181172
+    },
+    {
+      "phase": 36,
+      "label": "plan_iterations_materialization",
+      "mean": {
+        "instructions": 492494.71428571426,
+        "cycles": 142200.57142857142,
+        "allocation_requests": 20,
+        "requested_bytes": 59744,
+        "seconds": 4.391071428571429e-05
+      },
+      "median": {
+        "instructions": 490160,
+        "cycles": 141797,
+        "allocation_requests": 20,
+        "requested_bytes": 59744,
+        "seconds": 3.7208e-05
+      },
+      "share_of_exclusive_restore_instructions": 0.003806791173237098
+    },
+    {
+      "phase": 33,
+      "label": "plan_ports_and_constants_materialization",
+      "mean": {
+        "instructions": 347974.71428571426,
+        "cycles": 171253.57142857142,
+        "allocation_requests": 222,
+        "requested_bytes": 31522,
+        "seconds": 7.135685714285715e-05
+      },
+      "median": {
+        "instructions": 288575,
+        "cycles": 138767,
+        "allocation_requests": 222,
+        "requested_bytes": 31522,
+        "seconds": 3.4666e-05
+      },
+      "share_of_exclusive_restore_instructions": 0.0026897081987443832
+    },
+    {
+      "phase": 30,
+      "label": "remaining_plan_restore_and_temporary_destruction",
+      "mean": {
+        "instructions": 186214.57142857142,
+        "cycles": 57931.857142857145,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 2.038642857142857e-05
+      },
+      "median": {
+        "instructions": 174362,
+        "cycles": 46883,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 1.2331e-05
+      },
+      "share_of_exclusive_restore_instructions": 0.0014393656749606607
+    },
+    {
+      "phase": 37,
+      "label": "plan_collections_materialization",
+      "mean": {
+        "instructions": 135915.85714285713,
+        "cycles": 50261.142857142855,
+        "allocation_requests": 19,
+        "requested_bytes": 15520,
+        "seconds": 1.548214285714286e-05
+      },
+      "median": {
+        "instructions": 136764,
+        "cycles": 50933,
+        "allocation_requests": 19,
+        "requested_bytes": 15520,
+        "seconds": 1.3292e-05
+      },
+      "share_of_exclusive_restore_instructions": 0.0010505763214632559
+    },
+    {
+      "phase": 10,
+      "label": "outer_descriptor_deserialization",
+      "mean": {
+        "instructions": 71351.42857142857,
+        "cycles": 18174,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 5.809428571428572e-06
+      },
+      "median": {
+        "instructions": 71354,
+        "cycles": 16392,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 4.166999999999999e-06
+      },
+      "share_of_exclusive_restore_instructions": 0.0005515185860979512
+    },
+    {
+      "phase": 11,
+      "label": "binary_image_reader_initialization_validation",
+      "mean": {
+        "instructions": 40929,
+        "cycles": 19908.14285714286,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 9.67257142857143e-06
+      },
+      "median": {
+        "instructions": 29071,
+        "cycles": 11301,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 3.041e-06
+      },
+      "share_of_exclusive_restore_instructions": 0.0003163651332895954
+    },
+    {
+      "phase": 90,
+      "label": "descriptor_struct_assembly",
+      "mean": {
+        "instructions": 18351.285714285714,
+        "cycles": 4582.571428571428,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 1.3748571428571428e-06
+      },
+      "median": {
+        "instructions": 18349,
+        "cycles": 4588,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 1.208e-06
+      },
+      "share_of_exclusive_restore_instructions": 0.00014184824821118148
+    },
+    {
+      "phase": 13,
+      "label": "binary_reader_end_validation",
+      "mean": {
+        "instructions": 17857.285714285714,
+        "cycles": 4494.285714285715,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 1.381e-06
+      },
+      "median": {
+        "instructions": 17857,
+        "cycles": 3902,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 1.084e-06
+      },
+      "share_of_exclusive_restore_instructions": 0.00013802982176917069
+    },
+    {
+      "phase": 38,
+      "label": "plan_struct_assembly",
+      "mean": {
+        "instructions": 17839.85714285714,
+        "cycles": 3766.285714285714,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 1.2025714285714286e-06
+      },
+      "median": {
+        "instructions": 17839,
+        "cycles": 3758,
+        "allocation_requests": 0,
+        "requested_bytes": 0,
+        "seconds": 1e-06
+      },
+      "share_of_exclusive_restore_instructions": 0.0001378951057408522
+    }
+  ],
+  "performance_measured": false,
+  "limitations": [
+    "Diagnostic hooks can perturb optimization and execution; only uninstrumented cohorts can establish latency gains.",
+    "Mixed phases explicitly include both decoding and validation or materialization; no pure-subcategory cost inferred.",
+    "Source and immutable native Object are unchanged; diagnostic runtime library only inserts synchronous counter boundaries.",
+    "First evaluation is independently measured; no restoration work deferred."
+  ]
+}

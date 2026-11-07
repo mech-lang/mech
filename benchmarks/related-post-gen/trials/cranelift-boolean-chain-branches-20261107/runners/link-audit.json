@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-boolean-chain-branches-runners-20261107-v3/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-boolean-chain-branches-runners-20261107-v3/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-boolean-chain-branches-runners-20261107-v3/native-link-proof.json"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.11080737505108118,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 53, \"normalized_text_sha256\": \"811c0055fbb5be43e87791f6f3bff56e50b44e94005d68363710ec6bc65bad79\"}\n",
+  "stderr": ""
+}

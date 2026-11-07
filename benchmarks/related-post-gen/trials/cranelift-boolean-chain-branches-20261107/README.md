@@ -1,0 +1,3 @@
+# Rejected Cranelift Boolean-chain experiment
+
+Read report.json (or report.json.gz) and source-and-selection.json. The selected IR242 compiler is unchanged; LLVM is optional. Both latency boundaries use the fastest eligible measured Rust independently. All first/adverse samples are retained. Run python3 verify.py to check file integrity, exact cohort outputs and arithmetic. Diagnostic PC observations are not CPU-time shares or dynamic instruction counts. Compressed Rust probes and manifests are evidence, not production compiler inputs. Local recipes retain exact original paths/toolchain receipts; rebuilding requires those inputs or equivalent relocated paths.

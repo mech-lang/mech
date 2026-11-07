@@ -1,0 +1,25 @@
+{
+  "schema": "mech.related-post-gen.boolean-chain-prospective-rule.v1",
+  "declared_utc": "2026-11-07T15:38:32.039830+00:00",
+  "measurements_started": false,
+  "samples": 31,
+  "seed": 990275,
+  "resource_samples": 7,
+  "resource_seed": 9902757,
+  "candidate": "mech-ir265-reuse-4",
+  "fixed_anchor": "mech-ir242-reuse-4",
+  "matched_frontend_control": "mech-ir264-cranelift-runtime-control",
+  "backend": "Cranelift; LLVM stays optional comparison only",
+  "target": "post_json_seconds",
+  "minimum_practical_relative_reduction": 0.03,
+  "superiority": "At least21/31 paired processing wins and upper95% two-sided bootstrap median relative-change interval below0 versus BOTH fixed IR242 and parent IR264.",
+  "other_boundary": "One-sided95% upper median paired whole-process relative-change bound <=1% versus fixed IR242, unchanged anchor; no accumulated concessions.",
+  "bootstrap": {
+    "resamples": 20000,
+    "seed": 99027599
+  },
+  "references": "Fastest eligible measured Rust per boundary among all twenty retained controls, including explicit apple-m3 builds.",
+  "all_first_and_adverse_samples_retained": true,
+  "no_rerun_for_failed_promotion": true,
+  "goal": "Parity with fastest Rust at both boundaries; this is a compiler experiment, not goal completion."
+}

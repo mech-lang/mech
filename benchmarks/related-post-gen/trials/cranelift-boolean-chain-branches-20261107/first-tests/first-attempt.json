@@ -1,0 +1,9 @@
+{
+  "compiler_build": "/private/tmp/mech-related-boolean-chain-branches-opt-20261107-v2/build.json",
+  "new_tests_passed": true,
+  "cfg_cleanup_passed": 37,
+  "cfg_cleanup_failed": 1,
+  "failure": "Unnecessary distribution of an already constant conjunction retained one extra jump block, breaking the existing net-reachability-reduction assertion. No output mismatch observed.",
+  "correction": "Refuse already constant branch conditions before distribution; retain existing constant-fold/reachability path.",
+  "performance_measured": false
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "mech-ir265-reuse-4",
+    "original_source": "/private/tmp/mech-related-boolean-chain-branches-runners-20261107-v3/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-boolean-chain-branches-metrics-20261107-v3/mech-ir265-reuse-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "a26f19e6b7609b8583eabcd8a745058bdd57c349731b425ca6d35a307b6a8e6b",
+    "diagnostic_executable_sha256": "bef103b36077eb0de6472022a23d0d77b04f3c67201bce5313f9db8d8ae87f32"
+  }
+]

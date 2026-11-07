@@ -1,0 +1,5 @@
+{
+  "quiet": true,
+  "process_snapshot_sha256": "cd00d50ab7f790bf32e3e2da3c503d2f7038f412e31747b7800d70b5a0f6ee4b",
+  "no_other_own_benchmark_build_test_profile_archive": true
+}
