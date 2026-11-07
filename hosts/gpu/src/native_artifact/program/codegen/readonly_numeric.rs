@@ -35,6 +35,7 @@ pub(in crate::native_artifact) struct Report {
     pub parent: Option<u32>,
     pub source_sites: Vec<usize>,
     pub typed_loads: Vec<(usize, u8)>,
+    pub canonical_vector_views: Vec<usize>,
     pub movable_capture_reads: Vec<(usize, usize)>,
     pub ordinary_capture_reads: Vec<(usize, usize)>,
     #[serde(skip)]
@@ -334,6 +335,12 @@ pub(in crate::native_artifact) fn emit_entry(
             }
         },
     )?;
+    let mut canonical_vector_views = Vec::new();
+    for array in 0..proof.arrays.len() {
+        if super::numeric_geometry::canonicalize(controls.options(), b, &words, code, proof, shadow, array)? {
+            canonical_vector_views.push(array);
+        }
+    }
     for (at, array) in proof.arrays.iter().enumerate() {
         if matches!(array.width, 1 | 2 | 4 | 8) {
             // Runtime unsigned_matrix_native_view validates the actual packed
@@ -487,6 +494,7 @@ pub(in crate::native_artifact) fn emit_entry(
         source_sites: proof.sites.clone(),
         native_extent_bounds: Vec::new(),
         typed_loads: Vec::new(),
+        canonical_vector_views,
         movable_capture_reads: Vec::new(),
         ordinary_capture_reads: Vec::new(),
         capture_read_candidates: Vec::new(),
@@ -896,6 +904,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     controls,
                     b,
                     &words,
+                    code,
                     region,
                     proof,
                     *array,
@@ -975,6 +984,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     controls,
                     b,
                     &words,
+                    code,
                     region,
                     proof,
                     *array,
@@ -1180,6 +1190,7 @@ pub(in crate::native_artifact) fn emit_entry(
                             controls,
                             b,
                             &words,
+                            code,
                             region,
                             proof,
                             *array,

@@ -88,3 +88,5 @@ mod ordered_reduction;
 
 #[cfg(mech_native_check_census)]
 pub(in crate::native_artifact) mod check_census;
+
+mod numeric_geometry;

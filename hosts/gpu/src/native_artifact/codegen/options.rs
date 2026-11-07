@@ -56,6 +56,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     DisjointState,
     NontrappingHomes,
     ChildFunding,
+    /// Exact admitted unit-axis geometry, including cold reloaded views.
+    InvariantVectorGeometry,
 }
 #[cfg(feature = "canonical-native-program")]
 impl OptimizationOptions {

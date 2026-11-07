@@ -802,3 +802,5 @@ fn composition_native_parent_resumes_after_an_ordinary_empty_child_latest_phase(
         );
     }
 }
+
+mod invariant_vector_geometry;

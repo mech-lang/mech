@@ -67,6 +67,7 @@ pub(super) fn materialize(
     controls: &CompilationControls,
     b: &mut FunctionBuilder<'_>,
     words: &Words,
+    code: CodePlan<'_>,
     region: &Region,
     proof: &Proof,
     array: usize,
@@ -207,6 +208,9 @@ pub(super) fn materialize(
         );
         words.write(b, slot, value);
     }
+    // This helper has revalidated the current same-schema owner and view.
+    // Reestablish its exact shape identities before rejoining native loops.
+    super::super::numeric_geometry::canonicalize(controls.options(), b, words, code, proof, shadow, array)?;
     if let Some(tree) = &region.numeric_tree {
         for slot in tree.counters..tree.bank() {
             let value = if tree.live_counter_word(
