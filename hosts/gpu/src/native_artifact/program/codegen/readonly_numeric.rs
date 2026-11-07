@@ -36,6 +36,9 @@ pub(in crate::native_artifact) struct Report {
     pub source_sites: Vec<usize>,
     pub typed_loads: Vec<(usize, u8)>,
     pub movable_capture_reads: Vec<(usize, usize)>,
+    pub ordinary_capture_reads: Vec<(usize, usize)>,
+    #[serde(skip)]
+    pub capture_read_candidates: Vec<super::numeric_captured_reads::Candidate>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub source_guarded_read_packs: Vec<usize>,
     pub fully_lowered_read_packs: Vec<usize>,
@@ -483,6 +486,8 @@ pub(in crate::native_artifact) fn emit_entry(
         native_extent_bounds: Vec::new(),
         typed_loads: Vec::new(),
         movable_capture_reads: Vec::new(),
+        ordinary_capture_reads: Vec::new(),
+        capture_read_candidates: Vec::new(),
         read_pack_sites: Vec::new(),
         source_guarded_read_packs: Vec::new(),
         fully_lowered_read_packs: Vec::new(),
@@ -1075,10 +1080,9 @@ pub(in crate::native_artifact) fn emit_entry(
                 };
                 let movable =
                     matches!(operation, Operation::Read { .. }) && movable_captures.contains(array);
-                let (address, ty) = if movable {
-                    report.movable_capture_reads.push((site, *array));
+                let (address, ty, clamp) = if movable {
                     let base = words.read(b, view);
-                    super::numeric_captured_reads::address(
+                    let (address, ty, clamp) = super::numeric_captured_reads::address(
                         b,
                         ordinal,
                         length,
@@ -1087,9 +1091,10 @@ pub(in crate::native_artifact) fn emit_entry(
                         columns,
                         width,
                         template.inputs()[0].body(),
-                    )?
+                    )?;
+                    (address, ty, Some(clamp))
                 } else {
-                    super::numeric_words::linear_address(
+                    let (address, ty) = super::numeric_words::linear_address(
                         b,
                         ordinal,
                         rows,
@@ -1097,7 +1102,8 @@ pub(in crate::native_artifact) fn emit_entry(
                         width,
                         template.inputs()[0].body(),
                         |b| words.read(b, view),
-                    )?
+                    )?;
+                    (address, ty, None)
                 };
                 let value = b.ins().load(
                     ty,
@@ -1109,6 +1115,23 @@ pub(in crate::native_artifact) fn emit_entry(
                     address,
                     0,
                 );
+                if let Some(clamp) = clamp {
+                    let cranelift_codegen::ir::ValueDef::Result(load, 0) =
+                        b.func.dfg.value_def(value)
+                    else {
+                        unreachable!("physical capture load lost its instruction");
+                    };
+                    report
+                        .capture_read_candidates
+                        .push(super::numeric_captured_reads::Candidate {
+                            site,
+                            array: *array,
+                            load,
+                            ordinal,
+                            rows,
+                            clamp,
+                        });
+                }
                 let value = if width < 8 {
                     b.ins().uextend(types::I64, value)
                 } else {

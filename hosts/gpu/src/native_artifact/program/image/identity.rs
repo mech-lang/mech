@@ -421,7 +421,9 @@ fn selected_template(
 // captures lend immutable zero storage. Original source checks remain effects.
 // IR249 integrates PR973/IR204 unsigned interval predicate combination.
 // Demand liveness retains its ablation and extent-proof alias records.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 249;
+// IR250 selects movable capture reads only after local-phi cleanup proves a
+// reusable loop-invariant selector. Advancing reads retain ordinary addresses.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 250;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

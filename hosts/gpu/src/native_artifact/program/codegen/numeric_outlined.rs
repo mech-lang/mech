@@ -150,6 +150,19 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
                 &mut context,
                 module.isa(),
             )?;
+        for receipt in local
+            .numeric_write_loops
+            .iter_mut()
+            .chain(&mut local.readonly_numeric_loops)
+        {
+            let (selected, ordinary) = super::super::numeric_captured_reads::select(
+                &mut context,
+                &receipt.capture_read_candidates,
+                super::super::numeric_words::guarded_load_flags(controls.options()),
+            );
+            receipt.movable_capture_reads = selected;
+            receipt.ordinary_capture_reads = ordinary;
+        }
         if controls.enabled(OptimizationPass::BitCounts) {
             crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
         }

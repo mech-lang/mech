@@ -55,7 +55,7 @@ fn zero_append_frontiers_remove_only_empty_guards_and_preserve_growth_errors_and
 }
 
 #[test]
-fn movable_capture_reads_keep_current_windows_empty_views_and_retries() {
+fn movable_capture_reads_decline_advancing_indices_and_keep_empty_views_and_retries() {
     check_frontier_emission(OptimizationPass::MovableCaptureReads);
 }
 
@@ -106,9 +106,23 @@ fn check_frontier_emission(pass: OptimizationPass) {
                 .map(|region| region["movable_capture_reads"].as_array().unwrap().len())
                 .sum::<usize>()
             };
+            assert_eq!(
+                reads(&object.metadata()),
+                0,
+                "advancing indices retain ordinary guarded reads"
+            );
+            let metadata = object.metadata();
+            let declined: usize = [
+                "compiled_numeric_write_loops",
+                "compiled_readonly_numeric_loops",
+            ]
+            .into_iter()
+            .flat_map(|key| metadata[key].as_array().unwrap())
+            .map(|region| region["ordinary_capture_reads"].as_array().unwrap().len())
+            .sum();
             assert!(
-                reads(&object.metadata()) > 0,
-                "exercise actual movable capture reads"
+                declined > 0,
+                "exercise profit selection of real capture reads"
             );
             assert_eq!(reads(&old_object.metadata()), 0);
         } else {

@@ -34,3 +34,28 @@ nonempty views, extreme selectors, real shared-owner writes across the cold
 materialization callback, source failures, prior publication, decoded artifacts,
 restored execution, finite boundaries and retry. Performance remains an open
 measurement until an eligible cohort demonstrates improvement in both scopes.
+## Select reads after loop-parameter cleanup
+
+IR250 integrates PR973's unsigned interval predicates and selects reusable
+capture reads after native local-phi cleanup. A bounded recursive query accepts
+selectors defined before the innermost natural loop, or pure integer expressions
+of those values. Advancing selectors, unknown producers and single-use reads
+retain ordinary source-guarded addresses and memory flags. The removed clamp
+results remain aliases for the following unsigned-extent analysis.
+
+This is a profitability decision. Its safety permission still comes from the
+same direct ancestor ownership proof and independently safe initialized address.
+Retained clamps use unsigned min/max data flow; source comparisons cannot become
+their only protection. Source arithmetic, errors, effects, debits and publication
+are unchanged. No runtime cache, counter, allocation or dispatch is added.
+
+The executable selection test combines an invariant read with an advancing read,
+checks actual load flags and retired clamp aliases, verifies the native IR and
+compares optimized execution across loop bounds and extreme invariant selectors.
+The current-window fixture now requires advancing reads to decline selection;
+the shared-owner fixture still requires actual selected immutable reads. Empty
+matrix, finite-prefix, error and retry cases remain exercised.
+
+Performance is unmeasured until the frozen candidate completes qualification and
+both continuous post-JSON and complete-process randomized cohorts.
+
