@@ -1,5 +1,26 @@
 # Native compression milestone
 
+## R190 — duplicate join arguments rejected after full measurement
+
+**Production remains R186/IR206.** The candidate removes 142 exact duplicate private join arguments and shrinks generated text by 2,456 bytes, but reported stack grows 144 bytes. All 20 original gates pass with exact output, inflation, work, aliases, capacity and cleanup agreement. The measured tradeoff is unfavorable: 19 elapsed medians worsen, one improves, and geometric elapsed rises 0.783878%. Separate counters have 14 higher instruction medians and 13 higher cycle medians; all 12 scalar medians are adverse. Heap requests, bytes, reallocations and usable peaks remain equal.
+
+| Input | Retained compiler / Roc | Rejected candidate / Roc |
+|---|---:|---:|
+| Natural text 32 KB | 3.627365× | 3.651736× |
+| Random 32 KB | 4.738701× | 4.769069× |
+| Distribution change 16 KB | 6.312078× | 6.323377× |
+| Repeated 32 KB | 2.982935× | 3.005232× |
+| Periodic 33 KB | 3.469895× | 3.513236× |
+| Eight bytes | 4.480176× | 4.512758× |
+
+Candidate qualification passes 664 native tests, seven focused tests and all 247 actually executed CI selections, with the same seven inherited exclusions. Unchanged component/composition/real-capacity checks are 236/8/1. All 15 architecture/catalog checks, 132 workflow tests, runtime-only, formatting and warnings denied pass. Restored production reuses unchanged R186 qualification (663/246); no fresh candidate count is claimed for production.
+
+Five fresh profiles complete 17,748 correct calls. The independent source-map build repeats all five candidate image files byte-for-byte. Actual prologues show fixed stack storage 16,368→16,512 bytes with the same saved-register set. Fresh candidate unattributed stack accesses remain 21.16% of natural32 timer samples, 25.31% random32, 21.31% repeated32 and 16.45% distribution-change16. These are samples, not fully removable time or a per-function instruction ledger.
+
+The bounded next experiment should isolate a complete hot native loop from unrelated live state and measure the resulting register allocation. The source, algorithm, allocation sites, buffers and timing boundaries remain pinned. All eight candidate compiler/test/CI paths are restored.
+
+[Complete rejected candidate, all 20 timings, counters and reproducible evidence](native-private-join-arguments.md). The existing PR remains draft; no new PR is opened.
+
 ## R189 — register-spill diagnosis; no production change
 
 The pass-order probe passes its focused regression and all 665 candidate native tests, including 248 actual CI selections. It removes no additional compressor state, and the entire instruction section is byte-for-byte identical. The five-file candidate is archived and declined. Production remains the qualified R186 compiler; no new timing is claimed.
