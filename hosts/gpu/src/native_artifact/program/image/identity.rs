@@ -414,7 +414,9 @@ fn selected_template(
 // IR245 numeric alias classes remain a separately measured, unselected experiment.
 // IR246 combines demand liveness with point-local nonfaulting numeric loads.
 // Source bounds, error paths, memory dependence and control dependence remain.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 246;
+// IR247 integrates PR973/IR203 initialized ordinary local-word homes while
+// retaining their default alias class and current callback synchronization.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 247;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
