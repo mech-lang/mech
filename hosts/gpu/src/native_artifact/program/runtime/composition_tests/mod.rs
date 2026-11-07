@@ -12,6 +12,8 @@ mod bulk_bytes;
 mod captured_numeric;
 mod captured_window_handoffs;
 mod captured_windows;
+mod canonical_boolean_proofs;
+mod canonical_boolean_edges;
 mod child_cleanup;
 mod child_fuel;
 mod child_funding;

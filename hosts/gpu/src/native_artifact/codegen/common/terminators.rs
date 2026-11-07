@@ -35,6 +35,14 @@ pub(in crate::native_artifact) fn emit_source_terminator(
             yes,
             no,
         }) => {
+            if let Some((condition, expected)) =
+                super::canonical_booleans::direct_literal(code, options, left, right)
+            {
+                let condition = words.read(b, condition.get() as usize);
+                let (yes, no) = if expected { (yes, no) } else { (no, yes) };
+                b.ins().brif(condition, target(yes), &[], target(no), &[]);
+                return;
+            }
             let kind = code.kind(left).unwrap();
             let left = words.read(b, left.get() as usize);
             let right = words.read(b, right.get() as usize);

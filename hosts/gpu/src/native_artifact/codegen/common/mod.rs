@@ -10,6 +10,8 @@ pub(in crate::native_artifact) mod unsigned_guard_facts;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod boolean_branches;
 #[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod canonical_booleans;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod ssa_words;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod terminators;

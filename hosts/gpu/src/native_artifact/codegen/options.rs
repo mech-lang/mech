@@ -52,6 +52,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     DisjointState,
     NontrappingHomes,
     ChildFunding,
+    CanonicalBooleanBranches,
 }
 #[cfg(feature = "canonical-native-program")]
 impl OptimizationOptions {

@@ -5,10 +5,10 @@ use crate::native_artifact::codegen::options::{OptimizationOptions, Optimization
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationTerminator as Term,
     NativeMatchAction as Scalar, NativeMatchTerminator as Branch, NativeMatchValue as Value,
-    NativeScalarKind as Kind, NativeScalarOp as Op,
+    NativeScalarKind as Kind,
 };
 
-fn boolean_constant(code: CodePlan<'_>, value: Value) -> Option<bool> {
+pub(super) fn boolean_constant(code: CodePlan<'_>, value: Value) -> Option<bool> {
     if code.kind(value) != Some(Kind::Bool) {
         return None;
     }
@@ -60,55 +60,16 @@ fn native_boolean(
     }
     match definition {
         Scalar::Copy { source, .. } => native_boolean(code, facts, *source, depth - 1),
-        Scalar::Primitive { op, operands, .. } => match op {
-            Op::BoolAnd | Op::BoolOr | Op::BoolXor | Op::BoolNot => operands
+        Scalar::Primitive { op, operands, .. } => super::canonical_booleans::primitive(*op, || {
+            operands
                 .iter()
-                .all(|&operand| native_boolean(code, facts, operand, depth - 1)),
-            Op::U8Eq
-            | Op::U8Ne
-            | Op::U8Lt
-            | Op::U8Le
-            | Op::U8Gt
-            | Op::U8Ge
-            | Op::U16Eq
-            | Op::U16Ne
-            | Op::U16Lt
-            | Op::U16Le
-            | Op::U16Gt
-            | Op::U16Ge
-            | Op::U32Eq
-            | Op::U32Ne
-            | Op::U32Lt
-            | Op::U32Le
-            | Op::U32Gt
-            | Op::U32Ge
-            | Op::U64Eq
-            | Op::U64Ne
-            | Op::U64Lt
-            | Op::U64Le
-            | Op::U64Gt
-            | Op::U64Ge
-            | Op::I64Eq
-            | Op::I64Ne
-            | Op::I64Lt
-            | Op::I64Le
-            | Op::I64Gt
-            | Op::I64Ge
-            | Op::F64Eq
-            | Op::F64Ne
-            | Op::F64Lt
-            | Op::F64Le
-            | Op::F64Gt
-            | Op::F64Ge
-            | Op::BoolEq
-            | Op::BoolNe => true,
-            _ => false,
-        },
+                .all(|&operand| native_boolean(code, facts, operand, depth - 1))
+        }),
         _ => false,
     }
 }
 
-fn literal(code: CodePlan<'_>, left: Value, right: Value) -> Option<(Value, bool)> {
+pub(super) fn literal(code: CodePlan<'_>, left: Value, right: Value) -> Option<(Value, bool)> {
     boolean_constant(code, right)
         .map(|constant| (left, constant))
         .or_else(|| boolean_constant(code, left).map(|constant| (right, constant)))

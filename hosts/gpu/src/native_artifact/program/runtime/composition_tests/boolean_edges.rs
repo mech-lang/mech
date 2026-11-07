@@ -179,7 +179,7 @@ fn complementary_read_guards_keep_current_windows_errors_and_retry() {
     }
 }
 
-fn alternate_source(true_first: bool, joined: bool) -> String {
+pub(super) fn alternate_source(true_first: bool, joined: bool) -> String {
     let ready = if joined {
         "(gate? | true => at <= length - 8u64 | false => at < length - 8u64)"
     } else {
