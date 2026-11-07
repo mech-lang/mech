@@ -1,9 +1,10 @@
 //! Confined source byte expressions share one guarded native word load.
 //! This is an emission choice, not another numeric representation or proof.
 use crate::native_artifact::codegen::common::ssa_words::Words;
+use crate::native_artifact::codegen::options::OptimizationOptions;
 use crate::native_artifact::program::prepare::readonly_numeric::{Operation, Proof};
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{Block, Endianness, InstBuilder, MemFlags, types};
+use cranelift_codegen::ir::{Block, Endianness, InstBuilder, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationTerminator as Term,
@@ -338,6 +339,7 @@ pub(super) fn derive(facts: &NativeProgramFacts<'_>, proof: &Proof) -> Vec<Pack>
 
 pub(super) fn emit(
     b: &mut FunctionBuilder<'_>,
+    options: OptimizationOptions,
     words: &Words,
     shadow: usize,
     proof: &Proof,
@@ -395,7 +397,11 @@ pub(super) fn emit(
     };
     let value = b.ins().load(
         ty,
-        MemFlags::new().with_endianness(Endianness::Little),
+        crate::native_artifact::codegen::common::memory_regions::numeric_cells(
+            options,
+            proof.arrays[pack.array].writable || proof.arrays[pack.array].appends,
+        )
+        .with_endianness(Endianness::Little),
         address,
         0,
     );

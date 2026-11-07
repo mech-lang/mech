@@ -1,14 +1,16 @@
 //! Direct structured child transitions in the one numeric SSA/view bank.
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::common::ssa_words::Words;
+use crate::native_artifact::codegen::options::OptimizationOptions;
 use crate::native_artifact::compiler::{backend, offset};
 use crate::native_artifact::program::prepare::numeric_tree::Proof;
-use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
+use cranelift_codegen::ir::{InstBuilder, Value, types};
 use cranelift_frontend::FunctionBuilder;
 use std::collections::BTreeMap;
 
 pub(super) fn control(
     b: &mut FunctionBuilder<'_>,
+    options: OptimizationOptions,
     words: &Words,
     shadow: usize,
     tree: &Proof,
@@ -34,9 +36,13 @@ pub(super) fn control(
                         .physical
                         .checked_mul(2)
                         .ok_or_else(|| backend("numeric tree retirement offset overflows"))?;
-                    b.ins().store(MemFlags::new(), zero, bank, offset(at)?);
+                    let flags =
+                        crate::native_artifact::codegen::common::memory_regions::numeric_bank(
+                            options,
+                        );
+                    b.ins().store(flags, zero, bank, offset(at)?);
                     b.ins().store(
-                        MemFlags::new(),
+                        flags,
                         zero,
                         bank,
                         offset(at.checked_add(1).ok_or_else(|| {

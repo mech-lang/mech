@@ -340,6 +340,11 @@ fn numeric_tree_private_liveness_ablation_keeps_outputs_errors_and_retry() {
 }
 
 #[test]
+fn numeric_tree_numeric_array_aliases_keep_outputs_errors_and_retry() {
+    check_emission_ablation(OptimizationPass::NumericArrayAliases);
+}
+
+#[test]
 fn numeric_tree_outlining_ablation_keeps_outputs_errors_and_retry() {
     check_emission_ablation(OptimizationPass::NumericOutlining);
 }
@@ -870,6 +875,11 @@ fn numeric_tree_projected_debits_keep_each_finite_ordinary_continuation() {
 #[test]
 fn numeric_tree_fuel_derived_debits_keep_each_finite_ordinary_continuation() {
     check_numeric_tree_finite_fuel(Some(OptimizationPass::FuelDerivedNumericDebits));
+}
+
+#[test]
+fn numeric_tree_numeric_array_aliases_keep_each_finite_ordinary_continuation() {
+    check_numeric_tree_finite_fuel(Some(OptimizationPass::NumericArrayAliases));
 }
 
 fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {

@@ -295,7 +295,9 @@ pub(in crate::native_artifact) fn emit_entry(
                     .ok_or_else(|| backend("numeric scalar import offset overflows"))?;
                 return Ok(Some(b.ins().load(
                     types::I64,
-                    MemFlags::new(),
+                    crate::native_artifact::codegen::common::memory_regions::numeric_bank(
+                        controls.options(),
+                    ),
                     bank,
                     offset(at)?,
                 )));
@@ -800,6 +802,7 @@ pub(in crate::native_artifact) fn emit_entry(
         if let Some(pack) = read_packs.iter().find(|pack| pack.first == site) {
             let complete = super::numeric_read_packs::emit(
                 b,
+                controls.options(),
                 &words,
                 shadow,
                 proof,
@@ -897,7 +900,15 @@ pub(in crate::native_artifact) fn emit_entry(
                 };
                 // The admitted header proves spare cells for this complete
                 // traversal. Advance logical length only after initialization.
-                b.ins().store(MemFlags::new(), value, address, 0);
+                b.ins().store(
+                    crate::native_artifact::codegen::common::memory_regions::numeric_cells(
+                        controls.options(),
+                        true,
+                    ),
+                    value,
+                    address,
+                    0,
+                );
                 let length = b.ins().iadd_imm(length, 1);
                 words.write(b, view + 1, length);
                 words.write(b, view + 3, length);
@@ -964,7 +975,11 @@ pub(in crate::native_artifact) fn emit_entry(
                 // Match the selected leaf's whole-word store: only count bytes
                 // become visible, and the exclusive owner hides spare cells.
                 b.ins().store(
-                    MemFlags::new().with_endianness(cranelift_codegen::ir::Endianness::Little),
+                    crate::native_artifact::codegen::common::memory_regions::numeric_cells(
+                        controls.options(),
+                        true,
+                    )
+                    .with_endianness(cranelift_codegen::ir::Endianness::Little),
                     incoming,
                     address,
                     0,
@@ -1068,7 +1083,12 @@ pub(in crate::native_artifact) fn emit_entry(
                     template.inputs()[0].body(),
                     |b| words.read(b, view),
                 )?;
-                let value = b.ins().load(ty, MemFlags::new(), address, 0);
+                let cell_flags =
+                    crate::native_artifact::codegen::common::memory_regions::numeric_cells(
+                        controls.options(),
+                        proof.arrays[*array].writable || proof.arrays[*array].appends,
+                    );
+                let value = b.ins().load(ty, cell_flags, address, 0);
                 let value = if width < 8 {
                     b.ins().uextend(types::I64, value)
                 } else {
@@ -1114,7 +1134,7 @@ pub(in crate::native_artifact) fn emit_entry(
                         } else {
                             incoming
                         };
-                        b.ins().store(MemFlags::new(), narrowed, address, 0);
+                        b.ins().store(cell_flags, narrowed, address, 0);
                         b.ins().jump(done, &[]);
                         b.switch_to_block(done);
                         report.typed_stores.push((site, width));
@@ -1165,7 +1185,7 @@ pub(in crate::native_artifact) fn emit_entry(
             },
         }
         if let Some(tree) = &region.numeric_tree {
-            super::numeric_tree::control(b, &words, shadow, tree, site)?;
+            super::numeric_tree::control(b, controls.options(), &words, shadow, tree, site)?;
         }
         if let Some(window) = versions.iter().find(|v| v.initialize == site) {
             // Initialize just copied this child's current source arguments.

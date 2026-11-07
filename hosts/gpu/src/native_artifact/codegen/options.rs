@@ -51,6 +51,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     UnsignedGuardFacts,
     DisjointState,
     NontrappingHomes,
+    /// Current numeric loans keep input owners alive and give changed output
+    /// stores an exclusive backing. Calls end the memory-optimization epoch.
+    NumericArrayAliases,
     ChildFunding,
 }
 #[cfg(feature = "canonical-native-program")]
