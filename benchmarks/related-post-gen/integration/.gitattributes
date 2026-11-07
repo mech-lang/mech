@@ -1,0 +1,3 @@
+# Keep raw test output and unified patch context byte-exact for SHA verification.
+evidence/*.log whitespace=-blank-at-eof
+evidence/local-facts-and-metadata/*.patch whitespace=-blank-at-eol

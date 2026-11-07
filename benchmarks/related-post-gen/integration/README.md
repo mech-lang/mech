@@ -1,5 +1,42 @@
 # Current related-post integration targeting #973
 
+Compiler **67bdc1a3ec9e28accb2fd968f4292ca73d81b542**, **IR236 / work115 / ABI41 / image9**, integrates #973 through **40bba44acd7a60e28e3378dab012ee9d50007c66**. [PR990](https://github.com/mech-lang/mech/pull/990) targets `codex/level12-compression-consolidated` (#973).
+
+The latest DEFLATE pass retains immutable scalar/shape facts through successful checked fixed-size writes and closed supported prefixes. Growth, unknown effects and opaque continuations keep their guards. Partial scopes grant no loop-wide window, speculative execution or funding authority. Original/compact variants lose2560 native bytes in eight preprocessing kernels; the main query remains unchanged. The IR235 Boolean implication fix still lowers the unchanged mask-reuse source natively.
+
+A new31-round randomized cohort keeps five Rust controls, the IR235 parent, IR236 integration and an unselected IR237 metadata ablation. Every invocation processes all5000 posts. Continuous post-JSON includes all preparation, admission, allocations, worker creation/run/join and materialization; full process is fresh launch through exit. All372 latency and91 separate resource outputs are exact. Schedules, first runs and adverse observations remain.
+
+| Four-worker source/compiler | Post-JSON | × matched Rust | Full process | × full-process Rust |
+|---|---:|---:|---:|---:|
+| IR235 original |2.952500 ms|1.795151×|37.730542 ms|1.506375×|
+| IR235 mask reuse |2.888542 ms|1.756264×|37.375750 ms|1.492210×|
+| IR236 original |2.930875 ms|1.782003×|38.924166 ms|1.554030×|
+| IR236 mask reuse |2.878541 ms|1.750184×|37.123375 ms|1.482134×|
+| Unselected IR237 mask reuse |2.862708 ms|1.740557×|36.832125 ms|1.470506×|
+| Unselected IR237 + borrowed JSON |2.895875 ms|1.760723×|37.052792 ms|1.479316×|
+
+Matched Rust is U8/U32, **1.644708 ms**; independently fastest full-process Rust is U32, **25.047250 ms**. The preinitialized control remains ineligible for matched processing. The smaller multiple than the prior cohort also reflects a slower Rust reference. IR236 mask reuse wins21/31 processing pairs but14/31 whole-process pairs against the same-source IR235 parent. Original-source whole process is adverse (10/31 wins). **A full-process gain is not established.** The ordered source preserves tag order and exact fallback, but unordered unique rows lose their old subset fast path. It stays unselected; IR208 stays the selected speed checkpoint and parity is unmet.
+
+### Unselected metadata and JSON experiments
+
+IR237 (`7471c892eed435ff16416c949db8408e4b3edea0`) revalidates owned shapes without copying parameters and refreshes call metadata without cloning replaced descriptors. It saves only3 processing allocation requests and32 requested bytes. Same-source instructions rise54,911,461→54,972,486; processing and whole-process paired wins are19/31 each. It is retained as **IR237-unselected.patch**, exact three-file overrides and full qualification. **It is not applied to the active compiler.** Larger immutable descriptor sharing remains open.
+
+The separately measured borrowed-ID/title adapter removes10000 decode allocations (40089→30089). It accepts escaped strings through owned fallback and preserves the owned parser's tested errors. It increases live requested heap by894762bytes against owned IR237 and wins5/31 processing and15/31 whole-process pairs. It remains an unselected adapter; the active JSON host is unchanged.
+
+### Resources, profile and qualification
+
+Current IR236 mask reuse retires **54,911,461 processing instructions** versus Rust19,196,887 and requests **3858 allocations** versus58. Requested bytes8,013,126 / peak live requested heap13,344,051 compare with Rust6,825,713 /7,663,209. Restoration remains132,419,352 instructions and36,437 allocation requests. Native code is874160bytes; query code28448bytes with a528-byte frame. Complete executable, sections, stack, residency, cycles and all raw stage counters remain in `sizes.json` and the resource report.
+
+Fresh profiles execute2000 exact invocations of IR236 and the unselected IR237, auditing actual linked bytes and resolving each executable independently. The query leads current application-code positions, followed by UTF-8 preparation, other emitted kernels, root work, data-element/snapshot handling and allocation. Stack traffic, comparisons and rank arithmetic remain observed. Waiting positions and unresolved external positions remain explicit. **PC observations are not CPU-time shares**, and profiled timings are excluded.
+
+Active qualification: **853 GPU passes, exactly two inherited failures; all358 selected CI names pass locally**. All128 scalar and five compression rows equal IR235 in every non-timing field, allocations included. There are558 exact loader/source fixtures,65 original/decoded bundle files,48 finite denials,12 finite small/full successes,16 forged-frontier rejections and two fresh same-ABI/work-policy old Objects (IR235/234) rejected before entry. Scalar-only, runtime-only full5000 and unmodified generated-app success/error/denial checks pass.
+
+The unselected IR237 independently passes the same853/358 native tests,391 Core and289 relevant Engine tests, all133 control rows,589 loader/source fixtures,65 decoded files, the same finite/frontier/runtime checks and old Objects IR236/235. The borrowed adapter adds an exact escaped-ID/title output and six ownership/fallback/error cases. Source inventory and prototype overrides reconstruct its exact2465-file compiler without changing active source. Original setup/validator mistakes remain in retained recipes; no production check, meter, price or counter exemption was introduced.
+
+See `ir236-review-status.json`, `ir236-local-archive-index.json` and `evidence/local-facts-and-metadata/summary.json`. Raw binaries and traces remain in a SHA-verified local archive; they are not remotely uploaded. Next work needs actual shared/borrowed immutable call and restore metadata, fresh allocation-stack attribution, producer-derived immutable posting/index ranges and bounded native-tree funding with the checked fallback. **Draft; no merge requested; hosted CI is not claimed green.**
+
+## Retained IR235 and earlier evidence
+
 Compiler **cbe5b47839b4fe2300fe16ebc1fcacfcfa03f98b**, **IR235 / work115 / ABI41 / image9**, integrates #973 through **176d8134133befb8e35a6413fb8f98387bacebb3**. [PR990](https://github.com/mech-lang/mech/pull/990) targets `codex/level12-compression-consolidated` (#973).
 
 This fills the compiler gap exposed by reusing eligibility masks. The compiler now proves that every Boolean producer yields zero or one, recognizes repeated reads of the same private tuple field, and carries true-conjunction/false-disjunction/negation implications through its current-array proof. Producers must dominate the current read and execute at most once per loop traversal. Facts reset at the relevant header/exit. Raw inputs, unknown joins, tags, cycles and unavailable values grant no implication. A genuinely stale returned array still declines. No production meter, source-price or funding code changes.

@@ -279,7 +279,12 @@ if current_status.exists():
     assert ci['current_selected_count'] == len(ci['selected_names']) == 354
     assert ci['all_selected_names_executed_and_passed_in_complete_gpu_run']
     assert len(ci['new_names']) == 5 and ci['filters_removed'] == []
-    assert (root / '.github/workflows/ci-full.yml').read_bytes() == (evidence / 'ir235-ci-full.yml').read_bytes()
+    # This inventory belongs to the retained IR235 publication. Later
+    # integrations add tests and keep their own current inventory below.
+    assert subprocess.check_output(
+        ['git', 'show', 'e811116a249a024088f69fe08529de45181bbb30:.github/workflows/ci-full.yml'],
+        cwd=root,
+    ) == (evidence / 'ir235-ci-full.yml').read_bytes()
     assert (root / 'hosts/gpu/tests/fixtures/native/numeric-boolean-mask-reuse.mec').read_bytes() == (evidence / 'ir235-native-mask-reuse.mec').read_bytes()
     experiment = evidence / 'boolean-implication-mask-reuse'
     current = json.loads((experiment / 'summary.json').read_text())
@@ -295,6 +300,71 @@ if current_status.exists():
     profile = json.loads((experiment / 'profile-summary.json').read_text())
     assert set(profile['rows']) == {'before', 'after'}
     assert all(x['all1000_index_arrays_and_final_rust_output_exact'] and x['profiled_timings_excluded'] for x in profile['rows'].values())
+
+current_status = packet / 'integration/ir236-review-status.json'
+if current_status.exists():
+    status = json.loads(current_status.read_text())
+    assert status['identity'] == 'IR236/work115/ABI41/image9'
+    assert status['compiler'] == '67bdc1a3ec9e28accb2fd968f4292ca73d81b542'
+    assert status['incoming'] == '40bba44acd7a60e28e3378dab012ee9d50007c66'
+    assert status['source_files'] == current_files == 2465
+    assert status['gpu_passed'] == 853 and status['ci_selected_names_passed'] == 358
+    assert not status['metadata_patch_applied'] and not status['borrowed_json_applied']
+    assert not status['selected'] and not status['goal_complete']
+    assert (root / '.github/workflows/ci-full.yml').read_bytes() == (evidence / 'ir236-ci-full.yml').read_bytes()
+    for ir, previous, fixture_count in [(236, 235, 558), (237, 236, 589)]:
+        tests = json.loads((evidence / f'ir{ir}-tests-test-run.json').read_text())
+        assert tests['expected_failures_exact'] and not tests['new_failures']
+        assert '853 passed; 2 failed' in tests['summary'][0]
+        ci = json.loads((evidence / f'ir{ir}-tests-ci-selected-inventory-audit.json').read_text())
+        assert ci['current_selected_count'] == len(ci['selected_names']) == 358
+        assert ci['all_selected_names_executed_and_passed_in_complete_gpu_run']
+        for kind, count in [('scalar', 128), ('one-kib', 5)]:
+            if ir == 236:
+                old_path = evidence / f'ir235-control-{kind}-run.json'
+            else:
+                old_path = evidence / f'ir236-regressions-{kind}-run.json'
+            new_path = evidence / f'ir{ir}-regressions-{kind}-run.json'
+            assert len(rows(old_path)) == len(rows(new_path)) == count
+            assert rows(old_path) == rows(new_path)
+        qualification = json.loads((evidence / f'ir{ir}-runners-qualification-summary.json').read_text())
+        assert qualification['loader_fixtures_exact'] == fixture_count
+        assert qualification['decoded_bundle_files_exact'] == 65
+        assert qualification['finite_denials_exact'] == 48
+        assert qualification['finite_small_full_successes_exact'] == 12
+        assert qualification['forged_frontier_rejections'] == 16
+        for name in qualification['fixtures']:
+            data = json.loads((evidence / f"ir{ir}-edges-{name.replace('/', '-')}").read_text())
+            assert len(data) == 31
+            assert all(x['exit'] == 0 and x.get('exact_rust_output', x.get('exact_expected_output', False)) for x in data)
+        old = json.loads((evidence / f'ir{ir}-old-objects-summary.json').read_text())
+        assert old['fresh_old_objects'] == 2
+        assert {x['old_typed_ir'] for x in old['rows']} == {previous, previous-1}
+        assert all(x['old_entry_never_invoked'] and x['object_bound_rejected'] and x['compiled_module_rejected'] for x in old['rows'])
+        assert json.loads((evidence / f'ir{ir}-runtime-check-summary.json').read_text())['status'] == 'passed'
+        assert json.loads((evidence / f'ir{ir}-feature-check-scalar-compiler.json').read_text())['exit'] == 0
+    experiment = evidence / 'local-facts-and-metadata'
+    prototype = json.loads((evidence / 'ir237-source-inventory.json').read_text())['files']
+    overrides = json.loads((experiment / 'ir237-source-overrides.json').read_text())
+    assert set(overrides) == {'src/core/src/type_system/resolved_value.rs', 'src/core/src/function/specialization.rs', 'hosts/gpu/src/native_artifact/program/image/identity.rs'}
+    assert len(prototype) == 2465
+    for name, expected in prototype.items():
+        if name in overrides:
+            verify(experiment, overrides[name], expected)
+        else:
+            verify(root, name, expected)
+    summary = json.loads((experiment / 'summary.json').read_text())
+    assert summary['decision']['metadata_patch_applied_to_active_compiler'] is False
+    assert summary['decision']['borrowed_json_applied_to_active_adapter'] is False
+    for phase, expected in [('latency', 372), ('resources', 91)]:
+        run = json.loads(gzip.decompress((experiment / (phase+'.json.gz')).read_bytes()))
+        assert len(run['samples']) == expected and run['execution_order']['mode'] == 'randomized'
+        assert all(x['exit'] == 0 and x['exact_rust_output'] for x in run['samples'])
+    profiles = json.loads((experiment / 'profile-summary.json').read_text())
+    assert all(x['all1000_index_arrays_and_final_rust_output_exact'] and x['profiled_timings_excluded'] for x in profiles['rows'].values())
+    ownership = json.loads((experiment / 'borrowed-json-json-ownership-audit-run.json').read_text())
+    assert ownership['exit'] == 0 and len(ownership['rows']) == 6
+    assert json.loads((experiment / 'borrowed-json-escaped-id-title-output.json').read_text()) == json.loads((experiment / 'borrowed-json-escaped-id-title-expected.json').read_text())
 
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833

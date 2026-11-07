@@ -1,10 +1,10 @@
 {
   "schema": "mech.related-post-gen.dependent-compiler-build.v1",
-  "source": "/private/tmp/mech-related-native-boolean-implication-freshness-compiler-20261106",
-  "source_sha256": "4440e23b8e0f7b778341e0ac9a1d6927463b1324767fd72df46a033ebab8305d",
+  "source": "/private/tmp/mech-related-local-facts-integration-compiler-20261107",
+  "source_sha256": "80a73119d06c05f889da06b36ebb73f05b199c81efe325588ec11b692b1b6725",
   "opt_level": "3",
-  "base_build": "/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v6/build.json",
-  "base_build_sha256": "9778d390d13a33acacd39fb90184252aeaa803aaca726ed9ccee61da21f548bc",
+  "base_build": "/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v7/build.json",
+  "base_build_sha256": "0637d468ec65385f67becdb53164e89abe1d90501af943a3a8390b52e38b390d",
   "stages": [
     {
       "crate": "mech_core",
@@ -1966,6 +1966,8 @@
       "command": [
         "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
         "-L",
+        "dependency=/private/tmp/mech-related-local-facts-integration-opt-20261107-v1",
+        "-L",
         "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v7",
         "-L",
         "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v6",
@@ -2096,7 +2098,7 @@
         "-C",
         "embed-bitcode=no",
         "-C",
-        "metadata=related_dependent_4440e23b8e0f7b77_mech_gpu",
+        "metadata=related_dependent_80a73119d06c05f8_mech_gpu",
         "-D",
         "warnings",
         "-L",
@@ -2161,13 +2163,13 @@
         "mech_stdlib=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1/libmech_stdlib.rlib",
         "--extern",
         "tempfile=/private/tmp/mech-related-retained-deps/libtempfile-cd3db811e0a0846f.rlib",
-        "/private/tmp/mech-related-native-boolean-implication-freshness-compiler-20261106/hosts/gpu/src/lib.rs",
+        "/private/tmp/mech-related-local-facts-integration-compiler-20261107/hosts/gpu/src/lib.rs",
         "-o",
-        "/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v7/libmech_gpu.rlib"
+        "/private/tmp/mech-related-local-facts-integration-opt-20261107-v1/libmech_gpu.rlib"
       ],
       "environment": {
         "RUSTC_BOOTSTRAP": "1",
-        "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-native-boolean-implication-freshness-compiler-20261106/hosts/gpu",
+        "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-local-facts-integration-compiler-20261107/hosts/gpu",
         "CARGO_PKG_NAME": "mech-gpu",
         "CARGO_PKG_VERSION": "0.3.5",
         "CARGO_PKG_VERSION_MAJOR": "0",
@@ -2175,11 +2177,11 @@
         "CARGO_PKG_VERSION_PATCH": "5",
         "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
       },
-      "source_sha256": "4440e23b8e0f7b778341e0ac9a1d6927463b1324767fd72df46a033ebab8305d",
+      "source_sha256": "80a73119d06c05f889da06b36ebb73f05b199c81efe325588ec11b692b1b6725",
       "reused": false,
       "exit": 0,
-      "seconds": 33.707178208976984,
-      "library_sha256": "367f3db07f40e799058e4dbbc89df98533500a2095622ca345ca253b18afe996"
+      "seconds": 29.63249595812522,
+      "library_sha256": "e7f1867e15002dfd61974cba76b21e09ca683313036ac8d1cfb3f28cdc6dd025"
     }
   ],
   "reuse_policy": "A crate reuses its library only when every recorded Rust/manifest source under its manifest directory matches and none of its Mech dependencies rebuilt. All reused and rebuilt library hashes are verified."
