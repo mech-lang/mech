@@ -1,0 +1,17 @@
+{
+  "checked_utc": "2026-11-07T11:48:20.290611+00:00",
+  "frozen_compiler_source_commit": "f018ed15430d173d3f931f1f59ac0f6ed83eca11",
+  "integrated_upstream_code": "b6a42fde80dbc011dfefa9de5d9659be334411b0",
+  "latest_fetched_upstream": "feb2149d5c212ca0b284cc19e1d7ff0932c1b5f5",
+  "changed_upstream_paths": [
+    "benchmarks/mech-deflate/experiments.json",
+    "docs/design/native-compression-status.md",
+    "docs/design/native-coupled-scalar-choice.md"
+  ],
+  "production_source_manifest_lock_flags_CI_unchanged": true,
+  "latest_production_compiler_work_already_present": true,
+  "frozen_source_inventory_exact": true,
+  "history_merge_attempt": "A direct history merge reintroduced already cherry-picked upstream ancestors and conflicted in five files; aborted back to the exact clean evidence HEAD. No compiler code, frozen result or published branch changed.",
+  "history_merge_aborted_cleanly": true,
+  "additional_build_or_timing_needed": false
+}

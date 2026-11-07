@@ -2554,16 +2554,22 @@
       "unredacted_source_sha256": "187e2e6315fb89851084141e690c7a737875e1a4561217d6f0af752d48284bf7"
     },
     "README.md": {
-      "sha256": "374d0af6541f6221f5f78871ba810b9c3b5fc63dddb24543de73e93664e9962c",
-      "bytes": 4293,
-      "decoded_sha256": "374d0af6541f6221f5f78871ba810b9c3b5fc63dddb24543de73e93664e9962c",
-      "decoded_bytes": 4293
+      "sha256": "dd90facecf4f053e9ff6c147d031ba950d29177d2d3b67e8a7bdc41f101f2d61",
+      "bytes": 4648,
+      "decoded_sha256": "dd90facecf4f053e9ff6c147d031ba950d29177d2d3b67e8a7bdc41f101f2d61",
+      "decoded_bytes": 4648
     },
     "verify.py": {
       "sha256": "273d84968b497bec9c015254520631ee52ea4fa814c075a2b68381e879b0ebc4",
       "bytes": 1521,
       "decoded_sha256": "273d84968b497bec9c015254520631ee52ea4fa814c075a2b68381e879b0ebc4",
       "decoded_bytes": 1521
+    },
+    "upstream-code-equivalence.json": {
+      "sha256": "1eaa7109467983cad74ca2fbf95d161768e0ce40d4a617ec64c43c271856655b",
+      "bytes": 957,
+      "decoded_sha256": "1eaa7109467983cad74ca2fbf95d161768e0ce40d4a617ec64c43c271856655b",
+      "decoded_bytes": 957
     }
   }
 }
