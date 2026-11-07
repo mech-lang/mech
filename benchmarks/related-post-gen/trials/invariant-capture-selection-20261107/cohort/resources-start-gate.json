@@ -1,0 +1,11 @@
+{
+  "quiet": true,
+  "latency_complete_exact": 372,
+  "seed": 9902507,
+  "samples": 7,
+  "variants": 13,
+  "resource_timings_excluded": true,
+  "process_snapshot_sha256": "979072cd674503b82a06b008ceb3eea9674c182dbae39666e3e1dbdb04cc522a",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-invariant-capture-hoisting-cohort-20261107-v2/resources-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation application arguments remain local; every gate predicate is unchanged."
+}

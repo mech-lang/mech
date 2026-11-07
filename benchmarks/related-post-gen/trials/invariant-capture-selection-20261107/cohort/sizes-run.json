@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/collect-size-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-invariant-capture-hoisting-cohort-20261107-v2/latency-config.json",
+    "--reference",
+    "rust-mech-control-u8-ids-u32",
+    "--output",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/size-native-invariant-captures-20261107.json"
+  ],
+  "exit": 0,
+  "seconds": 0.528055917005986
+}

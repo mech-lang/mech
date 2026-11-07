@@ -1,0 +1,29 @@
+{
+  "quiet": true,
+  "qualification": {
+    "integration": {
+      "GPU_passed": 879,
+      "inherited_failures": 2,
+      "new_failures": 0,
+      "CI_executed": 384,
+      "controls_exact": 133,
+      "new_upstream_lexical_test": true
+    },
+    "hoisting": {
+      "GPU_passed": 880,
+      "inherited_failures": 2,
+      "new_failures": 0,
+      "CI_executed": 385,
+      "controls_exact": 133,
+      "new_upstream_lexical_test": true
+    }
+  },
+  "seed": 990250,
+  "samples": 31,
+  "variants": 12,
+  "primary_boundary": "continuous post-JSON including setup and workers",
+  "secondary_boundary": "fresh launch through exit",
+  "process_snapshot_sha256": "d33cc5fd9fd67e6698c053c3d7aec25b666b0e48b724c3ed9984c5337b91b231",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-invariant-capture-hoisting-cohort-20261107-v2/latency-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation application arguments remain local; every gate predicate is unchanged."
+}

@@ -1,0 +1,19 @@
+# Selective native capture reads: IR249 / IR250 (unselected)
+
+Selected IR242, source mask reuse and four native workers remain unchanged. IR249 (`a5a610cb1e8e6f6174d67f704d5255c411d38503`) integrates PR973 through `2f7f38a4332c93cbaa6679a7138f7e0717fc9043`; IR250 (`f7237af541137f25daf19d41087e4905bd3737b8`) adds post-local-phi profit selection and explicit unsigned min/max safe clamps. Advancing reads regain ordinary guarded addresses and flags. Alias records remain available to the following extent proof. No runtime cache or extra operation is introduced.
+
+The new pass selects23 genuinely reusable selectors and declines91. All14 query reads decline, removing60 static selects. The query's27,552B/544B-stack native bytes equalIR247 exactly. AllIR249 numeric function bytes equalIR248: the new upstream interval combiner finds no eligible predicates in this benchmark.
+
+The frozen31-round randomized cohort contains372 exact outputs (seed990250). The separate7-round resource cohort contains91 exact outputs (seed9902507). All first/adverse samples and ordering remain. Continuous post-JSON includes admission, setup, worker create/run/join and materialization; complete process includes restore, JSON and teardown. Resource/profile timings are excluded.
+
+Fastest eligible Rust is1.600792ms processing and23.207458ms complete. SelectedIR242 remeasures2.838166ms/1.772976x and35.885042ms/1.546272x. IR250 original-source takes2.849000ms/1.779744x and34.567834ms/1.489514x. It wins13/31 processing and25/31 complete pairs, failing the required21 wins in both. IR249 wins0/25; IR250 hoisted IDs18/27; IR250 partial sums16/16. No candidate is promoted. Original selection timing remains separate.
+
+IR250 processing instructions fall59,137,293to55,240,911 versusIR249 (-6.59%), but remain0.74% above selectedIR242. Allocations stay3,758/8,012,356B. The old IR242 hoisted-ID source passes21/27 in this cohort; earlier22/23 and16/26 remain. Across all93 rounds it wins59 processing/76 complete pairs, below the originally required21/31 processing-win fraction. Do not promote by selecting favorable cohorts.
+
+IR249 passes879 GPU checks and all384 actual CI-selected names. IR250 passes880 and385, respectively. Exactly the same two inherited catalog failures remain. Both preserve all128 scalar and5 DEFLATE control rows in every non-timing field. The exact new upstream lexical error-order/recovery fixture passes against both compilers through a focused harness using the unchanged upstream module and verbatim parent helpers. The initial attempt to compile the unrelated full build-system-dependent harness failed for missing test-only dependencies and is retained locally. IR249 passes62 edge fixtures; IR250 passes124. Full adoption qualification is not claimed for rejected compilers.
+
+Fresh all-thread macOS samples execute3,000 complete calculations with Rust-index checks and audited unchanged native Objects. Query worker remains the hottest observed emitted function; counts are observations, not CPU-time percentages. Driver cloning/verification and initial restore are included. Raw capture/run receipts and assembly are retained. Profile timings are excluded.
+
+The next source-frozen trial (IR251) preserves the proved immutable capture's entry view values through callback refreshes. It is not qualified or selected here and has no timing claim. It directly addresses full-address invariance, which is stronger than selector invariance.
+
+`verify.py` verifies all file hashes, decoded bytes, exact raw outputs and paired gates. No compiler source or build manifest changes in this evidence commit; source inventory remains byte-for-byte equal to the frozen build. Raw binaries and workstation-wide process snapshots remain local, with snapshot hashes and unmodified gate predicates published. Earlier source trials and full source qualification remain in the published IR248 packet.

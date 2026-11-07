@@ -1,0 +1,1337 @@
+{
+  "schema": "mech.related-post-gen.trial-evidence-manifest.v2",
+  "compiler_commit": "f7237af541137f25daf19d41087e4905bd3737b8",
+  "selected": false,
+  "files": {
+    "trial.json": {
+      "sha256": "17b350942381b9241f0c3cdfce79e9eb90d9de7997401eebdb4b9d15c29d35e8",
+      "bytes": 197942,
+      "decoded_sha256": "17b350942381b9241f0c3cdfce79e9eb90d9de7997401eebdb4b9d15c29d35e8",
+      "decoded_bytes": 197942,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/compiler-native-invariant-capture-selection-20261107.json"
+    },
+    "latency.json.gz": {
+      "sha256": "9364c75a31acfb69f01a6ec6b8097b3a7b6dfea9bdbea95dc9f56a9663d1ca17",
+      "bytes": 38932,
+      "decoded_sha256": "f21b7f68fda86d3fcba864ecc8c2749ef23c3e0a7c1890f7945767a1a66a9249",
+      "decoded_bytes": 772327,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-invariant-captures-randomized-20261107-5000-m3.json"
+    },
+    "resources.json.gz": {
+      "sha256": "e655d8b7252c7c7eea0c2c0a84c16ffbbc5a7529b065bbdbab86e10fa8c605f4",
+      "bytes": 68329,
+      "decoded_sha256": "6a84845a4d383a433743cc93daf09f6ebbac348fcb4b661501bd0c5389764b65",
+      "decoded_bytes": 823411,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-invariant-captures-resources-20261107-5000-m3.json"
+    },
+    "sizes.json": {
+      "sha256": "2719082dd204e4c9f78a2c61c93657f6fa836587eed693266293a6b302a67c3c",
+      "bytes": 30440,
+      "decoded_sha256": "2719082dd204e4c9f78a2c61c93657f6fa836587eed693266293a6b302a67c3c",
+      "decoded_bytes": 30440,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/size-native-invariant-captures-20261107.json"
+    },
+    "integration/build/build.json.gz": {
+      "sha256": "fc05b03df6709db0362c9686ddb7ee43bc58e9553abd8d1a064bf35348c34ccd",
+      "bytes": 6865,
+      "decoded_sha256": "aba3ce9144f9e8779b7e226020eeabba8d58ff861fd7e214178e7953a128b731",
+      "decoded_bytes": 78905,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-opt-20261107-v1/build.json"
+    },
+    "integration/build/source-inventory.json.gz": {
+      "sha256": "43b5908f616b2849100d826b47218de0f794230a2a50cea888f496af00ea8164",
+      "bytes": 116413,
+      "decoded_sha256": "73427bfb6cce4dc9ef76740b02c91680e362e8b92280723ba07d439f23f039ca",
+      "decoded_bytes": 314510,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-opt-20261107-v1/source-inventory.json"
+    },
+    "integration/build/compiler-build-run.json.gz": {
+      "sha256": "f82cb0bff982a7f7cf7b9e21a45b0b3e4378b2653b04c5ca71e211ba4bf9b0bf",
+      "bytes": 281,
+      "decoded_sha256": "eef98c79b0e1fd2d8a81af0538f9caa1bcc615df896330d9009b23b523daf9ae",
+      "decoded_bytes": 567,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-opt-20261107-v1/compiler-build-run.json"
+    },
+    "integration/tests/focus-cfg_cleanup.json.gz": {
+      "sha256": "997254487a90a30370b6f24b150ec983e665831db98df567ccfd7596c02dcdd7",
+      "bytes": 181,
+      "decoded_sha256": "cf15104b6fabb9ff256aa6c5e0f70d68575b4e5cdcbf5245fbc74b22d638966a",
+      "decoded_bytes": 226,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-cfg_cleanup.json"
+    },
+    "integration/tests/focus-movable_capture_reads.stdout.log.gz": {
+      "sha256": "b30d174c0255baaa6d848c8f7fcfcb7e2a0e7d36f5a5b7feb93cc41842f4c7fd",
+      "bytes": 312,
+      "decoded_sha256": "e61dc89efaac3f5aa162fe3d5cd72a743243f8401e6cc0e68109fec674376ff8",
+      "decoded_bytes": 721,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-movable_capture_reads.stdout.log"
+    },
+    "integration/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/mech_gpu-build.stderr.log"
+    },
+    "integration/tests/test-run.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/test-run.stderr.log"
+    },
+    "integration/tests/focus-cfg_cleanup_program_local_homes.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-cfg_cleanup_program_local_homes.stderr.log"
+    },
+    "integration/tests/ci-selected-list.stdout.log.gz": {
+      "sha256": "373f470a7173d220d3d28b2a1e809c774d784c1d70323b95bf04abc561b1e769",
+      "bytes": 8903,
+      "decoded_sha256": "563354ca8379049993d181707b2d3cddaab4f3d13af39fe82886d88ce62c3fc5",
+      "decoded_bytes": 55560,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/ci-selected-list.stdout.log"
+    },
+    "integration/tests/focus-numeric_first_change.stdout.log.gz": {
+      "sha256": "48e67da6e2392a812db9c69ca7c64366186816586fabb31a04e7684f0e03a29c",
+      "bytes": 192,
+      "decoded_sha256": "cd0044c99ef3d662da134c6477298f50b000ff7d49b68bf16274b7d0be3a79ac",
+      "decoded_bytes": 266,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-numeric_first_change.stdout.log"
+    },
+    "integration/tests/focus-numeric_first_change.json.gz": {
+      "sha256": "6720d2bb2cbea8fded2264aa33cbb4fe9de64d8f0f34f2ee185b2354c9fecdc7",
+      "bytes": 185,
+      "decoded_sha256": "f747e5abd2b5561389aac6503213498abb1a03d12e63711ba75c3003fc8276bc",
+      "decoded_bytes": 235,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-numeric_first_change.json"
+    },
+    "integration/tests/source-inventory.json.gz": {
+      "sha256": "43b5908f616b2849100d826b47218de0f794230a2a50cea888f496af00ea8164",
+      "bytes": 116413,
+      "decoded_sha256": "73427bfb6cce4dc9ef76740b02c91680e362e8b92280723ba07d439f23f039ca",
+      "decoded_bytes": 314510,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/source-inventory.json"
+    },
+    "integration/tests/focus-fresh_traversals.stdout.log.gz": {
+      "sha256": "7a347ca2de97fbaf926e773839c3b23537cb201eb695a4676736f264af85647a",
+      "bytes": 263,
+      "decoded_sha256": "84789e5f2e3760aa5701a9d8f2ac5619ae3b75c7cdceb38754ed282c0f675a12",
+      "decoded_bytes": 563,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-fresh_traversals.stdout.log"
+    },
+    "integration/tests/ci-selected-execute.json.gz": {
+      "sha256": "475b73276c3cd97c9a05b70826e8afb6b401198131f292aaef072b2a44bf871f",
+      "bytes": 518,
+      "decoded_sha256": "f1e99cbdaf172473245dc746f6a1e78b28cac89af93f090d19767cc5451fad59",
+      "decoded_bytes": 1175,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/ci-selected-execute.json"
+    },
+    "integration/tests/focus-cfg_cleanup.stdout.log.gz": {
+      "sha256": "b74af2fb97b66acc4974799a2d05734e3a66b9f3bc939831e839ccaba7dea330",
+      "bytes": 1051,
+      "decoded_sha256": "9dbdaa3e433c723bf03b34dd3a088796054fc502da1ed46a0ba4bd97b53cc88d",
+      "decoded_bytes": 4280,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-cfg_cleanup.stdout.log"
+    },
+    "integration/tests/focus-guarded_numeric_load.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-guarded_numeric_load.stderr.log"
+    },
+    "integration/tests/focus-fresh_traversals.json.gz": {
+      "sha256": "07e24bf001ed914596c98fff69bd2a10d4e8d7a26d9b7b1758ec556e5d013b57",
+      "bytes": 183,
+      "decoded_sha256": "b752f9f80153462bf2937c88153e1190fcf4f2e3ec4d5d1b3a64fe2cb61b7b3d",
+      "decoded_bytes": 232,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-fresh_traversals.json"
+    },
+    "integration/tests/focus-movable_capture_reads.json.gz": {
+      "sha256": "15798bc11678ac17ec5a0d8d122249aac72f93917f24a15743d26f0840b78817",
+      "bytes": 183,
+      "decoded_sha256": "ac61c5e236cbf721bcee7364f31dff4739a60bd568b2904c2ae01e221aebf81d",
+      "decoded_bytes": 236,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-movable_capture_reads.json"
+    },
+    "integration/tests/focus-unsigned_guard_facts.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-unsigned_guard_facts.stderr.log"
+    },
+    "integration/tests/focus-guarded_numeric_load.json.gz": {
+      "sha256": "7e2d188009282a03b94b7e435641ff6ed01f56ad65683e83ae3cfb9ee0815880",
+      "bytes": 184,
+      "decoded_sha256": "81bd74ac1c3c5f1c68c38e91e1a7d3554093e7ee35eb6ee80d3c2e785e27130c",
+      "decoded_bytes": 235,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-guarded_numeric_load.json"
+    },
+    "integration/tests/ci-selected-execute.stdout.log.gz": {
+      "sha256": "10e1c616aad1c574f7a9dda48fbb63e153966b71214a483aba1aaa838bf05fa9",
+      "bytes": 9009,
+      "decoded_sha256": "52a149d230db189b0add2fc9dcbb1b5edce97a34acdb5d803f443f5d2acf33ca",
+      "decoded_bytes": 57960,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/ci-selected-execute.stdout.log"
+    },
+    "integration/tests/focus-cfg_cleanup_program_local_homes.stdout.log.gz": {
+      "sha256": "2353d8e3a4741f61b1746518d2609529967089ba1893d976b36565df4b5751ea",
+      "bytes": 194,
+      "decoded_sha256": "d1df573e34b095d574ad4012da3e6780881e113637515b89d242c971fca0957c",
+      "decoded_bytes": 267,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-cfg_cleanup_program_local_homes.stdout.log"
+    },
+    "integration/tests/mech_gpu-build.json.gz": {
+      "sha256": "e7d443b3615e8743b8700d7218fb90288bf8288d20a9eb2494dc5fb911ac92e5",
+      "bytes": 1484,
+      "decoded_sha256": "3396f16c8a05fcf4d76df95999ecf38b812d339c928d796e1aa8d92ef4b6e148",
+      "decoded_bytes": 10583,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/mech_gpu-build.json"
+    },
+    "integration/tests/ci-selected-inventory-audit.json.gz": {
+      "sha256": "793996478f87aeff766dcecd4a5bfbf32819e4ae8bda0c84c4b266702747e64d",
+      "bytes": 8951,
+      "decoded_sha256": "f4681fda56d7855668400ecd582fefaff79dab5c4018749fbf68230e6521148c",
+      "decoded_bytes": 56028,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/ci-selected-inventory-audit.json"
+    },
+    "integration/tests/ci-selected-list.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/ci-selected-list.stderr.log"
+    },
+    "integration/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/mech_gpu-build.stdout.log"
+    },
+    "integration/tests/focus-movable_capture_reads.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-movable_capture_reads.stderr.log"
+    },
+    "integration/tests/test-run.stdout.log.gz": {
+      "sha256": "1a2e453a982a100c2c9c7d49c53aadb1d546125f00cb06307eb2bde6f8f3d5de",
+      "bytes": 22183,
+      "decoded_sha256": "7af2f10ae8327410909043ad8daa54f9bf09ca55480901858e452ea9f91c9646",
+      "decoded_bytes": 130003,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/test-run.stdout.log"
+    },
+    "integration/tests/focus-fresh_traversals.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-fresh_traversals.stderr.log"
+    },
+    "integration/tests/focus-numeric_first_change.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-numeric_first_change.stderr.log"
+    },
+    "integration/tests/focus-cfg_cleanup_program_local_homes.json.gz": {
+      "sha256": "27b2c7e6852287adf6e2614e2d01484e06d40205a4fe59c0109d44d2c50c78bb",
+      "bytes": 195,
+      "decoded_sha256": "6b91067cd93cc99db99474b8482eddc50a865a85cfa73e4b67f2eee574418b04",
+      "decoded_bytes": 248,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-cfg_cleanup_program_local_homes.json"
+    },
+    "integration/tests/focus-cfg_cleanup.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-cfg_cleanup.stderr.log"
+    },
+    "integration/tests/focus-unsigned_guard_facts.json.gz": {
+      "sha256": "1a27c5ee2f76b82c374cf61f8eea48ce84d3dcbf81aa2392f7056946ed01e05d",
+      "bytes": 184,
+      "decoded_sha256": "0bc1e602eb0a657ef0f06c92b9d3fcda56aef5f6b2ee244239ec25daae8325d8",
+      "decoded_bytes": 236,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-unsigned_guard_facts.json"
+    },
+    "integration/tests/ci-selected-execute.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/ci-selected-execute.stderr.log"
+    },
+    "integration/tests/focus-unsigned_guard_facts.stdout.log.gz": {
+      "sha256": "a2dc321140a61e19d2f6191b22068f6b3884a83e7e419569dbc235f77d155cf2",
+      "bytes": 455,
+      "decoded_sha256": "177601b9f2ca95454b8f838751bc8de8fc26f6f08eb78d16f856211bf8bc970c",
+      "decoded_bytes": 1267,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-unsigned_guard_facts.stdout.log"
+    },
+    "integration/tests/ci-selected-list.json.gz": {
+      "sha256": "e25414f7dca5e64ea09e2d934880b6d7c5801a4a98833958b084ca2736024ff5",
+      "bytes": 513,
+      "decoded_sha256": "1c812294b7ea13fab63a00baf00e1d69d0ec32d182216768443229186f15f9d9",
+      "decoded_bytes": 1168,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/ci-selected-list.json"
+    },
+    "integration/tests/focus-guarded_numeric_load.stdout.log.gz": {
+      "sha256": "77ed2d72eba32e9cc26d454c7b14ab7cc65d496b373fadee3db91f0201fdf0a6",
+      "bytes": 279,
+      "decoded_sha256": "fed497fc3fb904e04e9db61f775e341df1e230d8e1125271fa0a9a9ddc6e6e40",
+      "decoded_bytes": 554,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/focus-guarded_numeric_load.stdout.log"
+    },
+    "integration/tests/test-run.json.gz": {
+      "sha256": "cb32e9391047bfa899f2619bb4759ac5031d1fc6baa9cfc410ebe16414c7a32f",
+      "bytes": 407,
+      "decoded_sha256": "0caa7348183f987d40ad7f0a1029f17326eddf0031df59fe1588cd51f796cbe7",
+      "decoded_bytes": 636,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/test-run.json"
+    },
+    "integration/upstream-lexical/source-reuse.json.gz": {
+      "sha256": "f230d2aa1c77c0845368a6af642bfd3d96f9681d6bb5ffaba73db9b3f8e67a2c",
+      "bytes": 333,
+      "decoded_sha256": "83e495bcbe5bf14018279cbecf658023e60b457a22a1bb99ce1caa8269baddef",
+      "decoded_bytes": 643,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/upstream-interval-integration-v2/source-reuse.json"
+    },
+    "integration/upstream-lexical/list.json.gz": {
+      "sha256": "5b0bb1a2a2dc2ba4035bb46c7579e568c39423bf4394546b6274ae8001d15d98",
+      "bytes": 277,
+      "decoded_sha256": "c8e8690bf7bbc1533533b5346f2d9f85ae0c93953162f7ea8e67b94c3a10d9eb",
+      "decoded_bytes": 465,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/upstream-interval-integration-v2/list.json"
+    },
+    "integration/upstream-lexical/driver.rs.gz": {
+      "sha256": "2d80eb5b8fd55a9f5d3b76b50bf2f87a22dee6383203516dfb33eb1833cef6b3",
+      "bytes": 1954,
+      "decoded_sha256": "d35b4047cb9ec78f55281d43c60ce58399a120bd105a1966b44a8cd8bdf31317",
+      "decoded_bytes": 6025,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/upstream-interval-integration-v2/driver.rs"
+    },
+    "integration/upstream-lexical/run.json.gz": {
+      "sha256": "92b39341c72d8e7c977b06eada6180db936f1be5b33fca6015258173a04ca867",
+      "bytes": 339,
+      "decoded_sha256": "02303fbf7cfa135e77c9968dff92f7c34eab60c9872c86f00035335e1f977631",
+      "decoded_bytes": 576,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/upstream-interval-integration-v2/run.json"
+    },
+    "integration/upstream-lexical/build.json.gz": {
+      "sha256": "b734d8d94a552e5fc23024908b65015640ab794f7f17c67285999149e392c651",
+      "bytes": 1710,
+      "decoded_sha256": "3a8f862f4cf7c2fd54b856ab62b356df25142cf90bfa9381ff13d53f74c5905a",
+      "decoded_bytes": 11623,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-tests-20261107-v1/upstream-interval-integration-v2/build.json"
+    },
+    "integration/controls/one-kib-comparison.json.gz": {
+      "sha256": "aa886359dc652bd5060f112047419588fb82ba51e441abfa98b70c0ad1da26a9",
+      "bytes": 326,
+      "decoded_sha256": "08447f431e4a5eca642ff0d38fe1c9771c48046cb302e81b828eaa12517c18d3",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-regressions-20261107-v1/one-kib-comparison.json"
+    },
+    "integration/controls/one-kib-run.json.gz": {
+      "sha256": "769f3d342c09f3c6be0877a877778624c2af8d60c28ecef3f00e52b51d03bb8b",
+      "bytes": 723,
+      "decoded_sha256": "560856a0416597050003fa5f3f24133dc1ce46942712de0b6aeecd2843b43a7a",
+      "decoded_bytes": 3263,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-regressions-20261107-v1/one-kib-run.json"
+    },
+    "integration/controls/scalar-run.json.gz": {
+      "sha256": "5730ac221f82a06d0170feecfc0df9cd9e8994f692b5b962367c3c8a2294024a",
+      "bytes": 1707,
+      "decoded_sha256": "a0d10a7f63505bdc44a534495a65160d6ca21ddb2295c5a671c40c26e113d784",
+      "decoded_bytes": 39419,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-regressions-20261107-v1/scalar-run.json"
+    },
+    "integration/controls/one-kib.build.json.gz": {
+      "sha256": "a2155853a23a06fafdda3e7288c2f57b15529b15f22c59c03f12e6ebf444d2e6",
+      "bytes": 1222,
+      "decoded_sha256": "9e5cd1ce7a6bc2033e894f55b19623a2e4ac02d977010d26feccb1d16973a682",
+      "decoded_bytes": 4619,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-regressions-20261107-v1/one-kib.build.json"
+    },
+    "integration/controls/scalar.build.json.gz": {
+      "sha256": "8b4db715afc995fa47d83858e8019b74222c4aac8ee4faf1e9fc84709c1feeb8",
+      "bytes": 819,
+      "decoded_sha256": "d912a95005e27e08baf665eb3d5a1bcd1c382a6c5da894219998a9cea85cd187",
+      "decoded_bytes": 2419,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-regressions-20261107-v1/scalar.build.json"
+    },
+    "integration/controls/scalar-comparison.json.gz": {
+      "sha256": "8a00f7913bd5fa3c9853918a18321386f04e6e27c093c175589c08d0367a4bcb",
+      "bytes": 826,
+      "decoded_sha256": "7bb2b53dfcba3029e86f74a4c51dd2314f8237c29817bc55f0521001aa6fc5c0",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-regressions-20261107-v1/scalar-comparison.json"
+    },
+    "integration/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "e9910be336d0cd4d57ab87b4ac237b2ab550207de0d212085c643cd3fdc735c9",
+      "bytes": 2092,
+      "decoded_sha256": "820563bb2b161a7a4628f6f959cbcebff9360db2cab1521b335a6d6420ea0e9e",
+      "decoded_bytes": 13195,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/after-4/native-link-audit.json"
+    },
+    "integration/runners/after-4/edge-run.json.gz": {
+      "sha256": "20f9424e1c712c9694cc29b1a3823b89a65898db1c42a02fbbaf396ba345362a",
+      "bytes": 698,
+      "decoded_sha256": "f01323c6a03932d58478d6a9db7643d2c58423e45a6ff894e42390e5d980471a",
+      "decoded_bytes": 2880,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/after-4/edge-run.json"
+    },
+    "integration/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "d1669d7e0bdd48ab658eae3fa9dcc1e9086e49618353660812fb5a828551fe2e",
+      "bytes": 3335,
+      "decoded_sha256": "c7eb6bd840078c2e96c16c2d3084cb1a177fd8aead8566c7f6b8270298fe261f",
+      "decoded_bytes": 17150,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/after-4/runner-aot.build.json"
+    },
+    "integration/runners/after-4/edge-fixtures.json.gz": {
+      "sha256": "b0ca950bf3a97900affa7cb214ded3fd94f81e76ec99544a1215039d4a01f7eb",
+      "bytes": 5428,
+      "decoded_sha256": "7c647f5ff2dc6620cade1d2a1b334571d7d95d69e5d740e4c236187e514af7eb",
+      "decoded_bytes": 63960,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/after-4/edges/edge-fixtures.json"
+    },
+    "integration/runners/after-4/metadata.json.gz": {
+      "sha256": "d6615c879bb05b3dc463bd79e34379dcd5673bade773094e3434fec86865aa62",
+      "bytes": 139911,
+      "decoded_sha256": "b9fcc3ce7f07f6abd11a32ceca73aee7c0f6a01d654744bdae2cc88ddcf384bb",
+      "decoded_bytes": 2729651,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/after-4/build/metadata.json"
+    },
+    "integration/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "c4e1525ff8a20b658b6701964f118577a502b40fd8c6e45dc46bb0d61f35d075",
+      "bytes": 2064,
+      "decoded_sha256": "184e1a731b86f6feae6c56ce2567986356270818b033932fd42803abb10d12be",
+      "decoded_bytes": 12871,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/reuse-4/native-link-audit.json"
+    },
+    "integration/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "06b0cd1188ee53213ffa9240c02267042c650fa513ff488e9d9fb85c76a1ca01",
+      "bytes": 698,
+      "decoded_sha256": "f27936ba1885a6f9cd3fd33be44022412ff63fc3f05d191d98af7df3202ddc3c",
+      "decoded_bytes": 2878,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/reuse-4/edge-run.json"
+    },
+    "integration/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "707767f5647f3115082e703f7a056f23674a673bd5496f7356fdb1044b301ab7",
+      "bytes": 3335,
+      "decoded_sha256": "2e1fb0eccdbbda1420cf35eb03d9afe05e6dd01aa652df657634d6c8eee4d75f",
+      "decoded_bytes": 17151,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/reuse-4/runner-aot.build.json"
+    },
+    "integration/runners/reuse-4/edge-fixtures.json.gz": {
+      "sha256": "1490be058b389a54d536f764a97f2ece32acab6b7c1d9137fa476e06e77fd721",
+      "bytes": 5381,
+      "decoded_sha256": "1ef11d3e02dc1af9430e58ae508dc8ade1e90dcf8414b93cd3916fa3350e021b",
+      "decoded_bytes": 63997,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/reuse-4/edges/edge-fixtures.json"
+    },
+    "integration/runners/reuse-4/metadata.json.gz": {
+      "sha256": "9d89fd428ca0c6e6f09b6535cc4a460bbff71dd379c78d2b7b9a483a3caf6512",
+      "bytes": 137966,
+      "decoded_sha256": "c537c0a929885aa7898da70be452b09f19b3e5dbc9c75b2948db735edc7cd475",
+      "decoded_bytes": 2694909,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/reuse-4/build/metadata.json"
+    },
+    "integration/runners/native-code-comparison.json.gz": {
+      "sha256": "9022e41ebefed4e98e3463ce5eba22e7998ca4d558c8521b0aff34474dc70e3b",
+      "bytes": 4668,
+      "decoded_sha256": "44081ee3c928f737216e0d6bf57d879db7396da02dd89e2dda95a08c57a6bcc0",
+      "decoded_bytes": 67839,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/native-code-comparison.json"
+    },
+    "integration/runners/build-initial-runners.py.gz": {
+      "sha256": "c01fbb2cb3f067fbce05110059dbeaf198ae731be3e707c2c9027f9c046e44eb",
+      "bytes": 1374,
+      "decoded_sha256": "4f1670548dcfcd4f3e09ac7db03ab445df272a5d1166c932f1234a613768fc41",
+      "decoded_bytes": 3332,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-integration-runners-20261107-v1/build-initial-runners.py"
+    },
+    "hoisting/build/build.json.gz": {
+      "sha256": "f2ab6832695adbedf5f26a42ee1917856384e1a8d6951de613bd47bbaded0642",
+      "bytes": 6864,
+      "decoded_sha256": "ce6dfa9aaa52f1606e5eefe4bdfa68cb844fb450bfcae1c0b515a6e47081c07a",
+      "decoded_bytes": 79005,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-opt-20261107-v2/build.json"
+    },
+    "hoisting/build/source-inventory.json.gz": {
+      "sha256": "f84c23b4a1edb5667ead3b3e4832898601bf1d766783c32bf36af4ba06f2f3ef",
+      "bytes": 116425,
+      "decoded_sha256": "a8d80b856bfd24e235ee589b4805c7785b45970a5fe8f42eeb2ccfb02f6365b2",
+      "decoded_bytes": 314507,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-opt-20261107-v2/source-inventory.json"
+    },
+    "hoisting/build/compiler-build-run.json.gz": {
+      "sha256": "addc6424f96cd367aad3834920541478240ab20ab5555a2a2059a5636ba6d495",
+      "bytes": 280,
+      "decoded_sha256": "944a7c2a6a24b5ea4636ca730d275eb8bf75690f4c520b0136fa6459abdd1854",
+      "decoded_bytes": 559,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-opt-20261107-v2/compiler-build-run.json"
+    },
+    "hoisting/tests/focus-cfg_cleanup.json.gz": {
+      "sha256": "27f586bd1a52857a5dd684b6cf520307d67b77b561bede325a2131323896fb9a",
+      "bytes": 179,
+      "decoded_sha256": "8f2049600a39b2d0db1d53eb9359d918b0bc30310f0f1c8866f00bb4fe6e0ec7",
+      "decoded_bytes": 223,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-cfg_cleanup.json"
+    },
+    "hoisting/tests/focus-movable_capture_reads.stdout.log.gz": {
+      "sha256": "68dd469a668c08075aeed72d9a7b7a730a41ad2eae57f428ede0635059f85bfe",
+      "bytes": 348,
+      "decoded_sha256": "6027f8f45428068fa710070b1ec63e8d0565022e697145b37f2b3fa1baab60c3",
+      "decoded_bytes": 889,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-movable_capture_reads.stdout.log"
+    },
+    "hoisting/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/mech_gpu-build.stderr.log"
+    },
+    "hoisting/tests/test-run.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/test-run.stderr.log"
+    },
+    "hoisting/tests/focus-cfg_cleanup_program_local_homes.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-cfg_cleanup_program_local_homes.stderr.log"
+    },
+    "hoisting/tests/ci-selected-list.stdout.log.gz": {
+      "sha256": "8e0f0c7f4501110b6ddca2e2f61a2c55a7aad55f70eb922dad4cf1e2b45ca9e1",
+      "bytes": 8939,
+      "decoded_sha256": "883890f0e6cb26eeef90c7c2a78b3afb91707384f13868fd5aa2c3bc32b28f36",
+      "decoded_bytes": 55722,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/ci-selected-list.stdout.log"
+    },
+    "hoisting/tests/focus-numeric_first_change.stdout.log.gz": {
+      "sha256": "3b19897245a4ce2a4b71d41cb651d27fa85a5dd419a18eba52e7a9520048dc8f",
+      "bytes": 192,
+      "decoded_sha256": "4b54bd046c1edb04b1e06f5f6356c4a5d3c7306266aaa26203b2a622696ca39e",
+      "decoded_bytes": 266,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-numeric_first_change.stdout.log"
+    },
+    "hoisting/tests/focus-numeric_first_change.json.gz": {
+      "sha256": "4fa35d68e5308b56d3ae1a87a2f9cacfb811e921422dd9ee5b359e421c6d224b",
+      "bytes": 183,
+      "decoded_sha256": "415c0c0a2f54901214daf9c2244e7fd3d22f438b71b53de044813ea139dbfaba",
+      "decoded_bytes": 231,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-numeric_first_change.json"
+    },
+    "hoisting/tests/source-inventory.json.gz": {
+      "sha256": "f84c23b4a1edb5667ead3b3e4832898601bf1d766783c32bf36af4ba06f2f3ef",
+      "bytes": 116425,
+      "decoded_sha256": "a8d80b856bfd24e235ee589b4805c7785b45970a5fe8f42eeb2ccfb02f6365b2",
+      "decoded_bytes": 314507,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/source-inventory.json"
+    },
+    "hoisting/tests/focus-fresh_traversals.stdout.log.gz": {
+      "sha256": "52c0d87e01373884301d66276f1b113a21d50cb2558d11be7d340e0a421572a0",
+      "bytes": 263,
+      "decoded_sha256": "ebe37c5bc7c78439fc83ac7dc50662d122d1eecb9ea74bd75f7099a3cd1aa9e5",
+      "decoded_bytes": 563,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-fresh_traversals.stdout.log"
+    },
+    "hoisting/tests/ci-selected-execute.json.gz": {
+      "sha256": "74c061ddadc93cc059257751bb7b2780719281cca9815243429b7dcc5512da1f",
+      "bytes": 518,
+      "decoded_sha256": "d53716b76bf49e8ea981381ffdb31e54118bc0037448abc82413c098c30e5ce5",
+      "decoded_bytes": 1173,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/ci-selected-execute.json"
+    },
+    "hoisting/tests/focus-cfg_cleanup.stdout.log.gz": {
+      "sha256": "7804e9373ba46236c41157ccd50098ea3f79fdbba8c569ff9195beeea69cfe69",
+      "bytes": 1051,
+      "decoded_sha256": "6f358118b64631ad84c23124da1c05d30e8bff9dd5aabf362b90ceabdf1d6724",
+      "decoded_bytes": 4280,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-cfg_cleanup.stdout.log"
+    },
+    "hoisting/tests/focus-guarded_numeric_load.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-guarded_numeric_load.stderr.log"
+    },
+    "hoisting/tests/focus-fresh_traversals.json.gz": {
+      "sha256": "a66a3878db00b3895d75771fb953221da63234fd42e3ac10fca1c0ff770571b5",
+      "bytes": 182,
+      "decoded_sha256": "29da141970a02fb3d1558ac25e94a6aa8f5f7901222454ada3da258e33525fcd",
+      "decoded_bytes": 228,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-fresh_traversals.json"
+    },
+    "hoisting/tests/focus-movable_capture_reads.json.gz": {
+      "sha256": "6b1f08925e12e33b80abf0f5af5ca2823b8deb86f64eaa5bdb57fdad24625a23",
+      "bytes": 182,
+      "decoded_sha256": "f74f483cf49992af462c02b37b477bbad22c8e812a1ba09c3227de14d5bd3abf",
+      "decoded_bytes": 233,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-movable_capture_reads.json"
+    },
+    "hoisting/tests/focus-unsigned_guard_facts.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-unsigned_guard_facts.stderr.log"
+    },
+    "hoisting/tests/focus-guarded_numeric_load.json.gz": {
+      "sha256": "c0c8c3c2d6b20d4799a7274aa1675f2c99b65d506698b6bf2aa2be0da5e7c301",
+      "bytes": 184,
+      "decoded_sha256": "649b1f536667f6cf644bffc29e8543d7719e316898a0eecbf485eb2527271390",
+      "decoded_bytes": 232,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-guarded_numeric_load.json"
+    },
+    "hoisting/tests/ci-selected-execute.stdout.log.gz": {
+      "sha256": "b3cd45cada1f4aa3da237e80cc3db8944f5f34e6de96e264e35a427535a32a20",
+      "bytes": 9047,
+      "decoded_sha256": "bc4ab9d13937fbaa0424d0a55eb6677efed08dbebd68658f63edee4c0d4ffe02",
+      "decoded_bytes": 58128,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/ci-selected-execute.stdout.log"
+    },
+    "hoisting/tests/focus-cfg_cleanup_program_local_homes.stdout.log.gz": {
+      "sha256": "b0f1eb48e91176818cfe9ec49ce9b2c7101f492f934e71f6ee36bd3afe331f9c",
+      "bytes": 195,
+      "decoded_sha256": "07503d2e224b688c97acf05939f5e28905c031a409c80b186b500e7a7ecf6547",
+      "decoded_bytes": 267,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-cfg_cleanup_program_local_homes.stdout.log"
+    },
+    "hoisting/tests/mech_gpu-build.json.gz": {
+      "sha256": "9d7c2d842a57668213da97e50e0d52c3190ec751966749079ae64cb4c2f51760",
+      "bytes": 1493,
+      "decoded_sha256": "f5e5e23dc4b55758d4e90e705b58eef61725c41a4f442eae66df1c7a31594743",
+      "decoded_bytes": 10673,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/mech_gpu-build.json"
+    },
+    "hoisting/tests/ci-selected-inventory-audit.json.gz": {
+      "sha256": "1eb7c33f836b72b67627d4188a9e7c5afe0db70c746f5dcf5648dd07e03db92d",
+      "bytes": 8987,
+      "decoded_sha256": "5526f598a06f4d6fdea2ac27b8faeef5899dc271b24ce2c63661d61bde05f1a9",
+      "decoded_bytes": 56191,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/ci-selected-inventory-audit.json"
+    },
+    "hoisting/tests/ci-selected-list.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/ci-selected-list.stderr.log"
+    },
+    "hoisting/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/mech_gpu-build.stdout.log"
+    },
+    "hoisting/tests/focus-movable_capture_reads.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-movable_capture_reads.stderr.log"
+    },
+    "hoisting/tests/test-run.stdout.log.gz": {
+      "sha256": "8784c0b88c2bffe6779c1079e8756a84d113062ce46686091392adadaec0a82a",
+      "bytes": 22219,
+      "decoded_sha256": "de3222965b3e4c245c0cf6709f59f8c009e3073b26312021f492cf4b629cfb32",
+      "decoded_bytes": 130165,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/test-run.stdout.log"
+    },
+    "hoisting/tests/focus-fresh_traversals.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-fresh_traversals.stderr.log"
+    },
+    "hoisting/tests/focus-numeric_first_change.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-numeric_first_change.stderr.log"
+    },
+    "hoisting/tests/focus-cfg_cleanup_program_local_homes.json.gz": {
+      "sha256": "8eb6ae2e2d2ee580cbefd0e9647287dd480ca4986ce05d678bc8cca18d8499ac",
+      "bytes": 190,
+      "decoded_sha256": "6b4961859435f05d3d2357be03832694f26a318d13bfc9bb826c066a03fc93f9",
+      "decoded_bytes": 244,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-cfg_cleanup_program_local_homes.json"
+    },
+    "hoisting/tests/focus-cfg_cleanup.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-cfg_cleanup.stderr.log"
+    },
+    "hoisting/tests/focus-unsigned_guard_facts.json.gz": {
+      "sha256": "22a128f0d2eb844b644e8157d50f15189c200ba43602285291187c97b096086d",
+      "bytes": 185,
+      "decoded_sha256": "ac9a0bc80b920ea1b9590f4605d51bb17a2bc6e04aba0810a4f0fd41eff2a2ae",
+      "decoded_bytes": 234,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-unsigned_guard_facts.json"
+    },
+    "hoisting/tests/ci-selected-execute.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/ci-selected-execute.stderr.log"
+    },
+    "hoisting/tests/focus-unsigned_guard_facts.stdout.log.gz": {
+      "sha256": "5231e7d2abf23c40c3b078bfe4069cf8867736a98bd71bdd1d665fd88544ddee",
+      "bytes": 455,
+      "decoded_sha256": "bbc9a8eab310bac8c895362ca1b2e0a10b4279f5c973ac4af9008089d4b859a9",
+      "decoded_bytes": 1267,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-unsigned_guard_facts.stdout.log"
+    },
+    "hoisting/tests/ci-selected-list.json.gz": {
+      "sha256": "22cd7ce1f29ef192c962b1f38813a3df4396249c53d33534ad387ec3ab060c00",
+      "bytes": 513,
+      "decoded_sha256": "86fdc18ecd647ef3e9b5eafe084d26370510096194dd76f6d4bde3b295919658",
+      "decoded_bytes": 1165,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/ci-selected-list.json"
+    },
+    "hoisting/tests/focus-guarded_numeric_load.stdout.log.gz": {
+      "sha256": "89a0e14fe82fa8fd2e019c8c960c8104e1c2cb2f3df093225815b1205ae37f94",
+      "bytes": 280,
+      "decoded_sha256": "27efebad0744d0bd4afda70574bf8b0755d984818d696298396f211bd8a87b2a",
+      "decoded_bytes": 554,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/focus-guarded_numeric_load.stdout.log"
+    },
+    "hoisting/tests/test-run.json.gz": {
+      "sha256": "d5fbc7822a9125f0296ca7cafc73eb0dc72019c53faa203fa890c47304d9c8dc",
+      "bytes": 406,
+      "decoded_sha256": "4c6a0e9383bfe7abfec882e0c8b3922c764ba5b3915d178c51096ad2231f73cf",
+      "decoded_bytes": 634,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/test-run.json"
+    },
+    "hoisting/upstream-lexical/source-reuse.json.gz": {
+      "sha256": "c7ecf734066efdbd5867df1104e4de834b8d13fdefc44a3b4a9fc1ad69c7a854",
+      "bytes": 332,
+      "decoded_sha256": "d7a7d649ed5a4427ef30258d11a7c8ea0f1bbefdfdd971498724b26a275d2d72",
+      "decoded_bytes": 637,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/upstream-interval-integration-v2/source-reuse.json"
+    },
+    "hoisting/upstream-lexical/list.json.gz": {
+      "sha256": "32e1c5da9786c8496cebb48351528e2619f50547020102acca4dc2855d5ce347",
+      "bytes": 282,
+      "decoded_sha256": "626a8a06b63c37757ee3f34c68151bbfbcef8a7255c2cdcd61a981e51343e1c4",
+      "decoded_bytes": 462,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/upstream-interval-integration-v2/list.json"
+    },
+    "hoisting/upstream-lexical/driver.rs.gz": {
+      "sha256": "21d80c61b89b25a3cd0c29025575d997c3bdfbe897833ad1ce25a584a49fddd3",
+      "bytes": 1952,
+      "decoded_sha256": "591cf7bfaebe87c6be394211e011f7230967512dc31ef8aa32c1035b5148134d",
+      "decoded_bytes": 6022,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/upstream-interval-integration-v2/driver.rs"
+    },
+    "hoisting/upstream-lexical/run.json.gz": {
+      "sha256": "5269ec225954aa46009917704782a213a78ee39473eb124b35cdc27a8fe0c47e",
+      "bytes": 339,
+      "decoded_sha256": "9d911001f158f9f5013abd157e872920d99e752742594f8556fe5327d30e7f64",
+      "decoded_bytes": 572,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/upstream-interval-integration-v2/run.json"
+    },
+    "hoisting/upstream-lexical/build.json.gz": {
+      "sha256": "1e6e3f0a75d760028216728f097aaaf4e075afcc9a9155e382d064be88a1973b",
+      "bytes": 1713,
+      "decoded_sha256": "9626a34c8964669f063c467b7562fd2b5b7102d6a796e9a134d3068b202b5a33",
+      "decoded_bytes": 11707,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-tests-20261107-v2/upstream-interval-integration-v2/build.json"
+    },
+    "hoisting/controls/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-regressions-20261107-v2/one-kib-comparison.json"
+    },
+    "hoisting/controls/one-kib-run.json.gz": {
+      "sha256": "674599f7a7d920169a4a30b127e4368281fb8f9db0a5e6777773fda64f61d5c5",
+      "bytes": 719,
+      "decoded_sha256": "7ef9b3b1ac08b238b2c62ec0c782a472a6df006e8eafe33eff522beb6f24bd6d",
+      "decoded_bytes": 3253,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-regressions-20261107-v2/one-kib-run.json"
+    },
+    "hoisting/controls/scalar-run.json.gz": {
+      "sha256": "ac6ccbf6652b9eca51f197c1c76704d865eedeef6969ce40cb4514a9933cd9cb",
+      "bytes": 1712,
+      "decoded_sha256": "c3e03bd09d22cc324a483c828ebd1dde3ac4b0c85c57abc618f3f2905a2e143b",
+      "decoded_bytes": 39550,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-regressions-20261107-v2/scalar-run.json"
+    },
+    "hoisting/controls/one-kib.build.json.gz": {
+      "sha256": "97af5375bed8efc1f89d84ae408944113469f8720551473d9b17a1620ec41a7d",
+      "bytes": 1221,
+      "decoded_sha256": "3e80d2b17a11a4bf90b62fadef35b613ccfefdccd9c3a8d8a5bfcd7251353a98",
+      "decoded_bytes": 4600,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-regressions-20261107-v2/one-kib.build.json"
+    },
+    "hoisting/controls/scalar.build.json.gz": {
+      "sha256": "b6c842720fdc3548f08ef7248817efcfd1a70011c1972cca967d0720056c7dfe",
+      "bytes": 819,
+      "decoded_sha256": "a74d8cd70f86b6428e936e5f793f2b35575f85e2520d1f3151c2c748eb2cd4ef",
+      "decoded_bytes": 2400,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-regressions-20261107-v2/scalar.build.json"
+    },
+    "hoisting/controls/scalar-comparison.json.gz": {
+      "sha256": "8a00f7913bd5fa3c9853918a18321386f04e6e27c093c175589c08d0367a4bcb",
+      "bytes": 826,
+      "decoded_sha256": "7bb2b53dfcba3029e86f74a4c51dd2314f8237c29817bc55f0521001aa6fc5c0",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-regressions-20261107-v2/scalar-comparison.json"
+    },
+    "hoisting/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "f109c4cca16e1237561e643586e0c564c4e128dab6a2ea3285b5cee7d453c449",
+      "bytes": 2083,
+      "decoded_sha256": "07432cacc0173af80e919985271a2b3e971a4b488dbc80c4b8bb1d0046dd95e1",
+      "decoded_bytes": 13189,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/after-4/native-link-audit.json"
+    },
+    "hoisting/runners/after-4/edge-run.json.gz": {
+      "sha256": "e7446e22a621e6e0b9b23f5806ce3e361abaa901eb539a2a0a96db2b410925aa",
+      "bytes": 696,
+      "decoded_sha256": "4ba3b29f53477bfacfef3f1e52de924f042529e26f249ee2ef65d52accf917ee",
+      "decoded_bytes": 2871,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/after-4/edge-run.json"
+    },
+    "hoisting/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "9271e0a72716f6d9b42e895870075e3bc77bc635b8b9e4e3bb910ab6381c07cf",
+      "bytes": 3338,
+      "decoded_sha256": "47efb6aaad30a1a01883f9eb668808c2b4b7edfa3cd8da21f276ab93902f92f6",
+      "decoded_bytes": 17175,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/after-4/runner-aot.build.json"
+    },
+    "hoisting/runners/after-4/edge-fixtures.json.gz": {
+      "sha256": "df46efbc0601641c6ccb4958ed415a3ce9d7c83242595198735470476df229c1",
+      "bytes": 5450,
+      "decoded_sha256": "13ff6731f9fb8b583f6372e78e4c1f6d971b419665598f88ad4c6c2a3335d78f",
+      "decoded_bytes": 63515,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/after-4/edges/edge-fixtures.json"
+    },
+    "hoisting/runners/after-4/metadata.json.gz": {
+      "sha256": "0fb22c9031037e2ff3e6ec4c0f8d9b6bbd86102b670873cfe7607d183481304e",
+      "bytes": 139950,
+      "decoded_sha256": "00f5cef9afc115dcb5ac2b5ed899e902733230448b120ecb28ef1ea239d453ee",
+      "decoded_bytes": 2731613,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/after-4/build/metadata.json"
+    },
+    "hoisting/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "63c2b8fc2ca742044c98072830372a3f6a485d3c364ef59c1e6b264273ae4417",
+      "bytes": 2061,
+      "decoded_sha256": "148a227a92c69b888cb41a46f56837280583f72e68eef21c1f85314a3c12e0cc",
+      "decoded_bytes": 12865,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reuse-4/native-link-audit.json"
+    },
+    "hoisting/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "0792df657fd4c0e37b190ca83f063ebf93ca7d4a3d43aa4f92e9133eeb5ff7a2",
+      "bytes": 699,
+      "decoded_sha256": "21755921b0e39023c3aa5b0fb9a0c376cfd0efe5f697c41be81c9c8a9416c42f",
+      "decoded_bytes": 2871,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reuse-4/edge-run.json"
+    },
+    "hoisting/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "05fa9607828c81502aa2943b3431325cd61165c5eeef1e9353ed57cd2e692bb5",
+      "bytes": 3338,
+      "decoded_sha256": "5eb521df3a4c91532dd864972a459dbb1a4262f5f31e7726d113871fcc68fb69",
+      "decoded_bytes": 17176,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reuse-4/runner-aot.build.json"
+    },
+    "hoisting/runners/reuse-4/edge-fixtures.json.gz": {
+      "sha256": "0673652d1fb8a81a9ee503eb4e25a49491ab7d22d806fdeba4f8b00b21e54131",
+      "bytes": 5435,
+      "decoded_sha256": "806d2e415d69c14fd0483401c95198f2d71da61c3620ec22a9a2540ac2aeccf8",
+      "decoded_bytes": 63546,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reuse-4/edges/edge-fixtures.json"
+    },
+    "hoisting/runners/reuse-4/metadata.json.gz": {
+      "sha256": "73ab6c59c2cc0429e87e198a3e832cf18a43a7b0aae28e1938071ab18f74804b",
+      "bytes": 137999,
+      "decoded_sha256": "816969e91d328260c9945d19cfa68561cf76b07e6984ea82a50e1cb9a7590651",
+      "decoded_bytes": 2696799,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reuse-4/build/metadata.json"
+    },
+    "hoisting/runners/reads-4/native-link-audit.json.gz": {
+      "sha256": "a5ec5db8e00f714da08d8d40a72c9c488f23b3cdedd703b144cebb1031a73c2f",
+      "bytes": 2063,
+      "decoded_sha256": "6ec3142fce2e816b28e86f49e909359f84c8e5ae5572136f6adbe39a29a7e145",
+      "decoded_bytes": 12865,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reads-4/native-link-audit.json"
+    },
+    "hoisting/runners/reads-4/edge-run.json.gz": {
+      "sha256": "f7f63244498c52778f83176488c8eff83df0e5d7fbf96bb4c66ed9d48905e5cb",
+      "bytes": 697,
+      "decoded_sha256": "ef5e76ae8242978839eba79a5371fa951554b351647fa766f1f1c0952212f87a",
+      "decoded_bytes": 2871,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reads-4/edge-run.json"
+    },
+    "hoisting/runners/reads-4/runner-aot.build.json.gz": {
+      "sha256": "764f3ccd70386f353261d8011984265e5c4f7a96510fc3c2869a6399886057e8",
+      "bytes": 3337,
+      "decoded_sha256": "0904459b70308d7c00b4ec8cd3ccd14408a406fcc93e0691a1aad6811b47232a",
+      "decoded_bytes": 17176,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reads-4/runner-aot.build.json"
+    },
+    "hoisting/runners/reads-4/edge-fixtures.json.gz": {
+      "sha256": "509157e13401f10356a7acb1cf56a75de2f4e57039f81d352e75e4450307cd61",
+      "bytes": 5436,
+      "decoded_sha256": "dc75bb54684c048fafe54a5a1c63c8f5459da063234f425b860346fd4294a540",
+      "decoded_bytes": 63529,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reads-4/edges/edge-fixtures.json"
+    },
+    "hoisting/runners/reads-4/metadata.json.gz": {
+      "sha256": "b6dd8a9f84bea751810dae79b2f4a28948baaaca5c52d8443273428439a4450b",
+      "bytes": 138093,
+      "decoded_sha256": "3a6df2a305823e4761c1c955c5554b9d91e0ceb9e311774d4a84d96c1d633d6c",
+      "decoded_bytes": 2696025,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reads-4/build/metadata.json"
+    },
+    "hoisting/runners/partial-4/native-link-audit.json.gz": {
+      "sha256": "d0003c1ab9c6bf158e5cd25209c6e68a4025a8a068eb29c48018dc61f88824a8",
+      "bytes": 2069,
+      "decoded_sha256": "2cc5b6782cff6c48cac469772f0cfc68e2361ddb46506a4588a5341109a0c9e3",
+      "decoded_bytes": 12869,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/partial-4/native-link-audit.json"
+    },
+    "hoisting/runners/partial-4/edge-run.json.gz": {
+      "sha256": "3cdaa500ee4c9ca2ff3b297b0c88124cdffab31379a69f751fb8f8b8bcd0eacf",
+      "bytes": 702,
+      "decoded_sha256": "8ec5e99193211c5c62c3580a42f9bd25390c19eaa5fc01ded005b79e88854864",
+      "decoded_bytes": 2877,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/partial-4/edge-run.json"
+    },
+    "hoisting/runners/partial-4/runner-aot.build.json.gz": {
+      "sha256": "368d56de09e8571efe3928bc37d52ef4bafbe6d26533b017f0caa1354a8fbc31",
+      "bytes": 3342,
+      "decoded_sha256": "8545f3dcf3158e84c056b043efd5caf429adaf0cbb5ac58e6b9cce499b8b51a0",
+      "decoded_bytes": 17217,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/partial-4/runner-aot.build.json"
+    },
+    "hoisting/runners/partial-4/edge-fixtures.json.gz": {
+      "sha256": "0432c95d243fa923728a574f109a10dcb2f8ed8ecec2497c2dcf22dfe415d9bc",
+      "bytes": 5452,
+      "decoded_sha256": "2067799ffed1cec46627ceec90e6b6895a9ee619746799b33bd93eb35b59fcfb",
+      "decoded_bytes": 63851,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/partial-4/edges/edge-fixtures.json"
+    },
+    "hoisting/runners/partial-4/metadata.json.gz": {
+      "sha256": "511b08c2b958865c43fd9ed5348a98f17b0ad9d7e82da72e4cf5dab900d873e5",
+      "bytes": 136794,
+      "decoded_sha256": "75426585034954eaae7554d6d83dadecd04e9f38546f3c00a2cecf7db1527910",
+      "decoded_bytes": 2675414,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/partial-4/build/metadata.json"
+    },
+    "hoisting/runners/native-code-comparison.json.gz": {
+      "sha256": "4d16c8bafd2101620fc242b265c7b40fd035ff8e74236834cc64c8ef25b54345",
+      "bytes": 2556,
+      "decoded_sha256": "ca01d5694b985f5055f1e41f09ac4107e33f567033050a5dde1e8ccd26a2ec3b",
+      "decoded_bytes": 17902,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/native-code-comparison.json"
+    },
+    "hoisting/runners/build-initial-runners.py.gz": {
+      "sha256": "8be2b782f4f6291013e9303b89e56985f2eec436c559b6e5c15b5c6238e1c4fa",
+      "bytes": 1386,
+      "decoded_sha256": "44acf74207b4e124cdad46c9e465fda3121e6bfc6dc30e10cec25c72594d0cc9",
+      "decoded_bytes": 3329,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/build-initial-runners.py"
+    },
+    "hoisting/runners/build-source-combinations.py.gz": {
+      "sha256": "4fd1bbdb0d1d19deb373422cd8cfca4465b8af6f1b976a93a52177c8d4fb2ed3",
+      "bytes": 866,
+      "decoded_sha256": "7e814359197f0e19eedacc58147acc1a73d2b285e3b79f9453cd0f7011ec7e9f",
+      "decoded_bytes": 1820,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/build-source-combinations.py"
+    },
+    "hoisting/runners/build-source-combinations-initial.py.gz": {
+      "sha256": "beafbadd3275c734c3e9d388e25bd195fc06246ad90e8c282a12fc23341f156b",
+      "bytes": 845,
+      "decoded_sha256": "f82956675b69d3264b32808e994b2648da528ca6b04ad1504017375708db0db7",
+      "decoded_bytes": 1680,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/build-source-combinations-initial.py"
+    },
+    "hoisting/runners/initial-source-combination-failure.json.gz": {
+      "sha256": "61b9027a3f99cdca8f55dbfa1b34ce0a7a6d7b0aee0e35794456ce9a5b442966",
+      "bytes": 262,
+      "decoded_sha256": "9373b8761f7de0cd6ef0b280f6a71d62798e79feb4686a655afe6eef54f9500a",
+      "decoded_bytes": 394,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/initial-source-combination-failure.json"
+    },
+    "static-analysis/query-IR249.asm.gz": {
+      "sha256": "0cce8c029cff1fa8eb743131c7a6899f89690180126606cfe3f52559cb10b90b",
+      "bytes": 40711,
+      "decoded_sha256": "11f6d536a379d28f5bed53e464c9cd8438ebcc676df17a3a0110a57dae785d4b",
+      "decoded_bytes": 286559,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/static-analysis/query-IR249.asm"
+    },
+    "static-analysis/query-IR248.asm.gz": {
+      "sha256": "b54030e2df1a9968d366911a47b4e396ae9c0e7773c8d9b393ddb93dd0609ecb",
+      "bytes": 40703,
+      "decoded_sha256": "1328406f37b0e7719571ce2f992edb055b8c8f08c863f7c1f25d52562690f5d4",
+      "decoded_bytes": 286551,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/static-analysis/query-IR248.asm"
+    },
+    "static-analysis/comparison.json.gz": {
+      "sha256": "71e8a348bc7d7a19c89ed7bcad0d57cd5add52cfd9e69a42bdf7cdf10925dc59",
+      "bytes": 2961,
+      "decoded_sha256": "4f485c442974484ea7328b535bf1f75ccd0d1ef30108a176dacb78c00f46c55e",
+      "decoded_bytes": 9593,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/static-analysis/comparison.json"
+    },
+    "static-analysis/query-IR247.asm.gz": {
+      "sha256": "2610c8e1958335bc56a7065a935f8e19425f93c341a1ca01e21a48e631ffe3e1",
+      "bytes": 39227,
+      "decoded_sha256": "c52ea48f0f782081bfcf0387ae62d2ee06c0642a1b3a6cbd9d4ffb28b0cc975e",
+      "decoded_bytes": 279752,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/static-analysis/query-IR247.asm"
+    },
+    "static-analysis/query-IR250.asm.gz": {
+      "sha256": "b9859edec19d4090ed811a9560abb92094a5d9cac7bbb3a8e6f77bcc92fa842e",
+      "bytes": 39285,
+      "decoded_sha256": "dfb2027c6f9b36460cccb3906e81de2b7072efe524e5f2b9c6fc3a9597b163ea",
+      "decoded_bytes": 279749,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/static-analysis/query-IR250.asm"
+    },
+    "profiles/selected-ir242/summary.json.gz": {
+      "sha256": "1b91d65765364a789cc5d96637a93952b47be963c8e5567d3fc6646e35e16ca9",
+      "bytes": 1210,
+      "decoded_sha256": "0b2af81bdbd1ec63cc3e8e997bcf04b05273aff88190162b44bc60575bd1507f",
+      "decoded_bytes": 5986,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/summary.json"
+    },
+    "profiles/selected-ir242/stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/stderr.log"
+    },
+    "profiles/selected-ir242/build-command.json.gz": {
+      "sha256": "7131bcc3d6d69bb34a93c732cc97fd249b53da4de565aeb224539c1b6f95f22d",
+      "bytes": 1016,
+      "decoded_sha256": "3417d2ac857905e854bacebde43ed92d1d96a841d3eb4fd1e9ac5f7afebaebea",
+      "decoded_bytes": 8223,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/build-command.json"
+    },
+    "profiles/selected-ir242/sample-run.json.gz": {
+      "sha256": "82f56d7940187f0346f9e6c294ce2ec8e4edf46eb2c1b461f47222b10479a918",
+      "bytes": 363,
+      "decoded_sha256": "13e36b79a4148b9c019bc4ebf29c7894109964a1b75af03d9ff22845c20b8f6d",
+      "decoded_bytes": 687,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/sample-run.json"
+    },
+    "profiles/selected-ir242/output.json.gz": {
+      "sha256": "6b0aa7634fdbbc10daa72b371b47cb6b8692a6b26aa5bfd83d8b2d90376d4350",
+      "bytes": 705272,
+      "decoded_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "decoded_bytes": 3328279,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/output.json"
+    },
+    "profiles/selected-ir242/query-instructions.json.gz": {
+      "sha256": "613d49501aa0baf62a7cb4a4795ff4d0eea33db318749d4460a51422a1f3de4b",
+      "bytes": 406,
+      "decoded_sha256": "23ed94ed51e019941150b9f16125ad3bee5c384bf39b89829254303f81559617",
+      "decoded_bytes": 874,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/query-instructions.json"
+    },
+    "profiles/selected-ir242/runner.rs.gz": {
+      "sha256": "7b6bb445ba13bf2999f9728263f5e0beef039c17e1228f67ed465d51661ac11c",
+      "bytes": 3676,
+      "decoded_sha256": "8435ce9236a0c6484cd8ba308589456cd283d50b482b72d6c37b904719ac45fc",
+      "decoded_bytes": 10498,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/runner.rs"
+    },
+    "profiles/selected-ir242/stdout.log.gz": {
+      "sha256": "6fbd44e1e580e57a6e5ec0aae0c9329e95d66bd1aea2216ed264323086e6e101",
+      "bytes": 41429,
+      "decoded_sha256": "2f3aafbccc5a54b0a9de3eb84cbdb706c895242b195ddc4d9d93b6e8ca41ec1d",
+      "decoded_bytes": 1425867,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/stdout.log"
+    },
+    "profiles/selected-ir242/audit-run.json.gz": {
+      "sha256": "b22a0e47c737e10509f5f7ba6754cb44a8f69c2a11582c02e145807dde931d6b",
+      "bytes": 416,
+      "decoded_sha256": "8d9a061ed5bacd47aa083e07e4511e8480ba7e3a0c34842a0ce5072e61b7722d",
+      "decoded_bytes": 753,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/audit-run.json"
+    },
+    "profiles/selected-ir242/query.asm.gz": {
+      "sha256": "cbca2aef5bfe1519977ed710d68a9d284924d76c4ae0f4399f729cb3362dec80",
+      "bytes": 40345,
+      "decoded_sha256": "1a78a7d7e19a016ab62c4952f5d4ab42bbe325c082c60146942368e8e46bd2ca",
+      "decoded_bytes": 289040,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/query.asm"
+    },
+    "profiles/selected-ir242/native-link-audit.json.gz": {
+      "sha256": "a8e62a25fa33f85d8baccdbb8ccf7bf0ab770d091c4f31643e9c718b5752cdc4",
+      "bytes": 2090,
+      "decoded_sha256": "35cf5fac2dc64770f229ad99b72a9e72095b1532e306a739bc29c3ed18dd197c",
+      "decoded_bytes": 12880,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/native-link-audit.json"
+    },
+    "profiles/selected-ir242/run.json.gz": {
+      "sha256": "b2cf5edc5ba2ea21d1c834790b50acf3baf1b3b68b20cfec622a8d82a89453c9",
+      "bytes": 772,
+      "decoded_sha256": "39cd1048386d17af3df7545c920dd5876f44d87f6be31f0ab949d4f50ee41e6d",
+      "decoded_bytes": 1481,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/run.json"
+    },
+    "profiles/selected-ir242/build.json.gz": {
+      "sha256": "ff7046d66365e46bc304ff64b9164d4f69106765ed56eecb56b72625089c2390",
+      "bytes": 1516,
+      "decoded_sha256": "5fa8fd5309f9f9c1b6c83bf217ccec21e4f4ecce4c7246122cd9255564a97393",
+      "decoded_bytes": 10225,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/build.json"
+    },
+    "profiles/selected-ir242/sample.txt.gz": {
+      "sha256": "18e9ba943e0f38ed4f3b242512a9b9fc35efe056454c076034c8181eae8ee14a",
+      "bytes": 103101,
+      "decoded_sha256": "945878531cec944ff8bb8f380da3213611e1326b9951fce676de82bb541c2b34",
+      "decoded_bytes": 1530647,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/selected-ir242/sample.txt"
+    },
+    "profiles/candidate-ir250/summary.json.gz": {
+      "sha256": "bb3930c1fe74e60cc4471ec3d0146e6dd72e23889610b89e26d86d60d9fa9571",
+      "bytes": 1152,
+      "decoded_sha256": "2da9af591896168785d7465ed2c42e7b57a5ec13facf9dc93a1e64a234be9e21",
+      "decoded_bytes": 5924,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/summary.json"
+    },
+    "profiles/candidate-ir250/stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/stderr.log"
+    },
+    "profiles/candidate-ir250/build-command.json.gz": {
+      "sha256": "7cc8f272c6ace0bd6320d5310febdd6fe53420527d56bb1988a385df57835ba8",
+      "bytes": 1091,
+      "decoded_sha256": "41196f606fb93be07c744cec3cd8106c82aaebd156e9b6a3e7d1f3eccba53bde",
+      "decoded_bytes": 8803,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/build-command.json"
+    },
+    "profiles/candidate-ir250/sample-run.json.gz": {
+      "sha256": "025bad885a5d4f189ea694873e2babe5c902f1600ca240ab60c69c3105a11900",
+      "bytes": 367,
+      "decoded_sha256": "bf528ab01d8a8e2c7073090ef49ffa67448369b6f82665a19d1b3dd4a501b9b7",
+      "decoded_bytes": 689,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/sample-run.json"
+    },
+    "profiles/candidate-ir250/output.json.gz": {
+      "sha256": "6b0aa7634fdbbc10daa72b371b47cb6b8692a6b26aa5bfd83d8b2d90376d4350",
+      "bytes": 705272,
+      "decoded_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "decoded_bytes": 3328279,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/output.json"
+    },
+    "profiles/candidate-ir250/query-instructions.json.gz": {
+      "sha256": "a95d31574a789cd1a86062353b137b0e4ec3b82406fd73f7d8352617352a6912",
+      "bytes": 404,
+      "decoded_sha256": "5eef7dd375aaec82065cdcf6af6de64687d89e2dae6527333dd4c04d17c15660",
+      "decoded_bytes": 874,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/query-instructions.json"
+    },
+    "profiles/candidate-ir250/runner.rs.gz": {
+      "sha256": "7b6bb445ba13bf2999f9728263f5e0beef039c17e1228f67ed465d51661ac11c",
+      "bytes": 3676,
+      "decoded_sha256": "8435ce9236a0c6484cd8ba308589456cd283d50b482b72d6c37b904719ac45fc",
+      "decoded_bytes": 10498,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/runner.rs"
+    },
+    "profiles/candidate-ir250/stdout.log.gz": {
+      "sha256": "3da383c6a9af3120be69bdf5123b754f4126cd9f28f94b01f93a60d596bc9f31",
+      "bytes": 42174,
+      "decoded_sha256": "16ef75ca2f0d837f63e69dd191dc4684954908fa01ac45d16ffb182329e83ec8",
+      "decoded_bytes": 1422870,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/stdout.log"
+    },
+    "profiles/candidate-ir250/audit-run.json.gz": {
+      "sha256": "b939ee2d9150ad3ed43592a16bfb8de3c86ad9bc48f125a7a9f4ecd3cb527262",
+      "bytes": 406,
+      "decoded_sha256": "0f3f0b2b73be5937a4c2fe3a4dda595ee99e1812da7fbbeb62ba213f1672dbf9",
+      "decoded_bytes": 753,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/audit-run.json"
+    },
+    "profiles/candidate-ir250/query.asm.gz": {
+      "sha256": "b9859edec19d4090ed811a9560abb92094a5d9cac7bbb3a8e6f77bcc92fa842e",
+      "bytes": 39285,
+      "decoded_sha256": "dfb2027c6f9b36460cccb3906e81de2b7072efe524e5f2b9c6fc3a9597b163ea",
+      "decoded_bytes": 279749,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/query.asm"
+    },
+    "profiles/candidate-ir250/native-link-audit.json.gz": {
+      "sha256": "6702af866093bf872c86e74a2527c9b9dba08392c3e3e0f11e70fe1991799ac0",
+      "bytes": 2095,
+      "decoded_sha256": "903c6a2642f312aa92029fe7e464033e52a3139043917ea7ab7c2c2802091a1c",
+      "decoded_bytes": 12879,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/native-link-audit.json"
+    },
+    "profiles/candidate-ir250/run.json.gz": {
+      "sha256": "5ed6ebdb1876623583180d695bf427f9a2a2e362283bf62c467eba9b0d2565ef",
+      "bytes": 772,
+      "decoded_sha256": "a8049e87148b6128681f7720451a7f7e13ede86271b55680929103997f70ba83",
+      "decoded_bytes": 1484,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/run.json"
+    },
+    "profiles/candidate-ir250/build.json.gz": {
+      "sha256": "60ca599d494ea30ac382c7647fcee637f2b224db64a017d9f1f95d8438eaeac0",
+      "bytes": 1588,
+      "decoded_sha256": "106032f27a21ea6fa7e98d9f0c590b55d85da11fc66a27d19b98b4909cd97528",
+      "decoded_bytes": 10812,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/build.json"
+    },
+    "profiles/candidate-ir250/sample.txt.gz": {
+      "sha256": "6007a8a1fc2dec0f06ecb15e8970e57708407feecc5a561df7566a7bcfc2ba96",
+      "bytes": 102324,
+      "decoded_sha256": "ca4df671e4bfe7898933e0c9f97284642b1eced66a3b8c59c9bcbb526fc22f6b",
+      "decoded_bytes": 1543087,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/candidate-ir250/sample.txt"
+    },
+    "profiles/sampler-stub.c": {
+      "sha256": "3b0947d8b129196538fcb98799e90af8ffaa86ae88f1923846cdc409bb225f2a",
+      "bytes": 161,
+      "decoded_sha256": "3b0947d8b129196538fcb98799e90af8ffaa86ae88f1923846cdc409bb225f2a",
+      "decoded_bytes": 161,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/sampler-stub.c"
+    },
+    "profiles/capture.py": {
+      "sha256": "133bc0bca7772d6488e4b3e08fde18942b4f6ffbedf189d1fb996aa5f6003fbf",
+      "bytes": 3105,
+      "decoded_sha256": "133bc0bca7772d6488e4b3e08fde18942b4f6ffbedf189d1fb996aa5f6003fbf",
+      "decoded_bytes": 3105,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/capture.py"
+    },
+    "profiles/analyze.py": {
+      "sha256": "f4a7390cf568fea48bbd733e8f1359056b1368728d84417a5aa4bff70c97509d",
+      "bytes": 3514,
+      "decoded_sha256": "f4a7390cf568fea48bbd733e8f1359056b1368728d84417a5aa4bff70c97509d",
+      "decoded_bytes": 3514,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-20261107-v1/analyze.py"
+    },
+    "recipes/mech-related-invariant-capture-hoisting-prepare-cohort-20261107.py": {
+      "sha256": "c47bf54a396bd5e5a8dbbf073bb18d91513128d8479d6f89fd833e8def0d58dd",
+      "bytes": 2621,
+      "decoded_sha256": "c47bf54a396bd5e5a8dbbf073bb18d91513128d8479d6f89fd833e8def0d58dd",
+      "decoded_bytes": 2621,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-prepare-cohort-20261107.py"
+    },
+    "recipes/mech-related-invariant-capture-hoisting-run-cohorts-20261107.py": {
+      "sha256": "fbfe3453758fe7c3aa125faf47146a9bfa9c7323b0a19662d47776257bdcd4ea",
+      "bytes": 5405,
+      "decoded_sha256": "fbfe3453758fe7c3aa125faf47146a9bfa9c7323b0a19662d47776257bdcd4ea",
+      "decoded_bytes": 5405,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-run-cohorts-20261107.py"
+    },
+    "recipes/mech-related-invariant-capture-selection-report-20261107.py": {
+      "sha256": "b02c60a5ad4d51903743c7ad5a60d1834e8d056daa42736a8c31e8f5f35f1a04",
+      "bytes": 7128,
+      "decoded_sha256": "b02c60a5ad4d51903743c7ad5a60d1834e8d056daa42736a8c31e8f5f35f1a04",
+      "decoded_bytes": 7128,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-selection-report-20261107.py"
+    },
+    "recipes/mech-related-invariant-capture-external-interval-check-20261107.py": {
+      "sha256": "7359c9e6cfef50622a325fd7570fcd015d6fe4959d3278ffa6d6cd73909f870b",
+      "bytes": 3308,
+      "decoded_sha256": "7359c9e6cfef50622a325fd7570fcd015d6fe4959d3278ffa6d6cd73909f870b",
+      "decoded_bytes": 3308,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-external-interval-check-20261107.py"
+    },
+    "recipes/mech-related-invariant-capture-external-interval-check-20261107-initial.py": {
+      "sha256": "e0995394cf96037dfb00dbf9d6355d2bac7f65bc4f53a9e77438341fde73ffcc",
+      "bytes": 2368,
+      "decoded_sha256": "e0995394cf96037dfb00dbf9d6355d2bac7f65bc4f53a9e77438341fde73ffcc",
+      "decoded_bytes": 2368,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-external-interval-check-20261107-initial.py"
+    },
+    "recipes/mech-related-invariant-capture-all-thread-profile-build-20261107.py": {
+      "sha256": "a67034138108eadddd6e74d35ce6d1684bf1dcfebc4c6689b3fb451c093088f9",
+      "bytes": 1973,
+      "decoded_sha256": "a67034138108eadddd6e74d35ce6d1684bf1dcfebc4c6689b3fb451c093088f9",
+      "decoded_bytes": 1973,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-all-thread-profile-build-20261107.py"
+    },
+    "cohort/latency-config.json": {
+      "sha256": "19cea6c9abf6b091445dbae5eb461ed5817a42a4ddef23e81dde6a6e2da3758d",
+      "bytes": 17264,
+      "decoded_sha256": "19cea6c9abf6b091445dbae5eb461ed5817a42a4ddef23e81dde6a6e2da3758d",
+      "decoded_bytes": 17264,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-cohort-20261107-v2/latency-config.json"
+    },
+    "cohort/resources-config.json": {
+      "sha256": "dd7510bfda56d3299cc7ff0eee0951da5f42007c70773a2e4e2334272e0c91a2",
+      "bytes": 19081,
+      "decoded_sha256": "dd7510bfda56d3299cc7ff0eee0951da5f42007c70773a2e4e2334272e0c91a2",
+      "decoded_bytes": 19081,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-cohort-20261107-v2/resources-config.json"
+    },
+    "cohort/latency-run.json": {
+      "sha256": "82370e92e12cb45115588844ee089ef3c31ed41410231ef866e49272873d14b0",
+      "bytes": 748,
+      "decoded_sha256": "82370e92e12cb45115588844ee089ef3c31ed41410231ef866e49272873d14b0",
+      "decoded_bytes": 748,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-cohort-20261107-v2/latency-run.json"
+    },
+    "cohort/resources-run.json": {
+      "sha256": "554d62fe938d34958b8336dcda60f6480053e54aa11634126738f3327fab78bf",
+      "bytes": 769,
+      "decoded_sha256": "554d62fe938d34958b8336dcda60f6480053e54aa11634126738f3327fab78bf",
+      "decoded_bytes": 769,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-cohort-20261107-v2/resources-run.json"
+    },
+    "cohort/sizes-run.json": {
+      "sha256": "e39ab911c0b95aab0a417ef9f96247759d091442281ce0466b786d91cbd75ce6",
+      "bytes": 473,
+      "decoded_sha256": "e39ab911c0b95aab0a417ef9f96247759d091442281ce0466b786d91cbd75ce6",
+      "decoded_bytes": 473,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-cohort-20261107-v2/sizes-run.json"
+    },
+    "cohort/latency-start-gate.json": {
+      "sha256": "e2d2e2414a67334767cea993188419264e13c1ddc7199ae5b54d77d12c6a4e41",
+      "bytes": 992,
+      "decoded_sha256": "e2d2e2414a67334767cea993188419264e13c1ddc7199ae5b54d77d12c6a4e41",
+      "decoded_bytes": 992,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-cohort-20261107-v2/latency-start-gate.json",
+      "unredacted_source_sha256": "fb8d5a64353a25c2a271abdbb673fc66b94230a6e3397471bfb7002b86994212"
+    },
+    "cohort/resources-start-gate.json": {
+      "sha256": "3bb695523f1bc25f70e918f858767fc43efedd078761490dc3a5f0c1a2ce0609",
+      "bytes": 507,
+      "decoded_sha256": "3bb695523f1bc25f70e918f858767fc43efedd078761490dc3a5f0c1a2ce0609",
+      "decoded_bytes": 507,
+      "retained_source": "/private/tmp/mech-related-invariant-capture-hoisting-cohort-20261107-v2/resources-start-gate.json",
+      "unredacted_source_sha256": "8dc9499bf4c0463216d7ebb03e609708760928476e6938847125510d95f3887f"
+    },
+    "README.md": {
+      "sha256": "4f3cb7b89bb480bbf39da90a84173b34aff3794d5e723594504e3f15ffb96d70",
+      "bytes": 3897,
+      "decoded_sha256": "4f3cb7b89bb480bbf39da90a84173b34aff3794d5e723594504e3f15ffb96d70",
+      "decoded_bytes": 3897
+    },
+    "verify.py": {
+      "sha256": "4e3742b488f79d0f53eb8e95ec7e9af55e7717af1c6c2ff5634cfac267d310e6",
+      "bytes": 1543,
+      "decoded_sha256": "4e3742b488f79d0f53eb8e95ec7e9af55e7717af1c6c2ff5634cfac267d310e6",
+      "decoded_bytes": 1543
+    }
+  }
+}
