@@ -1040,7 +1040,6 @@ pub(in crate::native_artifact) fn emit_entry(
                         set_origin(b, frame, site as u64);
                         super::numeric_fuel_debits::spill_live(
                             fuel_debits.as_ref(),
-                            retirement.as_ref(),
                             b,
                             &words,
                             locals,
@@ -1141,6 +1140,7 @@ pub(in crate::native_artifact) fn emit_entry(
                             hooks,
                             error,
                             fuel_debits.as_ref(),
+                            retirement.as_ref(),
                         )?;
                         b.ins().jump(done, &[]);
                         b.switch_to_block(store);
