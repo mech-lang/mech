@@ -168,7 +168,9 @@ pub(in crate::native_artifact) fn emit_entry(
         {
             tail::flags(controls.options(), region)
         } else {
-            MemFlags::new()
+            crate::native_artifact::codegen::common::memory_regions::program_locals(
+                controls.options(),
+            )
         }
     })?;
     let setup_work = b.func.dfg.num_insts() - setup_start;
