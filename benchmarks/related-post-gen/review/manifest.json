@@ -9736,8 +9736,8 @@
       "bytes": 888
     },
     "integration/.gitattributes": {
-      "sha256": "e7acb737b8291d985f74f100c1e06820eceb918548dc76b64b7c82600e829251",
-      "bytes": 189
+      "sha256": "2db8564f4867cf2658c80ca10394ba6e82a159d4e3941b7a9d5387d7241e194e",
+      "bytes": 593
     },
     "integration/evidence/local-facts-and-metadata/native-function-text-correspondence.json": {
       "sha256": "7a48fdb26aeed8a68bd73bddb98117ad1e0da44173cb45084e73eae2b54811e5",
