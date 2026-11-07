@@ -1,0 +1,12 @@
+function u0:0(i64, i64) -> i64 apple_aarch64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = uadd_overflow v0, v1
+    brif v3, block2, block1
+
+block1:
+    return v2
+
+block2:
+    v4 = iconst.i64 0
+    return v4  ; v4 = 0
+}

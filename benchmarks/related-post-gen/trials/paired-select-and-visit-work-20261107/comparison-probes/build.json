@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "--edition=2024",
+    "-C",
+    "opt-level=3",
+    "-L",
+    "dependency=/private/tmp/mech-related-retained-deps",
+    "--extern",
+    "cranelift_codegen=/private/tmp/mech-related-retained-deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+    "--extern",
+    "cranelift_frontend=/private/tmp/mech-related-retained-deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+    "--extern",
+    "cranelift_jit=/private/tmp/mech-related-retained-deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+    "--extern",
+    "cranelift_module=/private/tmp/mech-related-retained-deps/libcranelift_module-8bb9481823a63cf0.rlib",
+    "--extern",
+    "cranelift_native=/private/tmp/mech-related-retained-deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+    "--extern",
+    "cranelift_object=/private/tmp/mech-related-retained-deps/libcranelift_object-e9e960ce24552414.rlib",
+    "/private/tmp/mech-related-cranelift-comparison-pair-probes-20261107-v1/probes.rs",
+    "-o",
+    "/private/tmp/mech-related-cranelift-comparison-pair-probes-20261107-v1/probes"
+  ],
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

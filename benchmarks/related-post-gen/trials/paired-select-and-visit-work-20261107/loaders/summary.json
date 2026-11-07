@@ -1,0 +1,20 @@
+{
+  "rows": {
+    "independent": {
+      "full5000_exact": true,
+      "edges_exact": 31
+    },
+    "json": {
+      "full5000_exact": true,
+      "edges_exact": 31
+    },
+    "full-catalog": {
+      "full5000_exact": true,
+      "edges_exact": 31
+    }
+  },
+  "full5000_plus_edges_exact": 96,
+  "finite_denials": 24,
+  "all_denials_exact_to_prior_and_zero_retention": true,
+  "LLVM_tools_used": false
+}

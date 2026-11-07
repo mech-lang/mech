@@ -1,0 +1,7 @@
+function u0:0(i64, i64) -> i64, i64 apple_aarch64 {
+block0(v0: i64, v1: i64):
+    v2 = icmp ugt v0, v1
+    v3 = select v2, v0, v1
+    v4 = select v2, v1, v0
+    return v3, v4
+}

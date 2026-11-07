@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/budget-json/runner-budget",
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/budget-json/build/source.mec",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/budget-json/work-output.json",
+    "1"
+  ],
+  "environment": {
+    "MECH_IMAGE_BUDGET_CASE": "work"
+  },
+  "exit": 0,
+  "seconds": 0.4881066670641303,
+  "stdout": "{\"budget_case\":\"work\",\"error\":\"Base(WorkLimit { phase: Setup, required: 44056, limit: 0 })\",\"output_unpublished\":true,\"retained_bytes\":0,\"retained_nodes\":0}\n",
+  "stderr": ""
+}

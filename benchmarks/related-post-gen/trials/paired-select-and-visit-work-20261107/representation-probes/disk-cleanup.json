@@ -1,0 +1,209 @@
+{
+  "time": "2026-11-07T17:57:24.710936+00:00",
+  "temporary_files": [
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.02.rcgu.o",
+      "bytes": 2419808,
+      "sha256": "fc44880ab09d083bc256c75cfc3f44ca33588dd76c9c6022c22e996c515f4709",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.10.rcgu.o",
+      "bytes": 2908240,
+      "sha256": "083f3c0e8f3338b6b8bf08f2d4d49a8751366e81133dd7b63ac31f80bb12ca0f",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.0o6clciux8sjjxlhb51mv9csx.rcgu.o",
+      "bytes": 1280,
+      "sha256": "43b47cc677402fec4c5f85ac5b29528dfd910b137f0d50460c4307fed1f2eef6",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.12.rcgu.o",
+      "bytes": 2191784,
+      "sha256": "11ddfbf184969e164872e5036ea8ca696577eba0fdf98f564c7432a501efa1c7",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.00.rcgu.o",
+      "bytes": 1195280,
+      "sha256": "cd7ad78fd24884bdc0ae9f012cc18f80a49f2533335e39454d591186c9670674",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.04.rcgu.o",
+      "bytes": 1613672,
+      "sha256": "7375e662b17d5eba3ab4be337cfb0a87bf65e6c2a8b07288f05916e83071b0f6",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.08.rcgu.o",
+      "bytes": 2690280,
+      "sha256": "0fdc0a4580ac235b1aa7929e500465abc92493afc03309c44d0d0db73706fa99",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.14.rcgu.o",
+      "bytes": 2043256,
+      "sha256": "b1f4f990edfcfe84eae839e3d0c8a04d7542412b61a2064d0ccf3f96a747a3fa",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.06.rcgu.o",
+      "bytes": 2686776,
+      "sha256": "2ce77d77022e949e2feeff202e41c2817154de11d612e985d23d4223b2fce1d6",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.03.rcgu.o",
+      "bytes": 2614880,
+      "sha256": "32ae65d5898d2f50e841d2889b11c466328a96a20379699557354896215bb3fe",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.11.rcgu.o",
+      "bytes": 3334520,
+      "sha256": "3deda9bd89829bcfef88f11db27f8f212a5df2251e29ec764b6bfe890e3b1921",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.13.rcgu.o",
+      "bytes": 2930304,
+      "sha256": "9cdc2ed705dc2267c5ea37f162fddc320d5057ea6329c076672a4a6281a851e8",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.01.rcgu.o",
+      "bytes": 1557192,
+      "sha256": "b90b7f9c4efa787281a7483c1ea22e5a5859a322c98415390440e5c619ad1f87",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.05.rcgu.o",
+      "bytes": 2675040,
+      "sha256": "4aa7916f7460bf04beeeecd04a724fe27ec1c1ad7a0d387ecd39a449142a6e92",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.09.rcgu.o",
+      "bytes": 2322208,
+      "sha256": "344fe9537905087aa42aac3b549a7497c2e5e1a10fa4e4a09d04583dbe691252",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.15.rcgu.o",
+      "bytes": 3055560,
+      "sha256": "4475bc55f9b7b1b14150cc399d2feeacedb73f699039be02da9e681a81cba893",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v2/gpu-tests.mech_gpu.dc910acf31da4071-cgu.07.rcgu.o",
+      "bytes": 2041840,
+      "sha256": "d2c6172e2a20eea1e23332bb6fd3dcdfa2123be952230c2c359f72ba469115a1",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.11.rcgu.o",
+      "bytes": 20432,
+      "sha256": "0cd26ba2a25cb0290b084299a35c980885fb0471422f87c10fd5529efa846100",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.03.rcgu.o",
+      "bytes": 18288,
+      "sha256": "00775241eb899e6b3ef42b475fad7c8273ccafdad1f248c8119d152e19007ab4",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.01.rcgu.o",
+      "bytes": 69280,
+      "sha256": "1d9b2ef536165be5a0035787a47f5c9db1f63a91719e75bdf7ea1fa25fe9c4b4",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.13.rcgu.o",
+      "bytes": 45000,
+      "sha256": "b37f542a5fabc00597cf384d2ef2774b3a84a4fa0a9f85552582739d325f3b5f",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.09.rcgu.o",
+      "bytes": 12976,
+      "sha256": "c431accb0c094659e878eba45ccfe30d5d620b7d1262425d79fb7ae74926f1bd",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.05.rcgu.o",
+      "bytes": 14656,
+      "sha256": "6f069724b234b993e03e9b7ebcf1325347579bddff9234682d846869bffc1140",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.07.rcgu.o",
+      "bytes": 10208,
+      "sha256": "07c47bff5df739fa9f6380fe7c6188e908bb44610370b5976911c8418815a9c4",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.15.rcgu.o",
+      "bytes": 55144,
+      "sha256": "cba291fc5a62495ab6a482698805ff87611b172a69dd81a7f928a52a93ab83b0",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.7wevpr6tpeksb7pmkajn73b0k.rcgu.o",
+      "bytes": 1280,
+      "sha256": "43b47cc677402fec4c5f85ac5b29528dfd910b137f0d50460c4307fed1f2eef6",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.10.rcgu.o",
+      "bytes": 80040,
+      "sha256": "a2783d36dd26082b38209c24173169ec7bec9b2df3bb03e91df0d8678be309bb",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.02.rcgu.o",
+      "bytes": 18120,
+      "sha256": "f866a4e5674fd06b101ce4b48817491b9a939fcbaa0042d2c95e49076db6122f",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.00.rcgu.o",
+      "bytes": 199464,
+      "sha256": "60a3d2e4d1765317dd4faf73c97d109479a9baeab95cf7c2ad6405e0e32e8c15",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.12.rcgu.o",
+      "bytes": 59352,
+      "sha256": "f4b8786b6ec0653ea46c663cce7ebe954fb8c611ed55f8d41f96d98470aecaaa",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.08.rcgu.o",
+      "bytes": 16376,
+      "sha256": "16433e9a449d37f3f939621545a27f750f0a353c3edc83dbc94818ae53ffe314",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.04.rcgu.o",
+      "bytes": 10528,
+      "sha256": "a5d94707b9027a55fd3adef747cbf49c4d2367e7c2edadad23a8aee9f401809b",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.06.rcgu.o",
+      "bytes": 24816,
+      "sha256": "c2f15aac1312cbaa55e73d86c63a86a09a68e600f253ac74af4968686b598c31",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    },
+    {
+      "path": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v1/compiler.compiler_facts.5e774a37b006bdad-cgu.14.rcgu.o",
+      "bytes": 25288,
+      "sha256": "1e08adad181391d5e52b7e3f4c9d8ae00d33f94b74634b26129b7e221d1e5278",
+      "reason": "Rust temporary codegen unit after retained failed link; source/build receipt preserved"
+    }
+  ]
+}

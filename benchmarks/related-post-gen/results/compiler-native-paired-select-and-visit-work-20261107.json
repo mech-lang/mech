@@ -1,0 +1,3440 @@
+{
+  "schema": "mech.related-post-gen.paired-select-and-visit-work-report.v1",
+  "updated_utc": "2026-11-07T18:27:36.837670+00:00",
+  "source_commits": {
+    "paired": "d18d25f699d3de7b655f2d4e1ff1e15197042597",
+    "compact": "43c194cd9f7f2f42f4afd142889d6eedba2cce36"
+  },
+  "parent": "b638320000f7cb33837df2ee73f09221551826a0",
+  "branches": {
+    "paired": "codex/related-paired-scalar-selects-20261107",
+    "compact": "codex/related-compact-visit-work-20261107"
+  },
+  "identities": {
+    "paired": "IR268/work115/ABI41/image9",
+    "compact": "IR269/work115/ABI41/image11"
+  },
+  "selected": false,
+  "goal_complete": false,
+  "production_backend": "Cranelift",
+  "new_production_dependency": false,
+  "LLVM_optional_only": true,
+  "source_freeze": {
+    "sources": [
+      {
+        "kind": "paired-scalar-selects",
+        "source": "/private/tmp/mech-related-paired-scalar-selects-compiler-20261107",
+        "build": "/private/tmp/mech-related-paired-scalar-selects-opt-20261107-v3",
+        "source_inventory_exact": true,
+        "commit": "d18d25f699d3de7b655f2d4e1ff1e15197042597"
+      },
+      {
+        "kind": "compact-visit-work",
+        "source": "/private/tmp/mech-related-compact-visit-work-compiler-20261107",
+        "build": "/private/tmp/mech-related-compact-visit-work-opt-20261107-v2",
+        "source_inventory_exact": true,
+        "commit": "43c194cd9f7f2f42f4afd142889d6eedba2cce36"
+      }
+    ],
+    "source_inventory_exact": true,
+    "predeclared_rule_sha256": "63fc377918f9687977353c2b70788bbb08ae63af44698990e8e9a00ec68861cc",
+    "no_prior_cohort": true
+  },
+  "prospective_rule": {
+    "schema": "mech.related-post-gen.paired-select-and-visit-work.prospective-rule.v1",
+    "declared_utc": "2026-11-07T18:00:18.393945+00:00",
+    "declared_before_randomized_cohorts": true,
+    "qualification_timings_ineligible": true,
+    "fixed_reference": "mech-ir242-reuse-4",
+    "matched_parent": "mech-ir264-cranelift-runtime-control",
+    "samples": 31,
+    "seed": 990278,
+    "resource_samples": 7,
+    "resource_seed": 9902787,
+    "bootstrap": {
+      "resamples": 20000,
+      "seed": 99027899
+    },
+    "experiments": {
+      "mech-ir268-reuse-4": {
+        "target": "post_json_seconds",
+        "mechanism": "adjacent independent word selections share one flags producer",
+        "superiority": "At least21/31 paired wins and upper95% two-sided bootstrap median relative-change interval below0 versus BOTH fixed IR242 and matched parent IR264.",
+        "other_boundary": "Whole-process one-sided95% upper median paired relative-change bound <=1% versus BOTH references; no accumulated concessions.",
+        "instructions": "Report dynamic processing instructions and actual generated compare/move/spill changes; no inferred speed from static code size."
+      },
+      "mech-ir269-reuse-4": {
+        "target": "wall_seconds",
+        "mechanism": "serialize final work only and eagerly reconstruct the unchanged runtime visit box from plan control rows",
+        "superiority": "At least21/31 paired whole-process wins and upper95% two-sided bootstrap median relative-change interval below0 versus BOTH fixed IR242 and matched parent IR264.",
+        "other_boundary": "Post-JSON one-sided95% upper median paired relative-change bound <=1% versus BOTH references; no accumulated concessions.",
+        "practical_restore_threshold": "At least10% restoration-instruction reduction or1ms restoration reduction versus matched parent; no deferral to first evaluation."
+      }
+    },
+    "confirmation": "If first cohort passes, declare second independently seeded confirmation before execution. Do not rerun an unchanged rejected candidate for favorable samples.",
+    "all_first_and_adverse_results_retained": true,
+    "LLVM_optional": true,
+    "default_dependency_change": false,
+    "goal": "Fastest eligible measured Rust independently at BOTH boundaries; partial phase improvement does not finish the goal.",
+    "optional_development_reference": "Both unchanged LLVM IR264 and paired-select LLVM IR268 are measured separately to distinguish existing-backend recovery from general representation gains; neither is a production candidate."
+  },
+  "analysis": {
+    "rule_sha256": "63fc377918f9687977353c2b70788bbb08ae63af44698990e8e9a00ec68861cc",
+    "first_cohort": true,
+    "all_first_and_adverse_results_retained": true,
+    "latency_exact_outputs": 806,
+    "resource_exact_outputs": 189,
+    "fastest_processing_Rust": {
+      "variant": "rust-ordered-ordered-mask-tables",
+      "median_seconds": 0.001568166,
+      "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+      "eligible_variants": [
+        "rust",
+        "rust-mech-control-streaming",
+        "rust-mech-control-u32-casts",
+        "rust-mech-control-u8-ids-u32",
+        "rust-ordered-scan-only",
+        "rust-ordered-ordered",
+        "rust-ordered-mask-reuse",
+        "rust-ordered-ordered-mask",
+        "rust-ordered-ordered-mask-tables",
+        "rust-apple-m3",
+        "rust-mech-control-streaming-apple-m3",
+        "rust-mech-control-u32-casts-apple-m3",
+        "rust-mech-control-u8-ids-u32-apple-m3",
+        "rust-ordered-scan-only-apple-m3",
+        "rust-ordered-ordered-apple-m3",
+        "rust-ordered-mask-reuse-apple-m3",
+        "rust-ordered-ordered-mask-apple-m3",
+        "rust-ordered-ordered-mask-tables-apple-m3"
+      ]
+    },
+    "fastest_whole_Rust": {
+      "variant": "rust-ordered-ordered",
+      "median_seconds": 0.023213000036776066,
+      "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+    },
+    "medians": {
+      "mech-ir242-reuse-4": {
+        "post_json_seconds": 0.002865208,
+        "wall_seconds": 0.035673584090545774,
+        "compile_or_restore_seconds": 0.007999334,
+        "times_fastest_processing_Rust": 1.8271075893751045,
+        "times_fastest_whole_Rust": 1.5367933500206161
+      },
+      "mech-ir264-cranelift-runtime-control": {
+        "post_json_seconds": 0.002837125,
+        "wall_seconds": 0.036413915921002626,
+        "compile_or_restore_seconds": 0.008005958,
+        "times_fastest_processing_Rust": 1.8091994087360648,
+        "times_fastest_whole_Rust": 1.5686863336627113
+      },
+      "mech-llvm-reuse-4": {
+        "post_json_seconds": 0.002413208,
+        "wall_seconds": 0.0369101669639349,
+        "compile_or_restore_seconds": 0.008000667,
+        "times_fastest_processing_Rust": 1.5388727979053238,
+        "times_fastest_whole_Rust": 1.590064485652806
+      },
+      "mech-ir268-reuse-4": {
+        "post_json_seconds": 0.002907125,
+        "wall_seconds": 0.03507095808163285,
+        "compile_or_restore_seconds": 0.008009125,
+        "times_fastest_processing_Rust": 1.8538375401583762,
+        "times_fastest_whole_Rust": 1.510832638007598
+      },
+      "mech-ir269-reuse-4": {
+        "post_json_seconds": 0.002821917,
+        "wall_seconds": 0.03692616708576679,
+        "compile_or_restore_seconds": 0.007120833,
+        "times_fastest_processing_Rust": 1.799501455840772,
+        "times_fastest_whole_Rust": 1.5907537598442738
+      },
+      "mech-ir268-llvm-reference-4": {
+        "post_json_seconds": 0.002416917,
+        "wall_seconds": 0.0348135840613395,
+        "compile_or_restore_seconds": 0.00800675,
+        "times_fastest_processing_Rust": 1.5412379811831147,
+        "times_fastest_whole_Rust": 1.4997451430743451
+      }
+    },
+    "resource_medians": {
+      "mech-ir242-reuse-4": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010207,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions": 125894927,
+          "cycles": 30361586
+        },
+        "post_JSON": {
+          "allocation_requests": 3758,
+          "requested_allocation_bytes": 8012356,
+          "peak_live_requested_heap_bytes": 13344071,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "instructions": 54855375,
+          "cycles": 14960443
+        },
+        "restore_seconds": 0.008100209
+      },
+      "mech-ir264-cranelift-runtime-control": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010226,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions": 125901249,
+          "cycles": 30195258
+        },
+        "post_JSON": {
+          "allocation_requests": 3758,
+          "requested_allocation_bytes": 8012356,
+          "peak_live_requested_heap_bytes": 13344090,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "instructions": 54853645,
+          "cycles": 14896289
+        },
+        "restore_seconds": 0.008134375
+      },
+      "mech-llvm-reuse-4": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010193,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions": 125931776,
+          "cycles": 30282239
+        },
+        "post_JSON": {
+          "allocation_requests": 3758,
+          "requested_allocation_bytes": 8012356,
+          "peak_live_requested_heap_bytes": 13344057,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "instructions": 40010855,
+          "cycles": 12600067
+        },
+        "restore_seconds": 0.008076791
+      },
+      "mech-ir268-reuse-4": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010192,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions": 125918285,
+          "cycles": 30371224
+        },
+        "post_JSON": {
+          "allocation_requests": 3758,
+          "requested_allocation_bytes": 8012356,
+          "peak_live_requested_heap_bytes": 13344056,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "instructions": 54684642,
+          "cycles": 14845534
+        },
+        "restore_seconds": 0.008099208
+      },
+      "mech-ir269-reuse-4": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010189,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions": 110070701,
+          "cycles": 27320425
+        },
+        "post_JSON": {
+          "allocation_requests": 3758,
+          "requested_allocation_bytes": 8012356,
+          "peak_live_requested_heap_bytes": 13344053,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "instructions": 54695917,
+          "cycles": 14945781
+        },
+        "restore_seconds": 0.007390834
+      },
+      "mech-ir268-llvm-reference-4": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010208,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions": 125906988,
+          "cycles": 30273415
+        },
+        "post_JSON": {
+          "allocation_requests": 3758,
+          "requested_allocation_bytes": 8012356,
+          "peak_live_requested_heap_bytes": 13344072,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "instructions": 40249116,
+          "cycles": 12765316
+        },
+        "restore_seconds": 0.0080835
+      }
+    },
+    "decisions": {
+      "mech-ir268-reuse-4": {
+        "paired": {
+          "mech-ir242-reuse-4": {
+            "post_json_seconds": {
+              "wins": 6,
+              "median_paired_relative_change": 0.013812830219657846,
+              "median_paired_delta_seconds": 3.9709000000000185e-05,
+              "two_sided_95_interval": [
+                0.006071817298822113,
+                0.023157348606603012
+              ],
+              "one_sided_95_upper": 0.022739907783088986
+            },
+            "wall_seconds": {
+              "wins": 21,
+              "median_paired_relative_change": -0.02855470784955061,
+              "median_paired_delta_seconds": -0.0010060002095997334,
+              "two_sided_95_interval": [
+                -0.04670897815709085,
+                -0.0012293416259779866
+              ],
+              "one_sided_95_upper": -0.011396725441640831
+            }
+          },
+          "mech-ir264-cranelift-runtime-control": {
+            "post_json_seconds": {
+              "wins": 4,
+              "median_paired_relative_change": 0.020997223425984535,
+              "median_paired_delta_seconds": 5.950000000000009e-05,
+              "two_sided_95_interval": [
+                0.013844451002497538,
+                0.026503778931542543
+              ],
+              "one_sided_95_upper": 0.02468150088951071
+            },
+            "wall_seconds": {
+              "wins": 26,
+              "median_paired_relative_change": -0.04563641657890216,
+              "median_paired_delta_seconds": -0.0016823750920593739,
+              "two_sided_95_interval": [
+                -0.06992194641418714,
+                -0.01568194797714817
+              ],
+              "one_sided_95_upper": -0.02151940013425946
+            }
+          }
+        },
+        "superiority_passed": false,
+        "other_boundary_noninferiority_passed": true,
+        "practical_restore_threshold_passed": true,
+        "first_cohort_passed": false,
+        "selected": false,
+        "confirmation_required": false
+      },
+      "mech-ir269-reuse-4": {
+        "paired": {
+          "mech-ir242-reuse-4": {
+            "post_json_seconds": {
+              "wins": 25,
+              "median_paired_relative_change": -0.019743551815145644,
+              "median_paired_delta_seconds": -5.5792000000000255e-05,
+              "two_sided_95_interval": [
+                -0.026386062475561523,
+                -0.014145646437994652
+              ],
+              "one_sided_95_upper": -0.016087831013130716
+            },
+            "wall_seconds": {
+              "wins": 8,
+              "median_paired_relative_change": 0.030034540943215005,
+              "median_paired_delta_seconds": 0.0010935000609606504,
+              "two_sided_95_interval": [
+                0.014614441713153292,
+                0.05260606492453479
+              ],
+              "one_sided_95_upper": 0.0489860445391781
+            }
+          },
+          "mech-ir264-cranelift-runtime-control": {
+            "post_json_seconds": {
+              "wins": 22,
+              "median_paired_relative_change": -0.0101838351822503,
+              "median_paired_delta_seconds": -2.8916999999999832e-05,
+              "two_sided_95_interval": [
+                -0.022378177966101753,
+                -0.002887006312692897
+              ],
+              "one_sided_95_upper": -0.004856356045127352
+            },
+            "wall_seconds": {
+              "wins": 15,
+              "median_paired_relative_change": 0.0013448189090012885,
+              "median_paired_delta_seconds": 4.75000124424696e-05,
+              "two_sided_95_interval": [
+                -0.018857296190556427,
+                0.018902125581869544
+              ],
+              "one_sided_95_upper": 0.017030552739818017
+            }
+          }
+        },
+        "superiority_passed": false,
+        "other_boundary_noninferiority_passed": true,
+        "practical_restore_threshold_passed": true,
+        "first_cohort_passed": false,
+        "selected": false,
+        "confirmation_required": false
+      }
+    },
+    "selected_changed": false
+  },
+  "actual_machine": {
+    "parent": {
+      "Object": "/private/tmp/mech-related-llvm-native-image-cranelift-control-20261107-v4/build/object.o",
+      "Object_sha256": "5bc1112023dfebdabd576535692bdcfa093b7de4e98e40fc69130596ba367add",
+      "text_bytes": 889544,
+      "text_sha256": "a89fd61ff00cf98854fdc474ff3f57dbc0b2ac61412caffaca3db2f6dd66c3da",
+      "code_bytes": 886344,
+      "stack_bound_bytes": 1536,
+      "native_metadata_bytes": 4913076,
+      "executable_bytes": 16606304
+    },
+    "paired": {
+      "Object": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v2/build/object.o",
+      "Object_sha256": "fba9b66009bf78765468c891f52aec131f96a36a18fcf3da0bd1f73243cd74b2",
+      "text_bytes": 889288,
+      "text_sha256": "31684bf96500eed2a85d793915f4051cfe142659dcd1bbf7c34b4466696ed849",
+      "code_bytes": 886140,
+      "stack_bound_bytes": 1520,
+      "native_metadata_bytes": 4913076,
+      "executable_bytes": 16606304
+    },
+    "compact": {
+      "Object": "/private/tmp/mech-related-compact-visit-work-runners-20261107-v2/build/object.o",
+      "Object_sha256": "fb0395577d497b96df6428ac4b0d40ac3593bd6ab661d1977ade25e834e8d85b",
+      "text_bytes": 889544,
+      "text_sha256": "a89fd61ff00cf98854fdc474ff3f57dbc0b2ac61412caffaca3db2f6dd66c3da",
+      "code_bytes": 886344,
+      "stack_bound_bytes": 1536,
+      "native_metadata_bytes": 4082288,
+      "executable_bytes": 15802400
+    },
+    "paired_LLVM": {
+      "Object": "/private/tmp/mech-related-paired-scalar-selects-llvm-reference-20261107-v1/build/object.o",
+      "Object_sha256": "4877919be29b7179c04d0fd34b26d4689c64a28cef66f293110ca984e90117db",
+      "text_bytes": 552888,
+      "text_sha256": "afa77bd60cb3f105c97f8a0a467e5cdd04444c5993e8a1fd60ec914855fa4822",
+      "code_bytes": 553292,
+      "stack_bound_bytes": 1584,
+      "native_metadata_bytes": 4913355,
+      "executable_bytes": 16276960
+    }
+  },
+  "resources": {
+    "mech-ir242-reuse-4-instrumented": {
+      "median_seconds": 0.002702709,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR242_reuse_4_instrumented",
+      "median_processing_plus_admission_seconds": 0.002861625,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 78227426,
+        "instructions_retired": 313022700,
+        "involuntary_context_switches": 16,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1783,
+        "peak_physical_footprint_bytes": 15991144,
+        "peak_resident_bytes": 26542080,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 14960443,
+          "instructions_per_cycle": 3.6663815369638453,
+          "instructions_retired": 54855375,
+          "lifetime_peak_physical_footprint_bytes_after": 15991144,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15876456,
+          "physical_footprint_bytes_before": 11927888,
+          "resident_bytes_after": 26427392,
+          "resident_bytes_before": 21069824,
+          "system_cpu_seconds": 0.00036670833333333336,
+          "user_cpu_seconds": 0.0036858333333333335
+        },
+        "live_requested_heap_bytes_after": 8498746,
+        "live_requested_heap_bytes_before": 7776904,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344071,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30361586,
+            "instructions_per_cycle": 4.146520112618623,
+            "instructions_retired": 125894927,
+            "lifetime_peak_physical_footprint_bytes_after": 9519464,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9519464,
+            "physical_footprint_bytes_before": 1147216,
+            "resident_bytes_after": 18612224,
+            "resident_bytes_before": 2031616,
+            "system_cpu_seconds": 0.0006018333333333333,
+            "user_cpu_seconds": 0.007489416666666667
+          },
+          "live_requested_heap_bytes_after": 6351969,
+          "live_requested_heap_bytes_before": 6354,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010207,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6477327,
+            "instructions_per_cycle": 4.849562944714695,
+            "instructions_retired": 31443657,
+            "lifetime_peak_physical_footprint_bytes_after": 11927888,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11927888,
+            "physical_footprint_bytes_before": 9519464,
+            "resident_bytes_after": 21069824,
+            "resident_bytes_before": 18628608,
+            "system_cpu_seconds": 0.00019133333333333334,
+            "user_cpu_seconds": 0.0015474166666666668
+          },
+          "live_requested_heap_bytes_after": 7776904,
+          "live_requested_heap_bytes_before": 6351969,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890193,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.03816587501205504,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002870834,
+      "over_fastest": 1.7296883729770933,
+      "over_rust": 0.30181847622770036,
+      "whole_process_over_fastest": 1.6481711269472614,
+      "processing_plus_admission_over_fastest": 1.8313919442753823,
+      "processing_plus_admission_over_rust": 0.31956503531645214,
+      "post_json_over_fastest_matched_native": 1.8372855496271778,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "peak_physical_footprint_bytes": 2.9133200801023724,
+          "page_reclaims": 3.448742746615087,
+          "instructions_retired": 2.2447966089248363,
+          "cycles": 2.271329598741602,
+          "wall_seconds": 2.0,
+          "peak_resident_bytes": 4.378378378378378,
+          "involuntary_context_switches": 3.2
+        },
+        "post_json": {
+          "live_requested_heap_bytes_after": 2.651125865330385,
+          "requested_allocation_bytes": 1.173848944425293,
+          "peak_additional_live_requested_heap_bytes": 0.9856665682269016,
+          "freed_allocation_bytes": 1.2846526026213523,
+          "hardware": {
+            "physical_footprint_bytes_after": 2.866754975688536,
+            "lifetime_peak_physical_footprint_bytes_after": 2.887463778374209,
+            "instructions_per_cycle": 1.2169151717759383,
+            "resident_bytes_after": 4.359459459459459,
+            "physical_footprint_bytes_before": 4.089598990619343,
+            "cycles": 2.519830105149262,
+            "resident_bytes_before": 6.123809523809523,
+            "system_cpu_seconds": 3.2864077669902914,
+            "user_cpu_seconds": 2.490918818460845,
+            "instructions_retired": 3.0652093047842137
+          },
+          "live_requested_heap_bytes_before": 3.7842249833948474,
+          "peak_live_requested_heap_bytes": 1.7322743028262637,
+          "allocation_requests": 64.79310344827586
+        }
+      },
+      "post_json_instructions_per_post": 10971.075,
+      "post_json_cycles_per_post": 2992.0886
+    },
+    "mech-llvm-reuse-4-instrumented": {
+      "median_seconds": 0.002246084,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "LLVM_O3_apple_m3_native_image10_reuse-4_instrumented",
+      "median_processing_plus_admission_seconds": 0.002403917,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 75581584,
+        "instructions_retired": 298020721,
+        "involuntary_context_switches": 17,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1793,
+        "peak_physical_footprint_bytes": 16105832,
+        "peak_resident_bytes": 26656768,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 12600067,
+          "instructions_per_cycle": 3.176003984740716,
+          "instructions_retired": 40010855,
+          "lifetime_peak_physical_footprint_bytes_after": 16105832,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15991144,
+          "physical_footprint_bytes_before": 11977040,
+          "resident_bytes_after": 26574848,
+          "resident_bytes_before": 21151744,
+          "system_cpu_seconds": 0.000372125,
+          "user_cpu_seconds": 0.003063416666666667
+        },
+        "live_requested_heap_bytes_after": 8498732,
+        "live_requested_heap_bytes_before": 7776890,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344057,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30282239,
+            "instructions_per_cycle": 4.159541175274391,
+            "instructions_retired": 125931776,
+            "lifetime_peak_physical_footprint_bytes_after": 9584976,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9584976,
+            "physical_footprint_bytes_before": 1179960,
+            "resident_bytes_after": 18694144,
+            "resident_bytes_before": 2064384,
+            "system_cpu_seconds": 0.0005959166666666667,
+            "user_cpu_seconds": 0.007483541666666667
+          },
+          "live_requested_heap_bytes_after": 6351955,
+          "live_requested_heap_bytes_before": 6340,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010193,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6435366,
+            "instructions_per_cycle": 4.887469803582267,
+            "instructions_retired": 31491830,
+            "lifetime_peak_physical_footprint_bytes_after": 11977040,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11977040,
+            "physical_footprint_bytes_before": 9584976,
+            "resident_bytes_after": 21151744,
+            "resident_bytes_before": 18710528,
+            "system_cpu_seconds": 0.000187875,
+            "user_cpu_seconds": 0.0015390416666666669
+          },
+          "live_requested_heap_bytes_after": 7776890,
+          "live_requested_heap_bytes_before": 6351955,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890179,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.036793333012610674,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002411083,
+      "over_fastest": 1.4374560411534802,
+      "over_rust": 0.2508259862084369,
+      "whole_process_over_fastest": 1.5888986985464417,
+      "processing_plus_admission_over_fastest": 1.538466510638761,
+      "processing_plus_admission_over_rust": 0.2684516038973729,
+      "post_json_over_fastest_matched_native": 1.543052630298981,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "peak_physical_footprint_bytes": 2.934214323400212,
+          "page_reclaims": 3.4680851063829787,
+          "instructions_retired": 2.1372121059914657,
+          "cycles": 2.194507701927642,
+          "wall_seconds": 2.0,
+          "peak_resident_bytes": 4.397297297297297,
+          "involuntary_context_switches": 3.4
+        },
+        "post_json": {
+          "live_requested_heap_bytes_after": 2.6511214981258453,
+          "requested_allocation_bytes": 1.173848944425293,
+          "peak_additional_live_requested_heap_bytes": 0.9856665682269016,
+          "freed_allocation_bytes": 1.2846526026213523,
+          "hardware": {
+            "physical_footprint_bytes_after": 2.887463778374209,
+            "lifetime_peak_physical_footprint_bytes_after": 2.9081725810598815,
+            "instructions_per_cycle": 1.0541530922753843,
+            "resident_bytes_after": 4.383783783783784,
+            "physical_footprint_bytes_before": 4.106451258982939,
+            "cycles": 2.1222652399730237,
+            "resident_bytes_before": 6.147619047619048,
+            "system_cpu_seconds": 3.3349514563106797,
+            "user_cpu_seconds": 2.07028412130769,
+            "instructions_retired": 2.2357270374757623
+          },
+          "live_requested_heap_bytes_before": 3.7842181710245564,
+          "peak_live_requested_heap_bytes": 1.732272485401863,
+          "allocation_requests": 64.79310344827586
+        }
+      },
+      "post_json_instructions_per_post": 8002.171,
+      "post_json_cycles_per_post": 2520.0134
+    },
+    "mech-ir264-cranelift-runtime-control-instrumented": {
+      "median_seconds": 0.002716875,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR264_same_frontend_adapter_and_runtime_as_LLVM_instrumented",
+      "median_processing_plus_admission_seconds": 0.0028745000000000003,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 78661303,
+        "instructions_retired": 313330540,
+        "involuntary_context_switches": 16,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1798,
+        "peak_physical_footprint_bytes": 16073064,
+        "peak_resident_bytes": 26722304,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 14896289,
+          "instructions_per_cycle": 3.6806477774430935,
+          "instructions_retired": 54853645,
+          "lifetime_peak_physical_footprint_bytes_after": 16073064,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15991144,
+          "physical_footprint_bytes_before": 12009832,
+          "resident_bytes_after": 26640384,
+          "resident_bytes_before": 21168128,
+          "system_cpu_seconds": 0.00037487500000000005,
+          "user_cpu_seconds": 0.0036678333333333337
+        },
+        "live_requested_heap_bytes_after": 8498765,
+        "live_requested_heap_bytes_before": 7776923,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344090,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30195258,
+            "instructions_per_cycle": 4.1691924606174915,
+            "instructions_retired": 125901249,
+            "lifetime_peak_physical_footprint_bytes_after": 9584976,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9584976,
+            "physical_footprint_bytes_before": 1163576,
+            "resident_bytes_after": 18694144,
+            "resident_bytes_before": 2064384,
+            "system_cpu_seconds": 0.0005858333333333334,
+            "user_cpu_seconds": 0.007574666666666667
+          },
+          "live_requested_heap_bytes_after": 6351988,
+          "live_requested_heap_bytes_before": 6373,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010226,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6454660,
+            "instructions_per_cycle": 4.864920847883544,
+            "instructions_retired": 31401655,
+            "lifetime_peak_physical_footprint_bytes_after": 12009832,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 12009832,
+            "physical_footprint_bytes_before": 9584976,
+            "resident_bytes_after": 21168128,
+            "resident_bytes_before": 18710528,
+            "system_cpu_seconds": 0.00019333333333333333,
+            "user_cpu_seconds": 0.0015433333333333334
+          },
+          "live_requested_heap_bytes_after": 7776923,
+          "live_requested_heap_bytes_before": 6351988,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890212,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.037771958857774734,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002882167,
+      "over_fastest": 1.738754375085198,
+      "over_rust": 0.3034004299394176,
+      "whole_process_over_fastest": 1.6311600868042584,
+      "processing_plus_admission_over_fastest": 1.8396317280634558,
+      "processing_plus_admission_over_rust": 0.3210028197325442,
+      "post_json_over_fastest_matched_native": 1.844538479310303,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "peak_physical_footprint_bytes": 2.928244539600829,
+          "page_reclaims": 3.4777562862669247,
+          "instructions_retired": 2.2470042385571007,
+          "cycles": 2.283927196830963,
+          "wall_seconds": 2.0,
+          "peak_resident_bytes": 4.408108108108108,
+          "involuntary_context_switches": 3.2
+        },
+        "post_json": {
+          "live_requested_heap_bytes_after": 2.6511317922508324,
+          "requested_allocation_bytes": 1.173848944425293,
+          "peak_additional_live_requested_heap_bytes": 0.9856665682269016,
+          "freed_allocation_bytes": 1.2846526026213523,
+          "hardware": {
+            "physical_footprint_bytes_after": 2.887463778374209,
+            "lifetime_peak_physical_footprint_bytes_after": 2.9022557802925464,
+            "instructions_per_cycle": 1.221650304851526,
+            "resident_bytes_after": 4.394594594594595,
+            "physical_footprint_bytes_before": 4.117694333205332,
+            "cycles": 2.5090244638613837,
+            "resident_bytes_before": 6.152380952380953,
+            "system_cpu_seconds": 3.3595967139656464,
+            "user_cpu_seconds": 2.478754259003745,
+            "instructions_retired": 3.0651126358233824
+          },
+          "live_requested_heap_bytes_before": 3.7842342287545283,
+          "peak_live_requested_heap_bytes": 1.7322767693308074,
+          "allocation_requests": 64.79310344827586
+        }
+      },
+      "post_json_instructions_per_post": 10970.729,
+      "post_json_cycles_per_post": 2979.2578
+    },
+    "mech-ir268-reuse-4-instrumented": {
+      "median_seconds": 0.002703166,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "paired-scalar-selects_instrumented",
+      "median_processing_plus_admission_seconds": 0.002868083,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 78004053,
+        "instructions_retired": 313024868,
+        "involuntary_context_switches": 17,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1799,
+        "peak_physical_footprint_bytes": 16089448,
+        "peak_resident_bytes": 26738688,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 14845534,
+          "instructions_per_cycle": 3.689532892518383,
+          "instructions_retired": 54684642,
+          "lifetime_peak_physical_footprint_bytes_after": 16089448,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15991120,
+          "physical_footprint_bytes_before": 11993424,
+          "resident_bytes_after": 26656768,
+          "resident_bytes_before": 21168128,
+          "system_cpu_seconds": 0.0003867916666666667,
+          "user_cpu_seconds": 0.003626625
+        },
+        "live_requested_heap_bytes_after": 8498731,
+        "live_requested_heap_bytes_before": 7776889,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344056,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30371224,
+            "instructions_per_cycle": 4.146339080703497,
+            "instructions_retired": 125918285,
+            "lifetime_peak_physical_footprint_bytes_after": 9552208,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9552208,
+            "physical_footprint_bytes_before": 1163576,
+            "resident_bytes_after": 18677760,
+            "resident_bytes_before": 2064384,
+            "system_cpu_seconds": 0.00060325,
+            "user_cpu_seconds": 0.00748925
+          },
+          "live_requested_heap_bytes_after": 6351954,
+          "live_requested_heap_bytes_before": 6339,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010192,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6605078,
+            "instructions_per_cycle": 4.746972707968021,
+            "instructions_retired": 31394775,
+            "lifetime_peak_physical_footprint_bytes_after": 11993424,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11993424,
+            "physical_footprint_bytes_before": 9552208,
+            "resident_bytes_after": 21168128,
+            "resident_bytes_before": 18694144,
+            "system_cpu_seconds": 0.00018145833333333336,
+            "user_cpu_seconds": 0.0015822083333333335
+          },
+          "live_requested_heap_bytes_after": 7776889,
+          "live_requested_heap_bytes_before": 6351954,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890178,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.03844345803372562,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002875792,
+      "over_fastest": 1.7299808453026193,
+      "over_rust": 0.3018695105949356,
+      "whole_process_over_fastest": 1.660158388381821,
+      "processing_plus_admission_over_fastest": 1.8355249558251592,
+      "processing_plus_admission_over_rust": 0.3202862168123063,
+      "post_json_over_fastest_matched_native": 1.8404585863666936,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "peak_physical_footprint_bytes": 2.9312294315005203,
+          "page_reclaims": 3.479690522243714,
+          "instructions_retired": 2.2448121564204273,
+          "cycles": 2.264843974295008,
+          "wall_seconds": 2.0,
+          "peak_resident_bytes": 4.410810810810811,
+          "involuntary_context_switches": 3.4
+        },
+        "post_json": {
+          "live_requested_heap_bytes_after": 2.651121186182664,
+          "requested_allocation_bytes": 1.173848944425293,
+          "peak_additional_live_requested_heap_bytes": 0.9856665682269016,
+          "freed_allocation_bytes": 1.2846526026213523,
+          "hardware": {
+            "physical_footprint_bytes_after": 2.8874594447798967,
+            "lifetime_peak_physical_footprint_bytes_after": 2.905214180676214,
+            "instructions_per_cycle": 1.2245993790897323,
+            "resident_bytes_after": 4.397297297297297,
+            "physical_footprint_bytes_before": 4.112068681770805,
+            "cycles": 2.500475654378479,
+            "resident_bytes_before": 6.152380952380953,
+            "system_cpu_seconds": 3.4663928304705003,
+            "user_cpu_seconds": 2.4509053022836707,
+            "instructions_retired": 3.0556690841543537
+          },
+          "live_requested_heap_bytes_before": 3.7842176844266784,
+          "peak_live_requested_heap_bytes": 1.7322723555858344,
+          "allocation_requests": 64.79310344827586
+        }
+      },
+      "post_json_instructions_per_post": 10936.9284,
+      "post_json_cycles_per_post": 2969.1068
+    },
+    "mech-ir268-llvm-reference-4-instrumented": {
+      "median_seconds": 0.002266416,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "optional_LLVM_paired_select_reference_instrumented",
+      "median_processing_plus_admission_seconds": 0.0024224579999999997,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 75803731,
+        "instructions_retired": 298585392,
+        "involuntary_context_switches": 17,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1785,
+        "peak_physical_footprint_bytes": 16023912,
+        "peak_resident_bytes": 26558464,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 12765316,
+          "instructions_per_cycle": 3.152504881195264,
+          "instructions_retired": 40249116,
+          "lifetime_peak_physical_footprint_bytes_after": 16023912,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15909224,
+          "physical_footprint_bytes_before": 11911528,
+          "resident_bytes_after": 26476544,
+          "resident_bytes_before": 21151744,
+          "system_cpu_seconds": 0.000379,
+          "user_cpu_seconds": 0.0030955
+        },
+        "live_requested_heap_bytes_after": 8498747,
+        "live_requested_heap_bytes_before": 7776905,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344072,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30273415,
+            "instructions_per_cycle": 4.158090225367703,
+            "instructions_retired": 125906988,
+            "lifetime_peak_physical_footprint_bytes_after": 9535848,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9535848,
+            "physical_footprint_bytes_before": 1163600,
+            "resident_bytes_after": 18677760,
+            "resident_bytes_before": 2048000,
+            "system_cpu_seconds": 0.0006162083333333334,
+            "user_cpu_seconds": 0.007479916666666667
+          },
+          "live_requested_heap_bytes_after": 6351970,
+          "live_requested_heap_bytes_before": 6355,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010208,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6447037,
+            "instructions_per_cycle": 4.87839700625264,
+            "instructions_retired": 31451206,
+            "lifetime_peak_physical_footprint_bytes_after": 11911528,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11911528,
+            "physical_footprint_bytes_before": 9535848,
+            "resident_bytes_after": 21151744,
+            "resident_bytes_before": 18694144,
+            "system_cpu_seconds": 0.000186125,
+            "user_cpu_seconds": 0.0015374166666666667
+          },
+          "live_requested_heap_bytes_after": 7776905,
+          "live_requested_heap_bytes_before": 6351970,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890194,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.035220209043473005,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002429875,
+      "over_fastest": 1.4504681797149641,
+      "over_rust": 0.25309651302381414,
+      "whole_process_over_fastest": 1.5209642543807458,
+      "processing_plus_admission_over_fastest": 1.5503324392767932,
+      "processing_plus_admission_over_rust": 0.2705221251291214,
+      "post_json_over_fastest_matched_native": 1.5550791947219307,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "peak_physical_footprint_bytes": 2.919289863901755,
+          "page_reclaims": 3.4526112185686655,
+          "instructions_retired": 2.141261561657007,
+          "cycles": 2.200957729522461,
+          "wall_seconds": 2.0,
+          "peak_resident_bytes": 4.381081081081081,
+          "involuntary_context_switches": 3.4
+        },
+        "post_json": {
+          "live_requested_heap_bytes_after": 2.6511261772735666,
+          "requested_allocation_bytes": 1.173848944425293,
+          "peak_additional_live_requested_heap_bytes": 0.9856665682269016,
+          "freed_allocation_bytes": 1.2846526026213523,
+          "hardware": {
+            "physical_footprint_bytes_after": 2.872671776455871,
+            "lifetime_peak_physical_footprint_bytes_after": 2.8933805791415437,
+            "instructions_per_cycle": 1.046353463311707,
+            "resident_bytes_after": 4.367567567567567,
+            "physical_footprint_bytes_before": 4.083989796478139,
+            "cycles": 2.1500986005924796,
+            "resident_bytes_before": 6.147619047619048,
+            "system_cpu_seconds": 3.3965646004480954,
+            "user_cpu_seconds": 2.0919663221918734,
+            "instructions_retired": 2.2490405885027527
+          },
+          "live_requested_heap_bytes_before": 3.7842254699927254,
+          "peak_live_requested_heap_bytes": 1.7322744326422923,
+          "allocation_requests": 64.79310344827586
+        }
+      },
+      "post_json_instructions_per_post": 8049.8232,
+      "post_json_cycles_per_post": 2553.0632
+    },
+    "mech-ir269-reuse-4-instrumented": {
+      "median_seconds": 0.002713792,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "compact-visit-work_instrumented",
+      "median_processing_plus_admission_seconds": 0.002875375,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 75736971,
+        "instructions_retired": 297632313,
+        "involuntary_context_switches": 17,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1745,
+        "peak_physical_footprint_bytes": 16122240,
+        "peak_resident_bytes": 25935872,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 14945781,
+          "instructions_per_cycle": 3.654364867249159,
+          "instructions_retired": 54695917,
+          "lifetime_peak_physical_footprint_bytes_after": 16122240,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16007552,
+          "physical_footprint_bytes_before": 12517736,
+          "resident_bytes_after": 25821184,
+          "resident_bytes_before": 20889600,
+          "system_cpu_seconds": 0.00038708333333333335,
+          "user_cpu_seconds": 0.003698125
+        },
+        "live_requested_heap_bytes_after": 8498728,
+        "live_requested_heap_bytes_before": 7776886,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344053,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 27320425,
+            "instructions_per_cycle": 4.028260138705749,
+            "instructions_retired": 110070701,
+            "lifetime_peak_physical_footprint_bytes_after": 9535824,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9535824,
+            "physical_footprint_bytes_before": 1147192,
+            "resident_bytes_after": 17842176,
+            "resident_bytes_before": 2031616,
+            "system_cpu_seconds": 0.0005800833333333334,
+            "user_cpu_seconds": 0.00681275
+          },
+          "live_requested_heap_bytes_after": 6351951,
+          "live_requested_heap_bytes_before": 6336,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010189,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6530850,
+            "instructions_per_cycle": 4.85793748133857,
+            "instructions_retired": 31726461,
+            "lifetime_peak_physical_footprint_bytes_after": 12517736,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 12517736,
+            "physical_footprint_bytes_before": 9535824,
+            "resident_bytes_after": 20889600,
+            "resident_bytes_before": 17858560,
+            "system_cpu_seconds": 0.00020229166666666667,
+            "user_cpu_seconds": 0.0015515833333333334
+          },
+          "live_requested_heap_bytes_after": 7776886,
+          "live_requested_heap_bytes_before": 6351951,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890175,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.036066458094865084,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002882583,
+      "over_fastest": 1.736781306858508,
+      "over_rust": 0.3030561433875876,
+      "whole_process_over_fastest": 1.5575090277488497,
+      "processing_plus_admission_over_fastest": 1.8401917133694412,
+      "processing_plus_admission_over_rust": 0.3211005332365504,
+      "post_json_over_fastest_matched_native": 1.8448047123243487,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "peak_physical_footprint_bytes": 2.9372035877001466,
+          "page_reclaims": 3.375241779497099,
+          "instructions_retired": 2.134426694705705,
+          "cycles": 2.19901935609302,
+          "wall_seconds": 2.0,
+          "peak_resident_bytes": 4.278378378378378,
+          "involuntary_context_switches": 3.4
+        },
+        "post_json": {
+          "live_requested_heap_bytes_after": 2.6511202503531197,
+          "requested_allocation_bytes": 1.173848944425293,
+          "peak_additional_live_requested_heap_bytes": 0.9856665682269016,
+          "freed_allocation_bytes": 1.2846526026213523,
+          "hardware": {
+            "physical_footprint_bytes_after": 2.8904265123521884,
+            "lifetime_peak_physical_footprint_bytes_after": 2.9111353150378614,
+            "instructions_per_cycle": 1.2129266977061797,
+            "resident_bytes_after": 4.2594594594594595,
+            "physical_footprint_bytes_before": 4.291834439629162,
+            "cycles": 2.51736054265023,
+            "resident_bytes_before": 6.071428571428571,
+            "system_cpu_seconds": 3.4690067214339058,
+            "user_cpu_seconds": 2.4992256356827074,
+            "instructions_retired": 3.05629910874012
+          },
+          "live_requested_heap_bytes_before": 3.7842162246330444,
+          "peak_live_requested_heap_bytes": 1.7322719661377486,
+          "allocation_requests": 64.79310344827586
+        }
+      },
+      "post_json_instructions_per_post": 10939.1834,
+      "post_json_cycles_per_post": 2989.1562
+    }
+  },
+  "paired_change": "Pair only adjacent independent I64 selects with the same predicate through iconcat/select.i128/isplit. Preserve raw nonzero truth and original effects/errors/work. Explicit ablation and emission counter;56 real benchmark pairs. Existing scalar and finite/alias/retry paths maintained. Optional LLVM lowering supports the internal concat vocabulary.",
+  "compact_change": "Serialize final u64 work prices in a versioned packed byte payload. Check native node/count/length then borrow bulk bytes; eagerly construct unchanged runtime visits from source-derived control plus final prices. Keep a separate untouched zero-completion base for existing funding checks; writer checks every non-work field against source derivation. Preserve legacy readers, independent source/layout proofs and genuine same-Object binding.",
+  "qualification": {
+    "paired": {
+      "paired_selects2_passed": true,
+      "scalar_select_tests_passed": true,
+      "actual_CI_names_exact": true,
+      "actual_CI_passed": 401
+    },
+    "compact": {
+      "all_image_tests_passed": true,
+      "actual_CI_names_exact": true,
+      "actual_CI_passed": 399
+    },
+    "engine": {
+      "new_tests_passed": true,
+      "all_image_tests_passed": true,
+      "new_summary": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1240 filtered out; finished in 0.00s"
+      ],
+      "image_summary": [
+        "test result: ok. 50 passed; 0 failed; 0 ignored; 0 measured; 1191 filtered out; finished in 0.01s"
+      ]
+    },
+    "loaders": {
+      "rows": {
+        "independent": {
+          "full5000_exact": true,
+          "edges_exact": 31
+        },
+        "json": {
+          "full5000_exact": true,
+          "edges_exact": 31
+        },
+        "full-catalog": {
+          "full5000_exact": true,
+          "edges_exact": 31
+        }
+      },
+      "full5000_plus_edges_exact": 96,
+      "finite_denials": 24,
+      "all_denials_exact_to_prior_and_zero_retention": true,
+      "LLVM_tools_used": false
+    },
+    "benchmark_outputs_each": 32,
+    "scalar_DEFLATE_rows_each": 133,
+    "all_nontiming_and_physical_allocation_fields_exact_IR240": true,
+    "optional_LLVM4_explicitly_passed_each": true,
+    "promotion_full_GPU_suite_not_run": true
+  },
+  "qualification_complete_for_promotion": false,
+  "first_failures_retained": [
+    "IR268 first source test used separate control choices; adjacency correctly declined. Corrected to one tuple-valued choice, then coverage/ablation and all401 CI pass.",
+    "IR268 second GPU test link and first runner compiler link failed from full disk; no test or performance success inferred. Raw failed receipts retained.144 old task tool executables losslessly archived,12.07GiB freed; all benchmark runners, source, outputs and build receipts preserved.",
+    "IR269 first new visit equivalence test used a definitions-only DEFLATE fixture. Corrected to executable assembled skip source; all25 image tests,399 CI and133 regression rows pass."
+  ],
+  "conclusion": "Both candidates fail their prospective promotion targets and remain unselected. No unchanged confirmation rerun. Paired selects use0.3% fewer processing instructions but lose27/31 parent processing pairs,paired+2.100%. Compact visits reduce restore instructions125.901M to110.071M(-12.574%) and native metadata by830788B(16.91%), but win only15/31 parent whole pairs and8/31 fixed242 whole pairs. Phase savings do not establish full-process superiority.",
+  "lifecycle_diagnostic": {
+    "exact_outputs": 22,
+    "diagnostic_only": true,
+    "timing_eligible": false,
+    "Objects_unchanged": true,
+    "medians_seconds": {
+      "parent": {
+        "worker_startup": 2.1167e-05,
+        "host_pre_restore": 5.8416e-05,
+        "restore": 0.007588542,
+        "JSON_input": 0.001520333,
+        "processing_and_report_print": 0.00270225,
+        "JSON_output": 0.00447675,
+        "output_drop": 1.667e-06,
+        "view_drop": 6.25e-07,
+        "input_drop": 0.0001575,
+        "remaining_run_teardown": 0.000452,
+        "worker_join": 2.95e-05,
+        "child_main_total": 0.016918417,
+        "before_main": 0.009722,
+        "after_main": 0.000351,
+        "whole_parent": 0.026969458
+      },
+      "compact": {
+        "worker_startup": 1.9667e-05,
+        "host_pre_restore": 5.6458e-05,
+        "restore": 0.006789416,
+        "JSON_input": 0.001580458,
+        "processing_and_report_print": 0.002675625,
+        "JSON_output": 0.004429291,
+        "output_drop": 1.458e-06,
+        "view_drop": 5e-07,
+        "input_drop": 0.000156875,
+        "remaining_run_teardown": 0.000447875,
+        "worker_join": 2.8375e-05,
+        "child_main_total": 0.016172542,
+        "before_main": 0.009677,
+        "after_main": 0.00036,
+        "whole_parent": 0.026030917
+      }
+    },
+    "interpretation": "Diagnostic host markers perturb code layout and timing; never substitute these values for the rejected production cohort. before_main includes dynamic loading and common parent launch overhead; after_main includes process exit, pipe delivery and parent wait. Neither establishes compiler CPU shares."
+  },
+  "launcher_retention_diagnostic_first": {
+    "diagnostic_only": true,
+    "not_candidate_remeasurement": true,
+    "rows": [
+      {
+        "held_outputs": 0,
+        "held_items": 0,
+        "maximum_resident_bytes": 25214976,
+        "Python": "3.14.8 (main, Sep 30 2026, 17:55:09) [Clang 21.0.0 (clang-2100.3.34.2)]",
+        "POSIX_SPAWN": true,
+        "HAVE_CLOSEFROM": false,
+        "samples": [
+          {
+            "sample": 0,
+            "mode": "no_cwd",
+            "seconds": 0.136579958
+          },
+          {
+            "sample": 0,
+            "mode": "cwd",
+            "seconds": 0.010120208
+          },
+          {
+            "sample": 1,
+            "mode": "no_cwd",
+            "seconds": 0.009533167
+          },
+          {
+            "sample": 1,
+            "mode": "cwd",
+            "seconds": 0.00830725
+          },
+          {
+            "sample": 2,
+            "mode": "cwd",
+            "seconds": 0.008893209
+          },
+          {
+            "sample": 2,
+            "mode": "no_cwd",
+            "seconds": 0.009354209
+          },
+          {
+            "sample": 3,
+            "mode": "no_cwd",
+            "seconds": 0.010667542
+          },
+          {
+            "sample": 3,
+            "mode": "cwd",
+            "seconds": 0.009633458
+          },
+          {
+            "sample": 4,
+            "mode": "no_cwd",
+            "seconds": 0.013708042
+          },
+          {
+            "sample": 4,
+            "mode": "cwd",
+            "seconds": 0.011452417
+          },
+          {
+            "sample": 5,
+            "mode": "no_cwd",
+            "seconds": 0.010992542
+          },
+          {
+            "sample": 5,
+            "mode": "cwd",
+            "seconds": 0.013077291
+          },
+          {
+            "sample": 6,
+            "mode": "cwd",
+            "seconds": 0.011015709
+          },
+          {
+            "sample": 6,
+            "mode": "no_cwd",
+            "seconds": 0.011461791
+          },
+          {
+            "sample": 7,
+            "mode": "cwd",
+            "seconds": 0.013320792
+          },
+          {
+            "sample": 7,
+            "mode": "no_cwd",
+            "seconds": 0.014684
+          },
+          {
+            "sample": 8,
+            "mode": "no_cwd",
+            "seconds": 0.015628792
+          },
+          {
+            "sample": 8,
+            "mode": "cwd",
+            "seconds": 0.01354125
+          },
+          {
+            "sample": 9,
+            "mode": "no_cwd",
+            "seconds": 0.013340917
+          },
+          {
+            "sample": 9,
+            "mode": "cwd",
+            "seconds": 0.012996042
+          },
+          {
+            "sample": 10,
+            "mode": "no_cwd",
+            "seconds": 0.01063575
+          },
+          {
+            "sample": 10,
+            "mode": "cwd",
+            "seconds": 0.011137667
+          },
+          {
+            "sample": 11,
+            "mode": "cwd",
+            "seconds": 0.012973125
+          },
+          {
+            "sample": 11,
+            "mode": "no_cwd",
+            "seconds": 0.009979791
+          },
+          {
+            "sample": 12,
+            "mode": "cwd",
+            "seconds": 0.00903625
+          },
+          {
+            "sample": 12,
+            "mode": "no_cwd",
+            "seconds": 0.010446
+          },
+          {
+            "sample": 13,
+            "mode": "no_cwd",
+            "seconds": 0.010561041
+          },
+          {
+            "sample": 13,
+            "mode": "cwd",
+            "seconds": 0.0101595
+          },
+          {
+            "sample": 14,
+            "mode": "cwd",
+            "seconds": 0.012534625
+          },
+          {
+            "sample": 14,
+            "mode": "no_cwd",
+            "seconds": 0.012510042
+          },
+          {
+            "sample": 15,
+            "mode": "no_cwd",
+            "seconds": 0.01395975
+          },
+          {
+            "sample": 15,
+            "mode": "cwd",
+            "seconds": 0.015561625
+          },
+          {
+            "sample": 16,
+            "mode": "no_cwd",
+            "seconds": 0.011840208
+          },
+          {
+            "sample": 16,
+            "mode": "cwd",
+            "seconds": 0.012575833
+          },
+          {
+            "sample": 17,
+            "mode": "cwd",
+            "seconds": 0.013004791
+          },
+          {
+            "sample": 17,
+            "mode": "no_cwd",
+            "seconds": 0.011170125
+          },
+          {
+            "sample": 18,
+            "mode": "cwd",
+            "seconds": 0.010371541
+          },
+          {
+            "sample": 18,
+            "mode": "no_cwd",
+            "seconds": 0.010369125
+          },
+          {
+            "sample": 19,
+            "mode": "no_cwd",
+            "seconds": 0.011870792
+          },
+          {
+            "sample": 19,
+            "mode": "cwd",
+            "seconds": 0.011264458
+          },
+          {
+            "sample": 20,
+            "mode": "no_cwd",
+            "seconds": 0.009234417
+          },
+          {
+            "sample": 20,
+            "mode": "cwd",
+            "seconds": 0.007910333
+          },
+          {
+            "sample": 21,
+            "mode": "cwd",
+            "seconds": 0.006500333
+          },
+          {
+            "sample": 21,
+            "mode": "no_cwd",
+            "seconds": 0.006910916
+          },
+          {
+            "sample": 22,
+            "mode": "no_cwd",
+            "seconds": 0.006045083
+          },
+          {
+            "sample": 22,
+            "mode": "cwd",
+            "seconds": 0.006206375
+          },
+          {
+            "sample": 23,
+            "mode": "no_cwd",
+            "seconds": 0.005282
+          },
+          {
+            "sample": 23,
+            "mode": "cwd",
+            "seconds": 0.005457208
+          },
+          {
+            "sample": 24,
+            "mode": "cwd",
+            "seconds": 0.005868709
+          },
+          {
+            "sample": 24,
+            "mode": "no_cwd",
+            "seconds": 0.005539167
+          },
+          {
+            "sample": 25,
+            "mode": "cwd",
+            "seconds": 0.005586709
+          },
+          {
+            "sample": 25,
+            "mode": "no_cwd",
+            "seconds": 0.005464834
+          },
+          {
+            "sample": 26,
+            "mode": "no_cwd",
+            "seconds": 0.005381375
+          },
+          {
+            "sample": 26,
+            "mode": "cwd",
+            "seconds": 0.005102333
+          },
+          {
+            "sample": 27,
+            "mode": "no_cwd",
+            "seconds": 0.005517167
+          },
+          {
+            "sample": 27,
+            "mode": "cwd",
+            "seconds": 0.005157834
+          },
+          {
+            "sample": 28,
+            "mode": "cwd",
+            "seconds": 0.005134792
+          },
+          {
+            "sample": 28,
+            "mode": "no_cwd",
+            "seconds": 0.004740209
+          },
+          {
+            "sample": 29,
+            "mode": "no_cwd",
+            "seconds": 0.005000708
+          },
+          {
+            "sample": 29,
+            "mode": "cwd",
+            "seconds": 0.004865416
+          },
+          {
+            "sample": 30,
+            "mode": "no_cwd",
+            "seconds": 0.004904042
+          },
+          {
+            "sample": 30,
+            "mode": "cwd",
+            "seconds": 0.006188375
+          }
+        ],
+        "medians": {
+          "no_cwd": 0.010446,
+          "cwd": 0.010120208
+        },
+        "diagnostic_only": true,
+        "not_Rust_or_Mech_latency": true
+      },
+      {
+        "held_outputs": 26,
+        "held_items": 130000,
+        "maximum_resident_bytes": 577847296,
+        "Python": "3.14.8 (main, Sep 30 2026, 17:55:09) [Clang 21.0.0 (clang-2100.3.34.2)]",
+        "POSIX_SPAWN": true,
+        "HAVE_CLOSEFROM": false,
+        "samples": [
+          {
+            "sample": 0,
+            "mode": "no_cwd",
+            "seconds": 0.012532792
+          },
+          {
+            "sample": 0,
+            "mode": "cwd",
+            "seconds": 0.009363416
+          },
+          {
+            "sample": 1,
+            "mode": "no_cwd",
+            "seconds": 0.006426458
+          },
+          {
+            "sample": 1,
+            "mode": "cwd",
+            "seconds": 0.007839583
+          },
+          {
+            "sample": 2,
+            "mode": "cwd",
+            "seconds": 0.006117875
+          },
+          {
+            "sample": 2,
+            "mode": "no_cwd",
+            "seconds": 0.006264667
+          },
+          {
+            "sample": 3,
+            "mode": "no_cwd",
+            "seconds": 0.006268167
+          },
+          {
+            "sample": 3,
+            "mode": "cwd",
+            "seconds": 0.006227292
+          },
+          {
+            "sample": 4,
+            "mode": "no_cwd",
+            "seconds": 0.00611225
+          },
+          {
+            "sample": 4,
+            "mode": "cwd",
+            "seconds": 0.006372541
+          },
+          {
+            "sample": 5,
+            "mode": "no_cwd",
+            "seconds": 0.006152333
+          },
+          {
+            "sample": 5,
+            "mode": "cwd",
+            "seconds": 0.006018916
+          },
+          {
+            "sample": 6,
+            "mode": "cwd",
+            "seconds": 0.006050875
+          },
+          {
+            "sample": 6,
+            "mode": "no_cwd",
+            "seconds": 0.005803584
+          },
+          {
+            "sample": 7,
+            "mode": "cwd",
+            "seconds": 0.0059655
+          },
+          {
+            "sample": 7,
+            "mode": "no_cwd",
+            "seconds": 0.006519042
+          },
+          {
+            "sample": 8,
+            "mode": "no_cwd",
+            "seconds": 0.005457667
+          },
+          {
+            "sample": 8,
+            "mode": "cwd",
+            "seconds": 0.005379125
+          },
+          {
+            "sample": 9,
+            "mode": "no_cwd",
+            "seconds": 0.005398375
+          },
+          {
+            "sample": 9,
+            "mode": "cwd",
+            "seconds": 0.005320875
+          },
+          {
+            "sample": 10,
+            "mode": "no_cwd",
+            "seconds": 0.005440417
+          },
+          {
+            "sample": 10,
+            "mode": "cwd",
+            "seconds": 0.006300416
+          },
+          {
+            "sample": 11,
+            "mode": "cwd",
+            "seconds": 0.005909625
+          },
+          {
+            "sample": 11,
+            "mode": "no_cwd",
+            "seconds": 0.005162875
+          },
+          {
+            "sample": 12,
+            "mode": "cwd",
+            "seconds": 0.005045292
+          },
+          {
+            "sample": 12,
+            "mode": "no_cwd",
+            "seconds": 0.005209167
+          },
+          {
+            "sample": 13,
+            "mode": "no_cwd",
+            "seconds": 0.005422083
+          },
+          {
+            "sample": 13,
+            "mode": "cwd",
+            "seconds": 0.00617225
+          },
+          {
+            "sample": 14,
+            "mode": "cwd",
+            "seconds": 0.005033625
+          },
+          {
+            "sample": 14,
+            "mode": "no_cwd",
+            "seconds": 0.005141792
+          },
+          {
+            "sample": 15,
+            "mode": "no_cwd",
+            "seconds": 0.005134791
+          },
+          {
+            "sample": 15,
+            "mode": "cwd",
+            "seconds": 0.005157708
+          },
+          {
+            "sample": 16,
+            "mode": "no_cwd",
+            "seconds": 0.005149334
+          },
+          {
+            "sample": 16,
+            "mode": "cwd",
+            "seconds": 0.005399958
+          },
+          {
+            "sample": 17,
+            "mode": "cwd",
+            "seconds": 0.005478333
+          },
+          {
+            "sample": 17,
+            "mode": "no_cwd",
+            "seconds": 0.005687541
+          },
+          {
+            "sample": 18,
+            "mode": "cwd",
+            "seconds": 0.005722333
+          },
+          {
+            "sample": 18,
+            "mode": "no_cwd",
+            "seconds": 0.005988042
+          },
+          {
+            "sample": 19,
+            "mode": "no_cwd",
+            "seconds": 0.006035667
+          },
+          {
+            "sample": 19,
+            "mode": "cwd",
+            "seconds": 0.006514708
+          },
+          {
+            "sample": 20,
+            "mode": "no_cwd",
+            "seconds": 0.006236791
+          },
+          {
+            "sample": 20,
+            "mode": "cwd",
+            "seconds": 0.006466291
+          },
+          {
+            "sample": 21,
+            "mode": "cwd",
+            "seconds": 0.006636834
+          },
+          {
+            "sample": 21,
+            "mode": "no_cwd",
+            "seconds": 0.006575333
+          },
+          {
+            "sample": 22,
+            "mode": "no_cwd",
+            "seconds": 0.006986042
+          },
+          {
+            "sample": 22,
+            "mode": "cwd",
+            "seconds": 0.006723833
+          },
+          {
+            "sample": 23,
+            "mode": "no_cwd",
+            "seconds": 0.006822959
+          },
+          {
+            "sample": 23,
+            "mode": "cwd",
+            "seconds": 0.007226667
+          },
+          {
+            "sample": 24,
+            "mode": "cwd",
+            "seconds": 0.007989042
+          },
+          {
+            "sample": 24,
+            "mode": "no_cwd",
+            "seconds": 0.008173625
+          },
+          {
+            "sample": 25,
+            "mode": "cwd",
+            "seconds": 0.006827375
+          },
+          {
+            "sample": 25,
+            "mode": "no_cwd",
+            "seconds": 0.0068765
+          },
+          {
+            "sample": 26,
+            "mode": "no_cwd",
+            "seconds": 0.007209541
+          },
+          {
+            "sample": 26,
+            "mode": "cwd",
+            "seconds": 0.007902458
+          },
+          {
+            "sample": 27,
+            "mode": "no_cwd",
+            "seconds": 0.008022875
+          },
+          {
+            "sample": 27,
+            "mode": "cwd",
+            "seconds": 0.008303083
+          },
+          {
+            "sample": 28,
+            "mode": "cwd",
+            "seconds": 0.008211917
+          },
+          {
+            "sample": 28,
+            "mode": "no_cwd",
+            "seconds": 0.009311875
+          },
+          {
+            "sample": 29,
+            "mode": "no_cwd",
+            "seconds": 0.008689916
+          },
+          {
+            "sample": 29,
+            "mode": "cwd",
+            "seconds": 0.009426375
+          },
+          {
+            "sample": 30,
+            "mode": "no_cwd",
+            "seconds": 0.011319292
+          },
+          {
+            "sample": 30,
+            "mode": "cwd",
+            "seconds": 0.013713208
+          }
+        ],
+        "medians": {
+          "no_cwd": 0.006236791,
+          "cwd": 0.006300416
+        },
+        "diagnostic_only": true,
+        "not_Rust_or_Mech_latency": true
+      }
+    ],
+    "causal_comparison": "Identical /usr/bin/true executable, same working-directory/capture protocol; vary only parsed output retention and cwd. Parent allocations are outside all per-launch clocks."
+  },
+  "next_probes": {
+    "paired_select_and_zero_store": {
+      "production_Program_Cranelift_flags": true,
+      "Cranelift_version": "0.131.3",
+      "default_dependency_changed": false,
+      "LLVM_only_optional_disassembler": true,
+      "paired_cmp": 1,
+      "independent_cmp": 2,
+      "paired_csel": 2,
+      "independent_csel": 2,
+      "paired_moves": 2,
+      "independent_moves": 2,
+      "paired_spills": 0,
+      "independent_spills": 0,
+      "scalar_store_count": 2,
+      "vector_store_count": 1,
+      "vector_exact_byte_coverage": 16,
+      "bool_narrow_wide_machine_bytes_equal": true,
+      "bool_ccmp_emitted": false,
+      "native_test_exit": 0,
+      "native_test_stdout": "4192 native probe cases passed\n",
+      "not_latency_evidence": true
+    },
+    "comparison_pairs": {
+      "production_Program_Cranelift_flags": true,
+      "Cranelift_version": "0.131.3",
+      "no_dependency_change": true,
+      "pure_two_full_width_equalities_or_inequalities_only": true,
+      "general_ordered_compare_case_not_claimed": true,
+      "native_probe_cases": 4096,
+      "all_exact": true,
+      "machine_code_saved": true,
+      "not_latency_evidence": true
+    }
+  },
+  "next_actions": [
+    "Use actual executed hot-cone counts before selecting narrow equality/inequality pair combining; reduced probe already emits cmp/ccmp/branch and passes4096 native cases without new dependencies. General ordered comparison cones still need a proved backend rule.",
+    "Count executed retirement store pairs before integrating the successful16-byte store probe.",
+    "Keep the12.6% restore instruction saving as an unselected foundation; investigate launch variability and remaining eager metadata construction before another whole-process candidate.",
+    "Preserve fastest eligible measured Rust independently at both boundaries; meet both before completing the goal."
+  ],
+  "all_first_and_adverse_results_retained": true,
+  "selected_compiler_unchanged": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+  "launcher_retention_diagnostic_balanced": {
+    "plan": {
+      "declared_utc": "2026-11-07T18:23:02.277306+00:00",
+      "counts": [
+        26,
+        0,
+        0,
+        26
+      ],
+      "launches_per_mode_per_parent": 31,
+      "untimed_warmups": 10,
+      "first_unbalanced_results_preserved": true,
+      "candidate_executables_not_run": true,
+      "not_a_Mech_or_Rust_cohort": true
+    },
+    "rows": [
+      {
+        "held_outputs": 26,
+        "held_items": 130000,
+        "maximum_resident_bytes": 577961984,
+        "Python": "3.14.8 (main, Sep 30 2026, 17:55:09) [Clang 21.0.0 (clang-2100.3.34.2)]",
+        "POSIX_SPAWN": true,
+        "HAVE_CLOSEFROM": false,
+        "samples": [
+          {
+            "sample": 0,
+            "mode": "no_cwd",
+            "seconds": 0.00634375
+          },
+          {
+            "sample": 0,
+            "mode": "cwd",
+            "seconds": 0.005577916
+          },
+          {
+            "sample": 1,
+            "mode": "no_cwd",
+            "seconds": 0.005711208
+          },
+          {
+            "sample": 1,
+            "mode": "cwd",
+            "seconds": 0.005791291
+          },
+          {
+            "sample": 2,
+            "mode": "cwd",
+            "seconds": 0.005859041
+          },
+          {
+            "sample": 2,
+            "mode": "no_cwd",
+            "seconds": 0.006587625
+          },
+          {
+            "sample": 3,
+            "mode": "no_cwd",
+            "seconds": 0.006042209
+          },
+          {
+            "sample": 3,
+            "mode": "cwd",
+            "seconds": 0.006346167
+          },
+          {
+            "sample": 4,
+            "mode": "no_cwd",
+            "seconds": 0.00641775
+          },
+          {
+            "sample": 4,
+            "mode": "cwd",
+            "seconds": 0.006004166
+          },
+          {
+            "sample": 5,
+            "mode": "no_cwd",
+            "seconds": 0.00726075
+          },
+          {
+            "sample": 5,
+            "mode": "cwd",
+            "seconds": 0.006478375
+          },
+          {
+            "sample": 6,
+            "mode": "cwd",
+            "seconds": 0.006204417
+          },
+          {
+            "sample": 6,
+            "mode": "no_cwd",
+            "seconds": 0.00668
+          },
+          {
+            "sample": 7,
+            "mode": "cwd",
+            "seconds": 0.006308625
+          },
+          {
+            "sample": 7,
+            "mode": "no_cwd",
+            "seconds": 0.006557417
+          },
+          {
+            "sample": 8,
+            "mode": "no_cwd",
+            "seconds": 0.006803833
+          },
+          {
+            "sample": 8,
+            "mode": "cwd",
+            "seconds": 0.006462958
+          },
+          {
+            "sample": 9,
+            "mode": "no_cwd",
+            "seconds": 0.006905542
+          },
+          {
+            "sample": 9,
+            "mode": "cwd",
+            "seconds": 0.006808625
+          },
+          {
+            "sample": 10,
+            "mode": "no_cwd",
+            "seconds": 0.006748958
+          },
+          {
+            "sample": 10,
+            "mode": "cwd",
+            "seconds": 0.006566167
+          },
+          {
+            "sample": 11,
+            "mode": "cwd",
+            "seconds": 0.007717375
+          },
+          {
+            "sample": 11,
+            "mode": "no_cwd",
+            "seconds": 0.00745125
+          },
+          {
+            "sample": 12,
+            "mode": "cwd",
+            "seconds": 0.007110833
+          },
+          {
+            "sample": 12,
+            "mode": "no_cwd",
+            "seconds": 0.009223083
+          },
+          {
+            "sample": 13,
+            "mode": "no_cwd",
+            "seconds": 0.009183708
+          },
+          {
+            "sample": 13,
+            "mode": "cwd",
+            "seconds": 0.008396583
+          },
+          {
+            "sample": 14,
+            "mode": "cwd",
+            "seconds": 0.007785083
+          },
+          {
+            "sample": 14,
+            "mode": "no_cwd",
+            "seconds": 0.0081745
+          },
+          {
+            "sample": 15,
+            "mode": "no_cwd",
+            "seconds": 0.006795542
+          },
+          {
+            "sample": 15,
+            "mode": "cwd",
+            "seconds": 0.007044208
+          },
+          {
+            "sample": 16,
+            "mode": "no_cwd",
+            "seconds": 0.00732
+          },
+          {
+            "sample": 16,
+            "mode": "cwd",
+            "seconds": 0.007419458
+          },
+          {
+            "sample": 17,
+            "mode": "cwd",
+            "seconds": 0.007369875
+          },
+          {
+            "sample": 17,
+            "mode": "no_cwd",
+            "seconds": 0.007007375
+          },
+          {
+            "sample": 18,
+            "mode": "cwd",
+            "seconds": 0.007581208
+          },
+          {
+            "sample": 18,
+            "mode": "no_cwd",
+            "seconds": 0.006895375
+          },
+          {
+            "sample": 19,
+            "mode": "no_cwd",
+            "seconds": 0.008333958
+          },
+          {
+            "sample": 19,
+            "mode": "cwd",
+            "seconds": 0.007964958
+          },
+          {
+            "sample": 20,
+            "mode": "no_cwd",
+            "seconds": 0.007817666
+          },
+          {
+            "sample": 20,
+            "mode": "cwd",
+            "seconds": 0.007239958
+          },
+          {
+            "sample": 21,
+            "mode": "cwd",
+            "seconds": 0.007654333
+          },
+          {
+            "sample": 21,
+            "mode": "no_cwd",
+            "seconds": 0.008318542
+          },
+          {
+            "sample": 22,
+            "mode": "no_cwd",
+            "seconds": 0.008469833
+          },
+          {
+            "sample": 22,
+            "mode": "cwd",
+            "seconds": 0.009565333
+          },
+          {
+            "sample": 23,
+            "mode": "no_cwd",
+            "seconds": 0.011811667
+          },
+          {
+            "sample": 23,
+            "mode": "cwd",
+            "seconds": 0.010961625
+          },
+          {
+            "sample": 24,
+            "mode": "cwd",
+            "seconds": 0.009556292
+          },
+          {
+            "sample": 24,
+            "mode": "no_cwd",
+            "seconds": 0.009500417
+          },
+          {
+            "sample": 25,
+            "mode": "cwd",
+            "seconds": 0.011766833
+          },
+          {
+            "sample": 25,
+            "mode": "no_cwd",
+            "seconds": 0.010881875
+          },
+          {
+            "sample": 26,
+            "mode": "no_cwd",
+            "seconds": 0.012132625
+          },
+          {
+            "sample": 26,
+            "mode": "cwd",
+            "seconds": 0.009988958
+          },
+          {
+            "sample": 27,
+            "mode": "no_cwd",
+            "seconds": 0.011560958
+          },
+          {
+            "sample": 27,
+            "mode": "cwd",
+            "seconds": 0.012888084
+          },
+          {
+            "sample": 28,
+            "mode": "cwd",
+            "seconds": 0.011011
+          },
+          {
+            "sample": 28,
+            "mode": "no_cwd",
+            "seconds": 0.010551292
+          },
+          {
+            "sample": 29,
+            "mode": "no_cwd",
+            "seconds": 0.012493125
+          },
+          {
+            "sample": 29,
+            "mode": "cwd",
+            "seconds": 0.012555416
+          },
+          {
+            "sample": 30,
+            "mode": "no_cwd",
+            "seconds": 0.01088025
+          },
+          {
+            "sample": 30,
+            "mode": "cwd",
+            "seconds": 0.011339667
+          }
+        ],
+        "medians": {
+          "no_cwd": 0.00745125,
+          "cwd": 0.007419458
+        },
+        "diagnostic_only": true,
+        "not_Rust_or_Mech_latency": true
+      },
+      {
+        "held_outputs": 0,
+        "held_items": 0,
+        "maximum_resident_bytes": 25247744,
+        "Python": "3.14.8 (main, Sep 30 2026, 17:55:09) [Clang 21.0.0 (clang-2100.3.34.2)]",
+        "POSIX_SPAWN": true,
+        "HAVE_CLOSEFROM": false,
+        "samples": [
+          {
+            "sample": 0,
+            "mode": "no_cwd",
+            "seconds": 0.005721709
+          },
+          {
+            "sample": 0,
+            "mode": "cwd",
+            "seconds": 0.005651667
+          },
+          {
+            "sample": 1,
+            "mode": "no_cwd",
+            "seconds": 0.006368083
+          },
+          {
+            "sample": 1,
+            "mode": "cwd",
+            "seconds": 0.005177
+          },
+          {
+            "sample": 2,
+            "mode": "cwd",
+            "seconds": 0.005736125
+          },
+          {
+            "sample": 2,
+            "mode": "no_cwd",
+            "seconds": 0.005454417
+          },
+          {
+            "sample": 3,
+            "mode": "no_cwd",
+            "seconds": 0.005362
+          },
+          {
+            "sample": 3,
+            "mode": "cwd",
+            "seconds": 0.005298875
+          },
+          {
+            "sample": 4,
+            "mode": "no_cwd",
+            "seconds": 0.005685375
+          },
+          {
+            "sample": 4,
+            "mode": "cwd",
+            "seconds": 0.005537417
+          },
+          {
+            "sample": 5,
+            "mode": "no_cwd",
+            "seconds": 0.005789208
+          },
+          {
+            "sample": 5,
+            "mode": "cwd",
+            "seconds": 0.005719667
+          },
+          {
+            "sample": 6,
+            "mode": "cwd",
+            "seconds": 0.00502875
+          },
+          {
+            "sample": 6,
+            "mode": "no_cwd",
+            "seconds": 0.005456167
+          },
+          {
+            "sample": 7,
+            "mode": "cwd",
+            "seconds": 0.005552416
+          },
+          {
+            "sample": 7,
+            "mode": "no_cwd",
+            "seconds": 0.006692667
+          },
+          {
+            "sample": 8,
+            "mode": "no_cwd",
+            "seconds": 0.006087625
+          },
+          {
+            "sample": 8,
+            "mode": "cwd",
+            "seconds": 0.006292584
+          },
+          {
+            "sample": 9,
+            "mode": "no_cwd",
+            "seconds": 0.0062625
+          },
+          {
+            "sample": 9,
+            "mode": "cwd",
+            "seconds": 0.006741791
+          },
+          {
+            "sample": 10,
+            "mode": "no_cwd",
+            "seconds": 0.006663583
+          },
+          {
+            "sample": 10,
+            "mode": "cwd",
+            "seconds": 0.00694525
+          },
+          {
+            "sample": 11,
+            "mode": "cwd",
+            "seconds": 0.007186875
+          },
+          {
+            "sample": 11,
+            "mode": "no_cwd",
+            "seconds": 0.007254208
+          },
+          {
+            "sample": 12,
+            "mode": "cwd",
+            "seconds": 0.008307
+          },
+          {
+            "sample": 12,
+            "mode": "no_cwd",
+            "seconds": 0.008012542
+          },
+          {
+            "sample": 13,
+            "mode": "no_cwd",
+            "seconds": 0.007794625
+          },
+          {
+            "sample": 13,
+            "mode": "cwd",
+            "seconds": 0.007582625
+          },
+          {
+            "sample": 14,
+            "mode": "cwd",
+            "seconds": 0.008817
+          },
+          {
+            "sample": 14,
+            "mode": "no_cwd",
+            "seconds": 0.008435917
+          },
+          {
+            "sample": 15,
+            "mode": "no_cwd",
+            "seconds": 0.011701917
+          },
+          {
+            "sample": 15,
+            "mode": "cwd",
+            "seconds": 0.012473
+          },
+          {
+            "sample": 16,
+            "mode": "no_cwd",
+            "seconds": 0.011655083
+          },
+          {
+            "sample": 16,
+            "mode": "cwd",
+            "seconds": 0.012194625
+          },
+          {
+            "sample": 17,
+            "mode": "cwd",
+            "seconds": 0.011841042
+          },
+          {
+            "sample": 17,
+            "mode": "no_cwd",
+            "seconds": 0.012528542
+          },
+          {
+            "sample": 18,
+            "mode": "cwd",
+            "seconds": 0.013152583
+          },
+          {
+            "sample": 18,
+            "mode": "no_cwd",
+            "seconds": 0.015851875
+          },
+          {
+            "sample": 19,
+            "mode": "no_cwd",
+            "seconds": 0.012148375
+          },
+          {
+            "sample": 19,
+            "mode": "cwd",
+            "seconds": 0.012195917
+          },
+          {
+            "sample": 20,
+            "mode": "no_cwd",
+            "seconds": 0.01107975
+          },
+          {
+            "sample": 20,
+            "mode": "cwd",
+            "seconds": 0.012191708
+          },
+          {
+            "sample": 21,
+            "mode": "cwd",
+            "seconds": 0.013854458
+          },
+          {
+            "sample": 21,
+            "mode": "no_cwd",
+            "seconds": 0.015710958
+          },
+          {
+            "sample": 22,
+            "mode": "no_cwd",
+            "seconds": 0.014066209
+          },
+          {
+            "sample": 22,
+            "mode": "cwd",
+            "seconds": 0.01521375
+          },
+          {
+            "sample": 23,
+            "mode": "no_cwd",
+            "seconds": 0.015108
+          },
+          {
+            "sample": 23,
+            "mode": "cwd",
+            "seconds": 0.012028042
+          },
+          {
+            "sample": 24,
+            "mode": "cwd",
+            "seconds": 0.013677
+          },
+          {
+            "sample": 24,
+            "mode": "no_cwd",
+            "seconds": 0.014096792
+          },
+          {
+            "sample": 25,
+            "mode": "cwd",
+            "seconds": 0.010436708
+          },
+          {
+            "sample": 25,
+            "mode": "no_cwd",
+            "seconds": 0.010354666
+          },
+          {
+            "sample": 26,
+            "mode": "no_cwd",
+            "seconds": 0.013388667
+          },
+          {
+            "sample": 26,
+            "mode": "cwd",
+            "seconds": 0.012619083
+          },
+          {
+            "sample": 27,
+            "mode": "no_cwd",
+            "seconds": 0.015429791
+          },
+          {
+            "sample": 27,
+            "mode": "cwd",
+            "seconds": 0.015569792
+          },
+          {
+            "sample": 28,
+            "mode": "cwd",
+            "seconds": 0.014290791
+          },
+          {
+            "sample": 28,
+            "mode": "no_cwd",
+            "seconds": 0.0139945
+          },
+          {
+            "sample": 29,
+            "mode": "no_cwd",
+            "seconds": 0.01133325
+          },
+          {
+            "sample": 29,
+            "mode": "cwd",
+            "seconds": 0.011003833
+          },
+          {
+            "sample": 30,
+            "mode": "no_cwd",
+            "seconds": 0.011385833
+          },
+          {
+            "sample": 30,
+            "mode": "cwd",
+            "seconds": 0.011889
+          }
+        ],
+        "medians": {
+          "no_cwd": 0.010354666,
+          "cwd": 0.010436708
+        },
+        "diagnostic_only": true,
+        "not_Rust_or_Mech_latency": true
+      },
+      {
+        "held_outputs": 0,
+        "held_items": 0,
+        "maximum_resident_bytes": 25165824,
+        "Python": "3.14.8 (main, Sep 30 2026, 17:55:09) [Clang 21.0.0 (clang-2100.3.34.2)]",
+        "POSIX_SPAWN": true,
+        "HAVE_CLOSEFROM": false,
+        "samples": [
+          {
+            "sample": 0,
+            "mode": "no_cwd",
+            "seconds": 0.006394917
+          },
+          {
+            "sample": 0,
+            "mode": "cwd",
+            "seconds": 0.006580667
+          },
+          {
+            "sample": 1,
+            "mode": "no_cwd",
+            "seconds": 0.007527833
+          },
+          {
+            "sample": 1,
+            "mode": "cwd",
+            "seconds": 0.006998417
+          },
+          {
+            "sample": 2,
+            "mode": "cwd",
+            "seconds": 0.00721925
+          },
+          {
+            "sample": 2,
+            "mode": "no_cwd",
+            "seconds": 0.007166958
+          },
+          {
+            "sample": 3,
+            "mode": "no_cwd",
+            "seconds": 0.007742875
+          },
+          {
+            "sample": 3,
+            "mode": "cwd",
+            "seconds": 0.007715875
+          },
+          {
+            "sample": 4,
+            "mode": "no_cwd",
+            "seconds": 0.008843583
+          },
+          {
+            "sample": 4,
+            "mode": "cwd",
+            "seconds": 0.011948167
+          },
+          {
+            "sample": 5,
+            "mode": "no_cwd",
+            "seconds": 0.011254333
+          },
+          {
+            "sample": 5,
+            "mode": "cwd",
+            "seconds": 0.011455958
+          },
+          {
+            "sample": 6,
+            "mode": "cwd",
+            "seconds": 0.0105295
+          },
+          {
+            "sample": 6,
+            "mode": "no_cwd",
+            "seconds": 0.013969458
+          },
+          {
+            "sample": 7,
+            "mode": "cwd",
+            "seconds": 0.012888542
+          },
+          {
+            "sample": 7,
+            "mode": "no_cwd",
+            "seconds": 0.014387791
+          },
+          {
+            "sample": 8,
+            "mode": "no_cwd",
+            "seconds": 0.013786541
+          },
+          {
+            "sample": 8,
+            "mode": "cwd",
+            "seconds": 0.012034709
+          },
+          {
+            "sample": 9,
+            "mode": "no_cwd",
+            "seconds": 0.015047583
+          },
+          {
+            "sample": 9,
+            "mode": "cwd",
+            "seconds": 0.012418208
+          },
+          {
+            "sample": 10,
+            "mode": "no_cwd",
+            "seconds": 0.014699375
+          },
+          {
+            "sample": 10,
+            "mode": "cwd",
+            "seconds": 0.013450875
+          },
+          {
+            "sample": 11,
+            "mode": "cwd",
+            "seconds": 0.015010625
+          },
+          {
+            "sample": 11,
+            "mode": "no_cwd",
+            "seconds": 0.012989709
+          },
+          {
+            "sample": 12,
+            "mode": "cwd",
+            "seconds": 0.01124075
+          },
+          {
+            "sample": 12,
+            "mode": "no_cwd",
+            "seconds": 0.013316625
+          },
+          {
+            "sample": 13,
+            "mode": "no_cwd",
+            "seconds": 0.012976041
+          },
+          {
+            "sample": 13,
+            "mode": "cwd",
+            "seconds": 0.011417
+          },
+          {
+            "sample": 14,
+            "mode": "cwd",
+            "seconds": 0.013956
+          },
+          {
+            "sample": 14,
+            "mode": "no_cwd",
+            "seconds": 0.010719
+          },
+          {
+            "sample": 15,
+            "mode": "no_cwd",
+            "seconds": 0.008912333
+          },
+          {
+            "sample": 15,
+            "mode": "cwd",
+            "seconds": 0.009778167
+          },
+          {
+            "sample": 16,
+            "mode": "no_cwd",
+            "seconds": 0.009827791
+          },
+          {
+            "sample": 16,
+            "mode": "cwd",
+            "seconds": 0.008360042
+          },
+          {
+            "sample": 17,
+            "mode": "cwd",
+            "seconds": 0.010784083
+          },
+          {
+            "sample": 17,
+            "mode": "no_cwd",
+            "seconds": 0.010194958
+          },
+          {
+            "sample": 18,
+            "mode": "cwd",
+            "seconds": 0.012381125
+          },
+          {
+            "sample": 18,
+            "mode": "no_cwd",
+            "seconds": 0.011210084
+          },
+          {
+            "sample": 19,
+            "mode": "no_cwd",
+            "seconds": 0.011303791
+          },
+          {
+            "sample": 19,
+            "mode": "cwd",
+            "seconds": 0.010173417
+          },
+          {
+            "sample": 20,
+            "mode": "no_cwd",
+            "seconds": 0.01348725
+          },
+          {
+            "sample": 20,
+            "mode": "cwd",
+            "seconds": 0.012972209
+          },
+          {
+            "sample": 21,
+            "mode": "cwd",
+            "seconds": 0.013847792
+          },
+          {
+            "sample": 21,
+            "mode": "no_cwd",
+            "seconds": 0.013510708
+          },
+          {
+            "sample": 22,
+            "mode": "no_cwd",
+            "seconds": 0.012525541
+          },
+          {
+            "sample": 22,
+            "mode": "cwd",
+            "seconds": 0.011777834
+          },
+          {
+            "sample": 23,
+            "mode": "no_cwd",
+            "seconds": 0.012279666
+          },
+          {
+            "sample": 23,
+            "mode": "cwd",
+            "seconds": 0.011708083
+          },
+          {
+            "sample": 24,
+            "mode": "cwd",
+            "seconds": 0.016378792
+          },
+          {
+            "sample": 24,
+            "mode": "no_cwd",
+            "seconds": 0.014981291
+          },
+          {
+            "sample": 25,
+            "mode": "cwd",
+            "seconds": 0.015040458
+          },
+          {
+            "sample": 25,
+            "mode": "no_cwd",
+            "seconds": 0.014070167
+          },
+          {
+            "sample": 26,
+            "mode": "no_cwd",
+            "seconds": 0.014476292
+          },
+          {
+            "sample": 26,
+            "mode": "cwd",
+            "seconds": 0.01417425
+          },
+          {
+            "sample": 27,
+            "mode": "no_cwd",
+            "seconds": 0.011643
+          },
+          {
+            "sample": 27,
+            "mode": "cwd",
+            "seconds": 0.012386166
+          },
+          {
+            "sample": 28,
+            "mode": "cwd",
+            "seconds": 0.0100615
+          },
+          {
+            "sample": 28,
+            "mode": "no_cwd",
+            "seconds": 0.010420875
+          },
+          {
+            "sample": 29,
+            "mode": "no_cwd",
+            "seconds": 0.014035084
+          },
+          {
+            "sample": 29,
+            "mode": "cwd",
+            "seconds": 0.01280925
+          },
+          {
+            "sample": 30,
+            "mode": "no_cwd",
+            "seconds": 0.0119825
+          },
+          {
+            "sample": 30,
+            "mode": "cwd",
+            "seconds": 0.010169333
+          }
+        ],
+        "medians": {
+          "no_cwd": 0.012279666,
+          "cwd": 0.011777834
+        },
+        "diagnostic_only": true,
+        "not_Rust_or_Mech_latency": true
+      },
+      {
+        "held_outputs": 26,
+        "held_items": 130000,
+        "maximum_resident_bytes": 577896448,
+        "Python": "3.14.8 (main, Sep 30 2026, 17:55:09) [Clang 21.0.0 (clang-2100.3.34.2)]",
+        "POSIX_SPAWN": true,
+        "HAVE_CLOSEFROM": false,
+        "samples": [
+          {
+            "sample": 0,
+            "mode": "no_cwd",
+            "seconds": 0.005705042
+          },
+          {
+            "sample": 0,
+            "mode": "cwd",
+            "seconds": 0.005789209
+          },
+          {
+            "sample": 1,
+            "mode": "no_cwd",
+            "seconds": 0.006554458
+          },
+          {
+            "sample": 1,
+            "mode": "cwd",
+            "seconds": 0.006608208
+          },
+          {
+            "sample": 2,
+            "mode": "cwd",
+            "seconds": 0.0064105
+          },
+          {
+            "sample": 2,
+            "mode": "no_cwd",
+            "seconds": 0.006691125
+          },
+          {
+            "sample": 3,
+            "mode": "no_cwd",
+            "seconds": 0.00695125
+          },
+          {
+            "sample": 3,
+            "mode": "cwd",
+            "seconds": 0.007776084
+          },
+          {
+            "sample": 4,
+            "mode": "no_cwd",
+            "seconds": 0.007441958
+          },
+          {
+            "sample": 4,
+            "mode": "cwd",
+            "seconds": 0.00801275
+          },
+          {
+            "sample": 5,
+            "mode": "no_cwd",
+            "seconds": 0.007265625
+          },
+          {
+            "sample": 5,
+            "mode": "cwd",
+            "seconds": 0.007453167
+          },
+          {
+            "sample": 6,
+            "mode": "cwd",
+            "seconds": 0.007577375
+          },
+          {
+            "sample": 6,
+            "mode": "no_cwd",
+            "seconds": 0.006747875
+          },
+          {
+            "sample": 7,
+            "mode": "cwd",
+            "seconds": 0.007568458
+          },
+          {
+            "sample": 7,
+            "mode": "no_cwd",
+            "seconds": 0.007658042
+          },
+          {
+            "sample": 8,
+            "mode": "no_cwd",
+            "seconds": 0.008463792
+          },
+          {
+            "sample": 8,
+            "mode": "cwd",
+            "seconds": 0.007720333
+          },
+          {
+            "sample": 9,
+            "mode": "no_cwd",
+            "seconds": 0.008007167
+          },
+          {
+            "sample": 9,
+            "mode": "cwd",
+            "seconds": 0.008067791
+          },
+          {
+            "sample": 10,
+            "mode": "no_cwd",
+            "seconds": 0.008384292
+          },
+          {
+            "sample": 10,
+            "mode": "cwd",
+            "seconds": 0.008634292
+          },
+          {
+            "sample": 11,
+            "mode": "cwd",
+            "seconds": 0.012149209
+          },
+          {
+            "sample": 11,
+            "mode": "no_cwd",
+            "seconds": 0.01376725
+          },
+          {
+            "sample": 12,
+            "mode": "cwd",
+            "seconds": 0.013228417
+          },
+          {
+            "sample": 12,
+            "mode": "no_cwd",
+            "seconds": 0.012032417
+          },
+          {
+            "sample": 13,
+            "mode": "no_cwd",
+            "seconds": 0.013940875
+          },
+          {
+            "sample": 13,
+            "mode": "cwd",
+            "seconds": 0.012607208
+          },
+          {
+            "sample": 14,
+            "mode": "cwd",
+            "seconds": 0.015801167
+          },
+          {
+            "sample": 14,
+            "mode": "no_cwd",
+            "seconds": 0.012716292
+          },
+          {
+            "sample": 15,
+            "mode": "no_cwd",
+            "seconds": 0.013851834
+          },
+          {
+            "sample": 15,
+            "mode": "cwd",
+            "seconds": 0.013381375
+          },
+          {
+            "sample": 16,
+            "mode": "no_cwd",
+            "seconds": 0.01004475
+          },
+          {
+            "sample": 16,
+            "mode": "cwd",
+            "seconds": 0.0118055
+          },
+          {
+            "sample": 17,
+            "mode": "cwd",
+            "seconds": 0.0122555
+          },
+          {
+            "sample": 17,
+            "mode": "no_cwd",
+            "seconds": 0.009603875
+          },
+          {
+            "sample": 18,
+            "mode": "cwd",
+            "seconds": 0.01286875
+          },
+          {
+            "sample": 18,
+            "mode": "no_cwd",
+            "seconds": 0.011112209
+          },
+          {
+            "sample": 19,
+            "mode": "no_cwd",
+            "seconds": 0.013599541
+          },
+          {
+            "sample": 19,
+            "mode": "cwd",
+            "seconds": 0.014228625
+          },
+          {
+            "sample": 20,
+            "mode": "no_cwd",
+            "seconds": 0.012129084
+          },
+          {
+            "sample": 20,
+            "mode": "cwd",
+            "seconds": 0.009974875
+          },
+          {
+            "sample": 21,
+            "mode": "cwd",
+            "seconds": 0.011932167
+          },
+          {
+            "sample": 21,
+            "mode": "no_cwd",
+            "seconds": 0.010630042
+          },
+          {
+            "sample": 22,
+            "mode": "no_cwd",
+            "seconds": 0.010926875
+          },
+          {
+            "sample": 22,
+            "mode": "cwd",
+            "seconds": 0.0134775
+          },
+          {
+            "sample": 23,
+            "mode": "no_cwd",
+            "seconds": 0.010919
+          },
+          {
+            "sample": 23,
+            "mode": "cwd",
+            "seconds": 0.013190333
+          },
+          {
+            "sample": 24,
+            "mode": "cwd",
+            "seconds": 0.01156725
+          },
+          {
+            "sample": 24,
+            "mode": "no_cwd",
+            "seconds": 0.011797875
+          },
+          {
+            "sample": 25,
+            "mode": "cwd",
+            "seconds": 0.011900417
+          },
+          {
+            "sample": 25,
+            "mode": "no_cwd",
+            "seconds": 0.012439541
+          },
+          {
+            "sample": 26,
+            "mode": "no_cwd",
+            "seconds": 0.011153333
+          },
+          {
+            "sample": 26,
+            "mode": "cwd",
+            "seconds": 0.013124792
+          },
+          {
+            "sample": 27,
+            "mode": "no_cwd",
+            "seconds": 0.011424792
+          },
+          {
+            "sample": 27,
+            "mode": "cwd",
+            "seconds": 0.0105055
+          },
+          {
+            "sample": 28,
+            "mode": "cwd",
+            "seconds": 0.012970916
+          },
+          {
+            "sample": 28,
+            "mode": "no_cwd",
+            "seconds": 0.010257292
+          },
+          {
+            "sample": 29,
+            "mode": "no_cwd",
+            "seconds": 0.010408459
+          },
+          {
+            "sample": 29,
+            "mode": "cwd",
+            "seconds": 0.014025375
+          },
+          {
+            "sample": 30,
+            "mode": "no_cwd",
+            "seconds": 0.013473583
+          },
+          {
+            "sample": 30,
+            "mode": "cwd",
+            "seconds": 0.018672708
+          }
+        ],
+        "medians": {
+          "no_cwd": 0.010630042,
+          "cwd": 0.011900417
+        },
+        "diagnostic_only": true,
+        "not_Rust_or_Mech_latency": true
+      }
+    ],
+    "interpretation": "Retained as a causal diagnostic only. Parent memory, process path and temporal drift must be separated before attributing the failed whole-process gate."
+  }
+}

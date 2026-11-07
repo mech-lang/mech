@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-paired-scalar-selects-llvm-reference-20261107-v1/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-paired-scalar-selects-llvm-reference-20261107-v1/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-paired-scalar-selects-llvm-reference-20261107-v1/native-link-proof.json"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.09953729202970862,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 53, \"normalized_text_sha256\": \"afa77bd60cb3f105c97f8a0a467e5cdd04444c5993e8a1fd60ec914855fa4822\"}\n",
+  "stderr": ""
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-paired-scalar-selects-llvm-reference-20261107-v1/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-paired-select-and-visit-work-metrics-20261107-v1/mech-ir268-llvm-reference-4/runner-metrics",
+    "--output",
+    "/private/tmp/mech-related-paired-select-and-visit-work-metrics-20261107-v1/mech-ir268-llvm-reference-4/native-link-audit.json"
+  ],
+  "cwd": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen",
+  "exit": 0,
+  "seconds": 0.14214733405970037,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 53, \"normalized_text_sha256\": \"afa77bd60cb3f105c97f8a0a467e5cdd04444c5993e8a1fd60ec914855fa4822\"}\n",
+  "stderr": "",
+  "rustflags": null
+}

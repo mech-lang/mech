@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/budget-independent/runner-budget",
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/budget-independent/build/source.mec",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/budget-independent/temporary-output.json",
+    "1"
+  ],
+  "environment": {
+    "MECH_IMAGE_BUDGET_CASE": "temporary"
+  },
+  "exit": 0,
+  "seconds": 0.29147566691972315,
+  "stdout": "{\"budget_case\":\"temporary\",\"error\":\"Collection { origin: NativeMatchOrigin { node: NodeId(2), block: Some(2), local: Some(0) }, error: ResourceLimit { phase: Admission, dimension: TemporaryBytes, required: 32048, limit: 0 } }\",\"output_unpublished\":true,\"retained_bytes\":0,\"retained_nodes\":0}\n",
+  "stderr": ""
+}

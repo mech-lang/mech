@@ -1,0 +1,35 @@
+warning: static `LINKED_IDENTITY` is never used
+ --> /private/tmp/mech-related-visit-work-lifecycle-diagnostic-20261107-v1/parent/build/linked.rs:2:124
+  |
+2 | ...0529696d89a0a732f9f4c6e7103daa6610488a8c57f1fec"] static LINKED_IDENTITY:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTI...
+  |                                                             ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: static `LINKED_IMAGE_BINDING` is never used
+ --> /private/tmp/mech-related-visit-work-lifecycle-diagnostic-20261107-v1/parent/build/linked.rs:3:146
+  |
+3 | ...103daa6610488a8c57f1fec_descriptor_binding_v1"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...
+  |                                                           ^^^^^^^^^^^^^^^^^^^^
+
+warning: static `LINKED_NATIVE_METADATA` is never used
+ --> /private/tmp/mech-related-visit-work-lifecycle-diagnostic-20261107-v1/parent/build/linked.rs:4:143
+  |
+4 | ...e7103daa6610488a8c57f1fec_native_metadata_v1"] static LINKED_NATIVE_METADATA:[u8;4913076];
+  |                                                          ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: static `LINKED_NATIVE_METADATA_BINDING` is never used
+ --> /private/tmp/mech-related-visit-work-lifecycle-diagnostic-20261107-v1/parent/build/linked.rs:5:151
+  |
+5 | ...488a8c57f1fec_native_metadata_binding_v1"] static LINKED_NATIVE_METADATA_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMA...
+  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `linked_entry` is never used
+ --> /private/tmp/mech-related-visit-work-lifecycle-diagnostic-20261107-v1/parent/build/linked.rs:6:52
+  |
+6 |  #[link_name="mech_canonical_program_entry_v1"] fn linked_entry(frame:*mut std::ffi::c_void)->u64;
+  |                                                    ^^^^^^^^^^^^
+
+warning: 5 warnings emitted
+
+{"seconds": 1.0271174169611186, "exit": 0}

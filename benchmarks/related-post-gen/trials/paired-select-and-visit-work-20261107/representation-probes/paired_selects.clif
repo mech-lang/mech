@@ -1,0 +1,9 @@
+function u0:0(i64, i64) -> i64, i64 apple_aarch64 {
+block0(v0: i64, v1: i64):
+    v2 = icmp ugt v0, v1
+    v3 = iconcat v0, v1
+    v4 = iconcat v1, v0
+    v5 = select v2, v3, v4
+    v6, v7 = isplit v5
+    return v6, v7
+}

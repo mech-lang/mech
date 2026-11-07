@@ -1,0 +1,36 @@
+test-build 0
+new-paired-selects-tests 0
+scalar-select-tests 101
+Traceback (most recent call last):
+  File "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v1/run.py", line 12, in <module>
+    run([P/'gpu-tests','scalar_selects','--test-threads=1'],'scalar-select-tests')
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v1/run.py", line 6, in run
+    (P/(name+'.json')).write_text(json.dumps(dict(command=cmd,environment=env or {},exit=r.returncode,seconds=time.monotonic()-t,stdout=r.stdout,stderr=r.stderr),indent=2)+'\n');print(name,r.returncode,flush=True);assert r.returncode==0,r.stdout[-5000:]+r.stderr[-5000:];return r
+                                                                                                                                                                                                                             ^^^^^^^^^^^^^^^
+AssertionError: 
+running 8 tests
+test native_artifact::codegen::common::scalar_selects::tests::paired_selects_decline_dependencies_distinct_conditions_and_effect_gaps ... ok
+test native_artifact::codegen::common::scalar_selects::tests::paired_selects_preserve_full_width_lanes_and_raw_truth ... ok
+test native_artifact::codegen::common::scalar_selects::tests::scalar_select_empty_chains_keep_full_width_values_and_nonzero_truth ... ok
+test native_artifact::codegen::common::scalar_selects::tests::scalar_select_rejects_memory_traps_and_shared_arms ... ok
+test native_artifact::program::runtime::composition_tests::scalar_selects::paired_select_source_keeps_reports_errors_aliases_and_retry ... FAILED
+test native_artifact::program::runtime::composition_tests::scalar_selects::scalar_select_source_keeps_finite_boundaries_and_atomic_publication ... ok
+test native_artifact::program::runtime::composition_tests::scalar_selects::scalar_select_source_keeps_reports_errors_aliases_and_retry ... ok
+test native_artifact::program::runtime::composition_tests::scalar_selects::unsigned_guard_source_keeps_reports_errors_aliases_and_retry ... ok
+
+failures:
+
+---- native_artifact::program::runtime::composition_tests::scalar_selects::paired_select_source_keeps_reports_errors_aliases_and_retry stdout ----
+
+thread 'native_artifact::program::runtime::composition_tests::scalar_selects::paired_select_source_keeps_reports_errors_aliases_and_retry' (21135731) panicked at /private/tmp/mech-related-paired-scalar-selects-compiler-20261107/hosts/gpu/src/native_artifact/program/runtime/composition_tests/scalar_selects.rs:80:9:
+real source must actually select the transform
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    native_artifact::program::runtime::composition_tests::scalar_selects::paired_select_source_keeps_reports_errors_aliases_and_retry
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 899 filtered out; finished in 0.71s
+
+

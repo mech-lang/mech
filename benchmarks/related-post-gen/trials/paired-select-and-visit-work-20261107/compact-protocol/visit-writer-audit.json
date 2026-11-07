@@ -1,0 +1,47 @@
+{
+  "audited_utc": "2026-11-07T18:05:17.424652+00:00",
+  "all_production_control_visit_writers": [
+    {
+      "file": "hosts/gpu/src/native_artifact/iteration_abi.rs",
+      "writer": "control_visits",
+      "fields": "origin,successors,iteration,progress,complete,arithmetic,reject,integrity derived from immutable source CFG; base work derives from primitive/helper charge and supplied completion"
+    },
+    {
+      "file": "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+      "writer": "PreparedNativeProgram::prepare",
+      "fields": "derives analysis and final control visits separately; selected_join::fund_visit_checks and compose_work are the only subsequent mutators; preserve work supplements in existing order"
+    },
+    {
+      "file": "hosts/gpu/src/native_artifact/program/prepare/selected_join/mod.rs",
+      "writer": "Layout::fund_visit_checks",
+      "fields": "only work +=64 when selected joins exist"
+    },
+    {
+      "file": "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+      "writer": "compose_work",
+      "fields": "only analysis.work and charged.work checked_add the same supplement; completion remains distinct"
+    },
+    {
+      "file": "hosts/gpu/src/native_artifact/program/prepare/tail.rs",
+      "writer": "validate_image",
+      "fields": "independent temporary analysis visits; only work changes for existing source-derived supplements"
+    },
+    {
+      "file": "hosts/gpu/src/native_artifact/program/image/wire/mod.rs",
+      "writer": "decode_inner",
+      "fields": "legacy wire visits remain supported; compact table overlays only work on a separate plan-derived copy; untouched base retained for all original funding validators"
+    }
+  ],
+  "exclusions": "Synthetic successor mutations in packed_map/tests.rs are negative proof tests, not prepared metadata writers. Scalar iteration descriptor has a separate immutable from_plan path. No mutable public visit API exists.",
+  "future_invariant_enforced": "VisitWork serializer compares every non-work field to fresh control_visits and fails if any differs; tests mutate complete to demonstrate refusal.",
+  "completion": "All final u64 prices including charged completion are serialized; zero-completion analysis rows are never substituted for final work.",
+  "bulk_payload": "Native packed byte node envelope and exact element count checked before borrowing; expected visits*8 checked with overflow handling; direct from_le_bytes for each eight-byte chunk. JSON/legacy forms retain typed validation.",
+  "files": {
+    "hosts/gpu/src/native_artifact/iteration_abi.rs": "ce4ec98c2f6034fcc94b903955d078833816cf6140112f6ca0faf5e58e1e3fa4",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "9c4c16bcb8214d96d8cb3aa8bb87dbb48f67d94fc7f8300c76a61256799602fd",
+    "hosts/gpu/src/native_artifact/program/prepare/selected_join/mod.rs": "71cb61ac3f3c340a2a07548b5207f0b542b242bd275e812dd0c215c0e071834e",
+    "hosts/gpu/src/native_artifact/program/prepare/tail.rs": "1b6c21a0a7c0ebf8ecdda276437063720db40c613577038061051333981fc0a2",
+    "hosts/gpu/src/native_artifact/program/image/mod.rs": "2422488298d1474976f0418ab06eb2d7662ce7516010da5bdff8f24ebe0a1982",
+    "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "c91b1fb2de1232cb2baaaa58bf14fa54647320441ee82063c11ee3f19979ac2d"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-related-compact-visit-work-engine-tests-20261107-v1/engine-tests",
+    "checked_bulk_byte_views",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.1110353330150247,
+  "stdout": "\nrunning 1 test\ntest native_artifact::build_image::tests::checked_bulk_byte_views_borrow_exact_packed_payload_and_reject_corruption ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1240 filtered out; finished in 0.00s\n\n",
+  "stderr": ""
+}

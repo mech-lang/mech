@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v3/gpu-tests",
+    "paired_selects",
+    "--test-threads=1"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.5774841671809554,
+  "stdout": "\nrunning 2 tests\ntest native_artifact::codegen::common::scalar_selects::tests::paired_selects_decline_dependencies_distinct_conditions_and_effect_gaps ... ok\ntest native_artifact::codegen::common::scalar_selects::tests::paired_selects_preserve_full_width_lanes_and_raw_truth ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 906 filtered out; finished in 0.00s\n\n",
+  "stderr": ""
+}

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v2/compiler",
+    "/private/tmp/mech-related-llvm-native-image-cranelift-control-20261107-v4/build/source.mec",
+    "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v2/build"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 6.225839749909937,
+  "stdout": "{\"code_bytes\":886140,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1520}\n",
+  "stderr": ""
+}

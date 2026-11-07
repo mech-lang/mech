@@ -1,0 +1,21 @@
+{
+  "sources": [
+    {
+      "kind": "paired-scalar-selects",
+      "source": "/private/tmp/mech-related-paired-scalar-selects-compiler-20261107",
+      "build": "/private/tmp/mech-related-paired-scalar-selects-opt-20261107-v3",
+      "source_inventory_exact": true,
+      "commit": "d18d25f699d3de7b655f2d4e1ff1e15197042597"
+    },
+    {
+      "kind": "compact-visit-work",
+      "source": "/private/tmp/mech-related-compact-visit-work-compiler-20261107",
+      "build": "/private/tmp/mech-related-compact-visit-work-opt-20261107-v2",
+      "source_inventory_exact": true,
+      "commit": "43c194cd9f7f2f42f4afd142889d6eedba2cce36"
+    }
+  ],
+  "source_inventory_exact": true,
+  "predeclared_rule_sha256": "63fc377918f9687977353c2b70788bbb08ae63af44698990e8e9a00ec68861cc",
+  "no_prior_cohort": true
+}

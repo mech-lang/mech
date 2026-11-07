@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v3/gpu-tests",
+    "scalar_selects",
+    "--test-threads=1"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 2.3950711670331657,
+  "stdout": "\nrunning 9 tests\ntest native_artifact::codegen::common::scalar_selects::tests::paired_selects_decline_dependencies_distinct_conditions_and_effect_gaps ... ok\ntest native_artifact::codegen::common::scalar_selects::tests::paired_selects_preserve_full_width_lanes_and_raw_truth ... ok\ntest native_artifact::codegen::common::scalar_selects::tests::scalar_select_empty_chains_keep_full_width_values_and_nonzero_truth ... ok\ntest native_artifact::codegen::common::scalar_selects::tests::scalar_select_rejects_memory_traps_and_shared_arms ... ok\ntest native_artifact::program::runtime::composition_tests::scalar_selects::paired_select_source_keeps_finite_boundaries_and_atomic_publication ... ok\ntest native_artifact::program::runtime::composition_tests::scalar_selects::paired_select_source_keeps_reports_errors_aliases_and_retry ... ok\ntest native_artifact::program::runtime::composition_tests::scalar_selects::scalar_select_source_keeps_finite_boundaries_and_atomic_publication ... ok\ntest native_artifact::program::runtime::composition_tests::scalar_selects::scalar_select_source_keeps_reports_errors_aliases_and_retry ... ok\ntest native_artifact::program::runtime::composition_tests::scalar_selects::unsigned_guard_source_keeps_reports_errors_aliases_and_retry ... ok\n\ntest result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 899 filtered out; finished in 2.38s\n\n",
+  "stderr": ""
+}

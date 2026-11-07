@@ -1,0 +1,22 @@
+  pacibsp
+  unwind Aarch64SetPointerAuth { return_addresses: true }
+  stp fp, lr, [sp, #-16]!
+  unwind PushFrameRegs { offset_upward_to_caller_sp: 16 }
+  mov fp, sp
+  unwind DefineNewFrame { offset_upward_to_caller_sp: 16, offset_downward_to_clobbers: 0 }
+block0:
+  subs xzr, x0, x1
+  cset x11, ne
+  subs xzr, x2, x3
+  cset x12, ne
+  orr w12, w11, w12
+  uxtb w12, w12
+  cbnz x12, label2 ; b label1
+block1:
+  movz x0, #0
+  ldp fp, lr, [sp], #16
+  retabsp
+block2:
+  movz x0, #1
+  ldp fp, lr, [sp], #16
+  retabsp

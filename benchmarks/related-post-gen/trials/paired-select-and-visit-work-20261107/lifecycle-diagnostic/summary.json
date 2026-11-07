@@ -1,0 +1,43 @@
+{
+  "exact_outputs": 22,
+  "diagnostic_only": true,
+  "timing_eligible": false,
+  "Objects_unchanged": true,
+  "medians_seconds": {
+    "parent": {
+      "worker_startup": 2.1167e-05,
+      "host_pre_restore": 5.8416e-05,
+      "restore": 0.007588542,
+      "JSON_input": 0.001520333,
+      "processing_and_report_print": 0.00270225,
+      "JSON_output": 0.00447675,
+      "output_drop": 1.667e-06,
+      "view_drop": 6.25e-07,
+      "input_drop": 0.0001575,
+      "remaining_run_teardown": 0.000452,
+      "worker_join": 2.95e-05,
+      "child_main_total": 0.016918417,
+      "before_main": 0.009722,
+      "after_main": 0.000351,
+      "whole_parent": 0.026969458
+    },
+    "compact": {
+      "worker_startup": 1.9667e-05,
+      "host_pre_restore": 5.6458e-05,
+      "restore": 0.006789416,
+      "JSON_input": 0.001580458,
+      "processing_and_report_print": 0.002675625,
+      "JSON_output": 0.004429291,
+      "output_drop": 1.458e-06,
+      "view_drop": 5e-07,
+      "input_drop": 0.000156875,
+      "remaining_run_teardown": 0.000447875,
+      "worker_join": 2.8375e-05,
+      "child_main_total": 0.016172542,
+      "before_main": 0.009677,
+      "after_main": 0.00036,
+      "whole_parent": 0.026030917
+    }
+  },
+  "interpretation": "Diagnostic host markers perturb code layout and timing; never substitute these values for the rejected production cohort. before_main includes dynamic loading and common parent launch overhead; after_main includes process exit, pipe delivery and parent wait. Neither establishes compiler CPU shares."
+}

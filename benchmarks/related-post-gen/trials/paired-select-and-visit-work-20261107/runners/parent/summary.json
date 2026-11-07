@@ -1,0 +1,8 @@
+{
+  "original_IR264_all13_bundle_files_identical": true,
+  "LLVM_identical_frontend_source_and_runtime": true,
+  "Rust_exact_outputs": 32,
+  "all_link_audits_passed": true,
+  "original_adverse_IR264_trial_unchanged": true,
+  "performance_measured": false
+}

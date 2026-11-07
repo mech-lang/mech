@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-compact-visit-work-runners-20261107-v2/runtime/build.json",
+    "--source",
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/full-catalog/runner.rs",
+    "--out",
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/full-catalog/runner-aot",
+    "--bundle",
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/full-catalog/build",
+    "--linked"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.9692722919862717,
+  "stdout": "warning: function `linked_catalog` is never used\n --> /private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/full-catalog/build/catalog.rs:1:4\n  |\n1 | fn linked_catalog() -> Result<mech_core::FunctionCatalog,String> {\n  |    ^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/full-catalog/build/linked.rs:3:146\n  |\n3 | ...699e37c6f0e81fc5f1e6f87_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_MODULE` is never used\n --> /private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/full-catalog/build/linked.rs:7:143\n  |\n7 | ...d21847699e37c6f0e81fc5f1e6f87_compiled_module_v1\"] static LINKED_MODULE:mech_gpu::native_artifact::NativeProgramModule;\n  |                                                              ^^^^^^^^^^^^^\n\nwarning: 3 warnings emitted\n\n{\"seconds\": 1.431783791165799, \"exit\": 0}\n",
+  "stderr": ""
+}

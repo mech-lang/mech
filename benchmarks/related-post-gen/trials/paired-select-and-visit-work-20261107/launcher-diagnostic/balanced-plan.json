@@ -1,0 +1,14 @@
+{
+  "declared_utc": "2026-11-07T18:23:02.277306+00:00",
+  "counts": [
+    26,
+    0,
+    0,
+    26
+  ],
+  "launches_per_mode_per_parent": 31,
+  "untimed_warmups": 10,
+  "first_unbalanced_results_preserved": true,
+  "candidate_executables_not_run": true,
+  "not_a_Mech_or_Rust_cohort": true
+}

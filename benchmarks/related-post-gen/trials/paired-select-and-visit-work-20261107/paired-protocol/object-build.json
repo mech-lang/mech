@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "seconds": 5.781914249993861,
+  "stdout": "{\"code_bytes\":886140,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1520}\n",
+  "stderr": ""
+}

@@ -1,0 +1,15 @@
+function u0:0(i64, i64, i64, i64) -> i64 apple_aarch64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = icmp ult v0, v1
+    v5 = icmp ule v2, v3
+    v6 = band v4, v5
+    brif v6, block1, block2
+
+block1:
+    v7 = iconst.i64 1
+    return v7  ; v7 = 1
+
+block2:
+    v8 = iconst.i64 0
+    return v8  ; v8 = 0
+}

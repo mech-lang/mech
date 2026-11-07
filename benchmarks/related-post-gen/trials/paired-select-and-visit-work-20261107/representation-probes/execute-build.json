@@ -1,0 +1,13 @@
+{
+  "command": [
+    "cc",
+    "-O2",
+    "/private/tmp/mech-related-cranelift-representation-probes-20261107-v1/execute.c",
+    "/private/tmp/mech-related-cranelift-representation-probes-20261107-v1/probes.o",
+    "-o",
+    "/private/tmp/mech-related-cranelift-representation-probes-20261107-v1/execute"
+  ],
+  "exit": 0,
+  "stdout": "",
+  "stderr": "ld: warning: no platform load command found in '/private/tmp/mech-related-cranelift-representation-probes-20261107-v1/probes.o', assuming: macOS\n"
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "mech-ir269-reuse-4",
+    "original_source": "/private/tmp/mech-related-compact-visit-work-runners-20261107-v2/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-paired-select-and-visit-work-compact-metrics-20261107-v1/mech-ir269-reuse-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "1e75f8531b3c8c2ef3eba9dbaaf766c52c32a2a42d407c04401bffd8e84ea24a",
+    "diagnostic_executable_sha256": "f066629e5712d8d7253a20e9492277e068126d0a26644b973fa9d0bd474441df"
+  }
+]

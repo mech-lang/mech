@@ -1,0 +1,22 @@
+{
+  "production_Program_Cranelift_flags": true,
+  "Cranelift_version": "0.131.3",
+  "default_dependency_changed": false,
+  "LLVM_only_optional_disassembler": true,
+  "paired_cmp": 1,
+  "independent_cmp": 2,
+  "paired_csel": 2,
+  "independent_csel": 2,
+  "paired_moves": 2,
+  "independent_moves": 2,
+  "paired_spills": 0,
+  "independent_spills": 0,
+  "scalar_store_count": 2,
+  "vector_store_count": 1,
+  "vector_exact_byte_coverage": 16,
+  "bool_narrow_wide_machine_bytes_equal": true,
+  "bool_ccmp_emitted": false,
+  "native_test_exit": 0,
+  "native_test_stdout": "4192 native probe cases passed\n",
+  "not_latency_evidence": true
+}

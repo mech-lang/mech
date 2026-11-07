@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-paired-scalar-selects-tests-20261107-v1/gpu-tests",
+    "scalar_selects",
+    "--test-threads=1"
+  ],
+  "environment": {},
+  "exit": 101,
+  "seconds": 0.722273166058585,
+  "stdout": "\nrunning 8 tests\ntest native_artifact::codegen::common::scalar_selects::tests::paired_selects_decline_dependencies_distinct_conditions_and_effect_gaps ... ok\ntest native_artifact::codegen::common::scalar_selects::tests::paired_selects_preserve_full_width_lanes_and_raw_truth ... ok\ntest native_artifact::codegen::common::scalar_selects::tests::scalar_select_empty_chains_keep_full_width_values_and_nonzero_truth ... ok\ntest native_artifact::codegen::common::scalar_selects::tests::scalar_select_rejects_memory_traps_and_shared_arms ... ok\ntest native_artifact::program::runtime::composition_tests::scalar_selects::paired_select_source_keeps_reports_errors_aliases_and_retry ... FAILED\ntest native_artifact::program::runtime::composition_tests::scalar_selects::scalar_select_source_keeps_finite_boundaries_and_atomic_publication ... ok\ntest native_artifact::program::runtime::composition_tests::scalar_selects::scalar_select_source_keeps_reports_errors_aliases_and_retry ... ok\ntest native_artifact::program::runtime::composition_tests::scalar_selects::unsigned_guard_source_keeps_reports_errors_aliases_and_retry ... ok\n\nfailures:\n\n---- native_artifact::program::runtime::composition_tests::scalar_selects::paired_select_source_keeps_reports_errors_aliases_and_retry stdout ----\n\nthread 'native_artifact::program::runtime::composition_tests::scalar_selects::paired_select_source_keeps_reports_errors_aliases_and_retry' (21135731) panicked at /private/tmp/mech-related-paired-scalar-selects-compiler-20261107/hosts/gpu/src/native_artifact/program/runtime/composition_tests/scalar_selects.rs:80:9:\nreal source must actually select the transform\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\n\nfailures:\n    native_artifact::program::runtime::composition_tests::scalar_selects::paired_select_source_keeps_reports_errors_aliases_and_retry\n\ntest result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 899 filtered out; finished in 0.71s\n\n",
+  "stderr": ""
+}

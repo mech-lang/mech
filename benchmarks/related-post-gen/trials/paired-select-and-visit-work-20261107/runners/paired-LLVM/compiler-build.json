@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-paired-scalar-selects-opt-20261107-v3/build.json",
+    "--source",
+    "/private/tmp/mech-related-paired-scalar-selects-llvm-reference-20261107-v1/compiler-facts.rs",
+    "--out",
+    "/private/tmp/mech-related-paired-scalar-selects-llvm-reference-20261107-v1/compiler"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 3.6235808751080185,
+  "stdout": "{\"seconds\": 3.012002500006929, \"exit\": 0}\n",
+  "stderr": ""
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/budget-full-catalog/runner-budget",
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/budget-full-catalog/build/source.mec",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "/private/tmp/mech-related-compact-visit-work-loader-tests-20261107-v1/budget-full-catalog/comparison-output.json",
+    "1"
+  ],
+  "environment": {
+    "MECH_IMAGE_BUDGET_CASE": "comparison"
+  },
+  "exit": 0,
+  "seconds": 0.07272404106333852,
+  "stdout": "{\"budget_case\":\"comparison\",\"error\":\"Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Binding(ResidentBinding { error: ResidentMemoryPlanRejected { error: TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Output, port: 0 }, dimension: ComparisonWork, required: 1, limit: 0 } } } }) }\",\"output_unpublished\":true,\"retained_bytes\":0,\"retained_nodes\":0}\n",
+  "stderr": ""
+}

@@ -1,0 +1,7 @@
+function u0:0(i64) apple_aarch64 {
+block0(v0: i64):
+    v1 = iconst.i64 0
+    store v1, v0  ; v1 = 0
+    store v1, v0+8  ; v1 = 0
+    return
+}

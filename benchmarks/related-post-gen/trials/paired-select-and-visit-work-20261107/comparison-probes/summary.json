@@ -1,0 +1,11 @@
+{
+  "production_Program_Cranelift_flags": true,
+  "Cranelift_version": "0.131.3",
+  "no_dependency_change": true,
+  "pure_two_full_width_equalities_or_inequalities_only": true,
+  "general_ordered_compare_case_not_claimed": true,
+  "native_probe_cases": 4096,
+  "all_exact": true,
+  "machine_code_saved": true,
+  "not_latency_evidence": true
+}

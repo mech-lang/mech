@@ -1,0 +1,22 @@
+[
+  {
+    "variant": "mech-ir268-reuse-4",
+    "original_source": "/private/tmp/mech-related-paired-scalar-selects-runners-20261107-v2/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-paired-select-and-visit-work-metrics-20261107-v1/mech-ir268-reuse-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "699ff47d25b3f700bdb8cb49f730fe8a0be952452122e529479021172d1c2394",
+    "diagnostic_executable_sha256": "b562b6966ac723fc5ee51b1f7f2536e401cd1a7170a88032be22db17c76a02a3"
+  },
+  {
+    "variant": "mech-ir268-llvm-reference-4",
+    "original_source": "/private/tmp/mech-related-paired-scalar-selects-llvm-reference-20261107-v1/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-paired-select-and-visit-work-metrics-20261107-v1/mech-ir268-llvm-reference-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "455d45f264c7e692a180cbc6f44249ee15426bce1d464c5dd5a4e20077be40e4",
+    "diagnostic_executable_sha256": "ec4e44da2aad0cb171819c68d334a5354c1a26f491f0cca62c857c43e63bf126"
+  }
+]

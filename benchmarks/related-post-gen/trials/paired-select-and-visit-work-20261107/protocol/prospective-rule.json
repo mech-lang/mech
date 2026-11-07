@@ -1,0 +1,38 @@
+{
+  "schema": "mech.related-post-gen.paired-select-and-visit-work.prospective-rule.v1",
+  "declared_utc": "2026-11-07T18:00:18.393945+00:00",
+  "declared_before_randomized_cohorts": true,
+  "qualification_timings_ineligible": true,
+  "fixed_reference": "mech-ir242-reuse-4",
+  "matched_parent": "mech-ir264-cranelift-runtime-control",
+  "samples": 31,
+  "seed": 990278,
+  "resource_samples": 7,
+  "resource_seed": 9902787,
+  "bootstrap": {
+    "resamples": 20000,
+    "seed": 99027899
+  },
+  "experiments": {
+    "mech-ir268-reuse-4": {
+      "target": "post_json_seconds",
+      "mechanism": "adjacent independent word selections share one flags producer",
+      "superiority": "At least21/31 paired wins and upper95% two-sided bootstrap median relative-change interval below0 versus BOTH fixed IR242 and matched parent IR264.",
+      "other_boundary": "Whole-process one-sided95% upper median paired relative-change bound <=1% versus BOTH references; no accumulated concessions.",
+      "instructions": "Report dynamic processing instructions and actual generated compare/move/spill changes; no inferred speed from static code size."
+    },
+    "mech-ir269-reuse-4": {
+      "target": "wall_seconds",
+      "mechanism": "serialize final work only and eagerly reconstruct the unchanged runtime visit box from plan control rows",
+      "superiority": "At least21/31 paired whole-process wins and upper95% two-sided bootstrap median relative-change interval below0 versus BOTH fixed IR242 and matched parent IR264.",
+      "other_boundary": "Post-JSON one-sided95% upper median paired relative-change bound <=1% versus BOTH references; no accumulated concessions.",
+      "practical_restore_threshold": "At least10% restoration-instruction reduction or1ms restoration reduction versus matched parent; no deferral to first evaluation."
+    }
+  },
+  "confirmation": "If first cohort passes, declare second independently seeded confirmation before execution. Do not rerun an unchanged rejected candidate for favorable samples.",
+  "all_first_and_adverse_results_retained": true,
+  "LLVM_optional": true,
+  "default_dependency_change": false,
+  "goal": "Fastest eligible measured Rust independently at BOTH boundaries; partial phase improvement does not finish the goal.",
+  "optional_development_reference": "Both unchanged LLVM IR264 and paired-select LLVM IR268 are measured separately to distinguish existing-backend recovery from general representation gains; neither is a production candidate."
+}
