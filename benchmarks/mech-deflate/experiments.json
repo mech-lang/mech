@@ -40368,6 +40368,109 @@
           "/private/tmp/mech-idiomatic-source-round195-20261107/public-replay/evidence/analyze.py"
         ]
       }
+    },
+    "196": {
+      "base": "e35a8a9a44ba488d9f6f5fdf6aebc68cdc6b9d15",
+      "compiler_source": "Exact changed compiler blob IDs in the immutable source-files.json; committed with this entry.",
+      "versions": {
+        "ir": 212,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "retained": true,
+      "production_source_changed": false,
+      "source_variant_retained": false,
+      "decision": "Retain the bounded scalar enum-state compiler correction. Preserve the existing compression source; reject state-source adoption because eight unchanged timing gates fail.",
+      "release_tag": "evidence-native-compression-experiments-6",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-6",
+      "events": [
+        {
+          "event": "native-enum-state-qualification",
+          "asset": "r196-native-enum-state-94598fa9fa95.tar.gz",
+          "sha256": "94598fa9fa9501b2852928d42011a9f1d4ab35d5e82d6b95cb90ce5d6f891fcd",
+          "manifest_sha256": "303f037f69bf2bd664f1b477afd1f94a042e9e654959923a532d859c2642b53b",
+          "bytes": 6000417,
+          "files": 880,
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r196-native-enum-state-94598fa9fa95.tar.gz"
+        }
+      ],
+      "analysis": {
+        "scripts": [
+          "heap-summary.py",
+          "analyze.py"
+        ],
+        "expected_outputs": {
+          "results.json": "b4ae4d7be0e9381ff14d1dd69ae46d9a3ee8cffb7811f0af9f9fe44bea6d8603"
+        }
+      },
+      "qualification": {
+        "native_passed": 670,
+        "inherited_exclusions": 7,
+        "scheduled_tests_executed": 253,
+        "new_maintained_tests": 2,
+        "components": 236,
+        "composition": 8,
+        "real_capacity": 1,
+        "native_match_controls": 1724,
+        "architecture_catalog": 15,
+        "workflow_python": 132,
+        "runtime_only": "passed; warnings denied",
+        "fresh_math_core_syntax_build": false
+      },
+      "compiler_only_timing": {
+        "count": 20,
+        "gates_pass": 20,
+        "faster": 14,
+        "geometric_change_percent": -0.1650157173489153,
+        "primary_observations": 3968,
+        "total_complete_calls": 4048
+      },
+      "state_source_timing": {
+        "count": 20,
+        "gates_pass": 12,
+        "faster": 8,
+        "geometric_change_percent": 21.85099315485848,
+        "primary_observations": 3968,
+        "total_complete_calls": 4048
+      },
+      "machine_text_byte_identical": true,
+      "ordinary_record_prototype": "preserved, unmeasured, not enabled",
+      "next": "Preserve current captured buffer/limit facts through the enum-state loop so existing loop specialization can apply; review the current bounded patch first.",
+      "public_verification": {
+        "archive_sha256": "94598fa9fa9501b2852928d42011a9f1d4ab35d5e82d6b95cb90ce5d6f891fcd",
+        "verified_file_occurrences": 880,
+        "numerical_replay_byte_identical": true,
+        "compiler_or_compressor_execution": false,
+        "download_command": [
+          "gh",
+          "release",
+          "download",
+          "evidence-native-compression-experiments-6",
+          "--repo",
+          "mech-lang/mech",
+          "--pattern",
+          "r196-native-enum-state-94598fa9fa95.tar.gz",
+          "--dir",
+          "/private/tmp/mech-nullary-state-round196-20261107/public-replay"
+        ],
+        "replay_commands": [
+          {
+            "command": [
+              "python3",
+              "/private/tmp/mech-nullary-state-round196-20261107/public-replay/evidence/heap-summary.py"
+            ],
+            "exit": 0
+          },
+          {
+            "command": [
+              "python3",
+              "/private/tmp/mech-nullary-state-round196-20261107/public-replay/evidence/analyze.py"
+            ],
+            "exit": 0
+          }
+        ]
+      }
     }
   },
   "repository": "mech-lang/mech",

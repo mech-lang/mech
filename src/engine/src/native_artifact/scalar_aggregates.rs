@@ -119,7 +119,7 @@ fn words(schema: &Schema) -> Option<usize> {
         }
         Schema::Enum { variants, .. } if !variants.is_empty() => variants
             .iter()
-            .map(|v| payload_words(v.payload.as_ref()?))
+            .map(|v| v.payload.as_ref().map_or(Some(0), payload_words))
             .collect::<Option<Vec<_>>>()?
             .into_iter()
             .max()?
@@ -162,7 +162,9 @@ fn constant_words(data: &ValueData, count: usize) -> Option<Box<[u64]>> {
     let mut result = Vec::new();
     if let ValueData::Enum(value) = data {
         result.push(u64::from(value.ordinal()));
-        payload(value.payload()?, &mut result)?;
+        if let Some(value) = value.payload() {
+            payload(value, &mut result)?;
+        }
     } else {
         payload(data, &mut result)?;
     }

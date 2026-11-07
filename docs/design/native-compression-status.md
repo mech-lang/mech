@@ -1,5 +1,15 @@
 # Native compression milestone
 
+## R196: native enum-state support, existing source retained
+
+States without payloads now use the existing native scalar representation, and exact child-fuel exits preserve current enum words. **670 native tests /253 actually executed CI selections /236 components /eight compositions /one real-capacity control pass**, with the same seven inherited exclusions. All1724 native match controls and candidate resident checks pass. IR/work/ABI/bytecode212/107/39/14.
+
+The existing source produces byte-identical machine instructions and passes all20 unchanged timing gates. Fresh retained ratios include natural32 **3.371926× Roc**, repeated32 **2.972509×**, periodic33 **3.521470×**, and eight literals **4.528874×**. Neutral timing fluctuations are not claimed as a speedup.
+
+The exact R195 state-source witness now completes every input, including natural32 in roughly16 ms, but fails eight performance gates: repeated32 is12.008249× Roc and periodic33 is22.972440× in its separate cohort. Source adoption remains rejected. Periodic instructions grow7.355854× with nearly unchanged allocation requests. The state loop loses existing specialization proofs (18 fully lowered read-pack occurrences→0 in the same outer loop), while guarded wide loads remain. Current captured buffer/limit fact preservation is the next bounded hypothesis; no per-function instruction attribution is claimed.
+
+[Design, matched ratios, failure dispositions and immutable evidence](native-nullary-state-lowering.md). #973 stays draft; no new PR or next semantic compiler expansion before review.
+
 ## R195 — idiomatic source acceptance cases; production unchanged
 
 A source-only state-machine rewrite of match extension passes all1,724 native controls, but loses native qualification and severely fails its first whole-compressor timing witness. The twenty-case campaign was stopped; the variant is not retained. Production remains R191 and its published timings below remain authoritative. Small executable probes isolate nullary enum packing, direct vector operations, positive logical-selection shapes and dynamic machine payloads. The next bounded fix is zero-word nullary scalar-state packing, followed by the identical witness and a fresh full matrix. [Source experiment and evidence](../../benchmarks/mech-deflate/source-variants/idiomatic-source.md).

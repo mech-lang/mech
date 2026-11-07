@@ -265,6 +265,7 @@ pub(super) fn derive(
     plan: &Plan,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
     forest: &super::super::numeric_phase::Forest,
     provenance: &mut Provenance<'_, '_>,
     arrays: &[Array],
@@ -321,6 +322,10 @@ pub(super) fn derive(
         };
         for value in live {
             if plan.values()[value as usize].scalar_kind().is_some()
+                // A private enum state is entirely represented by its checked
+                // tag/payload snapshot lanes, with no managed buffer binding.
+                || (aggregates.slot_at(value as usize).is_some()
+                    && matches!(plan.values()[value as usize].definition().body(), SchemaBody::Enum { .. }))
                 || !provenance.facts.definition_sites(value)?.iter().any(|d| {
                     d.site()
                         .is_some_and(|s| forest.sites.contains(&(s as usize)))
