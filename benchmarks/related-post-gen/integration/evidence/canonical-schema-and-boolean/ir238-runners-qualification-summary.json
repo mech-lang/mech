@@ -1,0 +1,91 @@
+{
+  "status": "passed",
+  "loader_fixtures_exact": 558,
+  "fixtures": {
+    "edges-after-4-full-catalog/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "e3f4f83a2dc49a1c16fbca5d256f7d14f13ae69cc5066fbbed565b127b1d821f"
+    },
+    "edges-after-4-independent/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "bb61e9d3da2a4dc8702fbae0a8daaebaabddc37cfba18634a0fde29e8520436b"
+    },
+    "edges-after-4-json/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "25dd9e9eb75d79beb3eccfc3ba0256bb4a167444f033d619ebdc4e1c5d697393"
+    },
+    "edges-after-8-independent/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "25a749d939ca0ee02fa1f40be9c9b270faeec7f2fe5c7b5e2aaa61da8f3b9b7d"
+    },
+    "edges-after-8-json/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "f3072a8e628a3a04e7b313de436e739519a6c0388d036beffd241b3f82e5eeb0"
+    },
+    "edges-compact-4-full-catalog/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "06368f4555012012d342c7e7372a42db1d076b8c8f3818118d0e54bd819d5f71"
+    },
+    "edges-compact-4-independent/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "092aa31cf55b18eb7aad5a60e4c558d6d659b3b87f9f3f7b4e0f9f4e6ceaffad"
+    },
+    "edges-compact-4-json/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "e8999c62b1f21b9b5363e15f0e724e1ab758a1758c7148194aa77bc9be45df46"
+    },
+    "edges-compact-8-independent/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "448b0471098cfaf5632cd91264e883404a4d25a7b485c5ccb1d94ee009ab3f99"
+    },
+    "edges-compact-8-json/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "c164168416d3ea20adb07ff1555b36b45ca5573a43e7f904882bb2cd52161e38"
+    },
+    "edges-reuse-4-full-catalog/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "4d43993f501fad9b068f78c66c716001dd8bc94a46725f686eada1f8402a9ca1"
+    },
+    "edges-reuse-4-independent/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "dd2e57b05553d7d1278931ac16e1a8b2288bb1ecce03ba6f5a7e42c094d9cd1b"
+    },
+    "edges-reuse-4-json/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "7d78264b2d90081d17c508d3d4791e4a08b73a28f8a036517b348cb0a76a0695"
+    },
+    "after-4/edges/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "d2ffc05831c630e9424c87e56de98d2e85eb663a82410266e4e58cdc5b91d90d"
+    },
+    "after-8/edges/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "105a1e5e5c5d3a2821f0bf69989607cd088a9f73707a268e5a573c7b88b270ad"
+    },
+    "compact-4/edges/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "bf2511a804892b34632d3a6b379dd681828f086db930756bf80ccd05b987ad2b"
+    },
+    "compact-8/edges/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "b21ea604869576310b87fdc68853b2d3619e672dcd55da26741582b8090fca41"
+    },
+    "reuse-4/edges/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "fcb573ad310c7d0a76e077ef792b48eba28312f47947636629381f7e3c9326da"
+    }
+  },
+  "decoded_bundle_files_exact": 65,
+  "finite_denials_exact": 48,
+  "finite_small_full_successes_exact": 12,
+  "forged_frontier_rejections": 16,
+  "source_experiment_loader_fixtures_exact": 124,
+  "total_loader_fixtures_exact": 682,
+  "source_experiment_fixtures": {
+    "edges-rust-insert-reuse-4-json/edge-fixtures.json": 31,
+    "edges-rust-insert-reuse-4-independent/edge-fixtures.json": 31,
+    "edges-rust-insert-reuse-4-full-catalog/edge-fixtures.json": 31,
+    "rust-insert-reuse-4/edges/edge-fixtures.json": 31
+  },
+  "total_decoded_bundle_files_exact": 78
+}

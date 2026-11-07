@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/experiments/check_subset3.py",
+    "--runner",
+    "/private/tmp/mech-related-child-entry-facts-integration-runners-20261107-v1/compact-4-json/runner-aot",
+    "--rust",
+    "/private/tmp/mech-related-post-rust-local-20261102/rust/target/release/rust",
+    "--source",
+    "/private/tmp/mech-related-child-entry-facts-integration-runners-20261107-v1/compact-4-json/build/source.mec",
+    "--out",
+    "/private/tmp/mech-related-child-entry-facts-integration-runners-20261107-v1/edges-compact-4-json"
+  ],
+  "exit": 0,
+  "seconds": 3.6968532078899443,
+  "stdout": "{\"fixture\": \"first-10\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"first-100\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"first-500\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"unicode-ties\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"empty-tags\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"all-empty\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"one-post\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"eight-tag-boundary\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"duplicate-utf8\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"wrapped-u8\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"wrap255\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"wrap256\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"wrap257\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"long-nine-tags\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"large-vocabulary\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"mixed-full-sparse\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"coverage-five-with-two-tag-fifth\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"coverage-six-with-two-tag-extra\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"coverage-all-six\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"coverage-permuted-ties\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"utf8-key-prefix\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"long-utf8-key-prefix\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"coverage-mixed-disjoint\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"random-0\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"random-1\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"random-2\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"random-3\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"random-4\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"random-5\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"random-6\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"random-7\", \"exit\": 0, \"exact\": true}\n{\"status\": \"passed\", \"cases\": 31, \"timing_claim\": false, \"source_sha256\": \"86c064828f10fb9cf8ff2f1daf630a50eea98c646f87bab9041344cd988688b1\", \"binary_sha256\": \"759a1ad551952021fbd2105581e1363e1f46657add51a8caa5c19ff05c0a6e0f\"}\n",
+  "stderr": ""
+}

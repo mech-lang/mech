@@ -20,6 +20,25 @@ def verify(base, name, expected):
     if actual != expected:
         raise SystemExit(f'Hash mismatch: {name}')
 
+def verify_git_inventory(revision, files):
+    """Historical inventories belong to their recorded tree, never today's tree."""
+    assert len(revision) == 40 and all(c in '0123456789abcdef' for c in revision)
+    for name in files:
+        assert (root/name).resolve().is_relative_to(root.resolve()), name
+    data = subprocess.check_output(['git', 'cat-file', '--batch'], cwd=root,
+        input=''.join(f'{revision}:{name}\n' for name in files).encode())
+    at = 0
+    for name, expected in files.items():
+        end = data.index(b'\n', at)
+        header = data[at:end].split()
+        assert len(header) == 3 and header[1] == b'blob', (revision, name)
+        size = int(header[2]); at = end + 1
+        blob = data[at:at+size]
+        assert len(blob) == size and data[at+size:at+size+1] == b'\n', name
+        assert hashlib.sha256(blob).hexdigest() == expected, (revision, name)
+        at += size + 1
+    assert at == len(data)
+
 for name, item in manifest['files'].items():
     verify(packet, name, item['sha256'])
     if item.get('compression') == 'gzip':
@@ -307,11 +326,14 @@ if current_status.exists():
     assert status['identity'] == 'IR236/work115/ABI41/image9'
     assert status['compiler'] == '67bdc1a3ec9e28accb2fd968f4292ca73d81b542'
     assert status['incoming'] == '40bba44acd7a60e28e3378dab012ee9d50007c66'
-    assert status['source_files'] == current_files == 2465
+    assert status['source_files'] == 2465
+    retained236 = json.loads((evidence / 'ir236-source-inventory.json').read_text())['files']
+    assert len(retained236) == 2465
+    verify_git_inventory(status['compiler'], retained236)
     assert status['gpu_passed'] == 853 and status['ci_selected_names_passed'] == 358
     assert not status['metadata_patch_applied'] and not status['borrowed_json_applied']
     assert not status['selected'] and not status['goal_complete']
-    assert (root / '.github/workflows/ci-full.yml').read_bytes() == (evidence / 'ir236-ci-full.yml').read_bytes()
+    assert subprocess.check_output(['git', 'show', status['compiler'] + ':.github/workflows/ci-full.yml'], cwd=root) == (evidence / 'ir236-ci-full.yml').read_bytes()
     for ir, previous, fixture_count in [(236, 235, 558), (237, 236, 589)]:
         tests = json.loads((evidence / f'ir{ir}-tests-test-run.json').read_text())
         assert tests['expected_failures_exact'] and not tests['new_failures']
@@ -362,7 +384,7 @@ if current_status.exists():
         if name in overrides:
             verify(experiment, overrides[name], expected)
         else:
-            verify(root, name, expected)
+            assert retained236[name] == expected, name
     summary = json.loads((experiment / 'summary.json').read_text())
     assert summary['decision']['metadata_patch_applied_to_active_compiler'] is False
     assert summary['decision']['borrowed_json_applied_to_active_adapter'] is False
@@ -375,6 +397,114 @@ if current_status.exists():
     ownership = json.loads((experiment / 'borrowed-json-json-ownership-audit-run.json').read_text())
     assert ownership['exit'] == 0 and len(ownership['rows']) == 6
     assert json.loads((experiment / 'borrowed-json-escaped-id-title-output.json').read_text()) == json.loads((experiment / 'borrowed-json-escaped-id-title-expected.json').read_text())
+
+schema_evidence = evidence / 'canonical-schema-and-boolean'
+if schema_evidence.exists():
+    summary = json.loads((schema_evidence / 'summary.json').read_text())
+    status = json.loads((packet / 'integration/ir238-review-status.json').read_text())
+    assert status['selected'] and not status['goal_complete']
+    assert status['identity'] == 'IR238/work115/ABI41/image9'
+    source238 = json.loads((schema_evidence / 'ir238-opt-source-inventory.json').read_text())['files']
+    assert status['source_files'] == len(source238) == 2466
+    verify_git_inventory(status['compiler'], source238)
+    for stem, counts in [('canonical-schema-sinks', [434, 105]), ('boolean-insertion-combination', [341, 84])]:
+        for phase, expected in zip(['randomized', 'resources'], counts):
+            run = json.loads(gzip.decompress((schema_evidence / f'{stem}-{phase}.json.gz').read_bytes()))
+            assert len(run['samples']) == expected and run['execution_order']['mode'] == 'randomized'
+            assert all(r['exit'] == 0 and r['exact_rust_output'] for r in run['samples'])
+            if stem == 'canonical-schema-sinks' and phase == 'randomized':
+                assert run['summary'] == summary['latency_summary']
+                by = {}
+                for r in run['samples']:
+                    by.setdefault(r['variant'], {})[r['sample']] = r
+                a, b = by['mech-ir238-original-4'], by['mech-selected-ir208-original-4']
+                for metric, wins in [('post_json_seconds', 31), ('wall_seconds', 21)]:
+                    assert sum(a[i][metric] < b[i][metric] for i in a) == wins
+    for ir, gpu, selected in [(238, 853, 358), (239, 855, 360)]:
+        tests = json.loads((schema_evidence / f'ir{ir}-tests-test-run.json').read_text())
+        assert tests['expected_failures_exact'] and not tests['new_failures']
+        assert f'{gpu} passed; 2 failed' in tests['summary'][0]
+        ci = json.loads((schema_evidence / f'ir{ir}-tests-ci-selected-inventory-audit.json').read_text())
+        assert ci['current_selected_count'] == len(ci['selected_names']) == selected
+        assert ci['all_selected_names_executed_and_passed_in_complete_gpu_run']
+    # Only physical GlobalAlloc counters may differ. Source work, report fields,
+    # errors, cleanup and every other non-timing value remain exact.
+    physical = {'allocation_requests_per_100', 'requested_bytes_per_100', 'allocation_requests', 'requested_bytes'}
+    for kind, count in [('scalar', 128), ('one-kib', 5)]:
+        old = rows(evidence / f'ir236-regressions-{kind}-run.json')
+        new = rows(schema_evidence / f'ir238-regressions-{kind}-run.json')
+        assert len(old) == len(new) == count
+        for a, b in zip(old, new):
+            assert {k:v for k,v in a.items() if k not in physical} == {k:v for k,v in b.items() if k not in physical}
+            assert all(b[k] <= a[k] for k in physical if k in a)
+        if kind == 'one-kib':
+            assert old == new
+        assert new == rows(schema_evidence / f'ir239-regressions-{kind}-run.json')
+    for label, expected in [('before', {'post-json': (3858,8013126), 'restore': (36437,13094307)}),
+                            ('after', {'post-json': (3758,8012356), 'restore': (26837,12830999)})]:
+        profile = json.loads(gzip.decompress((schema_evidence / f'allocation-{label}.json.gz').read_bytes()))
+        assert profile['exact_outputs'] and profile['counts_and_bytes_match_current_resource_cohort']
+        for phase, (requests, size) in expected.items():
+            row = profile['variants'][phase]
+            assert row['requests'] == requests and row['requested_bytes'] == size
+            assert row['unattributed_requests'] == 0 and row['diagnostic_timings_excluded']
+    prototype = json.loads((schema_evidence / 'ir239-opt-source-inventory.json').read_text())['files']
+    overrides = json.loads((schema_evidence / 'ir239-source-overrides.json').read_text())
+    for name, expected in prototype.items():
+        if name in overrides:
+            verify(schema_evidence, overrides[name], expected)
+        else:
+            assert source238[name] == expected, name
+    assert not summary['boolean_combination']['applied_to_active_compiler']
+    assert not summary['decision']['goal_complete']
+    for crate, index, count in [('core', 0, 393), ('engine', 0, 138), ('engine', 1, 22), ('engine', 2, 129)]:
+        stem = f'ir238-tests-mech_{crate}-run-{index}'
+        assert json.loads((schema_evidence / (stem+'.json')).read_text())['exit'] == 0
+        assert f'{count} passed; 0 failed' in (schema_evidence / (stem+'.stdout.log')).read_text()
+    extra = list(schema_evidence.glob('ir238-edges-*rust-insert*edge-fixtures.json'))
+    assert len(extra) == 4
+    for path in extra:
+        data = json.loads(path.read_text())
+        assert len(data) == 31 and all(r['exit'] == 0 and r.get('exact_rust_output', r.get('exact_expected_output', False)) for r in data)
+    for folder, ir in [(schema_evidence, 238), (evidence / 'child-entry-facts', 240)]:
+        qualification = json.loads((folder / f'ir{ir}-runners-qualification-summary.json').read_text())
+        assert qualification['loader_fixtures_exact'] == 558 and qualification['decoded_bundle_files_exact'] == 65
+        assert qualification['finite_denials_exact'] == 48 and qualification['finite_small_full_successes_exact'] == 12
+        assert qualification['forged_frontier_rejections'] == 16
+        for family in ['budget', 'compact-budget']:
+            budget = json.loads((folder / f'ir{ir}-{family}-summary.json').read_text())
+            denials = [r for r in budget['cases'] if r['case'] != 'success']
+            assert len(denials) == 8 and budget['all_eight_denials_exact']
+            for row in denials:
+                assert row['denial_exact'] and len(row['results']) == 3
+                assert all(r['output_unpublished'] and r['retained_bytes'] == r['retained_nodes'] == 0 for r in row['results'].values())
+        for name in qualification['fixtures']:
+            data = json.loads((folder / f"ir{ir}-edges-{name.replace('/', '-')}").read_text())
+            assert len(data) == 31
+            assert all(r['exit'] == 0 and r.get('exact_rust_output', r.get('exact_expected_output', False)) for r in data)
+        assert json.loads((folder / f'ir{ir}-runtime-check-summary.json').read_text())['status'] == 'passed'
+        assert json.loads((folder / f'ir{ir}-feature-check-scalar-compiler.json').read_text())['exit'] == 0
+        old = json.loads((folder / f'ir{ir}-old-objects-summary.json').read_text())
+        assert old['fresh_old_objects'] == 2
+        assert all(r['old_entry_never_invoked'] and r['object_bound_rejected'] and r['compiled_module_rejected'] for r in old['rows'])
+    current = evidence / 'child-entry-facts'
+    status = json.loads((packet / 'integration/ir240-review-status.json').read_text())
+    assert status['source_files'] == current_files
+    assert status['identity'] == 'IR240/work115/ABI41/image9' and not status['goal_complete']
+    for phase, expected in [('randomized', 279), ('resources', 70)]:
+        run = json.loads(gzip.decompress((current / f'child-entry-facts-integration-{phase}.json.gz').read_bytes()))
+        assert len(run['samples']) == expected and run['execution_order']['mode'] == 'randomized'
+        assert all(r['exit'] == 0 and r['exact_rust_output'] for r in run['samples'])
+    tests = json.loads((current / 'ir240-tests-test-run.json').read_text())
+    assert tests['expected_failures_exact'] and not tests['new_failures']
+    assert '858 passed; 2 failed' in tests['summary'][0]
+    ci = json.loads((current / 'ir240-tests-ci-selected-inventory-audit.json').read_text())
+    assert ci['current_selected_count'] == len(ci['selected_names']) == 363
+    assert ci['all_selected_names_executed_and_passed_in_complete_gpu_run']
+    for kind, count in [('scalar', 128), ('one-kib', 5)]:
+        a = rows(schema_evidence / f'ir238-regressions-{kind}-run.json')
+        b = rows(current / f'ir240-regressions-{kind}-run.json')
+        assert len(a) == len(b) == count and a == b
 
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833

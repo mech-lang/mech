@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-related-canonical-schema-sinks-tests-20261107-v1/mech_core-tests",
+    "",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 1.2140948749147356
+}
