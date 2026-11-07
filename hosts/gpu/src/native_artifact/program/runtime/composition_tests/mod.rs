@@ -41,6 +41,7 @@ mod nested_phase_growing;
 mod nested_phase_handoff;
 mod nested_scalar_array;
 mod numeric_bindings;
+mod numeric_boolean_relations;
 mod numeric_induction;
 mod numeric_tree;
 pub(super) mod observe;
