@@ -29,6 +29,7 @@ mod guarded_pack_failure;
 mod guarded_read_packs;
 mod hybrid_intervals;
 mod invariant_numeric;
+mod local_effects;
 mod managed_carriers;
 mod managed_projections;
 mod mixed_string_map;

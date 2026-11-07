@@ -19,6 +19,10 @@ pub(in crate::native_artifact::program::codegen) enum Step<'a> {
         index: u32,
         output: usize,
     },
+    /// Successful checked replacement preserves shape and immutable scalar
+    /// snapshots. This domain exports no array-content equality facts. The
+    /// write itself remains fallible and supplies no completion authority.
+    Replace,
     Keep,
 }
 
@@ -306,7 +310,7 @@ fn analyze<'a>(
                     state.words.insert(output, value);
                 }
             }
-            Step::Keep => {}
+            Step::Replace | Step::Keep => {}
         }
         if let Some(mut recording) = terms.recording.take() {
             recording.terminal_condition(&terms, &states, block.terminator());

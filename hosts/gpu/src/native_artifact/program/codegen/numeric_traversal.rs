@@ -88,6 +88,56 @@ fn analyze(
     let CodePlan::Program(program) = code else {
         return None;
     };
+    let step = |site| {
+        match numeric.action(site) {
+            Some(Operation::Aggregate) => Some(Step::Aggregate(
+                &program.metadata().scalar_aggregates,
+                program.metadata().scalar_aggregates.action(site)?,
+            )),
+            Some(Operation::Frame) => {
+                let moves =
+                    super::numeric_words::frame_word_moves(shadow, code, site, &numeric.frames)
+                        .ok()?;
+                Some(Step::Assign {
+                    moves: moves.assignments,
+                    parallel: moves.parallel,
+                })
+            }
+            Some(Operation::ArrayCopy) => Some(Step::Keep),
+            Some(Operation::Read {
+                array,
+                index,
+                output,
+            }) => Some(Step::Read {
+                array: *array,
+                index: *index,
+                output: *output as usize,
+            }),
+            Some(Operation::Length { array, output }) => Some(Step::Length {
+                array: *array,
+                output: *output as usize,
+            }),
+            Some(Operation::Write { .. }) => Some(Step::Replace),
+            // Growth and unknown effects still need their original guards.
+            Some(_) => None,
+            None => match code.blocks()[site].action() {
+                Action::Scalar(action) => Some(Step::Scalar(action)),
+                _ => None,
+            },
+        }
+    };
+    // Local substitutions can retain a supported prefix. Window versions and
+    // completion still require their entire original scope; a prefix never
+    // grants a loop-wide invariant, speculative execution or prepayment.
+    let prefix = if windows.is_empty() && captures.is_empty() && candidate.is_none() {
+        Some(scope.supported_prefix(code, |site| step(site).is_some())?)
+    } else {
+        None
+    };
+    let partial = prefix
+        .as_ref()
+        .is_some_and(|p| p.sites != scope.sites || p.outside != scope.outside);
+    let scope = prefix.as_ref().unwrap_or(scope);
     let sites = BTreeSet::from_iter(scope.sites.iter().copied());
     // An outside edge may only enter at the fresh header. In particular no
     // skipped case selection or cold resume can inherit a predecessor fact.
@@ -120,50 +170,16 @@ fn analyze(
             }
         }
     }
-    let step = |site| {
-        match numeric.action(site) {
-            Some(Operation::Aggregate) => Some(Step::Aggregate(
-                &program.metadata().scalar_aggregates,
-                program.metadata().scalar_aggregates.action(site)?,
-            )),
-            Some(Operation::Frame) => {
-                let moves =
-                    super::numeric_words::frame_word_moves(shadow, code, site, &numeric.frames)
-                        .ok()?;
-                Some(Step::Assign {
-                    moves: moves.assignments,
-                    parallel: moves.parallel,
-                })
-            }
-            Some(Operation::ArrayCopy) => Some(Step::Keep),
-            Some(Operation::Read {
-                array,
-                index,
-                output,
-            }) => Some(Step::Read {
-                array: *array,
-                index: *index,
-                output: *output as usize,
-            }),
-            Some(Operation::Length { array, output }) => Some(Step::Length {
-                array: *array,
-                output: *output as usize,
-            }),
-            // Mutable arrays, unsupported actions and cold boundaries decline
-            // this whole local analysis. The original guarded emitter remains.
-            Some(_) => None,
-            None => match code.blocks()[site].action() {
-                Action::Scalar(action) => Some(Step::Scalar(action)),
-                _ => None,
-            },
-        }
-    };
     if !captures.is_empty() {
         traversal_facts::with_captured_windows(code, scope, &slots, captures, step)
     } else if let Some(candidate) = candidate {
         traversal_facts::with_completion(code, scope, &slots, windows, candidate, step)
     } else {
-        traversal_facts::with_windows(code, scope, &slots, None, windows, step)
+        let mut proof = traversal_facts::with_windows(code, scope, &slots, None, windows, step)?;
+        if partial {
+            proof.windows.clear();
+        }
+        Some(proof)
     }
 }
 

@@ -1,5 +1,87 @@
 # Native compression milestone
 
+**R179 retains local facts across checked fixed-size writes and before opaque
+boundaries.** The compiler removes 40 additional projection guards and 510 read
+guards from the unchanged complete compressor. The matched comparison improves
+natural32KB **4.183810× → 3.720143× Roc** (11.082413%), natural16KB
+**4.951733× → 4.435018×** (10.435046%), and random32KB
+**5.427371× → 4.874584×** (10.185168%). All 20 unchanged 1.05 gates pass:
+17 faster medians, three stored-only cases slower by 0.121355–0.358408%, geometric
+elapsed improvement 3.754262%. All eight paired blocks improve on each priority
+case. Reference medians of zero remain unresolved; no gain is compounded with
+another round or source variant.
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| Natural text, 32 KB | 4.183810× | 3.720143× | −11.082413% |
+| Natural text, 16 KB | 4.951733× | 4.435018× | −10.435046% |
+| Random, 32 KB | 5.427371× | 4.874584× | −10.185168% |
+| Distribution change, 16 KB | 6.970006× | 6.415489× | −7.955760% |
+| Repeated, 32 KB | 3.205891× | 3.076759× | −4.027966% |
+| Periodic, 33 KB | 3.728267× | 3.565564× | −4.364050% |
+| Eight literals | 4.709432× | 4.593000× | −2.472322% |
+
+The existing shared transfer engine now models a successful length-preserving
+replacement without losing immutable scalar/shape facts. Its closed supported
+prefix ends at unknown effects or child edges, and prunes continuations reached
+from outside. Partial scopes export no loop-wide windows. All original write
+checks, source operations, ownership, first-change behavior, current-view admission,
+charges and failure paths remain. Completion rejects replacement as totality
+permission. The canonical plan, prepared numeric regions, 22 guarded windows,
+reduction recipes and lowered packs remain exactly equal. Current child gates
+still check their own predicates; caller-to-child predicate transfer remains
+unfinished. No source, allocator or runtime ABI change is included.
+
+Actual before/after Object maps show four repeated compare/branch pairs and their
+error paths disappearing from one selected parent projection segment. The generic
+witness also emits 220 fewer bytes across a write, and 704 fewer around a child
+boundary. Text shrinks **354,076 B** to 8,601,148 B; entry stack grows **1,648 B**
+to 17,440 B. The larger stack is an explicit tradeoff. Natural32 instructions fall
+242.296M → 225.144M (7.079124%); random32 79.517M → 72.561M (8.748004%).
+Seventeen instruction medians fall and three rise; six cycle medians rise,
+including eight bytes and repeated32. All contrary observations remain.
+
+All 20 allocation/requested-byte/reallocation/live-heap medians are equal. Initial
+eight-byte RSS rises 49.45% with physical footprint +0.091274%. A separate fresh
+four-session ABBA check does not reproduce it: RSS −0.070895%, physical −0.010540%.
+Both cohorts and their memory maps remain; no cause or memory saving is asserted.
+Twelve scalar controls pass their old 1.05 gate, with unchanged allocations and no
+iteration-dependent allocation slope. Five exact-current profiles cover 17,559
+full calls; natural32 has 81.03% inside the generated main entry and 39.74% unknown
+native attribution. Samples are separate from retired instructions; outside-entry
+includes generated helpers and useful runtime work.
+
+Qualification passes **639 GPU tests / the same seven inherited exclusions**, all
+**222 selected CI names executed**, four new focused regressions, unchanged
+**236 components / eight composition / one real-capacity path**, 15 architecture
+checks, 132 workflow tests, runtime-only, formatting and warnings denied. New
+controls cover fresh invocations, original/decoded, direct/restored, aliases,
+unselected visits, failure order, overflow, exact finite boundaries, unchanged
+publication, cleanup and retry. The combined early-write/child witness retains
+its existing full-region funding refusal and checked fallback; no funding policy
+is widened. Early witness representation mistakes and a denied read-only
+measurement inventory are preserved; the latter produced no primary observations.
+No unresolved introduced functional failure remains.
+
+Public evidence: **39 archives / 78 server digests verified**. Fresh public
+numerical replay verifies 6,347 file occurrences across 1,231 paths, preserves
+20 paths with historical versions, and reconstructs both indexed outputs
+byte-for-byte. Native binaries, bytecode and raw trace containers are excluded.
+
+Parent `176d8134133befb8e35a6413fb8f98387bacebb3`; exact clean performance source
+`8f01da96d1203e60fc26078d19a9f8807cd6ffc6`; IR/work/ABI/MBC **199/107/39/14**.
+All twelve source files reconstruct from the public parent and patch. Unit source
+predates the Git commit but matches every final file; its tracked patch and the two
+then-untracked files are retained. Frozen R145 dependencies, original source/MBC,
+real 262144 U16 / 1500513 U32 / 305257 U64 buffers, output capacity 13 clear/reuse,
+input aliases, allocator and full API boundary remain pinned. Largest input 33,027 B.
+See the [R179 report](native-local-numeric-facts.md) for all 20 rows, exact commands,
+profiles, memory confirmation, limitations and skipped coverage. One optimization
+commit in existing draft #973; ordinary CI cancelled by instruction, review kept.
+The broader mutable-parent/child brief and 1× goal remain active.
+
+## Historical R178 checkpoint
+
 **R178 fixes exhausted payload transport in native reductions.** A valid source
 transition reset the final minimum to zero; optimized execution bypassed that
 update and returned 9. The maintained regression fails on the clean R177 parent.

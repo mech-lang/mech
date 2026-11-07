@@ -75,7 +75,7 @@ impl Collector {
                     .read(*index as usize)
                     .zip(terms.interned.get(&Expr::ArrayLength(*array)).copied())
                     .is_some_and(|(index, length)| state.readable(terms, index, length)),
-                Step::Define(_) => false,
+                Step::Define(_) | Step::Replace => false,
                 Step::Scalar(_) | Step::Assign { .. } | Step::Length { .. } | Step::Keep => true,
             };
         }
@@ -167,6 +167,30 @@ fn total(state: &State, terms: &Terms, op: Op, args: &[Id]) -> bool {
         | U64WrappingMul | U64Clz | U64Ctz => true,
         _ => op.signature().1 == NativeScalarKind::Bool,
     }
+}
+
+#[cfg(test)]
+#[test]
+fn completion_does_not_get_totality_from_a_successful_replacement() {
+    let mut collector = Collector::new(Candidate {
+        tag: 0,
+        active: 0,
+        terminal: 1,
+        induction: 1,
+        count: 2,
+        next_tag: 3,
+        next_induction: 4,
+    });
+    collector.action(
+        &Terms::default(),
+        &[Some(State::default())],
+        &Step::Replace,
+        Term::Scalar(Branch::Jump(1)),
+    );
+    assert!(
+        !collector.valid,
+        "a retained local fact does not make a checked write total"
+    );
 }
 
 #[cfg(test)]
