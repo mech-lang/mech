@@ -39,7 +39,7 @@ fn arguments(
     )
 }
 
-fn resident(artifact: &ProgramArtifact, args: &[Value]) -> Vec<Data> {
+pub(super) fn resident(artifact: &ProgramArtifact, args: &[Value]) -> Vec<Data> {
     use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
     let mut instance = activate(
         mech_core::ReactiveInstanceId::new(0x45584954, 0),
