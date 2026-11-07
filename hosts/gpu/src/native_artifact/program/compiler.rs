@@ -387,13 +387,30 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
         limits,
         options,
     )?;
-    let descriptor = NativeProgramDescriptor::from_prepared(
+    finish_program_object(
+        module,
         prepared,
+        entry,
         NativeCodeFootprint {
             stack_bytes: stack,
             code_bytes: code,
         },
-    );
+        codegen,
+    )
+}
+
+// Code and stack admission must be derived by the selected machine emitter
+// before this same-Object identity, image and compiled-module binding is made.
+// Keeping finalization separate prevents a second backend from substituting
+// machine text under a descriptor which describes different code.
+fn finish_program_object(
+    mut module: cranelift_object::ObjectModule,
+    prepared: PreparedNativeProgram,
+    entry: cranelift_module::FuncId,
+    footprint: NativeCodeFootprint,
+    codegen: crate::native_artifact::codegen::control::CodegenReport,
+) -> Result<NativeProgramObject, NativeCompileError> {
+    let descriptor = NativeProgramDescriptor::from_prepared(prepared, footprint);
     let identity = NativeProgramObjectIdentity::from_descriptor(&descriptor).map_err(backend)?;
     let identity_id = module
         .declare_data(identity.symbol(), Linkage::Export, false, false)
