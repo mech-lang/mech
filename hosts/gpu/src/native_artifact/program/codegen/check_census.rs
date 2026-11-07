@@ -77,6 +77,7 @@ pub(in crate::native_artifact) fn observe_optimized_branches(
         }
     }}
     let mut observed=Vec::new();
+    let mut carry_sites=Vec::new();
     for block in function.layout.blocks() {
         let Some(inst)=function.layout.last_inst(block) else {continue};
         let D::Brif {arg,..}=function.dfg.insts[inst] else {continue};
@@ -101,7 +102,16 @@ pub(in crate::native_artifact) fn observe_optimized_branches(
             "branch-integer-comparison-tree"=>"branch-integer-comparison-tree-shared",
             other=>other,
         }};
+        if kind == "branch-single-add-carry-comparison" {
+            let mut defs=std::collections::BTreeMap::new();
+            value_definitions(function,arg,16,&mut defs);
+            carry_sites.push(serde_json::json!({"site":inst.as_u32(),"owner":owner,"condition":arg.to_string(),"normalized":value.to_string(),"inverted":inverted,"block":block.to_string(),"block_instructions":function.layout.block_insts(block).map(|i|format!("{}: {}",i,function.dfg.display_inst(i))).collect::<Vec<_>>(),"definitions":defs}));
+        }
         observed.push((inst,arg,inverted,kind));
+    }
+    if let Ok(directory)=std::env::var("MECH_OPPORTUNITY_IR_DIR") {
+        std::fs::write(std::path::Path::new(&directory).join(format!("owner-{owner}-carry-sites.json")),serde_json::to_vec_pretty(&carry_sites).map_err(crate::native_artifact::compiler::backend)?)
+            .map_err(crate::native_artifact::compiler::backend)?;
     }
     for (inst,condition,inverted,kind) in observed {
         let key=Key {compilation,kind,owner,site:inst.as_u32()as usize,version:inverted};
@@ -208,5 +218,19 @@ fn add_carry_comparison(f:&cranelift_codegen::ir::Function,v:Value)->bool{
         D::Binary{opcode:O::Iadd,args}=>args.iter().any(|&v|f.dfg.resolve_aliases(v)==f.dfg.resolve_aliases(base)),
         D::BinaryImm64{opcode:O::IaddImm,arg,..}=>f.dfg.resolve_aliases(arg)==f.dfg.resolve_aliases(base),
         _=>false,
+    }
+}
+
+#[cfg(mech_native_opportunity_census)]
+fn value_definitions(f:&cranelift_codegen::ir::Function,v:Value,depth:usize,out:&mut std::collections::BTreeMap<String,String>){
+    use cranelift_codegen::ir::ValueDef;
+    if depth==0{return;}let v=f.dfg.resolve_aliases(v);let name=v.to_string();if out.contains_key(&name){return;}
+    match f.dfg.value_def(v){
+        ValueDef::Result(i,_)=>{
+            out.insert(name,format!("{}: {}",i,f.dfg.display_inst(i)));
+            for &arg in f.dfg.inst_args(i){value_definitions(f,arg,depth-1,out);}
+        },
+        ValueDef::Param(block,index)=>{out.insert(name,format!("{block} parameter {index}"));},
+        _=>{out.insert(name,"detached or union value".to_owned());},
     }
 }
