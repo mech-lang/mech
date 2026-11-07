@@ -408,7 +408,10 @@ fn selected_template(
 // IR241 scalar-home retirement remains an independently measured experiment.
 // IR242 integrates PR973/IR201 selected normalized Boolean operands and current
 // smaller read windows bounded by the same checked mathematical sum.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 242;
+// IR243 shared call certificates remain an independently measured experiment.
+// IR244 integrates PR973/IR202 demand-based removal of dead native SSA values
+// and interior arguments, retaining effects, trapping loads and the entry ABI.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 244;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
