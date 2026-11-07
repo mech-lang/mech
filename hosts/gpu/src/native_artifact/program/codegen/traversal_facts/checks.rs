@@ -39,6 +39,7 @@ impl Check {
     pub(super) fn holds(self, state: &State, terms: &mut Terms) -> Option<bool> {
         match self {
             Self::Le(a, b) => {
+                let length = matches!(b, Operand::Length(_));
                 let (a, b) = (a.value(state, terms)?, b.value(state, terms)?);
                 Some(
                     state.truth(terms, Relation::Le, a, b) == Some(true)
@@ -47,7 +48,11 @@ impl Check {
                             .is_some_and(|bound| state.upper(terms, a) <= bound)
                         || state
                             .constant(terms, a)
-                            .is_some_and(|bound| bound <= state.lower(terms, b)),
+                            .is_some_and(|bound| bound <= state.lower(terms, b))
+                        || (length
+                            && terms
+                                .constant(0)
+                                .is_some_and(|zero| state.sum_fits(terms, a, zero, b))),
                 )
             }
             Self::Addition { word, extra } => {
@@ -79,6 +84,9 @@ impl Check {
                 }
                 if let Some(base) = base {
                     let base = state.read(base)?;
+                    if state.sum_fits(terms, end, base, length) {
+                        return Some(true);
+                    }
                     if !state.safe(terms, Arithmetic::Add, end, base) {
                         return Some(false);
                     }
@@ -92,5 +100,23 @@ impl Check {
                 Some(state.truth(terms, Relation::Le, end, length) == Some(true))
             }
         }
+    }
+}
+
+impl State {
+    /// A selected mathematical sum bounded by this exact length also bounds
+    /// a sum of smaller current operands. This proves nonoverflow as well as
+    /// the window; a ring sum, unknown order or different view supplies none.
+    fn sum_fits(&self, terms: &Terms, a: Id, b: Id, length: Id) -> bool {
+        self.relations.iter().any(|&(relation, sum, bound)| {
+            if bound != length || !matches!(relation, Relation::Le | Relation::Lt | Relation::Eq) {
+                return false;
+            }
+            let Expr::Arithmetic(Arithmetic::Add, x, y) = terms.terms[sum] else {
+                return false;
+            };
+            let le = |a, b| self.truth(terms, Relation::Le, a, b) == Some(true);
+            (le(a, x) && le(b, y)) || (le(a, y) && le(b, x))
+        })
     }
 }

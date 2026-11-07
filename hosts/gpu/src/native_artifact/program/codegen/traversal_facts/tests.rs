@@ -1,6 +1,106 @@
 use super::*;
 
 #[test]
+fn selected_normalized_booleans_retain_only_logically_forced_operands() {
+    let mut terms = Terms::default();
+    let a = terms.intern(Expr::Initial(0)).unwrap();
+    let b = terms.intern(Expr::Initial(1)).unwrap();
+    let c = terms.intern(Expr::Initial(2)).unwrap();
+    let p = terms.intern(Expr::Compare(Relation::Le, a, b)).unwrap();
+    let q = terms.intern(Expr::Compare(Relation::Lt, b, c)).unwrap();
+    let and = terms.intern(Expr::And(p, q)).unwrap();
+    let or = terms.intern(Expr::Or(p, q)).unwrap();
+    assert!(terms.boolean(and) && terms.boolean(or));
+    assert!(!terms.boolean(a));
+    for (predicate, selected, forced) in [
+        (and, true, Some(true)),
+        (and, false, None),
+        (or, true, None),
+        (or, false, Some(false)),
+    ] {
+        let mut state = State::default();
+        assert!(state.condition(&terms, predicate, selected).unwrap());
+        assert_eq!(state.truth(&terms, Relation::Le, a, b), forced);
+        assert_eq!(state.truth(&terms, Relation::Lt, b, c), forced);
+    }
+    let not = terms.intern(Expr::Not(and)).unwrap();
+    let repeated = terms.intern(Expr::Or(not, not)).unwrap();
+    let mut selected = State::default();
+    assert!(selected.condition(&terms, repeated, false).unwrap());
+    assert_eq!(selected.truth(&terms, Relation::Le, a, b), Some(true));
+    assert_eq!(selected.truth(&terms, Relation::Lt, b, c), Some(true));
+    let opaque = terms.intern(Expr::Boolean(10, 20)).unwrap();
+    let mut unknown = State::default();
+    assert!(unknown.condition(&terms, opaque, true).unwrap());
+    assert!(unknown.relations.is_empty());
+}
+
+#[test]
+fn smaller_sum_windows_require_selected_checked_bounds_and_current_views() {
+    let mut terms = Terms::default();
+    let left = terms.intern(Expr::Initial(0)).unwrap();
+    let right = terms.intern(Expr::Initial(1)).unwrap();
+    let maximum = terms.intern(Expr::Initial(2)).unwrap();
+    let small = terms.intern(Expr::Initial(3)).unwrap();
+    let length = terms.intern(Expr::ArrayLength(0)).unwrap();
+    let sum = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, left, maximum))
+        .unwrap();
+    let window = terms
+        .intern(Expr::Compare(Relation::Le, sum, length))
+        .unwrap();
+    let ordered = terms
+        .intern(Expr::Compare(Relation::Lt, right, left))
+        .unwrap();
+    let both = terms.intern(Expr::And(window, ordered)).unwrap();
+    let mut initial = State::default();
+    initial.words.extend([(0, left), (1, right), (2, small)]);
+    initial
+        .assume(&terms, Relation::Le, small, maximum)
+        .unwrap();
+    let fits = Check::Fits {
+        array: 0,
+        base: Some(1),
+        count: 2,
+        extra: 0,
+    };
+    for selected in [false, true] {
+        let mut state = initial.clone();
+        assert!(state.condition(&terms, both, selected).unwrap());
+        assert_eq!(fits.holds(&state, &mut terms), Some(selected));
+        assert_eq!(
+            Check::Le(Operand::Word(1), Operand::Length(0)).holds(&state, &mut terms),
+            Some(selected)
+        );
+    }
+    let mut state = initial.clone();
+    assert!(state.condition(&terms, both, true).unwrap());
+    assert_eq!(
+        Check::Fits {
+            array: 1,
+            base: Some(1),
+            count: 2,
+            extra: 0,
+        }
+        .holds(&state, &mut terms),
+        Some(false)
+    );
+    state
+        .words
+        .insert(1, terms.intern(Expr::Definition(7, 1)).unwrap());
+    assert_eq!(fits.holds(&state, &mut terms), Some(false));
+    state.words.insert(1, right);
+    state.words.insert(2, terms.constant(u64::MAX).unwrap());
+    assert_eq!(fits.holds(&state, &mut terms), Some(false));
+    let ring = terms
+        .intern(Expr::Wrapping(Arithmetic::Add, left, maximum))
+        .unwrap();
+    initial.assume(&terms, Relation::Le, ring, length).unwrap();
+    initial.assume(&terms, Relation::Lt, right, left).unwrap();
+    assert_eq!(fits.holds(&initial, &mut terms), Some(false));
+}
+
+#[test]
 fn child_checks_use_checked_sum_order_but_not_wrapping_or_fresh_words() {
     let mut terms = Terms::default();
     let start = terms.intern(Expr::Initial(0)).unwrap();

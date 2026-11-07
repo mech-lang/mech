@@ -148,9 +148,17 @@ pub(super) fn scalar(
                         .bit_and(Range(0, state.upper(terms, args[1])));
                     terms.intern(Expr::Bounded(site, output.get() as usize, bound.1))?
                 }
-                Op::BoolAnd | Op::BoolOr | Op::BoolXor
-                    if args.iter().all(|&value| terms.boolean(value)) =>
-                {
+                Op::BoolAnd | Op::BoolOr if args.iter().all(|&value| terms.boolean(value)) => {
+                    let [a, b] = args.as_slice() else {
+                        return None;
+                    };
+                    terms.intern(if *op == Op::BoolAnd {
+                        Expr::And(*a, *b)
+                    } else {
+                        Expr::Or(*a, *b)
+                    })?
+                }
+                Op::BoolXor if args.iter().all(|&value| terms.boolean(value)) => {
                     terms.intern(Expr::Boolean(site, output.get() as usize))?
                 }
                 _ if op.signature().1 == NativeScalarKind::Bool

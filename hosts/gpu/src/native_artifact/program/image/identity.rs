@@ -348,7 +348,9 @@ fn selected_template(
 // prefixes. Opaque continuations never inherit their predecessor's permission.
 // IR200 queries current transferred child arguments for individual admission
 // predicates. Residual view checks, ownership and funding remain independent.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 200;
+// IR201 retains normalized conjunction/disjunction structure and consumes only
+// selected operand facts for current smaller windows of a checked sum.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 201;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

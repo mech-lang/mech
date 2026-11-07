@@ -61,6 +61,8 @@ enum Expr {
     Wrapping(Arithmetic, Id, Id),
     Compare(Relation, Id, Id),
     Not(Id),
+    And(Id, Id),
+    Or(Id, Id),
 }
 #[derive(Default)]
 struct Terms {
@@ -93,7 +95,11 @@ impl Terms {
     fn boolean(&self, mut id: Id) -> bool {
         for _ in 0..MAX_TERMS {
             match self.terms[id] {
-                Expr::Compare(..) | Expr::Boolean(..) | Expr::Constant(0 | 1) => return true,
+                Expr::Compare(..)
+                | Expr::Boolean(..)
+                | Expr::And(..)
+                | Expr::Or(..)
+                | Expr::Constant(0 | 1) => return true,
                 Expr::Not(value) => id = value,
                 _ => return false,
             }
@@ -236,37 +242,48 @@ impl State {
         self.relations.insert((relation, a, b));
         Some(true)
     }
-    fn condition(&mut self, terms: &Terms, mut condition: Id, mut yes: bool) -> Option<bool> {
-        // Not chains are acyclic interned expressions; bound the walk anyway.
-        for _ in 0..MAX_TERMS {
-            let Expr::Not(value) = terms.terms[condition] else {
-                break;
-            };
-            condition = value;
-            yes = !yes;
-        }
-        match terms.terms[condition] {
-            Expr::Constant(value) => Some((value != 0) == yes),
-            Expr::Not(_) => None,
-            Expr::Compare(mut relation, mut a, mut b) => {
-                if !yes {
-                    relation = match relation {
-                        Relation::Eq => Relation::Ne,
-                        Relation::Ne => Relation::Eq,
-                        Relation::Lt => {
-                            core::mem::swap(&mut a, &mut b);
-                            Relation::Le
-                        }
-                        Relation::Le => {
-                            core::mem::swap(&mut a, &mut b);
-                            Relation::Lt
-                        }
-                    };
-                }
-                self.assume(terms, relation, a, b)
+    fn condition(&mut self, terms: &Terms, condition: Id, yes: bool) -> Option<bool> {
+        // Eager Boolean operands have already executed. Only the selected
+        // result's logically forced operands supply facts: true AND / false
+        // OR. The other cases cannot choose either operand. Repeated DAG
+        // nodes are visited once under the existing term allowance.
+        let mut pending = vec![(condition, yes)];
+        let mut visited = BTreeSet::new();
+        while let Some((condition, yes)) = pending.pop() {
+            if !visited.insert((condition, yes)) {
+                continue;
             }
-            _ => Some(true),
+            if visited.len() > MAX_TERMS {
+                return None;
+            }
+            match terms.terms[condition] {
+                Expr::Constant(value) if (value != 0) != yes => return Some(false),
+                Expr::Not(value) => pending.push((value, !yes)),
+                Expr::And(a, b) if yes => pending.extend([(a, true), (b, true)]),
+                Expr::Or(a, b) if !yes => pending.extend([(a, false), (b, false)]),
+                Expr::Compare(mut relation, mut a, mut b) => {
+                    if !yes {
+                        relation = match relation {
+                            Relation::Eq => Relation::Ne,
+                            Relation::Ne => Relation::Eq,
+                            Relation::Lt => {
+                                core::mem::swap(&mut a, &mut b);
+                                Relation::Le
+                            }
+                            Relation::Le => {
+                                core::mem::swap(&mut a, &mut b);
+                                Relation::Lt
+                            }
+                        };
+                    }
+                    if !self.assume(terms, relation, a, b)? {
+                        return Some(false);
+                    }
+                }
+                _ => {}
+            }
         }
+        Some(true)
     }
     fn merge(&mut self, other: &Self, site: usize, terms: &mut Terms) -> Option<()> {
         let condition = terms

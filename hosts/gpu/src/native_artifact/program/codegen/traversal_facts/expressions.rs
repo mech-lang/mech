@@ -232,6 +232,8 @@ impl Recording {
                     vec![a, b],
                 ),
                 Expr::Not(value) => Node::Scalar(Op::BoolNot, vec![value]),
+                Expr::And(a, b) => Node::Scalar(Op::BoolAnd, vec![a, b]),
+                Expr::Or(a, b) => Node::Scalar(Op::BoolOr, vec![a, b]),
                 _ => self.definitions.get(&id).cloned().unwrap_or(Node::Unknown),
             })
             .collect();
