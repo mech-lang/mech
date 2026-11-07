@@ -599,8 +599,17 @@ fn derive_with_children(
         };
         actions.push((site, operation));
     }
-    if arrays.iter().any(|array| array.witness == usize::MAX) {
+    if arrays.iter().any(|array| array.witness == usize::MAX)
+        && !arrays.iter().any(|array| {
+            array.witness != usize::MAX && array.width != 0 && !array.writable && !array.appends
+        })
+    {
         return Err("unwitnessed retained array");
+    }
+    if arrays.iter().any(|array| {
+        array.witness == usize::MAX && (array.width != 0 || array.writable || array.appends)
+    }) {
+        return Err("unwitnessed retained array has content effects");
     }
     // A prefix without a native backedge retains the maintained acyclic parent
     // pieces. A Tail phase adds a second entry and cold export without keeping

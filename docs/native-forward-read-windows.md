@@ -1,6 +1,6 @@
 # Activation-current forward read windows
 
-IR259 extends the existing immutable child-window versioning beyond its original
+IR260 extends the existing immutable child-window versioning beyond its original
 paired forward/reverse restriction. Paired selection retains priority. A forward
 group must contain only non-writable, non-appending views, share the same current
 induction/count coordinates, pass the existing recurrence/scope proof, and prove
@@ -31,3 +31,10 @@ width and no read/write/append permissions. Purely opaque flat carriers keep the
 efficient scalar path. The source/alias-version proof and the rejection of
 unwitnessed content effects remain mandatory. Original failed receipts and
 test-only diagnostic traces remain; no mechanism assertion is weakened.
+
+The next IR259 attempt admits the single-view numeric tree, but the flat phase
+adapter independently rejects its opaque owner and loses the complete child
+scope needed by window analysis. IR260 carries the same strictly zero-permission
+owner through that adapter and its original must-current source/exit proof. A
+real immutable content witness is still required; any unwitnessed content effect
+still rejects. No unread owner acquires a pointer, length or write permission.
