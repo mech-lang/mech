@@ -54,6 +54,11 @@ fn zero_append_frontiers_remove_only_empty_guards_and_preserve_growth_errors_and
     check_frontier_emission(OptimizationPass::ZeroAppendFrontiers);
 }
 
+#[test]
+fn movable_capture_reads_keep_current_windows_empty_views_and_retries() {
+    check_frontier_emission(OptimizationPass::MovableCaptureReads);
+}
+
 fn check_frontier_emission(pass: OptimizationPass) {
     for artifact in artifacts(ZERO_APPEND_FRONTIER_SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
@@ -89,6 +94,23 @@ fn check_frontier_emission(pass: OptimizationPass) {
                     .filter(|(_, count)| *count > 0)
                     .collect::<Vec<_>>()
             );
+        } else if pass == OptimizationPass::MovableCaptureReads {
+            assert_eq!(after, before);
+            let reads = |metadata: &serde_json::Value| {
+                [
+                    "compiled_numeric_write_loops",
+                    "compiled_readonly_numeric_loops",
+                ]
+                .into_iter()
+                .flat_map(|key| metadata[key].as_array().unwrap())
+                .map(|region| region["movable_capture_reads"].as_array().unwrap().len())
+                .sum::<usize>()
+            };
+            assert!(
+                reads(&object.metadata()) > 0,
+                "exercise actual movable capture reads"
+            );
+            assert_eq!(reads(&old_object.metadata()), 0);
         } else {
             assert!(matches!(
                 pass,
@@ -875,6 +897,11 @@ fn numeric_tree_fuel_derived_debits_keep_each_finite_ordinary_continuation() {
 #[test]
 fn guarded_numeric_loads_keep_each_finite_source_boundary_and_retry() {
     check_numeric_tree_finite_fuel(Some(OptimizationPass::GuardedNumericLoads));
+}
+
+#[test]
+fn movable_capture_reads_keep_each_finite_source_boundary_and_retry() {
+    check_numeric_tree_finite_fuel(Some(OptimizationPass::MovableCaptureReads));
 }
 
 #[test]

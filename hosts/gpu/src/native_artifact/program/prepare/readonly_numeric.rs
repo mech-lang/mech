@@ -57,6 +57,15 @@ pub(in crate::native_artifact) struct Array {
     pub appends: bool,
 }
 impl Array {
+    /// Direct immutable ancestor slots remain owned outside the numeric call.
+    /// Frame captures need a separate physical-home lifetime proof.
+    pub fn immutable_capture(&self) -> bool {
+        !self.writable
+            && !self.appends
+            && matches!(self.width, 1 | 2 | 4 | 8)
+            && matches!(self.storage, ArrayStorage::Capture { .. })
+    }
+
     pub fn physical(&self) -> Option<usize> {
         match self.storage {
             ArrayStorage::Carrier { physical, .. } => Some(physical),

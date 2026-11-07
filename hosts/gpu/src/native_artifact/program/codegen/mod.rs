@@ -41,6 +41,8 @@ pub(in crate::native_artifact) mod word_collections;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_branches;
 #[cfg(feature = "canonical-native-program")]
+mod numeric_captured_reads;
+#[cfg(feature = "canonical-native-program")]
 mod numeric_fuel;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_read_packs;

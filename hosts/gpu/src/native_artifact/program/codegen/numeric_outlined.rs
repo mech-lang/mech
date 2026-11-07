@@ -103,6 +103,7 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
                 args[1],
                 args[2],
                 None,
+                true,
                 code,
                 closed,
                 region.tail.header() as usize,

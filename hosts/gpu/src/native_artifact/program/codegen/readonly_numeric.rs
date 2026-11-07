@@ -35,6 +35,7 @@ pub(in crate::native_artifact) struct Report {
     pub parent: Option<u32>,
     pub source_sites: Vec<usize>,
     pub typed_loads: Vec<(usize, u8)>,
+    pub movable_capture_reads: Vec<(usize, usize)>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub source_guarded_read_packs: Vec<usize>,
     pub fully_lowered_read_packs: Vec<usize>,
@@ -159,6 +160,7 @@ pub(in crate::native_artifact) fn emit_entry(
     locals: Value,
     user_context: Value,
     outlined_function: Option<cranelift_codegen::ir::FuncRef>,
+    outlined_body: bool,
     code: CodePlan<'_>,
     closed: &Layout,
     site: usize,
@@ -450,6 +452,12 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     };
     let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
+    let movable_captures =
+        if outlined_body && controls.enabled(OptimizationPass::MovableCaptureReads) {
+            super::numeric_captured_reads::stable_arrays(code, region, proof)
+        } else {
+            BTreeSet::new()
+        };
     let boolean_successors =
         super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     let versions = super::numeric_loop_windows::derive(
@@ -472,6 +480,7 @@ pub(in crate::native_artifact) fn emit_entry(
         source_sites: proof.sites.clone(),
         native_extent_bounds: Vec::new(),
         typed_loads: Vec::new(),
+        movable_capture_reads: Vec::new(),
         read_pack_sites: Vec::new(),
         source_guarded_read_packs: Vec::new(),
         fully_lowered_read_packs: Vec::new(),
@@ -1062,18 +1071,30 @@ pub(in crate::native_artifact) fn emit_entry(
                 else {
                     return Err(backend("numeric address lost its entry witness"));
                 };
-                let (address, ty) = super::numeric_words::linear_address(
-                    b,
-                    ordinal,
-                    rows,
-                    columns,
-                    width,
-                    template.inputs()[0].body(),
-                    |b| words.read(b, view),
-                )?;
+                let movable =
+                    matches!(operation, Operation::Read { .. }) && movable_captures.contains(array);
+                let (address, ty) = if movable {
+                    report.movable_capture_reads.push((site, *array));
+                    let base = words.read(b, view);
+                    super::numeric_captured_reads::address(b, ordinal, length, base, width)?
+                } else {
+                    super::numeric_words::linear_address(
+                        b,
+                        ordinal,
+                        rows,
+                        columns,
+                        width,
+                        template.inputs()[0].body(),
+                        |b| words.read(b, view),
+                    )?
+                };
                 let value = b.ins().load(
                     ty,
-                    super::numeric_words::guarded_load_flags(controls.options()),
+                    if movable {
+                        super::numeric_captured_reads::flags()
+                    } else {
+                        super::numeric_words::guarded_load_flags(controls.options())
+                    },
                     address,
                     0,
                 );

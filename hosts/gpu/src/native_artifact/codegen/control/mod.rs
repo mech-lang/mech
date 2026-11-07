@@ -929,6 +929,7 @@ impl<'plan> CfgDefinition<'plan> {
                     locals,
                     user_context,
                     numeric_function,
+                    false,
                     plan,
                     &closed,
                     index,

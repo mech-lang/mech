@@ -51,6 +51,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     ScalarSelects,
     UnsignedGuardFacts,
     GuardedNumericLoads,
+    MovableCaptureReads,
     DisjointState,
     NontrappingHomes,
     ChildFunding,

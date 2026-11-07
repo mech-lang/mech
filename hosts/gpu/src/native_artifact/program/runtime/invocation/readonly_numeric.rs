@@ -7,6 +7,10 @@ use crate::native_artifact::program::runtime::buffer_frames::BufferFrames;
 use crate::native_artifact::program::runtime::buffer_frames::Field;
 use mech_engine::native_artifact::NativeIterationAction as Action;
 
+// A movable read of an empty immutable capture must still have a valid physical
+// address. Source length remains zero and its original selector guard rejects.
+static EMPTY_CAPTURE_CELL: u64 = 0;
+
 impl Invocation<'_, '_, '_> {
     /// A descriptor-proved immutable capture stays in its current arena slot
     /// for the whole synchronous loan. Mutable roots retain private lanes.
@@ -238,11 +242,14 @@ impl Invocation<'_, '_, '_> {
             let call = metadata.calls[array.witness]
                 .as_ref()
                 .ok_or_else(|| invalid("numeric view lost factory"))?;
-            let Some(view) =
+            let Some(mut view) =
                 call.unsigned_matrix_native_view(&owner, &self.state.library.memory_budget())
             else {
                 return Ok(false);
             };
+            if array.immutable_capture() && view[1] == 0 {
+                view[0] = (&EMPTY_CAPTURE_CELL as *const u64) as u64;
+            }
             // A no-op store still has the selected array output contract.
             // Decline, rather than reject at entry: an earlier assertion or
             // unselected store must keep its original source/error ordering.

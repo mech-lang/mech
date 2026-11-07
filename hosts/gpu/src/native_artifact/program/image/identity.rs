@@ -416,7 +416,10 @@ fn selected_template(
 // Source bounds, error paths, memory dependence and control dependence remain.
 // IR247 integrates PR973/IR203 initialized ordinary local-word homes while
 // retaining their default alias class and current callback synchronization.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 247;
+// IR248 adds data-dependent safe loads from direct immutable ancestor captures
+// inside outlined numeric callees. Replaced/retired roots are excluded; empty
+// captures lend immutable zero storage. Original source checks remain effects.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 248;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
