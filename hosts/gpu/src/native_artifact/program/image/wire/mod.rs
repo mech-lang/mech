@@ -246,9 +246,15 @@ fn decode_inner<
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
     restore_phase(10,true);
+    restore_phase(11,true);
     let mut reader = BuildOwnedImageReader::from_image(bytes).map_err(|e| e.to_string())?;
+    restore_phase(11,false);
+    restore_phase(12,true);
     let image: Image<'a, Frame> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
+    restore_phase(12,false);
+    restore_phase(13,true);
     reader.end().map_err(|e| e.to_string())?;
+    restore_phase(13,false);
     restore_phase(10,false);
     if image.format != "mech.build-owned-native-descriptor"
         || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9))
