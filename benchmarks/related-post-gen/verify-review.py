@@ -344,6 +344,16 @@ if current_status.exists():
         assert json.loads((evidence / f'ir{ir}-runtime-check-summary.json').read_text())['status'] == 'passed'
         assert json.loads((evidence / f'ir{ir}-feature-check-scalar-compiler.json').read_text())['exit'] == 0
     experiment = evidence / 'local-facts-and-metadata'
+    text_proof = json.loads((experiment / 'native-function-text-correspondence.json').read_text())
+    assert text_proof['functions_compared'] == 263
+    assert text_proof['all_five_query_functions_byte_identical']
+    assert len(text_proof['variants']) == 5
+    for variant in text_proof['variants'].values():
+        assert variant['native_text_saved_bytes'] == 2560
+        assert len(variant['changed_headers']) == 8
+        query = variant['functions'][str(variant['query_header'])]
+        assert query['before_bytes'] == query['after_bytes'] == 28448
+        assert query['before_sha256'] == query['after_sha256'] == variant['query_sha256']
     prototype = json.loads((evidence / 'ir237-source-inventory.json').read_text())['files']
     overrides = json.loads((experiment / 'ir237-source-overrides.json').read_text())
     assert set(overrides) == {'src/core/src/type_system/resolved_value.rs', 'src/core/src/function/specialization.rs', 'hosts/gpu/src/native_artifact/program/image/identity.rs'}

@@ -3844,8 +3844,8 @@
       "publication_generated": true
     },
     "verify-review.py": {
-      "sha256": "bbc4a457ba67b0bffa97759f9e9ae35e65a6a0619d84dcd85767f08cc385b20a",
-      "bytes": 24447
+      "sha256": "a02ee4dbeaacc336191df31fb92465208f171e08d84e9cb4db91287c17f21b45",
+      "bytes": 25095
     },
     "review/native-metadata/after-4/metadata.json.gz": {
       "sha256": "6172681ef00ff2861529ff54dd9b29666bc8e923a397c9043f08a1d7b93b1e8a",
@@ -3893,8 +3893,8 @@
       "bytes": 77145
     },
     "integration/README.md": {
-      "sha256": "1d4a1cd250cd4cd9d24b7003b1254e85ff1b17574508a96fe696f827ea379cdd",
-      "bytes": 35563
+      "sha256": "b6f526161a01451fbde55a451df9503be8106af08a0b7f71297142fc72e7982c",
+      "bytes": 35721
     },
     "integration/evidence/size-native-fuel-derived-debits-20261106.json": {
       "sha256": "3ad02f64e2500b47f6f068654b6a38baf414869a2be7eff4381e716129fb390f",
@@ -9739,6 +9739,14 @@
     "integration/.gitattributes": {
       "sha256": "e7acb737b8291d985f74f100c1e06820eceb918548dc76b64b7c82600e829251",
       "bytes": 189
+    },
+    "integration/evidence/local-facts-and-metadata/native-function-text-correspondence.json": {
+      "sha256": "7a48fdb26aeed8a68bd73bddb98117ad1e0da44173cb45084e73eae2b54811e5",
+      "bytes": 76194
+    },
+    "integration/evidence/local-facts-and-metadata/audit-native-function-text.py": {
+      "sha256": "7cb00f277aca95087d07bbea87314936d7d339ffed9dcb2a8098b3a51a57b515",
+      "bytes": 2236
     }
   },
   "limitations": [
