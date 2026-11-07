@@ -4,6 +4,86 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
 #[test]
+fn cfg_cleanup_selected_low_bit_tests_keep_unproved_words_and_prior_publication() {
+    for ty in [types::I8, types::I16, types::I32, types::I64] {
+        let mut module = cranelift_jit::JITModule::new(
+            cranelift_jit::JITBuilder::with_flags(
+                &[("opt_level", "speed")],
+                default_libcall_names(),
+            )
+            .unwrap(),
+        );
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(types::I64); 2];
+        context.func.signature.returns = vec![AbiParam::new(types::I64)];
+        let id = module
+            .declare_function("selected_low_bit", Linkage::Local, &context.func.signature)
+            .unwrap();
+        let mut fc = FunctionBuilderContext::new();
+        {
+            let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+            let entry = b.create_block();
+            let odd = b.create_block();
+            let even = b.create_block();
+            let publish = b.create_block();
+            let fail = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.switch_to_block(entry);
+            let args = b.block_params(entry).to_vec();
+            let word = if ty == types::I64 {
+                args[1]
+            } else {
+                b.ins().ireduce(ty, args[1])
+            };
+            let bit = b.ins().band_imm(word, 1);
+            b.ins().brif(bit, odd, &[], even, &[]);
+            for (block, expected) in [(odd, 1), (even, 0)] {
+                b.switch_to_block(block);
+                let exact = b.ins().icmp_imm(IntCC::Equal, word, expected);
+                b.ins().brif(exact, publish, &[], fail, &[]);
+            }
+            b.switch_to_block(publish);
+            let word = if ty == types::I64 {
+                word
+            } else {
+                b.ins().uextend(types::I64, word)
+            };
+            b.ins().store(MemFlags::new(), word, args[0], 0);
+            let status = b.ins().iconst(types::I64, 0);
+            b.ins().return_(&[status]);
+            b.switch_to_block(fail);
+            let status = b.ins().iconst(types::I64, 17);
+            b.ins().return_(&[status]);
+            b.seal_all_blocks();
+            b.finalize();
+        }
+        let controls = CompilationControls::new(
+            crate::native_artifact::codegen::options::OptimizationOptions::default(),
+        );
+        let report = optimize(&controls, &mut context, module.isa()).unwrap();
+        assert_eq!(report.selected_range_branches_removed, 0, "{ty}");
+        context.verify(module.isa()).unwrap();
+        module.define_function(id, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        // SAFETY: the retained JIT function and initialized output have the
+        // exact pointer/word ABI for every synchronous fresh/repeated call.
+        let entry: unsafe extern "C" fn(*mut u64, u64) -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+        let mask = u64::MAX >> (64 - ty.bits());
+        let mut output = 91;
+        for input in [0, 1, 2, 3, 255, 256, 257, u64::MAX, 0, 1] {
+            let value = input & mask;
+            let before = output;
+            assert_eq!(
+                unsafe { entry(&mut output, input) },
+                if value <= 1 { 0 } else { 17 }
+            );
+            assert_eq!(output, if value <= 1 { value } else { before });
+        }
+    }
+}
+
+#[test]
 fn cfg_cleanup_selected_ranges_do_not_assume_a_side_when_both_edges_share_a_target() {
     let mut module = cranelift_jit::JITModule::new(
         cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())

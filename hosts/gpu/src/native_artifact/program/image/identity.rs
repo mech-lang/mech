@@ -427,7 +427,9 @@ fn selected_template(
 // IR252 integrates PR973/IR205 selected immutable SSA range branch folding.
 // IR253 parent-frame borrowing remains an unselected startup experiment.
 // IR254 integrates PR973/IR206 Boolean facts through current loop arguments.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 254;
+// IR256 carries selected-edge facts through separately proved Boolean low-bit
+// tests, composing direct branch lowering with the new loop-argument proof.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 256;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

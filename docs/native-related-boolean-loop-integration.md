@@ -1,6 +1,6 @@
 # Boolean loop facts in the related-post compiler
 
-IR254 integrates PR973 commit
+IR256 integrates PR973 commit
 `b6a42fde80dbc011dfefa9de5d9659be334411b0` on the frozen IR252 related-post
 compiler. The same zero-or-one SSA transfer proof feeds selected-edge ranges,
 including current loop block arguments. Unsupported entry words, fresh loads,
@@ -22,3 +22,12 @@ a speed improvement for this integrated compiler.
 
 Qualification and matched Rust benchmarks must identify this exact compiler.
 Source variants and timer boundaries remain frozen for its first comparison.
+
+The initial IR254 integration passed the full 62-case Rust edge checks but its
+upstream proof-coverage test reported no selected branch fold. Existing direct
+Boolean lowering had inserted a low-bit test; selected-edge inversion did not
+carry facts back through that proven Boolean identity. IR256 composes the two
+passes only when independent SSA ranges prove the original word is zero or one.
+Unrestricted odd/even words never inherit a singleton value. The unchanged
+upstream assertion and a new four-width rejection/publication test cover this
+interaction. Original failed receipts remain; no expected value is weakened.
