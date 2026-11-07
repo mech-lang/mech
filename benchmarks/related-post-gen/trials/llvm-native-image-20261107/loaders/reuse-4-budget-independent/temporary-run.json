@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/reuse-4-budget-independent/runner-budget",
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/reuse-4-budget-independent/build/source.mec",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/reuse-4-budget-independent/temporary-output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.28855887497775257,
+  "stdout": "{\"budget_case\":\"temporary\",\"error\":\"Collection { origin: NativeMatchOrigin { node: NodeId(2), block: Some(2), local: Some(0) }, error: ResourceLimit { phase: Admission, dimension: TemporaryBytes, required: 32048, limit: 0 } }\",\"output_unpublished\":true,\"retained_bytes\":0,\"retained_nodes\":0}\n",
+  "stderr": "",
+  "qualification_only": true,
+  "elapsed_excluded_from_benchmark": true
+}

@@ -1,0 +1,18 @@
+{
+  "original_decoded_generated_projects_identical": true,
+  "generated_main_unmodified": true,
+  "generated_build_scripts_executed": 3,
+  "generated_pin_corruptions_rejected": 3,
+  "runtime_only_compiler_features": true,
+  "LLVM_Cranelift_results_exact": true,
+  "successes": 9,
+  "denials": 6,
+  "all_same_Object_link_audits_passed": true,
+  "Cargo_project_not_built": false,
+  "performance_measured": false,
+  "actual_minimal_runtime_only_Cargo_build_passed": true,
+  "Cargo_generated_main_unmodified": true,
+  "Cargo_exact_successes": 3,
+  "Cargo_overflow_denials_exact": 1,
+  "Cargo_build_receipt": "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/cargo-project-build.json"
+}

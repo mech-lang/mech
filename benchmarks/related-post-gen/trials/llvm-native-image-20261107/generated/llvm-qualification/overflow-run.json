@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/llvm-qualification/native-app",
+    "1000000",
+    "1048576",
+    "1000000",
+    "1000000",
+    "1048576",
+    "--",
+    "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/applications/overflow.json"
+  ],
+  "environment": {},
+  "exit": 1,
+  "seconds": 0.005629041930660605,
+  "stdout": "",
+  "stderr": "canonical native program: Control(Arithmetic { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None } })\n"
+}

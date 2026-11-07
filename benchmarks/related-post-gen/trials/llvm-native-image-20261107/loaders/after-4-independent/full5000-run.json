@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/after-4-independent/runner-aot",
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/after-4-independent/build/source.mec",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/after-4-independent/full5000.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.8814850829076022,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.306092958,\"input_admission_seconds\":0.000202042,\"json_read_and_parse_seconds\":0.001615083,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":8,\"parallel_numeric_work\":24693182666,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":4,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.003185167,\"posts\":5000,\"processing_plus_admission_seconds\":0.0031779589999999997,\"retained_bytes\":931048,\"sample\":0,\"seconds\":0.002975917,\"work\":53549889554}\n",
+  "stderr": "",
+  "qualification_only": true,
+  "elapsed_excluded_from_benchmark": true
+}

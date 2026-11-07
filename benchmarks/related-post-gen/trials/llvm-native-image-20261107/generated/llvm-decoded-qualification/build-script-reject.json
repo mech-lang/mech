@@ -1,0 +1,6 @@
+{
+  "exit": 101,
+  "stdout": "cargo:rerun-if-changed=Cargo.toml\ncargo:rerun-if-changed=application.mec\ncargo:rerun-if-changed=factory-profile.json\ncargo:rerun-if-changed=native-descriptor.bin\ncargo:rerun-if-changed=native-descriptor.json\ncargo:rerun-if-changed=object-identity.bin\ncargo:rerun-if-changed=program.mecb\ncargo:rerun-if-changed=program.o\ncargo:rerun-if-changed=rust-toolchain.toml\n",
+  "stderr": "\nthread 'main' (20934556) panicked at /private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/applications/llvm-decoded/build.rs:32:9:\nassertion `left == right` failed: changed generated input src/main.rs\n  left: \"4b3a03a9e97a684230e90eaf15f77acc81f6b5b71be5c5f6acce04f6995edbbc\"\n right: \"d96bdfdf350db9895a26b35634859b8a464cc1d4c580567e27681f16be27a5a1\"\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+  "original_restored": true
+}

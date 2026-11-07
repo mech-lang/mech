@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/after-4/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/after-4/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/after-4/link-proof.json"
+  ],
+  "exit": 1,
+  "seconds": 0.06308041699230671,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py\", line 323, in <module>\n    main()\n    ~~~~^^\n  File \"/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py\", line 316, in main\n    result = audit(args.object, args.executable)\n  File \"/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py\", line 114, in audit\n    hi, lo = pending[high], pending[low]\n             ~~~~~~~^^^^^^\nKeyError: 342508\n",
+  "qualification_only": true,
+  "elapsed_excluded_from_benchmark": true
+}

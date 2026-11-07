@@ -1,0 +1,7 @@
+{
+  "exit": 1,
+  "stage": "before first Cargo build",
+  "error": "Pinned original Rust source retained without Cargo.toml/lock at its old path",
+  "compiler_or_output_failure": false,
+  "fix": "Use retained original Rust package manifest and lock from resource-adapters-20261104/rust; do not change source"
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/reuse-4-budget-independent/runner-budget",
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/reuse-4-budget-independent/build/source.mec",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/reuse-4-budget-independent/transport-output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.2793077081441879,
+  "stdout": "{\"budget_case\":\"transport\",\"error\":\"Base(TransportLimit { required: 406360, limit: 0 })\",\"output_unpublished\":true,\"retained_bytes\":0,\"retained_nodes\":0}\n",
+  "stderr": "",
+  "qualification_only": true,
+  "elapsed_excluded_from_benchmark": true
+}

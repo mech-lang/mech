@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/llvm-qualification/build-script"
+  ],
+  "environment": {
+    "HOST": "aarch64-apple-darwin",
+    "TARGET": "aarch64-apple-darwin",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/applications/llvm"
+  },
+  "exit": 0,
+  "seconds": 0.30205270810984075,
+  "stdout": "cargo:rerun-if-changed=Cargo.toml\ncargo:rerun-if-changed=application.mec\ncargo:rerun-if-changed=factory-profile.json\ncargo:rerun-if-changed=native-descriptor.bin\ncargo:rerun-if-changed=native-descriptor.json\ncargo:rerun-if-changed=object-identity.bin\ncargo:rerun-if-changed=program.mecb\ncargo:rerun-if-changed=program.o\ncargo:rerun-if-changed=rust-toolchain.toml\ncargo:rerun-if-changed=src/main.rs\ncargo:rerun-if-changed=linked-manifest.json\ncargo:rerun-if-changed=build.rs\ncargo:rustc-link-arg=/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/applications/llvm/program.o\n",
+  "stderr": ""
+}

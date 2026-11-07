@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/after-4-budget-independent/runner-budget",
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/after-4-budget-independent/build/source.mec",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/after-4-budget-independent/nodes-output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.31475474988110363,
+  "stdout": "{\"budget_case\":\"nodes\",\"error\":\"Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Plan(TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Input, port: 0 }, dimension: RetainedNodes, required: 2, limit: 0 } }) }\",\"output_unpublished\":true,\"retained_bytes\":0,\"retained_nodes\":0}\n",
+  "stderr": "",
+  "qualification_only": true,
+  "elapsed_excluded_from_benchmark": true
+}

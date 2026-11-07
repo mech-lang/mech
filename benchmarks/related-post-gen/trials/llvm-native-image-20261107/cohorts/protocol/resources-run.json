@@ -1,0 +1,24 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/compare-implementations.py",
+    "--config",
+    "/private/tmp/mech-related-llvm-native-image-cohort-20261107-v1/resources-config.json",
+    "--input",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "--samples",
+    "7",
+    "--work",
+    "/private/tmp/mech-related-llvm-native-image-resources-20261107-v1",
+    "--output",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-llvm-native-image-resources-20261107-5000-m3.json",
+    "--order",
+    "randomized",
+    "--seed",
+    "9902737",
+    "--deduplicate-outputs",
+    "--resources"
+  ],
+  "exit": 0,
+  "seconds": 21.51735437498428
+}

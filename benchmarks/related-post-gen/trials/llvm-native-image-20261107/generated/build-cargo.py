@@ -1,0 +1,7 @@
+from pathlib import Path
+import json,os,subprocess,time
+P=Path(__file__).parent;A=P/'applications/llvm';RUST=Path('/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin');target=Path('/private/tmp/mech-related-llvm-native-image-generated-cargo-target-20261107-v4');env={**os.environ,'RUSTC':str(RUST/'rustc'),'RUSTC_BOOTSTRAP':'1','CARGO_TARGET_DIR':str(target)};cmd=[str(RUST/'cargo'),'build','--release','--offline','--manifest-path',str(A/'Cargo.toml')];t=time.monotonic();r=subprocess.run(cmd,capture_output=True,text=True,env=env);(P/'cargo-project-build.json').write_text(json.dumps(dict(command=cmd,environment={'RUSTC':env['RUSTC'],'RUSTC_BOOTSTRAP':'1','CARGO_TARGET_DIR':str(target)},exit=r.returncode,seconds=time.monotonic()-t,stdout=r.stdout,stderr=r.stderr),indent=2)+'\n');print('minimal runtime-only Cargo project',r.returncode,flush=True);assert r.returncode==0,r.stderr[-7000:]
+for case in ['zero','forty-one','near-max','overflow']:
+ cmd=[str(target/'release/native-app'),'1000000','1048576','1000000','1000000','1048576','--',str(P/'applications'/(case+'.json'))];r=subprocess.run(cmd,capture_output=True,text=True);(P/('cargo-'+case+'.json')).write_text(json.dumps(dict(command=cmd,exit=r.returncode,stdout=r.stdout,stderr=r.stderr),indent=2)+'\n');assert r.returncode==(1 if case=='overflow'else 0)
+ if case!='overflow':assert r.stdout==(P/'applications'/(case+'.expected')).read_text()
+ else:assert r.stdout==''

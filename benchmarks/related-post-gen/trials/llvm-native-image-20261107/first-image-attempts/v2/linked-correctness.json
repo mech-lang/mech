@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "after-4": {
+      "full5000_exact": true,
+      "Rust_edges_exact": 31,
+      "linked_text_audit_passed": true,
+      "LLVM_image_version": 10,
+      "qualified_for_performance": false,
+      "full_adoption_qualification_complete": false
+    },
+    "reuse-4": {
+      "full5000_exact": true,
+      "Rust_edges_exact": 31,
+      "linked_text_audit_passed": true,
+      "LLVM_image_version": 10,
+      "qualified_for_performance": false,
+      "full_adoption_qualification_complete": false
+    }
+  },
+  "exact_outputs": 64,
+  "performance_measured": false
+}

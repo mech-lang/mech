@@ -1,0 +1,41 @@
+{
+  "schema": "mech.related-post-gen.prospective-targeted-performance-rule.v1",
+  "declared_utc": "2026-11-07T14:47:51.853783+00:00",
+  "measurements_started": false,
+  "fixed_reference": {
+    "name": "mech-ir242-reuse-4",
+    "compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+    "executable_sha256": "ff91f2ab9126e8aba3ec7577d802e443cde63da1e77a8acec1f744f3769f2e7f"
+  },
+  "samples": 31,
+  "randomized_seed": 990273,
+  "resource_samples": 7,
+  "resource_seed": 9902737,
+  "targets": {
+    "mech-ir257-reuse-4": "whole_process",
+    "mech-llvm-after-4": "post_json",
+    "mech-llvm-reuse-4": "post_json"
+  },
+  "superiority": "At least21 of31 paired target-boundary wins and upper95% two-sided bootstrap interval for median paired relative change below0.",
+  "noninferiority": "Upper one-sided95% bootstrap bound of median paired relative change in the other boundary <=1% against the fixed IR242 executable. The fixed reference prevents successive1% concessions.",
+  "bootstrap": {
+    "resamples": 20000,
+    "seed": 99027399,
+    "unit": "paired randomized round",
+    "statistic": "median(candidate/reference -1)"
+  },
+  "LLVM_investment_threshold": "At least10% median paired processing reduction versus both fixed IR242 and identical-frontend/runtime IR264 Cranelift control. A second independently seeded predeclared cohort must confirm a successful first result before further backend expansion.",
+  "IR257_historical_results": "Remain unselected under their historical joint gate; only this fresh prospective experiment can change selection.",
+  "other_requirements": [
+    "Exact full outputs, source errors and finite budget behavior",
+    "Ownership/COW/aliases/publication/retry and independent loader proof rederivation",
+    "Actual emitted code/constants/stack and genuine same-Object identity",
+    "No deferred restoration charged to first evaluation",
+    "All first and adverse observations retained; no unchanged reruns to hunt wins"
+  ],
+  "restoration_investment_threshold": "Target at least1ms or10% restoration-instruction reduction, identified before representation change, with first evaluation and full process measured separately.",
+  "goal": "Parity with fastest eligible measured Rust at both boundaries; this rule does not redefine completion",
+  "identical_frontend_control": "mech-ir264-cranelift-runtime-control",
+  "control_note": "Existing IR264 native Object is byte-identical to its prior bundle; fresh host uses exactly the LLVM candidates runtime-only library and adapter, isolating backend from host/feature changes. Original adverse IR264 trial remains unchanged.",
+  "rule_last_updated_before_measurement_utc": "2026-11-07T14:55:01.633928+00:00"
+}

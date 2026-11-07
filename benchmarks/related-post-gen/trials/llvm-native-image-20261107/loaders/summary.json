@@ -1,0 +1,105 @@
+{
+  "rows": {
+    "after-4-independent": {
+      "full5000_exact": true,
+      "Rust_edges_exact": 31
+    },
+    "after-4-json": {
+      "full5000_exact": true,
+      "Rust_edges_exact": 31
+    },
+    "after-4-full-catalog": {
+      "full5000_exact": true,
+      "Rust_edges_exact": 31
+    },
+    "after-4-budget-work": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "after-4-budget-transport": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "after-4-budget-stack": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "after-4-budget-output_bytes": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "after-4-budget-output_elements": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "after-4-budget-temporary": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "after-4-budget-nodes": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "after-4-budget-comparison": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "after-4-budget-success": {
+      "all_three_loaders_exact": true,
+      "denial": false
+    },
+    "reuse-4-independent": {
+      "full5000_exact": true,
+      "Rust_edges_exact": 31
+    },
+    "reuse-4-json": {
+      "full5000_exact": true,
+      "Rust_edges_exact": 31
+    },
+    "reuse-4-full-catalog": {
+      "full5000_exact": true,
+      "Rust_edges_exact": 31
+    },
+    "reuse-4-budget-work": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "reuse-4-budget-transport": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "reuse-4-budget-stack": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "reuse-4-budget-output_bytes": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "reuse-4-budget-output_elements": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "reuse-4-budget-temporary": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "reuse-4-budget-nodes": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "reuse-4-budget-comparison": {
+      "all_three_loaders_exact": true,
+      "denial": true
+    },
+    "reuse-4-budget-success": {
+      "all_three_loaders_exact": true,
+      "denial": false
+    }
+  },
+  "loader_Rust_edge_outputs": 186,
+  "loader_full5000_outputs": 6,
+  "finite_denials_exact": 48,
+  "finite_successes_exact": 12,
+  "performance_measured": false
+}

@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "after-4": {
+      "all13_files_identical_to_v2": true,
+      "full5000_exact": true,
+      "Rust_edges_exact": 31,
+      "runtime_only_GPU": true,
+      "all_link_audits_passed": true
+    },
+    "reuse-4": {
+      "all13_files_identical_to_v2": true,
+      "full5000_exact": true,
+      "Rust_edges_exact": 31,
+      "runtime_only_GPU": true,
+      "all_link_audits_passed": true
+    }
+  },
+  "exact_outputs": 64,
+  "old_v3_loader_and_budget_evidence_applies_to_identical_Objects": true,
+  "performance_measured": false
+}

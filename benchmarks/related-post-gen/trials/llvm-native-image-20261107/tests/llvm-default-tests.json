@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-tests-20261107-v4/gpu-tests",
+    "llvm_",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.1681377089116722,
+  "stdout": "\nrunning 8 tests\ntest native_artifact::program::image::machine_backend::tests::llvm_backend_identity_binds_each_machine_and_source_field ... ok\ntest native_artifact::program::llvm_backend::image_tests::llvm_image_sources_errors_finite_limits_and_backend_forgery ... ignored, requires MECH_LLVM_TEST_BIN and Apple AArch64\ntest native_artifact::program::llvm_backend::machine::tests::llvm_machine_refuses_missing_repeated_and_overflowing_frames ... ok\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_floating_semantics ... ignored, requires MECH_LLVM_TEST_CLANG and an Apple AArch64 host\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_integer_boolean_and_vector_semantics ... ignored, requires MECH_LLVM_TEST_CLANG and an Apple AArch64 host\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_pair_returns_indirect_calls_and_preserving_bridge ... ignored, requires MECH_LLVM_TEST_CLANG and an Apple AArch64 host\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_owned_context_and_parallel_edges ... ok\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_refuses_unowned_machine_bytes_and_missing_definition ... ok\n\ntest result: ok. 4 passed; 0 failed; 4 ignored; 0 measured; 896 filtered out; finished in 0.00s\n\n",
+  "stderr": ""
+}

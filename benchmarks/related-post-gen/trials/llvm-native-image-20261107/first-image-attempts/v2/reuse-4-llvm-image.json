@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/compiler",
+    "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/reuse-4/build/source.mec",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/reuse-4/build"
+  ],
+  "exit": 0,
+  "seconds": 11.977603208040819,
+  "stdout": "{\"code_bytes\":554700,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1568}\n",
+  "stderr": ""
+}

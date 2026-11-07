@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/llvm-qualification/native-app",
+    "0",
+    "1048576",
+    "1000000",
+    "1000000",
+    "1048576",
+    "--",
+    "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/applications/forty-one.json"
+  ],
+  "environment": {},
+  "exit": 1,
+  "seconds": 0.005465291906148195,
+  "stdout": "",
+  "stderr": "canonical native program: Base(WorkLimit { phase: Setup, required: 284, limit: 0 })\n"
+}

@@ -1,0 +1,42 @@
+{
+  "after-4": {
+    "all13_bundle_files_byte_exact": true,
+    "files": {
+      "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+      "image-binding.bin": "a580da71d5aaf7eaeea33fd8d1ca50f5c92979dfecc0e891eb2f8e3f4695d016",
+      "frame-summary.json": "aab2e3f78a45f66bf5b8442360f780a13c2dc96ad486e71c66447698a93083a9",
+      "artifact.mecb": "8c1cf10b07a51c8dc04aaf90d1d0b862615c7bf36fcf7ec83298bfba0d87fb1a",
+      "source.mec": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "metadata.json": "680348e90b82f2dedcb3f2564543b3eb221f4284578b3ffa703f9a907279546d",
+      "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+      "native-metadata-binding.bin": "eea7540c3406eb55f0fd0a5a2b0a164f79b44a231ed0e66c85c6c54040e19e55",
+      "native-metadata.bin": "e74f6975f09ae21d29aec1e52bf9873332438b349e7a48a05ccf541f9f392823",
+      "linked.rs": "ee16bf24fc8fa47d8f27fd56369e92583d8946c5e378d26cb4e5dadea0cd7d69",
+      "object.o": "3327e1d0a7502c471f772eb78c4b7c1456a21f084c4a6afef69f106ba2110d6a",
+      "descriptor.json": "884bf7ca5485fc4b1fbc16f1a6fef8a5858fea9244ff896a207e2296d53513ea",
+      "map-facts.txt": "d5be89e6e3005de483d8cd80055e4f6f1042d84c36696cb08ae9ecd6038868dc"
+    },
+    "unchanged_typed_IR": 264,
+    "LLVM_code_used": false
+  },
+  "reuse-4": {
+    "all13_bundle_files_byte_exact": true,
+    "files": {
+      "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+      "image-binding.bin": "d68a81e2955ecb251443b831d98f543bd94437e984c6eee760dcdff5d93fc931",
+      "frame-summary.json": "f1472782f21c422fa4f593ee3daa84342a6df9e9dbfa01f4b7fdd7aeecb4e6b2",
+      "artifact.mecb": "49612ff092b1b4c8b7ec9ae91a18d812803f4a6dbde804406835bc81780a19b0",
+      "source.mec": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "metadata.json": "7474a1cdf74e143f071c766d6127f54e66f01cd7cc0b48ad182471aa3a0a8dd3",
+      "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+      "native-metadata-binding.bin": "bc013d09ef8a797e0c859deef953f6f24f87f93ebe633865fcd294fb1428df4c",
+      "native-metadata.bin": "b67f124e2900121dfb8ee86ae9967d1bc772d06212019ee5a78c73f492a8593d",
+      "linked.rs": "cd49b6c26c4d17dee72fec3df31cb511ea06659c1cb01dec97650e747031c879",
+      "object.o": "5bc1112023dfebdabd576535692bdcfa093b7de4e98e40fc69130596ba367add",
+      "descriptor.json": "4b2677095a347ecb4ca96b47b6a87236dd3c1e1f656c053638cf067d137aeac8",
+      "map-facts.txt": "e40dbb83004557a250b45b00bd4aefb748612bf0ceb3b1204b51a6efa573ee64"
+    },
+    "unchanged_typed_IR": 264,
+    "LLVM_code_used": false
+  }
+}

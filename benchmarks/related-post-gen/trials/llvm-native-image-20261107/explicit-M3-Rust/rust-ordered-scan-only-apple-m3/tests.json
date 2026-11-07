@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo",
+    "test",
+    "--release",
+    "--locked",
+    "--offline",
+    "--bin",
+    "rust_mech",
+    "--",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/rust-ordered-scan-only-apple-m3",
+  "environment": {
+    "RUSTC": "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "RUSTFLAGS": "-C target-cpu=apple-m3",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/target"
+  },
+  "exit": 0,
+  "seconds": 0.028373250039294362,
+  "stdout": "\nrunning 1 test\ntest streaming_tests::streaming_counts_and_order_match_full_sort_for_adversarial_keys ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+  "stderr": "    Finished `release` profile [optimized] target(s) in 0.01s\n     Running unittests src/main.rs (/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/target/release/deps/rust_mech-8dbcffb526b1c0db)\n"
+}

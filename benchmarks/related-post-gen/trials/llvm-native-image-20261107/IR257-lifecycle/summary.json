@@ -1,0 +1,99 @@
+{
+  "variants": {
+    "mech-ir242-reuse-4": {
+      "phases_median_seconds": {
+        "arguments_and_source_validation": 4.4041e-05,
+        "catalog_construction": 1.7792e-05,
+        "descriptor_restoration": 0.007707416,
+        "JSON_file_read": 0.000145,
+        "JSON_parse_and_text_drop": 0.001398083,
+        "input_preparation_and_admission": 0.000142875,
+        "views_and_output_slots": 8.166e-06,
+        "native_evaluation_and_internal_cleanup": 0.002545125,
+        "result_materialization": 9.625e-06,
+        "benchmark_report_output": 1.675e-05,
+        "output_file_creation": 7.6041e-05,
+        "JSON_serialization": 0.006266,
+        "writer_flush_and_close": 8.0167e-05,
+        "related_result_destruction": 7.08e-07,
+        "native_output_destruction": 1e-06,
+        "post_view_destruction": 3.75e-07,
+        "native_input_destruction": 0.000162667,
+        "budget_and_JSON_posts_destruction": 0.0001115,
+        "program_destruction": 0.000338,
+        "catalog_destruction": 3.458e-06,
+        "arguments_destruction": 2.08e-07
+      },
+      "wall_median_seconds": 0.03539995802566409,
+      "thread_start_median_seconds": 1.925e-05,
+      "thread_join_finalize_median_seconds": 3.1791e-05,
+      "launch_trace_output_and_exit_residue_median_seconds": 0.016564750025664092
+    },
+    "mech-ir257-reuse-4": {
+      "phases_median_seconds": {
+        "arguments_and_source_validation": 4.6959e-05,
+        "catalog_construction": 1.6333e-05,
+        "descriptor_restoration": 0.007755208,
+        "JSON_file_read": 0.000154,
+        "JSON_parse_and_text_drop": 0.001408667,
+        "input_preparation_and_admission": 0.000144,
+        "views_and_output_slots": 7.209e-06,
+        "native_evaluation_and_internal_cleanup": 0.002547875,
+        "result_materialization": 9.542e-06,
+        "benchmark_report_output": 1.5208e-05,
+        "output_file_creation": 7.2167e-05,
+        "JSON_serialization": 0.006168542,
+        "writer_flush_and_close": 7.3791e-05,
+        "related_result_destruction": 6.67e-07,
+        "native_output_destruction": 1e-06,
+        "post_view_destruction": 4.17e-07,
+        "native_input_destruction": 0.000161542,
+        "budget_and_JSON_posts_destruction": 0.000113291,
+        "program_destruction": 0.00035025,
+        "catalog_destruction": 3.541e-06,
+        "arguments_destruction": 2.08e-07
+      },
+      "wall_median_seconds": 0.03681008308194578,
+      "thread_start_median_seconds": 2.0042e-05,
+      "thread_join_finalize_median_seconds": 3.2666e-05,
+      "launch_trace_output_and_exit_residue_median_seconds": 0.016877166085179328
+    }
+  },
+  "paired_median_seconds": {
+    "wall_delta": 0.0014157500118017197,
+    "thread_start": 1.2499999999999999e-06,
+    "thread_join_finalize": 1.6660000000000007e-06,
+    "launch_trace_output_and_exit_residue": -3.0417933166021482e-06
+  },
+  "paired_phase_median_seconds": {
+    "arguments_and_source_validation": 3.0419999999999956e-06,
+    "catalog_construction": -1.5419999999999998e-06,
+    "descriptor_restoration": -3.941599999999958e-05,
+    "JSON_file_read": 9.167000000000002e-06,
+    "JSON_parse_and_text_drop": 1.6375000000000113e-05,
+    "input_preparation_and_admission": 1.875000000000005e-06,
+    "views_and_output_slots": -9.569999999999995e-07,
+    "native_evaluation_and_internal_cleanup": 5.957999999999918e-06,
+    "result_materialization": 2.499999999999993e-07,
+    "benchmark_report_output": -1.874000000000001e-06,
+    "output_file_creation": -4.542000000000012e-06,
+    "JSON_serialization": 2.4500000000000216e-05,
+    "writer_flush_and_close": 4.1700000000000634e-07,
+    "related_result_destruction": 0.0,
+    "native_output_destruction": 8.30000000000001e-08,
+    "post_view_destruction": 4.199999999999998e-08,
+    "native_input_destruction": 7.079999999999803e-07,
+    "budget_and_JSON_posts_destruction": 1.083000000000003e-06,
+    "program_destruction": 1.2374999999999962e-05,
+    "catalog_destruction": 0.0,
+    "arguments_destruction": 0.0
+  },
+  "exact_outputs": 18,
+  "diagnostic_only": true,
+  "limitations": [
+    "New diagnostic host executables preserve unchanged existing native Objects. Link layouts may differ from original executables.",
+    "Launch/trace-output/exit residue is not separately identified as process-exit time.",
+    "Median phase deltas are not additive; full per-round paired rows retained.",
+    "No trace timing qualifies a performance winner."
+  ]
+}

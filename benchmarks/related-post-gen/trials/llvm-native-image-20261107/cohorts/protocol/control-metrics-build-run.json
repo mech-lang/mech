@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-llvm-native-image-cohort-20261107-v1/metrics-input-config.json",
+    "--out",
+    "/private/tmp/mech-related-llvm-native-image-control-metrics-20261107-v1",
+    "--variant",
+    "mech-ir264-cranelift-runtime-control"
+  ],
+  "exit": 0,
+  "seconds": 2.685063209151849,
+  "stdout": "{\"variant\": \"mech-ir264-cranelift-runtime-control\", \"status\": \"built\", \"reverse_patch_exact\": true}\n",
+  "stderr": ""
+}

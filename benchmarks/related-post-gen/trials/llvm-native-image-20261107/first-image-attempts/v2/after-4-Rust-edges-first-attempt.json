@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/experiments/check_subset3.py",
+    "--runner",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/after-4/runner-aot",
+    "--rust",
+    "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech",
+    "--source",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/after-4/build/source.mec",
+    "--out",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/after-4/edges"
+  ],
+  "exit": 1,
+  "seconds": 0.37026620795950294,
+  "stdout": "{\"fixture\": \"first-10\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"first-100\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"first-500\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"unicode-ties\", \"exit\": 0, \"exact\": true}\n{\"fixture\": \"empty-tags\", \"exit\": 0, \"exact\": true}\n",
+  "stderr": "Traceback (most recent call last):\n  File \"/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/experiments/check_subset3.py\", line 60, in <module>\n    expected=case/'related_posts_rust.json';exact=r.returncode==0 and json.loads(actual.read_text())==json.loads(expected.read_text())\n                                                                                                                 ~~~~~~~~~~~~~~~~~~^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py\", line 787, in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py\", line 771, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/after-4/edges/edges/all-empty/related_posts_rust.json'\n",
+  "qualification_only": true,
+  "elapsed_excluded_from_benchmark": true
+}

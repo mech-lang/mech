@@ -1,0 +1,12 @@
+{
+  "variants": 10,
+  "cases_each": 32,
+  "total_cases": 320,
+  "exact_outputs": 319,
+  "inherited_Rayon_failures": 1,
+  "all_full5000_exact": true,
+  "source_unchanged": true,
+  "cpu": "apple-m3",
+  "all_setup_boundaries_unchanged": true,
+  "performance_measured": false
+}

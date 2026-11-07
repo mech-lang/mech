@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-generated-cargo-target-20261107-v4/release/native-app",
+    "1000000",
+    "1048576",
+    "1000000",
+    "1000000",
+    "1048576",
+    "--",
+    "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/applications/forty-one.json"
+  ],
+  "exit": 0,
+  "stdout": "6d6563682d736e617073686f742d7631008acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a480500000000000000010000000008000000000000002a00000000000000\n",
+  "stderr": ""
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/after-4/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/after-4/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/after-4/link-proof.json"
+  ],
+  "exit": 0,
+  "seconds": 0.08267350005917251,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 55, \"normalized_text_sha256\": \"7f3a716586fc15fd14fea62559b06c68006d98b56c393bbac8207e2044774eaa\"}\n",
+  "stderr": "",
+  "qualification_only": true,
+  "elapsed_excluded_from_benchmark": true
+}

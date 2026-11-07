@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-decoded-equivalence-20261107-v4/compiler-decoded",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v4/after-4/build/source.mec",
+    "/private/tmp/mech-related-llvm-native-image-decoded-equivalence-20261107-v4/after-4/build"
+  ],
+  "exit": 0,
+  "seconds": 13.512245291145518,
+  "stdout": "{\"code_bytes\":567792,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1552}\n",
+  "stderr": ""
+}

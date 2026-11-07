@@ -1,0 +1,95 @@
+{
+  "rule_sha256": "15183e24525e5d859c74fe9302e66d1a911ac68ab5e9661d471ff70b7286777d",
+  "fixed_reference": "mech-ir242-reuse-4",
+  "rows": {
+    "mech-ir257-reuse-4": {
+      "post_json_seconds": {
+        "wins": 15,
+        "median_paired_delta_seconds": 1.2089999999998456e-06,
+        "median_paired_relative_change": 0.000421842288904406,
+        "two_sided_95_interval": [
+          -0.005894814405452697,
+          0.009698456765460772
+        ],
+        "one_sided_95_upper": 0.008647621956997309
+      },
+      "wall_seconds": {
+        "wins": 19,
+        "median_paired_delta_seconds": -0.00026795780286192894,
+        "median_paired_relative_change": -0.0072589586819507,
+        "two_sided_95_interval": [
+          -0.022312114461906174,
+          0.015875457165841267
+        ],
+        "one_sided_95_upper": 0.014778739798330776
+      }
+    },
+    "mech-ir264-cranelift-runtime-control": {
+      "post_json_seconds": {
+        "wins": 19,
+        "median_paired_delta_seconds": -2.9667000000000148e-05,
+        "median_paired_relative_change": -0.010458706669712603,
+        "two_sided_95_interval": [
+          -0.017489532449406875,
+          0.0021779821796028553
+        ],
+        "one_sided_95_upper": 0.0005371649626968455
+      },
+      "wall_seconds": {
+        "wins": 17,
+        "median_paired_delta_seconds": -0.00011945911683142185,
+        "median_paired_relative_change": -0.003264092318248868,
+        "two_sided_95_interval": [
+          -0.02131060949985142,
+          0.012078720044133462
+        ],
+        "one_sided_95_upper": 0.007731127811835492
+      }
+    },
+    "mech-llvm-after-4": {
+      "post_json_seconds": {
+        "wins": 31,
+        "median_paired_delta_seconds": -0.000411916,
+        "median_paired_relative_change": -0.1479639925757319,
+        "two_sided_95_interval": [
+          -0.15446251166671454,
+          -0.13983434136239026
+        ],
+        "one_sided_95_upper": -0.13983434136239026
+      },
+      "wall_seconds": {
+        "wins": 20,
+        "median_paired_delta_seconds": -0.0007318749558180571,
+        "median_paired_relative_change": -0.021128334822825723,
+        "two_sided_95_interval": [
+          -0.034203781843872405,
+          6.772849959313376e-05
+        ],
+        "one_sided_95_upper": -0.0013546366945204058
+      }
+    },
+    "mech-llvm-reuse-4": {
+      "post_json_seconds": {
+        "wins": 31,
+        "median_paired_delta_seconds": -0.0004498330000000002,
+        "median_paired_relative_change": -0.16228486563550737,
+        "two_sided_95_interval": [
+          -0.16591070805720265,
+          -0.1564390809985523
+        ],
+        "one_sided_95_upper": -0.15737737578047384
+      },
+      "wall_seconds": {
+        "wins": 18,
+        "median_paired_delta_seconds": -0.00035037496127188206,
+        "median_paired_relative_change": -0.00940364721990572,
+        "two_sided_95_interval": [
+          -0.021594147413422582,
+          0.012063739177199606
+        ],
+        "one_sided_95_upper": 0.004879870235826145
+      }
+    }
+  },
+  "all_first_and_adverse_samples_retained": true
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "mech.related-post-gen.predeclared-confirmation.v1",
+  "declared_utc": "2026-11-07T15:04:43.578578+00:00",
+  "trigger": "Initial LLVM reuse4 exceeds predeclared10% processing investment threshold against both fixed IR242 and identical IR264 frontend/runtime control, and passes other-boundary noninferiority.",
+  "first_latency_sha256": "b14fc6e5f142c5eb87df7ca6e9f6cc26fe3d319527285cff0f9bf314251dc746",
+  "first_paired_processing_relative_changes": {
+    "mech-ir242-reuse-4": -0.15838979486255045,
+    "mech-ir264-cranelift-runtime-control": -0.15356639116082538
+  },
+  "seed": 990274,
+  "samples": 31,
+  "same25_variants": true,
+  "same_source_and_executables": true,
+  "source_commit": "b638320000f7cb33837df2ee73f09221551826a0",
+  "criteria_unchanged_from_rule_sha256": "15183e24525e5d859c74fe9302e66d1a911ac68ab5e9661d471ff70b7286777d",
+  "confirmation_promotion_candidates": [
+    "mech-llvm-reuse-4",
+    "mech-llvm-after-4"
+  ],
+  "IR257": "Retained as a control only. It failed fresh targeted superiority and will not be promoted by repeated measurements.",
+  "resources_not_repeated": "Existing seven-resource-round cohort remains authoritative; no source/executable change.",
+  "no_cherry_picking": true
+}

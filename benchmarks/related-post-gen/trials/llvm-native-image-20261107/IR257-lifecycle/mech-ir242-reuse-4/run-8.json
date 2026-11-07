@@ -1,0 +1,113 @@
+{
+  "round": 8,
+  "variant": "mech-ir242-reuse-4",
+  "command": [
+    "/private/tmp/mech-related-native-lifecycle-trace-20261107-v1/mech-ir242-reuse-4/runner-trace",
+    "/private/tmp/mech-related-native-lifecycle-trace-20261107-v1/mech-ir242-reuse-4/build/source.mec",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "/private/tmp/mech-related-native-lifecycle-trace-20261107-v1/mech-ir242-reuse-4/output-8.json",
+    "1"
+  ],
+  "exit": 0,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.007649625,\"input_admission_seconds\":0.000142709,\"json_read_and_parse_seconds\":0.001534959,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":8,\"parallel_numeric_work\":24693182666,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":4,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.002755917,\"posts\":5000,\"processing_plus_admission_seconds\":0.0027475,\"retained_bytes\":929689,\"sample\":0,\"seconds\":0.002604791,\"work\":47532423422}\nLIFECYCLE_TRACE {\"diagnostic_only\":true,\"explicit_final_writer_flush\":true,\"host_thread_body_seconds\":0.019126375,\"host_thread_join_finalize_seconds\":0.000031791,\"host_thread_start_seconds\":0.000018334,\"main_to_join_seconds\":0.0191765,\"native_Object_unchanged\":true,\"phases\":[[\"arguments_and_source_validation\",0.000039],[\"catalog_construction\",0.000017708],[\"descriptor_restoration\",0.007649708],[\"JSON_file_read\",0.000154959],[\"JSON_parse_and_text_drop\",0.001379958],[\"input_preparation_and_admission\",0.000142792],[\"views_and_output_slots\",8.375e-6],[\"native_evaluation_and_internal_cleanup\",0.002595416],[\"result_materialization\",9.334e-6],[\"benchmark_report_output\",0.000015875],[\"output_file_creation\",0.000076041],[\"JSON_serialization\",0.006335459],[\"writer_flush_and_close\",0.000067375],[\"related_result_destruction\",7.08e-7],[\"native_output_destruction\",1e-6],[\"post_view_destruction\",3.75e-7],[\"native_input_destruction\",0.00017275],[\"budget_and_JSON_posts_destruction\",0.0001175],[\"program_destruction\",0.000338],[\"catalog_destruction\",3.083e-6],[\"arguments_destruction\",1.67e-7]]}\n",
+  "stderr": "",
+  "wall_seconds": 0.03489137487486005,
+  "trace": {
+    "diagnostic_only": true,
+    "explicit_final_writer_flush": true,
+    "host_thread_body_seconds": 0.019126375,
+    "host_thread_join_finalize_seconds": 3.1791e-05,
+    "host_thread_start_seconds": 1.8334e-05,
+    "main_to_join_seconds": 0.0191765,
+    "native_Object_unchanged": true,
+    "phases": [
+      [
+        "arguments_and_source_validation",
+        3.9e-05
+      ],
+      [
+        "catalog_construction",
+        1.7708e-05
+      ],
+      [
+        "descriptor_restoration",
+        0.007649708
+      ],
+      [
+        "JSON_file_read",
+        0.000154959
+      ],
+      [
+        "JSON_parse_and_text_drop",
+        0.001379958
+      ],
+      [
+        "input_preparation_and_admission",
+        0.000142792
+      ],
+      [
+        "views_and_output_slots",
+        8.375e-06
+      ],
+      [
+        "native_evaluation_and_internal_cleanup",
+        0.002595416
+      ],
+      [
+        "result_materialization",
+        9.334e-06
+      ],
+      [
+        "benchmark_report_output",
+        1.5875e-05
+      ],
+      [
+        "output_file_creation",
+        7.6041e-05
+      ],
+      [
+        "JSON_serialization",
+        0.006335459
+      ],
+      [
+        "writer_flush_and_close",
+        6.7375e-05
+      ],
+      [
+        "related_result_destruction",
+        7.08e-07
+      ],
+      [
+        "native_output_destruction",
+        1e-06
+      ],
+      [
+        "post_view_destruction",
+        3.75e-07
+      ],
+      [
+        "native_input_destruction",
+        0.00017275
+      ],
+      [
+        "budget_and_JSON_posts_destruction",
+        0.0001175
+      ],
+      [
+        "program_destruction",
+        0.000338
+      ],
+      [
+        "catalog_destruction",
+        3.083e-06
+      ],
+      [
+        "arguments_destruction",
+        1.67e-07
+      ]
+    ]
+  },
+  "launch_trace_output_and_exit_residue_seconds": 0.01571487487486005,
+  "exact_Rust_output": true,
+  "diagnostic_only": true
+}

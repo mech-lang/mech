@@ -1,0 +1,33 @@
+{
+  "schema": "mech.native-link-audit.negative-checks.v1",
+  "positive_audit_passed": true,
+  "negative_cases": [
+    {
+      "case": "unrelocated_opcode",
+      "rejected": true,
+      "reason": "Native text differs beyond independently verified relocation fields"
+    },
+    {
+      "case": "wrong_call_target",
+      "rejected": true,
+      "reason": "('_mech_canonical_program_entry_v1_numeric_1553', '0x1001e4600', '0x1005e4600')"
+    },
+    {
+      "case": "identity_byte",
+      "rejected": true,
+      "reason": "Object identity or descriptor-binding data differs after linking"
+    },
+    {
+      "case": "metadata_byte",
+      "rejected": true,
+      "reason": "Object identity or descriptor-binding data differs after linking"
+    },
+    {
+      "case": "module_pointer",
+      "rejected": true,
+      "reason": ""
+    }
+  ],
+  "all_rejected": true,
+  "executable_copies_never_executed": true
+}

@@ -1,0 +1,94 @@
+{
+  "schema": "mech.related-post-gen.native-link-audit.v9",
+  "status": "passed",
+  "object": {
+    "path": "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/applications/default/program.o",
+    "sha256": "6a53c6a943919d63bebb927580a1ac88c1b92099e6063c0b59c5cb5f2ec0f201"
+  },
+  "executable": {
+    "path": "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/default-qualification/native-app",
+    "sha256": "c2591fd0d01d8e2192343309c2cb0dce3a00c3905712e57b3559354e8ce544a3"
+  },
+  "object_text": {
+    "name": "__text",
+    "segment": "__TEXT",
+    "address": 0,
+    "size": 740,
+    "offset": 448,
+    "relocations": 0,
+    "relocation_count": 0
+  },
+  "linked_text_address": 4301638144,
+  "linked_text_file_offset": 6670848,
+  "entry_symbol": "_mech_canonical_program_entry_v1",
+  "defined_native_function_count": 1,
+  "every_native_symbol_has_exact_object_relative_address": true,
+  "all_text_equal_except_independently_verified_relocation_fields": true,
+  "all_page_references_bound_to_exact_literals_or_defined_symbols": true,
+  "all_got_pointer_loads_or_relaxations_bind_to_exact_defined_symbols": true,
+  "normalized_text_sha256": "3df01f4175cafc2fcba67fdf05b5756528ff8fe19393f8ca08ed0bb380532de6",
+  "object_owned_data_exports": [
+    {
+      "symbol": "_mech_canonical_program_identity_v1_4f31ac2d765156bb5cfc46046df6f6b99d013a2969ab660e257098ad6e629274",
+      "bytes": 192,
+      "linked": true,
+      "complete_bytes_equal": true,
+      "object_data_has_no_relocations": true,
+      "linked_data_is_read_only": true
+    },
+    {
+      "symbol": "_mech_canonical_program_identity_v1_4f31ac2d765156bb5cfc46046df6f6b99d013a2969ab660e257098ad6e629274_compiled_module_v1",
+      "bytes": 72,
+      "linked": true,
+      "complete_bytes_equal_except_four_verified_relocations": true,
+      "linked_data_is_read_only": true,
+      "linked_segment": "__DATA_CONST",
+      "all_four_compiler_module_relocations_verified": true,
+      "relocations": [
+        {
+          "offset": 32,
+          "symbol": "_mech_canonical_program_identity_v1_4f31ac2d765156bb5cfc46046df6f6b99d013a2969ab660e257098ad6e629274_native_metadata_v1",
+          "address": 4302306640
+        },
+        {
+          "offset": 48,
+          "symbol": "_mech_canonical_program_identity_v1_4f31ac2d765156bb5cfc46046df6f6b99d013a2969ab660e257098ad6e629274",
+          "address": 4302306448
+        },
+        {
+          "offset": 56,
+          "symbol": "_mech_canonical_program_identity_v1_4f31ac2d765156bb5cfc46046df6f6b99d013a2969ab660e257098ad6e629274_native_metadata_binding_v1",
+          "address": 4302312928
+        },
+        {
+          "offset": 64,
+          "symbol": "_mech_canonical_program_entry_v1",
+          "address": 4301638144
+        }
+      ]
+    },
+    {
+      "symbol": "_mech_canonical_program_identity_v1_4f31ac2d765156bb5cfc46046df6f6b99d013a2969ab660e257098ad6e629274_descriptor_binding_v1",
+      "bytes": 64,
+      "linked": false
+    },
+    {
+      "symbol": "_mech_canonical_program_identity_v1_4f31ac2d765156bb5cfc46046df6f6b99d013a2969ab660e257098ad6e629274_native_metadata_binding_v1",
+      "bytes": 64,
+      "linked": true,
+      "complete_bytes_equal": true,
+      "object_data_has_no_relocations": true,
+      "linked_data_is_read_only": true
+    },
+    {
+      "symbol": "_mech_canonical_program_identity_v1_4f31ac2d765156bb5cfc46046df6f6b99d013a2969ab660e257098ad6e629274_native_metadata_v1",
+      "bytes": 6286,
+      "linked": true,
+      "complete_bytes_equal": true,
+      "object_data_has_no_relocations": true,
+      "linked_data_is_read_only": true
+    }
+  ],
+  "relocations": [],
+  "scope": "All native object text bytes compared. ARM64 BRANCH26 displacements bind to exact named defined symbols. Every PAGE21/PAGEOFF12 relocation constrains its symbol to consistent exact literal/constant bytes or a defined address. GOT address loads, including checked LDR-to-ADD linker relaxation, bind to exact defined function addresses. Nonzero page addends and other relocation forms fail closed."
+}

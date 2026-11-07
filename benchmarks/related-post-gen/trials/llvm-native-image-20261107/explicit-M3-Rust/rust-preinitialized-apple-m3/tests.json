@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo",
+    "test",
+    "--release",
+    "--locked",
+    "--offline",
+    "--bin",
+    "rust_rayon",
+    "--",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/rust-preinitialized-apple-m3",
+  "environment": {
+    "RUSTC": "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "RUSTFLAGS": "-C target-cpu=apple-m3",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/target"
+  },
+  "exit": 0,
+  "seconds": 6.035464124986902,
+  "stdout": "\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+  "stderr": "   Compiling crossbeam-utils v0.8.19\n   Compiling libc v0.2.152\n   Compiling zerocopy v0.8.37\n   Compiling allocator-api2 v0.2.21\n   Compiling serde v1.0.195\n   Compiling either v1.9.0\n   Compiling libmimalloc-sys v0.1.35\n   Compiling num_cpus v1.16.0\n   Compiling mimalloc v0.1.39\n   Compiling crossbeam-epoch v0.9.18\n   Compiling crossbeam-deque v0.8.5\n   Compiling rayon-core v1.12.1\n   Compiling rayon v1.8.1\n   Compiling serde_json v1.0.111\n   Compiling ahash v0.8.12\n   Compiling hashbrown v0.14.5\n   Compiling rust_rayon v0.1.0 (/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/rust-preinitialized-apple-m3)\n    Finished `release` profile [optimized] target(s) in 5.73s\n     Running unittests src/main.rs (/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/target/release/deps/rust_rayon-55085311572f8c20)\n"
+}

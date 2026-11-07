@@ -1,0 +1,10 @@
+{
+  "variants": [
+    "mech-ir242-reuse-4",
+    "mech-ir257-reuse-4"
+  ],
+  "same_existing_Objects": true,
+  "native_text_and_metadata_audited": true,
+  "trace_diagnostic_only": true,
+  "authoritative_original_executables_unchanged": true
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-generated-cargo-target-20261107-v4/release/native-app",
+    "1000000",
+    "1048576",
+    "1000000",
+    "1000000",
+    "1048576",
+    "--",
+    "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/applications/overflow.json"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "canonical native program: Control(Arithmetic { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None } })\n"
+}

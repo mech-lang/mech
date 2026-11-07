@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/reuse-4/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-native-lifecycle-trace-20261107-v1/mech-ir257-reuse-4/runner-trace",
+    "--output",
+    "/private/tmp/mech-related-native-lifecycle-trace-20261107-v1/mech-ir257-reuse-4/native-link-proof.json"
+  ],
+  "exit": 0,
+  "seconds": 0.07261591707356274,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 53, \"normalized_text_sha256\": \"db818ffd19fad822039c47c248a4603489e574537024fc4968a55cae4732ae36\"}\n",
+  "stderr": ""
+}

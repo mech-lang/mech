@@ -1,0 +1,13 @@
+{
+  "full_GPU": [
+    "test result: FAILED. 898 passed; 2 failed; 4 ignored; 0 measured; 0 filtered out; finished in 244.81s"
+  ],
+  "inherited_failures": [
+    "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+  ],
+  "CI399_names_exact": true,
+  "CI399_passed": 399,
+  "LLVM_native_tests_passed": true,
+  "performance_measured": false
+}

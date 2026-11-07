@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-llvm-native-image-opt-20261107-v2/build.json",
+    "--source",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/compiler-llvm-image.rs",
+    "--out",
+    "/private/tmp/mech-related-llvm-native-image-smoke-20261107-v2/compiler"
+  ],
+  "exit": 0,
+  "seconds": 2.422058916883543,
+  "stdout": "{\"seconds\": 1.8872172078117728, \"exit\": 0}\n",
+  "stderr": ""
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/after-4-budget-bound/runner-budget",
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/after-4-budget-bound/build/source.mec",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "/private/tmp/mech-related-llvm-native-image-loaders-budgets-20261107-v3/after-4-budget-bound/stack-output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.02853766712360084,
+  "stdout": "{\"budget_case\":\"stack\",\"error\":\"Base(StackLimit { required: 1552, limit: 0 })\",\"output_unpublished\":true,\"retained_bytes\":0,\"retained_nodes\":0}\n",
+  "stderr": "",
+  "qualification_only": true,
+  "elapsed_excluded_from_benchmark": true
+}

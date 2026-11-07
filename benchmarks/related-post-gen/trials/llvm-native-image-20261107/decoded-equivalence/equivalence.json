@@ -1,0 +1,38 @@
+{
+  "after-4": {
+    "all13_bundle_files_byte_exact": true,
+    "files": {
+      "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+      "image-binding.bin": "a264ba0103244e2c4905c4bf62c3c7ad5b4214c6a5d8fedde35dfc31a7adf31c",
+      "frame-summary.json": "aab2e3f78a45f66bf5b8442360f780a13c2dc96ad486e71c66447698a93083a9",
+      "artifact.mecb": "8c1cf10b07a51c8dc04aaf90d1d0b862615c7bf36fcf7ec83298bfba0d87fb1a",
+      "source.mec": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "metadata.json": "8d42588e29181d7f5813ce9eeecba151bbb0f57f140a604b6756ef2168a87ba0",
+      "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+      "native-metadata-binding.bin": "9c93d3e6cc6a8021977e9b6379f45a7bbf6ca1c9552e224af64437bce02ae840",
+      "native-metadata.bin": "4799175d6ba45495bae1688c378a5bde52561e241863822f6e541cbc6ea495c6",
+      "linked.rs": "bb123a4fd8a574ad1d4fe6020a76797bd3cd1a05f1a7948c89011554c3db1ba2",
+      "object.o": "a7fc4c8db6192242ff93778fc4c37f22d3e51115e2411d8965450c9ef1fe412a",
+      "descriptor.json": "fb8cb60e0fea6e705d7238173553ac1a10c7deeb433ac02fb5f0cd264f3940cd",
+      "map-facts.txt": "d5be89e6e3005de483d8cd80055e4f6f1042d84c36696cb08ae9ecd6038868dc"
+    }
+  },
+  "reuse-4": {
+    "all13_bundle_files_byte_exact": true,
+    "files": {
+      "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+      "image-binding.bin": "47b0aefac469aeee7d7c85c35dbcaee5834815c4ece4dfbed7d803655b62abae",
+      "frame-summary.json": "f1472782f21c422fa4f593ee3daa84342a6df9e9dbfa01f4b7fdd7aeecb4e6b2",
+      "artifact.mecb": "49612ff092b1b4c8b7ec9ae91a18d812803f4a6dbde804406835bc81780a19b0",
+      "source.mec": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "metadata.json": "04e81e64719e9a8ca6710abe72fce17c328fb278148452ab09e427a0c46efeb2",
+      "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+      "native-metadata-binding.bin": "150419be696e101044bda89e4099d0954c232f3b3a3412f6536eda528d305ea4",
+      "native-metadata.bin": "cc33e379c31025ff988d23675157a82efc6f1431af1622144075ccbd86c341c7",
+      "linked.rs": "4c07960264d99c3ce9cab1a521c08fc26c40d4bc7ef0cc5cf9f97fc856d0b943",
+      "object.o": "30c0fc22116262b68bd5db68f4c05da5400c75d54a0085e4c83f0b2d1ae947d4",
+      "descriptor.json": "1896c3a4a333799d5c76c2d14d0eb06e6392d42507f5489d26cc5fbe208a49de",
+      "map-facts.txt": "e40dbb83004557a250b45b00bd4aefb748612bf0ceb3b1204b51a6efa573ee64"
+    }
+  }
+}

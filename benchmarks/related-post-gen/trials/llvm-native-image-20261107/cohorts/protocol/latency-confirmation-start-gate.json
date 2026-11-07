@@ -1,0 +1,10 @@
+{
+  "quiet": true,
+  "checked_utc": "2026-11-07T15:04:43.658297+00:00",
+  "process_snapshot_sha256": "b99db5b363bb333fb2c039bd9e6126bfb0b7de72656cb5f0cc5f53d58c8917d4",
+  "all_own_build_test_profile_handles_terminal": true,
+  "prospective_rule_sha256": "15183e24525e5d859c74fe9302e66d1a911ac68ab5e9661d471ff70b7286777d",
+  "native_source_commit": "b638320000f7cb33837df2ee73f09221551826a0",
+  "upstream_latest": "7223f308e49e44d69598be73b5770a859322da51",
+  "upstream_delta_docs_only": true
+}

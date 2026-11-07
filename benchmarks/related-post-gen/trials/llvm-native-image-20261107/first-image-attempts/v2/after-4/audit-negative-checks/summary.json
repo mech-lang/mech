@@ -1,0 +1,43 @@
+{
+  "schema": "mech.native-link-audit.negative-checks.v1",
+  "positive_audit_passed": true,
+  "negative_cases": [
+    {
+      "case": "unrelocated_opcode",
+      "rejected": true,
+      "reason": "Native text differs beyond independently verified relocation fields"
+    },
+    {
+      "case": "wrong_page",
+      "rejected": true,
+      "reason": "('Inconsistent PAGE target', 'l003', 4176)"
+    },
+    {
+      "case": "wrong_page_offset",
+      "rejected": true,
+      "reason": ""
+    },
+    {
+      "case": "wrong_call_target",
+      "rejected": true,
+      "reason": "('_mech_canonical_program_entry_v1_numeric_2988', '0x1001eed80', '0x1005eed80')"
+    },
+    {
+      "case": "identity_byte",
+      "rejected": true,
+      "reason": "Object identity or descriptor-binding data differs after linking"
+    },
+    {
+      "case": "metadata_byte",
+      "rejected": true,
+      "reason": "Object identity or descriptor-binding data differs after linking"
+    },
+    {
+      "case": "module_pointer",
+      "rejected": true,
+      "reason": ""
+    }
+  ],
+  "all_rejected": true,
+  "executable_copies_never_executed": true
+}

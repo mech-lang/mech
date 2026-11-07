@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/generate",
+    "/private/tmp/mech-related-llvm-native-image-compiler-20261107",
+    "/private/tmp/mech-related-llvm-native-image-generated-app-20261107-v4/applications"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.6292764169629663,
+  "stdout": "",
+  "stderr": ""
+}
