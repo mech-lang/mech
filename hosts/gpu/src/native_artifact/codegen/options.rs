@@ -53,6 +53,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     GuardedNumericLoads,
     /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
+    /// Keep the current immutable ancestor view in outlined-entry SSA values.
+    CaptureViewAnchors,
     DisjointState,
     NontrappingHomes,
     ChildFunding,

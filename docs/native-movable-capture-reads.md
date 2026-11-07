@@ -58,3 +58,19 @@ matrix, finite-prefix, error and retry cases remain exercised.
 
 Performance is unmeasured until the frozen candidate completes qualification and
 both continuous post-JSON and complete-process randomized cohorts.
+
+## Preserve immutable view values through callbacks
+
+IR251 keeps the admitted backing pointer, length, rows and columns of the same
+proved direct immutable capture in outlined-entry SSA values. Ordinary callback
+refreshes cannot change that retained ancestor value; mutable and replaced roots
+still use current view state. This avoids making a stable address appear to
+advance through callback-refresh phis. The independently selectable
+`CaptureViewAnchors` ablation retains the existing checked path.
+
+The shared-owner and internally created backing fixtures compare default,
+ablated and ordinary execution for original/decoded/restored artifacts, no-op and
+first-changing writes, overflow, unchanged prior publication and successful retry.
+Finite-budget prefixes and current empty views retain their existing checks.
+This compiler change adds no host cache or runtime operation. Performance remains
+unmeasured until its own frozen qualification and cohorts complete.

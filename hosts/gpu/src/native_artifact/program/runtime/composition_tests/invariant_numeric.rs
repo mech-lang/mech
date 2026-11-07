@@ -882,6 +882,133 @@ fn invariant_numeric_capture_keeps_independent_changing_dimensions_and_nested_re
 
 #[test]
 fn movable_capture_reads_keep_shared_inputs_first_changes_current_reads_and_retry() {
+    check_immutable_capture_reads(OptimizationPass::MovableCaptureReads);
+}
+
+#[test]
+fn capture_view_anchors_keep_shared_inputs_first_changes_current_reads_and_retry() {
+    check_immutable_capture_reads(OptimizationPass::CaptureViewAnchors);
+}
+
+#[test]
+fn capture_view_anchors_keep_internally_owned_backing_through_alias_writes() {
+    const SOURCE: &str = r#"+> sequence
+walk(original<[u64]>, data<[u64]>, i<u64>, end<u64>, total<u64>) => (out<u64>) :=
+  old := data[1u64]
+  before := original[1u64]
+  replacement := ((i < 2u64)? | true => old | false => old + 1u64)
+  ~next := data
+  next[1u64] = replacement
+  current := next[1u64]
+  after := original[1u64]
+  next-total := total + before + after + current
+  out := ((i + 1u64 < end)? | true => walk(original,next,i + 1u64,end,next-total) | false => next-total).
+original := sequence/append(sequence/with-capacity(1u64),value<u64>)
+walk(original,original,0u64,steps<u64>,seed<u64>)
+"#;
+    for artifact in artifacts(SOURCE) {
+        let catalog = mech_stdlib::source_catalog();
+        let native = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let conservative = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::CaptureViewAnchors,
+        )
+        .unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::ScalarLoops,
+        )
+        .unwrap();
+        let metadata = crate::native_artifact::emit_program_object(&artifact, &catalog)
+            .unwrap()
+            .metadata();
+        let anchors: usize = [
+            "compiled_numeric_write_loops",
+            "compiled_readonly_numeric_loops",
+        ]
+        .into_iter()
+        .flat_map(|key| metadata[key].as_array().unwrap())
+        .map(|region| region["capture_view_anchors"].as_array().unwrap().len())
+        .sum();
+        assert!(
+            anchors > 0,
+            "the original backing has no external input owner"
+        );
+        for restored in [false, true] {
+            let mode = NativeProgramLimitMode::NoLimits;
+            let memory = mode.memory_budget();
+            let mut outputs = [
+                vec![None; artifact.outputs().len()],
+                vec![None; artifact.outputs().len()],
+                vec![None; artifact.outputs().len()],
+            ];
+            for (value, steps, seed, expected) in [
+                (2, 1, 0, Some(6)),
+                (3, 2, 0, Some(18)),
+                (4, 6, 7, Some(89)),
+                (u64::MAX, 1, 0, None),
+                (1, 2, u64::MAX, None),
+                (8, 5, 19, Some(145)),
+            ] {
+                let args = inputs(
+                    &artifact,
+                    &[
+                        ("value", Data::U64(value)),
+                        ("steps", Data::U64(steps)),
+                        ("seed", Data::U64(seed)),
+                    ],
+                    &memory,
+                );
+                let mut results = Vec::new();
+                for (jit, output) in [&native, &conservative, &ordinary]
+                    .into_iter()
+                    .zip(&mut outputs)
+                {
+                    let prior = output.clone();
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let (result, _) = if restored {
+                        observe::run_restored(jit, &args, output, mode.execution(), &memory)
+                    } else {
+                        observe::run(jit, &args, output, mode.execution(), &memory)
+                    };
+                    assert_eq!(result.is_ok(), expected.is_some(), "{result:?}");
+                    if let Some(expected) = expected {
+                        assert_eq!(
+                            output
+                                .last()
+                                .unwrap()
+                                .as_ref()
+                                .unwrap()
+                                .canonical_data_draft()
+                                .unwrap(),
+                            Data::U64(expected)
+                        );
+                        results.push("ok".to_owned());
+                    } else {
+                        results.push(format!("{:?}", result.unwrap_err()));
+                        assert!(output.iter().zip(prior).all(|(now, old)| match (now, old) {
+                            (Some(now), Some(old)) => now.shares_frozen_storage(&old),
+                            (None, None) => true,
+                            _ => false,
+                        }));
+                        assert_eq!(
+                            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                            retained
+                        );
+                    }
+                }
+                assert!(
+                    results.windows(2).all(|pair| pair[0] == pair[1]),
+                    "{results:?}"
+                );
+            }
+        }
+    }
+}
+
+fn check_immutable_capture_reads(pass: OptimizationPass) {
     const CHECK: &str = r#"
 walk(original<[u64]>, data<[u64]>, i<u64>, end<u64>, total<u64>) => (out<u64>) :=
   old := data[1u64]
@@ -898,12 +1025,7 @@ walk(unchanged<[u64]>, changed<[u64]>, 0u64, steps<u64>, seed<u64>)
     for artifact in artifacts(CHECK) {
         let catalog = mech_stdlib::source_catalog();
         let native = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let conservative = JitProgramArtifact::compile_for_test(
-            &artifact,
-            &catalog,
-            OptimizationPass::MovableCaptureReads,
-        )
-        .unwrap();
+        let conservative = JitProgramArtifact::compile_for_test(&artifact, &catalog, pass).unwrap();
         let ordinary = JitProgramArtifact::compile_for_test(
             &artifact,
             &catalog,
@@ -942,6 +1064,25 @@ walk(unchanged<[u64]>, changed<[u64]>, 0u64, steps<u64>, seed<u64>)
             reads > 0,
             "shared COW fixture must exercise movable immutable captures"
         );
+        let anchors = |metadata: &serde_json::Value| {
+            [
+                "compiled_numeric_write_loops",
+                "compiled_readonly_numeric_loops",
+            ]
+            .into_iter()
+            .flat_map(|key| metadata[key].as_array().unwrap())
+            .map(|region| region["capture_view_anchors"].as_array().unwrap().len())
+            .sum::<usize>()
+        };
+        assert!(
+            anchors(&metadata) > 0,
+            "exercise immutable capture entry views"
+        );
+        let old_object = crate::native_artifact::program::compiler::emit_program_object_for_test(
+            &artifact, &catalog, pass,
+        )
+        .unwrap();
+        assert_eq!(anchors(&old_object.metadata()), 0);
         let original = artifact
             .inputs()
             .iter()

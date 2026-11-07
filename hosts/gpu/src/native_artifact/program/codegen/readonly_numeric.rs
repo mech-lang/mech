@@ -37,6 +37,7 @@ pub(in crate::native_artifact) struct Report {
     pub typed_loads: Vec<(usize, u8)>,
     pub movable_capture_reads: Vec<(usize, usize)>,
     pub ordinary_capture_reads: Vec<(usize, usize)>,
+    pub capture_view_anchors: Vec<usize>,
     #[serde(skip)]
     pub(super) capture_read_candidates: Vec<super::numeric_captured_reads::Candidate>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
@@ -427,7 +428,6 @@ pub(in crate::native_artifact) fn emit_entry(
     } else {
         BTreeSet::new()
     };
-    let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
     let bailouts = if let Some(tree) = &region.numeric_tree {
         tree.nodes
@@ -463,6 +463,27 @@ pub(in crate::native_artifact) fn emit_entry(
     } else {
         BTreeSet::new()
     };
+    // Direct immutable ancestor captures keep the same backing and dimensions
+    // for this entire outlined call. A callback can refresh ordinary view homes,
+    // but cannot change this retained value. Keep its admitted entry SSA values
+    // so identical callback refreshes do not make the read address loop-variant.
+    let capture_views = if controls.enabled(OptimizationPass::CaptureViewAnchors) {
+        movable_captures
+            .iter()
+            .filter_map(|&array| {
+                let view = shadow + proof.view(array);
+                (view..view + 4).all(|slot| slots.contains(&slot)).then(|| {
+                    (
+                        array,
+                        core::array::from_fn::<_, 4, _>(|lane| words.read(b, view + lane)),
+                    )
+                })
+            })
+            .collect::<BTreeMap<_, _>>()
+    } else {
+        BTreeMap::new()
+    };
+    let setup_work = b.func.dfg.num_insts() - setup_start;
     let boolean_successors =
         super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     let versions = super::numeric_loop_windows::derive(
@@ -487,6 +508,7 @@ pub(in crate::native_artifact) fn emit_entry(
         typed_loads: Vec::new(),
         movable_capture_reads: Vec::new(),
         ordinary_capture_reads: Vec::new(),
+        capture_view_anchors: capture_views.keys().copied().collect(),
         capture_read_candidates: Vec::new(),
         read_pack_sites: Vec::new(),
         source_guarded_read_packs: Vec::new(),
@@ -1004,7 +1026,8 @@ pub(in crate::native_artifact) fn emit_entry(
             ) => {
                 let view = shadow + proof.view(*array);
                 let index = words.read(b, *index as usize);
-                let length = words.read(b, view + 1);
+                let captured_view = capture_views.get(array);
+                let length = captured_view.map_or_else(|| words.read(b, view + 1), |view| view[1]);
                 let ordinal = b.ins().iadd_imm(index, -1);
                 if let Operation::Read { array, index, .. } = operation
                     && traversal.read(site, *array, *index)
@@ -1070,8 +1093,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 }
                 // Canonical storage is row-major; source linear selection is
                 // one-based column-major. A valid ordinal proves rows > 0.
-                let rows = words.read(b, view + 2);
-                let columns = words.read(b, view + 3);
+                let rows = captured_view.map_or_else(|| words.read(b, view + 2), |view| view[2]);
+                let columns = captured_view.map_or_else(|| words.read(b, view + 3), |view| view[3]);
                 let width = proof.arrays[*array].width;
                 let Action::LibraryCall { template, .. } =
                     code.blocks()[proof.arrays[*array].witness].action()
@@ -1081,7 +1104,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 let movable =
                     matches!(operation, Operation::Read { .. }) && movable_captures.contains(array);
                 let (address, ty, clamp) = if movable {
-                    let base = words.read(b, view);
+                    let base = captured_view.map_or_else(|| words.read(b, view), |view| view[0]);
                     let (address, ty, clamp) = super::numeric_captured_reads::address(
                         b,
                         ordinal,
@@ -1101,7 +1124,7 @@ pub(in crate::native_artifact) fn emit_entry(
                         columns,
                         width,
                         template.inputs()[0].body(),
-                        |b| words.read(b, view),
+                        |b| captured_view.map_or_else(|| words.read(b, view), |view| view[0]),
                     )?;
                     (address, ty, None)
                 };

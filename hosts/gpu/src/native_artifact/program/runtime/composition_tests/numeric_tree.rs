@@ -919,6 +919,11 @@ fn movable_capture_reads_keep_each_finite_source_boundary_and_retry() {
 }
 
 #[test]
+fn capture_view_anchors_keep_each_finite_source_boundary_and_retry() {
+    check_numeric_tree_finite_fuel(Some(OptimizationPass::CaptureViewAnchors));
+}
+
+#[test]
 fn demand_liveness_keeps_each_finite_source_boundary_and_retry() {
     check_numeric_tree_finite_fuel(Some(OptimizationPass::DemandLiveness));
 }

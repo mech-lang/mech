@@ -423,7 +423,9 @@ fn selected_template(
 // Demand liveness retains its ablation and extent-proof alias records.
 // IR250 selects movable capture reads only after local-phi cleanup proves a
 // reusable loop-invariant selector. Advancing reads retain ordinary addresses.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 250;
+// IR251 retains current immutable ancestor view metadata as entry SSA values
+// across numeric callbacks. Backing lifetime and dimensions share one proof.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 251;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
