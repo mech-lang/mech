@@ -1168,9 +1168,13 @@ fn derive_inner(
     }) && !frames
         .fields(tail.carrier())
         .is_some_and(|fields| numeric_fields::has_nested_managed(frames, fields))
+        && !arrays.iter().any(|array| {
+            array.witness != usize::MAX && array.width != 0 && !array.writable && !array.appends
+        })
     {
-        // Opaque retention belongs to the new recursive managed-frame proof.
-        // Keep the established flat-frame eligibility and callback controls.
+        // Retain the efficient scalar route for a flat carrier with no actual
+        // immutable content read. A real read may use the same version-checked
+        // forwarding proof as recursive frames while other owners stay opaque.
         return Err("unwitnessed retained array");
     }
     if arrays.iter().any(|array| {

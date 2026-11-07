@@ -1,6 +1,6 @@
 # Activation-current forward read windows
 
-IR258 extends the existing immutable child-window versioning beyond its original
+IR259 extends the existing immutable child-window versioning beyond its original
 paired forward/reverse restriction. Paired selection retains priority. A forward
 group must contain only non-writable, non-appending views, share the same current
 induction/count coordinates, pass the existing recurrence/scope proof, and prove
@@ -22,3 +22,12 @@ The current hot related-post query has 14 ordinary capture reads and no guarded
 loop window/version entry gates. A new compiler build must show whether this
 extension reaches that query. Passing a synthetic proof fixture or reducing
 static code is not evidence of a benchmark speedup.
+
+The first IR258 attempt proves a real two-forward-view gate but its one-view
+fixture is rejected before window analysis: an unused retained flat-frame array
+blocks numeric entry. IR259 permits the existing opaque forwarding proof when
+another array has a real immutable content witness. Unused owners retain zero
+width and no read/write/append permissions. Purely opaque flat carriers keep the
+efficient scalar path. The source/alias-version proof and the rejection of
+unwitnessed content effects remain mandatory. Original failed receipts and
+test-only diagnostic traces remain; no mechanism assertion is weakened.

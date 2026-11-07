@@ -29,6 +29,27 @@ fn numeric_forward_windows_require_new_current_proofs_and_refuse_changing_bounds
             )
             .unwrap();
             let metadata = object.metadata();
+            if views == 1 {
+                assert!(
+                    metadata["readonly_numeric_regions"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|region| {
+                            region["proof"]["arrays"]
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .any(|array| {
+                                    array["witness"].as_u64() == Some(usize::MAX as u64)
+                                        && array["width"].as_u64() == Some(0)
+                                        && array["writable"].as_bool() == Some(false)
+                                        && array["appends"].as_bool() == Some(false)
+                                })
+                        }),
+                    "the unused retained owner must remain opaque without content permissions"
+                );
+            }
             let windows = [
                 "compiled_readonly_numeric_loops",
                 "compiled_numeric_write_loops",
@@ -92,6 +113,38 @@ fn numeric_forward_windows_require_new_current_proofs_and_refuse_changing_bounds
                 );
             }
         }
+    }
+    let opaque = SOURCE
+        .replace("value := ((at < sequence/length(costs))? | true => costs[bits/wrapping-add(at, 1u64)] | false => 0u32)", "value := 0u32")
+        .replace("node := ((reverse < sequence/length(nodes))? | true => nodes[bits/wrapping-add(reverse, 1u64)] | false => 0u64)", "node := 0u64");
+    assert_ne!(opaque, SOURCE);
+    for artifact in artifacts(&opaque) {
+        let object = crate::native_artifact::emit_program_object_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let metadata = object.metadata();
+        assert!(
+            metadata["compiled_readonly_numeric_loops"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            metadata["compiled_numeric_write_loops"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            !metadata["compiled_scalar_loops"]
+                .as_array()
+                .unwrap()
+                .is_empty(),
+            "a purely opaque flat carrier keeps its direct scalar loop"
+        );
     }
 }
 

@@ -433,7 +433,9 @@ fn selected_template(
 // transfer, including the proved Boolean low-bit branch predicate.
 // IR258 also versions complete immutable forward-read child windows when a
 // fresh activation gate proves additional source checks, retaining fallback.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 258;
+// IR259 also retains unused flat-frame owners through the existing opaque
+// forwarding proof when a real immutable content read justifies numeric entry.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 259;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
