@@ -17,6 +17,9 @@ impl Window {
 }
 
 fn forward(terms: &Terms, id: Id) -> Option<(Id, u64)> {
+    if matches!(terms.terms[id], Expr::Initial(_)) {
+        return Some((id, 0));
+    }
     let (Expr::Wrapping(Arithmetic::Add, a, b) | Expr::Arithmetic(Arithmetic::Add, a, b)) =
         terms.terms[id]
     else {
@@ -43,6 +46,9 @@ fn access(terms: &Terms, index: Id, length: Id) -> Option<(Id, u64, bool)> {
         return None;
     }
     let (base, delta) = forward(terms, at)?;
+    if delta == 0 {
+        return None;
+    }
     Some((base, delta, true))
 }
 

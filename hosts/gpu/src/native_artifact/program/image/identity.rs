@@ -441,7 +441,9 @@ fn selected_template(
 // retaining the paired floor and requiring an additional source check proof.
 // IR262 requires an actual immutable Read, rather than a Length witness, before
 // combining flat opaque forwarding with numeric content operations.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 262;
+// IR263 discovers current child windows at implicit one-based reads, including
+// the zero-offset interval. Forward selection requires a new read or branch fact.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 263;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

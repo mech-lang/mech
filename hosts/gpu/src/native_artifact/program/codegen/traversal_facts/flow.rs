@@ -321,6 +321,20 @@ fn analyze<'a>(
                 output,
             } => {
                 let length = terms.intern(Expr::ArrayLength(array))?;
+                // An implicit one-based read has the same interval obligation
+                // as an explicit base<length comparison. Discover candidates
+                // only from its checked mathematical index; the selected
+                // version still needs a fresh gate and this visit's k<count.
+                for state in states.iter().flatten() {
+                    if let Some(base) = state
+                        .read(index as usize)
+                        .and_then(|index| super::windows::read_base(&terms, index))
+                        && let Some(window) = state.discover_window(&terms, base, length)
+                        && !written.contains(&window.count)
+                    {
+                        proof.windows.insert(window);
+                    }
+                }
                 if states.iter().flatten().all(|state| {
                     state
                         .read(index as usize)

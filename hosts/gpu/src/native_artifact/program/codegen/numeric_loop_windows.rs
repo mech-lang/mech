@@ -117,8 +117,7 @@ pub(super) fn derive(
         else {
             continue;
         };
-        let minimum_predicates = if forward { 1 } else { 2 };
-        if selected.predicates.len() < minimum_predicates || selected.successors.len() < 2 {
+        if !forward && (selected.predicates.len() < 2 || selected.successors.len() < 2) {
             continue;
         }
         // Do not duplicate a forward loop unless admission removes an actual

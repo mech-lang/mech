@@ -1,6 +1,6 @@
 # Activation-current forward read windows
 
-IR262 extends the existing immutable child-window versioning beyond its original
+IR263 extends the existing immutable child-window versioning beyond its original
 paired forward/reverse restriction. Paired selection retains priority. A forward
 group must contain only non-writable, non-appending views, share the same current
 induction/count coordinates, pass the existing recurrence/scope proof, and prove
@@ -52,3 +52,15 @@ phase. Its retained `sequence/length(nodes)` supplies a width/witness without
 reading an element. IR262 consequently tests the selected actions for an actual
 immutable `Read` before admitting flat opaque forwarding. The negative fixture
 and its direct-scalar assertion are unchanged; the failed IR261 receipt remains.
+
+The separate D5 diagnostic records the real hot posting loops (headers1341 and
+1553): the selected `at<end` relation and checked `at+1` expression both survive.
+Discovery ran only at explicit U64Lt operations, so it never inspected these
+implicit reads. IR263 discovers the same current interval at an immutable read,
+using the shared mathematical one-based-index decoder. A zero-offset forward
+window admits `end<=length`; the visit must still select the exact current
+`at<end`. Arbitrary loaded indices, changed bounds and wrong owners do not match.
+Forward version selection now accepts a new proved read without requiring two
+extra source branches. The paired-view profitability floor is unchanged.
+New positive/negative source coverage, the same source/native error/alias/retry
+checks and finite-boundary tests cover direct reads as well as guarded reads.
