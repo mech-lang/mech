@@ -411,7 +411,10 @@ fn selected_template(
 // IR243 shared call certificates remain an independently measured experiment.
 // IR244 integrates PR973/IR202 demand-based removal of dead native SSA values
 // and interior arguments, retaining effects, trapping loads and the entry ABI.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 244;
+// IR245 numeric alias classes remain a separately measured, unselected experiment.
+// IR246 combines demand liveness with point-local nonfaulting numeric loads.
+// Source bounds, error paths, memory dependence and control dependence remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 246;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

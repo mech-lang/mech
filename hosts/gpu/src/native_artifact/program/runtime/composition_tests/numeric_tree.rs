@@ -872,6 +872,16 @@ fn numeric_tree_fuel_derived_debits_keep_each_finite_ordinary_continuation() {
     check_numeric_tree_finite_fuel(Some(OptimizationPass::FuelDerivedNumericDebits));
 }
 
+#[test]
+fn guarded_numeric_loads_keep_each_finite_source_boundary_and_retry() {
+    check_numeric_tree_finite_fuel(Some(OptimizationPass::GuardedNumericLoads));
+}
+
+#[test]
+fn demand_liveness_keeps_each_finite_source_boundary_and_retry() {
+    check_numeric_tree_finite_fuel(Some(OptimizationPass::DemandLiveness));
+}
+
 fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {
     let projected = matches!(
         pass,

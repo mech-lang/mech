@@ -2,10 +2,11 @@
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::common::{aggregates, ssa_words::Words};
 use crate::native_artifact::codegen::control::plan::CodePlan;
+use crate::native_artifact::codegen::options::{OptimizationOptions, OptimizationPass};
 use crate::native_artifact::compiler::backend;
 use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation};
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{InstBuilder, Value, types};
+use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
     NativeBufferFrameOperation as Frame, NativeIterationAction as Action,
@@ -13,6 +14,21 @@ use mech_engine::native_artifact::{
     NativeMatchTerminator as Branch,
 };
 use std::collections::BTreeSet;
+
+/// Only for a packed cell load AFTER the original logical bounds check (or
+/// its current-window proof) and the row-major address translation. Entry
+/// validated the exact typed slice and dimensions and retains its owner for
+/// this synchronous loan. Packed reads independently check their whole window.
+/// Thus this access cannot fault at this point. It is still dependent on
+/// control and mutable memory: no readonly, can_move, alignment or alias claim.
+pub(super) fn guarded_load_flags(options: OptimizationOptions) -> MemFlags {
+    if options.enabled(OptimizationPass::GuardedNumericLoads) {
+        MemFlags::new().with_notrap()
+    } else {
+        MemFlags::new()
+    }
+}
+
 pub(super) fn source_slots(
     code: CodePlan<'_>,
     sites: impl IntoIterator<Item = usize>,

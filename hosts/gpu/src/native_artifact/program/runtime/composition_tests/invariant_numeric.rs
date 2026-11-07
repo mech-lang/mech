@@ -7,6 +7,133 @@ const SOURCE: &str =
     include_str!("../../../../../tests/fixtures/native/invariant-numeric-arguments.mec");
 
 #[test]
+fn guarded_numeric_loads_retire_unused_data_but_preserve_bounds_errors_and_retry() {
+    const CHECK: &str = r#"
+walk(data<[u64]>, at<u64>, end<u64>, total<u64>) => (out<u64>) :=
+  more := at < end
+  ignored := (more? | true => data[at + 1u64] | false => 0u64)
+  next := (more? | true => total + at | false => total)
+  out := (more? | true => walk(data, at + 1u64, end, next) | false => total).
+walk(input<[u64]>, 0u64, steps<u64>, seed<u64>)
+"#;
+    for artifact in artifacts(CHECK) {
+        let catalog = mech_stdlib::source_catalog();
+        let native = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let conservative = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::GuardedNumericLoads,
+        )
+        .unwrap();
+        let no_demand = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::DemandLiveness,
+        )
+        .unwrap();
+        let removed_loads = |metadata: serde_json::Value| {
+            metadata["compiled_numeric_functions"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|function| function["cleanup"]["dead_loads_removed"].as_u64().unwrap())
+                .sum::<u64>()
+        };
+        let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+        let old = crate::native_artifact::program::compiler::emit_program_object_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::GuardedNumericLoads,
+        )
+        .unwrap();
+        assert!(
+            removed_loads(object.metadata()) > removed_loads(old.metadata()),
+            "remove an actual unused cell load, independently of its original source check"
+        );
+        for restored in [false, true] {
+            let mode = NativeProgramLimitMode::NoLimits;
+            let memory = mode.memory_budget();
+            let mut outputs = [
+                vec![None; artifact.outputs().len()],
+                vec![None; artifact.outputs().len()],
+                vec![None; artifact.outputs().len()],
+            ];
+            for (values, steps, seed, expected) in [
+                (vec![], 0, 0, Some(0)),
+                (vec![1, 2, 3], 3, 7, Some(10)),
+                (vec![], 1, 0, None),
+                (vec![1, 2], 3, 0, None),
+                (vec![1, 2, 3], 3, u64::MAX, None),
+                (vec![2, 3], 2, 5, Some(6)),
+            ] {
+                let args = inputs(
+                    &artifact,
+                    &[
+                        (
+                            "input",
+                            Data::Matrix(values.into_iter().map(Data::U64).collect()),
+                        ),
+                        ("steps", Data::U64(steps)),
+                        ("seed", Data::U64(seed)),
+                    ],
+                    &memory,
+                );
+                let aliases = args.clone();
+                let before = contents(&args);
+                let mut errors = Vec::new();
+                for (jit, output) in [&native, &conservative, &no_demand]
+                    .into_iter()
+                    .zip(&mut outputs)
+                {
+                    let prior = output.clone();
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let (result, _) = if restored {
+                        observe::run_restored(jit, &args, output, mode.execution(), &memory)
+                    } else {
+                        observe::run(jit, &args, output, mode.execution(), &memory)
+                    };
+                    assert_eq!(result.is_ok(), expected.is_some(), "{result:?}");
+                    if let Some(expected) = expected {
+                        assert_eq!(
+                            output
+                                .last()
+                                .unwrap()
+                                .as_ref()
+                                .unwrap()
+                                .canonical_data_draft()
+                                .unwrap(),
+                            Data::U64(expected)
+                        );
+                    } else {
+                        errors.push(format!("{:?}", result.unwrap_err()));
+                        assert!(output.iter().zip(prior).all(|(now, old)| match (now, old) {
+                            (Some(now), Some(old)) => now.shares_frozen_storage(&old),
+                            (None, None) => true,
+                            _ => false,
+                        }));
+                        assert_eq!(
+                            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                            retained
+                        );
+                    }
+                }
+                assert!(
+                    errors.windows(2).all(|pair| pair[0] == pair[1]),
+                    "{errors:?}"
+                );
+                assert_eq!(contents(&args), before);
+                assert_eq!(contents(&aliases), before);
+            }
+            drop(outputs);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+
+#[test]
 fn lifted_arrays_preserve_the_native_scalar_carrier_tree() {
     const CHECK: &str = r#"
 contains-later(values<[u64]>, at<u64>, end<u64>, key<u64>) => (out<bool>) :=

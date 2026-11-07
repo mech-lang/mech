@@ -353,7 +353,12 @@ pub(in crate::native_artifact) fn emit_entry(
                     template.inputs()[0].body(),
                     |b| words.read(b, view),
                 )?;
-                let value = b.ins().load(ty, MemFlags::new(), address, 0);
+                let value = b.ins().load(
+                    ty,
+                    numeric_words::guarded_load_flags(controls.options()),
+                    address,
+                    0,
+                );
                 let value = if width < 8 {
                     b.ins().uextend(types::I64, value)
                 } else {

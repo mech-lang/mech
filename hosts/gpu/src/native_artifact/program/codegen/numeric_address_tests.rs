@@ -4,6 +4,24 @@ use cranelift_codegen::ir::{AbiParam, Function, InstBuilder, Opcode, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use mech_core::{DimensionExpr as Dim, DimensionParameterId, IntegerWidth, SchemaBody};
 
+#[test]
+fn guarded_numeric_load_flags_keep_memory_and_control_dependence() {
+    use super::guarded_load_flags;
+    use crate::native_artifact::codegen::options::{OptimizationOptions, OptimizationPass};
+    let flags = guarded_load_flags(OptimizationOptions::default());
+    assert!(flags.notrap());
+    assert!(!flags.readonly());
+    assert!(!flags.can_move());
+    assert!(!flags.aligned());
+    assert_eq!(flags.alias_region(), None);
+    assert_eq!(
+        guarded_load_flags(OptimizationOptions::without(
+            OptimizationPass::GuardedNumericLoads
+        )),
+        cranelift_codegen::ir::MemFlags::new()
+    );
+}
+
 fn address_function(schema: &SchemaBody, width: u8) -> Function {
     let mut function = Function::new();
     function.signature.params = vec![AbiParam::new(types::I64); 4];
