@@ -107,13 +107,13 @@ mod streaming_tests {
 pub(in crate::native_artifact::program::image::decode::wire) mod layouts;
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
 struct Slot {
     schema: SchemaId,
     key: SchemaKey,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
 struct Visit {
     #[serde(deserialize_with = "proof")]
     origin: NativeMatchOrigin,
@@ -142,7 +142,7 @@ impl From<Visit> for native::iteration_abi::NativeIterationVisit {
     }
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
 struct Descriptor<'a, Frame> {
     #[serde(borrow)]
     plan: BuildOwnedImageRecord<'a>,
@@ -192,7 +192,7 @@ struct Descriptor<'a, Frame> {
     schema_templates: Option<BuildOwnedImageRecord<'a>>,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
 struct Image<'a, Frame> {
     format: String,
     version: u32,

@@ -29,7 +29,7 @@ macro_rules! image_struct {
         impl $crate::native_artifact::program_image_proofs::ImageRead for $name {
             fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
                 #[derive(serde::Deserialize)]
-                #[serde(deny_unknown_fields)]
+                #[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
                 struct Wire {
                     $(#[serde(deserialize_with = "crate::native_artifact::program_image_proofs::field")]
                     $field: $ty,)*
@@ -76,7 +76,7 @@ macro_rules! image_enum {
         impl $crate::native_artifact::program_image_proofs::ImageRead for $name {
             fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
                 #[derive(serde::Deserialize)]
-                #[serde(deny_unknown_fields)]
+                #[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
                 enum Wire {
                     $($variant {
                         $(#[serde(deserialize_with = "crate::native_artifact::program_image_proofs::field")]

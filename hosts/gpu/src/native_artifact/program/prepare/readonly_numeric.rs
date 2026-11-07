@@ -23,7 +23,7 @@ pub(in crate::native_artifact) use results::ResultRecipe;
 pub(super) use results::scalar_aggregate;
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
 pub(in crate::native_artifact) enum ArrayStorage {
     Carrier {
         field: usize,
@@ -43,7 +43,7 @@ pub(in crate::native_artifact) enum ArrayStorage {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
 pub(in crate::native_artifact) struct Array {
     /// Proof-local identity. Carrier roots use their structural leaf ordinal;
     /// immutable captures receive disjoint identities after those leaves.
@@ -103,7 +103,7 @@ pub(in crate::native_artifact::program::prepare) fn scalar_node_count(
 /// Fixed invocation scalar-bank offsets, derived from the exact current plan.
 /// Neither an offset nor a schema path grants ownership or entry authority.
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
 pub(in crate::native_artifact) struct ScalarBinding {
     pub value: u32,
     pub word: usize,
@@ -212,13 +212,13 @@ pub(in crate::native_artifact::program::prepare) fn scalar_bindings(
 }
 pub(in crate::native_artifact) use super::numeric_plan::Operation;
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
 pub(in crate::native_artifact) struct ColdAlias {
     pub value: u32,
     pub array: usize,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "__mech_private_positional_image_v1")]
 pub(in crate::native_artifact) struct Proof<Frame = FrameWords> {
     pub nested_managed: bool,
     pub arrays: Vec<Array>,

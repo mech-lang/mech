@@ -14,6 +14,8 @@ mod encode;
 mod key;
 #[path = "build_image/packed.rs"]
 mod packed;
+#[path = "build_image/positional.rs"]
+mod positional;
 pub use encode::encode_native_metadata_image;
 
 pub const NATIVE_METADATA_IMAGE_MAGIC: &[u8; 8] = b"MECHTVI3";
@@ -548,11 +550,23 @@ impl<'de> Deserializer<'de> for Node<'de> {
     }
     fn deserialize_struct<V: Visitor<'de>>(
         self,
-        _: &'static str,
+        name: &'static str,
         expected: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Error> {
         let mut fields = self.fields(OBJECT)?;
+        // Only an explicitly opted-in Rust visitor may consume struct values
+        // positionally. The image supplies no selector or proof permission.
+        if name == positional::STRUCT
+            && fields.remaining == expected.len()
+            && expected.len() <= 64
+            && positional::ordered(self.fields(OBJECT)?, expected)?
+        {
+            let mut values = positional::Values(fields);
+            let value = visitor.visit_seq(&mut values)?;
+            values.end()?;
+            return Ok(value);
+        }
         if self.canonical {
             if fields.remaining != expected.len() {
                 return Err(error("canonical native metadata field count differs"));
@@ -615,10 +629,11 @@ impl<'de> Deserializer<'de> for Node<'de> {
     }
     fn deserialize_enum<V: Visitor<'de>>(
         self,
-        _: &'static str,
+        name: &'static str,
         _: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Error> {
+        let positional = name == positional::STRUCT;
         let (tag, bytes) = self.parts()?;
         let (name, payload) = if tag == TEXT {
             (
@@ -642,6 +657,7 @@ impl<'de> Deserializer<'de> for Node<'de> {
             payload,
             depth: self.depth + 1,
             canonical: self.canonical,
+            positional,
         })
     }
     fn deserialize_ignored_any<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Error> {
@@ -662,6 +678,7 @@ struct Enumeration<'a> {
     payload: Option<&'a [u8]>,
     depth: usize,
     canonical: bool,
+    positional: bool,
 }
 impl<'de> EnumAccess<'de> for Enumeration<'de> {
     type Error = Error;
@@ -714,7 +731,11 @@ impl<'de> VariantAccess<'de> for Enumeration<'de> {
             depth: self.depth,
             canonical: self.canonical,
         }
-        .deserialize_struct("variant", fields, visitor)
+        .deserialize_struct(
+            if self.positional { positional::STRUCT } else { "variant" },
+            fields,
+            visitor,
+        )
     }
 }
 
