@@ -278,6 +278,164 @@ fn borrowed_frame_metadata_genuine_object_rows_keep_runtime_lanes_and_exact_publ
 }
 
 #[test]
+fn borrowed_parent_frame_metadata_keeps_runtime_lanes_and_exact_public_images() {
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(include_str!(
+        "../../../../tests/fixtures/native/numeric-parent-child.mec"
+    )) {
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let expected = object.descriptor().encode_build_owned_image().unwrap();
+        let bytes = Box::leak(object.native_metadata().to_vec().into_boxed_slice());
+        // SAFETY: immutable data from this genuine checked Object. This reader
+        // test does not bind or invoke an entry using caller-created metadata.
+        let verified = unsafe {
+            verify(
+                bytes,
+                object.identity().bytes(),
+                object.native_metadata_binding().bytes(),
+            )
+        }
+        .unwrap();
+        let restored = crate::native_artifact::program::image::decode::decode_compiled_for_test(
+            &verified, &catalog,
+        )
+        .unwrap();
+        let frames = restored
+            .metadata()
+            .compositions
+            .parents
+            .iter()
+            .flat_map(|parent| &parent.segments)
+            .filter_map(|segment| segment.frame_plan.as_ref())
+            .flat_map(|plan| &plan.frames)
+            .collect::<Vec<_>>();
+        assert!(
+            !frames.is_empty(),
+            "exercise real parent-piece frame metadata"
+        );
+        assert!(
+            frames
+                .iter()
+                .all(|frame| frame.compiler_data_is_borrowed_and_unmaterialized())
+        );
+        for frame in &frames {
+            std::hint::black_box((
+                frame.value,
+                frame.maximum_arity,
+                frame.scalar_nodes(),
+                &frame.arrays,
+                &frame.array_bindings,
+            ));
+        }
+        assert!(
+            frames
+                .iter()
+                .all(|frame| frame.compiler_data_is_borrowed_and_unmaterialized())
+        );
+        assert_eq!(restored.encode_build_owned_image().unwrap(), expected);
+        assert!(
+            frames
+                .iter()
+                .all(|frame| !frame.compiler_data_is_borrowed_and_unmaterialized()),
+            "public serialization retains lazy compiler-field access"
+        );
+    }
+}
+
+#[test]
+fn borrowed_parent_frame_metadata_rejects_malformed_fields_at_every_wire_level() {
+    use crate::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame;
+    use serde::Deserialize;
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(include_str!(
+        "../../../../tests/fixtures/native/numeric-parent-child.mec"
+    )) {
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let mut reader = mech_engine::native_artifact::BuildOwnedImageReader::from_image(
+            object.native_metadata(),
+        )
+        .unwrap();
+        let image = serde_json::Value::deserialize(&mut reader).unwrap();
+        reader.end().unwrap();
+        let layouts = image["descriptor"]["static_layouts"].clone();
+        let (parent, segment) = layouts["compositions"]["parents"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .enumerate()
+            .find_map(|(p, parent)| {
+                parent["segments"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .enumerate()
+                    .find_map(|(s, segment)| {
+                        segment["frame_plan"]["frames"]
+                            .as_array()
+                            .is_some_and(|frames| !frames.is_empty())
+                            .then_some((p, s))
+                    })
+            })
+            .expect("fixture must contain parent frames");
+        for fault in 0..8 {
+            let mut bad = layouts.clone();
+            let piece = &mut bad["compositions"]["parents"][parent]["segments"][segment];
+            match fault {
+                0 => piece["frame_plan"]["frames"][0]["fields"] = serde_json::json!([true]),
+                1 => piece["frame_plan"]["frames"][0]["fields"] = serde_json::json!([-1]),
+                2 => piece["frame_plan"]["frames"][0]["scalar_paths"] = serde_json::json!([[[0]]]),
+                3 => {
+                    piece["frame_plan"]["frames"][0]["scalar_paths"] =
+                        serde_json::json!([[[true], 0]])
+                }
+                4 => {
+                    piece["frame_plan"]["frames"][0]
+                        .as_object_mut()
+                        .unwrap()
+                        .insert("foreign".into(), true.into());
+                }
+                5 => {
+                    piece["frame_plan"]
+                        .as_object_mut()
+                        .unwrap()
+                        .insert("foreign".into(), true.into());
+                }
+                6 => {
+                    piece
+                        .as_object_mut()
+                        .unwrap()
+                        .insert("foreign".into(), true.into());
+                }
+                _ => {
+                    bad["compositions"]["parents"][parent]
+                        .as_object_mut()
+                        .unwrap()
+                        .insert("foreign".into(), true.into());
+                }
+            }
+            for native in [false, true] {
+                let json = serde_json::to_vec(&bad).unwrap();
+                let bytes = if native {
+                    mech_engine::native_artifact::encode_native_metadata_image(&json).unwrap()
+                } else {
+                    json
+                };
+                // Private structural reader only: leaked fixture bytes do not
+                // establish Object provenance or any executable descriptor.
+                let bytes = Box::leak(bytes.into_boxed_slice());
+                let mut reader =
+                    mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
+                assert!(
+                    super::super::static_layouts::Owned::<CompiledFrame>::deserialize(&mut reader)
+                        .is_err(),
+                    "fault={fault} native={native}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_mutation() {
     use serde::Deserialize;
     let catalog = mech_stdlib::source_catalog();

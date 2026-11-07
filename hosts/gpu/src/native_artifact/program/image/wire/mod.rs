@@ -498,7 +498,7 @@ fn decode_inner<
         .take()
         .map(|image| {
             let mut reader = image.reader();
-            let layouts = super::super::static_layouts::Owned::deserialize(&mut reader)
+            let layouts = super::super::static_layouts::Owned::<Frame>::deserialize(&mut reader)
                 .map_err(|error| error.to_string())?;
             reader.end().map_err(|error| error.to_string())?;
             Ok::<_, String>(layouts)

@@ -425,7 +425,9 @@ fn selected_template(
 // reusable loop-invariant selector. Advancing reads retain ordinary addresses.
 // IR251 view anchors remain a separately rejected, native-byte-identical trial.
 // IR252 integrates PR973/IR205 selected immutable SSA range branch folding.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 252;
+// IR253 carries the genuine compiled-module frame reader through parent-piece
+// metadata. Independent images still own and rederive every compiler field.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 253;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
