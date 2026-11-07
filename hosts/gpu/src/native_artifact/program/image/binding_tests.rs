@@ -284,6 +284,17 @@ fn borrowed_parent_frame_metadata_keeps_runtime_lanes_and_exact_public_images() 
         "../../../../tests/fixtures/native/numeric-parent-child.mec"
     )) {
         let object = emit_program_object(&artifact, &catalog).unwrap();
+        let expected_counts = object
+            .descriptor()
+            .metadata()
+            .compositions
+            .parents
+            .iter()
+            .flat_map(|parent| &parent.segments)
+            .filter_map(|segment| segment.frame_plan.as_ref())
+            .flat_map(|plan| &plan.frames)
+            .map(|frame| frame.fields.len())
+            .collect::<Vec<_>>();
         let expected = object.descriptor().encode_build_owned_image().unwrap();
         let expected_table = object
             .descriptor()
@@ -322,7 +333,9 @@ fn borrowed_parent_frame_metadata_keeps_runtime_lanes_and_exact_public_images() 
                 .iter()
                 .all(|frame| frame.compiler_data_is_borrowed_and_unmaterialized())
         );
-        for frame in &frames {
+        assert_eq!(frames.len(), expected_counts.len());
+        for (frame, count) in frames.iter().zip(expected_counts) {
+            assert_eq!(frame.field_count(), count);
             std::hint::black_box((
                 frame.value,
                 frame.maximum_arity,

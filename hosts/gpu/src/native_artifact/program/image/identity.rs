@@ -427,7 +427,9 @@ fn selected_template(
 // IR252 integrates PR973/IR205 selected immutable SSA range branch folding.
 // IR253 carries the genuine compiled-module frame reader through parent-piece
 // metadata. Independent images still own and rederive every compiler field.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 253;
+// IR255 keeps the exact validated parent-frame field count in its runtime lanes.
+// Reading a finite element limit never materializes compiler-only frame vectors.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 255;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
