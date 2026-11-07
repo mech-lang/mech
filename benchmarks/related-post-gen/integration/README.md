@@ -1,5 +1,25 @@
 # Current related-post integration targeting #973
 
+Compiler **c4649860a5e445c1ce1bdec8503870e8a455da17**, **IR234 / work115 / ABI41 / image9**, integrates #973 through **176d8134133befb8e35a6413fb8f98387bacebb3**. [PR990](https://github.com/mech-lang/mech/pull/990) targets `codex/level12-compression-consolidated` (#973).
+
+The latest upstream proof permits reduction bypass only when every exhausted source path preserves every payload. Nonidentity, missing or conflicting evidence retains the checked funded native source loop. The earlier changed-payload regression remains exact, with its selection assertion updated to require that safe native decline. The identity compressor path and all four related-post native text sections remain unchanged; no compiler speedup is claimed.
+
+Local qualification: **844 GPU passes with exactly two inherited failures**, all **128 scalar and five compression rows exactly equal to IR231 in every non-timing field**, **434 loader fixtures**, **52 byte-identical original/decoded bundle files**, **48 finite denials**, **12 finite small/full successes**, **16 forged-frontier rejections**, and **three fresh same-ABI/work-policy old-Object checks (IR231/232/233)**. Runtime-only full5000, scalar-only compilation and unmodified generated-app success/error/denial checks pass. The last loader link initially exhausted disk; the original failed driver and receipts remain, with the separate successful retry, native audit and all31 fixtures. `ir234-qualification-summary.json` asserts every completed check.
+
+The supplied performance review's Boolean experiments remain available as unselected IR232/233 patches. Three new source experiments use this exact IR234 compiler. Each cohort keeps standard Rust, all three fast numeric Rust controls and the preinitialized full-process control; schedules are recorded before timing. All **933 cohort outputs and93 edge fixtures** are exact.
+
+| Source experiment cohort | Original post-JSON | Candidate post-JSON | Candidate × fastest matched Rust | Original full process | Candidate full process |
+|---|---:|---:|---:|---:|---:|
+| Separate order scan,31 rounds |2.875083 ms|2.891250 ms|1.813595×|37.376375 ms|37.463041 ms|
+| Fused uniqueness/order,31 rounds |2.835500 ms|2.782167 ms|1.736865×|37.056416 ms|35.725541 ms|
+| Mask reuse,31 rounds |3.147209 ms|17.569083 ms|10.464795×|38.100625 ms|53.781834 ms|
+
+In the final cohort the simpler fused variant is also3.147209 ms, so its earlier processing win does not repeat. Matched Rust is1.678875 ms (U32) and full-process Rust24.584291 ms (U8/U32). Do not combine ratios across different cohorts. In its own first cohort, fused wins21/31 processing and23/31 full-process pairs; its instructions fall57,086,781→55,996,327. Allocation requests stay3858 versus Rust58. The final mask-reuse variant executes288,258,385 instructions and33,847 allocations versus the original57,544,416 and3858. It exposes a specific compiler gap: iteration3's numeric tree rejects with `numeric tree child returns an older array version`. The conjunction guarding append and the later payload-return branch need a sound correlated currentness proof; dropping the check would be incorrect.
+
+All source variants keep original output tag order and exact fallback. The ordered variants send unordered unique rows to the general path, so they are experiments with a disclosed input-scope cost. **None is selected; IR208 stays selected and Rust parity remains unmet.** See `evidence/ordered-source-experiments/summary.json` for all paired results, all six complete cohort reports, native selections, exact source and scopes. Current qualification is in `ir234-review-status.json`, `evidence/ir234-*` and `ir234-local-archive-index.json` (3177 losslessly archived and SHA-verified files). Raw binaries are not remotely uploaded; hosted CI is not claimed green. Draft; no merge requested.
+
+## Retained IR231 and earlier evidence
+
 The current compiler integrates #973 through **369714775615e4adb85d67467b9e7409a69f92b4** and repairs its inherited exhausted-transition reduction miscompile. Compiler **fc61145beddd6a9777e40e0469e224801bfe47c8** is **IR231 / work115 / ABI41 / image9**. [PR990](https://github.com/mech-lang/mech/pull/990) targets `codex/level12-compression-consolidated` (#973).
 
 The regression first reproduces the unfixed result `(9,119,1)` instead of `(0,119,1)` with the reduction selected. The fix retains the active tag and resumes the original exhausted source transition after the candidate reduction, preserving arbitrary final payload updates. Prepayment still charges the exact original visits. The new tests cover three payload updates, scalar/vector thresholds and tails, zero/exhausted entries, ties, original/decoded artifacts, direct/restored execution, aliases, finite publication, cleanup and retry. The optimized reduction stays selected.

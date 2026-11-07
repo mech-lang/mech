@@ -170,6 +170,65 @@ if experiments.exists():
     assert experiment['paired']['mech-after-4']['mech-parent-4']['post_json_seconds']['wins'] == 14
     assert experiment['paired']['mech-width-4']['mech-parent-4']['post_json_seconds']['wins'] == 17
 
+current_status = packet / 'integration/ir234-review-status.json'
+if current_status.exists():
+    status = json.loads(current_status.read_text())
+    assert status['identity'] == 'IR234/work115/ABI41/image9'
+    assert status['compiler'] == 'c4649860a5e445c1ce1bdec8503870e8a455da17'
+    assert status['incoming'] == '176d8134133befb8e35a6413fb8f98387bacebb3'
+    assert status['target_pr'] == 973 and status['gpu_passed'] == 844
+    assert len(status['inherited_gpu_failures']) == 2
+    assert status['current_performance_cohort_run']
+    assert not status['selected'] and not status['goal_complete']
+    tests = json.loads((evidence / 'ir234-gpu-test-run.json').read_text())
+    assert tests['expected_failures_exact'] and not tests['new_failures']
+    assert '844 passed; 2 failed' in tests['summary'][0]
+    for kind, count in [('scalar', 128), ('one-kib', 5)]:
+        def rows(path):
+            return [{k: v for k, v in json.loads(line).items()
+                     if k not in ('seconds', 'seconds_per_evaluation')}
+                    for line in json.loads(path.read_text())['stdout'].splitlines()
+                    if line.startswith('{')]
+        old = rows(evidence / f'ir231-control-{kind}-run.json')
+        new = rows(evidence / f'ir234-control-{kind}-run.json')
+        assert len(old) == len(new) == count and old == new
+    qualification = json.loads((evidence / 'ir234-qualification-summary.json').read_text())
+    assert qualification['all_completed_checks_asserted']
+    assert qualification['loader_fixtures_exact'] == 434
+    assert qualification['decoded_bundle_files_exact'] == 52
+    assert qualification['finite_denials_exact'] == 48
+    assert qualification['finite_small_full_successes_exact'] == 12
+    assert qualification['forged_frontier_rejections'] == 16
+    assert qualification['initial_driver_exit'] == 1
+    assert json.loads((evidence / 'ir234-qualify-loaders-run.json').read_text())['exit'] == 1
+    assert json.loads((evidence / 'ir234-repaired-last-loader-host-build-retry-run.json').read_text())['exit'] == 0
+    for name in qualification['fixtures']:
+        data = json.loads((evidence / ('ir234-edges-'+name.replace('/', '-'))).read_text())
+        assert len(data) == 31
+        assert all(x['exit'] == 0 and x.get('exact_rust_output', x.get('exact_expected_output', False)) for x in data)
+    native = json.loads((evidence / 'ir234-native-text-equivalence.json').read_text())
+    assert len(native) == 4 and all(x['complete_native_text_byte_identical'] for x in native.values())
+    old_objects = json.loads((evidence / 'ir234-old-object-summary.json').read_text())
+    assert old_objects['fresh_old_objects'] == 3
+    assert all(x['old_entry_never_invoked'] and x['object_bound_rejected'] and x['compiled_module_rejected'] for x in old_objects['rows'])
+    source_dir = evidence / 'ordered-source-experiments'
+    source = json.loads((source_dir / 'summary.json').read_text())
+    assert source['exact_cohort_outputs'] == 933 and source['fixture_outputs'] == 93
+    assert not source['selected'] and not source['goal_complete']
+    for label, latency, resources in [('ordered', 217, 56), ('fused', 248, 63), ('reused-masks', 279, 70)]:
+        for phase, expected in [('latency', latency), ('resources', resources)]:
+            run = json.loads(gzip.decompress((source_dir / f'{label}-{phase}.json.gz').read_bytes()))
+            assert len(run['samples']) == expected
+            assert all(row['exit'] == 0 and row['exact_rust_output'] for row in run['samples'])
+            assert run['execution_order'] == source['cohorts'][label+'-'+phase]['execution_order']
+            assert run['execution_order']['mode'] == 'randomized'
+        assert hashlib.sha256((source_dir / (label+'.mec')).read_bytes()).hexdigest() == source['sources'][label]['source_sha256']
+    assert source['paired']['fused']['mech-fused-4']['post_json_seconds']['wins'] == 21
+    assert source['paired']['fused']['mech-fused-4']['wall_seconds']['wins'] == 23
+    selection = json.loads((source_dir / 'reused-masks-native-selection.json').read_text())
+    assert len(selection['compiled_numeric_functions']) == 50
+    assert next(x for x in selection['numeric_tree_candidates'] if x['iteration'] == 3)['rejection'] == 'numeric tree child returns an older array version'
+
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833
 assert report['matched_native_reference']['median_seconds'] == 0.001651875
