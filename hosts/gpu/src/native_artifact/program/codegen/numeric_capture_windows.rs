@@ -36,6 +36,7 @@ pub(super) fn derive(
         }
         let candidate = (|| {
             let scope = scope(code, proof, id as u32, tail)?;
+            scope.order(code)?;
             let reads = packs
                 .iter()
                 .filter(|pack| {
@@ -110,6 +111,7 @@ pub(super) fn derive(
                 sites: scope.sites,
                 windows: Vec::new(),
                 captures,
+                geometry: Vec::new(),
                 facts,
                 prepaid: None,
                 reduction: None,
@@ -120,7 +122,7 @@ pub(super) fn derive(
     versions
 }
 
-fn scope(
+pub(super) fn scope(
     code: CodePlan<'_>,
     proof: &Proof,
     owner: u32,
@@ -166,7 +168,6 @@ fn scope(
         }
     }
     scope.sites.sort_unstable();
-    scope.order(code)?;
     Some(scope)
 }
 

@@ -40471,6 +40471,83 @@
           }
         ]
       }
+    },
+    "197": {
+      "base": "712a930950aed48fe2360eedd81a731449ff512e",
+      "decision": "Retain general enum-state geometry lowering; retain the existing compression source because seven source-adoption gates fail.",
+      "versions": {
+        "ir": 213,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "source_files": [
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_capture_windows.rs",
+          "bytes": 8999,
+          "sha256": "0597932e2c2ab62b4511949e0410382c82e6c6345e1fe14e1229e38ba73e3eaa",
+          "git_blob": "87b5da3e16369e42ac65d34eee2c7b45672eb324"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs",
+          "bytes": 11834,
+          "sha256": "2025efe4b1aeaff06d2d1bcbfa18aeaaeb5ee8561400cc3d13226f750e5c8d50",
+          "git_blob": "4a5047ce710d48f7e21e320d95252bc397cb8f33"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/image/identity.rs",
+          "bytes": 74083,
+          "sha256": "8c384f43ed6e5a30beae812410420c1cba52b08038223f342cdcbd42d2963c43",
+          "git_blob": "cb5233a624c1f729774e14f663482a833ad5bdc9"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+          "bytes": 13137,
+          "sha256": "bbef2e9ff46f8fc94dc066390aa9526e70afc97c02c27fece1845cdd4810ae98",
+          "git_blob": "8ca0c1e932684e3ccef769a0c8bbf591ee7e93ee"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_geometry_windows.rs",
+          "bytes": 4052,
+          "sha256": "8118c2037fa0c8cae66a6e2b0a88b9614135d3cd56477c711e361c709aaad6cd",
+          "git_blob": "49ba93394734c3d980836bc8baec8b951918ac72"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/state_read_packs.rs",
+          "bytes": 8131,
+          "sha256": "0383e34d4e85c394a0abefa7bb211e50afc6a18dde3a230fd3e4a1e76bfcffe4",
+          "git_blob": "b033135a35193cc6795ca40e953845b608fdf787"
+        }
+      ],
+      "events": [
+        {
+          "event": "qualified-immutable-state-geometry",
+          "asset": "r197-state-geometry-928564035718.tar.gz",
+          "sha256": "92856403571868f11e9361ba24727265201d5ab36238a31fee04bb7f7aa6b8d5",
+          "bytes": 2409653,
+          "files": 523,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "primary_observations": 7936,
+          "compiler_gates": 20,
+          "same_state_source_gates": 20,
+          "source_adoption_gates": 13,
+          "state_geometric_change_percent": -1.7697090721168651,
+          "retained_source_control_change_percent": 0.5333169506332336,
+          "native_tests": 673,
+          "scheduled_tests_executed": 256,
+          "new_tests": 3,
+          "native_match_controls": 1724,
+          "source_adopted": false,
+          "code_bytes_before": 6781820,
+          "code_bytes_after": 6761964,
+          "stack_bytes": 5536,
+          "public_verification": {
+            "file_occurrences": 523,
+            "server_digests_match": true,
+            "numerical_replay_byte_identical": true
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
