@@ -1,5 +1,33 @@
 # Native compression milestone
 
+## R188 — low-word scalar-cost experiment rejected
+
+**Production remains R186/IR206.** The actual scalar minimum path falls16→12 instructions, versus11 in the pinned reference, but the broader measured tradeoff does not justify retention. Complete source and all contrary evidence are preserved.
+
+Reject the current variant: the real scalar path improves16 to12 instructions and natural32 improves0.807595% in8/8 paired blocks, but aggregate elapsed improves only0.070110%;17 instruction medians,12 cycle medians and11 scalar-control medians rise. Code grows1236B and entry stack352B with unchanged heap. Preserve the complete experiment and return production to qualified R186; do not discard or repeat any sample.
+
+| Input | Retained compiler / Roc | Rejected candidate / Roc |
+|---|---:|---:|
+| reymont-prefix-32769 | 3.603628× | 3.574525× |
+| reymont-prefix-16384 | 4.345024× | 4.310893× |
+| random-32769 | 4.767305× | 4.781002× |
+| 16384-distribution-change | 6.287962× | 6.300231× |
+| repeated-32769 | 2.976170× | 2.978807× |
+| 33027-periodic-window | 3.462555× | 3.486903× |
+| eight-literals | 4.416522× | 4.427971× |
+
+All20 unchanged1.05 gates pass;10 faster/10 slower medians and aggregate−0.070110%. Natural32 improves0.807595% in8/8 blocks. Independent counters have17 higher instruction medians and12 higher cycle medians;11 scalar medians are adverse. Heap is exactly equal; rejected code+1236B/stack+352B are not production changes.
+
+**665 candidate native tests/all248 CI selections pass**, including11focused/77,088 compiled helper comparisons. The unchanged236/eight/one component qualification,15architecture/catalog checks,132workflow tests, runtime-only, formatting and warnings denied pass. Restored production reuses unchanged R186663/246 evidence; no fresh665-test production claim.
+
+Five exact-candidate profiles complete **17,838 correct calls**; independent compilation repeats all five image files byte-for-byte. Decoding the retained compiler's unattributed native sample PCs finds stack loads/stores at **19.92% of all natural32 timer samples,23.32% random32,19.33% repeated32 and15.33% distribution-change**. These include necessary homes and possible register spills; removability and retired-instruction attribution remain unproved. The next bounded investigation maps those accesses to their actual homes/liveness before changing lowering.
+
+Initial setup/harness errors and disk exhaustion are corrected with receipts preserved;339 obsolete reproducible binaries removed, about29GiB recovered. One redundant image producer ended by SIGKILL with cause unproved; the independent exact-current image build succeeds and repeats all image bytes. No failed command is relabeled passed.
+
+Fresh public replay verifies37 immutable packets, **4,970 file occurrences/1,080 paths**, retaining 10 multiversion paths. All38 receipts and three outputs match. No executables, bytecode or raw trace stores are uploaded.
+
+[Full experiment, all20 timings and stack census](native-low-word-costs.md). Existing draft973 only; review requested and ordinary exact-head CI cancelled by instruction. Parity remains incomplete.
+
 ## R187 — coupled scalar choice experiment rejected
 
 **Production stays at R186/IR206.** The candidate improves the inspected steady scalar minimum path16→13 instructions (reference11), but its complete-call result is an unfavorable broader tradeoff. The complete tested source remains archived for refinement.
