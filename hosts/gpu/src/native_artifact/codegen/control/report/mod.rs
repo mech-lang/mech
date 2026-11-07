@@ -158,6 +158,7 @@ pub(in crate::native_artifact) struct CfgCleanup {
     pub boolean_conditions_simplified: usize,
     pub unsigned_intervals_combined: usize,
     pub selected_range_branches_removed: usize,
+    pub boolean_phi_values: usize,
     pub before_blocks: usize,
     pub before_instructions: usize,
     pub after_blocks: usize,

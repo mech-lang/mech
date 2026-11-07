@@ -1318,3 +1318,255 @@ fn cfg_cleanup_program_local_homes_retire_dead_reads_and_observe_current_boundar
         }
     }
 }
+
+#[test]
+fn cfg_cleanup_boolean_phis_execute_fresh_checked_visits_and_preserve_publication() {
+    use crate::native_artifact::codegen::options::OptimizationOptions;
+    use cranelift_codegen::ir::condcodes::IntCC;
+    for ty in [types::I8, types::I16, types::I32, types::I64] {
+        for unknown in [false, true] {
+            let mut module = cranelift_jit::JITModule::new(
+                cranelift_jit::JITBuilder::with_flags(
+                    &[("opt_level", "speed")],
+                    default_libcall_names(),
+                )
+                .unwrap(),
+            );
+            let mut context = module.make_context();
+            context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+            context.func.signature.returns = vec![AbiParam::new(types::I64)];
+            let id = module
+                .declare_function(
+                    "boolean_phi_visits",
+                    Linkage::Local,
+                    &context.func.signature,
+                )
+                .unwrap();
+            let mut fc = FunctionBuilderContext::new();
+            {
+                let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+                let entry = b.create_block();
+                let header = b.create_block();
+                let inspect = b.create_block();
+                let zero = b.create_block();
+                let nonzero = b.create_block();
+                let one = b.create_block();
+                let advance = b.create_block();
+                let fail = b.create_block();
+                let done = b.create_block();
+                b.append_block_params_for_function_params(entry);
+                b.append_block_param(header, types::I64);
+                b.append_block_param(header, ty);
+                b.switch_to_block(entry);
+                let args = b.block_params(entry).to_vec();
+                let seed = if unknown {
+                    if ty == types::I64 {
+                        args[1]
+                    } else {
+                        b.ins().ireduce(ty, args[1])
+                    }
+                } else {
+                    let seed = b.ins().icmp_imm(IntCC::NotEqual, args[1], 0);
+                    if ty == types::I8 {
+                        seed
+                    } else {
+                        b.ins().uextend(ty, seed)
+                    }
+                };
+                let n = b.ins().iconst(types::I64, 0);
+                b.ins().jump(header, &[n.into(), seed.into()]);
+                b.switch_to_block(header);
+                let params = b.block_params(header).to_vec();
+                let more = b.ins().icmp(IntCC::UnsignedLessThan, params[0], args[2]);
+                b.ins().brif(more, inspect, &[], done, &[]);
+                b.switch_to_block(inspect);
+                let is_zero = b.ins().icmp_imm(IntCC::Equal, params[1], 0);
+                b.ins().brif(is_zero, zero, &[], nonzero, &[]);
+                b.switch_to_block(zero);
+                b.ins().jump(advance, &[]);
+                b.switch_to_block(nonzero);
+                let is_one = b.ins().icmp_imm(IntCC::Equal, params[1], 1);
+                b.ins().brif(is_one, one, &[], fail, &[]);
+                b.switch_to_block(one);
+                b.ins().jump(advance, &[]);
+                b.switch_to_block(advance);
+                let one = b.ins().iconst(ty, 1);
+                let tag = b.ins().bxor(params[1], one);
+                let n = b.ins().iadd_imm(params[0], 1);
+                b.ins().jump(header, &[n.into(), tag.into()]);
+                b.switch_to_block(fail);
+                let status = b.ins().iconst(types::I64, 17);
+                b.ins().return_(&[status]);
+                b.switch_to_block(done);
+                let tag = if ty == types::I64 {
+                    params[1]
+                } else {
+                    b.ins().uextend(types::I64, params[1])
+                };
+                b.ins().store(MemFlags::new(), tag, args[0], 0);
+                let status = b.ins().iconst(types::I64, 0);
+                b.ins().return_(&[status]);
+                b.seal_all_blocks();
+                b.finalize();
+            }
+            let controls = CompilationControls::new(OptimizationOptions::default());
+            let report = optimize(&controls, &mut context, module.isa()).unwrap();
+            assert_eq!(report.boolean_phi_values > 0, !unknown, "{ty} {unknown}");
+            assert_eq!(
+                report.selected_range_branches_removed > 0,
+                !unknown,
+                "{ty} {unknown}"
+            );
+            context.verify(module.isa()).unwrap();
+            module.define_function(id, &mut context).unwrap();
+            module.finalize_definitions().unwrap();
+            // SAFETY: the retained JIT and bank use the exact declared ABI;
+            // both owners live throughout every synchronous invocation.
+            let entry: unsafe extern "C" fn(*mut u64, u64, u64) -> u64 =
+                unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+            let mask = u64::MAX >> (64 - ty.bits());
+            let mut published = 91;
+            for (seed, count) in [(1, 3), (2, 1), (0, 4), (u64::MAX, 2), (0, 0), (1, 6)] {
+                let before = published;
+                let seed = if unknown {
+                    seed & mask
+                } else {
+                    u64::from(seed != 0)
+                };
+                let bad = count > 0 && seed > 1;
+                assert_eq!(
+                    unsafe {
+                        entry(
+                            &mut published,
+                            if unknown { seed } else { seed * 17 },
+                            count,
+                        )
+                    },
+                    if bad { 17 } else { 0 }
+                );
+                assert_eq!(published, if bad { before } else { seed ^ (count & 1) });
+            }
+        }
+    }
+}
+
+#[test]
+fn cfg_cleanup_boolean_phis_decline_aliases_fresh_loads_and_mutating_cycles() {
+    use cranelift_codegen::ir::condcodes::IntCC;
+    let mut function = Function::new();
+    function.signature.params = vec![AbiParam::new(types::I64); 3];
+    let mut fc = FunctionBuilderContext::new();
+    let values;
+    {
+        let mut b = FunctionBuilder::new(&mut function, &mut fc);
+        let entry = b.create_block();
+        let header = b.create_block();
+        let body = b.create_block();
+        let done = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        for _ in 0..5 {
+            b.append_block_param(header, types::I64);
+        }
+        b.switch_to_block(entry);
+        let args = b.block_params(entry).to_vec();
+        let loaded = b.ins().load(types::I64, MemFlags::new(), args[0], 0);
+        let one = b.ins().iconst(types::I64, 1);
+        let masked = b.ins().band_imm(args[1], 1);
+        b.ins().jump(
+            header,
+            &[
+                args[1].into(),
+                loaded.into(),
+                one.into(),
+                masked.into(),
+                masked.into(),
+            ],
+        );
+        b.switch_to_block(header);
+        values = b.block_params(header).to_vec();
+        b.ins().brif(args[2], body, &[], done, &[]);
+        b.switch_to_block(body);
+        let changed = b.ins().iadd_imm(values[2], 1);
+        let masked = b.ins().band_imm(values[3], 1);
+        let compared = b.ins().icmp(IntCC::Equal, values[0], values[1]);
+        let compared = b.ins().uextend(types::I64, compared);
+        b.ins().store(MemFlags::new(), values[0], args[0], 0);
+        let fresh = b.ins().load(types::I64, MemFlags::new(), args[0], 0);
+        b.ins().jump(
+            header,
+            &[
+                values[0].into(),
+                fresh.into(),
+                changed.into(),
+                masked.into(),
+                compared.into(),
+            ],
+        );
+        b.switch_to_block(done);
+        b.ins().return_(&[]);
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    let mut cfg = cranelift_codegen::flowgraph::ControlFlowGraph::new();
+    cfg.compute(&function);
+    let known = boolean_words::derive(&function, &cfg);
+    for (i, value) in values.into_iter().enumerate() {
+        assert_eq!(
+            known.contains_key(&function.dfg.resolve_aliases(value)),
+            i >= 3,
+            "{i}"
+        );
+    }
+}
+
+#[test]
+fn cfg_cleanup_boolean_phis_reject_unknown_seeds_through_mutual_cycles() {
+    for unknown in [false, true] {
+        let mut function = Function::new();
+        function.signature.params = vec![AbiParam::new(types::I64); 2];
+        let mut fc = FunctionBuilderContext::new();
+        let values;
+        {
+            let mut b = FunctionBuilder::new(&mut function, &mut fc);
+            let entry = b.create_block();
+            let header = b.create_block();
+            let body = b.create_block();
+            let done = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            for _ in 0..16 {
+                b.append_block_param(header, types::I64);
+            }
+            b.switch_to_block(entry);
+            let args = b.block_params(entry).to_vec();
+            let zero = b.ins().iconst(types::I64, 0);
+            let seed = if unknown {
+                args[0]
+            } else {
+                b.ins().band_imm(args[0], 1)
+            };
+            let mut seeds = vec![zero.into(); 16];
+            seeds[0] = seed.into();
+            b.ins().jump(header, &seeds);
+            b.switch_to_block(header);
+            values = b.block_params(header).to_vec();
+            b.ins().brif(args[1], body, &[], done, &[]);
+            b.switch_to_block(body);
+            let mut rotated = values.iter().copied().map(Into::into).collect::<Vec<_>>();
+            rotated.rotate_left(1);
+            b.ins().jump(header, &rotated);
+            b.switch_to_block(done);
+            b.ins().return_(&[]);
+            b.seal_all_blocks();
+            b.finalize();
+        }
+        let mut cfg = cranelift_codegen::flowgraph::ControlFlowGraph::new();
+        cfg.compute(&function);
+        let known = boolean_words::derive(&function, &cfg);
+        for value in values {
+            assert_eq!(
+                known.contains_key(&function.dfg.resolve_aliases(value)),
+                !unknown
+            );
+        }
+    }
+}
