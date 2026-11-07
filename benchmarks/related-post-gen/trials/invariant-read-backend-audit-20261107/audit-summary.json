@@ -1,0 +1,1013 @@
+{
+  "compiler": "c14760210be8e161ed6a523c651203f25b9cded5",
+  "identity": "IR250/work115/ABI41/image9",
+  "diagnostic_only": true,
+  "all13_normal_bundle_files_byte_identical": {
+    "catalog-profile.json": true,
+    "image-binding.bin": true,
+    "frame-summary.json": true,
+    "artifact.mecb": true,
+    "source.mec": true,
+    "metadata.json": true,
+    "catalog.rs": true,
+    "native-metadata-binding.bin": true,
+    "native-metadata.bin": true,
+    "linked.rs": true,
+    "object.o": true,
+    "descriptor.json": true,
+    "map-facts.txt": true
+  },
+  "original_source": "/private/tmp/mech-related-invariant-capture-hoisting-runners-20261107-v2/reuse-4/build/source.mec",
+  "optimized_clones": 51,
+  "readonly_loads": 103,
+  "readonly_loads_inside_loops": 23,
+  "dumps": [
+    {
+      "header": 801,
+      "selected_source_reads": [
+        [
+          919,
+          3
+        ],
+        [
+          921,
+          3
+        ],
+        [
+          923,
+          3
+        ]
+      ],
+      "loads": [
+        {
+          "block": "block408",
+          "innermost_loop_header": null,
+          "inst": "inst6584",
+          "operands": [
+            "v6365"
+          ]
+        },
+        {
+          "block": "block419",
+          "innermost_loop_header": null,
+          "inst": "inst20881",
+          "operands": [
+            "v22089"
+          ]
+        },
+        {
+          "block": "block419",
+          "innermost_loop_header": null,
+          "inst": "inst6896",
+          "operands": [
+            "v6632"
+          ]
+        },
+        {
+          "block": "block430",
+          "innermost_loop_header": null,
+          "inst": "inst20920",
+          "operands": [
+            "v22128"
+          ]
+        },
+        {
+          "block": "block430",
+          "innermost_loop_header": null,
+          "inst": "inst20924",
+          "operands": [
+            "v22132"
+          ]
+        },
+        {
+          "block": "block430",
+          "innermost_loop_header": null,
+          "inst": "inst7211",
+          "operands": [
+            "v6902"
+          ]
+        },
+        {
+          "block": "block139",
+          "innermost_loop_header": "block115",
+          "inst": "inst20958",
+          "operands": [
+            "v22166"
+          ]
+        },
+        {
+          "block": "block437",
+          "innermost_loop_header": null,
+          "inst": "inst20974",
+          "operands": [
+            "v22182"
+          ]
+        },
+        {
+          "block": "block437",
+          "innermost_loop_header": null,
+          "inst": "inst20978",
+          "operands": [
+            "v22186"
+          ]
+        },
+        {
+          "block": "block439",
+          "innermost_loop_header": null,
+          "inst": "inst21002",
+          "operands": [
+            "v22210"
+          ]
+        },
+        {
+          "block": "block439",
+          "innermost_loop_header": null,
+          "inst": "inst21006",
+          "operands": [
+            "v22214"
+          ]
+        },
+        {
+          "block": "block142",
+          "innermost_loop_header": "block115",
+          "inst": "inst21017",
+          "operands": [
+            "v22225"
+          ]
+        },
+        {
+          "block": "block443",
+          "innermost_loop_header": null,
+          "inst": "inst21033",
+          "operands": [
+            "v22241"
+          ]
+        },
+        {
+          "block": "block143",
+          "innermost_loop_header": "block115",
+          "inst": "inst21044",
+          "operands": [
+            "v22252"
+          ]
+        }
+      ]
+    },
+    {
+      "header": 901,
+      "selected_source_reads": [
+        [
+          919,
+          1
+        ],
+        [
+          921,
+          1
+        ],
+        [
+          923,
+          1
+        ]
+      ],
+      "loads": [
+        {
+          "block": "block97",
+          "innermost_loop_header": null,
+          "inst": "inst503",
+          "operands": [
+            "v474"
+          ]
+        },
+        {
+          "block": "block101",
+          "innermost_loop_header": null,
+          "inst": "inst2495",
+          "operands": [
+            "v2595"
+          ]
+        },
+        {
+          "block": "block108",
+          "innermost_loop_header": null,
+          "inst": "inst2526",
+          "operands": [
+            "v2626"
+          ]
+        },
+        {
+          "block": "block108",
+          "innermost_loop_header": null,
+          "inst": "inst635",
+          "operands": [
+            "v590"
+          ]
+        },
+        {
+          "block": "block112",
+          "innermost_loop_header": null,
+          "inst": "inst2542",
+          "operands": [
+            "v2642"
+          ]
+        },
+        {
+          "block": "block112",
+          "innermost_loop_header": null,
+          "inst": "inst2546",
+          "operands": [
+            "v2646"
+          ]
+        },
+        {
+          "block": "block123",
+          "innermost_loop_header": null,
+          "inst": "inst2577",
+          "operands": [
+            "v2677"
+          ]
+        },
+        {
+          "block": "block123",
+          "innermost_loop_header": null,
+          "inst": "inst2581",
+          "operands": [
+            "v2681"
+          ]
+        },
+        {
+          "block": "block123",
+          "innermost_loop_header": null,
+          "inst": "inst770",
+          "operands": [
+            "v709"
+          ]
+        },
+        {
+          "block": "block35",
+          "innermost_loop_header": "block11",
+          "inst": "inst2609",
+          "operands": [
+            "v2709"
+          ]
+        },
+        {
+          "block": "block130",
+          "innermost_loop_header": null,
+          "inst": "inst2621",
+          "operands": [
+            "v2721"
+          ]
+        },
+        {
+          "block": "block130",
+          "innermost_loop_header": null,
+          "inst": "inst2625",
+          "operands": [
+            "v2725"
+          ]
+        },
+        {
+          "block": "block132",
+          "innermost_loop_header": null,
+          "inst": "inst2639",
+          "operands": [
+            "v2739"
+          ]
+        },
+        {
+          "block": "block132",
+          "innermost_loop_header": null,
+          "inst": "inst2643",
+          "operands": [
+            "v2743"
+          ]
+        },
+        {
+          "block": "block38",
+          "innermost_loop_header": "block11",
+          "inst": "inst2651",
+          "operands": [
+            "v2751"
+          ]
+        },
+        {
+          "block": "block136",
+          "innermost_loop_header": null,
+          "inst": "inst2663",
+          "operands": [
+            "v2763"
+          ]
+        },
+        {
+          "block": "block39",
+          "innermost_loop_header": "block11",
+          "inst": "inst2670",
+          "operands": [
+            "v2770"
+          ]
+        }
+      ]
+    },
+    {
+      "header": 256,
+      "selected_source_reads": [
+        [
+          346,
+          3
+        ],
+        [
+          348,
+          3
+        ]
+      ],
+      "loads": [
+        {
+          "block": "block323",
+          "innermost_loop_header": null,
+          "inst": "inst4333",
+          "operands": [
+            "v4153"
+          ]
+        },
+        {
+          "block": "block334",
+          "innermost_loop_header": null,
+          "inst": "inst13551",
+          "operands": [
+            "v14385"
+          ]
+        },
+        {
+          "block": "block334",
+          "innermost_loop_header": null,
+          "inst": "inst4591",
+          "operands": [
+            "v4374"
+          ]
+        },
+        {
+          "block": "block108",
+          "innermost_loop_header": "block87",
+          "inst": "inst13585",
+          "operands": [
+            "v14419"
+          ]
+        },
+        {
+          "block": "block341",
+          "innermost_loop_header": null,
+          "inst": "inst13599",
+          "operands": [
+            "v14433"
+          ]
+        },
+        {
+          "block": "block343",
+          "innermost_loop_header": null,
+          "inst": "inst13621",
+          "operands": [
+            "v14455"
+          ]
+        },
+        {
+          "block": "block111",
+          "innermost_loop_header": "block87",
+          "inst": "inst13632",
+          "operands": [
+            "v14466"
+          ]
+        }
+      ]
+    },
+    {
+      "header": 304,
+      "selected_source_reads": [
+        [
+          346,
+          1
+        ],
+        [
+          348,
+          1
+        ]
+      ],
+      "loads": [
+        {
+          "block": "block158",
+          "innermost_loop_header": null,
+          "inst": "inst1376",
+          "operands": [
+            "v1319"
+          ]
+        },
+        {
+          "block": "block169",
+          "innermost_loop_header": null,
+          "inst": "inst4835",
+          "operands": [
+            "v5070"
+          ]
+        },
+        {
+          "block": "block169",
+          "innermost_loop_header": null,
+          "inst": "inst1561",
+          "operands": [
+            "v1477"
+          ]
+        },
+        {
+          "block": "block58",
+          "innermost_loop_header": "block37",
+          "inst": "inst4866",
+          "operands": [
+            "v5101"
+          ]
+        },
+        {
+          "block": "block176",
+          "innermost_loop_header": null,
+          "inst": "inst4879",
+          "operands": [
+            "v5114"
+          ]
+        },
+        {
+          "block": "block178",
+          "innermost_loop_header": null,
+          "inst": "inst4897",
+          "operands": [
+            "v5132"
+          ]
+        },
+        {
+          "block": "block61",
+          "innermost_loop_header": "block37",
+          "inst": "inst4905",
+          "operands": [
+            "v5140"
+          ]
+        }
+      ]
+    },
+    {
+      "header": 849,
+      "selected_source_reads": [
+        [
+          919,
+          1
+        ],
+        [
+          921,
+          1
+        ],
+        [
+          923,
+          1
+        ]
+      ],
+      "loads": [
+        {
+          "block": "block243",
+          "innermost_loop_header": null,
+          "inst": "inst3031",
+          "operands": [
+            "v2948"
+          ]
+        },
+        {
+          "block": "block254",
+          "innermost_loop_header": null,
+          "inst": "inst10281",
+          "operands": [
+            "v10760"
+          ]
+        },
+        {
+          "block": "block254",
+          "innermost_loop_header": null,
+          "inst": "inst3280",
+          "operands": [
+            "v3162"
+          ]
+        },
+        {
+          "block": "block265",
+          "innermost_loop_header": null,
+          "inst": "inst10318",
+          "operands": [
+            "v10797"
+          ]
+        },
+        {
+          "block": "block265",
+          "innermost_loop_header": null,
+          "inst": "inst10322",
+          "operands": [
+            "v10801"
+          ]
+        },
+        {
+          "block": "block265",
+          "innermost_loop_header": null,
+          "inst": "inst3532",
+          "operands": [
+            "v3379"
+          ]
+        },
+        {
+          "block": "block89",
+          "innermost_loop_header": "block65",
+          "inst": "inst10356",
+          "operands": [
+            "v10835"
+          ]
+        },
+        {
+          "block": "block272",
+          "innermost_loop_header": null,
+          "inst": "inst10370",
+          "operands": [
+            "v10849"
+          ]
+        },
+        {
+          "block": "block272",
+          "innermost_loop_header": null,
+          "inst": "inst10374",
+          "operands": [
+            "v10853"
+          ]
+        },
+        {
+          "block": "block274",
+          "innermost_loop_header": null,
+          "inst": "inst10396",
+          "operands": [
+            "v10875"
+          ]
+        },
+        {
+          "block": "block274",
+          "innermost_loop_header": null,
+          "inst": "inst10400",
+          "operands": [
+            "v10879"
+          ]
+        },
+        {
+          "block": "block92",
+          "innermost_loop_header": "block65",
+          "inst": "inst10411",
+          "operands": [
+            "v10890"
+          ]
+        },
+        {
+          "block": "block278",
+          "innermost_loop_header": null,
+          "inst": "inst10425",
+          "operands": [
+            "v10904"
+          ]
+        },
+        {
+          "block": "block93",
+          "innermost_loop_header": "block65",
+          "inst": "inst10436",
+          "operands": [
+            "v10915"
+          ]
+        }
+      ]
+    },
+    {
+      "header": 329,
+      "selected_source_reads": [
+        [
+          346,
+          1
+        ],
+        [
+          348,
+          1
+        ]
+      ],
+      "loads": [
+        {
+          "block": "block85",
+          "innermost_loop_header": null,
+          "inst": "inst422",
+          "operands": [
+            "v394"
+          ]
+        },
+        {
+          "block": "block89",
+          "innermost_loop_header": null,
+          "inst": "inst1800",
+          "operands": [
+            "v1880"
+          ]
+        },
+        {
+          "block": "block100",
+          "innermost_loop_header": null,
+          "inst": "inst1830",
+          "operands": [
+            "v1910"
+          ]
+        },
+        {
+          "block": "block100",
+          "innermost_loop_header": null,
+          "inst": "inst542",
+          "operands": [
+            "v499"
+          ]
+        },
+        {
+          "block": "block32",
+          "innermost_loop_header": "block11",
+          "inst": "inst1858",
+          "operands": [
+            "v1938"
+          ]
+        },
+        {
+          "block": "block107",
+          "innermost_loop_header": null,
+          "inst": "inst1869",
+          "operands": [
+            "v1949"
+          ]
+        },
+        {
+          "block": "block109",
+          "innermost_loop_header": null,
+          "inst": "inst1882",
+          "operands": [
+            "v1962"
+          ]
+        },
+        {
+          "block": "block35",
+          "innermost_loop_header": "block11",
+          "inst": "inst1890",
+          "operands": [
+            "v1970"
+          ]
+        }
+      ]
+    },
+    {
+      "header": 826,
+      "selected_source_reads": [
+        [
+          919,
+          1
+        ],
+        [
+          921,
+          1
+        ],
+        [
+          923,
+          1
+        ]
+      ],
+      "loads": [
+        {
+          "block": "block308",
+          "innermost_loop_header": null,
+          "inst": "inst4408",
+          "operands": [
+            "v4300"
+          ]
+        },
+        {
+          "block": "block319",
+          "innermost_loop_header": null,
+          "inst": "inst14315",
+          "operands": [
+            "v15036"
+          ]
+        },
+        {
+          "block": "block319",
+          "innermost_loop_header": null,
+          "inst": "inst4685",
+          "operands": [
+            "v4538"
+          ]
+        },
+        {
+          "block": "block330",
+          "innermost_loop_header": null,
+          "inst": "inst14353",
+          "operands": [
+            "v15074"
+          ]
+        },
+        {
+          "block": "block330",
+          "innermost_loop_header": null,
+          "inst": "inst14357",
+          "operands": [
+            "v15078"
+          ]
+        },
+        {
+          "block": "block330",
+          "innermost_loop_header": null,
+          "inst": "inst4965",
+          "operands": [
+            "v4779"
+          ]
+        },
+        {
+          "block": "block113",
+          "innermost_loop_header": "block89",
+          "inst": "inst14391",
+          "operands": [
+            "v15112"
+          ]
+        },
+        {
+          "block": "block337",
+          "innermost_loop_header": null,
+          "inst": "inst14406",
+          "operands": [
+            "v15127"
+          ]
+        },
+        {
+          "block": "block337",
+          "innermost_loop_header": null,
+          "inst": "inst14410",
+          "operands": [
+            "v15131"
+          ]
+        },
+        {
+          "block": "block339",
+          "innermost_loop_header": null,
+          "inst": "inst14433",
+          "operands": [
+            "v15154"
+          ]
+        },
+        {
+          "block": "block339",
+          "innermost_loop_header": null,
+          "inst": "inst14437",
+          "operands": [
+            "v15158"
+          ]
+        },
+        {
+          "block": "block116",
+          "innermost_loop_header": "block89",
+          "inst": "inst14448",
+          "operands": [
+            "v15169"
+          ]
+        },
+        {
+          "block": "block343",
+          "innermost_loop_header": null,
+          "inst": "inst14463",
+          "operands": [
+            "v15184"
+          ]
+        },
+        {
+          "block": "block117",
+          "innermost_loop_header": "block89",
+          "inst": "inst14474",
+          "operands": [
+            "v15195"
+          ]
+        }
+      ]
+    },
+    {
+      "header": 874,
+      "selected_source_reads": [
+        [
+          919,
+          1
+        ],
+        [
+          921,
+          1
+        ],
+        [
+          923,
+          1
+        ]
+      ],
+      "loads": [
+        {
+          "block": "block170",
+          "innermost_loop_header": null,
+          "inst": "inst1630",
+          "operands": [
+            "v1572"
+          ]
+        },
+        {
+          "block": "block174",
+          "innermost_loop_header": null,
+          "inst": "inst6176",
+          "operands": [
+            "v6440"
+          ]
+        },
+        {
+          "block": "block185",
+          "innermost_loop_header": null,
+          "inst": "inst6209",
+          "operands": [
+            "v6473"
+          ]
+        },
+        {
+          "block": "block185",
+          "innermost_loop_header": null,
+          "inst": "inst1835",
+          "operands": [
+            "v1747"
+          ]
+        },
+        {
+          "block": "block196",
+          "innermost_loop_header": null,
+          "inst": "inst6243",
+          "operands": [
+            "v6507"
+          ]
+        },
+        {
+          "block": "block196",
+          "innermost_loop_header": null,
+          "inst": "inst6247",
+          "operands": [
+            "v6511"
+          ]
+        },
+        {
+          "block": "block196",
+          "innermost_loop_header": null,
+          "inst": "inst2043",
+          "operands": [
+            "v1925"
+          ]
+        },
+        {
+          "block": "block63",
+          "innermost_loop_header": "block39",
+          "inst": "inst6278",
+          "operands": [
+            "v6542"
+          ]
+        },
+        {
+          "block": "block203",
+          "innermost_loop_header": null,
+          "inst": "inst6292",
+          "operands": [
+            "v6556"
+          ]
+        },
+        {
+          "block": "block203",
+          "innermost_loop_header": null,
+          "inst": "inst6296",
+          "operands": [
+            "v6560"
+          ]
+        },
+        {
+          "block": "block205",
+          "innermost_loop_header": null,
+          "inst": "inst6315",
+          "operands": [
+            "v6579"
+          ]
+        },
+        {
+          "block": "block205",
+          "innermost_loop_header": null,
+          "inst": "inst6319",
+          "operands": [
+            "v6583"
+          ]
+        },
+        {
+          "block": "block66",
+          "innermost_loop_header": "block39",
+          "inst": "inst6327",
+          "operands": [
+            "v6591"
+          ]
+        },
+        {
+          "block": "block209",
+          "innermost_loop_header": null,
+          "inst": "inst6341",
+          "operands": [
+            "v6605"
+          ]
+        },
+        {
+          "block": "block67",
+          "innermost_loop_header": "block39",
+          "inst": "inst6349",
+          "operands": [
+            "v6613"
+          ]
+        }
+      ]
+    },
+    {
+      "header": 281,
+      "selected_source_reads": [
+        [
+          346,
+          1
+        ],
+        [
+          348,
+          1
+        ]
+      ],
+      "loads": [
+        {
+          "block": "block223",
+          "innermost_loop_header": null,
+          "inst": "inst2558",
+          "operands": [
+            "v2475"
+          ]
+        },
+        {
+          "block": "block234",
+          "innermost_loop_header": null,
+          "inst": "inst8214",
+          "operands": [
+            "v8631"
+          ]
+        },
+        {
+          "block": "block234",
+          "innermost_loop_header": null,
+          "inst": "inst2781",
+          "operands": [
+            "v2667"
+          ]
+        },
+        {
+          "block": "block82",
+          "innermost_loop_header": "block61",
+          "inst": "inst8248",
+          "operands": [
+            "v8665"
+          ]
+        },
+        {
+          "block": "block241",
+          "innermost_loop_header": null,
+          "inst": "inst8261",
+          "operands": [
+            "v8678"
+          ]
+        },
+        {
+          "block": "block243",
+          "innermost_loop_header": null,
+          "inst": "inst8282",
+          "operands": [
+            "v8699"
+          ]
+        },
+        {
+          "block": "block85",
+          "innermost_loop_header": "block61",
+          "inst": "inst8293",
+          "operands": [
+            "v8710"
+          ]
+        }
+      ]
+    }
+  ],
+  "performance_claim": false,
+  "interpretation_limit": "The103 readonly loads/23 inside loops include backend duplication and nested activations. Map each load to its source activation and expected hoist point before claiming a LICM gap. No timing/dynamic-instruction inference from these static counts.",
+  "next_actions": [
+    "Integrate newly fetched PR973 selected-range branch folding in a separate frozen compiler epoch.",
+    "Map original and optimized capture loads to nested loop headers and invariant definitions; distinguish valid outer-loop placement from missed inner-loop motion.",
+    "Inspect repeated source bounds/work guards and backend rematerialization using exact CLIF/assembly. Apply only proved native transformations; retain finite source errors and prefixes.",
+    "Continue restoration metadata allocation ancestry work; selected restore still26,837 allocations and about125.9M instructions."
+  ]
+}

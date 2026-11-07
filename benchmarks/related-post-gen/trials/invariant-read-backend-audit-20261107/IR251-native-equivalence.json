@@ -1,0 +1,50 @@
+{
+  "after-4": {
+    "full_native_text_byte_identical": true,
+    "text_bytes": 898092,
+    "sha256": "f917d1c4dc9cc63a4222ace82b72cf5d4ef41e6f51909f4a1cb5cd1405e5829a",
+    "code_bytes": 894856,
+    "stack_bytes": 1536,
+    "capture_view_anchors": 73,
+    "all13_bundle_files": {
+      "catalog-profile.json": true,
+      "image-binding.bin": false,
+      "frame-summary.json": true,
+      "artifact.mecb": true,
+      "source.mec": true,
+      "metadata.json": false,
+      "catalog.rs": true,
+      "native-metadata-binding.bin": false,
+      "native-metadata.bin": false,
+      "linked.rs": false,
+      "object.o": false,
+      "descriptor.json": false,
+      "map-facts.txt": true
+    },
+    "decision": "No new native processing work removed. Entry view values were already invariant in this benchmark. No latency claim or new timing cohort for this failed optimization hypothesis."
+  },
+  "reuse-4": {
+    "full_native_text_byte_identical": true,
+    "text_bytes": 867092,
+    "sha256": "11f21f10235ef6e67cefb3dd735b636f127ce95fc2393f6927075cea27160b75",
+    "code_bytes": 863976,
+    "stack_bytes": 1552,
+    "capture_view_anchors": 70,
+    "all13_bundle_files": {
+      "catalog-profile.json": true,
+      "image-binding.bin": false,
+      "frame-summary.json": true,
+      "artifact.mecb": true,
+      "source.mec": true,
+      "metadata.json": false,
+      "catalog.rs": true,
+      "native-metadata-binding.bin": false,
+      "native-metadata.bin": false,
+      "linked.rs": false,
+      "object.o": false,
+      "descriptor.json": false,
+      "map-facts.txt": true
+    },
+    "decision": "No new native processing work removed. Entry view values were already invariant in this benchmark. No latency claim or new timing cohort for this failed optimization hypothesis."
+  }
+}

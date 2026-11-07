@@ -1,0 +1,1379 @@
+{
+  "schema": "mech.related-post-gen.trial-evidence-manifest.v2",
+  "compiler_commit": "c14760210be8e161ed6a523c651203f25b9cded5",
+  "selected": false,
+  "files": {
+    "audit-summary.json": {
+      "sha256": "4a02fe3035f88fd337bfbdf6e4a18f3dbf61affab1ac79549eddb70498cd1e20",
+      "bytes": 22311,
+      "decoded_sha256": "4a02fe3035f88fd337bfbdf6e4a18f3dbf61affab1ac79549eddb70498cd1e20",
+      "decoded_bytes": 22311,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/summary.json"
+    },
+    "compiler-build.json.gz": {
+      "sha256": "21f0a4bd70b90f96a1f5614bb27d2a8df91fb968ea3bdaa752ddf4c5ef49e760",
+      "bytes": 6890,
+      "decoded_sha256": "871847b9a9c228fcd502495f3a362e29ad078014641a45528f32b88269e6c9d8",
+      "decoded_bytes": 79117,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-opt-20261107-v1/build.json"
+    },
+    "source-inventory.json.gz": {
+      "sha256": "5379d70db2a5d1b2a6b124ad3ec90e63ceb5f38cee564c649f0a9afb7af766a0",
+      "bytes": 116430,
+      "decoded_sha256": "51338b327776b7b7cfcb5e195e78b7a4cde760fc0b6db78a48dbc14893e80276",
+      "decoded_bytes": 314509,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-opt-20261107-v1/source-inventory.json"
+    },
+    "audit-compile-run.json": {
+      "sha256": "1de0c69225a0a0233d87bbfe79f37af4cfadae06f07a3139c83fced048136272",
+      "bytes": 473,
+      "decoded_sha256": "1de0c69225a0a0233d87bbfe79f37af4cfadae06f07a3139c83fced048136272",
+      "decoded_bytes": 473,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/compile-run.json"
+    },
+    "IR251-noop-trial.json.gz": {
+      "sha256": "9709c2664f3236c53dbb5bd798455d1139ca43c4309eefb1eeda77972c722e60",
+      "bytes": 10749,
+      "decoded_sha256": "c665e2d86fca6eb7e29f1682d1c83893119ec8c128930e4782a6a1acd919f3ee",
+      "decoded_bytes": 63241,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/compiler-native-immutable-capture-views-noop-20261107.json"
+    },
+    "IR251-native-equivalence.json": {
+      "sha256": "320517a170edfbbbfd0df84104e92e8fb82a76f5fe6ee3dc3abde11aa65a8814",
+      "bytes": 1789,
+      "decoded_sha256": "320517a170edfbbbfd0df84104e92e8fb82a76f5fe6ee3dc3abde11aa65a8814",
+      "decoded_bytes": 1789,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-runners-20261107-v1/native-text-equivalence.json"
+    },
+    "ir/801-loads.json.gz": {
+      "sha256": "98cf2885c0612ea0e4afb05fc2c17a62aa1504711e2be8ebe3d2a87e6571fbea",
+      "bytes": 393,
+      "decoded_sha256": "e7a00ccb7e461725e1b7491d610b88b15aedd1b52bad127ba327a13526a44a63",
+      "decoded_bytes": 2371,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/801-loads.json"
+    },
+    "ir/3360-optimized.clif.gz": {
+      "sha256": "97486f0e667a6d4c7855f65fb7a057d82c8342201eb8ca62639deeb0007b20fc",
+      "bytes": 3659,
+      "decoded_sha256": "e036dae15f1136e4e296a8b3588d2f466c7b298ed0ce755b0e171190c69192ec",
+      "decoded_bytes": 17593,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3360-optimized.clif"
+    },
+    "ir/2384-optimized.clif.gz": {
+      "sha256": "3be904c8c7fdce042b234aa5141c9cd79acde55375eaa43e5d2889bc59bd0907",
+      "bytes": 8842,
+      "decoded_sha256": "c02f39215edd11a9efc38a368b67e8f1554a936eb2f4b4927d46e317d017e964",
+      "decoded_bytes": 51492,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2384-optimized.clif"
+    },
+    "ir/146-optimized.clif.gz": {
+      "sha256": "c1796d0fc41a51ff9680c59dff7423bfc8fc9d6fedd406303e91a9cbf3eb4c2e",
+      "bytes": 1951,
+      "decoded_sha256": "65a311c15e0a06ec7c547dac9ff04d1f37e1f43aa6cdf669ea6c3ae6f2e9ca23",
+      "decoded_bytes": 8663,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/146-optimized.clif"
+    },
+    "ir/1522-optimized.clif.gz": {
+      "sha256": "b43830d48ea61f918816ee063377250df01eec47fb336f543a033d9409690e02",
+      "bytes": 7814,
+      "decoded_sha256": "7c055a45880f4190227364430302e7232569b035f4e5ef36c0959879e1e55c26",
+      "decoded_bytes": 49662,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1522-optimized.clif"
+    },
+    "ir/1341-loads.json.gz": {
+      "sha256": "98fad43b9f85324c89bfdbc461228eb372fa7835a1a462a9e6bcf161aa05737c",
+      "bytes": 148,
+      "decoded_sha256": "444bdb02b4ac5e73dcbe74b0e51b4199302626214e28c03fd2de02c09304a208",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1341-loads.json"
+    },
+    "ir/1166-before.clif.gz": {
+      "sha256": "cef0fbd52c00bbadeb8326d1e0b5d2d014e3378387239251b40c3018a7139589",
+      "bytes": 13283,
+      "decoded_sha256": "19d8ac884ce9354cd5cbb28c595f8df840b29483d66a9c4d250b9a40e47e2b63",
+      "decoded_bytes": 65806,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1166-before.clif"
+    },
+    "ir/1282-optimized.clif.gz": {
+      "sha256": "0e75e6eae0fd0c2824e3ad0dce6f0bca506833f6a75662dfd9f8011d22773361",
+      "bytes": 36702,
+      "decoded_sha256": "8615bab8ac0f815ddfbc570ff42604a85c331ed659cf40aa91feb49caccb8c75",
+      "decoded_bytes": 231103,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1282-optimized.clif"
+    },
+    "ir/1790-before.clif.gz": {
+      "sha256": "8e60f5d2b9d3e3a00ad1c048873ad85ec975c50cd8ca3c29ae499953cd3d8612",
+      "bytes": 42111,
+      "decoded_sha256": "4e7bae3b1e5488cd9f14b43dd7396583f52368092e1ef653fff0ad671af39279",
+      "decoded_bytes": 219249,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1790-before.clif"
+    },
+    "ir/1553-optimized.clif.gz": {
+      "sha256": "3de5cec8449c0fde0d7a7e7246f3611d61aeda3a95c29d6f42e736bc6fc545e8",
+      "bytes": 3119,
+      "decoded_sha256": "4c4e7ef754171eb9baf470c6b4df7475938e83524739247f3892e7894335c633",
+      "decoded_bytes": 15156,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1553-optimized.clif"
+    },
+    "ir/3144-loads.json.gz": {
+      "sha256": "6b98c2e3ac3b1ae75f662a878812810bd148f18334de06cc2fc334e18cc9435e",
+      "bytes": 148,
+      "decoded_sha256": "f8032ef95d7debdcf70277a46e5ce5d2d945bb1acdec93fc98a18b91de6a1785",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3144-loads.json"
+    },
+    "ir/3144-optimized.clif.gz": {
+      "sha256": "e264d97c0fe5136271e0ff2cff15d804868666908382a245b72693d896b42fb2",
+      "bytes": 2009,
+      "decoded_sha256": "f9b8691153a19e57e403485712cdc49b317425db25a810bfb774975a63b36ab0",
+      "decoded_bytes": 8485,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3144-optimized.clif"
+    },
+    "ir/801-optimized.clif.gz": {
+      "sha256": "5a774ab3f9247fd604896ff458720a3b557934237410d189e41acc1aafce6ded",
+      "bytes": 23312,
+      "decoded_sha256": "43b57e62b33b8318adc4e899a32e9c5aff9a85a3948baa61cfa3b6ba573c1cbd",
+      "decoded_bytes": 157852,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/801-optimized.clif"
+    },
+    "ir/3098-loads.json.gz": {
+      "sha256": "66eff496d063abaed90effdfe30676d93419e4ca312c5acbfe1994266e1c75b8",
+      "bytes": 149,
+      "decoded_sha256": "d2a2678339cba14950e23f21abee5751cd21e09796e0630f70a22072693d4cee",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3098-loads.json"
+    },
+    "ir/1930-before.clif.gz": {
+      "sha256": "e17a4bd2fbd97c7f6bc6b93b80eb9b1eea9d1c0cbf5a1470f4d60ce07e0f84eb",
+      "bytes": 7320,
+      "decoded_sha256": "bc1e8d1f413c11a2fcee7e65e67a25d86a8273f76d11ae103926dabd64efd5cf",
+      "decoded_bytes": 33224,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1930-before.clif"
+    },
+    "ir/459-optimized.clif.gz": {
+      "sha256": "7be9b5a905f13a4edb62488120f6adad466a3e01f7b9b670e5887ef08f665149",
+      "bytes": 3069,
+      "decoded_sha256": "b5ecec565056dbda6d45e417194b3221ab1482f86b4b300b7b9ac2299f87532c",
+      "decoded_bytes": 14550,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/459-optimized.clif"
+    },
+    "ir/599-before.clif.gz": {
+      "sha256": "4a2c32459aeb5c5329cc0031988850e3189d71bd8303fe1a8af609afa4ab12bd",
+      "bytes": 6251,
+      "decoded_sha256": "5391beaa6a2ef568b1f36d90fad31db836b9f2a89661cdb10a08de8fe8fb1bef",
+      "decoded_bytes": 28762,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/599-before.clif"
+    },
+    "ir/3198-before.clif.gz": {
+      "sha256": "929e19e8786bc7881316b2c1f3dc39121116b8eea851f2304f0f00d29fa0f449",
+      "bytes": 13642,
+      "decoded_sha256": "2c37eff5d95bb6538a9e22be153b6896351ea66d3768401b4657f11b7abf9850",
+      "decoded_bytes": 67767,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3198-before.clif"
+    },
+    "ir/1282-before.clif.gz": {
+      "sha256": "f6bfd2cd4ad4d2547fd6ed81d0c8e3d19266664feee86a79cce7fc5095a7bb8b",
+      "bytes": 68357,
+      "decoded_sha256": "6f2101e11a12d471fd4fe39be5194c6314f5905e520373e8d49bc697d0eecd69",
+      "decoded_bytes": 375513,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1282-before.clif"
+    },
+    "ir/1053-before.clif.gz": {
+      "sha256": "28d006ede4bddf0ab2104dcfe40bd344f750869fadd67c329a1ac87444629e5a",
+      "bytes": 4010,
+      "decoded_sha256": "bb367e19e02c3c2d0b019b79126cab4cd19e5e0230e8822fbef24fb41e4c48ac",
+      "decoded_bytes": 17481,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1053-before.clif"
+    },
+    "ir/2742-loads.json.gz": {
+      "sha256": "93050776320fdb4f9ffc16928a601764bed9656d8269578c27c86f3cbc236c3c",
+      "bytes": 149,
+      "decoded_sha256": "565965e2ec169f797f9b9ec51d6872a5a5b4678a054a2b86bdff39d3bf13f8f0",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2742-loads.json"
+    },
+    "ir/3483-before.clif.gz": {
+      "sha256": "b2f7c11a002513050f9351a64321dc4775da5cfc6863c3451e45be7f09474550",
+      "bytes": 9467,
+      "decoded_sha256": "9109d5fa35465ea1bff0b1032adec5234c5f183a905a7238879aaa70bd12e1c7",
+      "decoded_bytes": 44067,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3483-before.clif"
+    },
+    "ir/2349-loads.json.gz": {
+      "sha256": "ee3bdef37cae0f033879125f87ea6241f38f76b404d47ca3752b7c93146c003a",
+      "bytes": 149,
+      "decoded_sha256": "8c70e471ecf84e232a927eb49fe75a62d3ffe694bca5a17b08f4095582318b28",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2349-loads.json"
+    },
+    "ir/2676-optimized.clif.gz": {
+      "sha256": "b2727c6450c5c1161e6a78d2cd025587222ee14a36fa7977992973627ccce605",
+      "bytes": 3655,
+      "decoded_sha256": "18a6584197bb957ef44b739e388aa0b9839ff0613a24508623c0fd2e824ba4c3",
+      "decoded_bytes": 17593,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2676-optimized.clif"
+    },
+    "ir/2128-loads.json.gz": {
+      "sha256": "0045479e7a3865b2f5af7cebdc43fb67badadffb290f9e284b8bf7747dd0d3ce",
+      "bytes": 148,
+      "decoded_sha256": "bdafee0624dcc2cda22c21d4d98273e62835062ebfa2a3180080f7cd92aa18b1",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2128-loads.json"
+    },
+    "ir/1816-loads.json.gz": {
+      "sha256": "e65b1f48e536cac5bab9cb63129bf1d4dee3038938a9e207648439e0b2b0329a",
+      "bytes": 148,
+      "decoded_sha256": "c14c441d80ed83d7a2e0e7aa224c87468f968046618e6e6aa00f50e1eefe7c6c",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1816-loads.json"
+    },
+    "ir/671-before.clif.gz": {
+      "sha256": "b0f36875bfd2994bc3bda9d25aeeb1ac4fd54dac0f68af9b2498abdd76d055ce",
+      "bytes": 9970,
+      "decoded_sha256": "6c09e842188d4bbb731c6af9ce4c86dac1dd42cbb3c5997a49c8ccc11bbf6f2a",
+      "decoded_bytes": 48369,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/671-before.clif"
+    },
+    "ir/2128-optimized.clif.gz": {
+      "sha256": "fb9fe88408ab2aac4000a7f59959ef4bee21623afbe7f969662e1e19c3ccdc9d",
+      "bytes": 3066,
+      "decoded_sha256": "526b1a2b12806b956428287a912a24502a12c71b4f360bbeb7d0ae8b82a221a6",
+      "decoded_bytes": 14623,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2128-optimized.clif"
+    },
+    "ir/2412-before.clif.gz": {
+      "sha256": "dbd9f47450b9fa792e200d319a5ba56d93d6534c62dcbf9fd3a2933d2621cac5",
+      "bytes": 6229,
+      "decoded_sha256": "20fd9867340468e11e4cedb24584307ad6ad2277197a987d83edce2495a795b7",
+      "decoded_bytes": 28296,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2412-before.clif"
+    },
+    "ir/146-before.clif.gz": {
+      "sha256": "4140bbb3a0482df61f5324c8cdf86d1bc2736fab0f4ba3661b4875ebe803ac09",
+      "bytes": 3118,
+      "decoded_sha256": "68f65f49fd5103a89eb7c19522f619a5a6ebb4d117c384143b5701a5bb408e48",
+      "decoded_bytes": 12982,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/146-before.clif"
+    },
+    "ir/2384-loads.json.gz": {
+      "sha256": "1820d6366bb4fc9e16793f688c03ae8a0b82266359d2f5e0c5199f667b1def2e",
+      "bytes": 149,
+      "decoded_sha256": "ddd2f4a6432463c909daf3fb0dd934a8ade8ef925c855933d161e2c1e7c5d28a",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2384-loads.json"
+    },
+    "ir/3198-loads.json.gz": {
+      "sha256": "31bc2a27286112b952141313872e3f4754ad4dbc55c191d27aa0a171ad60a9e6",
+      "bytes": 148,
+      "decoded_sha256": "5cf2e5a59e7c4029942a695fb8cdb45a3e61e4c981d43d7a2bbe95b5e367bb5a",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3198-loads.json"
+    },
+    "ir/3225-loads.json.gz": {
+      "sha256": "d294bde5e8b0f24a467641db176be57752b05d87f85c2cc5fb4e402324d71798",
+      "bytes": 148,
+      "decoded_sha256": "82bf1a16d1f86acd8c8eeb3166c684e46dda1b1d4c038279d2f7e733139efd6a",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3225-loads.json"
+    },
+    "ir/2349-before.clif.gz": {
+      "sha256": "0408dbdd5fe6b4c26117375d327b397074e3fc375a5be3df91588f3b68886f09",
+      "bytes": 135786,
+      "decoded_sha256": "b8e249298c75b8d47b22d0e9a67b9081d4cff0e1b72722a3bc54ef21a0c2da32",
+      "decoded_bytes": 753216,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2349-before.clif"
+    },
+    "ir/901-loads.json.gz": {
+      "sha256": "6bf4c81aa758d64d12e3b7fddea1e74b399b286f2b7a9f00583c2e0d6c75b2fb",
+      "bytes": 416,
+      "decoded_sha256": "6206e009a7131c28163fb48d62a28f5575aa6cd1011efa5398fe872f29647771",
+      "decoded_bytes": 2777,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/901-loads.json"
+    },
+    "ir/1930-loads.json.gz": {
+      "sha256": "e1eb704bd297b87c99b3e50430f4f8d8d3512c4485eadfe5d31dcb67b37dded8",
+      "bytes": 148,
+      "decoded_sha256": "3a9334aea007d23de7f8762ee2334d6e36a373025892efb5238b6b9a1eba8239",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1930-loads.json"
+    },
+    "ir/1311-before.clif.gz": {
+      "sha256": "fa426d33381cc21a6a2041580e177dc8fbb226c9f9f2c6b1ac5d7ca360bad83b",
+      "bytes": 20205,
+      "decoded_sha256": "a55c6fddf42cb30ecfb5d9b9fae05f6aee58f564da82f9967641f2ce9c315050",
+      "decoded_bytes": 104175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1311-before.clif"
+    },
+    "ir/1099-before.clif.gz": {
+      "sha256": "5a2aa2565b83d474ef604e49c7c28f4d7ef5d2c23cf86ad18226a4a972b7a487",
+      "bytes": 2944,
+      "decoded_sha256": "1d4c2c9c054ce5f86cb36b4b23ee94c6c6626e78b5ad70e0ff8c739a2400f622",
+      "decoded_bytes": 11896,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1099-before.clif"
+    },
+    "ir/2498-loads.json.gz": {
+      "sha256": "f17acd008883f8ac02b8163bbc789cf8b5f00fcf7b6a864796937843267fce12",
+      "bytes": 149,
+      "decoded_sha256": "358a061b7d8d0228359900910ede70873131c46bac45374f20a605ad048de1b2",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2498-loads.json"
+    },
+    "ir/256-loads.json.gz": {
+      "sha256": "02f5c0e69357e168fecd490e47d97cf891b90448c34e7d13a7db214a88c13ab2",
+      "bytes": 327,
+      "decoded_sha256": "586632a8dc71e74f0f5e6d7450b6331f70f4b05328cfa825c9cd111a7df80f8a",
+      "decoded_bytes": 1290,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/256-loads.json"
+    },
+    "ir/1311-loads.json.gz": {
+      "sha256": "089534503048eeea9dd913e09f387e29f03d75c306505b2e27ff7e1363c9bea3",
+      "bytes": 147,
+      "decoded_sha256": "28dac23227262d3bea1714f9a76e3d62cde0a1353f199a32890a062dcfa6b919",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1311-loads.json"
+    },
+    "ir/849-before.clif.gz": {
+      "sha256": "099c57d09538e2409814c27f75786f502f419d591abdaa6635ef0b66d2a658b3",
+      "bytes": 26803,
+      "decoded_sha256": "2413fd102e93c69366be038502a7b07bfaec6fd8fefa85bc0e5d4a8adff1ba74",
+      "decoded_bytes": 138223,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/849-before.clif"
+    },
+    "ir/2799-optimized.clif.gz": {
+      "sha256": "a507f66945c9bdc50e4216db3a3831ee0129d403f2676fc763708bd53578231e",
+      "bytes": 5064,
+      "decoded_sha256": "8d40be76ecf7fb42dcbebc39ae1fce6353f472eb7720c258bf7df8b8883c4763",
+      "decoded_bytes": 26418,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2799-optimized.clif"
+    },
+    "ir/1193-loads.json.gz": {
+      "sha256": "5aab1aad9121e42b9931edf8779094695a70469e85f4848a1808b14e1304ed7b",
+      "bytes": 148,
+      "decoded_sha256": "11aeb31b151e57c4e28ab6f0917f858e4344191525a7f1364a046285fcdbb082",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1193-loads.json"
+    },
+    "ir/3335-before.clif.gz": {
+      "sha256": "2eb0a3d28a3709b23205f03e844f65268b161292450487b246adeb863a5ccbdd",
+      "bytes": 11034,
+      "decoded_sha256": "2a516a68e147f2fd6cb84cad7363edd4e3b3041a24f2ed96913f1ec2f291145a",
+      "decoded_bytes": 51767,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3335-before.clif"
+    },
+    "ir/2255-loads.json.gz": {
+      "sha256": "0a4050e3716d968c285d5ff674595a8e4489b70becc10dace177f1842c8d2f88",
+      "bytes": 148,
+      "decoded_sha256": "182c6cc601c1dbbdc885baf4fc48ca9c8b78b6f597c3516fd446e49dbeb49ff1",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2255-loads.json"
+    },
+    "ir/1053-loads.json.gz": {
+      "sha256": "b73fab33a05b4907f161490e7150fd8aab959b9c73de8d783f3e4e45c966faf7",
+      "bytes": 149,
+      "decoded_sha256": "9f484a49bab5fefbe84aa3f9ba8d67a3d80f541a3d0518185d5fcd10d9598e83",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1053-loads.json"
+    },
+    "ir/256-before.clif.gz": {
+      "sha256": "97442aacdd5b4fcc23828dcaa7b55165b43fe011f5c382702ff07ccabca247fa",
+      "bytes": 29688,
+      "decoded_sha256": "cb017d3e6d73c5bbd1d38337c1427888319bec10a4283a0fa82e7046a9ff9c16",
+      "decoded_bytes": 147954,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/256-before.clif"
+    },
+    "ir/1816-optimized.clif.gz": {
+      "sha256": "64a0788d985112ac4d975d3b2a6f9f64853cab5549cf4a3c164f0a34b53fb2a8",
+      "bytes": 8838,
+      "decoded_sha256": "f00540f66ea67b0cb13aa485abd9babbc2eaf9b3facba0651b47e72f53c61c4d",
+      "decoded_bytes": 51248,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1816-optimized.clif"
+    },
+    "ir/1311-optimized.clif.gz": {
+      "sha256": "a7e6f22b5329c89ee93f09cc12c2187afca983003b1cc9c560b044c41d740ff6",
+      "bytes": 9761,
+      "decoded_sha256": "641ddee63326699f343b24ffc206626316b065cdd8449089d01927235d6d3662",
+      "decoded_bytes": 62547,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1311-optimized.clif"
+    },
+    "ir/671-loads.json.gz": {
+      "sha256": "17b17baf367f28401e488dfb480adff58312f7d05b102ee8e7987b203ed72f92",
+      "bytes": 147,
+      "decoded_sha256": "ee061e7ec8852c4572dce6b0e5b62ccccb9f6785b00a4383fdec19becb83f56d",
+      "decoded_bytes": 173,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/671-loads.json"
+    },
+    "ir/826-before.clif.gz": {
+      "sha256": "37315c3c97e69250688c01ef6a43845444d69ad78d3f2e2950c83f4bbe2c5b21",
+      "bytes": 32843,
+      "decoded_sha256": "be4ba79286eb97f61645ce323d8c3f213a96fd8347238502a6144a395b8e936e",
+      "decoded_bytes": 170796,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/826-before.clif"
+    },
+    "ir/2799-loads.json.gz": {
+      "sha256": "7022dcf03603d53c7baa3c94bf281f5d49554bc5db94a9d55081807f60268761",
+      "bytes": 148,
+      "decoded_sha256": "e3cb5938d87204d8b72f1876450894a3d838ef4eb46d03319baf02d2dba46dce",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2799-loads.json"
+    },
+    "ir/901-optimized.clif.gz": {
+      "sha256": "befdb5a556fc1cd3b5610a30682147f01630308ee64af3b00137891e3f5a3bd7",
+      "bytes": 7982,
+      "decoded_sha256": "071af59e643738fb393a3b1978e7867613ef84c066eb4a8670fbaea44dc2d52a",
+      "decoded_bytes": 50552,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/901-optimized.clif"
+    },
+    "ir/146-loads.json.gz": {
+      "sha256": "5ccc4f564d6f74baaed6a2b44a66915544ff0b7ecd5af16176b55687a7043799",
+      "bytes": 148,
+      "decoded_sha256": "b519047b1da1aa1debb4ac563cd097ac8b8194ba1561a1fcfaea253c9fdededb",
+      "decoded_bytes": 173,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/146-loads.json"
+    },
+    "ir/459-loads.json.gz": {
+      "sha256": "6b0174cf7c1f370939dc34d0487de80802f9206deda534fee35689c7cd7fb894",
+      "bytes": 148,
+      "decoded_sha256": "a7a2057d8fd0ede3d933ef2e9c4ea31de2219c7c475a3ff6d956f77abde62303",
+      "decoded_bytes": 173,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/459-loads.json"
+    },
+    "ir/599-loads.json.gz": {
+      "sha256": "ae738f00a2ef1fa54ff57546016427fbea36bb6e7ed8fddf74c7dafb0b18d598",
+      "bytes": 148,
+      "decoded_sha256": "6afbac87d3e30ec556591b5e638787ac2391443c9b1af4376206f8bf298e05b6",
+      "decoded_bytes": 173,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/599-loads.json"
+    },
+    "ir/2651-before.clif.gz": {
+      "sha256": "7e0fda83b1f4a61085a56e8670db271e4c17f708fe4f5fc2dae75c60a8669322",
+      "bytes": 11049,
+      "decoded_sha256": "060132b1941be561d39d466eaf8928f9b52867c38825f1a5045d3536e7f0e1e9",
+      "decoded_bytes": 51767,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2651-before.clif"
+    },
+    "ir/1522-before.clif.gz": {
+      "sha256": "15a4ed12c9e5cb902a2c91239fdf15872708984dfe49c6c783931cd6fe12d520",
+      "bytes": 16721,
+      "decoded_sha256": "ec5a8a339f7c07d0472647292c4899fba3eb1d1b53087fc6d8288308cc29b847",
+      "decoded_bytes": 84427,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1522-before.clif"
+    },
+    "ir/1816-before.clif.gz": {
+      "sha256": "1a0b7904caf7173a538e6517b669e8b3fb82a22981884e6b59ea7924e0a6b073",
+      "bytes": 14662,
+      "decoded_sha256": "6762f30cbb951af780a91d1237bb26a88158dd303714ce5ae68403621a7eee9b",
+      "decoded_bytes": 73445,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1816-before.clif"
+    },
+    "ir/107-before.clif.gz": {
+      "sha256": "4c3fe750500d0155d165f78bbc1809f5ef5d15769915cee2f2186b06e2a1f494",
+      "bytes": 15053,
+      "decoded_sha256": "9118c302363690d67f8a88b570c40c3abdc133e77427bc7b5e64d84de165afb9",
+      "decoded_bytes": 73059,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/107-before.clif"
+    },
+    "ir/874-optimized.clif.gz": {
+      "sha256": "d023af6b4ab94d0d7183404280a54b6833ae9c5237b7e86ae3d913ee467d82ad",
+      "bytes": 11561,
+      "decoded_sha256": "e88d67cfcfa9b1ce0117d45f885bc500224e943e752806608aad0f5d9d3b671d",
+      "decoded_bytes": 76477,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/874-optimized.clif"
+    },
+    "ir/801-before.clif.gz": {
+      "sha256": "c05265a1e8f96309b165c86824e5223bacf1f020809700e930420c5e6e314f0e",
+      "bytes": 45130,
+      "decoded_sha256": "87de21c219371d15d2cefe594a4428dd255a87bd0fd6fda3290dcbfb3c77f8b2",
+      "decoded_bytes": 239586,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/801-before.clif"
+    },
+    "ir/693-before.clif.gz": {
+      "sha256": "89da4c0024057b9408d07febbc687c099d6384f660c8bddd0614fff899f58331",
+      "bytes": 3787,
+      "decoded_sha256": "5a24030ce4e50ef9d60a61377b0124e8b1bd5791c9edf2e9542309578e34f24a",
+      "decoded_bytes": 16366,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/693-before.clif"
+    },
+    "ir/3426-optimized.clif.gz": {
+      "sha256": "f11b749ca22d69bffc2c5b4e6961a7029c17d62848bb0ae59edfe2b7ed797f58",
+      "bytes": 11141,
+      "decoded_sha256": "b5bb097ee5cb933e69c330373db0758dc45c0a10f8d09c680506cb6aa234b556",
+      "decoded_bytes": 67904,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3426-optimized.clif"
+    },
+    "ir/3144-before.clif.gz": {
+      "sha256": "50db678c368b0f7d6cd40a0aef0d0d91a7e9cdcbcc068750327eccb5abc8a80d",
+      "bytes": 2945,
+      "decoded_sha256": "eded476225483fbeaf68dfe953c6054b6662a05c1a9d3cd56b2f99e0819d0c91",
+      "decoded_bytes": 11918,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3144-before.clif"
+    },
+    "ir/671-optimized.clif.gz": {
+      "sha256": "a078a2033aa63f328e62ff9a171ead7d2a58c0317d998e9b29f7c125b36befbd",
+      "bytes": 5329,
+      "decoded_sha256": "793cc4e82f1a6ebba4c932ecc805fd36c20d1a4931c1af96326e8d4a1ff3c058",
+      "decoded_bytes": 31327,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/671-optimized.clif"
+    },
+    "ir/2228-before.clif.gz": {
+      "sha256": "601241f4e89df40b02c466d6bf78d74becc8f24c8d3b59320a818f76656f49c6",
+      "bytes": 13651,
+      "decoded_sha256": "c341203be1b54f798e08e7e621705fb774cd40f715c7c87390920e7f7ea82d07",
+      "decoded_bytes": 67767,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2228-before.clif"
+    },
+    "ir/2799-before.clif.gz": {
+      "sha256": "41226ac6251c5f495b52600a9bedd0ffbecfc99e191e69aefd15542c4a338836",
+      "bytes": 9468,
+      "decoded_sha256": "cb29c3ba1d99190f91d4d91007ef397e36d8ecbb79b7861f6804a0ebf6239ebb",
+      "decoded_bytes": 44067,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2799-before.clif"
+    },
+    "ir/1166-loads.json.gz": {
+      "sha256": "3d17383f20f010570705244a04cd227d2f4fe0149ec82295aae516ff37035da2",
+      "bytes": 148,
+      "decoded_sha256": "528f168aa19d092797b96f479f242dc0dc8b095d42eb92c62dfc78bcf85be9d9",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1166-loads.json"
+    },
+    "ir/3426-before.clif.gz": {
+      "sha256": "56046b3b09e86cca6c140cc6c759596c29d8a611ca0dc16ca0226c2d377c6758",
+      "bytes": 23161,
+      "decoded_sha256": "e4285092e5fe31af88710c8942f8869e47aa6d697037b70469468a1c463e5940",
+      "decoded_bytes": 118980,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3426-before.clif"
+    },
+    "ir/2676-before.clif.gz": {
+      "sha256": "165e52dcf7b6f30e22baf39fec7bcf698ed7941443d6e2117d4e0b41fdde8074",
+      "bytes": 5104,
+      "decoded_sha256": "663e221eb30420018b114923bc90452d4c099ebcf4ab0aca12a86c3c4dc2aa9b",
+      "decoded_bytes": 22422,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2676-before.clif"
+    },
+    "ir/693-optimized.clif.gz": {
+      "sha256": "a01f0ff5466dcf1da36e50da248bac1de928eda1d8b977dee0a85288b0e63eb4",
+      "bytes": 2530,
+      "decoded_sha256": "7f3f84c078928c618ee4f8fd5b931bba0920d2eda7dcfc71ce7fca2b996842a0",
+      "decoded_bytes": 12125,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/693-optimized.clif"
+    },
+    "ir/1790-optimized.clif.gz": {
+      "sha256": "25e7dff6a646565c7cec28b6158ceebd93d8128724c1001b2d3ce5415e6e2ab6",
+      "bytes": 24181,
+      "decoded_sha256": "20affa9c5cf438a36fa9893689cd176c64d9419b6c79c77f4f43e1f36f67b5b7",
+      "decoded_bytes": 143103,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1790-optimized.clif"
+    },
+    "ir/1844-loads.json.gz": {
+      "sha256": "48403de6f7856a9bdca90c3da18c191f2a3acac5efc297855c8c5f4b20bd29bb",
+      "bytes": 148,
+      "decoded_sha256": "839bc59d8bc6f9cdcf5125d653c6a4d4fe2d1ad4c9b96b54cee74d19efd479f9",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1844-loads.json"
+    },
+    "ir/572-loads.json.gz": {
+      "sha256": "117342c11c0fafd62587406eb20884c75fa70c177f2c485a44553a4f9e3612a1",
+      "bytes": 148,
+      "decoded_sha256": "3ba046b68985ca83c8f7b333500978e50abad4df6b43865b836cc243316f7368",
+      "decoded_bytes": 173,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/572-loads.json"
+    },
+    "ir/304-loads.json.gz": {
+      "sha256": "a03f5a2bcc3d70e504246daa9c593afd3d676ce77671e6ce45b6bb9e2588730f",
+      "bytes": 326,
+      "decoded_sha256": "c556ee67178d49c48dec67873ba04c49ffab46f85cd3b8b51eabe2da6e94cdec",
+      "decoded_bytes": 1278,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/304-loads.json"
+    },
+    "ir/2128-before.clif.gz": {
+      "sha256": "c56acccda03104c7413a70f80ad64d2c157556d7bcddf2992103334efe710636",
+      "bytes": 4006,
+      "decoded_sha256": "89f523bddf8a9e0c9cbe7e5ed767bcc6538f7bcad5dc950e22e003664b6610b7",
+      "decoded_bytes": 17533,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2128-before.clif"
+    },
+    "ir/874-before.clif.gz": {
+      "sha256": "ec8c851ad77e24d26eacf6e5ef061e2ebed902087e4593e1e3dc6fc0f42da8d2",
+      "bytes": 19196,
+      "decoded_sha256": "c08006c024dbbe225923955fee449186c19ff1869eea40a1f11e3bc38361cdda",
+      "decoded_bytes": 102647,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/874-before.clif"
+    },
+    "ir/2651-loads.json.gz": {
+      "sha256": "5979320c5ee46913b23d73c62de37948b1fb0a9c5fd24257953f67a687458cb6",
+      "bytes": 149,
+      "decoded_sha256": "df33c050d9cbd94a0a388a82d9ec3a369772cd2484f0010c02859a9c8b0039a1",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2651-loads.json"
+    },
+    "ir/1844-before.clif.gz": {
+      "sha256": "f6f5b4c631b9655e2148e1adc943c23b07738146c8f837af238591ac70e9b5b0",
+      "bytes": 6222,
+      "decoded_sha256": "a194262d77f482e8e990e584b49b63ad139e8da2ab00c4d65ff32b6ac21a73da",
+      "decoded_bytes": 28184,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1844-before.clif"
+    },
+    "ir/3309-optimized.clif.gz": {
+      "sha256": "da6a137777d6762ec77bb0e92eebfdf0a23f4b489ac3cd451a56e4d1d7c40a09",
+      "bytes": 40018,
+      "decoded_sha256": "98b7cf8d49ecefcbd2970fd5f77562a5f82ec095e41f3a445e21f1625d2439f6",
+      "decoded_bytes": 260564,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3309-optimized.clif"
+    },
+    "ir/572-before.clif.gz": {
+      "sha256": "46de92d70d7f6b59362ee4d2acc58eeed9c7b28db23fc2aa593e93509f5f3d21",
+      "bytes": 13255,
+      "decoded_sha256": "8ad920b2f2e2bce7c89f18ae5810bf1cbc06405bd4e473e48d2c208aff9eda62",
+      "decoded_bytes": 65740,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/572-before.clif"
+    },
+    "ir/107-loads.json.gz": {
+      "sha256": "f6a7100d8b6589f6956e064c87e8587a89fc6ae1c6ad8327e533282730185748",
+      "bytes": 147,
+      "decoded_sha256": "fc540686730ca0a6c138bf366ed0e1346c70b0b37f0818a61fe9239cb8f288f9",
+      "decoded_bytes": 173,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/107-loads.json"
+    },
+    "ir/1053-optimized.clif.gz": {
+      "sha256": "43e2acd99d19cc74719c086147b13ba20402779a5acb95c1fef13d7bb8782f53",
+      "bytes": 3070,
+      "decoded_sha256": "8c2789ebbf62e6d2dce6dbede9194de8ec3db4bb7016d5cb89a943973810694f",
+      "decoded_bytes": 14575,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1053-optimized.clif"
+    },
+    "ir/281-optimized.clif.gz": {
+      "sha256": "193af63f3e77be3ad5c20e61ab15350552ba07f16607bcbdcdb856882e9f924e",
+      "bytes": 10635,
+      "decoded_sha256": "b241ddddc2501d5f7037af2e7a4c58b793546eb6ff46794462a1c2fc13bdde95",
+      "decoded_bytes": 64775,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/281-optimized.clif"
+    },
+    "ir/1099-loads.json.gz": {
+      "sha256": "cd9b9551ef6cf41d40ce4ce22353037c49436d34b012b6021cd8365f6b7739b4",
+      "bytes": 148,
+      "decoded_sha256": "8bc5cc44defe6ca35996c5673b428a681d28c5fe1cf7a09fad89870b25681351",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1099-loads.json"
+    },
+    "ir/3309-loads.json.gz": {
+      "sha256": "3671afaf53ccedab0d5ad916a7c945586aca6ff4323a3efc9617d4af2f30c15d",
+      "bytes": 148,
+      "decoded_sha256": "b31c8616f0a99fed3b38e37a191d495997b50d4f42ab1d003c90bda2c30a2022",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3309-loads.json"
+    },
+    "ir/304-optimized.clif.gz": {
+      "sha256": "5811d3b075e8c0029eadd0f60f0860f912b9ea1ec77d58a3b7993c54a95b7902",
+      "bytes": 8148,
+      "decoded_sha256": "681dff91caf7f913e361e4efaaafb01d7a58f919d72435dba6a292142615a756",
+      "decoded_bytes": 49633,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/304-optimized.clif"
+    },
+    "ir/2412-optimized.clif.gz": {
+      "sha256": "a0aa8b2f9be59c80a1060a8ee2944bbf6b269226e545224516d99b01f0194176",
+      "bytes": 4284,
+      "decoded_sha256": "8ce6c08241843de29c9ea19a676a338443f68ac9cd4a720e312f73054a6cfcaa",
+      "decoded_bytes": 22065,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2412-optimized.clif"
+    },
+    "ir/2174-optimized.clif.gz": {
+      "sha256": "4f1a83eac8ace6c7dc024f682c8e1ae6d755b0eea87b5e20f89be156583ae728",
+      "bytes": 2009,
+      "decoded_sha256": "fbe7703065471cc785d234ef49ea0cb61f6faea5b3df2783a484bf18aea9c928",
+      "decoded_bytes": 8485,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2174-optimized.clif"
+    },
+    "ir/329-before.clif.gz": {
+      "sha256": "71af0351e85310ab33c86fbefd693190c311c417737d563bb15375bcd8579d30",
+      "bytes": 7881,
+      "decoded_sha256": "014171fefa0003cb2e98cac5cf3001fb7af07bb3c01e68bb9f4d172712073e17",
+      "decoded_bytes": 37461,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/329-before.clif"
+    },
+    "ir/3198-optimized.clif.gz": {
+      "sha256": "6aa9469e832b3d0c5bd5f14983514558d62384a3b8822c740e0efbb86e4dd114",
+      "bytes": 8153,
+      "decoded_sha256": "c8f6d1165d5a9022cb57133067a6aa0f5c8343b242f9a6d89dc40b06d7a7dae3",
+      "decoded_bytes": 45892,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3198-optimized.clif"
+    },
+    "ir/1193-optimized.clif.gz": {
+      "sha256": "eb28f26fdf09aba8c6e53a45a01b1870d2434dc6ae41166dd2001b6dc329804c",
+      "bytes": 4399,
+      "decoded_sha256": "7428650c47695d00e9d28ab610e0e7ef459333b78659b90d7eb4178185d3e9c4",
+      "decoded_bytes": 22308,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1193-optimized.clif"
+    },
+    "ir/1522-loads.json.gz": {
+      "sha256": "7b9a39619a3cd8cb209518e277188e1021797c306a24e924102295a9e1051031",
+      "bytes": 148,
+      "decoded_sha256": "7b4613d919b18f3a4724fdb6b76c8e80ca69761e6e07842b667821e3ea21998e",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1522-loads.json"
+    },
+    "ir/3335-optimized.clif.gz": {
+      "sha256": "4b5f41e8d7efbff11b929df6243a656427754bbc612ba9669e33bd19b1b5a359",
+      "bytes": 6973,
+      "decoded_sha256": "4de2efa050d1dd7a2c1019cfde08942d6c2189bf35e4b2e169882aae0a2f283c",
+      "decoded_bytes": 37151,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3335-optimized.clif"
+    },
+    "ir/849-optimized.clif.gz": {
+      "sha256": "6a6405db680e8182275997c0fde7198d87eed44c7c8356f85ba2286ecc09b3bc",
+      "bytes": 14490,
+      "decoded_sha256": "d1627ad5d023eb26e837f10aab2ee2c1055c3c80021cead211edd6afd9c12521",
+      "decoded_bytes": 98880,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/849-optimized.clif"
+    },
+    "ir/2174-loads.json.gz": {
+      "sha256": "07393ed9814cbd5e704e93a2425f0f04c1f1a7c4ad46338b2b315028c135e7d6",
+      "bytes": 149,
+      "decoded_sha256": "c61f71c4bb40573577440dda3df0f27944820f6734f785546334f386d1b49aa0",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2174-loads.json"
+    },
+    "ir/505-before.clif.gz": {
+      "sha256": "2cfd421f87e6980469d0660fe8664bf216129651dcf43f957ae073eb19d21da2",
+      "bytes": 2942,
+      "decoded_sha256": "44d57cf83fa8bed919e76435b20b7c9a9a725f94fe0f913d4883df1d4348b1f5",
+      "decoded_bytes": 11884,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/505-before.clif"
+    },
+    "ir/2174-before.clif.gz": {
+      "sha256": "72ad58210843911cb6ad06f226e5955a25d6380f76a4118d938b528390c25531",
+      "bytes": 2943,
+      "decoded_sha256": "ed99b8a526075c8ce4b87ec8418e6e704f9b19234386cdabe8f71c95ce5e8df8",
+      "decoded_bytes": 11918,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2174-before.clif"
+    },
+    "ir/2742-optimized.clif.gz": {
+      "sha256": "767b81c00ecb0cec7bdf66149a53ffd2a0fedb92d4abb1a88d421a03aea605d2",
+      "bytes": 11140,
+      "decoded_sha256": "ddc2e95ccf421b5d3a91e40583f80be8c9629420d7bf1c1efa796211608d5e21",
+      "decoded_bytes": 67904,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2742-optimized.clif"
+    },
+    "ir/2255-optimized.clif.gz": {
+      "sha256": "4f5bf10fc1403fffa1b32e4554661ac35968c274b32823359dc7330b240400d0",
+      "bytes": 4397,
+      "decoded_sha256": "a05ee3fec968c78f7ae71082e279f103c11e69058d3734e2b3d53a4ffdd13977",
+      "decoded_bytes": 22402,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2255-optimized.clif"
+    },
+    "ir/107-optimized.clif.gz": {
+      "sha256": "944c13cac38ed0fb2d7366455bbc516d0eb9a0eb417dd87fd1435423d7aa6706",
+      "bytes": 8441,
+      "decoded_sha256": "7fbd6821886bb5ac34ad8214b74d650f3dc5a148bb49433a0bde85027ed86764",
+      "decoded_bytes": 47729,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/107-optimized.clif"
+    },
+    "ir/1193-before.clif.gz": {
+      "sha256": "7305b6d9b7d4c438aeeae42fed53efbad8a6aa9e914917bf735da486c217dd91",
+      "bytes": 6258,
+      "decoded_sha256": "92d6b5ee85b517f24c8133c14b10911abd06bfddca9a4605b658ea106f41e6c4",
+      "decoded_bytes": 28808,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1193-before.clif"
+    },
+    "ir/849-loads.json.gz": {
+      "sha256": "a1dbe74fd51c15078c40b1d08dc13408878f71776ff01865bb2f899a70dd02bd",
+      "bytes": 392,
+      "decoded_sha256": "1dd95cfe99338d5f710b55421a42f0f3d34bcab5b7c8e8dad30a7b96e57e7c30",
+      "decoded_bytes": 2365,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/849-loads.json"
+    },
+    "ir/459-before.clif.gz": {
+      "sha256": "9fd7c8cd4da58d50177deb6abafce214d4c387d957e4cc5d88b730f500f3106b",
+      "bytes": 4009,
+      "decoded_sha256": "e6b7e3b56bc1531abd0bf4cef5c2ba17c208c2c6bc33bd5d20d1f7f8769a966b",
+      "decoded_bytes": 17453,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/459-before.clif"
+    },
+    "ir/1341-optimized.clif.gz": {
+      "sha256": "1cdab172d380146ac86156eda2878548e714104ce857654187da1601976355e7",
+      "bytes": 4419,
+      "decoded_sha256": "0e6c64fd26b2ec8deb634a419720145b22e9ff4f9f0a56013d99ba6837b3d03b",
+      "decoded_bytes": 23518,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1341-optimized.clif"
+    },
+    "ir/256-optimized.clif.gz": {
+      "sha256": "4fdebdb2698bd64ef4ec18725268bc027e33a6879c81820da0ad3b3bb4d91f7f",
+      "bytes": 16094,
+      "decoded_sha256": "f65715ead6dbe57586299e7a5e4993d0b702ef82cd39d1458d0488de0480acb5",
+      "decoded_bytes": 98447,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/256-optimized.clif"
+    },
+    "ir/329-loads.json.gz": {
+      "sha256": "456cad8a0f3ddd8216c874a0754d7283b5e8430d66bc98806fd520adac29b376",
+      "bytes": 329,
+      "decoded_sha256": "e71d009b806110c56804ee0524fc79d889bc448be6ec76b4008a96a37a8bccf5",
+      "decoded_bytes": 1419,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/329-loads.json"
+    },
+    "ir/281-before.clif.gz": {
+      "sha256": "e236497c0b46448c8c4576a27767c4a4dc23a1969d96cccb125a285f1ec1b3bf",
+      "bytes": 19131,
+      "decoded_sha256": "80c01e4ff1e97b61ec3f8090440b74c6d5fed7e764dedf2af22472980fa14e1b",
+      "decoded_bytes": 96138,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/281-before.clif"
+    },
+    "ir/3483-loads.json.gz": {
+      "sha256": "0856538a2a05e04991e2768400999ec61a4747245da23ba10830e68fd2a9ddd6",
+      "bytes": 149,
+      "decoded_sha256": "b5be6107beb582a080e0f9d032a9f5811137b2e4647d8e8b275e05011740ae70",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3483-loads.json"
+    },
+    "ir/3335-loads.json.gz": {
+      "sha256": "86628c96817620ccbf5c1b5aaf495edc0e7c7e637706beb6502bdb62142e8845",
+      "bytes": 148,
+      "decoded_sha256": "edec2e3a4656c4e89fbadc17711ae8a6adf5924788f75e57972119dcae2050d4",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3335-loads.json"
+    },
+    "ir/3225-optimized.clif.gz": {
+      "sha256": "4268375f891471486a3734599e3059740bd72bc22bb601424cf164a346adeb6d",
+      "bytes": 4400,
+      "decoded_sha256": "0fbc5972f70306650ac6df1e53493cbd0d40d4e60bfdc2e63383d9a394d75733",
+      "decoded_bytes": 22402,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3225-optimized.clif"
+    },
+    "ir/3360-loads.json.gz": {
+      "sha256": "75a1f8b0243d305310bb6e3dc44d07aaf67a43cc8e1322f4e5e130eed66bf00e",
+      "bytes": 149,
+      "decoded_sha256": "51eacfae9e368aba597162400253690d2fc1847beb5a5bb24a596f1f3ca5fe6b",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3360-loads.json"
+    },
+    "ir/826-loads.json.gz": {
+      "sha256": "495e1b9579576be05ec4e930c93fe6b4bb12805333777b2b34e87a5b4f11c060",
+      "bytes": 392,
+      "decoded_sha256": "6f6e2c0bac4c62908bf359dbe0225c68464a2eea769793b7f3b732d099bdd9f3",
+      "decoded_bytes": 2368,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/826-loads.json"
+    },
+    "ir/1099-optimized.clif.gz": {
+      "sha256": "8630ae3458145c1bea19f90035bda0a1f91e6417f122944488a8da2a8d43f40b",
+      "bytes": 2016,
+      "decoded_sha256": "cd5e45f162e42bc5d3b4602c87295540b975ac9bbee93d22fd3d6eb07977cc20",
+      "decoded_bytes": 8469,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1099-optimized.clif"
+    },
+    "ir/901-before.clif.gz": {
+      "sha256": "500f0991a61a42b8853c755c7c086a356ae8efcdbad768e7c54c51ae10464970",
+      "bytes": 11933,
+      "decoded_sha256": "2368462de75903e99c1b9a9059a00d26d3f9ee91e3001c2c9aa4555a6df42a5a",
+      "decoded_bytes": 59843,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/901-before.clif"
+    },
+    "ir/2651-optimized.clif.gz": {
+      "sha256": "3bb0714cd5879ea9ea4db470ddb681fd919127a441bb329f481432367a778944",
+      "bytes": 6974,
+      "decoded_sha256": "a24f0b8262874be3b99ddd2ee09422cde4bcff1e7d15bbce4a52e62818f0d6da",
+      "decoded_bytes": 37151,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2651-optimized.clif"
+    },
+    "ir/1844-optimized.clif.gz": {
+      "sha256": "35717df94395f4e72f8236f85475220302d706caa51e17e2f1bcf8fb76d83069",
+      "bytes": 4278,
+      "decoded_sha256": "6915b7330e6bc6e3b5c6b6f0be7e1be7ba025c699eb0f62a64de04a6cb2098a2",
+      "decoded_bytes": 21961,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1844-optimized.clif"
+    },
+    "ir/874-loads.json.gz": {
+      "sha256": "b6e36aa60101e4e8583ff1985963f1f86bfcc884d229cba73737d752b5f579a3",
+      "bytes": 400,
+      "decoded_sha256": "8387e62627feceea5d3471573f2a9dd8cbedd8b02057dd4380aba7fa572da3e0",
+      "decoded_bytes": 2490,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/874-loads.json"
+    },
+    "ir/3098-optimized.clif.gz": {
+      "sha256": "b7c506999054c834c58397c033410e3e680a5780711297ff8e4235698b1e366a",
+      "bytes": 3068,
+      "decoded_sha256": "4a874d361fd4cea259a301dc3548a907a580ef68cfc98ad4df6936cfa0ebc603",
+      "decoded_bytes": 14623,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3098-optimized.clif"
+    },
+    "ir/572-optimized.clif.gz": {
+      "sha256": "48849e6f88d31b4be66d25db7f97ea7d638852cd150840e9d90a374794ef1187",
+      "bytes": 7985,
+      "decoded_sha256": "743611d9820648096ee27bf0b1df4b3f651f2ff71f8f4b1d15f572ec352ea8f4",
+      "decoded_bytes": 45038,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/572-optimized.clif"
+    },
+    "ir/2255-before.clif.gz": {
+      "sha256": "090d7c3cb168d3535c6c7cdb78fdb905cb59c97cb636089c19de141f2c36ac44",
+      "bytes": 6256,
+      "decoded_sha256": "0c1c5194c5572166067c4471809158ddcb7c265fbdda284099e0a075af4b8271",
+      "decoded_bytes": 28934,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2255-before.clif"
+    },
+    "ir/1341-before.clif.gz": {
+      "sha256": "f87cd42248a76c871075d11036646d58fd65f8dfcd3e1367c256fe39387c17fa",
+      "bytes": 9069,
+      "decoded_sha256": "d7e69fc8056545a2b8b962a8070183d3c85049d319932c7080ce17b0ba978b80",
+      "decoded_bytes": 41684,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1341-before.clif"
+    },
+    "ir/2228-loads.json.gz": {
+      "sha256": "d14c41315d3b9777c2a9fe40b76175d0a5b04da0de64c39b5bd2389aea870b2d",
+      "bytes": 148,
+      "decoded_sha256": "f6d3065337e03826109ca52bfb586f1f0e9f9db7adcb83376d5b1bd8cacfb7fe",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2228-loads.json"
+    },
+    "ir/2498-before.clif.gz": {
+      "sha256": "6ae84b150b146b12c517852c19302a3c79cf500395e01a4203f1bfdd18a2d24d",
+      "bytes": 7316,
+      "decoded_sha256": "400f4d29525db35d8e33f17fb833edba82cbc91b932040ed527d8a28942bf27d",
+      "decoded_bytes": 33252,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2498-before.clif"
+    },
+    "ir/826-optimized.clif.gz": {
+      "sha256": "b7a035004d07648158d19556c906f8d69df46092bdd89c2a226b3fba4d95669a",
+      "bytes": 17262,
+      "decoded_sha256": "815be075169a2377a49f684a1f744287044513f19b95b387e5f0d487ba14c31d",
+      "decoded_bytes": 116879,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/826-optimized.clif"
+    },
+    "ir/281-loads.json.gz": {
+      "sha256": "f0946f2df782897868c438220d2d4a6a2dbb12b4d4246e3df7ddb6e312db66f1",
+      "bytes": 323,
+      "decoded_sha256": "fa0671d0377d7d3eb7c78c3f7336c02fcd9878eb0ba81d8222f57df524fdb81d",
+      "decoded_bytes": 1278,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/281-loads.json"
+    },
+    "ir/2676-loads.json.gz": {
+      "sha256": "b23d51d6c90b15d67b29bdf81876fd34645e25de93d397c16eb5c420340849a4",
+      "bytes": 149,
+      "decoded_sha256": "1751c8f0da24a370d92b4ca0f9a425ff8b125af1888ead97f129a5e16574053c",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2676-loads.json"
+    },
+    "ir/329-optimized.clif.gz": {
+      "sha256": "97f218c1c8e9ad45d13b24918ed7275a71d2fd416a71ad5094ee6534d8420d49",
+      "bytes": 5442,
+      "decoded_sha256": "ed8b35c5bd5b653bd238e731da0f8f3aa9742a4c376c86bcde40589592b6b24a",
+      "decoded_bytes": 31131,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/329-optimized.clif"
+    },
+    "ir/3483-optimized.clif.gz": {
+      "sha256": "20f8c49a49ea59d6c3406167f10584dd93ff96d9e0f2177276b2be0a02fa5f11",
+      "bytes": 5063,
+      "decoded_sha256": "bb674ea449bf3790ed89a13bf7027c946014fb0066f7d03bc0450619c36a6ba1",
+      "decoded_bytes": 26418,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3483-optimized.clif"
+    },
+    "ir/2349-optimized.clif.gz": {
+      "sha256": "1d2660a0a343f7c79c25bd9e07989ecdc8bfed805f81a64b1accc031448a71b0",
+      "bytes": 74984,
+      "decoded_sha256": "41a9224785ba27edd1a2dfe5bf1d46655cf985c6fa9f9af482df4994897557b5",
+      "decoded_bytes": 476803,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2349-optimized.clif"
+    },
+    "ir/2498-optimized.clif.gz": {
+      "sha256": "8351a17b184e8a81829945810fa68045c521a774d55d9dd705554be90e59702d",
+      "bytes": 4000,
+      "decoded_sha256": "bb801b9c3003cc357952cd26b4690544c621b932e2030ce59a04bfd1bd57c8d2",
+      "decoded_bytes": 19092,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2498-optimized.clif"
+    },
+    "ir/3309-before.clif.gz": {
+      "sha256": "8a91c3ef94f0145b6031b23581e3b1a00d0330d109f07bc65d90cc6ce92f2e1c",
+      "bytes": 78306,
+      "decoded_sha256": "9cf228b74640c30de7ec59e1763d2e2df1300ad9f161f1d6589cb89cf9c006f7",
+      "decoded_bytes": 427761,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3309-before.clif"
+    },
+    "ir/1553-loads.json.gz": {
+      "sha256": "f1f05192d688d4f5258a90f929ae76be8078ff1da7cd6ae7572f130add9a0488",
+      "bytes": 148,
+      "decoded_sha256": "b52c1edceab4277a9ef1eb2515e38f1b1123810bf180cb016a3e073caffca9d5",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1553-loads.json"
+    },
+    "ir/3098-before.clif.gz": {
+      "sha256": "39f1e6321ab059cc32f263ebfc8a52452fcdd21ffd32d0eb07f6da773b5aceba",
+      "bytes": 4012,
+      "decoded_sha256": "1b216332d9c3802d5854ed53d15d1642de16d4de23eb95c0015f52f0064e93d1",
+      "decoded_bytes": 17533,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3098-before.clif"
+    },
+    "ir/3360-before.clif.gz": {
+      "sha256": "aeae73532652916c2d52134f29230ce98be76e56b70544c17d531609d78770d9",
+      "bytes": 5103,
+      "decoded_sha256": "f15a44f80883ce77a4c62b882aabcacbd01a6c68ed62c3c1386a8a8d2ba1880f",
+      "decoded_bytes": 22422,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3360-before.clif"
+    },
+    "ir/1282-loads.json.gz": {
+      "sha256": "54dbe720581b2a8295ec391705814926c87fbc9eff7fa9fa96a144faabb4535d",
+      "bytes": 148,
+      "decoded_sha256": "8111e31f6c70922abb486979f22bad60a47dcbfb0fa9e5a1d7f9a914a9a1efd7",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1282-loads.json"
+    },
+    "ir/505-optimized.clif.gz": {
+      "sha256": "613b47ea29a18b43fe9330b9d7a67782c52af900aca741c7de9578e892c59df8",
+      "bytes": 2014,
+      "decoded_sha256": "d93b9d639f74e040802795ff481973151f97bb428547a8fcc0db3296b3277a18",
+      "decoded_bytes": 8459,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/505-optimized.clif"
+    },
+    "ir/2384-before.clif.gz": {
+      "sha256": "8dc75c0f635ba3eee8c2343bfc990c1ca16d495a69dc7bd737b7ecd315beeb19",
+      "bytes": 14661,
+      "decoded_sha256": "b884110661a1fae588932ec68eef4857701e7ae67176c5bbc92cafa684c80a30",
+      "decoded_bytes": 73725,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2384-before.clif"
+    },
+    "ir/505-loads.json.gz": {
+      "sha256": "2cc0cbd260f8d17d4c3cf5a060c5db06fd99a47056443ca5c4182bf9350d2c3d",
+      "bytes": 148,
+      "decoded_sha256": "f14fe7527948819a53512b54fa1d9598976bda0d697f77799fd35f6a8c86c803",
+      "decoded_bytes": 173,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/505-loads.json"
+    },
+    "ir/1930-optimized.clif.gz": {
+      "sha256": "c29bec7dccab4568468aaeca2921cfe1d729f94d28644f7d60fc774d858a794c",
+      "bytes": 3995,
+      "decoded_sha256": "eece8402fa211044d996c5ccaa5fcfeb54746298efdda7f38442c7f9ad8ab18b",
+      "decoded_bytes": 19074,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1930-optimized.clif"
+    },
+    "ir/3426-loads.json.gz": {
+      "sha256": "a895cf0eba0d91888b3a4b05475d45dc5cc152efc7fc46af49d52a253618b321",
+      "bytes": 149,
+      "decoded_sha256": "a912ad4c7b8a3f3710594f9e0cce829f0ee169995b407a9c50b901e0035e1351",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3426-loads.json"
+    },
+    "ir/693-loads.json.gz": {
+      "sha256": "04ef653ff70c73e313a5830c4e60f931a4c114193505ff0508fd6ed93d2dd029",
+      "bytes": 148,
+      "decoded_sha256": "e194061db0493803e48b87d3f78d7d1fcb7d37f71945503c3a051ce3a1eaf5ac",
+      "decoded_bytes": 173,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/693-loads.json"
+    },
+    "ir/2412-loads.json.gz": {
+      "sha256": "8294feb958986135fb765593058103e0ca669ac4b9f9924a967276d1e71e7ceb",
+      "bytes": 148,
+      "decoded_sha256": "58df7e0ab49c4121a62d4f932786c38303c99049e1b357253c708a40f1d526be",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2412-loads.json"
+    },
+    "ir/304-before.clif.gz": {
+      "sha256": "8caa43eb557d15ec5a1b9d72424f34a1dbd46686bfe7a3cf4eb7b26c9ef953d5",
+      "bytes": 13535,
+      "decoded_sha256": "2ba83e692e196e520a3994554214fed6f05156be845b2868e0704cb0fd6b3bbb",
+      "decoded_bytes": 69299,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/304-before.clif"
+    },
+    "ir/1790-loads.json.gz": {
+      "sha256": "69ae940a1d3ac6e907ea828a31f1e57c64dbf153cc21381e5dc8144915dcfda3",
+      "bytes": 148,
+      "decoded_sha256": "f334a2ab693d66f84875cac637cae0811e9822ec0834ff8c94521db14d64d26a",
+      "decoded_bytes": 175,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1790-loads.json"
+    },
+    "ir/2228-optimized.clif.gz": {
+      "sha256": "077a1315d7ee20dfeda5a8a137e4e37feb18eac3b7a5cbc8f6f7a1ac94904359",
+      "bytes": 8154,
+      "decoded_sha256": "68f9e14f65693ee0bafdb30d155a21f519c5c0edcfbb8f56f39e9a5b016e05a5",
+      "decoded_bytes": 45892,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2228-optimized.clif"
+    },
+    "ir/3225-before.clif.gz": {
+      "sha256": "44c209711ebf273bdc28a981f1173575851ee5def6efbd961a86d817a0f90664",
+      "bytes": 6257,
+      "decoded_sha256": "32a78d62d789df68da53c285f1882f6fd3cbcc0c9c1eb429838e363169033afd",
+      "decoded_bytes": 28934,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/3225-before.clif"
+    },
+    "ir/2742-before.clif.gz": {
+      "sha256": "43aeaef0e8b817b8b416be84f94a351573a1592d491960b0cec0d761ec895db2",
+      "bytes": 23133,
+      "decoded_sha256": "66051264d723211e7a5018d4ae3e16b3438136445368eefc30a1bd781b7ed145",
+      "decoded_bytes": 118980,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/2742-before.clif"
+    },
+    "ir/1553-before.clif.gz": {
+      "sha256": "7094616262a3a391a6dfd28f549427581d59d7678b9b078bb158dff0bab9911f",
+      "bytes": 6487,
+      "decoded_sha256": "6426036692f24cbd4e862b8e91c2763f48c5d55b2bbe48fb55723d41dbb44f44",
+      "decoded_bytes": 29389,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1553-before.clif"
+    },
+    "ir/1166-optimized.clif.gz": {
+      "sha256": "4ae0fd1dd86ba9ee756631a0cc987a7606cbd52816f1f678f78c52b5020c733d",
+      "bytes": 7993,
+      "decoded_sha256": "f5298e93d1f1b45dacb79493d183b25f464833e988fb4a37d4cba53a67a1e126",
+      "decoded_bytes": 45092,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/1166-optimized.clif"
+    },
+    "ir/599-optimized.clif.gz": {
+      "sha256": "87c82e47ad35eb0dc841fa6e7402d1176199f746184a1e0eccf669da19838b37",
+      "bytes": 4395,
+      "decoded_sha256": "e4336cb91d55221cd341c36a6dfd1b245503b0cf6ff2ab829aad32b0447cbae5",
+      "decoded_bytes": 22270,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-runners-20261107-v1/ir/599-optimized.clif"
+    },
+    "IR251-tests-v1/focus-capture_view_anchors.stderr.log.gz": {
+      "sha256": "0df9c17b006048cd345c0c1c98bce9dd99320292923e8a1b3ddeb4f439e1f860",
+      "bytes": 503,
+      "decoded_sha256": "6c5648f1123c7877bb714761d4caafb7f038262cad7ad186bd5416890f9e5341",
+      "decoded_bytes": 749,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v1/focus-capture_view_anchors.stderr.log"
+    },
+    "IR251-tests-v1/focus-capture_view_anchors.stdout.log.gz": {
+      "sha256": "7ba615d0c9f2133b295a969c5c00ac25db4f4763ead9e0c56b9eb85488c3509c",
+      "bytes": 305,
+      "decoded_sha256": "ff48f668bf7fe2ef97ac1db8dd508dc3fb2249eb3828746ac144eeca085ff0d6",
+      "decoded_bytes": 758,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v1/focus-capture_view_anchors.stdout.log"
+    },
+    "IR251-tests-v1/focus-capture_view_anchors.json.gz": {
+      "sha256": "2a7a46831cb127b0431738ccc35cb764a6bc01956812a31a279c38429e27e6a9",
+      "bytes": 180,
+      "decoded_sha256": "4daf6698f9404285d7d4702abad6ed3da9250e1063e655264abbe41bed859edc",
+      "decoded_bytes": 231,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v1/focus-capture_view_anchors.json"
+    },
+    "IR251-tests-v2/focus-cfg_cleanup.json.gz": {
+      "sha256": "97db149fabc481922258720b118b187ca95b3ca946871bcedb639f4dc47ebedf",
+      "bytes": 178,
+      "decoded_sha256": "3a187e37ac98f5404799ae9045d0b8dd3e2fe53daddae6c341fa4b19bfe4fc88",
+      "decoded_bytes": 220,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-cfg_cleanup.json"
+    },
+    "IR251-tests-v2/focus-movable_capture_reads.stdout.log.gz": {
+      "sha256": "69fea1aad188c9cbeab70394cc86c4e789980eab3fec72c0a9d3f83e2c3ea34f",
+      "bytes": 344,
+      "decoded_sha256": "8cb314f51122ee9dcb5748d1de8bf14a501e6f56e6b8078d7eba6cd3914f4756",
+      "decoded_bytes": 889,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-movable_capture_reads.stdout.log"
+    },
+    "IR251-tests-v2/focus-cfg_cleanup_program_local_homes.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-cfg_cleanup_program_local_homes.stderr.log"
+    },
+    "IR251-tests-v2/focus-capture_view_anchors.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-capture_view_anchors.stderr.log"
+    },
+    "IR251-tests-v2/focus-numeric_first_change.stdout.log.gz": {
+      "sha256": "08615de3096b23daaac5f63251d4f45e0908a0d636c79222f4e4230fb0276cbc",
+      "bytes": 193,
+      "decoded_sha256": "3488f2c10cfd9c99a342720aed442add83e73a1553001d70cd6b3f97e9d1dd85",
+      "decoded_bytes": 266,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-numeric_first_change.stdout.log"
+    },
+    "IR251-tests-v2/focus-numeric_first_change.json.gz": {
+      "sha256": "8c90787803dd31f1df3d385945eac462962e4802aa1a532bd6336557f4b0bd16",
+      "bytes": 183,
+      "decoded_sha256": "7fb30eac538d445f800b425aae7f8a451d45f653ef700156b5369fbaca5d4be6",
+      "decoded_bytes": 229,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-numeric_first_change.json"
+    },
+    "IR251-tests-v2/focus-fresh_traversals.stdout.log.gz": {
+      "sha256": "79af37fe57965999b5245282e1e27d5b461c94907def75ca443f23a7bf1b4c61",
+      "bytes": 263,
+      "decoded_sha256": "6198c28b2de832a7d8910102006cea71113a5ad212baf5024c986fc85d6d95ad",
+      "decoded_bytes": 563,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-fresh_traversals.stdout.log"
+    },
+    "IR251-tests-v2/ci-inventory-only.json.gz": {
+      "sha256": "019ed9966c5ab85ebf36acba18bd79e66d990815e5aa2eeb53dea6c22bd625ea",
+      "bytes": 9018,
+      "decoded_sha256": "3f7e5c45be88fda190ceb6c49940f00b0ee1566f4f0de8f412a1b2b36e393281",
+      "decoded_bytes": 56608,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/ci-inventory-only.json"
+    },
+    "IR251-tests-v2/focus-cfg_cleanup.stdout.log.gz": {
+      "sha256": "7a62cfddd8f94b775ccd1da2f10e82c482d7c9a7b1a0540ddfd23660822c8383",
+      "bytes": 1051,
+      "decoded_sha256": "8908737cd6091c5cd01304377b2388d03cfd590ce1ee7bf0829e0be4ebe12e79",
+      "decoded_bytes": 4280,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-cfg_cleanup.stdout.log"
+    },
+    "IR251-tests-v2/focus-guarded_numeric_load.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-guarded_numeric_load.stderr.log"
+    },
+    "IR251-tests-v2/focus-fresh_traversals.json.gz": {
+      "sha256": "c19bbc0c9eafedf9c4454248145aab94de72ec48a1ad2b7bdd362598d072ac02",
+      "bytes": 180,
+      "decoded_sha256": "7d8a78210a6c732243a48bca8d7db9ebb9419b5c18807cd4859215767b0f6ef8",
+      "decoded_bytes": 225,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-fresh_traversals.json"
+    },
+    "IR251-tests-v2/focus-movable_capture_reads.json.gz": {
+      "sha256": "17c6763b7adbd73ab24584ff8a93d707d2a903c893761269ddde8ca0469d0238",
+      "bytes": 179,
+      "decoded_sha256": "09f85a3e46d74be866dfd0c37549d5c258f69d851ab516f510c6d1df07107b70",
+      "decoded_bytes": 230,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-movable_capture_reads.json"
+    },
+    "IR251-tests-v2/focus-unsigned_guard_facts.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-unsigned_guard_facts.stderr.log"
+    },
+    "IR251-tests-v2/focus-guarded_numeric_load.json.gz": {
+      "sha256": "1c3b485f51741310ec855343e65dc92808eb33d1d08e04d6fde961277e37da79",
+      "bytes": 183,
+      "decoded_sha256": "e310ad183e8e45ba276c3ac50cdf232d021a56218537c2c7ecf248ab80e7179e",
+      "decoded_bytes": 229,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-guarded_numeric_load.json"
+    },
+    "IR251-tests-v2/focus-cfg_cleanup_program_local_homes.stdout.log.gz": {
+      "sha256": "90ddc6d710fd8843d2d2dd2cf24f493b052f25be323f46b275eb11828327b9b8",
+      "bytes": 197,
+      "decoded_sha256": "51dffefc1f792dde869f964da6880d2e8b36c3f4d057a417de8a0c87da8592d4",
+      "decoded_bytes": 267,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-cfg_cleanup_program_local_homes.stdout.log"
+    },
+    "IR251-tests-v2/focus-movable_capture_reads.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-movable_capture_reads.stderr.log"
+    },
+    "IR251-tests-v2/focus-fresh_traversals.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-fresh_traversals.stderr.log"
+    },
+    "IR251-tests-v2/focus-capture_view_anchors.stdout.log.gz": {
+      "sha256": "54ba08b1b7bdd67de09108042383d0c4d2d3db262b00e07b8ea107ded9ad6184",
+      "bytes": 272,
+      "decoded_sha256": "06ac2c0116f6c7c5bb567fe1dd5a38cc85375921f0123f859e7d0d88f08525ef",
+      "decoded_bytes": 579,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-capture_view_anchors.stdout.log"
+    },
+    "IR251-tests-v2/focus-numeric_first_change.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-numeric_first_change.stderr.log"
+    },
+    "IR251-tests-v2/focus-cfg_cleanup_program_local_homes.json.gz": {
+      "sha256": "10e7079263fcde66e4a544aa84ceca72e13e79db8971ed7f562b16dd91a02376",
+      "bytes": 192,
+      "decoded_sha256": "11d499b0031e8de8fc62c63bc98dc5056cd1657e55c08f62a34fa896feeda68b",
+      "decoded_bytes": 242,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-cfg_cleanup_program_local_homes.json"
+    },
+    "IR251-tests-v2/test-only-source-change.json.gz": {
+      "sha256": "dc2322a629bbf14bc0928f2507b3ffbefa29241ce43b0ed9f021ea49e9056990",
+      "bytes": 196,
+      "decoded_sha256": "1046d99537e2c71a3a3a49398db0b5822ad4f7b3c43f9c15e946def0c5eef8bd",
+      "decoded_bytes": 245,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/test-only-source-change.json"
+    },
+    "IR251-tests-v2/focus-cfg_cleanup.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-cfg_cleanup.stderr.log"
+    },
+    "IR251-tests-v2/focus-capture_view_anchors.json.gz": {
+      "sha256": "e2543b4292d3d55cc39be1140d945a69733d8ba56db4e327983e323faa7c3b6a",
+      "bytes": 179,
+      "decoded_sha256": "477a83b6a2988c73d2544cb6fdff5b14a6c3a8c968d25f209f11aba83df35054",
+      "decoded_bytes": 229,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-capture_view_anchors.json"
+    },
+    "IR251-tests-v2/focus-unsigned_guard_facts.json.gz": {
+      "sha256": "5582d57074bb12e204d839322d01e32df7e28bcdcf1fce21c6686a0a8e1f6f51",
+      "bytes": 184,
+      "decoded_sha256": "6c45791b01015dfc0cf9dd0659fac4cd8933e575fed771d0bf4c27116ebf37c5",
+      "decoded_bytes": 231,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-unsigned_guard_facts.json"
+    },
+    "IR251-tests-v2/focus-unsigned_guard_facts.stdout.log.gz": {
+      "sha256": "e45d34dfbfd56dc727aa8398f2c80f43544c0e64b9f63c303c601762c2367c21",
+      "bytes": 454,
+      "decoded_sha256": "4941c2726893a1c65d41dd23397bb09c8a10536cfc50c5dd3763d850e95c2a57",
+      "decoded_bytes": 1267,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-unsigned_guard_facts.stdout.log"
+    },
+    "IR251-tests-v2/focus-guarded_numeric_load.stdout.log.gz": {
+      "sha256": "11189aefabba5b6f0f22ead025b1f734bb4e950eadc534f2aee208d4e6b13538",
+      "bytes": 279,
+      "decoded_sha256": "e8b67d3fa4e44100a6fd595bc50fc35f8f09974a8b3fa7f1a14a850749b5809f",
+      "decoded_bytes": 554,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-tests-20261107-v2/focus-guarded_numeric_load.stdout.log"
+    },
+    "IR251-controls/scalar-comparison.json.gz": {
+      "sha256": "732d178ff3c4d408a7477c1fe33d656ac928ff9d2eaef6d37905d22a7d65c736",
+      "bytes": 825,
+      "decoded_sha256": "67ccca05956db06a885ed0e4c066b8430497d497b8c3ed8affccb88bd39ed3ab",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-regressions-20261107-v1/scalar-comparison.json"
+    },
+    "IR251-controls/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-regressions-20261107-v1/one-kib-comparison.json"
+    },
+    "IR251-controls/scalar-run.json.gz": {
+      "sha256": "b15529ab451680255489e30b25e54e8600a39df836aa6deb2ee4cc992445e943",
+      "bytes": 1681,
+      "decoded_sha256": "8ba292c9de2d9c8bc1aa7c33bbb0c6b8d7d797c3d2cd5e01f5e4a09478a596d7",
+      "decoded_bytes": 39437,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-regressions-20261107-v1/scalar-run.json"
+    },
+    "IR251-controls/one-kib-run.json.gz": {
+      "sha256": "6d3df56a29094742317f78b04b464e27409c0f84a162249b0e3ad19df935a9d1",
+      "bytes": 720,
+      "decoded_sha256": "123a856dbb448afa66fbcd65ec48833a63ea2d928e7d44c0db5300b01e96cab5",
+      "decoded_bytes": 3251,
+      "retained_source": "/private/tmp/mech-related-immutable-capture-views-regressions-20261107-v1/one-kib-run.json"
+    },
+    "recipes/mech-related-invariant-read-backend-audit-run-20261107.py": {
+      "sha256": "554648e32a66b04ddc5b4e6a712e2bfe3d2386953c061baf53f0d9b3263aeb0a",
+      "bytes": 2094,
+      "decoded_sha256": "554648e32a66b04ddc5b4e6a712e2bfe3d2386953c061baf53f0d9b3263aeb0a",
+      "decoded_bytes": 2094,
+      "retained_source": "/private/tmp/mech-related-invariant-read-backend-audit-run-20261107.py"
+    },
+    "recipes/mech-related-invariant-captures-finalize-state-20261107.py": {
+      "sha256": "82eca39028fa35827228efcc09521c1f0495c4648443ebe08046bfbfc752ca1a",
+      "bytes": 9156,
+      "decoded_sha256": "82eca39028fa35827228efcc09521c1f0495c4648443ebe08046bfbfc752ca1a",
+      "decoded_bytes": 9156,
+      "retained_source": "/private/tmp/mech-related-invariant-captures-finalize-state-20261107.py"
+    },
+    "README.md": {
+      "sha256": "51cab353047747320528dddedec712d8bff6415fa185dc736ed78e0b304a25fe",
+      "bytes": 2388,
+      "decoded_sha256": "51cab353047747320528dddedec712d8bff6415fa185dc736ed78e0b304a25fe",
+      "decoded_bytes": 2388,
+      "retained_source": null
+    },
+    "verify.py": {
+      "sha256": "2a18bbaf329f484892bb1d8516628508d58a86fa2ac95d7f35f434824f6b87d5",
+      "bytes": 1293,
+      "decoded_sha256": "2a18bbaf329f484892bb1d8516628508d58a86fa2ac95d7f35f434824f6b87d5",
+      "decoded_bytes": 1293,
+      "retained_source": null
+    }
+  }
+}
