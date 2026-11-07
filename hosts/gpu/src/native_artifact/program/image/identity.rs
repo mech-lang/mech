@@ -431,7 +431,9 @@ fn selected_template(
 // tests, composing direct branch lowering with the new loop-argument proof.
 // IR257 retains exact singleton results in the shared unsigned bit-and range
 // transfer, including the proved Boolean low-bit branch predicate.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 257;
+// IR258 also versions complete immutable forward-read child windows when a
+// fresh activation gate proves additional source checks, retaining fallback.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 258;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

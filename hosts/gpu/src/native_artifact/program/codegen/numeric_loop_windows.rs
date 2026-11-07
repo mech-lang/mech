@@ -89,21 +89,51 @@ pub(super) fn derive(
                 .or_default()
                 .push(window);
         }
-        // Begin with a paired forward/reverse immutable window. This confines
-        // code duplication to a complete leaf computation with both benefits.
-        let Some(windows) = groups.into_values().find(|windows| {
+        // Preserve paired-window selection, then consider an ordinary forward
+        // traversal of immutable views. A current entry gate proves the whole
+        // interval; each visit must still select its original induction bound.
+        let paired = groups.values().find(|windows| {
             windows
                 .iter()
                 .any(|a| !a.reverse && windows.iter().any(|b| b.reverse && b.array != a.array))
-        }) else {
+        });
+        let forward = paired.is_none();
+        let Some(windows) = paired
+            .or_else(|| {
+                groups.values().find(|windows| {
+                    windows.iter().all(|window| {
+                        !window.reverse
+                            && !proof.arrays[window.array].writable
+                            && !proof.arrays[window.array].appends
+                    })
+                })
+            })
+            .cloned()
+        else {
             continue;
         };
-        let Some(mut facts) =
+        let Some(mut selected) =
             super::numeric_traversal::local(code, proof, shadow, &scope, &windows)
         else {
             continue;
         };
-        if facts.predicates.len() < 2 || facts.successors.len() < 2 {
+        if selected.predicates.len() < 2 || selected.successors.len() < 2 {
+            continue;
+        }
+        // Do not duplicate a forward loop unless admission removes an actual
+        // source branch or read check that ordinary current facts cannot prove.
+        if forward
+            && !selected
+                .successors
+                .iter()
+                .any(|(site, target)| facts.successors.get(site) != Some(target))
+            && !scope.sites.iter().any(|&site| {
+                let Some(Operation::Read { array, index, .. }) = proof.action(site) else {
+                    return false;
+                };
+                selected.read(site, *array, *index) && !facts.read(site, *array, *index)
+            })
+        {
             continue;
         }
         let mut prepaid = None;
@@ -130,7 +160,7 @@ pub(super) fn derive(
                         &windows,
                     );
                 }
-                facts = complete;
+                selected = complete;
             }
         }
         versions.push(Version {
@@ -144,7 +174,7 @@ pub(super) fn derive(
             sites: scope.sites,
             windows,
             captures: Vec::new(),
-            facts,
+            facts: selected,
             prepaid,
             reduction,
             funding: None,
