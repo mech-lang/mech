@@ -26,7 +26,7 @@ fn literal(f: &Function, value: Value) -> Option<u64> {
     (bits > 0 && bits <= 64).then(|| imm.bits() as u64 & (u64::MAX >> (64 - bits)))
 }
 
-fn canonical_values(f: &Function) -> Option<Vec<bool>> {
+pub(super) fn canonical_values(f: &Function) -> Option<Vec<bool>> {
     let count = f.dfg.num_values();
     if count > MAX_VALUES {
         return None;

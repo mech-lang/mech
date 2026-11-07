@@ -2,6 +2,7 @@
 //! with no path to control or effects before the single backend data pass.
 //! Trapping loads, source failures and work debits retain their ordering.
 mod boolean_words;
+mod boolean_chains;
 mod dead_values;
 mod local_phis;
 mod selected_ranges;
@@ -277,16 +278,27 @@ pub(in crate::native_artifact) fn finish_boolean_conditions(
     context: &mut Context,
     report: &mut CfgCleanup,
 ) {
-    if !report.enabled || !controls.enabled(OptimizationPass::BooleanConditions) {
+    if !report.enabled {
         return;
     }
-    let simplified = boolean_conditions::optimize(&mut context.func);
+    let simplified = if controls.enabled(OptimizationPass::BooleanConditions) {
+        boolean_conditions::optimize(&mut context.func)
+    } else {
+        0
+    };
     report.boolean_conditions_simplified += simplified;
-    if simplified != 0 {
+    let chains = if controls.enabled(OptimizationPass::BooleanChainBranches) {
+        boolean_chains::expand(&mut context.func)
+    } else {
+        0
+    };
+    report.boolean_chain_branches += chains;
+    if simplified != 0 || chains != 0 {
         // Inverted tests swap successor order. Even with the same edge set,
         // Cranelift's cached postorder must be refreshed.
         context.compute_cfg();
         context.compute_domtree();
+        (report.after_blocks, report.after_instructions) = counts(&context.func);
     }
 }
 
@@ -305,6 +317,7 @@ fn optimize_ordered(
         constant_branches_removed: 0,
         neutral_operations_removed: 0,
         boolean_conditions_simplified: 0,
+        boolean_chain_branches: 0,
         unsigned_intervals_combined: 0,
         selected_range_branches_removed: 0,
         boolean_phi_values: 0,

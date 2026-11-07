@@ -17,6 +17,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     DemandLiveness,
     EarlyIdentities,
     BooleanConditions,
+    BooleanChainBranches,
     LoopOutlining,
     LoopInvariants,
     PreservingCalls,
