@@ -354,7 +354,9 @@ fn selected_template(
 // control or effects, preserving trapping loads and the declared entry ABI.
 // IR203 marks initialized, checked ordinary Program homes nontrapping. They
 // retain their default alias region and current boundary synchronization.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 203;
+// IR204 combines unsigned bounds of the same immutable word into one private
+// wrapping interval predicate. Source checks, effects and debits remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 204;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

@@ -4,6 +4,7 @@
 mod dead_values;
 mod local_phis;
 mod preheaders;
+mod unsigned_intervals;
 mod word_ranges;
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::control::CfgCleanup;
@@ -61,6 +62,7 @@ pub(in crate::native_artifact) fn optimize(
         enabled,
         rounds: 0,
         constant_branches_removed: 0,
+        unsigned_intervals_combined: 0,
         before_blocks,
         before_instructions,
         after_blocks: before_blocks,
@@ -105,6 +107,7 @@ pub(in crate::native_artifact) fn optimize(
     }
     report.local_phi_parameters_removed =
         local_phis::simplify(&mut context.func, &context.cfg, &context.domtree);
+    report.unsigned_intervals_combined = unsigned_intervals::combine(&mut context.func);
     let dead = dead_values::eliminate(&mut context.func);
     report.dead_parameters_removed = dead.parameters;
     report.dead_instructions_removed = dead.instructions;

@@ -1,5 +1,31 @@
 # Native compression milestone
 
+## R184 — unsigned interval predicates
+
+The compiler combines unsigned bounds of the same immutable word into one exact interval predicate. Source assertions, checked arithmetic, effects, prices, errors and publication remain. Four real sites are simplified; all earlier numeric recipes and proof selections are unchanged. IR/work/ABI/MBC: **204/107/39/14**.
+
+All **20 original timing gates pass**, with **14 faster / six slower medians** and a **0.191492% geometric elapsed reduction**. This is a modest mixed result, not an established general instruction-count improvement. Every contrary case and paired block is retained.
+
+| Input | Before / Roc | After / Roc |
+|---|---:|---:|
+| reymont-prefix-32769 | 3.678092× | 3.670159× |
+| random-32769 | 4.840132× | 4.804452× |
+| 16384-distribution-change | 6.391936× | 6.391698× |
+| repeated-32769 | 3.016813× | 2.999579× |
+| 33027-periodic-window | 3.555805× | 3.509126× |
+| eight-literals | 4.577226× | 4.522629× |
+
+Separate counters have **six lower / fourteen higher instruction medians**, with **ten cycle medians higher**. Natural-text instructions fall **0.916410%**; eight-byte instructions rise **0.640178%**. All measured allocation and live-heap metrics are unchanged across all twenty cases. Code shrinks **6,196 B** and stack usage falls **32 B**; no measured heap/RSS saving is claimed.
+
+All **656 native unit tests / 239 CI-selected names actually execute and pass**, with the same seven inherited exclusions. Two new native predicate tests and an original/decoded source assertion/rejection/recovery test pass. The unchanged **236 component / eight composition / one real-capacity path** tests, twelve scalar controls, fifteen architecture/catalog checks, runtime-only, formatting, warnings denied and 132 workflow tests pass. No allowance or expected-value increases.
+
+Five current profiles complete **17,656 calls** with zero managed cleanup. Independent source-location compilation repeats the actual whole Object byte-for-byte. Natural text is **80.25%** inside main; **34.92%** of samples remain native without a fine tag. CPU sample shares are not retired-instruction counts or removable-host estimates.
+
+Public evidence verifies **37 immutable packets / 4,767 file occurrences / 1,103 paths**, preserving 14 paths with multiple versions. All **38** container/inner receipts and three replay outputs match. Two release assets are used under standing upload permission; no new release or PR.
+
+[Design, all twenty timings and complete limitations](native-unsigned-intervals.md). Existing draft #973 only; exact-head review is requested without waiting for hosted CI. Parity remains unproved.
+
+## Historical R183 checkpoint
 **R183 marks checked, initialized native source homes nontrapping.** The
 prepared invocation owns the initialized word bank throughout each synchronous
 entry. Ordinary source homes keep the default alias region and current callback
