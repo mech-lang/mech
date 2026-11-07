@@ -63,13 +63,14 @@ fn numeric_forward_windows_discover_implicit_one_based_reads() {
                 NativeProgramLimitMode::NoLimits.compilation(),
             )
             .unwrap();
+            let metadata = object.metadata();
             assert!(
                 [
                     "compiled_readonly_numeric_loops",
                     "compiled_numeric_write_loops"
                 ]
                 .into_iter()
-                .flat_map(|key| object.metadata()[key].as_array().unwrap())
+                .flat_map(|key| metadata[key].as_array().unwrap())
                 .flat_map(|region| region["guarded_loop_windows"].as_array().unwrap())
                 .any(|window| window["read_sites"].as_array().unwrap().len() >= views),
                 "implicit reads must receive a real current window"
@@ -83,12 +84,13 @@ fn numeric_forward_windows_discover_implicit_one_based_reads() {
                 NativeProgramLimitMode::NoLimits.compilation(),
             )
             .unwrap();
+            let metadata = object.metadata();
             for region in [
                 "compiled_readonly_numeric_loops",
                 "compiled_numeric_write_loops",
             ]
             .into_iter()
-            .flat_map(|key| object.metadata()[key].as_array().unwrap())
+            .flat_map(|key| metadata[key].as_array().unwrap())
             {
                 assert!(
                     region["guarded_loop_windows"]
