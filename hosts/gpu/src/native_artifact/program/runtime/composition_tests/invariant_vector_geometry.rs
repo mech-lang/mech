@@ -1,4 +1,4 @@
-//! Unit-axis native homes retain checked errors, COW aliases and finite retry.
+//! General schemas must decline unit-axis identities and keep exact errors/retry.
 use super::*;
 use crate::native_artifact::codegen::options::OptimizationPass;
 const SOURCE: &str = r#"+> sequence
@@ -25,14 +25,19 @@ fn vector_geometry_keeps_mutation_errors_aliases_finite_prefixes_and_retry() {
         )
         .unwrap();
         let m = object.metadata();
+        // This input's schema admits general two-dimensional matrices. A
+        // row-shaped test value does not authorize a static unit-axis fact.
+        let rows = [
+            "compiled_numeric_write_loops",
+            "compiled_readonly_numeric_loops",
+        ]
+        .into_iter()
+        .flat_map(|k| m[k].as_array().unwrap())
+        .collect::<Vec<_>>();
+        assert!(!rows.is_empty(), "the native read/write loop must execute");
         assert!(
-            [
-                "compiled_numeric_write_loops",
-                "compiled_readonly_numeric_loops"
-            ]
-            .into_iter()
-            .flat_map(|k| m[k].as_array().unwrap())
-            .any(|r| !r["canonical_vector_views"].as_array().unwrap().is_empty())
+            rows.iter()
+                .all(|r| r["canonical_vector_views"].as_array().unwrap().is_empty())
         );
         let pair = [
             JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
