@@ -221,6 +221,22 @@ impl Traversal {
                 }
                 pending.extend(&self.next[&site]);
             }
+            // Phi alternatives may share one immutable name, but no current
+            // traversal may execute two producers (or revisit one). Otherwise
+            // an observation could refer to different bits at the next test.
+            let mut pending = sites
+                .iter()
+                .flat_map(|site| self.next[site].iter().copied())
+                .collect::<Vec<_>>();
+            let mut seen = BTreeSet::new();
+            while let Some(site) = pending.pop() {
+                if sites.contains(&site) {
+                    return None;
+                }
+                if seen.insert(site) {
+                    pending.extend(&self.next[&site]);
+                }
+            }
             if sites.len() == 1 {
                 let site = *sites.first()?;
                 if let Some(source) = copied(facts, site, key) {
