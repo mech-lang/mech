@@ -1,5 +1,79 @@
 # Native compression milestone
 
+**R180 proves current-argument predicates at native child entry.** Twelve source
+predicates are established after the initializer transfers the current arguments.
+Checked mathematical addition supplies order and constant lower bounds; wrapping
+arithmetic supplies neither. Residual full input windows, shapes, views, ownership,
+source charges and current-account funding remain checked. Captured versions
+without a current proof retain their gates. The broader mutable-parent/child
+brief remains incomplete: full maximum-window facts do not yet cross fresh scopes.
+
+The six priority larger-input medians improve by 0.17–1.54%; eight literals slow
+by 0.69%. All 20 unchanged 1.05 gates pass: 11 faster / nine slower medians,
+geometric elapsed change −0.120611%. These are matched before/after measurements;
+separate rounds are not compounded.
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.727567× | 3.709717× | -0.478858% |
+| reymont-prefix-16384 | 4.441393× | 4.433969× | -0.167153% |
+| random-32769 | 4.877577× | 4.841599× | -0.737623% |
+| 16384-distribution-change | 6.460330× | 6.406631× | -0.831205% |
+| repeated-32769 | 3.077022× | 3.029730× | -1.536943% |
+| 33027-periodic-window | 3.567339× | 3.550296× | -0.477743% |
+| eight-literals | 4.649868× | 4.681850× | +0.687813% |
+
+Natural32 retired instructions fall 1.715509%, random32 0.610454%, repeated32
+0.545979%; eight bytes rise 0.053016%. Eleven instruction medians and eight cycle
+medians rise. All 20 allocation and usable-live-heap medians are unchanged.
+Initial RSS rises substantially; fresh ABBA confirmation does not reproduce it
+(RSS +0.035483%, physical +0.042100%). Both cohorts remain, cause unproved.
+Generated text grows **60,344 B**; entry stack shrinks **224 B**. Tagged gate spans
+contain fewer glue/spill instructions, but their comparison counts are unchanged;
+12 source predicates are not 12 removed machine comparisons.
+
+Five exact-current profiles cover 17,463 complete calls. Natural32 has 80.58%
+inside the main generated entry, with 38.70% unknown native attribution. Outside
+entry includes other generated helpers and useful runtime/validation work; samples
+are not retired-instruction counts or an exact removable-host split.
+
+Qualification: **644 GPU / five focused / all 227 CI-selected tests executed**,
+with the same seven inherited exclusions. Unchanged **236 component / eight
+composition / one real-capacity path**, 12 scalar, 15 architecture/catalog,
+132 workflow, runtime-only, formatting and warnings-as-errors checks pass.
+Original/decoded, direct/restored, fresh arguments, wrapping refusal, residual
+full-window, aliases, overflow, finite failure prefixes, unchanged publication,
+cleanup and retry controls remain. A matched full-native 14-row witness preserves
+work/results/errors before and after; all 20 primary work values agree.
+
+The report preserves early toy funding refusals, a corrected cross-strategy test
+assumption and repaired frozen-dependency paths. Closure found missing current
+format/workflow receipts and ran both checks before publication. No expected
+value, allowance, warning policy or funding rule was weakened. No unresolved
+introduced functional failure remains; inherited exclusions and optimization
+refusals are explicit.
+
+Parent `40bba44acd7a60e28e3378dab012ee9d50007c66`; measured clean source
+`bcec44b0c2dab03e228fbdec5fdaa142552ff1ed`; IR/work/ABI/MBC **200/107/39/14**.
+All 13 changed compiler/test/CI files reconstruct from the public parent and
+exact patch and match qualification. Frozen R145 dependencies, pinned original
+source/MBC/algorithm/tables, depth 300/nice 258, near-EOF limits, real scratch
+capacities, allocation sites, output capacity 13 clear/reuse, input aliases,
+mimalloc and full evaluate_into timing remain unchanged. Largest input 33,027 B.
+
+[Full R180 report](native-child-entry-facts.md) records all 20 rows, adverse
+observations, counter/heap/profile/scalar cohorts, exact commands and skipped
+coverage. Public evidence: **39 archives / 78 server hashes verified**. Fresh download
+checks 6,468 file occurrences across 1,287 paths, retaining
+15 paths with historical versions. Both indexed reports replay byte-for-byte.
+Evidence is hash-indexed outside the source tree.
+One optimization commit in existing draft #973; no new PR. Ordinary hosted CI is
+cancelled by instruction, review automation preserved. Fresh all-feature builds,
+another standalone AOT harness, large inputs and the separate ten-workload suite
+are skipped. The broader brief and 1× target remain active.
+
+## Historical R179 checkpoint
+
 **R179 retains local facts across checked fixed-size writes and before opaque
 boundaries.** The compiler removes 40 additional projection guards and 510 read
 guards from the unchanged complete compressor. The matched comparison improves

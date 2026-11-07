@@ -346,7 +346,9 @@ fn selected_template(
 // IR197 derives affine read-address bases once at the current selected entry.
 // IR199 retains local facts through shape-preserving writes and closed supported
 // prefixes. Opaque continuations never inherit their predecessor's permission.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 199;
+// IR200 queries current transferred child arguments for individual admission
+// predicates. Residual view checks, ownership and funding remain independent.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 200;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

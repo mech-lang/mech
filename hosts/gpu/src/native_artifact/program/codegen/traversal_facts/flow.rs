@@ -46,7 +46,27 @@ pub(in crate::native_artifact::program::codegen) fn with_windows<'a>(
     windows: &[Window],
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
-    analyze(code, scope, slots, tag, windows, &[], None, step)
+    analyze(
+        code,
+        scope,
+        slots,
+        tag,
+        windows,
+        &[],
+        None,
+        &Queries::new(),
+        step,
+    )
+}
+
+pub(in crate::native_artifact::program::codegen) fn with_checks<'a>(
+    code: CodePlan<'_>,
+    scope: &Scope,
+    slots: &BTreeSet<usize>,
+    checks: &Queries,
+    step: impl Fn(usize) -> Option<Step<'a>>,
+) -> Option<Proof> {
+    analyze(code, scope, slots, None, &[], &[], None, checks, step)
 }
 
 pub(in crate::native_artifact::program::codegen) fn with_captured_windows<'a>(
@@ -56,7 +76,17 @@ pub(in crate::native_artifact::program::codegen) fn with_captured_windows<'a>(
     captures: &[CapturedWindow],
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
-    let mut proof = analyze(code, scope, slots, None, &[], captures, None, step)?;
+    let mut proof = analyze(
+        code,
+        scope,
+        slots,
+        None,
+        &[],
+        captures,
+        None,
+        &Queries::new(),
+        step,
+    )?;
     proof
         .flat_arrays
         .extend(captures.iter().map(|window| window.array));
@@ -82,6 +112,7 @@ pub(in crate::native_artifact::program::codegen) fn with_completion<'a>(
         windows,
         &[],
         Some(completion),
+        &Queries::new(),
         step,
     )
 }
@@ -94,6 +125,7 @@ fn analyze<'a>(
     windows: &[Window],
     captures: &[CapturedWindow],
     completion: Option<completion::Candidate>,
+    checks: &Queries,
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
     let ordered = scope.order(code)?;
@@ -311,6 +343,20 @@ fn analyze<'a>(
                 }
             }
             Step::Replace | Step::Keep => {}
+        }
+        // A child initialize action has just assigned its current arguments.
+        // Query this visit's transferred state without admitting the child or
+        // carrying any facts across its body/return edge.
+        if let Some(checks) = checks.get(&site) {
+            for &check in checks {
+                if states
+                    .iter()
+                    .flatten()
+                    .all(|state| check.holds(state, &mut terms) == Some(true))
+                {
+                    proof.checks.insert((site, check));
+                }
+            }
         }
         if let Some(mut recording) = terms.recording.take() {
             recording.terminal_condition(&terms, &states, block.terminator());
