@@ -24,6 +24,7 @@ mod fresh_traversals;
 mod guarded_pack_failure;
 mod guarded_read_packs;
 mod hybrid_intervals;
+mod local_effects;
 mod managed_carriers;
 mod managed_projections;
 mod multiple_children;

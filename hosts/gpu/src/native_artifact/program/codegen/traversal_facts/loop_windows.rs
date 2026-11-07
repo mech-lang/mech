@@ -122,7 +122,7 @@ pub(super) fn writes(step: Step<'_>, written: &mut BTreeSet<usize>) -> Option<()
         Step::Define(output) | Step::Length { output, .. } | Step::Read { output, .. } => {
             written.insert(output);
         }
-        Step::Scalar(Scalar::None) | Step::Keep => {}
+        Step::Scalar(Scalar::None) | Step::Replace | Step::Keep => {}
     }
     Some(())
 }
