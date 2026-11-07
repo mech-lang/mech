@@ -67,6 +67,8 @@ pub(in crate::native_artifact) struct Report {
     pub source_home_words: usize,
     pub terminal_scalar_words_omitted: usize,
     pub runtime_scalar_path_walks: usize,
+    pub guarded_scalar_retirement_nodes: Vec<usize>,
+    pub scalar_retirement_mask_words: usize,
     pub tree_nodes: Vec<usize>,
     pub projected_child_debit_nodes: usize,
     pub fuel_derived_child_debit_nodes: usize,
@@ -350,6 +352,21 @@ pub(in crate::native_artifact) fn emit_entry(
         .map(|tree| {
             super::numeric_fuel_debits::Anchors::new(b, &words, region.words, shadow, tree)
         });
+    let retirement = region
+        .numeric_tree
+        .as_ref()
+        .filter(|_| controls.enabled(OptimizationPass::ScalarHomeRetirement))
+        .map(|tree| {
+            super::numeric_retirement::ScalarHomes::new(
+                b,
+                tree.nodes
+                    .iter()
+                    .enumerate()
+                    .skip(1)
+                    .filter(|(_, node)| !node.scalar_bindings.is_empty())
+                    .map(|(index, _)| index),
+            )
+        });
     // Every ordinary scalar operand home is retained conservatively. Private
     // virtual-frame intermediates have no cold consumer: reconciliation reads
     // only current carrier/result leaves and exact view/flag/capacity lanes.
@@ -513,6 +530,21 @@ pub(in crate::native_artifact) fn emit_entry(
         source_home_words: source_homes.len(),
         terminal_scalar_words_omitted: 0,
         runtime_scalar_path_walks: 0,
+        guarded_scalar_retirement_nodes: region.numeric_tree.as_ref().map_or_else(
+            Vec::new,
+            |tree| {
+                if retirement.is_none() {
+                    return Vec::new();
+                }
+                tree.nodes
+                    .iter()
+                    .skip(1)
+                    .filter(|node| !node.scalar_bindings.is_empty())
+                    .map(|node| node.tail.header() as usize)
+                    .collect()
+            },
+        ),
+        scalar_retirement_mask_words: retirement.as_ref().map_or(0, |r| r.word_count()),
         tree_nodes: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
             tree.nodes
                 .iter()
@@ -876,6 +908,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     hooks,
                     error,
                     fuel_debits.as_ref(),
+                    retirement.as_ref(),
                 )?;
                 b.ins().jump(done, &[]);
                 b.switch_to_block(store);
@@ -953,6 +986,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     hooks,
                     error,
                     fuel_debits.as_ref(),
+                    retirement.as_ref(),
                 )?;
                 b.ins().jump(done, &[]);
                 b.switch_to_block(store);
@@ -1006,6 +1040,7 @@ pub(in crate::native_artifact) fn emit_entry(
                         set_origin(b, frame, site as u64);
                         super::numeric_fuel_debits::spill_live(
                             fuel_debits.as_ref(),
+                            retirement.as_ref(),
                             b,
                             &words,
                             locals,
@@ -1165,7 +1200,7 @@ pub(in crate::native_artifact) fn emit_entry(
             },
         }
         if let Some(tree) = &region.numeric_tree {
-            super::numeric_tree::control(b, &words, shadow, tree, site)?;
+            super::numeric_tree::control(b, &words, shadow, tree, site, retirement.as_ref())?;
         }
         if let Some(window) = versions.iter().find(|v| v.initialize == site) {
             // Initialize just copied this child's current source arguments.
