@@ -1,0 +1,4 @@
++> sequence
+count-used(values<[u32]>, cutoff<u32>) => (out<u64>) :=
+  out := sequence/length(values[values > cutoff]).
+count-used(data<[u32]>, limit<u32>)
