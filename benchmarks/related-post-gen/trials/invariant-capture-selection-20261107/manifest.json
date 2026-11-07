@@ -1328,10 +1328,10 @@
       "decoded_bytes": 3897
     },
     "verify.py": {
-      "sha256": "4e3742b488f79d0f53eb8e95ec7e9af55e7717af1c6c2ff5634cfac267d310e6",
-      "bytes": 1543,
-      "decoded_sha256": "4e3742b488f79d0f53eb8e95ec7e9af55e7717af1c6c2ff5634cfac267d310e6",
-      "decoded_bytes": 1543
+      "sha256": "8e8e8e8325361a361fc01031cca31e054d5d9b57c9b73e7d9ee8193a1a9ede0b",
+      "bytes": 1546,
+      "decoded_sha256": "8e8e8e8325361a361fc01031cca31e054d5d9b57c9b73e7d9ee8193a1a9ede0b",
+      "decoded_bytes": 1546
     }
   }
 }

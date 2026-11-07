@@ -16,7 +16,7 @@ for name,v in t['trials'].items():
  for field in ['post_json_seconds','wall_seconds']:
   deltas=[x[field]-rows[(x['sample'],'mech-ir242-reuse-4')][field]for x in a['samples']if x['variant']==name]
   assert len(deltas)==31
-  wins=sum(x<0for x in deltas);assert wins==v['paired_vs_selected'][field]['wins']
+  wins=sum(x < 0 for x in deltas);assert wins==v['paired_vs_selected'][field]['wins']
   assert abs(statistics.median(deltas)-v['paired_vs_selected'][field]['median_paired_delta_seconds'])<1e-12
   passed=passed and wins>=21
  assert passed==v['passes_joint_timing_gate']
