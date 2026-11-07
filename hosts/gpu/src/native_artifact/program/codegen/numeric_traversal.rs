@@ -11,7 +11,12 @@ use mech_engine::native_artifact::{
 };
 use std::collections::BTreeSet;
 
-pub(super) fn derive(code: CodePlan<'_>, numeric: &Numeric, shadow: usize) -> Proof {
+pub(super) fn derive(
+    code: CodePlan<'_>,
+    numeric: &Numeric,
+    shadow: usize,
+    checks: &traversal_facts::Queries,
+) -> Proof {
     let CodePlan::Program(program) = code else {
         return Proof::default();
     };
@@ -38,7 +43,7 @@ pub(super) fn derive(code: CodePlan<'_>, numeric: &Numeric, shadow: usize) -> Pr
             sites,
             outside: BTreeSet::new(),
         };
-        if let Some(proof) = local(code, numeric, shadow, &scope, &[]) {
+        if let Some(proof) = analyze(code, numeric, shadow, &scope, &[], &[], None, checks) {
             facts.extend(proof);
         }
     }
@@ -52,7 +57,16 @@ pub(super) fn local(
     scope: &Scope,
     windows: &[traversal_facts::Window],
 ) -> Option<Proof> {
-    analyze(code, numeric, shadow, scope, windows, &[], None)
+    analyze(
+        code,
+        numeric,
+        shadow,
+        scope,
+        windows,
+        &[],
+        None,
+        &traversal_facts::Queries::new(),
+    )
 }
 
 pub(super) fn captured_version(
@@ -62,7 +76,16 @@ pub(super) fn captured_version(
     scope: &Scope,
     windows: &[traversal_facts::CapturedWindow],
 ) -> Option<Proof> {
-    analyze(code, numeric, shadow, scope, &[], windows, None)
+    analyze(
+        code,
+        numeric,
+        shadow,
+        scope,
+        &[],
+        windows,
+        None,
+        &traversal_facts::Queries::new(),
+    )
 }
 
 pub(super) fn complete(
@@ -73,7 +96,16 @@ pub(super) fn complete(
     windows: &[traversal_facts::Window],
     candidate: traversal_facts::Candidate,
 ) -> Option<Proof> {
-    analyze(code, numeric, shadow, scope, windows, &[], Some(candidate))
+    analyze(
+        code,
+        numeric,
+        shadow,
+        scope,
+        windows,
+        &[],
+        Some(candidate),
+        &traversal_facts::Queries::new(),
+    )
 }
 
 fn analyze(
@@ -84,6 +116,7 @@ fn analyze(
     windows: &[traversal_facts::Window],
     captures: &[traversal_facts::CapturedWindow],
     candidate: Option<traversal_facts::Candidate>,
+    checks: &traversal_facts::Queries,
 ) -> Option<Proof> {
     let CodePlan::Program(program) = code else {
         return None;
@@ -175,7 +208,11 @@ fn analyze(
     } else if let Some(candidate) = candidate {
         traversal_facts::with_completion(code, scope, &slots, windows, candidate, step)
     } else {
-        let mut proof = traversal_facts::with_windows(code, scope, &slots, None, windows, step)?;
+        let mut proof = if windows.is_empty() {
+            traversal_facts::with_checks(code, scope, &slots, checks, step)?
+        } else {
+            traversal_facts::with_windows(code, scope, &slots, None, windows, step)?
+        };
         if partial {
             proof.windows.clear();
         }

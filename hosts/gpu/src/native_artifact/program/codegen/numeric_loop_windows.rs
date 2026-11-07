@@ -1,5 +1,5 @@
 //! Version an immutable numeric child for its complete current read windows.
-use super::traversal_facts::{Proof as Facts, Scope, Window};
+use super::traversal_facts::{Check, Operand, Proof as Facts, Scope, Window};
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::program::prepare::readonly_numeric::{Operation, Proof};
@@ -156,6 +156,42 @@ pub(super) fn derive(
 }
 
 impl Version {
+    pub fn queries(&self, proof: &Proof) -> std::collections::BTreeSet<Check> {
+        let mut checks = std::collections::BTreeSet::new();
+        for window in &self.windows {
+            checks.insert(Check::Addition {
+                word: window.count,
+                extra: window.delta,
+            });
+            if !proof.arrays[window.array].writable && !proof.arrays[window.array].appends {
+                checks.insert(Check::Fits {
+                    array: window.array,
+                    base: None,
+                    count: window.count,
+                    extra: window.adjustment(),
+                });
+            }
+        }
+        for window in &self.captures {
+            checks.extend([
+                Check::Le(Operand::Word(window.induction), Operand::Word(window.limit)),
+                Check::Le(Operand::Constant(window.width), Operand::Word(window.limit)),
+                Check::Addition {
+                    word: window.limit,
+                    extra: window.width,
+                },
+                Check::Le(Operand::Word(window.base), Operand::Length(window.array)),
+                Check::Fits {
+                    array: window.array,
+                    base: Some(window.base),
+                    count: window.limit,
+                    extra: 0,
+                },
+            ]);
+        }
+        checks
+    }
+
     pub fn report(&self, proof: &Proof) -> Report {
         Report {
             initialize: self.initialize,
@@ -210,26 +246,48 @@ impl Version {
         words: &Words,
         shadow: usize,
         proof: &Proof,
+        facts: &Facts,
         state: usize,
         checked: Block,
     ) {
         if !self.captures.is_empty() {
-            captured::gate(self, b, words, shadow, proof, state, checked);
+            captured::gate(self, b, words, shadow, proof, facts, state, checked);
             return;
         }
         let mut enough = b.ins().iconst(cranelift_codegen::ir::types::I8, 1);
         for window in &self.windows {
             let count = words.read(b, window.count);
-            let safe = b.ins().icmp_imm(
-                IntCC::UnsignedLessThanOrEqual,
-                count,
-                u64::MAX.wrapping_sub(window.delta) as i64,
-            );
+            let safe = if facts.check(
+                self.initialize,
+                Check::Addition {
+                    word: window.count,
+                    extra: window.delta,
+                },
+            ) {
+                b.ins().iconst(cranelift_codegen::ir::types::I8, 1)
+            } else {
+                b.ins().icmp_imm(
+                    IntCC::UnsignedLessThanOrEqual,
+                    count,
+                    u64::MAX.wrapping_sub(window.delta) as i64,
+                )
+            };
             let required = b.ins().iadd_imm(count, window.adjustment() as i64);
             let length = words.read(b, shadow + proof.view(window.array) + 1);
-            let fits = b
-                .ins()
-                .icmp(IntCC::UnsignedGreaterThanOrEqual, length, required);
+            let fits = if facts.check(
+                self.initialize,
+                Check::Fits {
+                    array: window.array,
+                    base: None,
+                    count: window.count,
+                    extra: window.adjustment(),
+                },
+            ) {
+                b.ins().iconst(cranelift_codegen::ir::types::I8, 1)
+            } else {
+                b.ins()
+                    .icmp(IntCC::UnsignedGreaterThanOrEqual, length, required)
+            };
             let valid = b.ins().band(safe, fits);
             enough = b.ins().band(enough, valid);
         }
