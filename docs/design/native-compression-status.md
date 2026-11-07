@@ -1,6 +1,32 @@
 # Native compression milestone
 
-## R186 — Boolean facts through loop arguments
+## R187 — coupled scalar choice experiment rejected
+
+**Production stays at R186/IR206.** The candidate improves the inspected steady scalar minimum path16→13 instructions (reference11), but its complete-call result is an unfavorable broader tradeoff. The complete tested source remains archived for refinement.
+
+Reject the current coupled scalar-choice variant: the local steady loop improves16 to13 instructions and natural text improves about0.7%, but random32 is2.070262% slower in all8 blocks,12 instruction medians rise and11 cycle medians rise. Overall elapsed is nearly flat(-0.055883%). Restore the qualified R186 compiler, preserve the complete candidate and use its concrete widening instruction for the next refinement. No sample is discarded or repeated.
+
+| Input | Before / Roc | Rejected candidate / Roc |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.624071× | 3.598057× |
+| reymont-prefix-16384 | 4.346250× | 4.314056× |
+| random-32769 | 5.267394× | 5.376443× |
+| 16384-distribution-change | 6.638034× | 6.411380× |
+| repeated-32769 | 2.998008× | 3.004170× |
+| 33027-periodic-window | 3.514017× | 3.526781× |
+| eight-literals | 4.581944× | 4.577412× |
+
+All20 original1.05 gates pass, but random32 is2.070262% slower in all8 paired blocks. Separate counters have8 lower/12higher instruction medians and11higher cycle medians. Allocation requests/bytes/reallocations/incremental peak are equal; fixed+16B usable-live offset remains unattributed. Candidate code−928B and stack+48B are not production changes. All contrary observations remain.
+
+**664 candidate native tests/all247 CI-selected names execute and pass**;10focused, unchanged236/8/1components,12scalar gates,15architecture/catalog,132workflow, runtime-only, formatting and warnings denied pass. No expected-value/allowance increases. Restored production reuses the already-qualified R186663/246 evidence; no fresh664-test claim for restored code.
+
+Five current-candidate profiles complete **17,430 calls**. The entire Object repeats byte-for-byte under independent source-location compilation. CPU-time samples remain distinct from hardware events. A R186 summary-hash/version-label error is corrected in baseline records after verifying the correct descriptors embedded in both actual executables; original receipts are preserved.
+
+Fresh public replay verifies38 immutable packets, **4,781 file occurrences/1,072 paths**, preserving 13 multiversion paths. All39 receipts and three output hashes match. No native binaries, bytecode or raw trace stores are uploaded; no new PR.
+
+[Full rejected candidate, all20 results and next hypothesis](native-coupled-scalar-choice.md). Existing draft973 only; ordinary exact-head CI cancelled and fresh review requested without waiting. Parity remains unproved.
+
+## Qualified production R186 — Boolean facts through loop arguments
 
 The compiler proves245 zero-or-one scalar loop arguments and removes eight additional branch sites. Unrestricted entry aliases, fresh loads, arithmetic changes and unknown seeds remain unknown. Current selected-edge facts consume this proof; source checks, work, errors and atomic publication remain. IR/work/ABI/MBC206/107/39/14.
 
