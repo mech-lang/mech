@@ -201,6 +201,48 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
         let function = module
             .declare_function(&symbol, Linkage::Local, &signature)
             .map_err(backend)?;
+        if let Some(directory) = std::env::var_os("MECH_NATIVE_IR_DUMP") {
+            // Diagnostic only: optimize a clone. The actual function, module
+            // declarations, source debits and generated Object are untouched.
+            let directory = std::path::PathBuf::from(directory);
+            std::fs::create_dir_all(&directory).map_err(backend)?;
+            std::fs::write(
+                directory.join(format!("{header}-before.clif")),
+                context.func.display().to_string(),
+            )
+            .map_err(backend)?;
+            let mut copy = cranelift_codegen::Context::for_function(context.func.clone());
+            copy.optimize(module.isa(), &mut Default::default())
+                .map_err(backend)?;
+            copy.compute_cfg();
+            copy.compute_domtree();
+            let mut loops = cranelift_codegen::loop_analysis::LoopAnalysis::new();
+            loops.compute(&copy.func, &copy.cfg, &copy.domtree);
+            let loads = copy.func.layout.blocks().flat_map(|block| {
+                let loops = &loops;
+                let func = &copy.func;
+                func.layout.block_insts(block).filter_map(move |inst| {
+                    let flags = func.dfg.insts[inst].memflags()?;
+                    (flags.readonly() && flags.can_move()).then(|| serde_json::json!({
+                        "inst":inst.to_string(), "block":block.to_string(),
+                        "innermost_loop_header":loops.innermost_loop(block).map(|lp| loops.loop_header(lp).to_string()),
+                        "operands":func.dfg.inst_args(inst).iter().map(ToString::to_string).collect::<Vec<_>>(),
+                    }))
+                })
+            }).collect::<Vec<_>>();
+            std::fs::write(
+                directory.join(format!("{header}-optimized.clif")),
+                copy.func.display().to_string(),
+            )
+            .map_err(backend)?;
+            std::fs::write(directory.join(format!("{header}-loads.json")),
+                serde_json::to_vec_pretty(&serde_json::json!({
+                    "header":header, "symbol":symbol, "optimized_clone_only":true,
+                    "readonly_movable_loads":loads,
+                    "selected_source_reads":local.numeric_write_loops.iter().chain(&local.readonly_numeric_loops)
+                        .flat_map(|receipt| receipt.movable_capture_reads.iter().copied()).collect::<Vec<_>>(),
+                })).map_err(backend)?).map_err(backend)?;
+        }
         module
             .define_function(function, &mut context)
             .map_err(backend)?;
