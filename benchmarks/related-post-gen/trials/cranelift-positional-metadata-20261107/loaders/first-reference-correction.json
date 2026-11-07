@@ -1,0 +1,5 @@
+{
+  "failure": "Harness compared Cranelift1536B native stack against prior LLVM1568B native stack. Both match their genuine machine footprints; this was the wrong physical-backend reference.",
+  "correction": "Build and execute the unchanged parent IR264 Cranelift through each budget-reader form, then compare every entire denial object without exemptions.",
+  "source_or_program_change": false
+}

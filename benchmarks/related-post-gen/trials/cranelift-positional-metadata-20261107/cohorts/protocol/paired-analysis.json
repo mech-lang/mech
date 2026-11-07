@@ -1,0 +1,132 @@
+{
+  "schema": "mech.related-post-gen.positional-metadata-performance-decision.v1",
+  "rule_sha256": "ae6d8cb569dfcc43ea771b7f0965525a7e3008f94d873ddc05055e334e882078",
+  "source_commit": "ed66537a2a519ddc14f162dbc06a3cff7bcc5208",
+  "candidate": "mech-ir266-reuse-4",
+  "paired": {
+    "mech-ir242-reuse-4": {
+      "post_json_seconds": {
+        "wins": 18,
+        "median_paired_relative_change": -0.009171589310829842,
+        "median_paired_delta_seconds": -2.6084000000000003e-05,
+        "two_sided_95_interval": [
+          -0.014841583867405528,
+          0.00458345811643035
+        ],
+        "one_sided_95_upper": 0.0008505322424561257
+      },
+      "wall_seconds": {
+        "wins": 14,
+        "median_paired_relative_change": 0.021187470409675724,
+        "median_paired_delta_seconds": 0.0007411660626530647,
+        "two_sided_95_interval": [
+          -0.019852442046731755,
+          0.030757132054635816
+        ],
+        "one_sided_95_upper": 0.02752929216785449
+      }
+    },
+    "mech-ir264-cranelift-runtime-control": {
+      "post_json_seconds": {
+        "wins": 12,
+        "median_paired_relative_change": 0.0046125147786486576,
+        "median_paired_delta_seconds": 1.3167000000000127e-05,
+        "two_sided_95_interval": [
+          -0.005049737992703807,
+          0.015303640143305763
+        ],
+        "one_sided_95_upper": 0.015303640143305763
+      },
+      "wall_seconds": {
+        "wins": 12,
+        "median_paired_relative_change": 0.02823397966011032,
+        "median_paired_delta_seconds": 0.0008509168401360512,
+        "two_sided_95_interval": [
+          -0.017369034109304238,
+          0.06979886132386226
+        ],
+        "one_sided_95_upper": 0.05698492075524153
+      }
+    }
+  },
+  "medians": {
+    "mech-ir242-reuse-4": {
+      "post_json_seconds": 0.002850333,
+      "wall_seconds": 0.036579875042662024,
+      "compile_or_restore_seconds": 0.007963875,
+      "times_fastest_processing_Rust": 1.846270289597385,
+      "times_fastest_whole_Rust": 1.732589612578896
+    },
+    "mech-ir264-cranelift-runtime-control": {
+      "post_json_seconds": 0.002835292,
+      "wall_seconds": 0.03487483295612037,
+      "compile_or_restore_seconds": 0.008005834,
+      "times_fastest_processing_Rust": 1.8365276555171446,
+      "times_fastest_whole_Rust": 1.651831047802319
+    },
+    "mech-ir266-reuse-4": {
+      "post_json_seconds": 0.002835083,
+      "wall_seconds": 0.03645166684873402,
+      "compile_or_restore_seconds": 0.008231125,
+      "times_fastest_processing_Rust": 1.836392278180347,
+      "times_fastest_whole_Rust": 1.7265170881433125
+    }
+  },
+  "resource_restore": {
+    "mech-ir264-cranelift-runtime-control": {
+      "instructions": 125883144,
+      "seconds": 0.008085167,
+      "allocations": 26837,
+      "requested_bytes": 12830999,
+      "processing_instructions": 54831821,
+      "processing_allocations": 3758
+    },
+    "mech-ir266-reuse-4": {
+      "instructions": 127104760,
+      "seconds": 0.008215416,
+      "allocations": 26837,
+      "requested_bytes": 12830999,
+      "processing_instructions": 54838157,
+      "processing_allocations": 3758
+    }
+  },
+  "practical_restore_threshold_passed": false,
+  "whole_superiority_passed": false,
+  "processing_noninferiority_passed": true,
+  "selected": false,
+  "decision": "Reject checked positional metadata readers: the predeclared restoration practical threshold and whole-process superiority requirements fail. Keep IR242 selected. Optional LLVM remains separate; do not rerun this unchanged candidate for a favorable cohort.",
+  "all_first_and_adverse_samples_retained": true,
+  "latency_full_outputs_exact": 744,
+  "resources_full_outputs_exact": 175,
+  "fastest_processing_Rust": {
+    "variant": "rust-ordered-ordered-mask",
+    "median_seconds": 0.001543833,
+    "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+    "eligible_variants": [
+      "rust",
+      "rust-mech-control-streaming",
+      "rust-mech-control-u32-casts",
+      "rust-mech-control-u8-ids-u32",
+      "rust-ordered-scan-only",
+      "rust-ordered-ordered",
+      "rust-ordered-mask-reuse",
+      "rust-ordered-ordered-mask",
+      "rust-ordered-ordered-mask-tables",
+      "rust-apple-m3",
+      "rust-mech-control-streaming-apple-m3",
+      "rust-mech-control-u32-casts-apple-m3",
+      "rust-mech-control-u8-ids-u32-apple-m3",
+      "rust-ordered-scan-only-apple-m3",
+      "rust-ordered-ordered-apple-m3",
+      "rust-ordered-mask-reuse-apple-m3",
+      "rust-ordered-ordered-mask-apple-m3",
+      "rust-ordered-ordered-mask-tables-apple-m3"
+    ]
+  },
+  "fastest_whole_Rust": {
+    "variant": "rust-mech-control-u32-casts",
+    "median_seconds": 0.021112832939252257,
+    "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+  },
+  "whole_process_improvement_not_established": true
+}

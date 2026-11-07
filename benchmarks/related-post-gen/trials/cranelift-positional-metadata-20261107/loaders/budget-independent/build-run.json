@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-positional-metadata-runners-20261107-v1/runtime/build.json",
+    "--source",
+    "/private/tmp/mech-related-positional-metadata-loader-tests-20261107-v1/budget-independent/runner.rs",
+    "--out",
+    "/private/tmp/mech-related-positional-metadata-loader-tests-20261107-v1/budget-independent/runner-budget",
+    "--bundle",
+    "/private/tmp/mech-related-positional-metadata-loader-tests-20261107-v1/budget-independent/build",
+    "--linked"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.5794877919834107,
+  "stdout": "warning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-positional-metadata-loader-tests-20261107-v1/budget-independent/build/linked.rs:3:146\n  |\n3 | ...abfe398db1cd0b29403a942_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: static `LINKED_NATIVE_METADATA_BINDING` is never used\n --> /private/tmp/mech-related-positional-metadata-loader-tests-20261107-v1/budget-independent/build/linked.rs:5:151\n  |\n5 | ...cd0b29403a942_native_metadata_binding_v1\"] static LINKED_NATIVE_METADATA_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMA...\n  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_MODULE` is never used\n --> /private/tmp/mech-related-positional-metadata-loader-tests-20261107-v1/budget-independent/build/linked.rs:7:143\n  |\n7 | ...a35220abfe398db1cd0b29403a942_compiled_module_v1\"] static LINKED_MODULE:mech_gpu::native_artifact::NativeProgramModule;\n  |                                                              ^^^^^^^^^^^^^\n\nwarning: 3 warnings emitted\n\n{\"seconds\": 1.0760594999883324, \"exit\": 0}\n",
+  "stderr": ""
+}

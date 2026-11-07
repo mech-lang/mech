@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "mech-ir266-reuse-4",
+    "original_source": "/private/tmp/mech-related-positional-metadata-runners-20261107-v1/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-positional-metadata-metrics-20261107-v1/mech-ir266-reuse-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "e34ff2cf6b2f68cad673b297859f01c1252729529b8a5f918fd48f6bab048809",
+    "diagnostic_executable_sha256": "a9011b019b2c2196f4a3e4ab34d020cac5e48bd139049d2b08db68369349c894"
+  }
+]

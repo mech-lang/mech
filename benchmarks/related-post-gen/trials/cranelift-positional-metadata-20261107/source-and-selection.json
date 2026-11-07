@@ -1,0 +1,9 @@
+{
+  "source_commit": "ed66537a2a519ddc14f162dbc06a3cff7bcc5208",
+  "parent": "0784205e43177e03dd07cb8e4d2bafbbbe912ffc",
+  "selected": false,
+  "selected_IR242_unchanged": true,
+  "LLVM_mandatory": false,
+  "goal_complete": false,
+  "input_sha256": "500530b81cb81c5b1a5e48aa30de6a89ba0a350460ad826c4c7bb023e6e46cb8"
+}

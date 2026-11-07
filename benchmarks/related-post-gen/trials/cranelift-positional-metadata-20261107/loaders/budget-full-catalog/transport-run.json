@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/private/tmp/mech-related-positional-metadata-loader-tests-20261107-v1/budget-full-catalog/runner-budget",
+    "/private/tmp/mech-related-positional-metadata-loader-tests-20261107-v1/budget-full-catalog/build/source.mec",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "/private/tmp/mech-related-positional-metadata-loader-tests-20261107-v1/budget-full-catalog/transport-output.json",
+    "1"
+  ],
+  "environment": {
+    "MECH_IMAGE_BUDGET_CASE": "transport"
+  },
+  "exit": 0,
+  "seconds": 0.06902158400043845,
+  "stdout": "{\"budget_case\":\"transport\",\"error\":\"Base(TransportLimit { required: 406360, limit: 0 })\",\"output_unpublished\":true,\"retained_bytes\":0,\"retained_nodes\":0}\n",
+  "stderr": ""
+}

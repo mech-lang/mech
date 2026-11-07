@@ -1,0 +1,10 @@
+{
+  "new_tests_passed": true,
+  "all_image_tests_passed": true,
+  "new_summary": [
+    "test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 1238 filtered out; finished in 0.08s"
+  ],
+  "image_summary": [
+    "test result: ok. 73 passed; 0 failed; 0 ignored; 0 measured; 1191 filtered out; finished in 0.01s"
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "first_attempt": "Expected32 fields from the LLVM branch; selectedIR242 has31, so setup asserted before editing source. Subsequent dependent build reused all old stages and is retained as first-unchanged-attempt, not treated as new profiling.",
+  "first_unchanged_build": "/private/tmp/mech-related-restore-instruction-phases-opt-20261107-v3-first-unchanged-attempt"
+}

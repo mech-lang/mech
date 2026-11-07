@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-positional-metadata-tests-20261107-v1/gpu-tests",
+    "borrowed_frame_metadata",
+    "--test-threads=1"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.747190082911402,
+  "stdout": "\nrunning 5 tests\ntest native_artifact::program::image::binding::tests::borrowed_frame_metadata_genuine_object_rows_keep_runtime_lanes_and_exact_public_images ... ok\ntest native_artifact::program::prepare::readonly_numeric::numeric_frame::tests::borrowed_frame_metadata_keeps_runtime_reads_without_materializing_compiler_vectors ... ok\ntest native_artifact::program::prepare::readonly_numeric::numeric_frame::tests::borrowed_frame_metadata_rejects_malformed_rows_before_access ... ok\ntest native_artifact::program::prepare::readonly_numeric::numeric_frame::tests::borrowed_frame_metadata_serialization_and_clones_preserve_complete_descriptions ... ok\ntest native_artifact::program::prepare::readonly_numeric::scalar_kind_borrow_tests::borrowed_frame_metadata_scalar_kinds_keep_all_variants_and_reject_other_values ... ok\n\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 899 filtered out; finished in 0.27s\n\n",
+  "stderr": ""
+}
