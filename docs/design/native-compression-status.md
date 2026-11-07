@@ -1,5 +1,10 @@
 # Native compression milestone
 
+## R195 — idiomatic source acceptance cases; production unchanged
+
+A source-only state-machine rewrite of match extension passes all1,724 native controls, but loses native qualification and severely fails its first whole-compressor timing witness. The twenty-case campaign was stopped; the variant is not retained. Production remains R191 and its published timings below remain authoritative. Small executable probes isolate nullary enum packing, direct vector operations, positive logical-selection shapes and dynamic machine payloads. The next bounded fix is zero-word nullary scalar-state packing, followed by the identical witness and a fresh full matrix. [Source experiment and evidence](../../benchmarks/mech-deflate/source-variants/idiomatic-source.md).
+
+
 ## R193 — compact native phase; production unchanged
 
 Experiment B's first phase is complete. The shared Plan/scalar/array emitter generates all four real nested path phases with compact typed state: 1,632 bytes of code, 160 bytes of stack, no calls. Larger-case phase kernels are **1.30–1.46× faster than the existing phase**, with 33.72–51.91% fewer instructions in a separate cohort. All eight primary blocks improve. These diagnostic entries omit exact ordinary accounting and recovery; **no whole-compressor acceleration or new reference ratio is claimed**.

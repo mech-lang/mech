@@ -1,0 +1,40 @@
+// Match extension has three ordered phases. The input and limits are captures;
+// state payloads carry only the current length and one word comparison.
+#ExtendMatch(input<[u8]>, str-at<u64>, match-at<u64>, start<u64>, four-end<u64>, maximum<u64>) => <u64>
+  | :Start
+  | :FirstWords(length<u64>)
+  | :FirstCompared(length<u64>, difference<u64>)
+  | :RemainingWords(length<u64>)
+  | :RemainingCompared(length<u64>, difference<u64>)
+  | :Tail(length<u64>)
+  | :Done(length<u64>).
+#ExtendMatch(input, str-at, match-at, start, four-end, maximum) -> :Start
+  :Start
+    | four-end <= maximum -> :FirstWords(start)
+    | * -> :RemainingWords(start)
+  :FirstWords(length)
+    | length + 8u64 <= four-end -> {
+        difference := word-difference(input, str-at, match-at, length)
+      } -> :FirstCompared(length, difference)
+    | * -> :RemainingWords(length)
+  :FirstCompared(length, difference)
+    | difference == 0u64 -> :FirstWords(bits/wrapping-add(length, 8u64))
+    | * -> :Done(bits/wrapping-add(length, bits/shift-right-wrap(bits/trailing-zeros(difference), 3u64)))
+  :RemainingWords(length)
+    | length + 8u64 <= maximum -> {
+        difference := word-difference(input, str-at, match-at, length)
+      } -> :RemainingCompared(length, difference)
+    | * -> :Tail(length)
+  :RemainingCompared(length, difference)
+    | difference == 0u64 -> :RemainingWords(bits/wrapping-add(length, 8u64))
+    | * -> :Done(bits/wrapping-add(length, bits/shift-right-wrap(bits/trailing-zeros(difference), 3u64)))
+  :Tail(length)
+    | length >= maximum -> :Done(length)
+    | byte(input, bits/wrapping-add(str-at, length)) == byte(input, bits/wrapping-add(match-at, length)) -> :Tail(bits/wrapping-add(length, 1u64))
+    | * -> :Done(length)
+  :Done(length) => length.
+
+extend-length(input<[u8]>, str-at<u64>, match-at<u64>, start<u64>, maximum<u64>) => (out<u64>) :=
+  window! := (str-at + maximum <= sequence/length(input)) && (match-at < str-at)
+  four-end := start + 32u64
+  out := #ExtendMatch(input, str-at, match-at, start, four-end, maximum).

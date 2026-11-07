@@ -40302,6 +40302,72 @@
         "verified_archives": 1,
         "verified_file_occurrences": 512
       }
+    },
+    "195": {
+      "base": "ee1146428eb873687bee8d28c850a2cd6193b9e5",
+      "production": "ee1146428eb873687bee8d28c850a2cd6193b9e5",
+      "compiler_source": "cadaabefcf7dfb64b1b32a724e53c300f7c1fca1",
+      "versions": {
+        "ir": 211,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "retained": false,
+      "diagnostic_retained": true,
+      "production_changed": false,
+      "decision": "Reject source adoption: first full-compressor pilot is severely adverse; stop the matrix and fix the actual native qualification gap. Keep source variant and language reproducers as compiler acceptance inputs.",
+      "release_tag": "evidence-native-compression-experiments-6",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-6",
+      "events": [
+        {
+          "event": "idiomatic-source-qualification",
+          "source_revision": "ee1146428eb873687bee8d28c850a2cd6193b9e5",
+          "asset": "r195-idiomatic-source-54ae0b145f5f.tar.gz",
+          "sha256": "54ae0b145f5f3b275e24ef910f74469e1472af1ce609f40ae7e609a69f8a80fc",
+          "manifest_sha256": "99a5f5c5fc2f9835f157c39756238c2c332b8d038a945f9142f48f511ff9241a",
+          "bytes": 1245515,
+          "files": 124,
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r195-idiomatic-source-54ae0b145f5f.tar.gz"
+        }
+      ],
+      "analysis": {
+        "script": "analyze.py",
+        "expected_outputs": {
+          "results.json": "5d93b78b0c23dd107a7d3ae085262c69a83509e3e6e616d66d974bdfe7d70bff"
+        }
+      },
+      "qualification": {
+        "native_match_controls": 1724,
+        "candidate_resident_controls": 862,
+        "unary_broadcast_controls": 8,
+        "full_matrix_finished_cases": 0,
+        "pilot_complete_calls": 12
+      },
+      "scope": "Unretained source-only experiment; no completed full matrix, instruction, heap or peak-memory claim. Existing compiler and retained source unchanged.",
+      "next": "Nullary scalar enum layout and constant packing, then repeat the same idiomatic source witness; no dummy source payload.",
+      "public_verification": {
+        "archive_sha256": "54ae0b145f5f3b275e24ef910f74469e1472af1ce609f40ae7e609a69f8a80fc",
+        "verified_file_occurrences": 124,
+        "numerical_replay_byte_identical": true,
+        "compiler_or_compressor_execution": false,
+        "download_command": [
+          "gh",
+          "release",
+          "download",
+          "evidence-native-compression-experiments-6",
+          "--repo",
+          "mech-lang/mech",
+          "--pattern",
+          "r195-idiomatic-source-54ae0b145f5f.tar.gz",
+          "--dir",
+          "/private/tmp/mech-idiomatic-source-round195-20261107/public-replay"
+        ],
+        "replay_command": [
+          "python3",
+          "/private/tmp/mech-idiomatic-source-round195-20261107/public-replay/evidence/analyze.py"
+        ]
+      }
     }
   },
   "repository": "mech-lang/mech",

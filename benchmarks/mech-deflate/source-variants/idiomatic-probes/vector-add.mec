@@ -1,0 +1,3 @@
+shift(values<[u32]>, bias<u32>) => (out<[u32]>) :=
+  out := values + bias.
+shift(data<[u32]>, increment<u32>)
