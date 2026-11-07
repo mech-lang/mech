@@ -1,0 +1,507 @@
+{
+  "audited_utc": "2026-11-07T18:33:21.258427+00:00",
+  "upstream973_head": "ee1146428eb873687bee8d28c850a2cd6193b9e5",
+  "prior_audited_head": "7223f308e49e44d69598be73b5770a859322da51",
+  "production_change": "R191 complete numeric-phase outlining, IR211/work107/ABI39; later R192/R193 commits record diagnostic prototypes only.",
+  "measured_trials_parent": "b638320000f7cb33837df2ee73f09221551826a0",
+  "measured_trials_not_rebased": true,
+  "argument_transport_difference": "Upstream outlines complete multi-loop phases with no ordinary exits using seven explicit arguments. Related branch already outlines broader numeric regions, including trees/cold continuations, using three arguments and Hooks::load.",
+  "rows": [
+    {
+      "region": 0,
+      "header": 107,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 1,
+      "header": 146,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 2,
+      "header": 256,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 3,
+      "header": 281,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 4,
+      "header": 304,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 5,
+      "header": 329,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 6,
+      "header": 459,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 7,
+      "header": 505,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 8,
+      "header": 572,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 9,
+      "header": 599,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 10,
+      "header": 671,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 11,
+      "header": 693,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 12,
+      "header": 801,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 13,
+      "header": 826,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 14,
+      "header": 849,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 15,
+      "header": 874,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 16,
+      "header": 901,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 17,
+      "header": 1053,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 18,
+      "header": 1099,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 19,
+      "header": 1166,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 20,
+      "header": 1193,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 21,
+      "header": 1282,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 22,
+      "header": 1311,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 23,
+      "header": 1341,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 24,
+      "header": 1522,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 25,
+      "header": 1553,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 26,
+      "header": 1790,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 27,
+      "header": 1816,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 28,
+      "header": 1844,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 29,
+      "header": 1930,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 30,
+      "header": 2128,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 31,
+      "header": 2174,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 32,
+      "header": 2228,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 33,
+      "header": 2255,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 34,
+      "header": 2349,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 35,
+      "header": 2384,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 36,
+      "header": 2412,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 37,
+      "header": 2498,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 38,
+      "header": 2651,
+      "numeric": true,
+      "phase_loops": 2,
+      "ordinary_cold_exits": 2,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 39,
+      "header": 2676,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 40,
+      "header": 2742,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 41,
+      "header": 2761,
+      "numeric": false,
+      "phase_loops": 0,
+      "ordinary_cold_exits": null,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": false
+    },
+    {
+      "region": 42,
+      "header": 2799,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 43,
+      "header": 3098,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 44,
+      "header": 3144,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 45,
+      "header": 3198,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 46,
+      "header": 3225,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 47,
+      "header": 3309,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 48,
+      "header": 3335,
+      "numeric": true,
+      "phase_loops": 2,
+      "ordinary_cold_exits": 2,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 49,
+      "header": 3360,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 50,
+      "header": 3426,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    },
+    {
+      "region": 51,
+      "header": 3445,
+      "numeric": false,
+      "phase_loops": 0,
+      "ordinary_cold_exits": null,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": false
+    },
+    {
+      "region": 52,
+      "header": 3483,
+      "numeric": true,
+      "phase_loops": 0,
+      "ordinary_cold_exits": 0,
+      "passes_first_R191_predicate": false,
+      "already_compiled_native": true
+    }
+  ],
+  "first_R191_predicate_eligible": 0,
+  "already_compiled_native_functions": 51,
+  "source_pins": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_outlined.rs": {
+      "upstream_sha256": "24dd09120cdd73f5691aea73b67211ae6f3f675d7eef5d1f4030bc92a3b3c361",
+      "trial_sha256": "a232ec980bb1954c7655c1be4f4f88ad594dfc20eecb58adb6313c111a6bf51a"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/hooks/mod.rs": {
+      "upstream_sha256": "9dd097bca910ae2447eb0ffb63ff60eaec1058ff53f0e07802bb44718acb2b7e",
+      "trial_sha256": "e00c1ba7cee853bbf8d1ea358995bb31680f660df3e8c486b8ca8592cd72170d"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "upstream_sha256": "6e16ef8cc9d15f740d3f3d0750bdb8e96487c675cb6072fe9dd3e06576cec29c",
+      "trial_sha256": "5c9f97917ab9bf773fbc34d1a3eaeb8e0d4ad9d0380e9d9ff9f8f47146be028f"
+    }
+  },
+  "descriptor_sha256": "4b2677095a347ecb4ca96b47b6a87236dd3c1e1f656c053638cf067d137aeac8",
+  "status": "No new R191 complete-phase body is eligible under the frozen related plan first predicate. A seven-argument adapter for broader regions is a separate compiler experiment, not a claimed measured adoption.",
+  "compact_diagnostic_limit": "Upstream R193 omits exact accounting, canonical admission/publication and precise recovery; its kernel-only numbers are not ordinary NoLimits or full-program Rust parity. Reuse representation findings while preserving these contracts."
+}
