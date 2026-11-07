@@ -395,10 +395,11 @@ fn selected_template(
 // PR973/IR197 without changing source operations, admission or visit prices.
 // IR231 preserves the exhausted source transition after an ordered reduction.
 // IR232/233's direct Boolean experiments remain unselected source patches.
-// IR234 integrates PR973/IR198's explicit exhausted-payload identity proof.
+// IR235 adds producer-canonical, current-visit Boolean implications to numeric
+// tree freshness. Unknown representations and lost availability still decline.
 // Only proved identity edges are bypassed; other payloads keep native source
 // traversal and the independently proved complete-child funding path.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 234;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 235;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

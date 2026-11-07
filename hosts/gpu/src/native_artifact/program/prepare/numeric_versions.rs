@@ -8,6 +8,8 @@ type Key = (u32, Option<usize>);
 #[path = "numeric_freshness_state.rs"]
 mod state;
 use state::State;
+#[path = "numeric_boolean_relations.rs"]
+mod boolean_relations;
 #[path = "numeric_induction.rs"]
 mod induction;
 #[derive(Default)]
@@ -318,6 +320,7 @@ pub(super) fn validate_tree(
                 header: node.tail.header() as usize,
                 exit: node.tail.exit() as usize,
                 edges,
+                allowed: [BTreeMap::new(), BTreeMap::new()],
             };
             let refined = analyze_tree(
                 plan,
@@ -339,6 +342,31 @@ pub(super) fn validate_tree(
                 return cold_aliases(plan, tail, frames, provenance, arrays, tree, &analysis);
             }
         }
+        for related in boolean_relations::derive(&local, provenance.facts) {
+            let partition = Partition {
+                iteration: node.iteration,
+                header: node.tail.header() as usize,
+                exit: node.tail.exit() as usize,
+                edges: related.edges,
+                allowed: related.allowed,
+            };
+            let refined = analyze_tree(
+                plan,
+                tail,
+                frames,
+                provenance,
+                &traversal,
+                actions,
+                arrays,
+                result,
+                tree,
+                Some(&partition),
+            )?;
+            analysis.strengthen(refined);
+            if verify_tree(plan, tail, frames, &analysis, actions, arrays, result, tree).is_ok() {
+                return cold_aliases(plan, tail, frames, provenance, arrays, tree, &analysis);
+            }
+        }
     }
     // Child currentness is an inductive theorem, not a guessed initial fact.
     // A compositional proof can establish it even when one unified fixed point
@@ -354,6 +382,7 @@ struct Partition {
     header: usize,
     exit: usize,
     edges: Vec<(usize, (usize, usize))>,
+    allowed: [BTreeMap<usize, usize>; 2],
 }
 struct Analysis {
     inputs: BTreeMap<usize, State>,
@@ -434,6 +463,13 @@ fn analyze_tree(
                         }
                         next_truth = edge;
                     }
+                }
+                if next_truth != 0
+                    && partition.allowed[(next_truth - 1) as usize]
+                        .get(&site)
+                        .is_some_and(|&allowed| allowed != next)
+                {
+                    continue;
                 }
                 // No predicate observation survives a new lexical traversal or
                 // a completed activation. The same SSA number may then contain
