@@ -39090,6 +39090,52 @@
         "instruction_medians_higher": 17
       },
       "next_target": "Trace hottest physical stack accesses back to explicit homes versus register spills; no removability or saving established."
+    },
+    "189": {
+      "base": "5f5740bd850c1a6875dac0f00ae392943079801c",
+      "production": "582c8b00cf86df926f21845573222c3cf9ba117f",
+      "compiler_source": "5f5740bd850c1a6875dac0f00ae392943079801c",
+      "candidate_source": "Five-file IR209 patch in attempt/complete-candidate-source.patch; not retained.",
+      "versions": {
+        "ir": 206,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "candidate_versions": {
+        "ir": 209,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "retained": false,
+      "decision": "Pass-order probe has zero compressor eligibility and identical instruction bytes. Retain qualified R186, archive the complete probe and exact register-spill diagnosis. No new timing or performance gain.",
+      "release_tag": "evidence-native-compression-experiments-6",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-6",
+      "archive_publication": "Public archive and receipt have verified server SHA256 digests.",
+      "events": [
+        {
+          "event": "stack-traffic-diagnosis-and-declined-probe",
+          "source_revision": "5f5740bd850c1a6875dac0f00ae392943079801c",
+          "asset": "r189-stack-traffic-eb36ba1c009d.tar.gz",
+          "sha256": "eb36ba1c009da86defedb481d07e9998e60f4bc75506ea716462e1dbcb4da15e",
+          "manifest_sha256": "147d1ad6556da1497376d8dce0434436852225e4edaeb88571470289d8bddffa",
+          "bytes": 30020157,
+          "files": 213,
+          "publication": "published",
+          "asset_id": 720759974,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r189-stack-traffic-eb36ba1c009d.tar.gz"
+        }
+      ],
+      "analysis": {
+        "script": "replay-r189.py",
+        "description": "Verify exact retained-image identity, 665 candidate tests/248 executed CI selections, 8B explicit stack and 142 static duplicate join arguments. No native code.",
+        "expected_outputs": {
+          "replay-results.json": "489a25ccc54f11f921215246cd46f7cde5e25265af07fa59a65542ac09a1b70d"
+        }
+      },
+      "new_performance_cohort": false,
+      "object_sha256": "0cb170a5e492d771e2219dc6b53654c3a93755f732d1da1e29a9d23fb28fb678"
     }
   },
   "repository": "mech-lang/mech",

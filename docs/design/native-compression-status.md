@@ -1,5 +1,15 @@
 # Native compression milestone
 
+## R189 — register-spill diagnosis; no production change
+
+The pass-order probe passes its focused regression and all 665 candidate native tests, including 248 actual CI selections. It removes no additional compressor state, and the entire instruction section is byte-for-byte identical. The five-file candidate is archived and declined. Production remains the qualified R186 compiler; no new timing is claimed.
+
+Independent diagnostic builds reproduce all five retained image files exactly. Only 8 bytes of the main frame are explicit storage. Allocator spill accesses account for 19.88% of natural32 timer samples, 23.32% random32, 19.31% repeated32 and 15.31% distribution-change16. These are sampled costs, not promised savings. Root pointers explain little of this traffic; exact numeric/phi labels retain the unresolved remainder.
+
+There are also 142 duplicate branch-join argument vectors in the maintained pre-backend graph. Direct sampled weight is small, so a separate candidate must establish its actual machine-code and complete-call effect.
+
+[Exact frame analysis, declined patch, tests and public replay](native-register-spill-diagnosis.md). The existing draft PR remains the only PR.
+
 ## R188 — low-word scalar-cost experiment rejected
 
 **Production remains R186/IR206.** The actual scalar minimum path falls16→12 instructions, versus11 in the pinned reference, but the broader measured tradeoff does not justify retention. Complete source and all contrary evidence are preserved.
