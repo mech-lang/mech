@@ -1,6 +1,93 @@
 use super::*;
 
 #[test]
+fn child_checks_use_checked_sum_order_but_not_wrapping_or_fresh_words() {
+    let mut terms = Terms::default();
+    let start = terms.intern(Expr::Initial(0)).unwrap();
+    let width = terms.constant(32).unwrap();
+    let end = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, start, width))
+        .unwrap();
+    let wrapped = terms
+        .intern(Expr::Wrapping(Arithmetic::Add, start, width))
+        .unwrap();
+    let mut state = State::default();
+    state.words.extend([(0, start), (1, end)]);
+    state.successful.insert((Arithmetic::Add, start, width));
+    let ordered = Check::Le(Operand::Word(0), Operand::Word(1));
+    let long = Check::Le(Operand::Constant(8), Operand::Word(1));
+    assert_eq!(ordered.holds(&state, &mut terms), Some(true));
+    assert_eq!(long.holds(&state, &mut terms), Some(true));
+    assert_eq!(
+        Check::Le(Operand::Constant(33), Operand::Word(1)).holds(&state, &mut terms),
+        Some(false)
+    );
+    state.words.insert(1, wrapped);
+    assert_eq!(ordered.holds(&state, &mut terms), Some(false));
+    assert_eq!(long.holds(&state, &mut terms), Some(false));
+    state
+        .words
+        .insert(1, terms.intern(Expr::Initial(1)).unwrap());
+    assert_eq!(ordered.holds(&state, &mut terms), Some(false));
+    assert_eq!(long.holds(&state, &mut terms), Some(false));
+}
+
+#[test]
+fn child_window_checks_keep_exact_views_current_words_and_checked_extents() {
+    let mut terms = Terms::default();
+    let count = terms.intern(Expr::Initial(0)).unwrap();
+    let three = terms.constant(3).unwrap();
+    let length = terms.intern(Expr::ArrayLength(0)).unwrap();
+    let end = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, count, three))
+        .unwrap();
+    let mut state = State::default();
+    state.words.insert(0, count);
+    state.successful.insert((Arithmetic::Add, count, three));
+    state.assume(&terms, Relation::Le, end, length).unwrap();
+    let exact = Check::Fits {
+        array: 0,
+        base: None,
+        count: 0,
+        extra: 3,
+    };
+    assert_eq!(exact.holds(&state, &mut terms), Some(true));
+    assert_eq!(
+        Check::Fits {
+            array: 1,
+            base: None,
+            count: 0,
+            extra: 3
+        }
+        .holds(&state, &mut terms),
+        Some(false)
+    );
+    assert_eq!(
+        Check::Fits {
+            array: 0,
+            base: None,
+            count: 0,
+            extra: 4
+        }
+        .holds(&state, &mut terms),
+        Some(false)
+    );
+    let mut fresh = State::default();
+    fresh.words.insert(0, count);
+    assert_eq!(exact.holds(&fresh, &mut terms), Some(false));
+    state
+        .words
+        .insert(0, terms.intern(Expr::Definition(7, 0)).unwrap());
+    assert_eq!(exact.holds(&state, &mut terms), Some(false));
+    state.words.insert(0, terms.constant(u64::MAX).unwrap());
+    assert_eq!(
+        Check::Addition { word: 0, extra: 3 }.holds(&state, &mut terms),
+        Some(false)
+    );
+    assert_eq!(exact.holds(&state, &mut terms), Some(false));
+}
+
+#[test]
 fn whole_windows_need_the_current_selected_interval_and_exact_views() {
     let mut terms = Terms::default();
     let k = terms.intern(Expr::Initial(0)).unwrap();

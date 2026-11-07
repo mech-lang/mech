@@ -9,6 +9,7 @@ use mech_engine::native_artifact::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 mod captured_windows;
+mod checks;
 mod completion;
 mod entry;
 mod expressions;
@@ -19,8 +20,10 @@ mod ranges;
 mod scope;
 mod windows;
 pub(super) use captured_windows::CapturedWindow;
+pub(super) use checks::{Check, Operand, Queries};
 pub(super) use completion::{Candidate, Completed};
 pub(super) use expressions::{Graph, Node};
+pub(super) use flow::with_checks;
 pub(super) use flow::{Step, derive};
 pub(super) use flow::{with_captured_windows, with_completion, with_windows};
 pub(super) use loop_windows::Window;
@@ -156,6 +159,12 @@ impl State {
             });
         }
         if self.relations.contains(&(relation, a, b)) {
+            return Some(true);
+        }
+        if relation == Relation::Le
+            && let Expr::Arithmetic(Arithmetic::Add, x, y) = terms.terms[b]
+            && (a == x || a == y)
+        {
             return Some(true);
         }
         if self.window_holds(terms, a, b) {
@@ -307,6 +316,7 @@ pub(super) struct Proof {
     pub(super) successors: BTreeMap<usize, u32>,
     pub(super) predicates: BTreeMap<usize, bool>,
     pub(super) flat_arrays: BTreeSet<usize>,
+    checks: BTreeSet<(usize, Check)>,
 }
 impl Proof {
     pub(super) fn extend(&mut self, other: Self) {
@@ -316,6 +326,11 @@ impl Proof {
         self.windows.extend(other.windows);
         self.successors.extend(other.successors);
         self.predicates.extend(other.predicates);
+        self.checks.extend(other.checks);
+    }
+
+    pub fn check(&self, site: usize, check: Check) -> bool {
+        self.checks.contains(&(site, check))
     }
 
     pub fn guard(

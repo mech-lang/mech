@@ -44,6 +44,7 @@ pub(in crate::native_artifact) struct Report {
     pub proven_scalar_arithmetic: Vec<usize>,
     pub guarded_loop_windows: Vec<super::numeric_loop_windows::Report>,
     pub version_entry_gates: Vec<(usize, usize, Option<usize>)>,
+    proven_child_entry_checks: Vec<(usize, super::traversal_facts::Check)>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
@@ -449,7 +450,6 @@ pub(in crate::native_artifact) fn emit_entry(
     let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
     let boolean_successors =
         super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
-    let traversal = super::numeric_traversal::derive(code, proof, shadow);
     let versions = super::numeric_loop_windows::derive(
         code,
         proof,
@@ -458,6 +458,11 @@ pub(in crate::native_artifact) fn emit_entry(
         &read_packs,
         controls.enabled(OptimizationPass::ChildFunding),
     );
+    let checks = versions
+        .iter()
+        .map(|v| (v.initialize, v.queries(proof)))
+        .collect();
+    let traversal = super::numeric_traversal::derive(code, proof, shadow, &checks);
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
@@ -477,6 +482,7 @@ pub(in crate::native_artifact) fn emit_entry(
         proven_scalar_arithmetic: Vec::new(),
         guarded_loop_windows: versions.iter().map(|v| v.report(proof)).collect(),
         version_entry_gates: Vec::new(),
+        proven_child_entry_checks: Vec::new(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
         cold_exits: proof
@@ -1163,16 +1169,25 @@ pub(in crate::native_artifact) fn emit_entry(
         }
         if let Some(window) = versions.iter().find(|v| v.initialize == site) {
             // Initialize just copied this child's current source arguments.
-            // Re-admit it even when its caller is another selected version;
-            // caller facts never become permissions for the child.
+            // Current source facts may establish particular predicates. All
+            // remaining checks, view admission and funding still happen here;
+            // caller facts never become ownership permission for the child.
             report
                 .version_entry_gates
                 .push((site, window.header, version.map(|v| v.header)));
+            report.proven_child_entry_checks.extend(
+                window
+                    .queries(proof)
+                    .into_iter()
+                    .filter(|check| traversal.check(site, *check))
+                    .map(|check| (site, check)),
+            );
             window.gate(
                 b,
                 &words,
                 shadow,
                 proof,
+                traversal,
                 region.words,
                 target(window.header as u32),
             );

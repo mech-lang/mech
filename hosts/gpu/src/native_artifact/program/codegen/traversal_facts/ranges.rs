@@ -2,6 +2,23 @@
 use super::*;
 
 impl State {
+    pub(super) fn lower(&self, terms: &Terms, value: Id) -> u64 {
+        if let Some(value) = self.constant(terms, value) {
+            return value;
+        }
+        // Arithmetic is mathematical only after a checked operation succeeded
+        // or the current traversal proved a wrapping operation cannot wrap.
+        // A single nonnegative addend supplies a lower bound; ring expressions
+        // and unknown/redefined words supply none.
+        match terms.terms[value] {
+            Expr::Arithmetic(Arithmetic::Add, a, b) => self
+                .constant(terms, a)
+                .unwrap_or(0)
+                .max(self.constant(terms, b).unwrap_or(0)),
+            _ => 0,
+        }
+    }
+
     pub(super) fn upper(&self, terms: &Terms, value: Id) -> u64 {
         if let Some(value) = self.constant(terms, value) {
             return value;
