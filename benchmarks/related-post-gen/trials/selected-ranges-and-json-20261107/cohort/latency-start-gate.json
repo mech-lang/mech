@@ -1,0 +1,20 @@
+{
+  "quiet": true,
+  "qualification": {
+    "GPU_passed": 884,
+    "inherited_failures": 2,
+    "new_failures": 0,
+    "CI_executed": 389,
+    "controls_nontiming_exact": 133,
+    "Rust_edge_outputs_exact": 248,
+    "extended_host_differential_processes": 32
+  },
+  "seed": 990252,
+  "samples": 31,
+  "variants": 14,
+  "primary_boundary": "continuous post-JSON including setup and workers",
+  "secondary_boundary": "fresh launch through exit",
+  "process_snapshot_sha256": "7a60b5656207c8ae0d3e6f462c50e776d95cdf8259d0f1258e3a7b69032c8a38",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-selected-ranges-cohort-20261107-v1/latency-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation application arguments remain local; all gate predicates are unchanged."
+}

@@ -1,0 +1,64 @@
+{
+  "cases": [
+    {
+      "compiler_epoch": 242,
+      "case": "ordered",
+      "owned_borrowed_full_JSON_equal": true,
+      "literal_unicode_escaped_unicode_equal": true,
+      "escapes_in_both_ID_title": true
+    },
+    {
+      "compiler_epoch": 242,
+      "case": "unordered",
+      "owned_borrowed_full_JSON_equal": true,
+      "literal_unicode_escaped_unicode_equal": true,
+      "escapes_in_both_ID_title": true
+    },
+    {
+      "compiler_epoch": 242,
+      "case": "duplicates",
+      "owned_borrowed_full_JSON_equal": true,
+      "literal_unicode_escaped_unicode_equal": true,
+      "escapes_in_both_ID_title": true
+    },
+    {
+      "compiler_epoch": 242,
+      "case": "empty",
+      "owned_borrowed_full_JSON_equal": true,
+      "literal_unicode_escaped_unicode_equal": true,
+      "escapes_in_both_ID_title": true
+    },
+    {
+      "compiler_epoch": 252,
+      "case": "ordered",
+      "owned_borrowed_full_JSON_equal": true,
+      "literal_unicode_escaped_unicode_equal": true,
+      "escapes_in_both_ID_title": true
+    },
+    {
+      "compiler_epoch": 252,
+      "case": "unordered",
+      "owned_borrowed_full_JSON_equal": true,
+      "literal_unicode_escaped_unicode_equal": true,
+      "escapes_in_both_ID_title": true
+    },
+    {
+      "compiler_epoch": 252,
+      "case": "duplicates",
+      "owned_borrowed_full_JSON_equal": true,
+      "literal_unicode_escaped_unicode_equal": true,
+      "escapes_in_both_ID_title": true
+    },
+    {
+      "compiler_epoch": 252,
+      "case": "empty",
+      "owned_borrowed_full_JSON_equal": true,
+      "literal_unicode_escaped_unicode_equal": true,
+      "escapes_in_both_ID_title": true
+    }
+  ],
+  "fresh_processes": 32,
+  "all_outputs_exact": true,
+  "scope": "Host IO differential check against the unchanged owned-string adapter; ordinary Rust does not accept all escaped borrowed strings, so it is not used as this extended-case oracle. All normal31 edge cases separately match Rust.",
+  "timings_excluded": true
+}

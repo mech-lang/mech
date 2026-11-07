@@ -1,0 +1,2226 @@
+{
+  "schema": "mech.related-post-gen.selected-ranges-and-json-ownership.v1",
+  "updated_utc": "2026-11-07T09:45:48.763437+00:00",
+  "selected_compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+  "selected_identity": "IR242/work115/ABI41/image9",
+  "selected_workers": 4,
+  "selected_source": "ordered-combinadic-mask-reuse",
+  "selected_changed": false,
+  "candidate_compiler": "c879e9541277635d9faca26121b00c43d349193b",
+  "candidate_identity": "IR252/work115/ABI41/image9",
+  "candidate_branch": "codex/related-selected-range-integration-20261107",
+  "candidate_selected": false,
+  "integrated_PR973": "7f71c3796bac86eb963f6fe28eda7504022089e1",
+  "latency_report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-selected-ranges-randomized-20261107-5000-m3.json",
+  "resource_report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-selected-ranges-resources-20261107-5000-m3.json",
+  "latency_seed": 990252,
+  "resource_seed": 9902527,
+  "exact_latency_outputs": 434,
+  "exact_resource_outputs": 105,
+  "all_first_and_adverse_samples_retained": true,
+  "resource_and_profile_timings_excluded": true,
+  "matched_reference": {
+    "variant": "rust-mech-control-u8-ids-u32",
+    "median_seconds": 0.0015987080000000001,
+    "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+    "eligible_variants": [
+      "rust",
+      "rust-mech-control-streaming",
+      "rust-mech-control-u32-casts",
+      "rust-mech-control-u8-ids-u32"
+    ]
+  },
+  "whole_reference": {
+    "variant": "rust-mech-control-u32-casts",
+    "median_seconds": 0.023001916939392686,
+    "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+  },
+  "trials": {
+    "mech-ir242-reuse-4": {
+      "timing": {
+        "median_seconds": 0.00266225,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "IR242_reuse_4",
+        "median_processing_plus_admission_seconds": 0.002812625,
+        "median_whole_process_seconds": 0.0344346659258008,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002820875,
+        "over_fastest": 1.6652509401341582,
+        "over_rust": 0.30825416005618916,
+        "whole_process_over_fastest": 1.4970346174421918,
+        "processing_plus_admission_over_fastest": 1.759311268849596,
+        "processing_plus_admission_over_rust": 0.3256656425685187,
+        "post_json_over_fastest_matched_native": 1.7644716858863532
+      },
+      "resources": {
+        "median_seconds": 0.002660625,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "IR242_reuse_4_instrumented",
+        "median_processing_plus_admission_seconds": 0.0028078329999999996,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 79021023,
+          "instructions_retired": 312882038,
+          "involuntary_context_switches": 14,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1785,
+          "peak_physical_footprint_bytes": 16007528,
+          "peak_resident_bytes": 26558464,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.02
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3758,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7290514,
+          "hardware": {
+            "cycles": 15012882,
+            "instructions_per_cycle": 3.653308205579715,
+            "instructions_retired": 54862832,
+            "lifetime_peak_physical_footprint_bytes_after": 16007528,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15892816,
+            "physical_footprint_bytes_before": 11927912,
+            "resident_bytes_after": 26460160,
+            "resident_bytes_before": 21069824,
+            "system_cpu_seconds": 0.00035645833333333336,
+            "user_cpu_seconds": 0.003627
+          },
+          "live_requested_heap_bytes_after": 8498733,
+          "live_requested_heap_bytes_before": 7776891,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "peak_live_requested_heap_bytes": 13344058,
+          "requested_allocation_bytes": 8012356
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 26837,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 6485384,
+            "hardware": {
+              "cycles": 30732438,
+              "instructions_per_cycle": 4.096365117534769,
+              "instructions_retired": 125885781,
+              "lifetime_peak_physical_footprint_bytes_after": 9535824,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 9535824,
+              "physical_footprint_bytes_before": 1163600,
+              "resident_bytes_after": 18644992,
+              "resident_bytes_before": 2031616,
+              "system_cpu_seconds": 0.00060625,
+              "user_cpu_seconds": 0.0074945
+            },
+            "live_requested_heap_bytes_after": 6351956,
+            "live_requested_heap_bytes_before": 6341,
+            "peak_additional_live_requested_heap_bytes": 7003853,
+            "peak_live_requested_heap_bytes": 7010194,
+            "requested_allocation_bytes": 12830999
+          },
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6488148,
+              "instructions_per_cycle": 4.845884694287855,
+              "instructions_retired": 31433323,
+              "lifetime_peak_physical_footprint_bytes_after": 11927912,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 11927912,
+              "physical_footprint_bytes_before": 9535824,
+              "resident_bytes_after": 21069824,
+              "resident_bytes_before": 18661376,
+              "system_cpu_seconds": 0.00019358333333333334,
+              "user_cpu_seconds": 0.0015195
+            },
+            "live_requested_heap_bytes_after": 7776891,
+            "live_requested_heap_bytes_before": 6351956,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 8890180,
+            "requested_allocation_bytes": 3290192
+          }
+        },
+        "median_whole_process_seconds": 0.043440707959234715,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002815042,
+        "over_fastest": 1.6001757374114995,
+        "over_rust": 0.3023494534101438,
+        "whole_process_over_fastest": 1.4060282526820966,
+        "processing_plus_admission_over_fastest": 1.688710825953805,
+        "processing_plus_admission_over_rust": 0.31907795078861706,
+        "post_json_over_fastest_matched_native": 1.6930465241040518,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "peak_physical_footprint_bytes": 2.933819238562753,
+            "cycles": 2.2533270576335256,
+            "involuntary_context_switches": 2.8,
+            "wall_seconds": 2.0,
+            "page_reclaims": 3.4593023255813953,
+            "instructions_retired": 2.228926516145293,
+            "peak_resident_bytes": 4.404891304347826
+          },
+          "post_json": {
+            "freed_allocation_bytes": 1.2846526026213523,
+            "hardware": {
+              "lifetime_peak_physical_footprint_bytes_after": 2.925035887930253,
+              "instructions_per_cycle": 1.1953266958048485,
+              "cycles": 2.3889657652611445,
+              "instructions_retired": 2.856435248694886,
+              "physical_footprint_bytes_before": 4.0896072192660045,
+              "resident_bytes_after": 4.412568306010929,
+              "system_cpu_seconds": 3.240530303030303,
+              "user_cpu_seconds": 2.310681673391378,
+              "resident_bytes_before": 6.123809523809523,
+              "physical_footprint_bytes_after": 2.904074705368133
+            },
+            "live_requested_heap_bytes_before": 3.784218657622434,
+            "peak_live_requested_heap_bytes": 1.7413146372492254,
+            "live_requested_heap_bytes_after": 2.651121810069027,
+            "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+            "allocation_requests": 64.79310344827586,
+            "requested_allocation_bytes": 1.173848944425293
+          }
+        },
+        "post_json_instructions_per_post": 10972.5664,
+        "post_json_cycles_per_post": 3002.5764
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 0,
+          "median_paired_delta_seconds": 0.0
+        },
+        "wall_seconds": {
+          "wins": 0,
+          "median_paired_delta_seconds": 0.0
+        }
+      },
+      "passes_joint_gate": false
+    },
+    "mech-ir250-reuse-4": {
+      "timing": {
+        "median_seconds": 0.002654292,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "IR250_invariant_captures_reuse-4",
+        "median_processing_plus_admission_seconds": 0.0028057499999999997,
+        "median_whole_process_seconds": 0.03443337487988174,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.00281425,
+        "over_fastest": 1.6602731705852474,
+        "over_rust": 0.3073327264546389,
+        "whole_process_over_fastest": 1.4969784896889067,
+        "processing_plus_admission_over_fastest": 1.7550109213189646,
+        "processing_plus_admission_over_rust": 0.32486960637718193,
+        "post_json_over_fastest_matched_native": 1.7603277146295633
+      },
+      "resources": {
+        "median_seconds": 0.002678625,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "IR250_invariant_captures_reuse-4_instrumented",
+        "median_processing_plus_admission_seconds": 0.002846167,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 78552150,
+          "instructions_retired": 313205250,
+          "involuntary_context_switches": 15,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1791,
+          "peak_physical_footprint_bytes": 16073064,
+          "peak_resident_bytes": 26656768,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.02
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3758,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7290514,
+          "hardware": {
+            "cycles": 15114917,
+            "instructions_per_cycle": 3.655852427108928,
+            "instructions_retired": 55253875,
+            "lifetime_peak_physical_footprint_bytes_after": 16073064,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15991144,
+            "physical_footprint_bytes_before": 12009832,
+            "resident_bytes_after": 26591232,
+            "resident_bytes_before": 21200896,
+            "system_cpu_seconds": 0.0003714166666666667,
+            "user_cpu_seconds": 0.0036372083333333334
+          },
+          "live_requested_heap_bytes_after": 8498731,
+          "live_requested_heap_bytes_before": 7776889,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "peak_live_requested_heap_bytes": 13344056,
+          "requested_allocation_bytes": 8012356
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 26837,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 6485384,
+            "hardware": {
+              "cycles": 30229309,
+              "instructions_per_cycle": 4.165908390429963,
+              "instructions_retired": 125949841,
+              "lifetime_peak_physical_footprint_bytes_after": 9568616,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 9568616,
+              "physical_footprint_bytes_before": 1147216,
+              "resident_bytes_after": 18677760,
+              "resident_bytes_before": 2031616,
+              "system_cpu_seconds": 0.0005804583333333333,
+              "user_cpu_seconds": 0.007414458333333334
+            },
+            "live_requested_heap_bytes_after": 6351954,
+            "live_requested_heap_bytes_before": 6339,
+            "peak_additional_live_requested_heap_bytes": 7003853,
+            "peak_live_requested_heap_bytes": 7010192,
+            "requested_allocation_bytes": 12830999
+          },
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6500248,
+              "instructions_per_cycle": 4.837803573032906,
+              "instructions_retired": 31424845,
+              "lifetime_peak_physical_footprint_bytes_after": 12009832,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 12009832,
+              "physical_footprint_bytes_before": 9568616,
+              "resident_bytes_after": 21200896,
+              "resident_bytes_before": 18694144,
+              "system_cpu_seconds": 0.00018133333333333334,
+              "user_cpu_seconds": 0.0015006666666666669
+            },
+            "live_requested_heap_bytes_after": 7776889,
+            "live_requested_heap_bytes_before": 6351954,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 8890178,
+            "requested_allocation_bytes": 3290192
+          }
+        },
+        "median_whole_process_seconds": 0.04344266699627042,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002853125,
+        "over_fastest": 1.6110014506455732,
+        "over_rust": 0.304394946541037,
+        "whole_process_over_fastest": 1.4060916600607893,
+        "processing_plus_admission_over_fastest": 1.7117659865713042,
+        "processing_plus_admission_over_rust": 0.3234341693263759,
+        "post_json_over_fastest_matched_native": 1.7159507261647866,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "peak_physical_footprint_bytes": 2.9458305108602896,
+            "cycles": 2.2399568913488674,
+            "involuntary_context_switches": 3.0,
+            "wall_seconds": 2.0,
+            "page_reclaims": 3.4709302325581395,
+            "instructions_retired": 2.2312290318209813,
+            "peak_resident_bytes": 4.421195652173913
+          },
+          "post_json": {
+            "freed_allocation_bytes": 1.2846526026213523,
+            "hardware": {
+              "lifetime_peak_physical_footprint_bytes_after": 2.9370112005426314,
+              "instructions_per_cycle": 1.1961591401929965,
+              "cycles": 2.4052023627284678,
+              "instructions_retired": 2.8767949160368014,
+              "physical_footprint_bytes_before": 4.117694333205332,
+              "resident_bytes_after": 4.434426229508197,
+              "system_cpu_seconds": 3.376515151515152,
+              "user_cpu_seconds": 2.3171851773200256,
+              "resident_bytes_before": 6.161904761904762,
+              "physical_footprint_bytes_after": 2.9220420597771586
+            },
+            "live_requested_heap_bytes_before": 3.7842176844266784,
+            "peak_live_requested_heap_bytes": 1.741314376261955,
+            "live_requested_heap_bytes_after": 2.651121186182664,
+            "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+            "allocation_requests": 64.79310344827586,
+            "requested_allocation_bytes": 1.173848944425293
+          }
+        },
+        "post_json_instructions_per_post": 11050.775,
+        "post_json_cycles_per_post": 3022.9834
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 14,
+          "median_paired_delta_seconds": 7.91700000000008e-06
+        },
+        "wall_seconds": {
+          "wins": 12,
+          "median_paired_delta_seconds": 0.0004095821641385555
+        }
+      },
+      "passes_joint_gate": false
+    },
+    "mech-ir252-reuse-4": {
+      "timing": {
+        "median_seconds": 0.002626583,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "ir252-reuse-4",
+        "median_processing_plus_admission_seconds": 0.002775292,
+        "median_whole_process_seconds": 0.034086667001247406,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.00278375,
+        "over_fastest": 1.6429410498977923,
+        "over_rust": 0.30412438218907517,
+        "whole_process_over_fastest": 1.4819054903581175,
+        "processing_plus_admission_over_fastest": 1.7359592871243528,
+        "processing_plus_admission_over_rust": 0.32134296342216595,
+        "post_json_over_fastest_matched_native": 1.7412498092209459
+      },
+      "resources": {
+        "median_seconds": 0.002691042,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "ir252-reuse-4_instrumented",
+        "median_processing_plus_admission_seconds": 0.002847208,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 79818474,
+          "instructions_retired": 312830876,
+          "involuntary_context_switches": 14,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1791,
+          "peak_physical_footprint_bytes": 15991144,
+          "peak_resident_bytes": 26656768,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.03
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3758,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7290514,
+          "hardware": {
+            "cycles": 14904316,
+            "instructions_per_cycle": 3.7073750315009426,
+            "instructions_retired": 55241992,
+            "lifetime_peak_physical_footprint_bytes_after": 15991144,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15909224,
+            "physical_footprint_bytes_before": 11960680,
+            "resident_bytes_after": 26574848,
+            "resident_bytes_before": 21184512,
+            "system_cpu_seconds": 0.00036533333333333334,
+            "user_cpu_seconds": 0.0036646250000000003
+          },
+          "live_requested_heap_bytes_after": 8498731,
+          "live_requested_heap_bytes_before": 7776889,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "peak_live_requested_heap_bytes": 13344056,
+          "requested_allocation_bytes": 8012356
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 26837,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 6485384,
+            "hardware": {
+              "cycles": 30142118,
+              "instructions_per_cycle": 4.168090576780305,
+              "instructions_retired": 125635078,
+              "lifetime_peak_physical_footprint_bytes_after": 9552232,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 9552232,
+              "physical_footprint_bytes_before": 1179984,
+              "resident_bytes_after": 18694144,
+              "resident_bytes_before": 2064384,
+              "system_cpu_seconds": 0.0006055833333333334,
+              "user_cpu_seconds": 0.0073328333333333336
+            },
+            "live_requested_heap_bytes_after": 6351954,
+            "live_requested_heap_bytes_before": 6339,
+            "peak_additional_live_requested_heap_bytes": 7003853,
+            "peak_live_requested_heap_bytes": 7010192,
+            "requested_allocation_bytes": 12830999
+          },
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6464433,
+              "instructions_per_cycle": 4.865989948383717,
+              "instructions_retired": 31449526,
+              "lifetime_peak_physical_footprint_bytes_after": 11960680,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 11960680,
+              "physical_footprint_bytes_before": 9552232,
+              "resident_bytes_after": 21184512,
+              "resident_bytes_before": 18710528,
+              "system_cpu_seconds": 0.0001755,
+              "user_cpu_seconds": 0.0015083750000000002
+            },
+            "live_requested_heap_bytes_after": 7776889,
+            "live_requested_heap_bytes_before": 6351954,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 8890178,
+            "requested_allocation_bytes": 3290192
+          }
+        },
+        "median_whole_process_seconds": 0.04605862498283386,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002854208,
+        "over_fastest": 1.6184693884915449,
+        "over_rust": 0.3058059958858314,
+        "whole_process_over_fastest": 1.4907613399469726,
+        "processing_plus_admission_over_fastest": 1.7123920736533411,
+        "processing_plus_admission_over_rust": 0.3235524670124459,
+        "post_json_over_fastest_matched_native": 1.7166020732443699,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "peak_physical_footprint_bytes": 2.9308164204883687,
+            "cycles": 2.276066802668678,
+            "involuntary_context_switches": 2.8,
+            "wall_seconds": 3.0,
+            "page_reclaims": 3.4709302325581395,
+            "instructions_retired": 2.2285620454356674,
+            "peak_resident_bytes": 4.421195652173913
+          },
+          "post_json": {
+            "freed_allocation_bytes": 1.2846526026213523,
+            "hardware": {
+              "lifetime_peak_physical_footprint_bytes_after": 2.9220420597771586,
+              "instructions_per_cycle": 1.2130168321810706,
+              "cycles": 2.3716899046188415,
+              "instructions_retired": 2.876176227230138,
+              "physical_footprint_bytes_before": 4.100842064841736,
+              "resident_bytes_after": 4.4316939890710385,
+              "system_cpu_seconds": 3.3212121212121213,
+              "user_cpu_seconds": 2.3346517307283925,
+              "resident_bytes_before": 6.1571428571428575,
+              "physical_footprint_bytes_after": 2.9070729190116857
+            },
+            "live_requested_heap_bytes_before": 3.7842176844266784,
+            "peak_live_requested_heap_bytes": 1.741314376261955,
+            "live_requested_heap_bytes_after": 2.651121186182664,
+            "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+            "allocation_requests": 64.79310344827586,
+            "requested_allocation_bytes": 1.173848944425293
+          }
+        },
+        "post_json_instructions_per_post": 11048.3984,
+        "post_json_cycles_per_post": 2980.8632
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 18,
+          "median_paired_delta_seconds": -1.5000000000000256e-05
+        },
+        "wall_seconds": {
+          "wins": 20,
+          "median_paired_delta_seconds": -0.0005746663082391024
+        }
+      },
+      "passes_joint_gate": false
+    },
+    "mech-ir252-reads-4": {
+      "timing": {
+        "median_seconds": 0.002637875,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "ir252-reads-4",
+        "median_processing_plus_admission_seconds": 0.0027896250000000004,
+        "median_whole_process_seconds": 0.03567679086700082,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002797209,
+        "over_fastest": 1.6500042534346484,
+        "over_rust": 0.3054318499232679,
+        "whole_process_over_fastest": 1.5510355489503296,
+        "processing_plus_admission_over_fastest": 1.7449246516562125,
+        "processing_plus_admission_over_rust": 0.3230025396738649,
+        "post_json_over_fastest_matched_native": 1.7496684822994568
+      },
+      "resources": {
+        "median_seconds": 0.002667542,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "ir252-reads-4_instrumented",
+        "median_processing_plus_admission_seconds": 0.002826082,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 77734555,
+          "instructions_retired": 312583217,
+          "involuntary_context_switches": 14,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1776,
+          "peak_physical_footprint_bytes": 15729000,
+          "peak_resident_bytes": 26427392,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.03
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3758,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7290514,
+          "hardware": {
+            "cycles": 14818666,
+            "instructions_per_cycle": 3.717995061093893,
+            "instructions_retired": 55095727,
+            "lifetime_peak_physical_footprint_bytes_after": 15729000,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15630696,
+            "physical_footprint_bytes_before": 11714920,
+            "resident_bytes_after": 26279936,
+            "resident_bytes_before": 20889600,
+            "system_cpu_seconds": 0.00036712500000000005,
+            "user_cpu_seconds": 0.003633625
+          },
+          "live_requested_heap_bytes_after": 8498491,
+          "live_requested_heap_bytes_before": 7776649,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "peak_live_requested_heap_bytes": 13343816,
+          "requested_allocation_bytes": 8012356
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 26842,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 6485384,
+            "hardware": {
+              "cycles": 30026270,
+              "instructions_per_cycle": 4.180038046683787,
+              "instructions_retired": 125524958,
+              "lifetime_peak_physical_footprint_bytes_after": 9339240,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 9339240,
+              "physical_footprint_bytes_before": 1163600,
+              "resident_bytes_after": 18464768,
+              "resident_bytes_before": 2048000,
+              "system_cpu_seconds": 0.0005959166666666667,
+              "user_cpu_seconds": 0.007374666666666667
+            },
+            "live_requested_heap_bytes_after": 6351714,
+            "live_requested_heap_bytes_before": 6339,
+            "peak_additional_live_requested_heap_bytes": 7003613,
+            "peak_live_requested_heap_bytes": 7009952,
+            "requested_allocation_bytes": 12830759
+          },
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6469859,
+              "instructions_per_cycle": 4.858923973459081,
+              "instructions_retired": 31422470,
+              "lifetime_peak_physical_footprint_bytes_after": 11714920,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 11714920,
+              "physical_footprint_bytes_before": 9339240,
+              "resident_bytes_after": 20889600,
+              "resident_bytes_before": 18464768,
+              "system_cpu_seconds": 0.00018379166666666668,
+              "user_cpu_seconds": 0.0014874166666666668
+            },
+            "live_requested_heap_bytes_after": 7776649,
+            "live_requested_heap_bytes_before": 6351714,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 8889938,
+            "requested_allocation_bytes": 3290192
+          }
+        },
+        "median_whole_process_seconds": 0.044800249859690666,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002833709,
+        "over_fastest": 1.604335818435949,
+        "over_rust": 0.3031354909649432,
+        "whole_process_over_fastest": 1.4500320088948178,
+        "processing_plus_admission_over_fastest": 1.699686294887617,
+        "processing_plus_admission_over_rust": 0.321151739907821,
+        "post_json_over_fastest_matched_native": 1.704273390156299,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "peak_physical_footprint_bytes": 2.8827713312982204,
+            "cycles": 2.216642729297512,
+            "involuntary_context_switches": 2.8,
+            "wall_seconds": 3.0,
+            "page_reclaims": 3.441860465116279,
+            "instructions_retired": 2.2267977584360343,
+            "peak_resident_bytes": 4.383152173913044
+          },
+          "post_json": {
+            "freed_allocation_bytes": 1.2846526026213523,
+            "hardware": {
+              "lifetime_peak_physical_footprint_bytes_after": 2.874140809327646,
+              "instructions_per_cycle": 1.2164916019427083,
+              "cycles": 2.358060614933182,
+              "instructions_retired": 2.868560934938075,
+              "physical_footprint_bytes_before": 4.016580723023753,
+              "resident_bytes_after": 4.382513661202186,
+              "system_cpu_seconds": 3.3375000000000004,
+              "user_cpu_seconds": 2.3149023147165004,
+              "resident_bytes_before": 6.071428571428571,
+              "physical_footprint_bytes_after": 2.8561778404090785
+            },
+            "live_requested_heap_bytes_before": 3.784100900935971,
+            "peak_live_requested_heap_bytes": 1.7412830577894978,
+            "live_requested_heap_bytes_after": 2.6510463198191228,
+            "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+            "allocation_requests": 64.79310344827586,
+            "requested_allocation_bytes": 1.173848944425293
+          }
+        },
+        "post_json_instructions_per_post": 11019.1454,
+        "post_json_cycles_per_post": 2963.7332
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 14,
+          "median_paired_delta_seconds": 5.166000000000025e-06
+        },
+        "wall_seconds": {
+          "wins": 6,
+          "median_paired_delta_seconds": 0.0008616261184215546
+        }
+      },
+      "passes_joint_gate": false
+    },
+    "mech-ir252-partial-4": {
+      "timing": {
+        "median_seconds": 0.002615459,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "ir252-partial-4",
+        "median_processing_plus_admission_seconds": 0.002765042,
+        "median_whole_process_seconds": 0.03616237500682473,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.00277375,
+        "over_fastest": 1.6359829312169576,
+        "over_rust": 0.30283636668472175,
+        "whole_process_over_fastest": 1.5721461433891917,
+        "processing_plus_admission_over_fastest": 1.7295478598968668,
+        "processing_plus_admission_over_rust": 0.3201561458278093,
+        "post_json_over_fastest_matched_native": 1.7349947582673009
+      },
+      "resources": {
+        "median_seconds": 0.002596041,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "ir252-partial-4_instrumented",
+        "median_processing_plus_admission_seconds": 0.002751333,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 77234247,
+          "instructions_retired": 310030053,
+          "involuntary_context_switches": 15,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1780,
+          "peak_physical_footprint_bytes": 15892840,
+          "peak_resident_bytes": 26492928,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.03
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3758,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7285714,
+          "hardware": {
+            "cycles": 14811128,
+            "instructions_per_cycle": 3.664616023843694,
+            "instructions_retired": 54277097,
+            "lifetime_peak_physical_footprint_bytes_after": 15892840,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15794512,
+            "physical_footprint_bytes_before": 11780432,
+            "resident_bytes_after": 26411008,
+            "resident_bytes_before": 21004288,
+            "system_cpu_seconds": 0.0003680416666666667,
+            "user_cpu_seconds": 0.0036042500000000002
+          },
+          "live_requested_heap_bytes_after": 8449239,
+          "live_requested_heap_bytes_before": 7727397,
+          "peak_additional_live_requested_heap_bytes": 5562367,
+          "peak_live_requested_heap_bytes": 13289764,
+          "requested_allocation_bytes": 8007556
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 26115,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 6379498,
+            "hardware": {
+              "cycles": 29805895,
+              "instructions_per_cycle": 4.175135763248096,
+              "instructions_retired": 124509473,
+              "lifetime_peak_physical_footprint_bytes_after": 9388392,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 9388392,
+              "physical_footprint_bytes_before": 1163600,
+              "resident_bytes_after": 18530304,
+              "resident_bytes_before": 2064384,
+              "system_cpu_seconds": 0.0005899166666666666,
+              "user_cpu_seconds": 0.007373500000000001
+            },
+            "live_requested_heap_bytes_after": 6302462,
+            "live_requested_heap_bytes_before": 6343,
+            "peak_additional_live_requested_heap_bytes": 6934853,
+            "peak_live_requested_heap_bytes": 6941196,
+            "requested_allocation_bytes": 12675617
+          },
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6627227,
+              "instructions_per_cycle": 4.724360437689667,
+              "instructions_retired": 31436466,
+              "lifetime_peak_physical_footprint_bytes_after": 11780432,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 11780432,
+              "physical_footprint_bytes_before": 9388392,
+              "resident_bytes_after": 21004288,
+              "resident_bytes_before": 18546688,
+              "system_cpu_seconds": 0.00018358333333333334,
+              "user_cpu_seconds": 0.0015260416666666669
+            },
+            "live_requested_heap_bytes_after": 7727397,
+            "live_requested_heap_bytes_before": 6302462,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 8840686,
+            "requested_allocation_bytes": 3290192
+          }
+        },
+        "median_whole_process_seconds": 0.04541820799931884,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.00275875,
+        "over_fastest": 1.5613330783276436,
+        "over_rust": 0.2950102240564992,
+        "whole_process_over_fastest": 1.4700332161520162,
+        "processing_plus_admission_over_fastest": 1.6547301149690743,
+        "processing_plus_admission_over_rust": 0.31265737512775804,
+        "post_json_over_fastest_matched_native": 1.6591909102500257,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "peak_physical_footprint_bytes": 2.912799512042063,
+            "cycles": 2.202376177046594,
+            "involuntary_context_switches": 3.0,
+            "wall_seconds": 3.0,
+            "page_reclaims": 3.449612403100775,
+            "instructions_retired": 2.208609386306895,
+            "peak_resident_bytes": 4.394021739130435
+          },
+          "post_json": {
+            "freed_allocation_bytes": 1.2838068004608212,
+            "hardware": {
+              "lifetime_peak_physical_footprint_bytes_after": 2.904079090858591,
+              "instructions_per_cycle": 1.1990265032893632,
+              "cycles": 2.356861110138664,
+              "instructions_retired": 2.825938935628249,
+              "physical_footprint_bytes_before": 4.039042185528554,
+              "resident_bytes_after": 4.404371584699454,
+              "system_cpu_seconds": 3.345833333333333,
+              "user_cpu_seconds": 2.296188150350393,
+              "resident_bytes_before": 6.104761904761904,
+              "physical_footprint_bytes_after": 2.8861117364495654
+            },
+            "live_requested_heap_bytes_before": 3.7601349822513424,
+            "peak_live_requested_heap_bytes": 1.7342296158176034,
+            "live_requested_heap_bytes_after": 2.6356824942477677,
+            "peak_additional_live_requested_heap_bytes": 0.9918409436025309,
+            "allocation_requests": 64.79310344827586,
+            "requested_allocation_bytes": 1.1731457211869294
+          }
+        },
+        "post_json_instructions_per_post": 10855.4194,
+        "post_json_cycles_per_post": 2962.2256
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 20,
+          "median_paired_delta_seconds": -2.095799999999974e-05
+        },
+        "wall_seconds": {
+          "wins": 6,
+          "median_paired_delta_seconds": 0.0013539588544517756
+        }
+      },
+      "passes_joint_gate": false
+    },
+    "mech-ir252-compact-reuse-4": {
+      "timing": {
+        "median_seconds": 0.002656208,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "ir252-compact-reuse-4",
+        "median_processing_plus_admission_seconds": 0.0028098740000000004,
+        "median_whole_process_seconds": 0.03503324999473989,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002817708,
+        "over_fastest": 1.661471638347966,
+        "over_rust": 0.3075545745044718,
+        "whole_process_over_fastest": 1.5230578428332011,
+        "processing_plus_admission_over_fastest": 1.7575905043322484,
+        "processing_plus_admission_over_rust": 0.3253471123049017,
+        "post_json_over_fastest_matched_native": 1.7624907112493338
+      },
+      "resources": {
+        "median_seconds": 0.002653542,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "ir252-compact-reuse-4_instrumented",
+        "median_processing_plus_admission_seconds": 0.002809042,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 78941810,
+          "instructions_retired": 314138823,
+          "involuntary_context_switches": 15,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1819,
+          "peak_physical_footprint_bytes": 16351568,
+          "peak_resident_bytes": 27082752,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.03
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3845,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7324708,
+          "hardware": {
+            "cycles": 15076154,
+            "instructions_per_cycle": 3.6127806017940682,
+            "instructions_retired": 54479970,
+            "lifetime_peak_physical_footprint_bytes_after": 16318800,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 16318800,
+            "physical_footprint_bytes_before": 12517736,
+            "resident_bytes_after": 26968064,
+            "resident_bytes_before": 21774336,
+            "system_cpu_seconds": 0.0003784166666666667,
+            "user_cpu_seconds": 0.0036437500000000003
+          },
+          "live_requested_heap_bytes_after": 8528504,
+          "live_requested_heap_bytes_before": 7806342,
+          "peak_additional_live_requested_heap_bytes": 5576887,
+          "peak_live_requested_heap_bytes": 13383229,
+          "requested_allocation_bytes": 8046870
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 28944,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 7726878,
+            "hardware": {
+              "cycles": 30881514,
+              "instructions_per_cycle": 4.137356769489993,
+              "instructions_retired": 127815435,
+              "lifetime_peak_physical_footprint_bytes_after": 10387816,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 10387816,
+              "physical_footprint_bytes_before": 1163600,
+              "resident_bytes_after": 19595264,
+              "resident_bytes_before": 2031616,
+              "system_cpu_seconds": 0.0006327083333333333,
+              "user_cpu_seconds": 0.007547666666666667
+            },
+            "live_requested_heap_bytes_after": 6381407,
+            "live_requested_heap_bytes_before": 6355,
+            "peak_additional_live_requested_heap_bytes": 7736410,
+            "peak_live_requested_heap_bytes": 7742765,
+            "requested_allocation_bytes": 14101930
+          },
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6414788,
+              "instructions_per_cycle": 4.892730671691722,
+              "instructions_retired": 31383976,
+              "lifetime_peak_physical_footprint_bytes_after": 12517736,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 12517736,
+              "physical_footprint_bytes_before": 10387816,
+              "resident_bytes_after": 21774336,
+              "resident_bytes_before": 19611648,
+              "system_cpu_seconds": 0.00017275,
+              "user_cpu_seconds": 0.0015015416666666666
+            },
+            "live_requested_heap_bytes_after": 7806342,
+            "live_requested_heap_bytes_before": 6381407,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 8919631,
+            "requested_allocation_bytes": 3290192
+          }
+        },
+        "median_whole_process_seconds": 0.044790583197027445,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002817042,
+        "over_fastest": 1.5959158192538918,
+        "over_rust": 0.3015445518631374,
+        "whole_process_over_fastest": 1.4497191318388916,
+        "processing_plus_admission_over_fastest": 1.6894379530260273,
+        "processing_plus_admission_over_rust": 0.31921533974390875,
+        "post_json_over_fastest_matched_native": 1.69424938113006,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "peak_physical_footprint_bytes": 2.9968740194655337,
+            "cycles": 2.251068256248275,
+            "involuntary_context_switches": 3.0,
+            "wall_seconds": 3.0,
+            "page_reclaims": 3.5251937984496124,
+            "instructions_retired": 2.237879671236905,
+            "peak_resident_bytes": 4.491847826086956
+          },
+          "post_json": {
+            "freed_allocation_bytes": 1.290677885762436,
+            "hardware": {
+              "lifetime_peak_physical_footprint_bytes_after": 2.9819142373485907,
+              "instructions_per_cycle": 1.1820664604247628,
+              "cycles": 2.3990340947064572,
+              "instructions_retired": 2.836501525401385,
+              "physical_footprint_bytes_before": 4.291834439629162,
+              "resident_bytes_after": 4.497267759562842,
+              "system_cpu_seconds": 3.4401515151515154,
+              "user_cpu_seconds": 2.3213527288171587,
+              "resident_bytes_before": 6.328571428571428,
+              "physical_footprint_bytes_after": 2.9819142373485907
+            },
+            "live_requested_heap_bytes_before": 3.798549451725841,
+            "peak_live_requested_heap_bytes": 1.7464262034351405,
+            "live_requested_heap_bytes_after": 2.660408670523116,
+            "peak_additional_live_requested_heap_bytes": 0.9944300446994396,
+            "allocation_requests": 66.29310344827586,
+            "requested_allocation_bytes": 1.1789054125188094
+          }
+        },
+        "post_json_instructions_per_post": 10895.994,
+        "post_json_cycles_per_post": 3015.2308
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 13,
+          "median_paired_delta_seconds": 1.3542000000000068e-05
+        },
+        "wall_seconds": {
+          "wins": 11,
+          "median_paired_delta_seconds": 0.0010012912098318338
+        }
+      },
+      "passes_joint_gate": false
+    },
+    "mech-ir252-compact-reuse-8": {
+      "timing": {
+        "median_seconds": 0.002808042,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "ir252-compact-reuse-8",
+        "median_processing_plus_admission_seconds": 0.002962459,
+        "median_whole_process_seconds": 0.03537870803847909,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002970042,
+        "over_fastest": 1.7564445789975405,
+        "over_rust": 0.3251349903699884,
+        "whole_process_over_fastest": 1.5380765060450299,
+        "processing_plus_admission_over_fastest": 1.8530331993084415,
+        "processing_plus_admission_over_rust": 0.34301448426928277,
+        "post_json_over_fastest_matched_native": 1.8577764044465905
+      },
+      "resources": {
+        "median_seconds": 0.002944375,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "ir252-compact-reuse-8_instrumented",
+        "median_processing_plus_admission_seconds": 0.003104084,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 86002020,
+          "instructions_retired": 318130598,
+          "involuntary_context_switches": 49,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1897,
+          "peak_physical_footprint_bytes": 17711488,
+          "peak_resident_bytes": 28327936,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.02
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 4422,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 8869300,
+          "hardware": {
+            "cycles": 21670429,
+            "instructions_per_cycle": 2.7044119431138167,
+            "instructions_retired": 58605767,
+            "lifetime_peak_physical_footprint_bytes_after": 17711488,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 17531264,
+            "physical_footprint_bytes_before": 12304744,
+            "resident_bytes_after": 28164096,
+            "resident_bytes_before": 21577728,
+            "system_cpu_seconds": 0.00120575,
+            "user_cpu_seconds": 0.00513275
+          },
+          "live_requested_heap_bytes_after": 8528540,
+          "live_requested_heap_bytes_before": 7806378,
+          "peak_additional_live_requested_heap_bytes": 6983247,
+          "peak_live_requested_heap_bytes": 14789625,
+          "requested_allocation_bytes": 9591462
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 28943,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 7726590,
+            "hardware": {
+              "cycles": 30823230,
+              "instructions_per_cycle": 4.140733336512754,
+              "instructions_retired": 127630776,
+              "lifetime_peak_physical_footprint_bytes_after": 10191208,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 10191208,
+              "physical_footprint_bytes_before": 1179984,
+              "resident_bytes_after": 19398656,
+              "resident_bytes_before": 2048000,
+              "system_cpu_seconds": 0.0006176666666666668,
+              "user_cpu_seconds": 0.007560666666666667
+            },
+            "live_requested_heap_bytes_after": 6381443,
+            "live_requested_heap_bytes_before": 6355,
+            "peak_additional_live_requested_heap_bytes": 7736446,
+            "peak_live_requested_heap_bytes": 7742801,
+            "requested_allocation_bytes": 14101678
+          },
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6409558,
+              "instructions_per_cycle": 4.899736612103362,
+              "instructions_retired": 31364114,
+              "lifetime_peak_physical_footprint_bytes_after": 12304744,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 12304744,
+              "physical_footprint_bytes_before": 10191208,
+              "resident_bytes_after": 21577728,
+              "resident_bytes_before": 19415040,
+              "system_cpu_seconds": 0.000170125,
+              "user_cpu_seconds": 0.0014967083333333334
+            },
+            "live_requested_heap_bytes_after": 7806378,
+            "live_requested_heap_bytes_before": 6381443,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 8919667,
+            "requested_allocation_bytes": 3290192
+          }
+        },
+        "median_whole_process_seconds": 0.0453747499268502,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.003111792,
+        "over_fastest": 1.7708310779764094,
+        "over_rust": 0.3345943798485289,
+        "whole_process_over_fastest": 1.4686266258691103,
+        "processing_plus_admission_over_fastest": 1.8668846243597792,
+        "processing_plus_admission_over_rust": 0.3527434722064075,
+        "post_json_over_fastest_matched_native": 1.8715204353380146,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "peak_physical_footprint_bytes": 3.2461167169580047,
+            "cycles": 2.4523939493562317,
+            "involuntary_context_switches": 9.8,
+            "wall_seconds": 2.0,
+            "page_reclaims": 3.6763565891472867,
+            "instructions_retired": 2.2663165006594554,
+            "peak_resident_bytes": 4.698369565217392
+          },
+          "post_json": {
+            "freed_allocation_bytes": 1.5628485629997502,
+            "hardware": {
+              "lifetime_peak_physical_footprint_bytes_after": 3.236398401342545,
+              "instructions_per_cycle": 0.8848571240499659,
+              "cycles": 3.4483660765149757,
+              "instructions_retired": 3.0513112891365055,
+              "physical_footprint_bytes_before": 4.218807943386911,
+              "resident_bytes_after": 4.69672131147541,
+              "system_cpu_seconds": 10.961363636363636,
+              "user_cpu_seconds": 3.269961775323848,
+              "resident_bytes_before": 6.271428571428571,
+              "physical_footprint_bytes_after": 3.2034662916585046
+            },
+            "live_requested_heap_bytes_before": 3.798566969249447,
+            "peak_live_requested_heap_bytes": 1.9299519300595873,
+            "live_requested_heap_bytes_after": 2.660419900477647,
+            "peak_additional_live_requested_heap_bytes": 1.2452019605843236,
+            "allocation_requests": 76.24137931034483,
+            "requested_allocation_bytes": 1.4051956183918075
+          }
+        },
+        "post_json_instructions_per_post": 11721.1534,
+        "post_json_cycles_per_post": 4334.0858
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 2,
+          "median_paired_delta_seconds": 0.00019150000000000026
+        },
+        "wall_seconds": {
+          "wins": 11,
+          "median_paired_delta_seconds": 0.000663665821775794
+        }
+      },
+      "passes_joint_gate": false
+    },
+    "mech-ir242-borrowed-json-4": {
+      "timing": {
+        "median_seconds": 0.002697958,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "ir242-borrowed-json-4",
+        "median_processing_plus_admission_seconds": 0.002858416,
+        "median_whole_process_seconds": 0.03567091701552272,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002880875,
+        "over_fastest": 1.687586476079434,
+        "over_rust": 0.3123886851936805,
+        "whole_process_over_fastest": 1.5507801853867806,
+        "processing_plus_admission_over_fastest": 1.787953772671432,
+        "processing_plus_admission_over_rust": 0.3309676488576099,
+        "post_json_over_fastest_matched_native": 1.8020019916082237
+      },
+      "resources": {
+        "median_seconds": 0.002687417,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "ir242-borrowed-json-4_instrumented",
+        "median_processing_plus_admission_seconds": 0.0028620010000000003,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 77310896,
+          "instructions_retired": 308343963,
+          "involuntary_context_switches": 15,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1829,
+          "peak_physical_footprint_bytes": 16630120,
+          "peak_resident_bytes": 27279360,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.02
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3758,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7290514,
+          "hardware": {
+            "cycles": 15242826,
+            "instructions_per_cycle": 3.6291013884170824,
+            "instructions_retired": 55358857,
+            "lifetime_peak_physical_footprint_bytes_after": 16630120,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 16630120,
+            "physical_footprint_bytes_before": 11354448,
+            "resident_bytes_after": 27181056,
+            "resident_bytes_before": 20512768,
+            "system_cpu_seconds": 0.0003990416666666667,
+            "user_cpu_seconds": 0.0036646666666666668
+          },
+          "live_requested_heap_bytes_after": 9393489,
+          "live_requested_heap_bytes_before": 8671647,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "peak_live_requested_heap_bytes": 14238814,
+          "requested_allocation_bytes": 8012356
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 26837,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 6485384,
+            "hardware": {
+              "cycles": 30219235,
+              "instructions_per_cycle": 4.161079235358185,
+              "instructions_retired": 125653386,
+              "lifetime_peak_physical_footprint_bytes_after": 9322832,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 9322832,
+              "physical_footprint_bytes_before": 1163576,
+              "resident_bytes_after": 18415616,
+              "resident_bytes_before": 2031616,
+              "system_cpu_seconds": 0.0005712083333333334,
+              "user_cpu_seconds": 0.00748325
+            },
+            "live_requested_heap_bytes_after": 6351964,
+            "live_requested_heap_bytes_before": 6349,
+            "peak_additional_live_requested_heap_bytes": 7003853,
+            "peak_live_requested_heap_bytes": 7010202,
+            "requested_allocation_bytes": 12830999
+          },
+          "json": {
+            "allocation_requests": 30089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 751968,
+            "hardware": {
+              "cycles": 5911168,
+              "instructions_per_cycle": 4.85926245970292,
+              "instructions_retired": 28690417,
+              "lifetime_peak_physical_footprint_bytes_after": 11354448,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 11354448,
+              "physical_footprint_bytes_before": 9322832,
+              "resident_bytes_after": 20512768,
+              "resident_bytes_before": 18432000,
+              "system_cpu_seconds": 0.00016475000000000002,
+              "user_cpu_seconds": 0.0013891666666666668
+            },
+            "live_requested_heap_bytes_after": 8671647,
+            "live_requested_heap_bytes_before": 6351964,
+            "peak_additional_live_requested_heap_bytes": 2319683,
+            "peak_live_requested_heap_bytes": 8671647,
+            "requested_allocation_bytes": 3071651
+          }
+        },
+        "median_whole_process_seconds": 0.0437004161067307,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.00288025,
+        "over_fastest": 1.6162892101319053,
+        "over_rust": 0.30539405629697103,
+        "whole_process_over_fastest": 1.4144341238104805,
+        "processing_plus_admission_over_fastest": 1.721289005646211,
+        "processing_plus_admission_over_rust": 0.32523352145051826,
+        "post_json_over_fastest_matched_native": 1.7322644745800224,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "peak_physical_footprint_bytes": 3.0479263253893545,
+            "cycles": 2.2045618645900285,
+            "involuntary_context_switches": 3.0,
+            "wall_seconds": 2.0,
+            "page_reclaims": 3.544573643410853,
+            "instructions_retired": 2.1965979243078926,
+            "peak_resident_bytes": 4.524456521739131
+          },
+          "post_json": {
+            "freed_allocation_bytes": 1.2846526026213523,
+            "hardware": {
+              "lifetime_peak_physical_footprint_bytes_after": 3.038801357747846,
+              "instructions_per_cycle": 1.1874064621024827,
+              "cycles": 2.4255562309643457,
+              "instructions_retired": 2.882260807503696,
+              "physical_footprint_bytes_before": 3.8929891930440506,
+              "resident_bytes_after": 4.532786885245901,
+              "system_cpu_seconds": 3.6276515151515154,
+              "user_cpu_seconds": 2.334678275642387,
+              "resident_bytes_before": 5.961904761904762,
+              "physical_footprint_bytes_after": 3.038801357747846
+            },
+            "live_requested_heap_bytes_before": 4.219605028502471,
+            "peak_live_requested_heap_bytes": 1.8580746003404056,
+            "live_requested_heap_bytes_after": 2.930234843304701,
+            "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+            "allocation_requests": 64.79310344827586,
+            "requested_allocation_bytes": 1.173848944425293
+          }
+        },
+        "post_json_instructions_per_post": 11071.7714,
+        "post_json_cycles_per_post": 3048.5652
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 5,
+          "median_paired_delta_seconds": 5.433300000000016e-05
+        },
+        "wall_seconds": {
+          "wins": 6,
+          "median_paired_delta_seconds": 0.0012551259715110064
+        }
+      },
+      "passes_joint_gate": false
+    },
+    "mech-ir252-borrowed-json-4": {
+      "timing": {
+        "median_seconds": 0.002709583,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "ir252-borrowed-json-4",
+        "median_processing_plus_admission_seconds": 0.0028734999999999998,
+        "median_whole_process_seconds": 0.03435095795430243,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002891167,
+        "over_fastest": 1.6948579728130462,
+        "over_rust": 0.3137347100263045,
+        "whole_process_over_fastest": 1.4933954437281518,
+        "processing_plus_admission_over_fastest": 1.79738889152991,
+        "processing_plus_admission_over_rust": 0.3327141812081733,
+        "post_json_over_fastest_matched_native": 1.808439690049715
+      },
+      "resources": {
+        "median_seconds": 0.002722708,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "ir252-borrowed-json-4_instrumented",
+        "median_processing_plus_admission_seconds": 0.00289575,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 78708156,
+          "instructions_retired": 308303158,
+          "involuntary_context_switches": 16,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1852,
+          "peak_physical_footprint_bytes": 16908624,
+          "peak_resident_bytes": 27656192,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.03
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3758,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7290514,
+          "hardware": {
+            "cycles": 15351807,
+            "instructions_per_cycle": 3.626580571264347,
+            "instructions_retired": 55717291,
+            "lifetime_peak_physical_footprint_bytes_after": 16908624,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 16908624,
+            "physical_footprint_bytes_before": 11649360,
+            "resident_bytes_after": 27590656,
+            "resident_bytes_before": 20873216,
+            "system_cpu_seconds": 0.00041404166666666667,
+            "user_cpu_seconds": 0.0036651250000000004
+          },
+          "live_requested_heap_bytes_after": 9393487,
+          "live_requested_heap_bytes_before": 8671645,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "peak_live_requested_heap_bytes": 14238812,
+          "requested_allocation_bytes": 8012356
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 26837,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 6485384,
+            "hardware": {
+              "cycles": 30516162,
+              "instructions_per_cycle": 4.1171780055434235,
+              "instructions_retired": 125640471,
+              "lifetime_peak_physical_footprint_bytes_after": 9584976,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 9584976,
+              "physical_footprint_bytes_before": 1163576,
+              "resident_bytes_after": 18743296,
+              "resident_bytes_before": 2080768,
+              "system_cpu_seconds": 0.0005868333333333334,
+              "user_cpu_seconds": 0.007434458333333334
+            },
+            "live_requested_heap_bytes_after": 6351962,
+            "live_requested_heap_bytes_before": 6347,
+            "peak_additional_live_requested_heap_bytes": 7003853,
+            "peak_live_requested_heap_bytes": 7010200,
+            "requested_allocation_bytes": 12830999
+          },
+          "json": {
+            "allocation_requests": 30089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 751968,
+            "hardware": {
+              "cycles": 5953390,
+              "instructions_per_cycle": 4.81411722200139,
+              "instructions_retired": 28759407,
+              "lifetime_peak_physical_footprint_bytes_after": 11649360,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 11649360,
+              "physical_footprint_bytes_before": 9584976,
+              "resident_bytes_after": 20873216,
+              "resident_bytes_before": 18743296,
+              "system_cpu_seconds": 0.0001840416666666667,
+              "user_cpu_seconds": 0.0013397083333333334
+            },
+            "live_requested_heap_bytes_after": 8671645,
+            "live_requested_heap_bytes_before": 6351962,
+            "peak_additional_live_requested_heap_bytes": 2319683,
+            "peak_live_requested_heap_bytes": 8671645,
+            "requested_allocation_bytes": 3071651
+          }
+        },
+        "median_whole_process_seconds": 0.04377887491136789,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002913542,
+        "over_fastest": 1.6375142237843323,
+        "over_rust": 0.30940447285710154,
+        "whole_process_over_fastest": 1.4169735689800915,
+        "processing_plus_admission_over_fastest": 1.7415866165315856,
+        "processing_plus_admission_over_rust": 0.3290687074324356,
+        "post_json_over_fastest_matched_native": 1.7522872326349543,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "peak_physical_footprint_bytes": 3.0989698339945986,
+            "cycles": 2.2444054865151584,
+            "involuntary_context_switches": 3.2,
+            "wall_seconds": 3.0,
+            "page_reclaims": 3.5891472868217056,
+            "instructions_retired": 2.1963072353726227,
+            "peak_resident_bytes": 4.586956521739131
+          },
+          "post_json": {
+            "freed_allocation_bytes": 1.2846526026213523,
+            "hardware": {
+              "lifetime_peak_physical_footprint_bytes_after": 3.0896920508599948,
+              "instructions_per_cycle": 1.186581675397297,
+              "cycles": 2.442898129612715,
+              "instructions_retired": 2.900922686130937,
+              "physical_footprint_bytes_before": 3.9941028032256294,
+              "resident_bytes_after": 4.601092896174864,
+              "system_cpu_seconds": 3.764015151515151,
+              "user_cpu_seconds": 2.3349702696963264,
+              "resident_bytes_before": 6.066666666666666,
+              "physical_footprint_bytes_after": 3.0896920508599948
+            },
+            "live_requested_heap_bytes_before": 4.219604055306715,
+            "peak_live_requested_heap_bytes": 1.8580743393531352,
+            "live_requested_heap_bytes_after": 2.930234219418338,
+            "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+            "allocation_requests": 64.79310344827586,
+            "requested_allocation_bytes": 1.173848944425293
+          }
+        },
+        "post_json_instructions_per_post": 11143.4582,
+        "post_json_cycles_per_post": 3070.3614
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 3,
+          "median_paired_delta_seconds": 7.029200000000001e-05
+        },
+        "wall_seconds": {
+          "wins": 15,
+          "median_paired_delta_seconds": 5.2708201110363007e-05
+        }
+      },
+      "passes_joint_gate": false
+    }
+  },
+  "qualification": {
+    "gpu": {
+      "command": [
+        "/private/tmp/mech-related-selected-range-integration-tests-20261107-v1/mech_gpu-tests",
+        "--test-threads=1"
+      ],
+      "exit": 101,
+      "seconds": 228.5382395409979,
+      "summary": [
+        "test result: FAILED. 884 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 228.52s"
+      ],
+      "expected_failures_exact": true,
+      "failed_tests": [
+        "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+        "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+      ],
+      "new_failures": []
+    },
+    "actual_CI": {
+      "expected": 389,
+      "listed": 389,
+      "executed": 389,
+      "names_exact": true
+    },
+    "controls_all_nontiming_fields_exact": 133,
+    "Rust_edge_outputs_exact": 248,
+    "extended_host_differential_processes": 32,
+    "full_adoption_qualification_run": false
+  },
+  "compiled_root_selected_range_branches_removed": 766,
+  "numeric_selected_range_branches_removed": 0,
+  "source_combinations": [
+    "hoisted invariant tag reads",
+    "partial combinadic sums",
+    "byte IDs/U32 ordered keys with four native workers",
+    "same compact source with eight native workers"
+  ],
+  "borrowed_json": {
+    "scope": "Host IO source optimization only; tags retain owned transfer to canonical inputs, exact native bundles and continuous timing boundaries unchanged. Cow borrows ordinary ID/title text and owns escaped fallback.",
+    "extended_tests": {
+      "cases": [
+        {
+          "compiler_epoch": 242,
+          "case": "ordered",
+          "owned_borrowed_full_JSON_equal": true,
+          "literal_unicode_escaped_unicode_equal": true,
+          "escapes_in_both_ID_title": true
+        },
+        {
+          "compiler_epoch": 242,
+          "case": "unordered",
+          "owned_borrowed_full_JSON_equal": true,
+          "literal_unicode_escaped_unicode_equal": true,
+          "escapes_in_both_ID_title": true
+        },
+        {
+          "compiler_epoch": 242,
+          "case": "duplicates",
+          "owned_borrowed_full_JSON_equal": true,
+          "literal_unicode_escaped_unicode_equal": true,
+          "escapes_in_both_ID_title": true
+        },
+        {
+          "compiler_epoch": 242,
+          "case": "empty",
+          "owned_borrowed_full_JSON_equal": true,
+          "literal_unicode_escaped_unicode_equal": true,
+          "escapes_in_both_ID_title": true
+        },
+        {
+          "compiler_epoch": 252,
+          "case": "ordered",
+          "owned_borrowed_full_JSON_equal": true,
+          "literal_unicode_escaped_unicode_equal": true,
+          "escapes_in_both_ID_title": true
+        },
+        {
+          "compiler_epoch": 252,
+          "case": "unordered",
+          "owned_borrowed_full_JSON_equal": true,
+          "literal_unicode_escaped_unicode_equal": true,
+          "escapes_in_both_ID_title": true
+        },
+        {
+          "compiler_epoch": 252,
+          "case": "duplicates",
+          "owned_borrowed_full_JSON_equal": true,
+          "literal_unicode_escaped_unicode_equal": true,
+          "escapes_in_both_ID_title": true
+        },
+        {
+          "compiler_epoch": 252,
+          "case": "empty",
+          "owned_borrowed_full_JSON_equal": true,
+          "literal_unicode_escaped_unicode_equal": true,
+          "escapes_in_both_ID_title": true
+        }
+      ],
+      "fresh_processes": 32,
+      "all_outputs_exact": true,
+      "scope": "Host IO differential check against the unchanged owned-string adapter; ordinary Rust does not accept all escaped borrowed strings, so it is not used as this extended-case oracle. All normal31 edge cases separately match Rust.",
+      "timings_excluded": true
+    },
+    "JSON_requests_before": 40089,
+    "JSON_requests_after": 30089,
+    "selected": false,
+    "paired_IR242_borrowed_vs_owned": {
+      "post_json_seconds": {
+        "wins": 5,
+        "median_paired_delta_seconds": 5.433300000000016e-05
+      },
+      "wall_seconds": {
+        "wins": 6,
+        "median_paired_delta_seconds": 0.0012551259715110064
+      }
+    },
+    "paired_IR252_borrowed_vs_owned": {
+      "post_json_seconds": {
+        "wins": 2,
+        "median_paired_delta_seconds": 0.00010529099999999998
+      },
+      "wall_seconds": {
+        "wins": 14,
+        "median_paired_delta_seconds": 0.00022291694767773151
+      }
+    },
+    "decision": "Fewer JSON allocations did not translate to better measured latency; processing and memory worsen. Keep unselected."
+  },
+  "restore_allocation_profile": {
+    "path": "/private/tmp/mech-related-selected-range-restore-allocation-profile-20261107-v1",
+    "requests": 26837,
+    "requested_bytes": 12830999,
+    "counts_and_bytes_equal_resource_cohort": true,
+    "zero_loss_and_unattributed": true,
+    "scope": "Allocation ancestry only; inclusive stack counts overlap and are not CPU-time percentages. Genuine compiled-module restoration before JSON. Native Object audited unchanged; timings excluded.",
+    "top_allocation_symbols": [
+      {
+        "symbol": "<alloc::raw_vec::RawVecInner>::finish_grow",
+        "requests": 1993,
+        "requested_bytes": 4991780
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::dimension::DimensionExpr]> as core::clone::Clone>::clone",
+        "requests": 1768,
+        "requested_bytes": 84864
+      },
+      {
+        "symbol": "<mech_core::schema::SchemaBody as core::clone::Clone>::clone",
+        "requests": 1479,
+        "requested_bytes": 147968
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<u32> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 1466,
+        "requested_bytes": 18852
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<core::option::Option<usize>> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 1275,
+        "requested_bytes": 786992
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<usize> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 1234,
+        "requested_bytes": 61784
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(usize, usize)> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 867,
+        "requested_bytes": 93840
+      },
+      {
+        "symbol": "<mech_core::kind_expr::KindExpr as core::clone::Clone>::clone",
+        "requests": 794,
+        "requested_bytes": 73728
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::dimension::DimensionExpr> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 700,
+        "requested_bytes": 33600
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::native_artifact::program_image_read::iteration::Step> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 691,
+        "requested_bytes": 5592
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::dimension::DimensionParameter]> as core::clone::Clone>::clone",
+        "requests": 661,
+        "requested_bytes": 62664
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::native_artifact::program_image_proofs::Image<mech_engine::native_artifact::control::NativeMatchValue>> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 635,
+        "requested_bytes": 3500
+      },
+      {
+        "symbol": "<mech_engine::resident::general::native_collection_calls::prepared::buffer_frames::FrameGeometry>::derive",
+        "requests": 522,
+        "requested_bytes": 37436
+      },
+      {
+        "symbol": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors",
+        "requests": 491,
+        "requested_bytes": 7856
+      },
+      {
+        "symbol": "<alloc::vec::Vec<mech_core::semantic_identity::SchemaId> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<mech_core::semantic_identity::SchemaId, core::iter::adapters::chain::Chain<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::operation_contract::resolved::ResolvedInputPort>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_template::{closure#0}>, core::iter::sources::once::Once<mech_core::semantic_identity::SchemaId>>>>::from_iter",
+        "requests": 491,
+        "requested_bytes": 7800
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::semantic_identity::SchemaKey> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 489,
+        "requested_bytes": 46688
+      },
+      {
+        "symbol": "<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>>",
+        "requests": 489,
+        "requested_bytes": 17504
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::resident::general::native_collection_templates::image::LexicalSource> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 488,
+        "requested_bytes": 17496
+      },
+      {
+        "symbol": "<mech_engine::resident::general::native_collection_calls::prepared::frame_shape::FrameShapeRecipe>::derive_leaves",
+        "requests": 436,
+        "requested_bytes": 3735
+      },
+      {
+        "symbol": "<alloc::boxed::Box<mech_core::schema::SchemaBody> as serde_core::de::Deserialize>::deserialize::<&mut mech_engine::native_artifact::build_image::NativeReader>",
+        "requests": 392,
+        "requested_bytes": 25088
+      },
+      {
+        "symbol": "<alloc::boxed::Box<mech_core::kind_expr::KindExpr> as serde_core::de::Deserialize>::deserialize::<&mut mech_engine::native_artifact::build_image::NativeReader>",
+        "requests": 370,
+        "requested_bytes": 17760
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::schema::SchemaBody]> as core::clone::Clone>::clone",
+        "requests": 367,
+        "requested_bytes": 122432
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::type_system::resolved::KindPredicateEvidence]> as core::clone::Clone>::clone",
+        "requests": 356,
+        "requested_bytes": 45312
+      },
+      {
+        "symbol": "<alloc::vec::Vec<mech_core::dimension::DimensionExpr>>::into_boxed_slice",
+        "requests": 348,
+        "requested_bytes": 16704
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::semantic_identity::SchemaId]>>::try_clone_from_ref_in",
+        "requests": 303,
+        "requested_bytes": 5748
+      },
+      {
+        "symbol": "<alloc::vec::Vec<mech_engine::resident::general::native_collection_calls::prepared::frame_admission::Field> as alloc::vec::spec_from_iter::SpecFromIter<mech_engine::resident::general::native_collection_calls::prepared::frame_admission::Field, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>, <mech_engine::resident::general::native_collection_calls::prepared::frame_admission::FrameAdmissionRecipe>::derive::{closure#0}>, core::option::Option<core::convert::Infallible>>>>::from_iter",
+        "requests": 301,
+        "requested_bytes": 144480
+      },
+      {
+        "symbol": "mech_core::dimension::canonicalize_dimension_environment",
+        "requests": 288,
+        "requested_bytes": 17545
+      },
+      {
+        "symbol": "mech_core::schema::validation::normalize_body_dimensions",
+        "requests": 284,
+        "requested_bytes": 18176
+      },
+      {
+        "symbol": "<mech_engine::resident::general::native_collection_calls::prepared::frame_shape::FrameShapeRecipe>::derive",
+        "requests": 261,
+        "requested_bytes": 8056
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_engine::resident::general::native_collection_calls::prepared::frame_admission::Field]> as core::iter::traits::collect::FromIterator<mech_engine::resident::general::native_collection_calls::prepared::frame_admission::Field>>::from_iter::<core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>, <mech_engine::resident::general::native_collection_calls::prepared::frame_admission::FrameAdmissionRecipe>::derive::{closure#0}>, core::option::Option<core::convert::Infallible>>>",
+        "requests": 244,
+        "requested_bytes": 133320
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_gpu::native_artifact::program::prepare::readonly_numeric::ScalarBinding> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 234,
+        "requested_bytes": 61216
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(alloc::vec::Vec<usize>, usize)> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 232,
+        "requested_bytes": 37920
+      },
+      {
+        "symbol": "<alloc::vec::Vec<mech_core::dimension::DimensionExpr> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::dimension::DimensionExpr, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::dimension::DimensionExpr>, mech_core::schema::validation::normalize_body_dimensions::{closure#2}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>>>::from_iter",
+        "requests": 232,
+        "requested_bytes": 22272
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::native_artifact::program_image_read::values::Parameter> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 223,
+        "requested_bytes": 21112
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::dimension::DimensionParameterDeclaration]> as core::clone::Clone>::clone",
+        "requests": 180,
+        "requested_bytes": 14560
+      },
+      {
+        "symbol": "<mech_core::type_system::resolved_value::ResolvedValueDescriptor as core::clone::Clone>::clone",
+        "requests": 171,
+        "requested_bytes": 2000
+      },
+      {
+        "symbol": "<&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_string::<serde_core::de::impls::StringVisitor>",
+        "requests": 159,
+        "requested_bytes": 1321
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(usize, mech_gpu::native_artifact::program::prepare::numeric_plan::Operation)> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 153,
+        "requested_bytes": 108704
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::schema::SchemaBody> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 146,
+        "requested_bytes": 48640
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_gpu::native_artifact::program::prepare::composition::image::values::Value> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 144,
+        "requested_bytes": 784
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::kind_expr::KindExpr> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 142,
+        "requested_bytes": 36096
+      },
+      {
+        "symbol": "<alloc::vec::Vec<mech_engine::resident::general::native_collection_calls::prepared::frame_shape::Axis>>::into_boxed_slice",
+        "requests": 134,
+        "requested_bytes": 23296
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_gpu::native_artifact::program::prepare::composition::numeric::Retirement> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 133,
+        "requested_bytes": 2704
+      },
+      {
+        "symbol": "mech_core::schema::validation::rewrite_body_dimensions",
+        "requests": 129,
+        "requested_bytes": 8256
+      },
+      {
+        "symbol": "<mech_core::schema::Schema>::canonical_bytes",
+        "requests": 128,
+        "requested_bytes": 24840
+      }
+    ],
+    "top_call_stacks": [
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<usize> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<usize>> -> <mech_engine::native_artifact::build_image::Fields>::decode::<core::marker::PhantomData<alloc::vec::Vec<usize>>> -> <&mut mech_engine::native_artifact::build_image::Fields as serde_core::de::SeqAccess>::next_element_seed::<core::marker::PhantomData<(alloc::vec::Vec<usize>, usize)>> -> <<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(alloc::vec::Vec<usize>, usize)> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 1185,
+        "requested_bytes": 12840
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<core::option::Option<usize>> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <mech_engine::native_artifact::build_image::Node>::array::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<core::option::Option<usize>>> -> <&mut mech_engine::native_artifact::build_image::Fields as serde_core::de::MapAccess>::next_value::<alloc::vec::Vec<core::option::Option<usize>>> -> <<<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame as serde_core::de::Deserialize>::deserialize::Wire as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_struct::<<<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame as serde_core::de::Deserialize>::deserialize::Wire as serde_core::de::Deserialize>::deserialize::__Visitor>",
+        "requests": 772,
+        "requested_bytes": 74512
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::native_artifact::program_image_read::iteration::Step> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::native_artifact::program_image_read::iteration::Step>> -> <alloc::boxed::Box<[mech_engine::native_artifact::program_image_read::iteration::Step]> as serde_core::de::Deserialize>::deserialize::<&mut mech_engine::native_artifact::build_image::NativeReader> -> <<<mech_engine::native_artifact::program_image_read::iteration::Action as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <mech_engine::native_artifact::build_image::Enumeration as serde_core::de::VariantAccess>::struct_variant::<<<mech_engine::native_artifact::program_image_read::iteration::Action as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor>",
+        "requests": 691,
+        "requested_bytes": 5592
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::native_artifact::program_image_proofs::Image<mech_engine::native_artifact::control::NativeMatchValue>> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::native_artifact::program_image_proofs::Image<mech_engine::native_artifact::control::NativeMatchValue>>> -> <alloc::boxed::Box<[mech_engine::native_artifact::control::NativeMatchValue]> as mech_engine::native_artifact::program_image_proofs::ImageRead>::read::<&mut mech_engine::native_artifact::build_image::NativeReader> -> <<<mech_engine::native_artifact::buffer_frames::NativeBufferFrameAction as mech_engine::native_artifact::program_image_proofs::ImageRead>::read::Wire as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_struct::<<<mech_engine::native_artifact::buffer_frames::NativeBufferFrameAction as mech_engine::native_artifact::program_image_proofs::ImageRead>::read::Wire as serde_core::de::Deserialize>::deserialize::__Visitor>",
+        "requests": 592,
+        "requested_bytes": 2808
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(usize, usize)> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(usize, usize)>> -> <mech_engine::native_artifact::build_image::Fields>::decode::<core::marker::PhantomData<alloc::vec::Vec<(usize, usize)>>> -> <<<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame as serde_core::de::Deserialize>::deserialize::Wire as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_struct::<<<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame as serde_core::de::Deserialize>::deserialize::Wire as serde_core::de::Deserialize>::deserialize::__Visitor>",
+        "requests": 559,
+        "requested_bytes": 13440
+      },
+      {
+        "symbol": "<mech_engine::resident::general::native_collection_calls::prepared::buffer_frames::FrameGeometry>::derive -> <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors -> <core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>> -> <alloc::vec::Vec<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>>>>::from_iter -> core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>, core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::result::Result<core::convert::Infallible, alloc::string::String>, <core::result::Result<alloc::boxed::Box<[core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>]>, alloc::string::String> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, alloc::string::String>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>>::{closure#0}, alloc::boxed::Box<[core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>]>>",
+        "requests": 522,
+        "requested_bytes": 37436
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<core::option::Option<usize>> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <mech_engine::native_artifact::build_image::Node>::array::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<core::option::Option<usize>>> -> <&mut mech_engine::native_artifact::build_image::Fields as serde_core::de::MapAccess>::next_value::<alloc::vec::Vec<core::option::Option<usize>>> -> <<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::OwnedFrameWords as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_struct::<<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::OwnedFrameWords as serde_core::de::Deserialize>::deserialize::__Visitor>",
+        "requests": 491,
+        "requested_bytes": 31392
+      },
+      {
+        "symbol": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors -> <core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>> -> <alloc::vec::Vec<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>>>>::from_iter -> core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>, core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::result::Result<core::convert::Infallible, alloc::string::String>, <core::result::Result<alloc::boxed::Box<[core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>]>, alloc::string::String> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, alloc::string::String>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>>::{closure#0}, alloc::boxed::Box<[core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>]>> -> mech_gpu::native_artifact::program::image::decode::wire::decode_inner::<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>",
+        "requests": 491,
+        "requested_bytes": 7856
+      },
+      {
+        "symbol": "<alloc::vec::Vec<mech_core::semantic_identity::SchemaId> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<mech_core::semantic_identity::SchemaId, core::iter::adapters::chain::Chain<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::operation_contract::resolved::ResolvedInputPort>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_template::{closure#0}>, core::iter::sources::once::Once<mech_core::semantic_identity::SchemaId>>>>::from_iter -> <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_template -> <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors -> <core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>> -> <alloc::vec::Vec<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>>>>::from_iter",
+        "requests": 491,
+        "requested_bytes": 7800
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::semantic_identity::SchemaKey> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::semantic_identity::SchemaKey>> -> <alloc::boxed::Box<[mech_core::semantic_identity::SchemaKey]> as serde_core::de::Deserialize>::deserialize::<&mut mech_engine::native_artifact::build_image::NativeReader> -> <mech_engine::native_artifact::build_image::Fields>::decode::<core::marker::PhantomData<alloc::boxed::Box<[mech_core::semantic_identity::SchemaKey]>>> -> <&mut mech_engine::native_artifact::build_image::BuildOwnedImageReader as serde_core::de::Deserializer>::deserialize_tuple_struct::<<mech_engine::resident::general::native_collection_calls::prepared::image::BindingRow as serde_core::de::Deserialize>::deserialize::__Visitor>",
+        "requests": 489,
+        "requested_bytes": 46688
+      },
+      {
+        "symbol": "<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>> -> <alloc::vec::Vec<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>>>>::from_iter -> core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>, core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::result::Result<core::convert::Infallible, alloc::string::String>, <core::result::Result<alloc::boxed::Box<[core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>]>, alloc::string::String> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, alloc::string::String>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>>::{closure#0}, alloc::boxed::Box<[core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>]>> -> mech_gpu::native_artifact::program::image::decode::wire::decode_inner::<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame> -> <mech_gpu::native_artifact::program::linked::LinkedProgramArtifact>::from_compiled_module",
+        "requests": 489,
+        "requested_bytes": 17504
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::resident::general::native_collection_templates::image::LexicalSource> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::resident::general::native_collection_templates::image::LexicalSource>> -> <alloc::boxed::Box<[mech_engine::resident::general::native_collection_templates::image::LexicalSource]> as serde_core::de::Deserialize>::deserialize::<&mut mech_engine::native_artifact::build_image::NativeReader> -> <&mut mech_engine::native_artifact::build_image::Fields as serde_core::de::MapAccess>::next_value::<alloc::boxed::Box<[mech_engine::resident::general::native_collection_templates::image::LexicalSource]>> -> <<mech_engine::resident::general::native_collection_templates::shared_image::Lexical as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 488,
+        "requested_bytes": 17496
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<u32> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<u32>> -> <alloc::boxed::Box<[u32]> as serde_core::de::Deserialize>::deserialize::<&mut mech_engine::native_artifact::build_image::NativeReader> -> <&mut mech_engine::native_artifact::build_image::Fields as serde_core::de::MapAccess>::next_value::<alloc::boxed::Box<[u32]>> -> <<<mech_engine::native_artifact::program_image_read::WireAction as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 474,
+        "requested_bytes": 3792
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<u32> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<u32>> -> <alloc::boxed::Box<[u32]> as serde_core::de::Deserialize>::deserialize::<&mut mech_engine::native_artifact::build_image::NativeReader> -> <&mut mech_engine::native_artifact::build_image::Fields as serde_core::de::MapAccess>::next_value::<alloc::boxed::Box<[u32]>> -> <<<mech_engine::native_artifact::program_image_read::iteration::Action as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 460,
+        "requested_bytes": 5384
+      },
+      {
+        "symbol": "<alloc::boxed::Box<mech_core::schema::SchemaBody> as serde_core::de::Deserialize>::deserialize::<&mut mech_engine::native_artifact::build_image::NativeReader> -> <mech_engine::native_artifact::build_image::Node>::decode::<core::marker::PhantomData<alloc::boxed::Box<mech_core::schema::SchemaBody>>> -> <<<mech_core::schema::SchemaBody as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <mech_engine::native_artifact::build_image::Enumeration as serde_core::de::VariantAccess>::struct_variant::<<<mech_core::schema::SchemaBody as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor> -> <<mech_core::schema::SchemaBody as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::<mech_engine::native_artifact::build_image::Enumeration>",
+        "requests": 392,
+        "requested_bytes": 25088
+      },
+      {
+        "symbol": "<alloc::boxed::Box<mech_core::kind_expr::KindExpr> as serde_core::de::Deserialize>::deserialize::<&mut mech_engine::native_artifact::build_image::NativeReader> -> <mech_engine::native_artifact::build_image::Node>::decode::<core::marker::PhantomData<alloc::boxed::Box<mech_core::kind_expr::KindExpr>>> -> <<<mech_core::kind_expr::KindExpr as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <mech_engine::native_artifact::build_image::Enumeration as serde_core::de::VariantAccess>::struct_variant::<<<mech_core::kind_expr::KindExpr as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor> -> <<mech_core::kind_expr::KindExpr as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::<mech_engine::native_artifact::build_image::Enumeration>",
+        "requests": 370,
+        "requested_bytes": 17760
+      },
+      {
+        "symbol": "<mech_engine::resident::general::native_collection_calls::prepared::frame_shape::FrameShapeRecipe>::derive_leaves -> <mech_engine::resident::general::native_collection_calls::prepared::frame_shape::FrameShapeRecipe>::derive -> <mech_engine::resident::general::native_collection_calls::prepared::buffer_frames::FrameGeometry>::derive -> <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors -> <core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>>",
+        "requests": 368,
+        "requested_bytes": 3267
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::dimension::DimensionExpr> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::dimension::DimensionExpr>> -> <mech_engine::native_artifact::build_image::Node>::decode::<core::marker::PhantomData<alloc::boxed::Box<[mech_core::dimension::DimensionExpr]>>> -> <<<mech_core::schema::SchemaBody as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <mech_engine::native_artifact::build_image::Enumeration as serde_core::de::VariantAccess>::struct_variant::<<<mech_core::schema::SchemaBody as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor>",
+        "requests": 358,
+        "requested_bytes": 17184
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::type_system::resolved::KindPredicateEvidence]> as core::clone::Clone>::clone -> <mech_core::type_system::resolved_value::ResolvedValueDescriptor as core::clone::Clone>::clone -> <core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>> -> <alloc::vec::Vec<mech_core::type_system::resolved_value::ResolvedValueDescriptor> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>>>>::from_iter -> <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_template",
+        "requests": 356,
+        "requested_bytes": 45312
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::dimension::DimensionExpr> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::dimension::DimensionExpr>> -> <mech_engine::native_artifact::build_image::Node>::decode::<core::marker::PhantomData<alloc::boxed::Box<[mech_core::dimension::DimensionExpr]>>> -> <<<mech_core::kind_expr::KindExpr as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <mech_engine::native_artifact::build_image::Enumeration as serde_core::de::VariantAccess>::struct_variant::<<<mech_core::kind_expr::KindExpr as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::__Visitor>",
+        "requests": 342,
+        "requested_bytes": 16416
+      },
+      {
+        "symbol": "<mech_core::kind_expr::KindExpr as core::clone::Clone>::clone -> <alloc::boxed::Box<[mech_core::type_system::resolved::KindPredicateEvidence]> as core::clone::Clone>::clone -> <mech_core::type_system::resolved_value::ResolvedValueDescriptor as core::clone::Clone>::clone -> <core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>> -> <alloc::vec::Vec<mech_core::type_system::resolved_value::ResolvedValueDescriptor> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>>>>::from_iter",
+        "requests": 334,
+        "requested_bytes": 32208
+      },
+      {
+        "symbol": "mech_core::dimension::canonicalize_dimension_environment -> mech_core::schema::validation::finalize_schema -> mech_engine::native_artifact::program_image_read::values::finalize_schema_image -> <alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord> as core::iter::traits::iterator::Iterator>::try_fold::<(), core::iter::adapters::map::map_try_fold<mech_engine::native_artifact::build_image::BuildOwnedImageRecord, core::result::Result<mech_core::schema::Schema, alloc::string::String>, (), core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::schema::table::SchemaHandle>>, mech_engine::native_artifact::program_image_read::values::schema_record, core::iter::adapters::map::map_try_fold<core::result::Result<mech_core::schema::Schema, alloc::string::String>, core::result::Result<mech_core::schema::table::SchemaHandle, alloc::string::String>, (), core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::schema::table::SchemaHandle>>, mech_engine::native_artifact::program_image_read::values::schema_table<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>, mech_engine::native_artifact::program_image_read::values::schema_record>>::{closure#0}, <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>, mech_engine::native_artifact::program_image_read::values::schema_record>, mech_engine::native_artifact::program_image_read::values::schema_table<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>, mech_engine::native_artifact::program_image_read::values::schema_record>>::{closure#0}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<mech_core::schema::table::SchemaHandle, core::ops::control_flow::ControlFlow<mech_core::schema::table::SchemaHandle>, core::ops::control_flow::ControlFlow<mech_core::schema::table::SchemaHandle>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<mech_core::schema::table::SchemaHandle>>::{closure#0}>::{closure#0}>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::schema::table::SchemaHandle>>> -> <alloc::vec::Vec<mech_core::schema::table::SchemaHandle> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::schema::table::SchemaHandle, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>, mech_engine::native_artifact::program_image_read::values::schema_record>, mech_engine::native_artifact::program_image_read::values::schema_table<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>, mech_engine::native_artifact::program_image_read::values::schema_record>>::{closure#0}>, core::result::Result<core::convert::Infallible, alloc::string::String>>>>::from_iter",
+        "requests": 288,
+        "requested_bytes": 17545
+      },
+      {
+        "symbol": "<mech_engine::resident::general::native_collection_calls::prepared::frame_shape::FrameShapeRecipe>::derive -> <mech_engine::resident::general::native_collection_calls::prepared::buffer_frames::FrameGeometry>::derive -> <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors -> <core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>> -> <alloc::vec::Vec<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>>>>::from_iter",
+        "requests": 261,
+        "requested_bytes": 8056
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::semantic_identity::SchemaId]>>::try_clone_from_ref_in -> <mech_engine::resident::general::native_collection_calls::prepared::frame_shape::FrameShapeRecipe>::derive_leaves -> <mech_engine::resident::general::native_collection_calls::prepared::frame_shape::FrameShapeRecipe>::derive -> <mech_engine::resident::general::native_collection_calls::prepared::buffer_frames::FrameGeometry>::derive -> <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors",
+        "requests": 261,
+        "requested_bytes": 4028
+      },
+      {
+        "symbol": "<mech_core::schema::SchemaBody as core::clone::Clone>::clone -> <alloc::boxed::Box<[mech_core::schema::SchemaBody]> as core::clone::Clone>::clone -> <mech_core::schema::SchemaBody as core::clone::Clone>::clone -> <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::from_build_owned_schema_templates -> mech_gpu::native_artifact::program::image::decode::wire::decode_inner::<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>",
+        "requests": 260,
+        "requested_bytes": 25344
+      },
+      {
+        "symbol": "<alloc::vec::Vec<mech_engine::resident::general::native_collection_calls::prepared::frame_admission::Field> as alloc::vec::spec_from_iter::SpecFromIter<mech_engine::resident::general::native_collection_calls::prepared::frame_admission::Field, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>, <mech_engine::resident::general::native_collection_calls::prepared::frame_admission::FrameAdmissionRecipe>::derive::{closure#0}>, core::option::Option<core::convert::Infallible>>>>::from_iter -> <alloc::boxed::Box<[mech_engine::resident::general::native_collection_calls::prepared::frame_admission::Field]> as core::iter::traits::collect::FromIterator<mech_engine::resident::general::native_collection_calls::prepared::frame_admission::Field>>::from_iter::<core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>, <mech_engine::resident::general::native_collection_calls::prepared::frame_admission::FrameAdmissionRecipe>::derive::{closure#0}>, core::option::Option<core::convert::Infallible>>> -> <mech_engine::resident::general::native_collection_calls::prepared::buffer_frames::FrameGeometry>::derive -> <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors -> <core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>>",
+        "requests": 259,
+        "requested_bytes": 124320
+      },
+      {
+        "symbol": "mech_core::schema::validation::normalize_body_dimensions -> <alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody> as core::iter::traits::iterator::Iterator>::try_fold::<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, core::iter::adapters::map::map_try_fold<mech_core::schema::SchemaBody, core::result::Result<mech_core::schema::SchemaBody, mech_core::semantic_error::SemanticModelError>, alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, core::ops::control_flow::ControlFlow<core::result::Result<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, !>, alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}, <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>> as core::iter::traits::iterator::Iterator>::try_fold<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, alloc::vec::in_place_collect::write_in_place_with_drop<mech_core::schema::SchemaBody>::{closure#0}, core::result::Result<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, !>>::{closure#0}>::{closure#0}, core::ops::control_flow::ControlFlow<core::result::Result<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, !>, alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>>> -> alloc::vec::in_place_collect::from_iter_in_place::<core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>, mech_core::schema::SchemaBody> -> core::iter::adapters::try_process::<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}>, mech_core::schema::SchemaBody, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>, <core::result::Result<alloc::vec::Vec<mech_core::schema::SchemaBody>, mech_core::semantic_error::SemanticModelError> as core::iter::traits::collect::FromIterator<core::result::Result<mech_core::schema::SchemaBody, mech_core::semantic_error::SemanticModelError>>>::from_iter<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}>>::{closure#0}, alloc::vec::Vec<mech_core::schema::SchemaBody>> -> mech_core::schema::validation::normalize_body_dimensions",
+        "requests": 244,
+        "requested_bytes": 15616
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::dimension::DimensionExpr]> as core::clone::Clone>::clone -> <mech_core::kind_expr::KindExpr as core::clone::Clone>::clone -> <alloc::boxed::Box<[mech_core::type_system::resolved::KindPredicateEvidence]> as core::clone::Clone>::clone -> <mech_core::type_system::resolved_value::ResolvedValueDescriptor as core::clone::Clone>::clone -> <core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>>",
+        "requests": 238,
+        "requested_bytes": 11424
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(alloc::vec::Vec<usize>, usize)> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <mech_engine::native_artifact::build_image::Node>::array::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(alloc::vec::Vec<usize>, usize)>> -> <<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::OwnedFrameWords as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_struct::<<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::OwnedFrameWords as serde_core::de::Deserialize>::deserialize::__Visitor> -> <&mut mech_engine::native_artifact::build_image::Fields as serde_core::de::SeqAccess>::next_element_seed::<core::marker::PhantomData<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>>",
+        "requests": 232,
+        "requested_bytes": 37920
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::native_artifact::program_image_read::values::Parameter> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_engine::native_artifact::program_image_read::values::Parameter>> -> <<mech_engine::native_artifact::program_image_read::values::SchemaImage as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::BuildOwnedImageReader as serde_core::de::Deserializer>::deserialize_struct::<<mech_engine::native_artifact::program_image_read::values::SchemaImage as serde_core::de::Deserialize>::deserialize::__Visitor> -> mech_engine::native_artifact::program_image_read::canonical_record::<mech_engine::native_artifact::program_image_read::values::SchemaImage>",
+        "requests": 223,
+        "requested_bytes": 21112
+      },
+      {
+        "symbol": "<alloc::raw_vec::RawVecInner>::finish_grow -> <alloc::raw_vec::RawVec<(mech_engine::resident::general::ActivatedNodeIndex, alloc::boxed::Box<[mech_core::semantic_identity::CellSlotId]>, alloc::boxed::Box<[mech_engine::resident::general::ActivatedNodeIndex]>, alloc::boxed::Box<[mech_engine::resident::general::ActivatedNodeIndex]>)>>::grow_one -> <mech_engine::resident::general::native_collection_calls::prepared::frame_shape::FrameShapeRecipe>::derive_leaves -> <mech_engine::resident::general::native_collection_calls::prepared::frame_shape::FrameShapeRecipe>::derive -> <mech_engine::resident::general::native_collection_calls::prepared::buffer_frames::FrameGeometry>::derive",
+        "requests": 221,
+        "requested_bytes": 64512
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<u32> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<u32>> -> <mech_engine::native_artifact::build_image::Fields>::decode::<core::marker::PhantomData<alloc::vec::Vec<u32>>> -> <&mut mech_engine::native_artifact::build_image::Fields as serde_core::de::SeqAccess>::next_element_seed::<core::marker::PhantomData<(u32, alloc::vec::Vec<u32>)>> -> <<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(u32, alloc::vec::Vec<u32>)> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields>",
+        "requests": 221,
+        "requested_bytes": 1092
+      },
+      {
+        "symbol": "<alloc::vec::Vec<mech_core::dimension::DimensionExpr> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::dimension::DimensionExpr, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::dimension::DimensionExpr>, mech_core::schema::validation::normalize_body_dimensions::{closure#2}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>>>::from_iter -> core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::dimension::DimensionExpr>, mech_core::schema::validation::normalize_body_dimensions::{closure#2}>, mech_core::dimension::DimensionExpr, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>, <core::result::Result<alloc::vec::Vec<mech_core::dimension::DimensionExpr>, mech_core::semantic_error::SemanticModelError> as core::iter::traits::collect::FromIterator<core::result::Result<mech_core::dimension::DimensionExpr, mech_core::semantic_error::SemanticModelError>>>::from_iter<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::dimension::DimensionExpr>, mech_core::schema::validation::normalize_body_dimensions::{closure#2}>>::{closure#0}, alloc::vec::Vec<mech_core::dimension::DimensionExpr>> -> mech_core::schema::validation::normalize_body_dimensions -> <alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody> as core::iter::traits::iterator::Iterator>::try_fold::<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, core::iter::adapters::map::map_try_fold<mech_core::schema::SchemaBody, core::result::Result<mech_core::schema::SchemaBody, mech_core::semantic_error::SemanticModelError>, alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, core::ops::control_flow::ControlFlow<core::result::Result<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, !>, alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}, <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>> as core::iter::traits::iterator::Iterator>::try_fold<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, alloc::vec::in_place_collect::write_in_place_with_drop<mech_core::schema::SchemaBody>::{closure#0}, core::result::Result<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, !>>::{closure#0}>::{closure#0}, core::ops::control_flow::ControlFlow<core::result::Result<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, !>, alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>>> -> alloc::vec::in_place_collect::from_iter_in_place::<core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>, mech_core::schema::SchemaBody>",
+        "requests": 220,
+        "requested_bytes": 21120
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::dimension::DimensionExpr]> as core::clone::Clone>::clone -> <mech_core::schema::SchemaBody as core::clone::Clone>::clone -> <alloc::boxed::Box<[mech_core::schema::SchemaBody]> as core::clone::Clone>::clone -> <mech_core::schema::SchemaBody as core::clone::Clone>::clone -> <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::from_build_owned_schema_templates",
+        "requests": 220,
+        "requested_bytes": 10560
+      },
+      {
+        "symbol": "<alloc::vec::Vec<mech_core::dimension::DimensionExpr>>::into_boxed_slice -> mech_core::schema::validation::normalize_body_dimensions -> <alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody> as core::iter::traits::iterator::Iterator>::try_fold::<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, core::iter::adapters::map::map_try_fold<mech_core::schema::SchemaBody, core::result::Result<mech_core::schema::SchemaBody, mech_core::semantic_error::SemanticModelError>, alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, core::ops::control_flow::ControlFlow<core::result::Result<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, !>, alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}, <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>> as core::iter::traits::iterator::Iterator>::try_fold<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, alloc::vec::in_place_collect::write_in_place_with_drop<mech_core::schema::SchemaBody>::{closure#0}, core::result::Result<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, !>>::{closure#0}>::{closure#0}, core::ops::control_flow::ControlFlow<core::result::Result<alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>, !>, alloc::vec::in_place_drop::InPlaceDrop<mech_core::schema::SchemaBody>>> -> alloc::vec::in_place_collect::from_iter_in_place::<core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>, mech_core::schema::SchemaBody> -> core::iter::adapters::try_process::<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}>, mech_core::schema::SchemaBody, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>, <core::result::Result<alloc::vec::Vec<mech_core::schema::SchemaBody>, mech_core::semantic_error::SemanticModelError> as core::iter::traits::collect::FromIterator<core::result::Result<mech_core::schema::SchemaBody, mech_core::semantic_error::SemanticModelError>>>::from_iter<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<mech_core::schema::SchemaBody>, mech_core::schema::validation::normalize_body_dimensions::{closure#1}>>::{closure#0}, alloc::vec::Vec<mech_core::schema::SchemaBody>>",
+        "requests": 220,
+        "requested_bytes": 10560
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_engine::resident::general::native_collection_calls::prepared::frame_admission::Field]> as core::iter::traits::collect::FromIterator<mech_engine::resident::general::native_collection_calls::prepared::frame_admission::Field>>::from_iter::<core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>, <mech_engine::resident::general::native_collection_calls::prepared::frame_admission::FrameAdmissionRecipe>::derive::{closure#0}>, core::option::Option<core::convert::Infallible>>> -> <mech_engine::resident::general::native_collection_calls::prepared::buffer_frames::FrameGeometry>::derive -> <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors -> <core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>> -> <alloc::vec::Vec<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>>>>::from_iter",
+        "requests": 210,
+        "requested_bytes": 89400
+      },
+      {
+        "symbol": "<mech_core::schema::SchemaBody as core::clone::Clone>::clone -> <mech_core::type_system::resolved_value::ResolvedValueDescriptor as core::clone::Clone>::clone -> <core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>> -> <alloc::vec::Vec<mech_core::type_system::resolved_value::ResolvedValueDescriptor> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>>>>::from_iter -> <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_template",
+        "requests": 208,
+        "requested_bytes": 30528
+      },
+      {
+        "symbol": "<mech_core::kind_expr::KindExpr as core::clone::Clone>::clone -> <mech_core::type_system::resolved_value::ResolvedValueDescriptor as core::clone::Clone>::clone -> <core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>> -> <alloc::vec::Vec<mech_core::type_system::resolved_value::ResolvedValueDescriptor> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>>>>::from_iter -> <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_template",
+        "requests": 208,
+        "requested_bytes": 22896
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(usize, usize)> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<(usize, usize)>> -> <mech_engine::native_artifact::build_image::Fields>::decode::<core::marker::PhantomData<alloc::vec::Vec<(usize, usize)>>> -> <<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::OwnedFrameWords as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_map::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_struct::<<mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::OwnedFrameWords as serde_core::de::Deserialize>::deserialize::__Visitor>",
+        "requests": 203,
+        "requested_bytes": 6080
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::dimension::DimensionParameterDeclaration]> as core::clone::Clone>::clone -> <mech_core::type_system::resolved_value::ResolvedValueDescriptor as core::clone::Clone>::clone -> <core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>> -> <alloc::vec::Vec<mech_core::type_system::resolved_value::ResolvedValueDescriptor> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>>>>::from_iter -> <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_template",
+        "requests": 180,
+        "requested_bytes": 14560
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::dimension::DimensionParameter]> as core::clone::Clone>::clone -> <mech_core::type_system::resolved_value::ResolvedValueDescriptor as core::clone::Clone>::clone -> <core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>> -> <alloc::vec::Vec<mech_core::type_system::resolved_value::ResolvedValueDescriptor> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>>>>::from_iter -> <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_template",
+        "requests": 171,
+        "requested_bytes": 14000
+      },
+      {
+        "symbol": "<alloc::boxed::Box<[mech_core::dimension::DimensionParameter]> as core::clone::Clone>::clone -> <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_template -> <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors -> <core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, false, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::FrameWords>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>>>> -> <alloc::vec::Vec<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<core::option::Option<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>>>, mech_gpu::native_artifact::program::image::decode::wire::decode_inner<true, true, mech_gpu::native_artifact::program::prepare::readonly_numeric::numeric_frame::CompiledFrame>::{closure#3}>, core::result::Result<core::convert::Infallible, alloc::string::String>>>>::from_iter",
+        "requests": 171,
+        "requested_bytes": 14000
+      },
+      {
+        "symbol": "<mech_core::type_system::resolved_value::ResolvedValueDescriptor as core::clone::Clone>::clone -> <core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::type_system::resolved_value::ResolvedValueDescriptor>>> -> <alloc::vec::Vec<mech_core::type_system::resolved_value::ResolvedValueDescriptor> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::type_system::resolved_value::ResolvedValueDescriptor, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::iter::adapters::copied::Copied<core::slice::iter::Iter<mech_core::semantic_identity::SchemaId>>, core::iter::adapters::chain::Chain<core::slice::iter::Iter<mech_core::schema::Schema>, core::iter::sources::once::Once<&mech_core::schema::Schema>>>, <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_schemas::{closure#1}>, core::option::Option<core::convert::Infallible>>>>::from_iter -> <mech_engine::resident::general::native_collection_calls::prepared::NativeDescriptorTemplatePool>::for_template -> <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::from_build_owned_plan_binding_record_with_descriptors",
+        "requests": 171,
+        "requested_bytes": 2000
+      },
+      {
+        "symbol": "<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::schema::SchemaBody> as serde_core::de::Visitor>::visit_seq::<&mut mech_engine::native_artifact::build_image::Fields> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_seq::<<alloc::vec::Vec<_> as serde_core::de::Deserialize>::deserialize::VecVisitor<mech_core::schema::SchemaBody>> -> <mech_engine::native_artifact::build_image::Enumeration as serde_core::de::VariantAccess>::newtype_variant_seed::<core::marker::PhantomData<alloc::boxed::Box<[mech_core::schema::SchemaBody]>>> -> <<mech_core::schema::SchemaBody as serde_core::de::Deserialize>::deserialize::__Visitor as serde_core::de::Visitor>::visit_enum::<mech_engine::native_artifact::build_image::Enumeration> -> <&mut mech_engine::native_artifact::build_image::NativeReader as serde_core::de::Deserializer>::deserialize_enum::<<mech_core::schema::SchemaBody as serde_core::de::Deserialize>::deserialize::__Visitor>",
+        "requests": 146,
+        "requested_bytes": 48640
+      },
+      {
+        "symbol": "<mech_core::schema::SchemaBody as core::clone::Clone>::clone -> <core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>, core::slice::iter::Iter<mech_core::operation_contract::resolved::ResolvedInputPort>>, mech_engine::resident::general::native_collection_templates::image::leaf::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>, core::slice::iter::Iter<mech_core::operation_contract::resolved::ResolvedInputPort>>, mech_engine::resident::general::native_collection_templates::image::leaf::{closure#1}>, core::result::Result<core::convert::Infallible, alloc::string::String>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<mech_core::schema::Schema, core::ops::control_flow::ControlFlow<mech_core::schema::Schema>, core::ops::control_flow::ControlFlow<mech_core::schema::Schema>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<mech_core::schema::Schema>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<mech_core::schema::Schema>>> -> <alloc::vec::Vec<mech_core::schema::Schema> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::schema::Schema, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>, core::slice::iter::Iter<mech_core::operation_contract::resolved::ResolvedInputPort>>, mech_engine::resident::general::native_collection_templates::image::leaf::{closure#1}>, core::result::Result<core::convert::Infallible, alloc::string::String>>>>::from_iter -> core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>, core::slice::iter::Iter<mech_core::operation_contract::resolved::ResolvedInputPort>>, mech_engine::resident::general::native_collection_templates::image::leaf::{closure#1}>, mech_core::schema::Schema, core::result::Result<core::convert::Infallible, alloc::string::String>, <core::result::Result<alloc::boxed::Box<[mech_core::schema::Schema]>, alloc::string::String> as core::iter::traits::collect::FromIterator<core::result::Result<mech_core::schema::Schema, alloc::string::String>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<alloc::vec::into_iter::IntoIter<mech_engine::native_artifact::build_image::BuildOwnedImageRecord>, core::slice::iter::Iter<mech_core::operation_contract::resolved::ResolvedInputPort>>, mech_engine::resident::general::native_collection_templates::image::leaf::{closure#1}>>::{closure#0}, alloc::boxed::Box<[mech_core::schema::Schema]>> -> mech_engine::resident::general::native_collection_templates::image::leaf",
+        "requests": 146,
+        "requested_bytes": 13760
+      }
+    ]
+  },
+  "size_report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/size-native-selected-ranges-20261107.json",
+  "next_compiler_gap": "Root numeric frames use CompiledFrame but static parent-piece composition frames still select owned FrameWords. Carry the existing reader through private composition wire types, preserving eager structural validation and independent derivation.",
+  "followup": {
+    "compiler": "d79d975707",
+    "identity": "IR253/work115/ABI41/image9",
+    "source": "/private/tmp/mech-related-borrowed-parent-frame-metadata-compiler-20261107",
+    "build": "/private/tmp/mech-related-borrowed-parent-frame-metadata-opt-20261107-v2",
+    "selected": false,
+    "status": "12-stage build passed. Initial positive test incorrectly expected legacy V2 serialization to visit static composition layouts; corrected to require exact V9 table serialization and retained original failed receipt. Fresh focused/full/CI and controls in progress; no speed claim."
+  },
+  "decision": "Keep selectedIR242. IR252 wins18 processing/20 whole pairs; all source/host combinations fail the joint timing gate. Eight compact workers regress again. Original promotion record stays unchanged.",
+  "goal_complete": false
+}
