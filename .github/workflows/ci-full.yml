@@ -760,7 +760,7 @@ jobs:
             composition_tests parent_continuation_is_single_use native_parent_continuation_prepares native_paid_iteration_guard native_runtime_consolidation \
             buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow numeric_words::tests numeric_branches::tests numeric_read_packs::tests traversal_facts::tests traversal_facts::completion:: ordered_reduction::tests cfg_cleanup captured_window numeric_first_change entry_locals_snapshot admitted_helper_tests invocation::numeric_segments::tests maps::admission_tests dead_constant_owners argument_bank_tests ssa_words::tests readonly_numeric::exits::liveness_tests checked_unsigned_tests canonical_relation numeric_captured_reads::tests \
             --list | tee native-composition-tests.txt
-          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 398
+          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 399
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program --lib -- \
             composition_tests parent_continuation_is_single_use native_parent_continuation_prepares native_paid_iteration_guard native_runtime_consolidation \

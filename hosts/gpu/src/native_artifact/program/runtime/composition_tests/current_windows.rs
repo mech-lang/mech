@@ -260,6 +260,7 @@ fn numeric_forward_windows_keep_zero_trip_errors_aliases_publication_and_recover
     for (source, _) in forward_sources()
         .into_iter()
         .chain(direct_forward_sources())
+        .chain(carried_forward_sources())
     {
         for artifact in artifacts(&source) {
             let ordinary = JitProgramArtifact::compile_for_test(
@@ -348,6 +349,7 @@ fn numeric_forward_windows_keep_every_finite_boundary_and_retry() {
     for (source, _) in forward_sources()
         .into_iter()
         .chain(direct_forward_sources())
+        .chain(carried_forward_sources())
     {
         resources::finite_boundaries(&source, |artifact, memory| {
             arguments(artifact, memory, 300, 0, 3, u32::MAX, u64::MAX)

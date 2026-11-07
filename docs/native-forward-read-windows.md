@@ -1,6 +1,6 @@
 # Activation-current forward read windows
 
-IR263 extends the existing immutable child-window versioning beyond its original
+IR264 extends the existing immutable child-window versioning beyond its original
 paired forward/reverse restriction. Paired selection retains priority. A forward
 group must contain only non-writable, non-appending views, share the same current
 induction/count coordinates, pass the existing recurrence/scope proof, and prove
@@ -64,3 +64,15 @@ Forward version selection now accepts a new proved read without requiring two
 extra source branches. The paired-view profitability floor is unchanged.
 New positive/negative source coverage, the same source/native error/alias/retry
 checks and finite-boundary tests cover direct reads as well as guarded reads.
+
+D6 discovers the real posting-read windows in20 independent analyses, but every
+candidate is discarded because its count home is written. At the corresponding
+ordinary latch, every candidate count retains exactly `Initial(its_home)`. IR264
+uses that post-copy identity at every reachable ordinary backedge, independently
+of the proposed window. Joins which change the value lose identity and decline;
+no stable value is inferred from storage reuse or from the optimized path. The
+proof does not cross a latch. Selected-window analysis performs one extra bounded
+ordinary traversal (no window assumptions; maximum recursive depth two).
+The new maintained source contract exercises invariant carrier copies for one
+and two direct-read views; the complete semantic/finite tests include both.
+Changing-bound refusals remain unchanged.
