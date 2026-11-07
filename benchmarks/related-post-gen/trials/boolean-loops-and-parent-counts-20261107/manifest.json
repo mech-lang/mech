@@ -1,0 +1,1996 @@
+{
+  "schema": "mech.related-post-gen.trial-evidence-manifest.v2",
+  "compiler_commit": "70f5744439f1d7e027b5e9ab9a0e3fcf1c08bcba",
+  "metadata_compiler_commit": "93b5569cc478740fab9b823f5093286e5564b694",
+  "selected": false,
+  "files": {
+    "trial.json": {
+      "sha256": "dc95eebbd08adf2cda282d70d9203aa7f9d040462b0f7e60db0b1e2b8754f621",
+      "bytes": 47982,
+      "decoded_sha256": "dc95eebbd08adf2cda282d70d9203aa7f9d040462b0f7e60db0b1e2b8754f621",
+      "decoded_bytes": 47982,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/compiler-native-boolean-loops-and-parent-counts-20261107.json"
+    },
+    "latency.json.gz": {
+      "sha256": "23f581b4fe4e74c1c1856e6cac6ade9a9cf875db7a110cf478b5bb2d59832a93",
+      "bytes": 29411,
+      "decoded_sha256": "4a582ee1a5648c623f2a727d643217b78cfad66b5c09b37dc321e80e7e269460",
+      "decoded_bytes": 590495,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-boolean-loops-and-parent-counts-randomized-20261107-5000-m3.json"
+    },
+    "resources.json.gz": {
+      "sha256": "c98d1375a7921c8f5a96c49f161687cf71c4770426da9e8b47893a38b1d7da75",
+      "bytes": 55956,
+      "decoded_sha256": "7d3df2974ae3fbfed92b58a194c722aabbf7395fe329063b7dec0f6bbc90ac9e",
+      "decoded_bytes": 662665,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-boolean-loops-and-parent-counts-resources-20261107-5000-m3.json"
+    },
+    "sizes.json.gz": {
+      "sha256": "26adf03821d6e1fbae2e8044607eed50ba857bc6d122ab8d98200c266626405c",
+      "bytes": 4097,
+      "decoded_sha256": "e452ee84ac6ea792eee16f808c5e746271af9767776fa4aa7afa29cd53654a77",
+      "decoded_bytes": 24574,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/size-native-boolean-loops-and-parent-counts-20261107.json"
+    },
+    "boolean/v1/opt/source-inventory.json.gz": {
+      "sha256": "f5fb5c4eb13a1077b852c304b436ee8a24f274d1cbabaf218e9aee0150dd89f9",
+      "bytes": 116525,
+      "decoded_sha256": "6c0c3d89f804dd6dcb161ede9893da58ac99a1f10b65f6bdcb4e359a266610a3",
+      "decoded_bytes": 314807,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v1/source-inventory.json"
+    },
+    "boolean/v1/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v1/mech_gpu.stdout.log"
+    },
+    "boolean/v1/opt/mech_gpu.build.json.gz": {
+      "sha256": "66791504e9b324945cdfbdcc564389afd7be493f679184b955dcc506389f1af0",
+      "bytes": 1813,
+      "decoded_sha256": "62c02c1a013582c7b1a755b1b5882c235d414b56b1b0236f0b0a0cdb647c5c07",
+      "decoded_bytes": 11488,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v1/mech_gpu.build.json"
+    },
+    "boolean/v1/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v1/mech_gpu.stderr.log"
+    },
+    "boolean/v1/opt/compiler.build.json.gz": {
+      "sha256": "96b3dc6adaffbdc3ee4daaa99c383154b3bcc53d9f705aded19cd52747c8b235",
+      "bytes": 2147,
+      "decoded_sha256": "adf95e40dbce7a7a44f483dd550a4aca7c06f534b190ffa4f69e5edc69b9125a",
+      "decoded_bytes": 12361,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v1/compiler.build.json"
+    },
+    "boolean/v1/opt/build.json.gz": {
+      "sha256": "823e8ff53fd539e44e7c530c326842caf73f0219056e0f97c5a40640f6c27b7b",
+      "bytes": 6893,
+      "decoded_sha256": "9924899980df645f919bcce472f2570bdce10ee4cc276d4119f790cf3bde5f50",
+      "decoded_bytes": 79203,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v1/build.json"
+    },
+    "boolean/v1/opt/compiler-build-run.json.gz": {
+      "sha256": "71149410d6a741675e7049fb010f32aa67b2276b654fde2155a0db5cce5c07d9",
+      "bytes": 279,
+      "decoded_sha256": "75f4a455a1578ed92dd9ae43290d8200c8c767f6316423579f0d87d8804ee1ca",
+      "decoded_bytes": 553,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v1/compiler-build-run.json"
+    },
+    "boolean/v1/tests/focus-cfg_cleanup.json.gz": {
+      "sha256": "8cba977d4ab2a3c20aee8c80000dcf599cba58b24e53790c0f3e5424ce5b55fe",
+      "bytes": 181,
+      "decoded_sha256": "1e63a2a8dcdf234210de3128c76cc8dfcf820716c7f3560c19fe2f47eb80252b",
+      "decoded_bytes": 223,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-cfg_cleanup.json"
+    },
+    "boolean/v1/tests/focus-movable_capture_reads.stdout.log.gz": {
+      "sha256": "dede1d1c667e2762370427f2c33d638f94a2affa9fbc16a4d52f095259c6da6e",
+      "bytes": 348,
+      "decoded_sha256": "f9915a03c18fde0fc80ce72a24192bdccf9c1b93114bd8a1861e7f94a14e4e7b",
+      "decoded_bytes": 889,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-movable_capture_reads.stdout.log"
+    },
+    "boolean/v1/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/mech_gpu-build.stderr.log"
+    },
+    "boolean/v1/tests/focus-cfg_cleanup_program_local_homes.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-cfg_cleanup_program_local_homes.stderr.log"
+    },
+    "boolean/v1/tests/focus-fresh_traversals.stdout.log.gz": {
+      "sha256": "31a7445530c82b45bfcd033429cd0a47a92e8c79aa7558a5d69796fcfba13ca1",
+      "bytes": 263,
+      "decoded_sha256": "b5bc237d6f35a45801a1bd76c81ed370c911484a5fcb84f39945dcad50a28c21",
+      "decoded_bytes": 563,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-fresh_traversals.stdout.log"
+    },
+    "boolean/v1/tests/focus-cfg_cleanup.stdout.log.gz": {
+      "sha256": "5d62b5e30fdd4bbfec209d5dddac7ff3e81a4927bb721b0936b696e8034389c7",
+      "bytes": 1231,
+      "decoded_sha256": "86173f6e49529a533ff410aa79a9f46e3e1166b4d4d7ab7ef2901679ff7cb41e",
+      "decoded_bytes": 5445,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-cfg_cleanup.stdout.log"
+    },
+    "boolean/v1/tests/focus-guarded_numeric_load.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-guarded_numeric_load.stderr.log"
+    },
+    "boolean/v1/tests/focus-fresh_traversals.json.gz": {
+      "sha256": "21c6b2b84820dd100d228bba883822f17fec0821b93bc647c0918edf02f3d5f6",
+      "bytes": 182,
+      "decoded_sha256": "ef69d3ccbd67c495a21325ea8a771420d29d7a56e477437ee81e0a663bcdf1bb",
+      "decoded_bytes": 226,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-fresh_traversals.json"
+    },
+    "boolean/v1/tests/focus-movable_capture_reads.json.gz": {
+      "sha256": "1ec91b2cfd618170065deae34df6c7fb8f2c02c7bf85392a467093498611a88f",
+      "bytes": 182,
+      "decoded_sha256": "cb9304f59bdac446aaab2d9133df5680db1641a1748de9ce713bb5056f29f2ec",
+      "decoded_bytes": 230,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-movable_capture_reads.json"
+    },
+    "boolean/v1/tests/focus-guarded_numeric_load.json.gz": {
+      "sha256": "92fc6c3b7f8f7b560a15628c6abec0137735b9d860e23cb78f3cd7a2751f7393",
+      "bytes": 184,
+      "decoded_sha256": "319a8880148751bd816aad33bd18005a20e4e98bbd4cf07eff20e72e2ce012f6",
+      "decoded_bytes": 230,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-guarded_numeric_load.json"
+    },
+    "boolean/v1/tests/focus-cfg_cleanup_program_local_homes.stdout.log.gz": {
+      "sha256": "6609ff4c210578d6482300ac5f2576aedc68a179481557df29395c6b386093a2",
+      "bytes": 195,
+      "decoded_sha256": "86553278b36fbb50b84c49d11e60eda3aaa0fcddef557c0010ca2e02194000bc",
+      "decoded_bytes": 267,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-cfg_cleanup_program_local_homes.stdout.log"
+    },
+    "boolean/v1/tests/build-and-test.py.gz": {
+      "sha256": "1a479026cb1f88f21479703bdb24a854215632e41b318fbb249ba29dabf77c1b",
+      "bytes": 1750,
+      "decoded_sha256": "a9b0e46c83420bffbf63fe19b3c14997d0b3c10a37f2718c42a90f08e4c0e2c1",
+      "decoded_bytes": 4114,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/build-and-test.py"
+    },
+    "boolean/v1/tests/mech_gpu-build.json.gz": {
+      "sha256": "764d7b48a51349c61abdd5c3c49af8530f72c5e7f88eefc52bb1da271f40a9f1",
+      "bytes": 1513,
+      "decoded_sha256": "a70dd5678298a4a1dc50f1ab128639b97175fdc73ffae81aaef0244b30f4d40e",
+      "decoded_bytes": 10861,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/mech_gpu-build.json"
+    },
+    "boolean/v1/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/mech_gpu-build.stdout.log"
+    },
+    "boolean/v1/tests/focus-movable_capture_reads.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-movable_capture_reads.stderr.log"
+    },
+    "boolean/v1/tests/focus-fresh_traversals.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-fresh_traversals.stderr.log"
+    },
+    "boolean/v1/tests/focus-cfg_cleanup_program_local_homes.json.gz": {
+      "sha256": "dffb5cd31bdaa9f6a878453771b43ad52a5045602d6958c4bd304e7d1d76bf7e",
+      "bytes": 195,
+      "decoded_sha256": "4ab49dee61c8d6ef6f497011c056e8e4c2f0e23c73cde1fdd6aeb4bcafcffe71",
+      "decoded_bytes": 243,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-cfg_cleanup_program_local_homes.json"
+    },
+    "boolean/v1/tests/focus-cfg_cleanup.stderr.log.gz": {
+      "sha256": "d417c1782d1d2bbe56d68fa730d213d79d7cb88b4ee696cfbb604caba70077c5",
+      "bytes": 326,
+      "decoded_sha256": "5c4b0e92ae315446f2300d8ef6b79bb9e360089104454bad2ca62ae42e0c7fa1",
+      "decoded_bytes": 460,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-cfg_cleanup.stderr.log"
+    },
+    "boolean/v1/tests/focus-guarded_numeric_load.stdout.log.gz": {
+      "sha256": "ee3bab91784dd070b13efc15d6dc5d7e597813b112f5747aada3f405bf41a345",
+      "bytes": 280,
+      "decoded_sha256": "2b94b63dc4cd59d6f8f5fa4a20a84b3a4bcea2cd4eb056b94efdb9b61f450524",
+      "decoded_bytes": 554,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v1/focus-guarded_numeric_load.stdout.log"
+    },
+    "boolean/v1/regressions/run.py.gz": {
+      "sha256": "9a7b4de2b6c368001104f1b32849026583a4d2e0d6075f57f0f9a05043e3101b",
+      "bytes": 1423,
+      "decoded_sha256": "2f0a4e26d388a374194e0053fa64b87e356c952000aff925974839191f1ed867",
+      "decoded_bytes": 3562,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v1/run.py"
+    },
+    "boolean/v1/regressions/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v1/one-kib-comparison.json"
+    },
+    "boolean/v1/regressions/one-kib-run.json.gz": {
+      "sha256": "7b816a6c865e8a4d40667081044644705ae08b2a951301f1d546c5d40071c48c",
+      "bytes": 718,
+      "decoded_sha256": "ff182a8b6d6ea5ccfc600318f9ab30d5c1bcad1bd947ab5266157eab4927e975",
+      "decoded_bytes": 3251,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v1/one-kib-run.json"
+    },
+    "boolean/v1/regressions/scalar-run.json.gz": {
+      "sha256": "aa1c538c06459e679e48fa90831ed7f31269798374fc1d4cffa974eee4ff2403",
+      "bytes": 1685,
+      "decoded_sha256": "a6ce32ce3d58a666c899e0036e11e3bbf7c463e28af2b3d7de7efdea4d32dc8a",
+      "decoded_bytes": 39377,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v1/scalar-run.json"
+    },
+    "boolean/v1/regressions/one-kib.build.json.gz": {
+      "sha256": "63147e323d77035bdc68aa31bd1bb7ce1129e1c42017debdb4710d951a38194e",
+      "bytes": 1221,
+      "decoded_sha256": "8d19019743655a0b1b6e8a3c2da22a36e12a9d4fb7efe096e650904600c488fe",
+      "decoded_bytes": 4588,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v1/one-kib.build.json"
+    },
+    "boolean/v1/regressions/scalar.build.json.gz": {
+      "sha256": "058fdf2978f4a7e9cf5c482491063cb24cc6014496677a657f80122eb9514174",
+      "bytes": 816,
+      "decoded_sha256": "54647df35c0d672847c579fc43d3ea42461b44a151d85a4df118b1e698187444",
+      "decoded_bytes": 2390,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v1/scalar.build.json"
+    },
+    "boolean/v1/regressions/scalar-comparison.json.gz": {
+      "sha256": "8a00f7913bd5fa3c9853918a18321386f04e6e27c093c175589c08d0367a4bcb",
+      "bytes": 826,
+      "decoded_sha256": "7bb2b53dfcba3029e86f74a4c51dd2314f8237c29817bc55f0521001aa6fc5c0",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v1/scalar-comparison.json"
+    },
+    "boolean/v1/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/after-4/runner.rs"
+    },
+    "boolean/v1/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "61a15c54ebd23190d3e6a8dce3ca3c72042b412c0295d533982f48bbdf3c66a1",
+      "bytes": 2090,
+      "decoded_sha256": "aaacd7692ad95399028aa554aa9736957afa43d85b01fc12cf0f96228ef8b0a1",
+      "decoded_bytes": 13185,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/after-4/native-link-audit.json"
+    },
+    "boolean/v1/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "c2c3b45bb6c876a3c6ded9e50779250414d42fd64452d5df35b6ca9e25bd44ae",
+      "bytes": 3365,
+      "decoded_sha256": "c34a7ad272cac873ee81b144770354f77c84655789de792a89cbd80b3da31a69",
+      "decoded_bytes": 17320,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/after-4/runner-aot.build.json"
+    },
+    "boolean/v1/runners/after-4/edge-run.json.gz": {
+      "sha256": "a3649173c1c45c5d2f41995707d20523cc0ec6641fb9e7b06c0dc84fa78762a7",
+      "bytes": 696,
+      "decoded_sha256": "300196fe7ad2a9dc22ff3988b2d1de951e342db58fefa4efe4b9d355a6e60246",
+      "decoded_bytes": 2864,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/after-4/edge-run.json"
+    },
+    "boolean/v1/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "88f00fa3d4b955d2e46ccc8de816bab160d3860258cc3c32c0e00f70b38543b0",
+      "bytes": 5464,
+      "decoded_sha256": "fd0247fc04e2cc3301a07276ec4d47bef3a4bfb064c0b2daa4ac2d4caac6cf23",
+      "decoded_bytes": 63145,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/after-4/edges/edge-fixtures.json"
+    },
+    "boolean/v1/runners/after-4/build/metadata.json.gz": {
+      "sha256": "81c4e4b697dfdde38dd56be03e4fc01635008ff7abe6bfb1372a60e4bab72e0f",
+      "bytes": 140093,
+      "decoded_sha256": "db513e9b94adb06f9942a9ef5c0494596d51d76b71ef70e35522cf6dd94f8eb7",
+      "decoded_bytes": 2735883,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/after-4/build/metadata.json"
+    },
+    "boolean/v1/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/after-4/build/source.mec"
+    },
+    "boolean/v1/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/reuse-4/runner.rs"
+    },
+    "boolean/v1/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "b04d0be8e5d295c3c2c2a88e43c6850edc068d5f814d9d331530fc4c610fda9c",
+      "bytes": 2053,
+      "decoded_sha256": "39ce1b14ddabfba4b62ca25b32490443af0034e18fd78c7bb4af92052a1c0097",
+      "decoded_bytes": 12861,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/reuse-4/native-link-audit.json"
+    },
+    "boolean/v1/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "802746bb67ea9ea3cd7e0c27cd1639ecdb17a164e16f3830a9d7b7c36772ce16",
+      "bytes": 3362,
+      "decoded_sha256": "2d0c8a1af5005eb6d659f3a1b511ef5dca15f6c3142d022679dcbedec0249278",
+      "decoded_bytes": 17320,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/reuse-4/runner-aot.build.json"
+    },
+    "boolean/v1/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "29b3e75c0ef152310de0bb1705ed025554c81157d559b42a85518de30bbd70c2",
+      "bytes": 697,
+      "decoded_sha256": "ccd6aafa8fe8d18051af808098e492dde3280a07df2f6e3c94b472bb0f9a51cf",
+      "decoded_bytes": 2865,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/reuse-4/edge-run.json"
+    },
+    "boolean/v1/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "1c0054cfb44b065cd6bd47f35f02abad6cedb330e2d5aee02820e2f217e54018",
+      "bytes": 5447,
+      "decoded_sha256": "86785a54897fd50f9dc3b05ffd4b69b1cb0ca6a94cea4f1d5e256871a7c2946f",
+      "decoded_bytes": 63142,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/reuse-4/edges/edge-fixtures.json"
+    },
+    "boolean/v1/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "8d50833a654ec8b2d623730f3543948b60663bfddaba0ba7ec3927f9f30ada21",
+      "bytes": 138140,
+      "decoded_sha256": "cc7c3003c938316531ef1cc3da3d7413e95a7a210dd193140c878495c24451de",
+      "decoded_bytes": 2700911,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/reuse-4/build/metadata.json"
+    },
+    "boolean/v1/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/reuse-4/build/source.mec"
+    },
+    "boolean/v1/runners/build-initial-runners.py.gz": {
+      "sha256": "fbf090943dbb5830a6628b1c946394c22bd64a813036535606bc2ed3cfab24c4",
+      "bytes": 1373,
+      "decoded_sha256": "961d3e03fe5bf9f431c8c7e879a4f63daf19a0281f193eb82ca822811e929ea8",
+      "decoded_bytes": 3327,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/build-initial-runners.py"
+    },
+    "boolean/v1/runners/native-code-comparison.json.gz": {
+      "sha256": "db48ac4175121526fbe3221f7dbb8c06aff9298c3703ff1cd540fbb36f6c5c38",
+      "bytes": 2890,
+      "decoded_sha256": "5f39f52cae95396c526e6a3646c00eb210596248d1c9be3b198450e6b1624fb6",
+      "decoded_bytes": 26602,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v1/native-code-comparison.json"
+    },
+    "boolean/v2/opt/source-inventory.json.gz": {
+      "sha256": "2295f4310e8b23766a0ba233e951ea13e7d8ee3e17c9d0a24bfddd4adb31ab0b",
+      "bytes": 116523,
+      "decoded_sha256": "b342a2479c6223150d5bb6388a5ef92b5a0f1da02dbb96e7ab41f5b48d1f1ac1",
+      "decoded_bytes": 314807,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v2/source-inventory.json"
+    },
+    "boolean/v2/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v2/mech_gpu.stdout.log"
+    },
+    "boolean/v2/opt/mech_gpu.build.json.gz": {
+      "sha256": "08c69a08a16cd22dac17564fba8e498cde41ee681992919a572eee119cb260a2",
+      "bytes": 1819,
+      "decoded_sha256": "c4e5788da1d783c73acd93441015a127d43de1de2cb6d18b188d0e84320d4568",
+      "decoded_bytes": 11581,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v2/mech_gpu.build.json"
+    },
+    "boolean/v2/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v2/mech_gpu.stderr.log"
+    },
+    "boolean/v2/opt/compiler.build.json.gz": {
+      "sha256": "fdb2aee59fda78509c17df07656845e2e2c429399507b1f16a1bfa0eb7c42367",
+      "bytes": 2148,
+      "decoded_sha256": "6164432b8ffae69b22d1bda06d504e19f54b1d6d48d9c767921beb64a47d2e30",
+      "decoded_bytes": 12456,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v2/compiler.build.json"
+    },
+    "boolean/v2/opt/build.json.gz": {
+      "sha256": "acc23e3bc6a851b4272ee1e2f1086a5ea684d5b8f0b73a71b37857b82b1088de",
+      "bytes": 6886,
+      "decoded_sha256": "91c28ee58e93780b423b1a8a110c06594196a8e83807720cd97d30b8531a21e0",
+      "decoded_bytes": 79302,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v2/build.json"
+    },
+    "boolean/v2/opt/compiler-build-run.json.gz": {
+      "sha256": "894eb11f0a7df487cc4a82b685c32724f7419f09478229f8d389a2c20c4f8af4",
+      "bytes": 277,
+      "decoded_sha256": "ff9ca8a1c46e9308e8efd90b7ccf212990fc53d7219c408db9480f46cb4b3f61",
+      "decoded_bytes": 552,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v2/compiler-build-run.json"
+    },
+    "boolean/v2/tests/focus-cfg_cleanup.json.gz": {
+      "sha256": "c5d36247df0a4365ea7362efd4f24e917351d8ee42c4a12908c8cd017971d60e",
+      "bytes": 182,
+      "decoded_sha256": "5059d0b01401fdce9575c06fee3ed20ae3a89c0027c0a35522db4838fd2d446c",
+      "decoded_bytes": 223,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-cfg_cleanup.json"
+    },
+    "boolean/v2/tests/focus-movable_capture_reads.stdout.log.gz": {
+      "sha256": "6fa6f3c62e598b66157f96e05121eba86e7182a4d81532c3f13a6e587ec196d5",
+      "bytes": 345,
+      "decoded_sha256": "1efc5191cfe20563089f824d29ea29e43808c257e025a8835f724e633085ed2b",
+      "decoded_bytes": 889,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-movable_capture_reads.stdout.log"
+    },
+    "boolean/v2/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/mech_gpu-build.stderr.log"
+    },
+    "boolean/v2/tests/focus-cfg_cleanup_program_local_homes.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-cfg_cleanup_program_local_homes.stderr.log"
+    },
+    "boolean/v2/tests/focus-fresh_traversals.stdout.log.gz": {
+      "sha256": "d8f217f850d2194bd7c1f168dafec1a39f5d0df48782114ade3cf1987b30a6ff",
+      "bytes": 263,
+      "decoded_sha256": "799f8e5e6a6bfa3864c194779e3c21f2fd5cc15e6a153b8dc22b4c54e74c6a54",
+      "decoded_bytes": 563,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-fresh_traversals.stdout.log"
+    },
+    "boolean/v2/tests/focus-cfg_cleanup.stdout.log.gz": {
+      "sha256": "30b80f045e5bceb6090c170394012d2974f87a1c19c8dece94fe3fd84ae1ab09",
+      "bytes": 1250,
+      "decoded_sha256": "563dbe7972d4120d7395cd464986258660f251c8dc7c54d44c2db4b0da9b40dd",
+      "decoded_bytes": 5589,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-cfg_cleanup.stdout.log"
+    },
+    "boolean/v2/tests/focus-guarded_numeric_load.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-guarded_numeric_load.stderr.log"
+    },
+    "boolean/v2/tests/focus-fresh_traversals.json.gz": {
+      "sha256": "69ed37d76fd29d92ca23155ace5ad1cafa754ccc2b767d9cb8081d09c39f2daf",
+      "bytes": 183,
+      "decoded_sha256": "ed8e2e4af403cfd10de510bb19eb7a778e9a1a83cdfcf1298d48cea7231a56a6",
+      "decoded_bytes": 226,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-fresh_traversals.json"
+    },
+    "boolean/v2/tests/focus-movable_capture_reads.json.gz": {
+      "sha256": "6dda1f898007aa4feb54414d1f65ac66c82c64d3fb08a0a0f39f39638f4a59c2",
+      "bytes": 183,
+      "decoded_sha256": "351f32914bd3938b73b6aeac453abb85d86999dfa7b228b4526e9c70f708a652",
+      "decoded_bytes": 231,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-movable_capture_reads.json"
+    },
+    "boolean/v2/tests/focus-guarded_numeric_load.json.gz": {
+      "sha256": "8c9f1d5d980bab43c4b0fbac878ab31ac3cf80c102a03bef6709647fa76afd79",
+      "bytes": 185,
+      "decoded_sha256": "86081b449cf9185e4390dbe5067fb3fdcb11d9c35ab9d42c413bcfb8ff9489b0",
+      "decoded_bytes": 230,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-guarded_numeric_load.json"
+    },
+    "boolean/v2/tests/focus-cfg_cleanup_program_local_homes.stdout.log.gz": {
+      "sha256": "7cdf3a2fef8a7920c504ab724a4c6128430907e16fd3f800f7e21e576aa1dae8",
+      "bytes": 195,
+      "decoded_sha256": "a04ac35f6845d92dcb8030905078e45a01ee3f4d96618c323785c3e2024fb3d2",
+      "decoded_bytes": 267,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-cfg_cleanup_program_local_homes.stdout.log"
+    },
+    "boolean/v2/tests/build-and-test.py.gz": {
+      "sha256": "c68f7a287ec50f22130e611759f88e06aba26ebdac4b6d79e11533427d0bb844",
+      "bytes": 1749,
+      "decoded_sha256": "d46652652f0e49bbe55d0dba1d2f55787ea05f2dab85b49437f4bf7b94b4f830",
+      "decoded_bytes": 4114,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/build-and-test.py"
+    },
+    "boolean/v2/tests/mech_gpu-build.json.gz": {
+      "sha256": "6615d324c91809a39c977be9492007b11da3d4049fea920b852c7b466292ad0b",
+      "bytes": 1516,
+      "decoded_sha256": "eb5f5472d85e95be027cc80ab40af35b69ddaed27c31c2da86726b5ca8822e78",
+      "decoded_bytes": 10956,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/mech_gpu-build.json"
+    },
+    "boolean/v2/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/mech_gpu-build.stdout.log"
+    },
+    "boolean/v2/tests/focus-movable_capture_reads.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-movable_capture_reads.stderr.log"
+    },
+    "boolean/v2/tests/focus-fresh_traversals.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-fresh_traversals.stderr.log"
+    },
+    "boolean/v2/tests/focus-cfg_cleanup_program_local_homes.json.gz": {
+      "sha256": "bb2b95e51f14923ae583a83888b18418a371b2d762563576f41b0bb7b9a1a5a4",
+      "bytes": 195,
+      "decoded_sha256": "8861263faa479ccfccffe0f01fad02742f528f452012164df9dc468ce1322209",
+      "decoded_bytes": 243,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-cfg_cleanup_program_local_homes.json"
+    },
+    "boolean/v2/tests/focus-cfg_cleanup.stderr.log.gz": {
+      "sha256": "a991a9cecef19fcc927ef3f68440c0813bc525cb7fc0689b20bb2c511243b968",
+      "bytes": 325,
+      "decoded_sha256": "1b0477688b79dcd3d1b4c80a5708bbe9fc3b8f59161e7b5e0cd1fe99c6e0fd95",
+      "decoded_bytes": 460,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-cfg_cleanup.stderr.log"
+    },
+    "boolean/v2/tests/focus-guarded_numeric_load.stdout.log.gz": {
+      "sha256": "c16e7f20bd637c5fec431107f325c35b198e3c16b78ea571c74e6f363243c26d",
+      "bytes": 280,
+      "decoded_sha256": "01ac04bed0242e950d26978c898c3e455d7d0fa43283efcbf1b60baa75e40566",
+      "decoded_bytes": 554,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v2/focus-guarded_numeric_load.stdout.log"
+    },
+    "boolean/v2/regressions/run.py.gz": {
+      "sha256": "f98532ece0af7c07109faeafe3c2cc76a99a24b1b43625d37de4afd79fd196dc",
+      "bytes": 1424,
+      "decoded_sha256": "f9adc56c4cea8b96d2e9232a8cc8175f43ac4551bde1e5caf5bc9c73656b9b38",
+      "decoded_bytes": 3562,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v2/run.py"
+    },
+    "boolean/v2/regressions/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v2/one-kib-comparison.json"
+    },
+    "boolean/v2/regressions/one-kib-run.json.gz": {
+      "sha256": "af3ac189cfa749a81630d61e2654dd63719e7d2c05b1d763af432387235aaddf",
+      "bytes": 717,
+      "decoded_sha256": "3f49c95ba9d950fa4455332f3aa1a42e6d3dc4473f0a61acbd580643def0c45f",
+      "decoded_bytes": 3251,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v2/one-kib-run.json"
+    },
+    "boolean/v2/regressions/scalar-run.json.gz": {
+      "sha256": "c91d2d1da5d3935d36583618b851f7479de776e27f3867e25cf18e270b8073b3",
+      "bytes": 1696,
+      "decoded_sha256": "3024a2b2aab3a3da349ca8576e2db4173d766ebca7c688395760fdecf76fdd6a",
+      "decoded_bytes": 39460,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v2/scalar-run.json"
+    },
+    "boolean/v2/regressions/one-kib.build.json.gz": {
+      "sha256": "fc201bab30969a8e46ecdcf69ebb08edd5c22971181ce97982e9370c2e51fd98",
+      "bytes": 1220,
+      "decoded_sha256": "fbbe9467c2c43d9786c5c3812adf0c2fe960193e951da2c0b1eb1bbe7270e5d1",
+      "decoded_bytes": 4588,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v2/one-kib.build.json"
+    },
+    "boolean/v2/regressions/scalar.build.json.gz": {
+      "sha256": "7ccf0f366b6fe76ea772da09f3c446aad10faa7489dad43b450374c511e2a829",
+      "bytes": 819,
+      "decoded_sha256": "8ebaa74f8c9aa357f84224ae8ee848645e0def8144c92f5e0ce41a69706e5365",
+      "decoded_bytes": 2390,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v2/scalar.build.json"
+    },
+    "boolean/v2/regressions/scalar-comparison.json.gz": {
+      "sha256": "732d178ff3c4d408a7477c1fe33d656ac928ff9d2eaef6d37905d22a7d65c736",
+      "bytes": 825,
+      "decoded_sha256": "67ccca05956db06a885ed0e4c066b8430497d497b8c3ed8affccb88bd39ed3ab",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v2/scalar-comparison.json"
+    },
+    "boolean/v2/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/after-4/runner.rs"
+    },
+    "boolean/v2/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "2331aecee8fc0f2aa5892975e6009d2ec1de6a8d8fd32725868723e8e10fe2ac",
+      "bytes": 2086,
+      "decoded_sha256": "5a04d78caaa55d21f1b20f50aa378a8b99dd7bda15238610517968bc7bd1db36",
+      "decoded_bytes": 13185,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/after-4/native-link-audit.json"
+    },
+    "boolean/v2/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "f31130ee88e90cb311fb71c1ee2000fd3d420fef08e23e1086ca34c485535d3b",
+      "bytes": 3365,
+      "decoded_sha256": "af219acf0c60af1b8df8068dc62d7f05aabc60c1c24253bad7ac11f353d4053f",
+      "decoded_bytes": 17415,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/after-4/runner-aot.build.json"
+    },
+    "boolean/v2/runners/after-4/edge-run.json.gz": {
+      "sha256": "bf2bd8384a269c4b0004db3638d7e97a0a035ba16e5e840d88cf95627573f1a8",
+      "bytes": 697,
+      "decoded_sha256": "bc07a05d4207e6b1b2e8c728f4dd301fd638b06326da81a225243df8d1fb09e5",
+      "decoded_bytes": 2865,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/after-4/edge-run.json"
+    },
+    "boolean/v2/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "1189279407d0bc530ee2c9b4340a722cf3ca1fc3a16ddf4ff6244e181ee12282",
+      "bytes": 5474,
+      "decoded_sha256": "e15529bce553b88c554a880bcbf991fd20680385fe95e8f923d60d3ace2be0ad",
+      "decoded_bytes": 63198,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/after-4/edges/edge-fixtures.json"
+    },
+    "boolean/v2/runners/after-4/build/metadata.json.gz": {
+      "sha256": "4cb2258c8492f4beb6fdfe78256671d3a2c400606d5a30e0eee6c792a7bb518c",
+      "bytes": 140097,
+      "decoded_sha256": "d1018e3a3fd75ffd0e5051ba41c393a82376e7039c6318dc38668d43eabd0edc",
+      "decoded_bytes": 2735883,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/after-4/build/metadata.json"
+    },
+    "boolean/v2/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/after-4/build/source.mec"
+    },
+    "boolean/v2/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/reuse-4/runner.rs"
+    },
+    "boolean/v2/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "d3e7a1c34a94e6df11632583cb0a3180b278d58d8e0e732f5046eefb12754ba0",
+      "bytes": 2059,
+      "decoded_sha256": "42af0386d5bdc84fef7ffe670a9c9f682c93f5e353b4991a1c3c9f8fb17fe6fe",
+      "decoded_bytes": 12861,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/reuse-4/native-link-audit.json"
+    },
+    "boolean/v2/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "8f71d48d5bb729e9969e4d68334478cda9f06ea747b16a7ab511fdd6af3cacf1",
+      "bytes": 3361,
+      "decoded_sha256": "5c60ae08cc295bb1ffbe991f69fcc663d47e7f52a8191975587b9bd57adbed42",
+      "decoded_bytes": 17415,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/reuse-4/runner-aot.build.json"
+    },
+    "boolean/v2/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "59acf847be3584b08664552ea7ac5c50fef5418c6341b4a5502a433124facf14",
+      "bytes": 695,
+      "decoded_sha256": "9dbf0527ac96e0dda38d8ae05fc5bbbc765379c7d92eb019a6617069e13875f3",
+      "decoded_bytes": 2864,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/reuse-4/edge-run.json"
+    },
+    "boolean/v2/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "cd0e284cf2b0096e2e91a9294903a8fb9f31c32b78a550048efa16e19ea32052",
+      "bytes": 5453,
+      "decoded_sha256": "22d7bf84dfb405226f2039d875153d8bfcf8aa16509e28e484bc76bbb77fa054",
+      "decoded_bytes": 63119,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/reuse-4/edges/edge-fixtures.json"
+    },
+    "boolean/v2/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "c31e040340cf18b667e4293ce5c020933c33b3eba00430fbe6c9aca9958912f9",
+      "bytes": 138146,
+      "decoded_sha256": "ce463b5296ef1e6562b09cad47df0522312be76423c2eba1b4c9c71d346838ca",
+      "decoded_bytes": 2700911,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/reuse-4/build/metadata.json"
+    },
+    "boolean/v2/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/reuse-4/build/source.mec"
+    },
+    "boolean/v2/runners/build-initial-runners.py.gz": {
+      "sha256": "bbb83e0d93f4ba9893930117d478147609ccd074ee7cdb15b0fe8b835d853c9d",
+      "bytes": 1377,
+      "decoded_sha256": "eca59a233b7ddb467a7c1dff3ecce686aeba555c77efa46059b39fb704e90f66",
+      "decoded_bytes": 3327,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/build-initial-runners.py"
+    },
+    "boolean/v2/runners/native-code-comparison.json.gz": {
+      "sha256": "9cb87dd3839c028490be63fe94acd3f8eefbfd84ae5396d53017faf615fa8d9d",
+      "bytes": 2888,
+      "decoded_sha256": "26d6f85644b14813041b74eba2563cb415f070564fba24eff9a6191a62abc7ce",
+      "decoded_bytes": 26602,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v2/native-code-comparison.json"
+    },
+    "boolean/v3/opt/source-inventory.json.gz": {
+      "sha256": "ef50763001af582c323b271c21250f53f3248b104adb9271af574f2e33315a7f",
+      "bytes": 116524,
+      "decoded_sha256": "7308b5b71282fec7885deba1ccb9e8a755b43ce258cfee981ef4522a56dcd30d",
+      "decoded_bytes": 314807,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v3/source-inventory.json"
+    },
+    "boolean/v3/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v3/mech_gpu.stdout.log"
+    },
+    "boolean/v3/opt/mech_gpu.build.json.gz": {
+      "sha256": "a437f383043448bf55a7e706135f9930052bd07ec9504f8673802ff651c5e56f",
+      "bytes": 1819,
+      "decoded_sha256": "8ce6a2452d5ae0d7df9138cd3e925e7676b8b44a5e489dbb9d40a00fd3e459e6",
+      "decoded_bytes": 11677,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v3/mech_gpu.build.json"
+    },
+    "boolean/v3/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v3/mech_gpu.stderr.log"
+    },
+    "boolean/v3/opt/compiler.build.json.gz": {
+      "sha256": "68e6f2fb1190d557aa6367297a3a713e73842c652059850fce0dcc9cf7a6e671",
+      "bytes": 2153,
+      "decoded_sha256": "94ec1b2201d7380e113b1af98b8ad96e01b43c5f27c7587604025e930177d16b",
+      "decoded_bytes": 12552,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v3/compiler.build.json"
+    },
+    "boolean/v3/opt/build.json.gz": {
+      "sha256": "5908dcbb7e494f71b146b6b31f417153d3afcb867daee1f8bc323f72d0d55864",
+      "bytes": 6885,
+      "decoded_sha256": "fe60d6814a9b6acd7c9a4b18123dfb78449e67d802ae4dcc24f3ba37c7262ea5",
+      "decoded_bytes": 79406,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v3/build.json"
+    },
+    "boolean/v3/opt/compiler-build-run.json.gz": {
+      "sha256": "65561200ed3fc25a7a46654a21cb2f38b3cc9d64d3bb6c22970ef913abb37b1b",
+      "bytes": 280,
+      "decoded_sha256": "aadab03bb2b3ab335542f8e42297bee4d52bf27562ac7ae524a89c143b2d83bc",
+      "decoded_bytes": 554,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-opt-20261107-v3/compiler-build-run.json"
+    },
+    "boolean/v3/tests/focus-cfg_cleanup.json.gz": {
+      "sha256": "4d0ef956c6695c460c82add546854aa5e8eabeb5c010c8aa71a5c29987e454c1",
+      "bytes": 180,
+      "decoded_sha256": "dfa129488674442bb9916ebe88e535926588cc8d531cc1ab99e4a6e643d3c10f",
+      "decoded_bytes": 221,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-cfg_cleanup.json"
+    },
+    "boolean/v3/tests/focus-movable_capture_reads.stdout.log.gz": {
+      "sha256": "66a497a2b84ffe67a7ea094ccb7ee4409b4ab0398852625f74f59bc93f390e56",
+      "bytes": 348,
+      "decoded_sha256": "e37ba2504c2a0e541f06581c5fb5ec95f5e7f27b2fa13dd719c74a54f8711da2",
+      "decoded_bytes": 889,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-movable_capture_reads.stdout.log"
+    },
+    "boolean/v3/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/mech_gpu-build.stderr.log"
+    },
+    "boolean/v3/tests/test-run.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/test-run.stderr.log"
+    },
+    "boolean/v3/tests/focus-cfg_cleanup_program_local_homes.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-cfg_cleanup_program_local_homes.stderr.log"
+    },
+    "boolean/v3/tests/ci-selected-list.stdout.log.gz": {
+      "sha256": "013b0428e9c94d5e2cf763904e182af5e7525e5333b48b42c1b7e5bac6b1dc2b",
+      "bytes": 9080,
+      "decoded_sha256": "1d6de9d1e81557801627d3bd9dd02a644c03e382197934d9262e91b9d52de892",
+      "decoded_bytes": 56815,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/ci-selected-list.stdout.log"
+    },
+    "boolean/v3/tests/focus-numeric_first_change.stdout.log.gz": {
+      "sha256": "971a81461ec5aabed1f02b8ed530c9ab788ef8bb15d389da0ee210471a1f47e4",
+      "bytes": 193,
+      "decoded_sha256": "3c1fbff1eaba163149b0afcd5a302e0a8f4ebd9a05bfbdb904e8cb7004178ad8",
+      "decoded_bytes": 266,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-numeric_first_change.stdout.log"
+    },
+    "boolean/v3/tests/focus-numeric_first_change.json.gz": {
+      "sha256": "820fc93b72b4fc4b5c4a349a6d67c8d5afdf249d4b41c95f470fe9b3fc7e6ff2",
+      "bytes": 185,
+      "decoded_sha256": "385838db93b41dc1de3fffd8634be252fee241bb9e9ec8b67656baea5e543682",
+      "decoded_bytes": 230,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-numeric_first_change.json"
+    },
+    "boolean/v3/tests/source-inventory.json.gz": {
+      "sha256": "ef50763001af582c323b271c21250f53f3248b104adb9271af574f2e33315a7f",
+      "bytes": 116524,
+      "decoded_sha256": "7308b5b71282fec7885deba1ccb9e8a755b43ce258cfee981ef4522a56dcd30d",
+      "decoded_bytes": 314807,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/source-inventory.json"
+    },
+    "boolean/v3/tests/focus-fresh_traversals.stdout.log.gz": {
+      "sha256": "f757e17ba2f26c867c1a2860c7315982967a549af5e7b5dcab33c1b37370c791",
+      "bytes": 263,
+      "decoded_sha256": "8ca8f18686c4bef7d9865cebc31c769541ce9cf29263e3401d50cfb972bd8399",
+      "decoded_bytes": 563,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-fresh_traversals.stdout.log"
+    },
+    "boolean/v3/tests/ci-selected-execute.json.gz": {
+      "sha256": "d777478e7db58d26bfc8949435abb95d3a7b1ff7cb43da28b87ed643fff5c854",
+      "bytes": 517,
+      "decoded_sha256": "dd34f5833f82b4b7ff52c592349472985d40ff394a73241d53aae2810553d3e4",
+      "decoded_bytes": 1171,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/ci-selected-execute.json"
+    },
+    "boolean/v3/tests/focus-cfg_cleanup.stdout.log.gz": {
+      "sha256": "9561af583dada368709b315fe1e3ea80ec8104aa56dd10bdf39a239e146a437f",
+      "bytes": 1216,
+      "decoded_sha256": "95fb1bdc05cb50047730ce7c0f11a0588f52525271876980f059ebf92fa80f93",
+      "decoded_bytes": 5421,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-cfg_cleanup.stdout.log"
+    },
+    "boolean/v3/tests/focus-guarded_numeric_load.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-guarded_numeric_load.stderr.log"
+    },
+    "boolean/v3/tests/focus-fresh_traversals.json.gz": {
+      "sha256": "4c56c94621769c52fa2dfe5e087385200debb8d48dd9848b87a4531fc5149065",
+      "bytes": 182,
+      "decoded_sha256": "a7346741a63b7533ec69ec718cc9f6e9433796cbb4ed0ebc7d3529cbcb280011",
+      "decoded_bytes": 226,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-fresh_traversals.json"
+    },
+    "boolean/v3/tests/focus-movable_capture_reads.json.gz": {
+      "sha256": "09bc58845a0c95ce8e7bed4896f737197f4cec60d0deb83d52790a6c48becbef",
+      "bytes": 183,
+      "decoded_sha256": "86f50df97122fc2917d01bf577363682bad62ff538a38f56521b7be1129c5350",
+      "decoded_bytes": 230,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-movable_capture_reads.json"
+    },
+    "boolean/v3/tests/focus-unsigned_guard_facts.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-unsigned_guard_facts.stderr.log"
+    },
+    "boolean/v3/tests/focus-guarded_numeric_load.json.gz": {
+      "sha256": "613d4ad2d587fee33513fb9fe9e5ef2503c97c4acd590e1dbd181e1ad10b40d1",
+      "bytes": 186,
+      "decoded_sha256": "a6d18832d31366737a5f572e0bc91b41d44e5a9243af5a8af342a86a438c7e64",
+      "decoded_bytes": 230,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-guarded_numeric_load.json"
+    },
+    "boolean/v3/tests/ci-selected-execute.stdout.log.gz": {
+      "sha256": "61fa10f747d3c2ffa9b5f3b6825d4a947612aa67111ded656ca4ae9765a94c03",
+      "bytes": 9185,
+      "decoded_sha256": "43baba07d1f312adaf3cf2dbe98b7f054fd25a209faef9a581cc5c4c5df08e1c",
+      "decoded_bytes": 59269,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/ci-selected-execute.stdout.log"
+    },
+    "boolean/v3/tests/focus-cfg_cleanup_program_local_homes.stdout.log.gz": {
+      "sha256": "7cdf3a2fef8a7920c504ab724a4c6128430907e16fd3f800f7e21e576aa1dae8",
+      "bytes": 195,
+      "decoded_sha256": "a04ac35f6845d92dcb8030905078e45a01ee3f4d96618c323785c3e2024fb3d2",
+      "decoded_bytes": 267,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-cfg_cleanup_program_local_homes.stdout.log"
+    },
+    "boolean/v3/tests/build-and-test.py.gz": {
+      "sha256": "8802dca95995a7371505e3618e095eff05d8013b11ff18c6efa35c06413db395",
+      "bytes": 1750,
+      "decoded_sha256": "577fc7fa0799727ffd7d219831fb5f69a21e62a0d08c6ac0421be209f460cad6",
+      "decoded_bytes": 4114,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/build-and-test.py"
+    },
+    "boolean/v3/tests/mech_gpu-build.json.gz": {
+      "sha256": "9dcac7a4b162a7dc9c7bd40fb2d589c4a80b4a82293007d185fb1abde262620c",
+      "bytes": 1517,
+      "decoded_sha256": "7153dcf83e5e4567d0453d5bf49113739d0d6ed1bf26087dbb947586bd288fe4",
+      "decoded_bytes": 11051,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/mech_gpu-build.json"
+    },
+    "boolean/v3/tests/ci-selected-inventory-audit.json.gz": {
+      "sha256": "2886ca2f30ef49fd3981ccc7f5ec9574c7b7aac9f64b4adb08469f4e935631b2",
+      "bytes": 9128,
+      "decoded_sha256": "23dcc31a7c335918887a44143b7f4fe40d0af529cf2e21f030e7e3cbfc166b33",
+      "decoded_bytes": 57292,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/ci-selected-inventory-audit.json"
+    },
+    "boolean/v3/tests/ci-selected-list.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/ci-selected-list.stderr.log"
+    },
+    "boolean/v3/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/mech_gpu-build.stdout.log"
+    },
+    "boolean/v3/tests/focus-movable_capture_reads.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-movable_capture_reads.stderr.log"
+    },
+    "boolean/v3/tests/test-run.stdout.log.gz": {
+      "sha256": "b084a730144298d7922b5bfd76fcbc2e9e9dfc3b3a4ba383e1b2ac2e48d9b310",
+      "bytes": 22377,
+      "decoded_sha256": "3c6bf72d63fb99258dd3bcb075571025808f907dc66a53cc8c7df3b55a39e31f",
+      "decoded_bytes": 131302,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/test-run.stdout.log"
+    },
+    "boolean/v3/tests/focus-fresh_traversals.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-fresh_traversals.stderr.log"
+    },
+    "boolean/v3/tests/focus-numeric_first_change.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-numeric_first_change.stderr.log"
+    },
+    "boolean/v3/tests/focus-cfg_cleanup_program_local_homes.json.gz": {
+      "sha256": "728e666b5dbf548ce06dbac2383dca562a69453d778bf8f76e1d625321038ef5",
+      "bytes": 193,
+      "decoded_sha256": "390bddaa6e80d0b89cf65869f74fd820d101f2e39a14dcb62d9f7b5d6cfb0082",
+      "decoded_bytes": 242,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-cfg_cleanup_program_local_homes.json"
+    },
+    "boolean/v3/tests/focus-cfg_cleanup.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-cfg_cleanup.stderr.log"
+    },
+    "boolean/v3/tests/focus-unsigned_guard_facts.json.gz": {
+      "sha256": "033fb0da5e944a243513027efd289e8a7e26aff37323b13748a1ec3165e1a073",
+      "bytes": 186,
+      "decoded_sha256": "3d4c3f84767e82c66eb4566b2c46298d186276ec4ea5cbd336ebff40537e637b",
+      "decoded_bytes": 232,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-unsigned_guard_facts.json"
+    },
+    "boolean/v3/tests/ci-selected-execute.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/ci-selected-execute.stderr.log"
+    },
+    "boolean/v3/tests/focus-unsigned_guard_facts.stdout.log.gz": {
+      "sha256": "ad4116d51e498fa5f43d689abf52eff82e1ea6b1521014e9a07150592aef9d87",
+      "bytes": 455,
+      "decoded_sha256": "0186f644a274afe880c9485546b112ac38345ff1433e79b7c581bc79718241d2",
+      "decoded_bytes": 1267,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-unsigned_guard_facts.stdout.log"
+    },
+    "boolean/v3/tests/ci-selected-list.json.gz": {
+      "sha256": "5bd6aead71b7c819813c41b9b1884dc5a7afba3971758abfbb56e220f020b247",
+      "bytes": 512,
+      "decoded_sha256": "44a54d6f8324aa0a8904b5fb2de028102c6df410a05d593854940f3d78a98f16",
+      "decoded_bytes": 1163,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/ci-selected-list.json"
+    },
+    "boolean/v3/tests/focus-guarded_numeric_load.stdout.log.gz": {
+      "sha256": "6314a824dd9dadb9cf60af73ddbc44cc242ed2eda5aa464f39b17a0bbfbf9d74",
+      "bytes": 280,
+      "decoded_sha256": "4ab59deff5fdad278586236b0f846c9cbb24a61e1dea1b13125ea5a183b027a4",
+      "decoded_bytes": 554,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/focus-guarded_numeric_load.stdout.log"
+    },
+    "boolean/v3/tests/test-run.json.gz": {
+      "sha256": "5f09aebc3deb25d16fc00f1753e795ba2ab79000134fab51ad4c93e6fb6d1600",
+      "bytes": 405,
+      "decoded_sha256": "027fe1cbae28910a385be02e9b8f18caf7653a1d0c84a32c9cf5ca90c0ad6f24",
+      "decoded_bytes": 632,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-tests-20261107-v3/test-run.json"
+    },
+    "boolean/v3/regressions/run.py.gz": {
+      "sha256": "4f3c53855e9861206ee6b137976edc358fabd332cd9fdaf31a7ba75acd86d2af",
+      "bytes": 1424,
+      "decoded_sha256": "93907b3deb79e4116397296f830c5b6b1cc017ba554966bdc4906d202083b139",
+      "decoded_bytes": 3562,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v3/run.py"
+    },
+    "boolean/v3/regressions/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v3/one-kib-comparison.json"
+    },
+    "boolean/v3/regressions/one-kib-run.json.gz": {
+      "sha256": "ffe605fa6e20d6fec8c070d0a3d49190c2d96b5601a6228a98cd6911f75994b3",
+      "bytes": 716,
+      "decoded_sha256": "0405bfc61a08da12dca7f15647239f07eeaaf3771b6be0a9e321a97aa0c5d1bf",
+      "decoded_bytes": 3252,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v3/one-kib-run.json"
+    },
+    "boolean/v3/regressions/scalar-run.json.gz": {
+      "sha256": "8b9704f611e0c34d7d12c687f7555de868fe56859ea81229b3117f2185b2a6d5",
+      "bytes": 1687,
+      "decoded_sha256": "c163b23c1cbe6f7d7bc2dac4b97b62df2cdf3279be02565bb3b903dcef11072b",
+      "decoded_bytes": 39482,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v3/scalar-run.json"
+    },
+    "boolean/v3/regressions/one-kib.build.json.gz": {
+      "sha256": "ce380edfc76210c09697c4f4ab0cff586c96b6b6258710ced52b5a9d1b2d9985",
+      "bytes": 1222,
+      "decoded_sha256": "6424bbf8fccdfdd5750d12f7abe791d53f8091145770597806ecf76214849109",
+      "decoded_bytes": 4589,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v3/one-kib.build.json"
+    },
+    "boolean/v3/regressions/scalar.build.json.gz": {
+      "sha256": "915d757633323aa601013c9d7972f728c560490aa121e3209eced77d4b53ef15",
+      "bytes": 819,
+      "decoded_sha256": "6be2b9063655459c67d08faa5e72f718aebda6a7c2069682d27cf9c03a0667fe",
+      "decoded_bytes": 2390,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v3/scalar.build.json"
+    },
+    "boolean/v3/regressions/scalar-comparison.json.gz": {
+      "sha256": "732d178ff3c4d408a7477c1fe33d656ac928ff9d2eaef6d37905d22a7d65c736",
+      "bytes": 825,
+      "decoded_sha256": "67ccca05956db06a885ed0e4c066b8430497d497b8c3ed8affccb88bd39ed3ab",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v3/scalar-comparison.json"
+    },
+    "boolean/v3/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/after-4/runner.rs"
+    },
+    "boolean/v3/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "8d55f76db33aefee0cc72c2bdefaaaf043065ce7a746bd959a9ce1def08cd26b",
+      "bytes": 2084,
+      "decoded_sha256": "de56bbdd4e62b5e66bdf445fe30fbfc6e89bff05d8e64dbc823737d0b3fbe0be",
+      "decoded_bytes": 13185,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/after-4/native-link-audit.json"
+    },
+    "boolean/v3/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "6d032c4d6355dec0665e6e02ae4e3d14f912175234ed21f430eb1fef62221987",
+      "bytes": 3362,
+      "decoded_sha256": "9020d4a3e4828c55e3107723a9afeb054afcd4770559d33be2e455ae21c0e66c",
+      "decoded_bytes": 17510,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/after-4/runner-aot.build.json"
+    },
+    "boolean/v3/runners/after-4/edge-run.json.gz": {
+      "sha256": "0e43222bbe4af9fe36f282ae12fbeb73c94824486541cfadea09f158bd705d8d",
+      "bytes": 695,
+      "decoded_sha256": "f538ea74640075f0b0bc200d1c50882f752ab5301bfaf1fead8134ba7f949a16",
+      "decoded_bytes": 2865,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/after-4/edge-run.json"
+    },
+    "boolean/v3/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "31072666464793ae6ee65f2af8759d3286eedb74b703915637e01bfd08ba5c35",
+      "bytes": 5462,
+      "decoded_sha256": "e32b2070ba2d14e9f13c661231cc5c2a0c3c1a56ea9d7ad65f302c2720a16c4a",
+      "decoded_bytes": 63172,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/after-4/edges/edge-fixtures.json"
+    },
+    "boolean/v3/runners/after-4/build/metadata.json.gz": {
+      "sha256": "9acafa498b309064b91cf2ee7ab41483f50611b608fe9d9c2184c4812d1696a0",
+      "bytes": 140101,
+      "decoded_sha256": "91815c5964ebccf7d42e763c1544ae089b3aabaf817fd5a0b064768bdbe2dfc4",
+      "decoded_bytes": 2735883,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/after-4/build/metadata.json"
+    },
+    "boolean/v3/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/after-4/build/source.mec"
+    },
+    "boolean/v3/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/reuse-4/runner.rs"
+    },
+    "boolean/v3/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "f3ea6cd6c5e6e68f1ba84aa61775c60a8884823a3378c3f882387c98732e8cfe",
+      "bytes": 2057,
+      "decoded_sha256": "b909c1f3e8eb18caad3f5f189c1801641d04cf01260889042c2099e0ac56956d",
+      "decoded_bytes": 12861,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/reuse-4/native-link-audit.json"
+    },
+    "boolean/v3/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "11aedc41760c017a5324d9998791e537f681269250d3aa6238a6528513d95a19",
+      "bytes": 3368,
+      "decoded_sha256": "b7d94a576ee68cc9fec33b2f7864a5de41126c638132f411831a64d21206e8a8",
+      "decoded_bytes": 17510,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/reuse-4/runner-aot.build.json"
+    },
+    "boolean/v3/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "f8a6d81f71f658b7b61525269b7eaa67764a69dc8811f381b57559e89fd3d4d6",
+      "bytes": 697,
+      "decoded_sha256": "831280d1bbfe83b9a202935694d7e5bf9b313f2f0c57dae78ecd4fce2b99ba7d",
+      "decoded_bytes": 2865,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/reuse-4/edge-run.json"
+    },
+    "boolean/v3/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "72fb8ceecb605adbcdbdf4def531e957c09ef2cd9f57d8b205a9f76c274b7747",
+      "bytes": 5431,
+      "decoded_sha256": "f15c1d002f1b6ba27d0b4e4ee9ab9d150b57c794a4cb7aea4cf6e6154534b3e7",
+      "decoded_bytes": 63149,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/reuse-4/edges/edge-fixtures.json"
+    },
+    "boolean/v3/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "feb680e487eab784c641f3e6d548ff7465d37ad3800c8dd130a5583c7ef206c6",
+      "bytes": 138148,
+      "decoded_sha256": "26ab842618159b393d9adf3474d7216a5298db1d79581c4861cfbd6ebdfce17f",
+      "decoded_bytes": 2700911,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/reuse-4/build/metadata.json"
+    },
+    "boolean/v3/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/reuse-4/build/source.mec"
+    },
+    "boolean/v3/runners/build-initial-runners.py.gz": {
+      "sha256": "c6f77102737a164c9c989f4a63acee26af393b32aec81c949ae4d15f9e11093d",
+      "bytes": 1378,
+      "decoded_sha256": "808b10a61cb29ef14a8374c33451aeba9c2bf8701161a110403826e8475b37f7",
+      "decoded_bytes": 3327,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/build-initial-runners.py"
+    },
+    "boolean/v3/runners/native-code-comparison.json.gz": {
+      "sha256": "b9780f12fe26fd144ff4174962226a9b5ed8bc7c99c59d02eed73484b6163461",
+      "bytes": 2889,
+      "decoded_sha256": "70028b9069aee9a55a2aaf64728e7c947155d6ba4715aa84eeac4149476a8088",
+      "decoded_bytes": 26602,
+      "retained_source": "/private/tmp/mech-related-boolean-loop-integration-runners-20261107-v3/native-code-comparison.json"
+    },
+    "metadata/v1/opt/source-inventory.json.gz": {
+      "sha256": "814ee2acb4907173ccd4ef7ef72af9d54c92f45076c4550a45508fb984e08b76",
+      "bytes": 116464,
+      "decoded_sha256": "2437ecded59bdc473ffdd24c1aeb156af50f45e1ef1bab810ce5892d170fb49b",
+      "decoded_bytes": 314660,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-opt-20261107-v1/source-inventory.json"
+    },
+    "metadata/v1/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-opt-20261107-v1/mech_gpu.stdout.log"
+    },
+    "metadata/v1/opt/mech_gpu.build.json.gz": {
+      "sha256": "df431343a34bed3103094e16f1be9ddb84ef8cd91c65f46559da1a8bab4f6b61",
+      "bytes": 1831,
+      "decoded_sha256": "cb14d953a92c26d2dee241361e2413c52f92615e36540da2b5bde0062459a0dd",
+      "decoded_bytes": 11700,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-opt-20261107-v1/mech_gpu.build.json"
+    },
+    "metadata/v1/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-opt-20261107-v1/mech_gpu.stderr.log"
+    },
+    "metadata/v1/opt/compiler.build.json.gz": {
+      "sha256": "468f0a1ffb901bd39ba127453b4ff45a41a4499493f7d0b3946a4fffa364dbce",
+      "bytes": 2168,
+      "decoded_sha256": "b0f610f74d90f4f14f2bb8510d4e50e28fa791f6b0163a17d27a5ce697585bf6",
+      "decoded_bytes": 12583,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-opt-20261107-v1/compiler.build.json"
+    },
+    "metadata/v1/opt/build.json.gz": {
+      "sha256": "17021fcdda97b5acf447c557c3faa6a6ef6ce394f35ce2cf6b77eca20a839b4c",
+      "bytes": 6911,
+      "decoded_sha256": "2adc0d929a61c89d600ba99072212a178abdca796b9aecf68667f9de047390fd",
+      "decoded_bytes": 79438,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-opt-20261107-v1/build.json"
+    },
+    "metadata/v1/opt/compiler-build-run.json.gz": {
+      "sha256": "dbedae6a3a5de3f7266a0f58bdf939ba45b0fa1e05bcb60fa1cd121abc4049d4",
+      "bytes": 278,
+      "decoded_sha256": "49a4c73eb521e0a4d31cbdf242445d06b812339a2dae001984ff32d947525de7",
+      "decoded_bytes": 559,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-opt-20261107-v1/compiler-build-run.json"
+    },
+    "metadata/v1/tests/focus-cfg_cleanup.json.gz": {
+      "sha256": "e531316a3dfe47220e83b72093dc2d988c0273630678cc4e04dfbbf1a798de4d",
+      "bytes": 181,
+      "decoded_sha256": "ae7b61efda7509ebcb1651a13f9e52de6bf30fb3d666f71a8de86acf8f993608",
+      "decoded_bytes": 224,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-cfg_cleanup.json"
+    },
+    "metadata/v1/tests/focus-movable_capture_reads.stdout.log.gz": {
+      "sha256": "01c117a6f26a79e04e34304aac6786460259257ff5e236fc1f29a78e83548bfc",
+      "bytes": 348,
+      "decoded_sha256": "dd896d6eddaf5d037dcb044a47bec2fc7907775b9808836165df1716a7bd047c",
+      "decoded_bytes": 889,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-movable_capture_reads.stdout.log"
+    },
+    "metadata/v1/tests/focus-borrowed_frame_metadata.stdout.log.gz": {
+      "sha256": "8b8cd24cf6e58728b3b2b79cd33bad5d1e15ffa754640f23d3b957aa8b1e5751",
+      "bytes": 385,
+      "decoded_sha256": "f84dbce8a70c6b97258a73860a22da2eabf33bdfc4625a5cece841a930441e23",
+      "decoded_bytes": 1081,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-borrowed_frame_metadata.stdout.log"
+    },
+    "metadata/v1/tests/focus-frozen_static_layouts.json.gz": {
+      "sha256": "e8326f927f644308414be2a526161dc5f4bdff4561f1d39e25deddfdb8331288",
+      "bytes": 187,
+      "decoded_sha256": "6f88720106644ab342332b2dedd9a30e77cfef806beb19a1f6bf05a6c0c09196",
+      "decoded_bytes": 235,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-frozen_static_layouts.json"
+    },
+    "metadata/v1/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/mech_gpu-build.stderr.log"
+    },
+    "metadata/v1/tests/test-run.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/test-run.stderr.log"
+    },
+    "metadata/v1/tests/focus-borrowed_parent_frame_metadata.json.gz": {
+      "sha256": "0d1f3439755b54a126faae1cb531253e445f4edd3a0aad91723035450fd4c7ae",
+      "bytes": 193,
+      "decoded_sha256": "2bc5fd51b2af38ffc51db943e4754d2e4dbeae01912f6a74babc6808339b5cb7",
+      "decoded_bytes": 243,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-borrowed_parent_frame_metadata.json"
+    },
+    "metadata/v1/tests/focus-cfg_cleanup_program_local_homes.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-cfg_cleanup_program_local_homes.stderr.log"
+    },
+    "metadata/v1/tests/ci-selected-list.stdout.log.gz": {
+      "sha256": "61fb56a86fcbb1d9ed838bc82e9aeab5a883a2efd95537f0538bd6bcd945981c",
+      "bytes": 9099,
+      "decoded_sha256": "008e54e7e4128f67a2b0072f3bc449d9c42936bdf98789d8809242eda4b81bca",
+      "decoded_bytes": 56692,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/ci-selected-list.stdout.log"
+    },
+    "metadata/v1/tests/focus-numeric_first_change.stdout.log.gz": {
+      "sha256": "2b2dc5d8d90fa5ad4aa63bd23d500db7778c825b3136ae306d2010bf5ccf0ce9",
+      "bytes": 192,
+      "decoded_sha256": "f65028e92bc6b2c28fd1208887fb118aeeec6cd3efb65ad386a3ce73d4d0699b",
+      "decoded_bytes": 266,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-numeric_first_change.stdout.log"
+    },
+    "metadata/v1/tests/focus-numeric_first_change.json.gz": {
+      "sha256": "3adc80559a14ff05adc8b56c26b753edbc139a91dc15854869fdd663973db785",
+      "bytes": 185,
+      "decoded_sha256": "43ee49963dfe021994434d6660e9a0d3dc21747c5000b25dbf2818f15cfcddda",
+      "decoded_bytes": 233,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-numeric_first_change.json"
+    },
+    "metadata/v1/tests/source-inventory.json.gz": {
+      "sha256": "814ee2acb4907173ccd4ef7ef72af9d54c92f45076c4550a45508fb984e08b76",
+      "bytes": 116464,
+      "decoded_sha256": "2437ecded59bdc473ffdd24c1aeb156af50f45e1ef1bab810ce5892d170fb49b",
+      "decoded_bytes": 314660,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/source-inventory.json"
+    },
+    "metadata/v1/tests/focus-borrowed_parent_frame_metadata.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-borrowed_parent_frame_metadata.stderr.log"
+    },
+    "metadata/v1/tests/focus-fresh_traversals.stdout.log.gz": {
+      "sha256": "bc920b22b450808a721c27aaefdde8f091b5965f62cf166f2f8a423775eeedef",
+      "bytes": 263,
+      "decoded_sha256": "633a3a4818d5578c0d975b82b220cc202a67409a7a560836054d5fe2a23f2725",
+      "decoded_bytes": 563,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-fresh_traversals.stdout.log"
+    },
+    "metadata/v1/tests/ci-selected-execute.json.gz": {
+      "sha256": "ed906eb6e7296b0715ec8968c6afd5634ea08cb6dcbf596fdbd93b8f9324d459",
+      "bytes": 542,
+      "decoded_sha256": "4abf03f72fefb51e22f9fa2aa58784e5b4b307cbf02c794c48348a9518cec985",
+      "decoded_bytes": 1254,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/ci-selected-execute.json"
+    },
+    "metadata/v1/tests/focus-cfg_cleanup.stdout.log.gz": {
+      "sha256": "d30837536a42b3ab7d80d8a8aebae717333b39fdcd3a2a13fe45e1564bb1fcf6",
+      "bytes": 1136,
+      "decoded_sha256": "d96b48e789e82709cef5925cb75e807f3986a92f8b9f06678d941efdbaa614b2",
+      "decoded_bytes": 4856,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-cfg_cleanup.stdout.log"
+    },
+    "metadata/v1/tests/focus-guarded_numeric_load.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-guarded_numeric_load.stderr.log"
+    },
+    "metadata/v1/tests/focus-fresh_traversals.json.gz": {
+      "sha256": "f9ae857f44f414fe94b2e07036811c7ee4b8a0fbd6a94a778a7a17dea477766b",
+      "bytes": 182,
+      "decoded_sha256": "ede858cdc44153f6ede7ef345f959c18ddd141d90aca233e8440ebc4f695aacd",
+      "decoded_bytes": 229,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-fresh_traversals.json"
+    },
+    "metadata/v1/tests/focus-movable_capture_reads.json.gz": {
+      "sha256": "f1290c6c543dbba2a7e11862b7116ba794ec34849a46d7356f4e3b12855ca0ab",
+      "bytes": 185,
+      "decoded_sha256": "78f0a63e4fb70ed54ece4cfa37d15c13b21a5329ed51cab3fa552c4f3b5ac8f8",
+      "decoded_bytes": 234,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-movable_capture_reads.json"
+    },
+    "metadata/v1/tests/focus-unsigned_guard_facts.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-unsigned_guard_facts.stderr.log"
+    },
+    "metadata/v1/tests/focus-frozen_static_layouts.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-frozen_static_layouts.stderr.log"
+    },
+    "metadata/v1/tests/focus-guarded_numeric_load.json.gz": {
+      "sha256": "1871bec52e180f295605357b816f59362021fd4105a05300b3098099cdb9ebe3",
+      "bytes": 186,
+      "decoded_sha256": "de3ac31456c1f841753393bfe7f70df245b64e3ef12ef05eb294081fd8af76dd",
+      "decoded_bytes": 233,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-guarded_numeric_load.json"
+    },
+    "metadata/v1/tests/ci-selected-execute.stdout.log.gz": {
+      "sha256": "509e894f10a9ef15630d4fabf9ee374a447bab80f3056388b64e5a753127c85e",
+      "bytes": 9206,
+      "decoded_sha256": "89600cc14122538058665a349787ac52f739b4b78766df7fdc09651fe29e19f3",
+      "decoded_bytes": 59140,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/ci-selected-execute.stdout.log"
+    },
+    "metadata/v1/tests/focus-cfg_cleanup_program_local_homes.stdout.log.gz": {
+      "sha256": "6609ff4c210578d6482300ac5f2576aedc68a179481557df29395c6b386093a2",
+      "bytes": 195,
+      "decoded_sha256": "86553278b36fbb50b84c49d11e60eda3aaa0fcddef557c0010ca2e02194000bc",
+      "decoded_bytes": 267,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-cfg_cleanup_program_local_homes.stdout.log"
+    },
+    "metadata/v1/tests/build-and-test.py.gz": {
+      "sha256": "bbab8efe2e8a72843b1be4f4eede99642aa66ad40328f18f1726e260c47c4f7e",
+      "bytes": 1782,
+      "decoded_sha256": "9c9de759059084044d94590da5f5fc8266d8863034922ee158c28528b8e0b6d6",
+      "decoded_bytes": 4200,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/build-and-test.py"
+    },
+    "metadata/v1/tests/mech_gpu-build.json.gz": {
+      "sha256": "b56aaaf8853e5163a64c946a4c262885331bb79eee1a351debe140435204f923",
+      "bytes": 1532,
+      "decoded_sha256": "a0f36efcc4de9c0fd4b20f490dca6372f63d6b2b794a235a4d62aa971d11d5fc",
+      "decoded_bytes": 11071,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/mech_gpu-build.json"
+    },
+    "metadata/v1/tests/ci-selected-inventory-audit.json.gz": {
+      "sha256": "665e7dd2293d2283ded8b948346803f1464ee452107567e1475466c8f3818079",
+      "bytes": 9148,
+      "decoded_sha256": "ed225828732beb86fe4e06043e04a9e2085dc3aec2cb8b5bef64ffa79f569a68",
+      "decoded_bytes": 57168,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/ci-selected-inventory-audit.json"
+    },
+    "metadata/v1/tests/ci-selected-list.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/ci-selected-list.stderr.log"
+    },
+    "metadata/v1/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/mech_gpu-build.stdout.log"
+    },
+    "metadata/v1/tests/focus-borrowed_frame_metadata.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-borrowed_frame_metadata.stderr.log"
+    },
+    "metadata/v1/tests/focus-movable_capture_reads.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-movable_capture_reads.stderr.log"
+    },
+    "metadata/v1/tests/test-run.stdout.log.gz": {
+      "sha256": "30d87529b292d41eb13a7b74334670f67385214c4facbad93b72d25b904f3570",
+      "bytes": 22353,
+      "decoded_sha256": "d587db14c716ed34d3b649e81d3d1795696a8138169abd7ff95bc74114d6ae1c",
+      "decoded_bytes": 131179,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/test-run.stdout.log"
+    },
+    "metadata/v1/tests/focus-borrowed_parent_frame_metadata.stdout.log.gz": {
+      "sha256": "09c29f7301399cf75c63bbec664a69efc7d0a951c63e0a3370930f02e0a915dc",
+      "bytes": 225,
+      "decoded_sha256": "dc42348bf24be889703c833f70ef79dc82f357d68baec47d0f9474ad053aa70e",
+      "decoded_bytes": 388,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-borrowed_parent_frame_metadata.stdout.log"
+    },
+    "metadata/v1/tests/focus-borrowed_frame_metadata.json.gz": {
+      "sha256": "27e3031dfcb945550ea2b36e397b88930eee77cc2ee7bbb2f59f937518952680",
+      "bytes": 184,
+      "decoded_sha256": "7d009fcfb15f791d11b6cdc84a4239d6d685fda028d7b96de879deacec91f07d",
+      "decoded_bytes": 237,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-borrowed_frame_metadata.json"
+    },
+    "metadata/v1/tests/focus-fresh_traversals.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-fresh_traversals.stderr.log"
+    },
+    "metadata/v1/tests/focus-numeric_first_change.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-numeric_first_change.stderr.log"
+    },
+    "metadata/v1/tests/focus-cfg_cleanup_program_local_homes.json.gz": {
+      "sha256": "47c05679d95366fc8dc8903c00ee339183b0db3a6c051cca89744cdb599112ee",
+      "bytes": 194,
+      "decoded_sha256": "d65ec5803be80cd6340bc84cd4ffa9f6713f44fca303d01c0e53de3d09e7ba8a",
+      "decoded_bytes": 245,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-cfg_cleanup_program_local_homes.json"
+    },
+    "metadata/v1/tests/focus-cfg_cleanup.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-cfg_cleanup.stderr.log"
+    },
+    "metadata/v1/tests/focus-unsigned_guard_facts.json.gz": {
+      "sha256": "98cf77ef80a5cfe92c77d016b9a92ad406cf573a7d242377ae5ef5bd058e7918",
+      "bytes": 185,
+      "decoded_sha256": "44e60a0aa8293cfb4b59835621ca36034b7499be4e03af13616083e9d6b451f3",
+      "decoded_bytes": 234,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-unsigned_guard_facts.json"
+    },
+    "metadata/v1/tests/ci-selected-execute.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/ci-selected-execute.stderr.log"
+    },
+    "metadata/v1/tests/focus-frozen_static_layouts.stdout.log.gz": {
+      "sha256": "36a0c7e45c9439e1e2a8f1f3686c98063979ab06e24ff526078c5c0d39353b06",
+      "bytes": 196,
+      "decoded_sha256": "89b02ad2feb0012b2722f678e7df6e45122b626aee553782785fd94c99e52bd0",
+      "decoded_bytes": 261,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-frozen_static_layouts.stdout.log"
+    },
+    "metadata/v1/tests/focus-unsigned_guard_facts.stdout.log.gz": {
+      "sha256": "004119fb2c95919964d2b6130cfb172b9435135212c654632259a26d032c140e",
+      "bytes": 455,
+      "decoded_sha256": "f2ecb13c9292a8d65a70d7a7b66e9071522a54d6358da3e11738b8342530715d",
+      "decoded_bytes": 1267,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-unsigned_guard_facts.stdout.log"
+    },
+    "metadata/v1/tests/ci-selected-list.json.gz": {
+      "sha256": "0edfd79a76e917f5ac3adf11eb19bad77aeb608b7117e68a8d4b03068a9476c9",
+      "bytes": 537,
+      "decoded_sha256": "d399727b65eac794b4e0e1abe897e0de8fb92f3ff0661bb1c1d1bcd09226036f",
+      "decoded_bytes": 1247,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/ci-selected-list.json"
+    },
+    "metadata/v1/tests/focus-guarded_numeric_load.stdout.log.gz": {
+      "sha256": "b56bb1f381fe6d8fe303cf93c40014baf9311b0307a3cccdd9efd016fb680931",
+      "bytes": 280,
+      "decoded_sha256": "eaf70a656dac960b1ff95038bf04372b6f2bb96181f2e818b530cbb89e73da9c",
+      "decoded_bytes": 554,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/focus-guarded_numeric_load.stdout.log"
+    },
+    "metadata/v1/tests/test-run.json.gz": {
+      "sha256": "77d497e8e9daeb0c2c03861fda5712810a5147c984b0b3d5da5ae217c721f712",
+      "bytes": 403,
+      "decoded_sha256": "53d4a26b21a466f56d1881a1add5ea816c4a9e538af3a060440c5deb5a5cb916",
+      "decoded_bytes": 634,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-tests-20261107-v1/test-run.json"
+    },
+    "metadata/v1/regressions/run.py.gz": {
+      "sha256": "40138f380f77adf5b9f0ab1a3d7a11e7f41beaee2e444945c2432e6ab155ce83",
+      "bytes": 1426,
+      "decoded_sha256": "e94108c526733fed10f6130a64c6d05862d5bce4c74b5adbed92b4c8b921d565",
+      "decoded_bytes": 3565,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-regressions-20261107-v1/run.py"
+    },
+    "metadata/v1/regressions/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-regressions-20261107-v1/one-kib-comparison.json"
+    },
+    "metadata/v1/regressions/one-kib-run.json.gz": {
+      "sha256": "cd8e9cafb2b3ab56f767867c50468fe1b4516b8d89046838394831f77d916a99",
+      "bytes": 718,
+      "decoded_sha256": "a9a00a831c1677bd812b4ae77f47b7cd726cb259607dfb03f7a3360a4ed9c07b",
+      "decoded_bytes": 3255,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-regressions-20261107-v1/one-kib-run.json"
+    },
+    "metadata/v1/regressions/scalar-run.json.gz": {
+      "sha256": "17da7d13cc266fff477f192187c5026381e7e88507f89bea960693b6bd995c95",
+      "bytes": 1706,
+      "decoded_sha256": "12d933ec42a030f0761b95a3a84a72aaf10727619a1ff446790586306d169974",
+      "decoded_bytes": 39480,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-regressions-20261107-v1/scalar-run.json"
+    },
+    "metadata/v1/regressions/one-kib.build.json.gz": {
+      "sha256": "ce4bfb4afa8c36448ee08fcc9d6add2d6de85b82abe686ec48e7b567faaf1997",
+      "bytes": 1219,
+      "decoded_sha256": "6cc6f89fe2b073a18d406e3a6a601d12d2fae62885bc94344539e93a6bb85a0a",
+      "decoded_bytes": 4607,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-regressions-20261107-v1/one-kib.build.json"
+    },
+    "metadata/v1/regressions/scalar.build.json.gz": {
+      "sha256": "c78349b8db464c2f83abc27d4425a6119253ca642ed21ab539f9b2b00b15dbd9",
+      "bytes": 818,
+      "decoded_sha256": "e2232f81890b6e34199ff4fa379e54bace9cea00298f198e0def3d2d021e2579",
+      "decoded_bytes": 2408,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-regressions-20261107-v1/scalar.build.json"
+    },
+    "metadata/v1/regressions/scalar-comparison.json.gz": {
+      "sha256": "8a00f7913bd5fa3c9853918a18321386f04e6e27c093c175589c08d0367a4bcb",
+      "bytes": 826,
+      "decoded_sha256": "7bb2b53dfcba3029e86f74a4c51dd2314f8237c29817bc55f0521001aa6fc5c0",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-regressions-20261107-v1/scalar-comparison.json"
+    },
+    "metadata/v1/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/after-4/runner.rs"
+    },
+    "metadata/v1/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "b14377f1bd61044981e2d699344de39319676d101193065836d19198c121ad25",
+      "bytes": 2083,
+      "decoded_sha256": "dbe5a058a7a29cb4208501021fde594e71ccf225907740289bb9f0f0b3c70587",
+      "decoded_bytes": 13191,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/after-4/native-link-audit.json"
+    },
+    "metadata/v1/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "6baf0669f243c803a2e3c51d3ee90011e866d23c40768891c4721dcba8756f2b",
+      "bytes": 3387,
+      "decoded_sha256": "1c830f2729d24eaa057f117c79ef00a0acd053748b40f89cf5febce63efdb3e0",
+      "decoded_bytes": 17597,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/after-4/runner-aot.build.json"
+    },
+    "metadata/v1/runners/after-4/edge-run.json.gz": {
+      "sha256": "d46b6f7b900469d1d143f6741ad2237971804c39f30df2e15afabb37951c16ce",
+      "bytes": 696,
+      "decoded_sha256": "c5476ac7fb9568aa461f7526a778b0919f3a1307d0e5f038ba6a99e5f7758bb7",
+      "decoded_bytes": 2874,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/after-4/edge-run.json"
+    },
+    "metadata/v1/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "0d660681abbfb620b7bdeab2f50f52e11b9f10c6e5b50a188735ca3a017c0ec9",
+      "bytes": 5477,
+      "decoded_sha256": "bd7bd36451571dcaf57017dea5bd1aacf5c4ec6eec410b22202e5e6dc8fc8e29",
+      "decoded_bytes": 63726,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/after-4/edges/edge-fixtures.json"
+    },
+    "metadata/v1/runners/after-4/build/metadata.json.gz": {
+      "sha256": "04d0f40cfe6f07090339c76e8f7a89e0f840e44132581694bfee8f4913a0f106",
+      "bytes": 139997,
+      "decoded_sha256": "1892e12c8985aec5d3a55187e9f4abdd2b6ce09d188dc793dc804cc1ce2f1d33",
+      "decoded_bytes": 2734095,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/after-4/build/metadata.json"
+    },
+    "metadata/v1/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/after-4/build/source.mec"
+    },
+    "metadata/v1/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/reuse-4/runner.rs"
+    },
+    "metadata/v1/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "d605685d094b9d8957b3ff6ff6399eb617a0bb92e73f139e48e17427487fb307",
+      "bytes": 2054,
+      "decoded_sha256": "b6a36a032e5b3c6bff596cddc5c224e2c39028c52ef01c631874919a6cbe1b5a",
+      "decoded_bytes": 12867,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/reuse-4/native-link-audit.json"
+    },
+    "metadata/v1/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "9e9f9f1adff048ebfab7259306ea8da4344d760ab03a0c4aba601c6c55c3b6ff",
+      "bytes": 3383,
+      "decoded_sha256": "54205084e326791143b338a14960e505776110033cf0dc56c6621aa721dddd00",
+      "decoded_bytes": 17596,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/reuse-4/runner-aot.build.json"
+    },
+    "metadata/v1/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "4054fc318cebe4b790d3b70975c45d91e004a60d239f954366f6072f4300b272",
+      "bytes": 695,
+      "decoded_sha256": "684ea645c196bf8de85f0ac58f52133c19ad146d5797ee43638781ae8be9d548",
+      "decoded_bytes": 2873,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/reuse-4/edge-run.json"
+    },
+    "metadata/v1/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "190d82c766b39d02860624421bb50e13580e2de213a5ee837a45319def83139d",
+      "bytes": 5432,
+      "decoded_sha256": "101a783d53ea3056749c778b0a1397c53e4ab83be0fe7a312d7592d71a34ab93",
+      "decoded_bytes": 63658,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/reuse-4/edges/edge-fixtures.json"
+    },
+    "metadata/v1/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "332b68cce3b674155c5cfef31b55ca0b30cbef474188f4c5cba5cc5a1b059e5f",
+      "bytes": 138049,
+      "decoded_sha256": "2f78c02b0feeb48880641867f3a9051c20c07b1b5375547b753e51c16060e71a",
+      "decoded_bytes": 2699189,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/reuse-4/build/metadata.json"
+    },
+    "metadata/v1/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/reuse-4/build/source.mec"
+    },
+    "metadata/v1/runners/build-initial-runners.py.gz": {
+      "sha256": "fd218eded589be1b3c6d607db2238d85836b2d498a384e9804418f17ad85cde1",
+      "bytes": 1378,
+      "decoded_sha256": "01ff90f34700b4889472531d01e4fa41e9d120c68f02e83c9476046ce18b96ab",
+      "decoded_bytes": 3330,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/build-initial-runners.py"
+    },
+    "metadata/v1/runners/native-code-comparison.json.gz": {
+      "sha256": "a789a286f822b45a40f3ddbc1c3aa390a5f2944cf4b8a1b9727fb339b81d3c3c",
+      "bytes": 2578,
+      "decoded_sha256": "1874976b39a90ee40bc37e6d6c8259494d5505142bcfbc9fcecee78380e5c0a8",
+      "decoded_bytes": 18766,
+      "retained_source": "/private/tmp/mech-related-parent-frame-runtime-counts-runners-20261107-v1/native-code-comparison.json"
+    },
+    "metadata-post-json-profile/summary.json.gz": {
+      "sha256": "0a45fe6ffe236f7713b49e990b591f7d6e1a6210daebbfb194d9ca9012c40529",
+      "bytes": 23605,
+      "decoded_sha256": "5beb63d4159dcba53953496ed463d61e338e20d50f046087f90b1fc0bb981920",
+      "decoded_bytes": 292007,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/summary.json"
+    },
+    "metadata-post-json-profile/allocation_profile.rs.gz": {
+      "sha256": "745f5d5f37efc72d1be87d27d7f58bc21dc8a549961bfd44ac583dacf4b53495",
+      "bytes": 1849,
+      "decoded_sha256": "5575cfe93d631bb894ae84447755211a8d71ccc25e1b4c4199b0ed21de781530",
+      "decoded_bytes": 4950,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/allocation_profile.rs"
+    },
+    "metadata-post-json-profile/build-and-profile.py.gz": {
+      "sha256": "86893b8f8985474293a77ff68ac6d66ff97caa5a92c235cbeb7d3cfc336ae59c",
+      "bytes": 1393,
+      "decoded_sha256": "1ab9e01a1ad897a3453d7b0e440711739f7fca5123e1a8e7064f446ae83def96",
+      "decoded_bytes": 3400,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/build-and-profile.py"
+    },
+    "metadata-post-json-profile/analyze.py.gz": {
+      "sha256": "c37f0765996df6a3e6361499b98688aab96d10993609196e5ce7496777713189",
+      "bytes": 2360,
+      "decoded_sha256": "cac0d20cb7ca6b3ce7d7e78e4a9a1c1f1891ab57aebf4ca4f46cad07ad3cce35",
+      "decoded_bytes": 5515,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/analyze.py"
+    },
+    "metadata-post-json-profile/255/symbols.txt.gz": {
+      "sha256": "4e2a4f52912243dba3cfa3ea44c6aa29394f3e10cfae5a72a63a6d84682214a9",
+      "bytes": 239807,
+      "decoded_sha256": "c501e1c6ddf46be3ab57c154082cb83483d428c6218bf46072cc35de9d3058e5",
+      "decoded_bytes": 2848945,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/255/symbols.txt"
+    },
+    "metadata-post-json-profile/255/summary.json.gz": {
+      "sha256": "8b6f1c851931bee73c745ea59c45cfe572bc52b616a984749059ef4add738c88",
+      "bytes": 22526,
+      "decoded_sha256": "845815329bc0fea95afcbae6d571f7ddb4c7cf130205f506f29ed8846732454b",
+      "decoded_bytes": 272039,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/255/summary.json"
+    },
+    "metadata-post-json-profile/255/allocations.jsonl.gz": {
+      "sha256": "75cfa8d08232cd7af5580fae61f4b2e351bafa1f243da39f04252e3876af222d",
+      "bytes": 40649,
+      "decoded_sha256": "5ee32b571109585072b6ea3153b9d9002cc1ebbd9763175c1bd12739531425b3",
+      "decoded_bytes": 1168143,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/255/allocations.jsonl"
+    },
+    "metadata-post-json-profile/255/profile-run.json.gz": {
+      "sha256": "3051e3200b37b6a5412a8cdf7e4bb27e60dee51c3fa11a6fdf69f5396db61626",
+      "bytes": 784,
+      "decoded_sha256": "25960887c915a9afeba5b11203d0564776c765d10f2bfa94af12fdc2d0df2201",
+      "decoded_bytes": 1798,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/255/profile-run.json"
+    },
+    "metadata-post-json-profile/255/runner-profile.build.json.gz": {
+      "sha256": "98f726de5fe30b413ed42ed1c7a72f6573b061c4b9b64a4ce0674e9da72e0392",
+      "bytes": 3402,
+      "decoded_sha256": "99475928f3f438f9a8f2d5d11aec528c2966e76f1f25edbd72df3fcf8f6b0e87",
+      "decoded_bytes": 17673,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/255/runner-profile.build.json"
+    },
+    "metadata-post-json-profile/255/runner.rs.gz": {
+      "sha256": "64f048e9944d8d0fe52f7f1cc7c30d3cf36704aad1fb6d666250bd9dca8987a0",
+      "bytes": 3349,
+      "decoded_sha256": "a3c15e315139b816eb7ad918707f6b0ebf7f615ef084aca12a08258d3aeff3f7",
+      "decoded_bytes": 9338,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/255/runner.rs"
+    },
+    "metadata-post-json-profile/255/host-build-run.json.gz": {
+      "sha256": "3fdb5e484dea675700655492d368be0c3ee1b0a0158fd38c771afbc57dbdb35f",
+      "bytes": 793,
+      "decoded_sha256": "def6942ec732518ecd61a88b5167bd2f68e486ceddcb109c61a99fae6c58164b",
+      "decoded_bytes": 2791,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/255/host-build-run.json"
+    },
+    "metadata-post-json-profile/255/audit-run.json.gz": {
+      "sha256": "354983290e937fd49d85b2517b0cccc791af63d9a16e00eb689a44c08052a156",
+      "bytes": 381,
+      "decoded_sha256": "fb8c96cfee54cbc7b68eaec9fd7195e5291a007d953773f95da1c203591db78d",
+      "decoded_bytes": 763,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/255/audit-run.json"
+    },
+    "metadata-post-json-profile/255/related_posts_profile.json.gz": {
+      "sha256": "6b0aa7634fdbbc10daa72b371b47cb6b8692a6b26aa5bfd83d8b2d90376d4350",
+      "bytes": 705272,
+      "decoded_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "decoded_bytes": 3328279,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/255/related_posts_profile.json"
+    },
+    "metadata-post-json-profile/255/native-link-audit.json.gz": {
+      "sha256": "e1585148024b2971e5397d029273e0ae9a616df97f8351ed7d44bfc32ebb4148",
+      "bytes": 2065,
+      "decoded_sha256": "3fe05f052d609cad96a60a0babe29c6a70da1a9caf550de39dd0622a7d209500",
+      "decoded_bytes": 12880,
+      "retained_source": "/private/tmp/mech-related-parent-frame-counts-post-json-allocation-profile-20261107-v1/255/native-link-audit.json"
+    },
+    "metrics/255/metrics-config.json.gz": {
+      "sha256": "aad5eb4cd011c1cb0c9e796c48c691425c74ed1a3897ea4e0b8a5d12e523c856",
+      "bytes": 1526,
+      "decoded_sha256": "c2eddd4ab45504ec9251c74e56510ea10527437e59383249cc0b046373af278a",
+      "decoded_bytes": 4863,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v1/metrics-config.json"
+    },
+    "metrics/255/source-pins.json.gz": {
+      "sha256": "772df844e4ddca804da4b88ad28e61a454b08ad9d6d7fe69c321e4bdeab58c6c",
+      "bytes": 526,
+      "decoded_sha256": "6f28a3cb4850e62c0ea8ae4a54c681aee88a61561d8a019d9eeab39d7cc0247b",
+      "decoded_bytes": 1478,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v1/source-pins.json"
+    },
+    "metrics/255/mech-ir255-reuse-4/runner-metrics.build.json.gz": {
+      "sha256": "0d779276965aaa5dc3fdafede7d37a0364a10fd32ed9ff10c092e5af83667a08",
+      "bytes": 3418,
+      "decoded_sha256": "78a727d81bd513955438dad7058e32cd918e36f7d468821b64da76e5d54691b3",
+      "decoded_bytes": 17720,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v1/mech-ir255-reuse-4/runner-metrics.build.json"
+    },
+    "metrics/255/mech-ir255-reuse-4/runner.rs.gz": {
+      "sha256": "deccfb0f27b75764d13c9df3c8a9157c3d8a1232137d93806c705d574ad91453",
+      "bytes": 3457,
+      "decoded_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+      "decoded_bytes": 9883,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v1/mech-ir255-reuse-4/runner.rs"
+    },
+    "metrics/255/mech-ir255-reuse-4/host-build-run.json.gz": {
+      "sha256": "813b7d04f74adde74f3d036ecf1537e2299f9d71a7be9713cf56806cbf50cbf0",
+      "bytes": 827,
+      "decoded_sha256": "968f613eff3c7bf5c6b7cab5dbb48139511208f0a6559361f257e3494a853380",
+      "decoded_bytes": 2893,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v1/mech-ir255-reuse-4/host-build-run.json"
+    },
+    "metrics/255/mech-ir255-reuse-4/audit-run.json.gz": {
+      "sha256": "be8db83f0f714249edda6a2a1acbe56ebef398623403736e7f638273fcc70e8d",
+      "bytes": 418,
+      "decoded_sha256": "a3402959037653bb3d90b9ae43839247b96ca7e11b5edec8d9fee9195caac942",
+      "decoded_bytes": 835,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v1/mech-ir255-reuse-4/audit-run.json"
+    },
+    "metrics/255/mech-ir255-reuse-4/native-link-audit.json.gz": {
+      "sha256": "1b3a615fbb258140fea01f6dd382f3e2c8273239e0bfe7279dee67d9dae5c651",
+      "bytes": 2086,
+      "decoded_sha256": "2a88514a0d9db12ab50fc5ba69fb11710ba67079f5e7fd8cd949c62ebda6e3b0",
+      "decoded_bytes": 12886,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v1/mech-ir255-reuse-4/native-link-audit.json"
+    },
+    "metrics/257/metrics-config.json.gz": {
+      "sha256": "fd8f10457742aa976716191815d71d4ade71a3997956aaf15c6eef966147df05",
+      "bytes": 1484,
+      "decoded_sha256": "71271c6ff72f82837a52d0bbbc02bd73c48d49d79494fbacfb4c94d1cfd00302",
+      "decoded_bytes": 3628,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v2/metrics-config.json"
+    },
+    "metrics/257/source-pins.json.gz": {
+      "sha256": "a2f6b6c2bc2c5391f37cce669a4ef7b11b035b792fe34eb5698cc3e9a8d963e9",
+      "bytes": 410,
+      "decoded_sha256": "51d47ff9b2e6c7307a7be0aa87f3bf30eafce888e49e69a9a8d19c587a45b554",
+      "decoded_bytes": 739,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v2/source-pins.json"
+    },
+    "metrics/257/mech-ir257-reuse-4/runner-metrics.build.json.gz": {
+      "sha256": "9b374c0834bbe6db3e0adb4e2b1976f0b87b3bf59f4e234829433442cf9f150e",
+      "bytes": 3405,
+      "decoded_sha256": "b6ad1d64e7d2a786f0529263942759c90cab5f1bb71e01c7de6487b5dbf594d6",
+      "decoded_bytes": 17657,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v2/mech-ir257-reuse-4/runner-metrics.build.json"
+    },
+    "metrics/257/mech-ir257-reuse-4/runner.rs.gz": {
+      "sha256": "deccfb0f27b75764d13c9df3c8a9157c3d8a1232137d93806c705d574ad91453",
+      "bytes": 3457,
+      "decoded_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+      "decoded_bytes": 9883,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v2/mech-ir257-reuse-4/runner.rs"
+    },
+    "metrics/257/mech-ir257-reuse-4/host-build-run.json.gz": {
+      "sha256": "d43dd28930a69954bd7f54cfe11dc805f100219478765e46e41f2bd2db878240",
+      "bytes": 826,
+      "decoded_sha256": "bd46ce7e85186ad2919fa5fe1b7e936fb40e35a3e9cb486d3b01705ff506592f",
+      "decoded_bytes": 2886,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v2/mech-ir257-reuse-4/host-build-run.json"
+    },
+    "metrics/257/mech-ir257-reuse-4/audit-run.json.gz": {
+      "sha256": "55a1bb007171d0b43f27b26d8e7336229d918271027720c464c52c27db037ece",
+      "bytes": 416,
+      "decoded_sha256": "b6be060f1a74db5b167af71906ff91d19517a5cc8c20bb0277e64a16e5adbeec",
+      "decoded_bytes": 832,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v2/mech-ir257-reuse-4/audit-run.json"
+    },
+    "metrics/257/mech-ir257-reuse-4/native-link-audit.json.gz": {
+      "sha256": "5c713713be842a20f1f53ca8b67a7a84fa415c285e27ca06bae73d3037dcd86a",
+      "bytes": 2092,
+      "decoded_sha256": "5842efed24082b785a92519b4a6321158e6776e6fd2df2c0ca01792445e4e011",
+      "decoded_bytes": 12883,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-metrics-20261107-v2/mech-ir257-reuse-4/native-link-audit.json"
+    },
+    "recipes/mech-related-boolean-loops-and-parent-counts-report-20261107.py": {
+      "sha256": "1956ea23f577990ebf7022c905367c3a13a8fa1c0a65dced33150dbbc3fc23fb",
+      "bytes": 7723,
+      "decoded_sha256": "1956ea23f577990ebf7022c905367c3a13a8fa1c0a65dced33150dbbc3fc23fb",
+      "decoded_bytes": 7723,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-report-20261107.py"
+    },
+    "recipes/mech-related-boolean-loops-and-parent-counts-prepare-cohort-20261107.py": {
+      "sha256": "3fc2a971507c4ca25b19a71a6ab622950313d4dba9ce11f0f70377f2d95ad5a6",
+      "bytes": 4920,
+      "decoded_sha256": "3fc2a971507c4ca25b19a71a6ab622950313d4dba9ce11f0f70377f2d95ad5a6",
+      "decoded_bytes": 4920,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-prepare-cohort-20261107.py"
+    },
+    "cohort/resources-run.json": {
+      "sha256": "1340d99697fc24556c7dd610e98a2fe8fd794d1e23c35c167c40e4caf456e324",
+      "bytes": 800,
+      "decoded_sha256": "1340d99697fc24556c7dd610e98a2fe8fd794d1e23c35c167c40e4caf456e324",
+      "decoded_bytes": 800,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-cohort-20261107-v2/resources-run.json"
+    },
+    "cohort/latency-start-gate.json": {
+      "sha256": "e8e94fd019c1e77c96a92c1f39acee275bce227b07ee862edd77708be4a549fb",
+      "bytes": 1041,
+      "decoded_sha256": "e8e94fd019c1e77c96a92c1f39acee275bce227b07ee862edd77708be4a549fb",
+      "decoded_bytes": 1041,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-cohort-20261107-v2/latency-start-gate.json",
+      "unredacted_source_sha256": "400f3664ee7c3989488e914b1ffe624a44b1244fb3043a0257ea340edffdee8b"
+    },
+    "cohort/run-cohorts.py": {
+      "sha256": "aadf2bcbdeb2d890b922e5fea54bac7f63ab4358666801cce9c13a3a8bfa71aa",
+      "bytes": 5542,
+      "decoded_sha256": "aadf2bcbdeb2d890b922e5fea54bac7f63ab4358666801cce9c13a3a8bfa71aa",
+      "decoded_bytes": 5542,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-cohort-20261107-v2/run-cohorts.py"
+    },
+    "cohort/latency-config.json": {
+      "sha256": "cb47daa9aef3ebf7995a006c3db30ee7761908fa9837fcb31e241191861afc05",
+      "bytes": 14179,
+      "decoded_sha256": "cb47daa9aef3ebf7995a006c3db30ee7761908fa9837fcb31e241191861afc05",
+      "decoded_bytes": 14179,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-cohort-20261107-v2/latency-config.json"
+    },
+    "cohort/sizes-run.json": {
+      "sha256": "3ce2b35d0a8645c58a0f93b05fc9ae271b29b782f11201e3ec03937968b5bdc6",
+      "bytes": 491,
+      "decoded_sha256": "3ce2b35d0a8645c58a0f93b05fc9ae271b29b782f11201e3ec03937968b5bdc6",
+      "decoded_bytes": 491,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-cohort-20261107-v2/sizes-run.json"
+    },
+    "cohort/native-text-proofs.json": {
+      "sha256": "b8083cc0a154c44a284e746c4c72dffb3a4e1006c396878e9753153654982a61",
+      "bytes": 740,
+      "decoded_sha256": "b8083cc0a154c44a284e746c4c72dffb3a4e1006c396878e9753153654982a61",
+      "decoded_bytes": 740,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-cohort-20261107-v2/native-text-proofs.json"
+    },
+    "cohort/latency-run.json": {
+      "sha256": "a954c92c60cecaed1be247353b1ba83343c6e8836179a2751f31253e8bd9efd0",
+      "bytes": 778,
+      "decoded_sha256": "a954c92c60cecaed1be247353b1ba83343c6e8836179a2751f31253e8bd9efd0",
+      "decoded_bytes": 778,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-cohort-20261107-v2/latency-run.json"
+    },
+    "cohort/resources-config.json": {
+      "sha256": "650a82bde23239ff1c2d639d57800b6c295aae7a92ecc86e09ca706c18435b6f",
+      "bytes": 15903,
+      "decoded_sha256": "650a82bde23239ff1c2d639d57800b6c295aae7a92ecc86e09ca706c18435b6f",
+      "decoded_bytes": 15903,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-cohort-20261107-v2/resources-config.json"
+    },
+    "cohort/resources-start-gate.json": {
+      "sha256": "ff22020ab3c16978a142d3ead56beac6113bda3b55bcc176715132ae08db3a30",
+      "bytes": 512,
+      "decoded_sha256": "ff22020ab3c16978a142d3ead56beac6113bda3b55bcc176715132ae08db3a30",
+      "decoded_bytes": 512,
+      "retained_source": "/private/tmp/mech-related-boolean-loops-and-parent-counts-cohort-20261107-v2/resources-start-gate.json",
+      "unredacted_source_sha256": "7e08eebbf1544cf4538364018991ddb31f9a21542e3972116965c4d24b952643"
+    },
+    "README.md": {
+      "sha256": "da49e65a72d3aeba5a7e46966a9cb8b86b6185f125264675a8e1c03e0419cd4a",
+      "bytes": 3696,
+      "decoded_sha256": "da49e65a72d3aeba5a7e46966a9cb8b86b6185f125264675a8e1c03e0419cd4a",
+      "decoded_bytes": 3696
+    },
+    "verify.py": {
+      "sha256": "7f1ab0ad7369913cc0871605a25f32371ab9a63df716ccdba2428303fac814e8",
+      "bytes": 1521,
+      "decoded_sha256": "7f1ab0ad7369913cc0871605a25f32371ab9a63df716ccdba2428303fac814e8",
+      "decoded_bytes": 1521
+    }
+  }
+}

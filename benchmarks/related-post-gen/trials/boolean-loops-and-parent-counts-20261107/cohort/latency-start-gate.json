@@ -1,0 +1,29 @@
+{
+  "quiet": true,
+  "qualification": {
+    "parent-frame-runtime-counts": {
+      "GPU_passed": 887,
+      "inherited_failures": 2,
+      "new_failures": 0,
+      "CI_executed": 392,
+      "controls_nontiming_exact": 133,
+      "Rust_edge_outputs_exact": 62
+    },
+    "boolean-loop-integration": {
+      "GPU_passed": 888,
+      "inherited_failures": 2,
+      "new_failures": 0,
+      "CI_executed": 393,
+      "controls_nontiming_exact": 133,
+      "Rust_edge_outputs_exact": 62
+    }
+  },
+  "seed": 990257,
+  "samples": 31,
+  "variants": 10,
+  "primary_boundary": "continuous post-JSON including setup and workers",
+  "secondary_boundary": "fresh launch through exit",
+  "process_snapshot_sha256": "3451a92b91586a6ca64e4b05dba60ce85d6cdaa1e24abee1b62a44388e4df20a",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-boolean-loops-and-parent-counts-cohort-20261107-v2/latency-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation application arguments remain local; all gate predicates are unchanged."
+}

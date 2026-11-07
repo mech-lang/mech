@@ -1,0 +1,22 @@
+[
+  {
+    "variant": "after-4",
+    "IR255_native_text_equals_IR252": true,
+    "native_text_bytes": 876136,
+    "sha256": "618fcf7dbc731d54798499dc65c297ce06f6827fca9f87d4a34559b2089c7e88"
+  },
+  {
+    "variant": "reuse-4",
+    "IR255_native_text_equals_IR252": true,
+    "native_text_bytes": 845744,
+    "sha256": "ee48f476919bc4d8f3e3f4dcf75eae76f4d79a41589c4d1651e6c159b62145ef"
+  },
+  {
+    "variant": "reuse-4",
+    "header": 1282,
+    "IR257_hot_query_equals_IR252": true,
+    "function_bytes": 27552,
+    "sha256": "b9d6ead8f1481d2ca7cb2ad19943cd27ebc7dca8afb127fa6ffa1ba89ca173ee",
+    "limitation": "New Boolean facts remove branches in the root and fallback numeric functions, but no new branch in this current hot query."
+  }
+]
