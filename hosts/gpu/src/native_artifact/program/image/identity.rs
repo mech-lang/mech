@@ -443,7 +443,9 @@ fn selected_template(
 // combining flat opaque forwarding with numeric content operations.
 // IR263 discovers current child windows at implicit one-based reads, including
 // the zero-offset interval. Forward selection requires a new read or branch fact.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 263;
+// IR264 proves copied interval bounds unchanged at every ordinary backedge,
+// independently of the proposed window, instead of rejecting all carrier writes.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 264;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

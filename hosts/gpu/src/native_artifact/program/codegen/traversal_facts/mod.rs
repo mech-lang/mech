@@ -334,6 +334,9 @@ pub(super) struct Proof {
     pub(super) predicates: BTreeMap<usize, bool>,
     pub(super) flat_arrays: BTreeSet<usize>,
     checks: BTreeSet<(usize, Check)>,
+    // This traversal's ordinary, post-copy backedge identities. It is not
+    // combined by extend, which may aggregate facts from different scopes.
+    unchanged_at_latch: BTreeSet<usize>,
 }
 impl Proof {
     pub(super) fn extend(&mut self, other: Self) {

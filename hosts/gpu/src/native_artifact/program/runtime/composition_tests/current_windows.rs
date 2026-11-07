@@ -53,6 +53,41 @@ fn changing_bound(source: &str) -> String {
         )
 }
 
+fn carried_forward_sources() -> [(String, usize); 2] {
+    direct_forward_sources().map(|(source, views)| {
+        let carried = changing_bound(&source)
+            .replace("    | k >= 8u64 -> :Done(k, best, item)\n", "")
+            .replace("remaining + 2u64", "remaining");
+        (carried, views)
+    })
+}
+
+#[test]
+fn numeric_forward_windows_preserve_bounds_through_invariant_carrier_copies() {
+    for (source, views) in carried_forward_sources() {
+        for artifact in artifacts(&source) {
+            let object = crate::native_artifact::emit_program_object_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                NativeProgramLimitMode::NoLimits.compilation(),
+            )
+            .unwrap();
+            let metadata = object.metadata();
+            assert!(
+                [
+                    "compiled_readonly_numeric_loops",
+                    "compiled_numeric_write_loops"
+                ]
+                .into_iter()
+                .flat_map(|key| metadata[key].as_array().unwrap())
+                .flat_map(|region| region["guarded_loop_windows"].as_array().unwrap())
+                .any(|window| window["read_sites"].as_array().unwrap().len() >= views),
+                "an unchanged bound copied through the carrier must retain its gate"
+            );
+        }
+    }
+}
+
 #[test]
 fn numeric_forward_windows_discover_implicit_one_based_reads() {
     for (source, views) in direct_forward_sources() {

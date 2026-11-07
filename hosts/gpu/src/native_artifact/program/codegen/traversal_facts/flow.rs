@@ -55,7 +55,7 @@ pub(in crate::native_artifact::program::codegen) fn with_windows<'a>(
         &[],
         None,
         &Queries::new(),
-        step,
+        &step,
     )
 }
 
@@ -66,7 +66,7 @@ pub(in crate::native_artifact::program::codegen) fn with_checks<'a>(
     checks: &Queries,
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
-    analyze(code, scope, slots, None, &[], &[], None, checks, step)
+    analyze(code, scope, slots, None, &[], &[], None, checks, &step)
 }
 
 pub(in crate::native_artifact::program::codegen) fn with_captured_windows<'a>(
@@ -85,7 +85,7 @@ pub(in crate::native_artifact::program::codegen) fn with_captured_windows<'a>(
         captures,
         None,
         &Queries::new(),
-        step,
+        &step,
     )?;
     proof
         .flat_arrays
@@ -113,7 +113,7 @@ pub(in crate::native_artifact::program::codegen) fn with_completion<'a>(
         &[],
         Some(completion),
         &Queries::new(),
-        step,
+        &step,
     )
 }
 
@@ -126,7 +126,7 @@ fn analyze<'a>(
     captures: &[CapturedWindow],
     completion: Option<completion::Candidate>,
     checks: &Queries,
-    step: impl Fn(usize) -> Option<Step<'a>>,
+    step: &impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
     let ordered = scope.order(code)?;
     let (mut terms, partitions) = entry::states(
@@ -160,11 +160,37 @@ fn analyze<'a>(
         }
         written.extend(current);
     }
-    // A gate is checked once at activation. A capture changed on a latch
-    // cannot inherit that gate on later visits, even if its home is reused.
-    if windows.iter().any(|window| written.contains(&window.count)) {
+    // Prove recurrence independently of the proposed windows. An unchanged
+    // value may be copied through its carrier; a changed value cannot inherit
+    // the activation's gate. The recursive analysis has no windows, so depth
+    // is bounded at two and its joins cover all ordinary reachable backedges.
+    let ordinary_unchanged = if windows.is_empty() {
+        None
+    } else {
+        Some(
+            analyze(
+                code,
+                scope,
+                slots,
+                tag,
+                &[],
+                &[],
+                None,
+                &Queries::new(),
+                step,
+            )?
+            .unchanged_at_latch,
+        )
+    };
+    if windows.iter().any(|window| {
+        written.contains(&window.count)
+            && !ordinary_unchanged
+                .as_ref()
+                .is_some_and(|words| words.contains(&window.count))
+    }) {
         return None;
     }
+    let mut unchanged_at_latch: Option<BTreeSet<usize>> = None;
     for site in ordered {
         let mut states = incoming.remove(&site)?;
         if states.iter().all(Option::is_none) {
@@ -247,8 +273,7 @@ fn analyze<'a>(
                             &terms,
                             state.read(operands[0].get() as usize)?,
                             state.read(operands[1].get() as usize)?,
-                        ) && !written.contains(&window.count)
-                        {
+                        ) {
                             proof.windows.insert(window);
                         }
                     }
@@ -330,7 +355,6 @@ fn analyze<'a>(
                         .read(index as usize)
                         .and_then(|index| super::windows::read_base(&terms, index))
                         && let Some(window) = state.discover_window(&terms, base, length)
-                        && !written.contains(&window.count)
                     {
                         proof.windows.insert(window);
                     }
@@ -377,6 +401,20 @@ fn analyze<'a>(
             terms.recording = Some(recording);
         }
         if site == scope.latch {
+            for state in states.iter().flatten() {
+                let unchanged = state
+                    .words
+                    .iter()
+                    .filter_map(|(&word, &value)| {
+                        (terms.terms[value] == Expr::Initial(word)).then_some(word)
+                    })
+                    .collect::<BTreeSet<_>>();
+                if let Some(words) = &mut unchanged_at_latch {
+                    words.retain(|word| unchanged.contains(word));
+                } else {
+                    unchanged_at_latch = Some(unchanged);
+                }
+            }
             continue;
         }
         let successors = scope::successors(block.terminator())?;
@@ -454,6 +492,13 @@ fn analyze<'a>(
             proof.successors.insert(site, reached[0]);
         }
     }
+    proof.unchanged_at_latch = unchanged_at_latch.unwrap_or_default();
+    let unchanged = ordinary_unchanged
+        .as_ref()
+        .unwrap_or(&proof.unchanged_at_latch);
+    proof
+        .windows
+        .retain(|window| !written.contains(&window.count) || unchanged.contains(&window.count));
     proof.completed = completion.and_then(completion::Collector::finish);
     if proof.completed.is_some()
         && let Some(recording) = terms.recording.take()
