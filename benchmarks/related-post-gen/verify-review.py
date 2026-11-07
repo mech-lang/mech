@@ -561,6 +561,112 @@ if experiment.exists():
         expected = json.loads((experiment / 'reuse-4-native-link-audit.json').read_text()) if label != 'before' else json.loads((evidence / 'child-entry-facts/ir240-reuse-4-native-link-audit.json').read_text())
         assert audit['normalized_text_sha256'] == expected['normalized_text_sha256'] == proof[label]['normalized_text_sha256']
 
+
+# Current IR242 promotion and the independently measured IR243 ablation.
+current = evidence / 'conjoined-windows-and-shared-certificates'
+if current.exists():
+    newest = json.loads((current/'summary.json').read_text())
+    assert newest['compiler'] == '4cc266ae0d05c69432a4c15ffe99d5e586685647'
+    assert newest['identity'] == 'IR242/work115/ABI41/image9'
+    assert newest['incoming_973'] == '65034db9ca9da4133355108e85784703cde7592b'
+    assert newest['selected_source'] == 'IR242 ordered-combinadic mask reuse/four workers'
+    assert not newest['goal_complete'] and not newest['unselected_IR243']['selected']
+    source242 = json.loads((current/'IR242-source-inventory.json').read_text())['files']
+    assert len(source242) == 2468
+    verify_git_inventory(newest['compiler'], source242)
+    assert source242 == json.loads(integration.read_text())['files']
+    latency = json.loads(gzip.decompress((current/'randomized.json.gz').read_bytes()))
+    resource = json.loads(gzip.decompress((current/'resources.json.gz').read_bytes()))
+    for report, count, seed in [(latency,372,990243),(resource,91,9902437)]:
+        assert len(report['samples']) == count
+        assert all(row['exit']==0 and row['exact_rust_output'] for row in report['samples'])
+        assert report['execution_order']['seed'] == seed
+    by_variant = {}
+    for row in latency['samples']:
+        by_variant.setdefault(row['variant'],{})[row['sample']] = row
+    import statistics
+    for label, expected in newest['paired'].items():
+        variant, parent = label.split(' vs ')
+        for metric, evidence_pair in expected.items():
+            delta = [by_variant[variant][i][metric]-by_variant[parent][i][metric]
+                     for i in range(31)]
+            assert evidence_pair['wins'] == sum(x<0 for x in delta)
+            assert evidence_pair['median_paired_delta_seconds'] == statistics.median(delta)
+    paired = newest['paired']['mech-ir242-reuse-4 vs mech-ir238-original-4']
+    assert paired['post_json_seconds']['wins'] == 29
+    assert paired['wall_seconds']['wins'] == 24
+    selected = json.loads((current/'selected-speed-checkpoint.json').read_text())
+    assert selected['timing'] == latency['summary']['mech-ir242-reuse-4']
+    assert selected['resources'] == resource['summary']['mech-ir242-reuse-4-instrumented']
+    assert selected['timing']['median_post_json_seconds'] == 0.002839
+    assert selected['matched_reference'] == latency['matched_native_reference']
+    assert selected['whole_process_reference'] == latency['whole_process_reference']
+    for prefix in ['IR242','IR243']:
+        tests = json.loads((current/f'{prefix}-tests-test-run.json').read_text())
+        assert tests['expected_failures_exact'] and len(tests['failed_tests']) == 2
+        assert '863 passed' in tests['summary'][0]
+        ci = json.loads((current/f'{prefix}-tests-ci-selected-inventory-audit.json').read_text())
+        assert ci['actually_executed_and_passed'] == 368
+    def raw_controls(path):
+        data = json.loads(path.read_text())['stdout']
+        return [{k:v for k,v in json.loads(line).items()
+                 if k not in ('seconds','seconds_per_evaluation')}
+                for line in data.splitlines() if line.startswith('{')]
+    physical = {'allocation_requests_per_100','requested_bytes_per_100',
+                'allocation_requests','requested_bytes'}
+    for family,count in [('scalar',128),('one-kib',5)]:
+        parent = raw_controls(evidence/f'child-entry-facts/ir240-regressions-{family}-run.json')
+        rows242 = raw_controls(current/f'IR242-controls-{family}-run.json')
+        rows243 = raw_controls(current/f'IR243-controls-{family}-run.json')
+        assert len(parent)==len(rows242)==len(rows243)==count
+        assert rows242 == parent
+        for before,after in zip(rows242,rows243):
+            assert {k:v for k,v in before.items() if k not in physical} == {
+                k:v for k,v in after.items() if k not in physical}
+            assert all(after[k] <= before[k] for k in physical & before.keys())
+    fixtures = list(current.glob('IR242-edges-*.json'))
+    assert len(fixtures)==18
+    for fixture in fixtures:
+        rows=json.loads(fixture.read_text())
+        assert len(rows)==31
+        assert all(row['exit']==0 and row.get('exact_rust_output',
+                   row.get('exact_expected_output',False)) for row in rows)
+    for family in ['budget','compact-budget','mask-budget']:
+        checks=json.loads((current/f'IR242-{family}__summary.json').read_text())
+        assert checks['all_eight_denials_exact']
+        denied=[row for row in checks['cases'] if row['case']!='success']
+        assert len(denied)==8 and all(row['denial_exact'] and len(row['results'])==3
+                                    for row in denied)
+        for loader in ['bound','independent','full-catalog']:
+            for size in ['first-10','full-5000']:
+                receipt=current/f'IR242-{family}__{loader}__success-rust-{size}-run.json'
+                assert json.loads(receipt.read_text())['exact_standard_rust_output']
+    for prefix in ['frontier-image-probe','mask-frontier-image-probe']:
+        raw=json.loads((current/f'IR242-{prefix}-run.json').read_text())
+        assert raw['exit']==0
+        check=json.loads(raw['stdout'])
+        assert check['genuine_legacy_independent_bound_and_compiled_module_accepted']
+        assert check['native_entry_never_invoked'] and len(check['forged_cases'])==8
+        assert all(row['independent_rejected'] and row['object_bound_rejected']
+                   for row in check['forged_cases'])
+    assert json.loads((current/'IR242-old-objects-summary.json').read_text())['fresh_old_objects']==2
+    runtime=json.loads((current/'IR242-runtime-summary.json').read_text())
+    assert runtime['runtime_only_full5000_exact_rust'] and runtime['generated_main_executed_unmodified']
+    assert json.loads((current/'IR242-features-scalar-compiler.json').read_text())['exit']==0
+    proto=json.loads((current/'IR243-source-inventory.json').read_text())['files']
+    overrides=json.loads((current/'IR243-source-overrides.json').read_text())
+    assert len(proto)==2468 and len(overrides)==3
+    for name,digest in proto.items():
+        if name in overrides:
+            assert hashlib.sha256((current/overrides[name]).read_bytes()).hexdigest()==digest
+        else:
+            assert source242[name]==digest
+    for ir in [242,243]:
+        for variant in ['after-4','reuse-4']:
+            audit=json.loads((current/f'IR{ir}-{variant}-native-link-audit.json').read_text())
+            old=json.loads((evidence/f'child-entry-facts/ir240-{variant}-native-link-audit.json').read_text())
+            assert audit['normalized_text_sha256']==old['normalized_text_sha256']
+
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833
 assert report['matched_native_reference']['median_seconds'] == 0.001651875

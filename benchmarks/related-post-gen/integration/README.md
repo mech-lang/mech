@@ -1,8 +1,32 @@
 # Current related-post integration targeting #973
 
-Current compiler **deebf08df690e37ddf763635d70fd25aaf0bedb4**, **IR240 / work115 / ABI41 / image9**, integrates #973 through **54280db43e2d26e2554ff2651f24e929e11571c4**. PR990 targets `codex/level12-compression-consolidated` (#973). IR238's canonical-schema sink change and all prior related-post compiler work are retained; IR239's Boolean branch experiment is not applied.
+## Current IR242 and selected mask reuse
 
-The newly selected speed checkpoint is **IR238, original source, four workers**. Its31-round randomized cohort measures **2.934250 ms /1.828289× fastest eligible Rust** for continuous post-JSON and **36.674708 ms /1.490249× Rust** for complete fresh launch through exit. Same-cohort Rust controls are1.604916ms and24.609792ms respectively. It beats the previous selected IR208 in31/31 processing pairs and21/31 whole-process pairs, meeting the recorded21/31 promotion threshold at both boundaries. Earlier compiler changes contribute the processing gain; schema encoding mainly improves restoration.
+Qualified compiler **4cc266ae0d05c69432a4c15ffe99d5e586685647**, **IR242 / work115 / ABI41 / image9**, integrates #973 through **65034db9ca9da4133355108e85784703cde7592b**. PR990 continues to target #973. IR239, IR241 and IR243 experiments remain unapplied.
+
+The new selected checkpoint is **IR242, ordered combinadic keys with eligibility-mask reuse, four native workers**. In31 seeded randomized rounds it measures **2.839000ms /1.769444x fastest eligible Rust** and **34.660667ms /1.501667x fastest launch-through-exit Rust**. Same-cohort selectedIR238 is2.901667ms /1.808502x and36.038667ms /1.561369x. Paired wins are **29/31 processing and24/31 whole process**, meeting the recorded21/31 gate at both boundaries. Fastest Rust references are U8/U32 at1.604459ms and U32 at23.081458ms. Every invocation computes all5000 posts; all preparation, admission, worker create/run/join and materialization stay inside continuous post-JSON.
+
+The source retains masks already built during eligibility and uses ordered combinadic keys. Unordered unique rows take the exact original CSR fallback and can be slower than their earlier subset fast path. The new DEFLATE pass leaves all four original/compact native text sections and mask-reuse text byte-identical to IR240, so no same-source compiler-pass speed gain is claimed.
+
+Selected processing requests3758 allocations /8,012,356bytes, peak live requested heap13,344,067bytes and54,878,870 instructions. Same-cohort selectedIR238 uses3758 /8,043,236bytes,13,616,166 peak and56,911,893 instructions. Selected restoration uses26,837 requests /12,830,999bytes and125,878,851 instructions. Full sizes, stack, cycles, heap, residency and footprint reports remain.
+
+Qualification: **863 GPU passes, exactly two inherited failures; all368 selected CI names execute and pass**. Core393 and Engine289 qualification is reused only for identical source and build flags. All128 scalar and five compression rows equal qualifiedIR240 in every non-timing field. There are558 exact source/loader outputs,65 identical decoded bundle files,72 total finite denials,18 finite successes,32 forged-frontier rejections, fresh same-ABI/work-policy IR240/241 Object refusals, scalar-only compilation, selected-source runtime-only first10/full5000 outputs and an unmodified generated application with success/error/denial checks. Additional selected-source budget/probe receipts include the source-specific header correction.
+
+The unselected **IR243 shared-call-certificate** prototype (2884d52b0de6eb02f9bf41c9dc89f44bf1420bbf, branch codex/related-shared-call-certificates-20261107) shares immutable authority and exact retained ports while validating fresh shapes and detaching provider contract changes. It cuts processing requests3758 to3197 but less than1% of instructions; original same-source paired wins are18/31 processing and4/31 whole process. Mask reuse wins17/31 and13/31 against its IR242 parent. **It is not applied.** Its393 Core,289 Engine,863 GPU,368 selected-name,62 fixture and133 semantic-control results remain; physical control requests/bytes never increase. Full adoption qualification is not claimed.
+
+All372 latency and91 separate resource outputs match Rust, with every first/adverse sample retained. Earlier setup attempts failed because temporary input/source files were unavailable; their receipts remain. Exact historical compressor source, bytecode, scalar fixture and original Rust hashes were recovered. No semantic counter or source-price exemptions were introduced.
+
+See evidence/conjoined-windows-and-shared-certificates/summary.json, ir242-review-status.json and ir242-243-local-archive-index.json. New lossless local archives verify3120 file records. Raw binaries stay local. Previous root/parallel profiles remain diagnostic evidence: serial preprocessing is the next target. Numeric source read lanes, exclusive write lanes and scalar banks may admit stronger alias information under the current owner/COW loan contract; calls must remain barriers and pointed-to data must retain trapping/mutability semantics.
+
+**Parity is unmet. Draft; no merge requested; hosted CI is not claimed green.**
+
+The moving #973 branch advanced again to **65436c6b01d6939b9ad9cb3d479c1020c1c16287** after this qualification. That update is pending integration; the compiler and measurements above include #973 only through65034db.
+
+## Historical IR238/240 evidence
+
+Historical IR240 compiler **deebf08df690e37ddf763635d70fd25aaf0bedb4**, **IR240 / work115 / ABI41 / image9**, integrates #973 through **54280db43e2d26e2554ff2651f24e929e11571c4**. PR990 targets `codex/level12-compression-consolidated` (#973). IR238's canonical-schema sink change and all prior related-post compiler work are retained; IR239's Boolean branch experiment is not applied.
+
+The then-selected speed checkpoint was **IR238, original source, four workers**. Its31-round randomized cohort measures **2.934250 ms /1.828289× fastest eligible Rust** for continuous post-JSON and **36.674708 ms /1.490249× Rust** for complete fresh launch through exit. Same-cohort Rust controls are1.604916ms and24.609792ms respectively. It beats the previous selected IR208 in31/31 processing pairs and21/31 whole-process pairs, meeting the recorded21/31 promotion threshold at both boundaries. Earlier compiler changes contribute the processing gain; schema encoding mainly improves restoration.
 
 IR238 original/four requests3758 processing allocations and26,944 restoration allocations, versus3858 and36,618 for the IR236 parent. Processing instructions remain effectively flat (56,881,713 versus56,854,720); restoration falls135,889,196 to129,499,282 instructions. Canonical schema and dimension children encode into a single sink; table keys reuse the exact canonical bytes already generated for sorting/deduplication. An independent preserved old encoder verifies bytes and SHA keys, including nested/dynamic/Unicode cases and table handles. Collision, ordering and foreign-handle checks remain.
 
@@ -20,11 +44,10 @@ The24-hour trend is IR197→IR238: processing3.327833→2.934250ms (−11.8%), w
 
 All first/adverse samples remain. Latency and resources are separate seeded randomized cohorts. See `ir238-review-status.json`, `ir240-review-status.json`, both evidence summaries, source inventories and lossless local archive indices. **Two inherited GPU failures remain; draft, no merge requested, hostedCI not claimed green; raw binary archives remain local.**
 
-The next checked #973 head is `65034db9ca9da4133355108e85784703cde7592b`, which advanced after IR240 qualification. Its integration is pending; none of the measurements below are attributed to that newer source.
 
 ## Unselected IR241 experiment and fresh root/parallel attribution
 
-IR241 (`8f6516cd93410c75df18648ed10b9d335ca5311b`) keeps compiler-local dirty masks for scalar-bank homes. Every entry and resumable first-change helper marks all homes dirty. A child return clears homes only while its bit is set; no mask is persisted or accepted as authority. Source work, prices, finite admission and the runtime ABI remain unchanged. This branch's active compiler remains IR240; the experiment is not applied.
+IR241 (`8f6516cd93410c75df18648ed10b9d335ca5311b`) keeps compiler-local dirty masks for scalar-bank homes. Every entry and resumable first-change helper marks all homes dirty. A child return clears homes only while its bit is set; no mask is persisted or accepted as authority. Source work, prices, finite admission and the runtime ABI remain unchanged. The active compiler at that experiment was IR240; the experiment remains unapplied.
 
 It passes861 GPU tests with the same two inherited failures,366 selected names,133 scalar/compression rows exactly equal to IR240,62 source fixtures and387 exact cohort outputs. Full AOT loader/finite/runtime adoption qualification is deliberately not claimed. In31 randomized rounds, original/four reaches2.912834ms /1.806456× fastest matched Rust and36.164791ms /1.492670× fastest full-process Rust. ParentIR240 is2.945000ms /37.042541ms in that cohort. Against selectedIR238, paired wins are22/31 processing and14/31 whole process, so IR241 stays unselected. Processing instructions fall56,993,316→55,425,746; allocations stay3758. Mask reuse is2.854667ms /1.770382× Rust, but remains unselected for its narrower unordered-input fast path. Its cycle median is adverse despite fewer instructions. All adverse and first samples remain.
 

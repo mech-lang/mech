@@ -1,12 +1,12 @@
 {
   "schema": "mech.related-post-gen.published-review-packet.v1",
   "measured_compiler": "5925a2b3a4fd4dfcca7ada541e37a69d514171f8",
-  "selected_speed_compiler": "c3a6925108ad3523f4e29022b66f1c17b92c9878",
+  "selected_speed_compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
   "original_snapshot": "2fdacb1b2b21efebfc3e6ef2ee5a01aaec9beb14",
   "original_deflate_commit": "fa65038fce11557ab159e55edf5aefc5a4e206e3",
   "target_pr": 973,
   "target_branch": "codex/level12-compression-consolidated",
-  "target_head_at_publication": "dcc09ee9e75d02e516c9be636c0af5dbba0f7c67",
+  "target_head_at_publication": "65436c6b01d6939b9ad9cb3d479c1020c1c16287",
   "compiler_files": {
     "Cargo.toml": "16aff8f30a9b0c442f2bb57548ef0b5b243eaa4e7138ead65584dda8365244d9",
     "build.rs": "e7fc859e472c830b0ebd08d265fac9db8ae6cdf284996023763137aa2a565388",
@@ -3843,8 +3843,8 @@
       "publication_generated": true
     },
     "verify-review.py": {
-      "sha256": "1d1ac7c858aff2c874d91d5e1ba858f8303dd67e672a105c6ecc3df03a99073e",
-      "bytes": 38627
+      "sha256": "c7d16694e084043c5e49cedb6f83d452d0407e7487be3c9a7723f67a407d7976",
+      "bytes": 45382
     },
     "review/native-metadata/after-4/metadata.json.gz": {
       "sha256": "6172681ef00ff2861529ff54dd9b29666bc8e923a397c9043f08a1d7b93b1e8a",
@@ -3884,16 +3884,16 @@
       "bytes": 44519
     },
     "integration/source-inventory.json": {
-      "sha256": "c0061363a0f47084765247245e3bc8641289429a1772a9df8cab1d6151f4c6ce",
-      "bytes": 313523
+      "sha256": "56ede90ea457258f8e790be3453809589596c662b0d81fcd73ec49c9761f2f9d",
+      "bytes": 313522
     },
     "integration/compiler-build.json": {
       "sha256": "81c377e73f480eb5ad3813d1b062ce2e2b24e172abaa3d2e35d24455ce08df43",
       "bytes": 78272
     },
     "integration/README.md": {
-      "sha256": "f177ac3766994120f0a44069063faaa3a13d3262c434185cbd16a6c66737c48a",
-      "bytes": 44594
+      "sha256": "f933196042d3a9c1207f3f9681e06b6328e0310cbc4c6e071892bce6ac8cd943",
+      "bytes": 48848
     },
     "integration/evidence/size-native-fuel-derived-debits-20261106.json": {
       "sha256": "3ad02f64e2500b47f6f068654b6a38baf414869a2be7eff4381e716129fb390f",
@@ -9736,8 +9736,8 @@
       "bytes": 888
     },
     "integration/.gitattributes": {
-      "sha256": "2ed3c5e9d9120701198c64d25d13122d19b2cad836f1fff9eaf3aac08b939fb3",
-      "bytes": 803
+      "sha256": "0a9885f6acda5274ebf0f3a28aa410a37f0b5610101726a490bade250d05768b",
+      "bytes": 967
     },
     "integration/evidence/local-facts-and-metadata/native-function-text-correspondence.json": {
       "sha256": "7a48fdb26aeed8a68bd73bddb98117ad1e0da44173cb45084e73eae2b54811e5",
@@ -12514,6 +12514,1170 @@
     "integration/evidence/scalar-home-and-root-phases/tests-test-run.stdout.log": {
       "sha256": "fe766137d4c5a2a77cada89ee94bba02d8e460a66d22b140ca9f0d76f963bc56",
       "bytes": 127308
+    },
+    "integration/ir242-review-status.json": {
+      "sha256": "b243b71d5b1db313fbd54fd29e2b90ec7e0e582ef310e5fd9e006901f91d407a",
+      "bytes": 5210
+    },
+    "integration/ir242-243-local-archive-index.json": {
+      "sha256": "6d547662a44b37a4b09d27dfeb94d3cf8efd5e9e1c19814cf3ac8c3a84d634ed",
+      "bytes": 1450017
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-after-4-native-link-audit.json": {
+      "sha256": "12de32121bc9d1661ed7c45e257ea34a186d2ec748745648669b1fe3f09431a6",
+      "bytes": 13193
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-after-4-runner-aot.build.json": {
+      "sha256": "29cea2cadb16615b591be70d9bc406e7cf530ab0a27bcb7351e9fbe7e4164173",
+      "bytes": 16640
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-after-4-runner.rs.txt": {
+      "sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "bytes": 8870
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__bound__runner.rs.txt": {
+      "sha256": "8b03e72da1582c70827738642cb0c80daec06fb63f8ce155a921caeeae439dcd",
+      "bytes": 10194
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__bound__success-rust-first-10-run.json": {
+      "sha256": "7f36980bfca9eeaffdddb31039800977ff4b1588a96f1d8af16ff1e4ad7bf3e3",
+      "bytes": 1556
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__bound__success-rust-full-5000-run.json": {
+      "sha256": "05a972d5bd0528288ec132383e04b7e0f8e6092a18c4a8861c5af5bf095ed33a",
+      "bytes": 1553
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__build-and-check.py": {
+      "sha256": "21b429973df7503575432eec2ea23a2c556eaa3dfebc188e42557d6a67e2e13e",
+      "bytes": 2647
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__full-catalog__runner.rs.txt": {
+      "sha256": "98969990dacf411ee6376fd652cd184709373f13a46eda21ac6049703bdefc03",
+      "bytes": 10198
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__full-catalog__success-rust-first-10-run.json": {
+      "sha256": "c92c65f8e40906a38ce95ef5d5fcb5553fd2bf062ac05bb7e9baac4a963c0ffa",
+      "bytes": 1576
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__full-catalog__success-rust-full-5000-run.json": {
+      "sha256": "41f5cf6e1cd8ce6898c24627134aa99fb7e48b5068f3d4fedbdd59e43812910c",
+      "bytes": 1576
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__independent__runner.rs.txt": {
+      "sha256": "52c621b77c6d26eae1c46e0986691463149eb5eecec1a0b566b7404f0460ce70",
+      "bytes": 10237
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__independent__success-rust-first-10-run.json": {
+      "sha256": "99b6197fefeeaf70f1452b4f48f2ea299cc72ebbe2f03e25f457809cbe65481d",
+      "bytes": 1571
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__independent__success-rust-full-5000-run.json": {
+      "sha256": "d68bced4cdc2c6cac6d531cba4450510271496fd6dcfa6aeda56af0cf0be2ad6",
+      "bytes": 1562
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__run.json": {
+      "sha256": "12f899e8e35e92d8c2119bbbdaabe12ffe52c776be7091e6a83764a86520193f",
+      "bytes": 650
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-budget__summary.json": {
+      "sha256": "d24017e084e2afe51e11cc9dfdf013ac12d54b8db443c1dbdb625cf8dfbd5a4f",
+      "bytes": 14636
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-build.json": {
+      "sha256": "7d9154c305be25dcde08c4728a30e740ac5efebefceb858dbd44611a22cf9c16",
+      "bytes": 78381
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__bound__runner.rs.txt": {
+      "sha256": "8b03e72da1582c70827738642cb0c80daec06fb63f8ce155a921caeeae439dcd",
+      "bytes": 10194
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__bound__success-rust-first-10-run.json": {
+      "sha256": "b4dbd0f612285a761e8ddd6426c599180195a74e539ce13460d9e7bd070b4ee7",
+      "bytes": 1576
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__bound__success-rust-full-5000-run.json": {
+      "sha256": "487b7b8f67e38e5e6fc7c90033b36c2e3fdaff809283ee23b59e1fd911f93855",
+      "bytes": 1569
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__build-and-check.py": {
+      "sha256": "21b429973df7503575432eec2ea23a2c556eaa3dfebc188e42557d6a67e2e13e",
+      "bytes": 2647
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__full-catalog__runner.rs.txt": {
+      "sha256": "98969990dacf411ee6376fd652cd184709373f13a46eda21ac6049703bdefc03",
+      "bytes": 10198
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__full-catalog__success-rust-first-10-run.json": {
+      "sha256": "018d2ada4e49b30fdca65276fb9374b2be5e95035220e84f11349bd843ba6e93",
+      "bytes": 1610
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__full-catalog__success-rust-full-5000-run.json": {
+      "sha256": "39766b7316b31c57bdd58204eec6919618b68031b4d1ab6f7adfdc056db537ad",
+      "bytes": 1590
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__independent__runner.rs.txt": {
+      "sha256": "52c621b77c6d26eae1c46e0986691463149eb5eecec1a0b566b7404f0460ce70",
+      "bytes": 10237
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__independent__success-rust-first-10-run.json": {
+      "sha256": "b1ab713bed441fde50daafd28d2e345914d133fe41f1cc4c91980b92395c3fca",
+      "bytes": 1597
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__independent__success-rust-full-5000-run.json": {
+      "sha256": "5be160866170f502e1a54d0fed0037078c775da9ae296a861b27ac9ce2d79a91",
+      "bytes": 1586
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__run.json": {
+      "sha256": "04eb1a5a645c0b81566c46df60b3207b206ac3ab7458d70a5dbf2b4861600607",
+      "bytes": 658
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-compact-budget__summary.json": {
+      "sha256": "22ea8fa3194354ce49ea91cdd83ddbf3dde1646af916d3cfb7c97fa144602b1e",
+      "bytes": 14635
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-controls-finish-controls.py": {
+      "sha256": "c838fb284d11527a88c5ae270a6b450583d5a9cf028392a59079c86a0a651178",
+      "bytes": 3667
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-controls-one-kib-comparison.json": {
+      "sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "bytes": 1422
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-controls-one-kib-run.json": {
+      "sha256": "791d4710c3006b8f68393f5a77b2f2f43c4e52191be83e5f348f7de5b2e05a37",
+      "bytes": 3261
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-controls-one-kib.build.json": {
+      "sha256": "638ff62d0250c0294e49e0d7132ea53620125f4b6f7fe505a3316101658df8eb",
+      "bytes": 4613
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-controls-run.py": {
+      "sha256": "392cb3258d160392eec8603b610b355bc8e4842af65b50a77f100235c474e230",
+      "bytes": 3566
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-controls-scalar-comparison.json": {
+      "sha256": "7bb2b53dfcba3029e86f74a4c51dd2314f8237c29817bc55f0521001aa6fc5c0",
+      "bytes": 35991
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-controls-scalar-run.initial-missing-source.json": {
+      "sha256": "a3cd71f3f162060db5426366cc650414a8661f78670c5a7c600951c07922dc67",
+      "bytes": 644
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-controls-scalar-run.json": {
+      "sha256": "f01b5407f464459a8c5199845de22b05e620f78e9a01241410ff8363b4edcbd4",
+      "bytes": 39415
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-controls-scalar.build.json": {
+      "sha256": "ac30eccb3fb9a70f9718f593cbf80f68c50b03cab5dde93fd76542e37bcd02fe",
+      "bytes": 2414
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-after-4__edges.json": {
+      "sha256": "6324e5b54b9e77846dd132085533f5af2b1f86aba58fe70662433f5fd582c72b",
+      "bytes": 63848
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-after-8__edges.json": {
+      "sha256": "7f2403565f600adef21bd577e1ef134c827a97bee16e97006233cc15d1f62eff",
+      "bytes": 63882
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-compact-4__edges.json": {
+      "sha256": "f4dbb9995b95298c1916695aa65f120bd2a4963687e75103cbbe1fb4397129c6",
+      "bytes": 64241
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-compact-8__edges.json": {
+      "sha256": "766be8ae01ec07e449273117fd34c843979479c03b8c4683df7b760c4c9d2fd5",
+      "bytes": 64177
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-after-4-full-catalog.json": {
+      "sha256": "c0532784cc6cbedcdb96ce8fc498bc6d04167421736b306db6253a22600b0dae",
+      "bytes": 65691
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-after-4-independent.json": {
+      "sha256": "f0d33637676f13fe7cdbd916effff1cddce631a52c30ab3c55e2e5caef2ddb46",
+      "bytes": 65483
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-after-4-json.json": {
+      "sha256": "78c8c9eec5fc348c73a10309d67abb2616c0987a4a69c12a289f77a24f994d12",
+      "bytes": 64589
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-after-8-independent.json": {
+      "sha256": "276f0b4581fc04d4c6f571b9f489eaec1984ff1520a7bda416b52246349e0347",
+      "bytes": 65569
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-after-8-json.json": {
+      "sha256": "211d575496b7133caed9bb63cbf41e2636f172da2c71a97210678f59dd72b82b",
+      "bytes": 64565
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-compact-4-full-catalog.json": {
+      "sha256": "93dd0142521dd100c7e9cb69d4ce99c634d6134abed28ae8d7d042bbbe0d96be",
+      "bytes": 66038
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-compact-4-independent.json": {
+      "sha256": "ac3a15f31f73fc15f2d36def9754eb926fe047952b460e540e4dfcf2cec32f9e",
+      "bytes": 65848
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-compact-4-json.json": {
+      "sha256": "7119bf562862cf54ea5ef23533a818aedfb38ecb5714ebe7b4b6b916a3406bd9",
+      "bytes": 64873
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-compact-8-independent.json": {
+      "sha256": "53693dd0048a62e68a4cf860e347a9c3abed9e81d81a822bb737db4568f86ea7",
+      "bytes": 65916
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-compact-8-json.json": {
+      "sha256": "b3ecc3d409fd13f6ed1eeea4073e511464b89540b8794c54aab042ddf07e6e1a",
+      "bytes": 64879
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-reuse-4-full-catalog.json": {
+      "sha256": "428f84f7f16bb8806bab3edfb8c0a2ea779575673af4534f7e13987c08402ea1",
+      "bytes": 65650
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-reuse-4-independent.json": {
+      "sha256": "9daa9eb88de68123717e72b29dda07821d39a035e862146b3b4bcc9676e9c184",
+      "bytes": 65492
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-edges-reuse-4-json.json": {
+      "sha256": "a727c24056ec696f0557beaff6ee16249440c72fa2105c6f13bc463e9d446ca7",
+      "bytes": 64537
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-edges-reuse-4__edges.json": {
+      "sha256": "a047b2e79eec9234456998a01fc1a2c946b4d22bb6daf5dcb11848be4d62b6ac",
+      "bytes": 63824
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-features-run.py": {
+      "sha256": "e00468e47a7a2353f57e307a12ffcc175799a78b85bd13c4895d0babf1c61fee",
+      "bytes": 1107
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-features-scalar-compiler.json": {
+      "sha256": "4301235028a33523736cdbe2d3729a5aa0e0da2413540a8241230c0c7869c212",
+      "bytes": 10459
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-features-scalar-compiler.spec.json": {
+      "sha256": "b0bb39774ae9e13002a4eee1a524594f9fe0c6e46532e30ebcc526415bcbe622",
+      "bytes": 10381
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-frontier-image-probe-native-link-audit.json": {
+      "sha256": "0a0f2dc5b1dc143feeddc730e1740e5d4480bf7168bf4d55f96a64cd0ee83331",
+      "bytes": 13322
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-frontier-image-probe-probe.rs.txt": {
+      "sha256": "d7060ce18e69bda2f5fb93fce1699a8f1989cee94250eb6119e573ce1f50526e",
+      "bytes": 3148
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-frontier-image-probe-run.json": {
+      "sha256": "59fa3e0d9bdccb691a66333155e4964229b35408054e575592fae5b0da58b4b7",
+      "bytes": 1040
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__bound__runner.rs.txt": {
+      "sha256": "8b03e72da1582c70827738642cb0c80daec06fb63f8ce155a921caeeae439dcd",
+      "bytes": 10194
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__bound__success-rust-first-10-run.json": {
+      "sha256": "81513c3986aba15c97d8a6de1118827d8d89a8ba6659c7bae07437477ade6689",
+      "bytes": 1567
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__bound__success-rust-full-5000-run.json": {
+      "sha256": "54998b80c268af36af7b53fdf5a249843b636a65c8ecc0f690666a2f02cf57b8",
+      "bytes": 1560
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__build-and-check.py": {
+      "sha256": "21b429973df7503575432eec2ea23a2c556eaa3dfebc188e42557d6a67e2e13e",
+      "bytes": 2647
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__full-catalog__runner.rs.txt": {
+      "sha256": "98969990dacf411ee6376fd652cd184709373f13a46eda21ac6049703bdefc03",
+      "bytes": 10198
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__full-catalog__success-rust-first-10-run.json": {
+      "sha256": "77fce7fe568ee9caa7d60a5662719e2a33394c68cec8bcfaca666f8a55af7eb6",
+      "bytes": 1588
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__full-catalog__success-rust-full-5000-run.json": {
+      "sha256": "b421f3b6a459922c1fc4694c57a3ede543550331d30ab3d6ec290e4d1bbff6a9",
+      "bytes": 1581
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__independent__runner.rs.txt": {
+      "sha256": "52c621b77c6d26eae1c46e0986691463149eb5eecec1a0b566b7404f0460ce70",
+      "bytes": 10237
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__independent__success-rust-first-10-run.json": {
+      "sha256": "a93d5c7f7491b91bc86a30cb3a7262d259a6d884c72e8c41773ddbf8df748e7f",
+      "bytes": 1586
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__independent__success-rust-full-5000-run.json": {
+      "sha256": "25d1d9577c7acc275633ae2c2456a80232b19a07257d99d67b572793d8d3c4f3",
+      "bytes": 1578
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__run.json": {
+      "sha256": "4b28f1178c690673008e6345d531e72cdb10e6265482c1cfd9a70f8541ff8fca",
+      "bytes": 655
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-budget__summary.json": {
+      "sha256": "d7629398710271a4f332a7d8fa9bc310d8a156d4f79c457562160a64176a745f",
+      "bytes": 14623
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-frontier-image-probe-native-link-audit.json": {
+      "sha256": "4fa49c7d0c99e6a1b9c33b72a3cbe24c17ec560192f72afb845c2aeee58bebf5",
+      "bytes": 13003
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-frontier-image-probe-probe.initial-original-header.rs.txt": {
+      "sha256": "d7060ce18e69bda2f5fb93fce1699a8f1989cee94250eb6119e573ce1f50526e",
+      "bytes": 3148
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-frontier-image-probe-probe.rs.txt": {
+      "sha256": "d02711d84938db55e13ddfd8f965e19bbde7c6de6264f18f450719d0e1ff4c09",
+      "bytes": 3148
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-frontier-image-probe-run.initial-original-header.json": {
+      "sha256": "8aff659a67098498ac1027e9a20c333f5fe4ee4112db316d07abe1065aebd5cd",
+      "bytes": 497
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-mask-frontier-image-probe-run.json": {
+      "sha256": "15675933f54e0841ce8cfff84f1d4e218d73466bd420bf72a9daf3976a3d4722",
+      "bytes": 1079
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-old-objects-run.py": {
+      "sha256": "9761bc863726d53f2821699b01a4c8e25eb7dc83421748cd97eceb7958521aae",
+      "bytes": 1799
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-old-objects-summary.json": {
+      "sha256": "c32393495a947942ff67584df792d9c0f8140bbd7c0ce17283fd5f524318bc08",
+      "bytes": 888
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-reuse-4-native-link-audit.json": {
+      "sha256": "40fc566ce14129b3f6e1af80bddde7377a0ca2fcfe2c3165c138ba2f9a24ef31",
+      "bytes": 12869
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-reuse-4-runner-aot.build.json": {
+      "sha256": "34231dcea6abce3b3f3badafd298cf4bc279b8e8a8493b152fb57f5582446f5b",
+      "bytes": 16640
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-reuse-4-runner.rs.txt": {
+      "sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "bytes": 8870
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-after-4-decoded-compile.json": {
+      "sha256": "e9d8fdc940fc68b8fb76385785e4cc4c518eeb1ed49dff22cd6ebbd8ce53487f",
+      "bytes": 501
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-after-4-full-catalog-edges-run.json": {
+      "sha256": "63751366f51202d3447476b27c097c35394084f648ae66340ba38be460201ddd",
+      "bytes": 2916
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-after-4-independent-edges-run.json": {
+      "sha256": "fe5a4c1084005c83affc9192b6a2ac767c417718038490ced164ca2ef734eb59",
+      "bytes": 2913
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-after-4-json-edges-run.json": {
+      "sha256": "09f70bf34954f158e6814a994fce934cfa631409ac4a46a5122a975598340c80",
+      "bytes": 2892
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-after-8-decoded-compile.json": {
+      "sha256": "31b7daabe4347508da0b95f9f25a5206c12ee0ed5298a6f61ff8d763b39bc860",
+      "bytes": 500
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-after-8-independent-edges-run.json": {
+      "sha256": "59f94782521c11e2912c5b24910cba115f7f51cf870afa6d94a4aabc303084c4",
+      "bytes": 2913
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-after-8-json-edges-run.json": {
+      "sha256": "94accc9e68f99db80eb4983cfd9eb2e5f466351a8d9593bb27eae12becaf822b",
+      "bytes": 2892
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-build-initial-runners.py": {
+      "sha256": "8f026f17d427c8ab10f8d0723dd22d398ee11c3a11d84ab3b2e3279754ad2c65",
+      "bytes": 1432
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-compact-4-decoded-compile.json": {
+      "sha256": "abf9136fc9465d3c3cdf59cbe06c25d32b8b1e19fead8b826edcce2fd3b1bec3",
+      "bytes": 504
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-compact-4-full-catalog-edges-run.json": {
+      "sha256": "f428d4abfe2189cb9be94f75d36e7f927f030234db87ac0a30d939084714ab72",
+      "bytes": 2922
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-compact-4-independent-edges-run.json": {
+      "sha256": "b6f577baeaa753792cb7963b9f3031e81e957aca7cd0cb451a34a9b51ebd0e47",
+      "bytes": 2919
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-compact-4-json-edges-run.json": {
+      "sha256": "1864b66b719978e8cb4665b5a89ecc1447731525d0aabd8581d7cde643f884b5",
+      "bytes": 2898
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-compact-8-decoded-compile.json": {
+      "sha256": "59764718af4478d372ee9d2517c7b0f5f8dd37a154b8effa69250b4231b4604a",
+      "bytes": 504
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-compact-8-independent-edges-run.json": {
+      "sha256": "541fc584a758099439c33a7dbe69383c33e790355df9e5fc69576e024783fbf4",
+      "bytes": 2918
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-compact-8-json-edges-run.json": {
+      "sha256": "28f871c2c6237e7917f2fd5973621a41029275e2d27696c3f6aaa68387873a40",
+      "bytes": 2897
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-compile-and-check.py": {
+      "sha256": "24953e1fb4836b53161d5222c09a42b737535e9fd07a99334b46dbb9cce9e2c6",
+      "bytes": 3657
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-finish-original-loaders.py": {
+      "sha256": "4978dad0ea9a5fa1ea585270476f2487ab7d6ef4038ca573f8a05999c5e9b090",
+      "bytes": 1584
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-native-text-equivalence.json": {
+      "sha256": "cb44203524c6ab77e9ddf86909473529b413d4c64a9bf8af8668f3786268279d",
+      "bytes": 6583
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-original-decoded-correspondence.json": {
+      "sha256": "1db48f01e42a66a3c1f9f23eae55fba6eab116ad5f4b963afc24219b671043b9",
+      "bytes": 5179
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualification-summary.json": {
+      "sha256": "02bf1d146e11cf28f3b52a13519156a2e3bb4c44a41f9255425622f34f9ba5d0",
+      "bytes": 3078
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualify-budgets-run.json": {
+      "sha256": "f180a417907c56b358b6cf0aba72976ebafb95fb8069434bdcdff2056cfe0f12",
+      "bytes": 318
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualify-budgets.py": {
+      "sha256": "de2823fabd2a11ce4c12160fdced20d71c2f8f008528dbb853c3077f4cf549cd",
+      "bytes": 2970
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualify-compact-budgets-run.json": {
+      "sha256": "e25b21001aebcdd560faa07f2f1c6edb15cf204b4afe5587b83d3649c752ba76",
+      "bytes": 326
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualify-compact-budgets.py": {
+      "sha256": "b47dcaade7efc4b7bfa90afd1173848018a114106c680ff7674aebda40e20737",
+      "bytes": 2982
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualify-loaders-run.json": {
+      "sha256": "58f247adcfbb0465e0521d6560e6d90b71eebac620fbd49563d5862fde396eeb",
+      "bytes": 1054
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualify-loaders.py": {
+      "sha256": "5c5a89020edb494b4f12cdbf6d3ccde2d9c8b0ecbd5d2148b8327cf2b194b493",
+      "bytes": 2860
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualify-mask-budgets.py": {
+      "sha256": "47e458e36b6f5bdbc23743f3e1ea16d6795374de326ebbe9641a5eed41d2b176",
+      "bytes": 2975
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualify-new-source-loaders.py": {
+      "sha256": "46cf4daf82d0efe79a6a26ec180ad47664869322ca59febfdfd0e9ac91810433",
+      "bytes": 2355
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualify-other-run.json": {
+      "sha256": "f28f86e0b585238e4730bf13419853b8fa9937cb7c470c40b86b1ad6b395d57e",
+      "bytes": 443
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-qualify-other.py": {
+      "sha256": "6248d3018aab5193901c26e421f0f7167875b40ac73d9bb32881a248b72dbc83",
+      "bytes": 1537
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-reuse-4-decoded-compile.initial-missing-source.json": {
+      "sha256": "bd0031bfbf15630a4d01387053eaea8964e8adf464f11634b58adec190f1de63",
+      "bytes": 939
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-reuse-4-decoded-compile.json": {
+      "sha256": "01775cebfdd3303b0ffb04408752453c1c31a777167d587182dfebe0c5d27357",
+      "bytes": 494
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-reuse-original-decoded-correspondence.json": {
+      "sha256": "55ab874e04574c1272f733e6ffd881ea606f97bdbed606420f30df77157b3961",
+      "bytes": 1245
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runners-validate-base-qualification.py": {
+      "sha256": "e9032e5ab922d35615f07392f62548cd19dd073e54ebf71a5e64697032fa79b0",
+      "bytes": 2783
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-build-and-check.py": {
+      "sha256": "b00d33979a4e7cb77fb246a8e7c081f4c6d86f296ea092fab16cccfdf844d8c1",
+      "bytes": 8386
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-generate-standard-app.build.json": {
+      "sha256": "105a30549c50dd02385830749365e9ad273b08d4d50d04c0072acc9e76debb8c",
+      "bytes": 11850
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-generate-standard-app.json": {
+      "sha256": "bd4d6a039e2d6a71ae97186e186be2fc021da77b4d6ab49add8f5d735da95ba3",
+      "bytes": 497
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-generator-build.json": {
+      "sha256": "ad25187065c3cf534fe556fcfea17f2b92872bf3b856da9e7d721c570d102524",
+      "bytes": 719
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-hosted-build.json": {
+      "sha256": "f2ab5a7e35a0f7c09a16c0647e73d24059a3baf54bf8a43420934601eb9824f9",
+      "bytes": 78710
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-hosted-generation.json": {
+      "sha256": "f182ff8379ba8b8c67a38cda228f624a9bd30e896cf8e7eba5f9fba3899f779e",
+      "bytes": 10324
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-managed-audit-input-correction.json": {
+      "sha256": "4766e8d4767da3f021a4fd932edec754b9793dc0279018da8d9ed4151181f4eb",
+      "bytes": 495
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-managed-main-audit.json": {
+      "sha256": "f8b8a7610fd038f6758fbe8a512ff928ca44599179d1d78174db74bc7e69b242",
+      "bytes": 872
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-managed-main-build.json": {
+      "sha256": "acfab71e2f9c511d46dcc65fb50f7879bb1bb1dacde9f6519e3d02a9f9cc6aee",
+      "bytes": 852
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-program-runtime-build.json": {
+      "sha256": "b03aa9ae9a85f9eedb2ccdd9084bee1a0c25ff549191f8a9beb6df8797925f25",
+      "bytes": 78213
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-program-runtime.json": {
+      "sha256": "52ff2c64d5bdb5d3639835949810f485aea81b7a6d833b576da3ec1d7bfb64d0",
+      "bytes": 10079
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-runtime-first10.json": {
+      "sha256": "96b382a9d1faeada34e3bc4a4c9658b21bd3181915a7003884600c8b2527a5e4",
+      "bytes": 1632
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-runtime-full5000.json": {
+      "sha256": "c548e0ae9b62e866cbfee96bdcd6993844c0b74ab34331b497ce470478603469",
+      "bytes": 1633
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-runtime-images.json": {
+      "sha256": "a79310f51e03a25a4a3d95144c0197850a9d8d0018243fe13d6d0155efef0637",
+      "bytes": 6145
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-runtime-runner-audit.json": {
+      "sha256": "2f73f01ea4595125d6ae761cb19e4c0233c62874f08cef87d4fb9837c67afc05",
+      "bytes": 869
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-runtime-runner-build.json": {
+      "sha256": "d3b6fa48d82177ebfaf00a2ef6680ea6f99037dd5c46dc6b7d4ffe2f98b66881",
+      "bytes": 2950
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-scalar-runtime.json": {
+      "sha256": "af9cf651f1cbd0e5ac797f75ab6274038fd2b82bdfac3c9acf5c54c885272422",
+      "bytes": 10010
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-runtime-summary.json": {
+      "sha256": "f0402bb8bfb03c0afe3c188a64597cbe7c48ddb7c1ff72d8287f45afe936163f",
+      "bytes": 2324
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-source-inventory.json": {
+      "sha256": "56ede90ea457258f8e790be3453809589596c662b0d81fcd73ec49c9761f2f9d",
+      "bytes": 313522
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-build-and-test.py": {
+      "sha256": "c4d05033671f4db3723f3cc0a4de09d38eaa5d93c30592dda0dc69b1c1475c8d",
+      "bytes": 3002
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-ci-selected-inventory-audit.json": {
+      "sha256": "9b6d304459f8a2ad66a3fd8c1a93d3d995859d608f7e56d71d8465f4d26d2670",
+      "bytes": 55935
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-canonical_relation.json": {
+      "sha256": "6eb516125c9109b87c281b4fd4493ba663edde5358bf71a80c7cbfba5156fc81",
+      "bytes": 233
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-canonical_relation.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-canonical_relation.stdout.log": {
+      "sha256": "d982f143aedab2bfdefbb60ed5c8af42077a070e070fe2d02f6c6341f8e87667",
+      "bytes": 293
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-child_entry_checks.json": {
+      "sha256": "9d685f9714d14cc70004bda731c0102af62fbd62a9e57c68bd1f3b886e9305a1",
+      "bytes": 230
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-child_entry_checks.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-child_entry_checks.stdout.log": {
+      "sha256": "b143435f77fbf8e1a9a8e62cc93140489f42c6aa93e53f92620a95b23695d2a4",
+      "bytes": 4235
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-child_funding.json": {
+      "sha256": "7dc6ce836a2461d1a190dd412a3a61d50ae0292fbbafb10559846101b64d1b44",
+      "bytes": 226
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-child_funding.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-child_funding.stdout.log": {
+      "sha256": "898b56f0007657c72d5f471111968f225a9884e06c803a869e3ffc36c0fb38a6",
+      "bytes": 600
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-completion_does_not_get_totality.json": {
+      "sha256": "98bc430ff2c00d1b512abf18daa1ebeb733d96d6359940ade4e596d2a0e75002",
+      "bytes": 248
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-completion_does_not_get_totality.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-completion_does_not_get_totality.stdout.log": {
+      "sha256": "be9d859e4c925a5f7559b5cea9d11290d47ef49991120cb247270d930093b2fe",
+      "bytes": 253
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-huffman_parent_cleanup.json": {
+      "sha256": "a8fbb1d4f651d46db37fa80703e02f181739ba3f41060e4cf99ce2ede4f9fca4",
+      "bytes": 237
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-huffman_parent_cleanup.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-huffman_parent_cleanup.stdout.log": {
+      "sha256": "2681593668d6ecfae556220e9e3417e6fba4af52ae55d3367428b0e3a6edd3c3",
+      "bytes": 694
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-local_effects.json": {
+      "sha256": "fda2b30940b598e21ade824ad8379e7526fb25b2be9040ec2c9b27550b1590fc",
+      "bytes": 227
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-local_effects.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-local_effects.stdout.log": {
+      "sha256": "0d9a35fc6a6754c93543eaec00ca923120b4298e8036c6a229cb226e038aa483",
+      "bytes": 3734
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-named_managed_fields_decline.json": {
+      "sha256": "f8da3f0b0f9bf019f818524b316c8c24d0df59dbc429b12ac7e6902b5ade39c8",
+      "bytes": 243
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-named_managed_fields_decline.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-named_managed_fields_decline.stdout.log": {
+      "sha256": "0df85ab015ead45c9f3e018b415ee2ff65e3a0b1f3dcd81708790da1873cdd5c",
+      "bytes": 277
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-native_argument_bank_numeric.json": {
+      "sha256": "9465d3848e6562fc4f3002521320adc3e73ab9a57a53fa86837cf75976db1828",
+      "bytes": 242
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-native_argument_bank_numeric.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-native_argument_bank_numeric.stdout.log": {
+      "sha256": "99a5bc270bef5cf235293710a0794b703407b5476ce6c3e643db1df84cae649c",
+      "bytes": 256
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-nested_phase.json": {
+      "sha256": "ee5f036ef5e7d2e0ca705e99c781f7d3b8c5ad94cf7f9e21d3825b4fd3797bb3",
+      "bytes": 224
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-nested_phase.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-nested_phase.stdout.log": {
+      "sha256": "6599547f26841b46e5e2e2d720996277641bfdbd5429046239b633968b26b16b",
+      "bytes": 16307
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-numeric_boolean_relations.json": {
+      "sha256": "e39e043ccb5a9ba6dbe06bc9ca0c75db70aa6952e1f12b88f0f52df015376867",
+      "bytes": 239
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-numeric_boolean_relations.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-numeric_boolean_relations.stdout.log": {
+      "sha256": "938854dfbfacd25bcb0dc8d44b7f814cebd2050c41710587c7c080147dc2f9ad",
+      "bytes": 668589
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-ordered_reduction.json": {
+      "sha256": "aa06301380449f117582d55f1381dca3518b6bac1b837a86d45eb39d979644b4",
+      "bytes": 231
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-ordered_reduction.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-ordered_reduction.stdout.log": {
+      "sha256": "0edb16ce6d648f67f8ef1887921ae637698b3c21208ee7879bcbd1c72bf09a1a",
+      "bytes": 4987
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-phase_descendants.json": {
+      "sha256": "78a9cf6fb8687df58225a23f5e69ab1c82f172edd319280e93dc22570699339b",
+      "bytes": 231
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-phase_descendants.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-phase_descendants.stdout.log": {
+      "sha256": "0031f1f22f02c2f271d92a4b99b24a3ecd631e0eded03d9f2ce4aace2ec1a94b",
+      "bytes": 1603
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-traversal_facts.json": {
+      "sha256": "0cadf11e0144d4a993a477df5f71fbf2f55804d40c9c23c4ed907d72927b8cf4",
+      "bytes": 229
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-traversal_facts.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-traversal_facts.stdout.log": {
+      "sha256": "49907191d1d08a2adc7de88b14f9fe0c6909041d4e407e5071a0cbbd7216f0e4",
+      "bytes": 2488
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-virtual_retirement.json": {
+      "sha256": "03ce36544d90cceabce5f89497b8b6f700d30e6089c77bf445a513d896a48ee9",
+      "bytes": 232
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-virtual_retirement.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-focus-virtual_retirement.stdout.log": {
+      "sha256": "44d0d8c331612acdbf4568d14baea9c137b482f164988a38b6d299c4f675c9ad",
+      "bytes": 2646
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-mech_gpu-build.json": {
+      "sha256": "4f48893aeadaf1923144880deb93e4bf98a2dd00ecb0b84d01d823c682e91112",
+      "bytes": 10092
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-mech_gpu-build.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-mech_gpu-build.stdout.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-source-inventory.json": {
+      "sha256": "56ede90ea457258f8e790be3453809589596c662b0d81fcd73ec49c9761f2f9d",
+      "bytes": 313522
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-test-run.json": {
+      "sha256": "798f87868267c1a8080921e1077eccaa3e93f620f4c97924faad84bd3a0eecbc",
+      "bytes": 636
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-test-run.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR242-tests-test-run.stdout.log": {
+      "sha256": "5d43fe748043fd3fb357feac2fdc5e445c53bddbdcd791f56a248ab4285f094f",
+      "bytes": 127606
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-after-4-native-link-audit.json": {
+      "sha256": "b03ce610aebe92c030a087ea582a856393b9c9311420918a08c86c9061177270",
+      "bytes": 13185
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-after-4-runner-aot.build.json": {
+      "sha256": "ddb968566c3295fe01a875bdb89ca1bb445572dc7c067504a3c5a279d14cf089",
+      "bytes": 16669
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-after-4-runner.rs.txt": {
+      "sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "bytes": 8870
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-build.json": {
+      "sha256": "baa26b21392ecd83486daabd9e937e15ea0956190c5b5c2c416d89fd000313af",
+      "bytes": 78049
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-controls-finish-controls.py": {
+      "sha256": "eb6beb750bc02341b2bc8a964e0c1fa65ef3fabd19bb4f609bbc66e3c116db48",
+      "bytes": 2514
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-controls-fixture-search-mbc.json": {
+      "sha256": "6a519cce8b097832dc080a14c4b1ca61ab3d17ddc574c5e260a0f7dfc4d70908",
+      "bytes": 60
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-controls-one-kib-comparison.json": {
+      "sha256": "1ea4fc8514a1be7e5f3385a32b830a2fbceba0efe41539858edc1d27965333ea",
+      "bytes": 7026
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-controls-one-kib-run.initial-missing-fixtures.json": {
+      "sha256": "6dad1ba3b2cf7ff59bde870a76bb61af75c6b2dabd352e52e72bb1ee54f0813f",
+      "bytes": 875
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-controls-one-kib-run.json": {
+      "sha256": "2591920892b5978ab2d07f4735b649bdd7edee721570448332bd4da92c4bf485",
+      "bytes": 3252
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-controls-one-kib.build.json": {
+      "sha256": "8b77b907c30ed4b756a20b26f9e523088c45d757661ec681b52024f5d6a80fcf",
+      "bytes": 4507
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-controls-run.py": {
+      "sha256": "da17dc06b9aa7bbf653539bc923d6651bc7842274d9572ed3ca8abf65d29e8f0",
+      "bytes": 3562
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-controls-scalar-comparison.json": {
+      "sha256": "3f1271be757217fba7789b40a22f8210fe195749c0fa6a8a1120986612e814b1",
+      "bytes": 125553
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-controls-scalar-run.json": {
+      "sha256": "bcbadb0474458b33fa8623d2dbf9473cc7c78422b5eb84ebd2b94bc1c848f181",
+      "bytes": 39548
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-controls-scalar.build.json": {
+      "sha256": "94b5b6b5a9ab831dc23a116102c12d67b82a6244c25a9cacf09aa4cce8b85460",
+      "bytes": 2304
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-reuse-4-native-link-audit.json": {
+      "sha256": "a01e5b9267394d72b87972dc4e3937ce5459eee8ab76e11cbb2dae99fa208b49",
+      "bytes": 12861
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-reuse-4-runner-aot.build.json": {
+      "sha256": "bed01f72715baa0b7e94c35e5b2bb6e89ebe73c2762cd99c5bf1b99d831c0034",
+      "bytes": 16668
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-reuse-4-runner.rs.txt": {
+      "sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "bytes": 8870
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-source-hosts__gpu__src__native_artifact__program__image__identity.rs.txt": {
+      "sha256": "a690a65d1ca2dbfec92008a196e386ccec50db3417382174d27028d01937dff5",
+      "bytes": 80645
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-source-inventory.json": {
+      "sha256": "3faebc9d5f9674e4689dadaeaa8776ee9f7413ccf2e388647ac8fb51909583bb",
+      "bytes": 313518
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-source-overrides.json": {
+      "sha256": "06044604c5d1119b3dd0ae2bcff610f4ee9eea6fe4f22ce6bee6dc9888651bda",
+      "bytes": 368
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-source-src__core__src__function__bound_call_tests.rs.txt": {
+      "sha256": "2478d8537b9c967e1c61f93c1cdf6aca6060186b514b5fbd9171f3bfc034b607",
+      "bytes": 6886
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-source-src__core__src__function__specialization.rs.txt": {
+      "sha256": "2cb4a57acc48740cac3fd48f62eef669d5aa170fc7be69d29cc38089428b98fa",
+      "bytes": 75919
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-build-and-test.py": {
+      "sha256": "990bfad54953c0e8ccc7633f75576b07dc799508e8e71a8a81980fb7c24ecaa8",
+      "bytes": 2998
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-ci-selected-inventory-audit.json": {
+      "sha256": "3d23ea246a9a2d3ef82de5b83e94ccd72262e2e7b8f3e42459126f8fa84aca49",
+      "bytes": 54767
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-canonical_relation.json": {
+      "sha256": "fe11f2f77fa54d50187cee463ac620e50f53eda86748ff4a358a9f95d14ff01b",
+      "bytes": 229
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-canonical_relation.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-canonical_relation.stdout.log": {
+      "sha256": "94a0829ad9e01113bc31b415bb1ec8f5ab172804f56ed9dca317365ea1780b24",
+      "bytes": 293
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-child_entry_checks.json": {
+      "sha256": "c77559c84ba7a8dd08d16296dad1ac03b673dc4c451c2100a004a4e725ec583c",
+      "bytes": 228
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-child_entry_checks.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-child_entry_checks.stdout.log": {
+      "sha256": "8dcefd32f7eaaf35d1dd3db39d33211268b1e865c38373837f7d27a46536af5b",
+      "bytes": 4236
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-child_funding.json": {
+      "sha256": "9a06523e5a9d1a5e9346e386cc99fdcad55d67fedb85845c63218f2ecb117faf",
+      "bytes": 222
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-child_funding.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-child_funding.stdout.log": {
+      "sha256": "38015bd5822391f452a4085f601c8d91ebe50f11345e961a9b412fb9f82d22ff",
+      "bytes": 600
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-completion_does_not_get_totality.json": {
+      "sha256": "698a14e8d1a61ffc57a59e421d0f79007d3d6e7d9aabe6cd64c2cd9d93618d9d",
+      "bytes": 244
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-completion_does_not_get_totality.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-completion_does_not_get_totality.stdout.log": {
+      "sha256": "be9d859e4c925a5f7559b5cea9d11290d47ef49991120cb247270d930093b2fe",
+      "bytes": 253
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-huffman_parent_cleanup.json": {
+      "sha256": "fd602e03bc79bce1f48ce750096c5b291e6f496ab2a2fd1b68a57e91e40048b0",
+      "bytes": 232
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-huffman_parent_cleanup.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-huffman_parent_cleanup.stdout.log": {
+      "sha256": "8e2e1317c513de883905ca5f736e8bce159d92e1fc1cce87d95193a6128f0539",
+      "bytes": 694
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-local_effects.json": {
+      "sha256": "b107964e4c378f9790e496f4a1ce2bf9145ffd868d01ba5184f13308377e06a6",
+      "bytes": 223
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-local_effects.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-local_effects.stdout.log": {
+      "sha256": "c2649d247df904df6985190dec735d2db2c7ed986206a57fd49e6312b371ac2f",
+      "bytes": 3734
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-named_managed_fields_decline.json": {
+      "sha256": "96f51926e136061d1a220db70db04cc20d836d0278b52224b1d68cecb96cc8a1",
+      "bytes": 235
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-named_managed_fields_decline.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-named_managed_fields_decline.stdout.log": {
+      "sha256": "0df85ab015ead45c9f3e018b415ee2ff65e3a0b1f3dcd81708790da1873cdd5c",
+      "bytes": 277
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-native_argument_bank_numeric.json": {
+      "sha256": "b11b6b083b9e0c520589d1826eeddf0b1dae5b71ddb84877859b5aa603793f76",
+      "bytes": 239
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-native_argument_bank_numeric.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-native_argument_bank_numeric.stdout.log": {
+      "sha256": "99a5bc270bef5cf235293710a0794b703407b5476ce6c3e643db1df84cae649c",
+      "bytes": 256
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-nested_phase.json": {
+      "sha256": "e0812a49960d94087c75f2364f2e76e7a88b93358d40086876310591395d38cf",
+      "bytes": 221
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-nested_phase.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-nested_phase.stdout.log": {
+      "sha256": "33c94b36ed82e3df1283c6674d698ad5fc9ff6f37382760a0d9aed0607b3a83b",
+      "bytes": 16307
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-numeric_boolean_relations.json": {
+      "sha256": "9384b9b3525bb8a24a48566001cb37b9962dca83acdf23b51eb1ab51d87136e9",
+      "bytes": 235
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-numeric_boolean_relations.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-numeric_boolean_relations.stdout.log": {
+      "sha256": "3393961a8154bb4bdfec4391b422efc6d8c747a649763f299efe94af0b25ffcb",
+      "bytes": 668589
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-ordered_reduction.json": {
+      "sha256": "478c60146b6b646253d27324ef6c33689fbe11eea4555386219293e1bb8738ee",
+      "bytes": 225
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-ordered_reduction.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-ordered_reduction.stdout.log": {
+      "sha256": "ab8e254ab1c06702cd03a0277cc5816bd8facbfb3374ce0ffeea1378c0aa924f",
+      "bytes": 4987
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-phase_descendants.json": {
+      "sha256": "7f441344926933b0778665a09d462feaa0fdfd1dfefc50a920b5047fcf749758",
+      "bytes": 227
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-phase_descendants.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-phase_descendants.stdout.log": {
+      "sha256": "397f5ac4b87a0db6d2d66adf9ff96b09c77004fbf683651b648ff41987cb2aeb",
+      "bytes": 1603
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-traversal_facts.json": {
+      "sha256": "1afd3b00363e8480f420d378d98b18d2f22209d34d2cb94b823c4cff97144dc3",
+      "bytes": 225
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-traversal_facts.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-traversal_facts.stdout.log": {
+      "sha256": "49907191d1d08a2adc7de88b14f9fe0c6909041d4e407e5071a0cbbd7216f0e4",
+      "bytes": 2488
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-virtual_retirement.json": {
+      "sha256": "9d6ae039ef020bbc3d07e943a269dba9e17d38a7028649aa60b40febae4d285b",
+      "bytes": 228
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-virtual_retirement.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-focus-virtual_retirement.stdout.log": {
+      "sha256": "d410418a00c6d4a99df1f088ae14f0f0fb08a9885e9009a2daed3aa5e2bb5ed4",
+      "bytes": 2646
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_core-build.json": {
+      "sha256": "ac8850b8c7042731e30d02900efbf7456c65dd4fa684dd87f9c7246d2e794328",
+      "bytes": 6338
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_core-build.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_core-build.stdout.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_core-run-0.json": {
+      "sha256": "adbae140e8594d6aed54c7ad1ae4b208770343739d89fa0f899eb1f7adbc4901",
+      "bytes": 192
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_core-run-0.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_core-run-0.stdout.log": {
+      "sha256": "2c4ab91832089c5b0787d82c6e328c64d98d7d1f00bc60393cc09ccf708feca2",
+      "bytes": 41732
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-build.json": {
+      "sha256": "ec7c06b01089420cece9a4e07d0e0d34a64168c47368d764c8c57e9589e9c027",
+      "bytes": 11186
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-build.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-build.stdout.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-run-0.json": {
+      "sha256": "7ca98269f10e2d8c9ce719b0ef953b1e4a74baecfe7c9b4c7723400ac3347f1c",
+      "bytes": 209
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-run-0.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-run-0.stdout.log": {
+      "sha256": "3880e42f2b2053eff23317fa39d92fc30288bee9a931f451b16822b103ba1a77",
+      "bytes": 17500
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-run-1.json": {
+      "sha256": "81b5df99d144f4af4575dd7e9644b07f148a6ddc876a2b680fce2c3af1f56d69",
+      "bytes": 212
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-run-1.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-run-1.stdout.log": {
+      "sha256": "1c1b9222d98d702dbe543c8480091b2d8a413c15be670ee5e47096319b292b97",
+      "bytes": 2446
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-run-2.json": {
+      "sha256": "101abd87857ede170da51ab50a2b2787ec86fe1431e399ebc1b71d4fac84255a",
+      "bytes": 230
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-run-2.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_engine-run-2.stdout.log": {
+      "sha256": "ddf0e9cc81f9cc533e6e55ed71f1fe768ad4f326c439c65befbbe8ddbcada82d",
+      "bytes": 22712
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_gpu-build.json": {
+      "sha256": "1449edbf5ee85ff4e2bfd53e1290f656792703703091ae924fbfb1f3466ed786",
+      "bytes": 10192
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_gpu-build.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-mech_gpu-build.stdout.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-source-inventory.json": {
+      "sha256": "3faebc9d5f9674e4689dadaeaa8776ee9f7413ccf2e388647ac8fb51909583bb",
+      "bytes": 313518
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-test-core.py": {
+      "sha256": "4180b21a77a324d1eec985081e36cf022f927a86a4f17dc891dc44fb326f0eb6",
+      "bytes": 1341
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-test-run.json": {
+      "sha256": "865dcbfe92f5bd27ffdbcaa446133cf9e309d535389dd09e1f72cc350f44d33e",
+      "bytes": 631
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-test-run.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-test-run.stdout.log": {
+      "sha256": "54762abcbfd3c2831938bea594052b7ce4ad732d72e415489ab92ea197811d4c",
+      "bytes": 127600
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/IR243-tests-test-source-layers.py": {
+      "sha256": "fc3646c4784b3e1b438b18d22e91d15ea0f700673ec6942a91b40993c62a2dc3",
+      "bytes": 1343
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/randomized.json.gz": {
+      "sha256": "cac4c3e656602460914a9b64c1c5f896e1bc73f68a9b6db71843c9f7826661d3",
+      "bytes": 38245,
+      "compression": "gzip",
+      "uncompressed_sha256": "399906a5871d7b440a621e9f5bdc22d5ce3630dc3010a6a7af5657b585d7df8c"
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/rebuild-frozen-bytecode.rs.txt": {
+      "sha256": "44f098bbb7ebe5e0d65121939f34180c0c398115a93e582d7cae7a189daf9832",
+      "bytes": 1087
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/recovered-fixture-pins.json": {
+      "sha256": "ed37969af65d51f932016cae290351e5b98d350c11780ac6c60dcbfa7a469e94",
+      "bytes": 583
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/recovered-one-kib-main.rs.txt": {
+      "sha256": "015f415dc6f0cd3d05f6dd1153bf7c59394d50ca746ec5dfa092327eb81a503c",
+      "bytes": 4618
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/resources.json.gz": {
+      "sha256": "db111023c4ef6442b27c40e3035334d778be9ab8ecf88b5e39da390d82d20dbb",
+      "bytes": 69235,
+      "compression": "gzip",
+      "uncompressed_sha256": "cd6b1c27240c294b370ff099458168f5644fd8150e5da0ca97d87081889e67f7"
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/selected-speed-checkpoint.json": {
+      "sha256": "fca2570b69025caff0a0818ceb625b2b1438afc36d4a88d94c4643e94e1b3d03",
+      "bytes": 13417
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/sizes.json": {
+      "sha256": "e576b8789389cea36de399621c12056518419cd11c75a033e3db3eeddcbafa9c",
+      "bytes": 30315
+    },
+    "integration/evidence/conjoined-windows-and-shared-certificates/summary.json": {
+      "sha256": "e00bf4e83d8639f38546ec2f7ea2ac9b48ad04ee9b10efcd82064f7768e86110",
+      "bytes": 140874
     }
   },
   "limitations": [
@@ -12524,9 +13688,9 @@
   ],
   "active_integration": {
     "schema": "mech.related-post-gen.current-compiler-review.v1",
-    "compiler": "deebf08df690e37ddf763635d70fd25aaf0bedb4",
-    "identity": "IR240/work115/ABI41/image9",
-    "incoming": "54280db43e2d26e2554ff2651f24e929e11571c4",
+    "compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+    "identity": "IR242/work115/ABI41/image9",
+    "incoming": "65034db9ca9da4133355108e85784703cde7592b",
     "source_files": 2468,
     "target_pr": 973,
     "target_branch": "codex/level12-compression-consolidated",
@@ -12536,107 +13700,117 @@
       "fixtures": {
         "edges-after-4-full-catalog/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "a6ca02c96c7dfb2845dd9afe6afe90e27e2c2f84575ff7f071e2c21a4c35cbad"
+          "sha256": "c0532784cc6cbedcdb96ce8fc498bc6d04167421736b306db6253a22600b0dae"
         },
         "edges-after-4-independent/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "e635ccea7e965db56cae1e1d49bb56a29d421e677c72bd23274b7e1293ce883d"
+          "sha256": "f0d33637676f13fe7cdbd916effff1cddce631a52c30ab3c55e2e5caef2ddb46"
         },
         "edges-after-4-json/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "d5a62f38919a2ab25d80963b01fa8ab69d129e954ace7cb6ce93aed363a2494e"
+          "sha256": "78c8c9eec5fc348c73a10309d67abb2616c0987a4a69c12a289f77a24f994d12"
         },
         "edges-after-8-independent/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "cae8b66e363de2e1e138ebb6e4cceaaa132125ec7e00025f1b4e5897cd2cc21e"
+          "sha256": "276f0b4581fc04d4c6f571b9f489eaec1984ff1520a7bda416b52246349e0347"
         },
         "edges-after-8-json/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "498996bbc4b2261fcb32ec579ec437c44e23b30aa3ec6f28f71a58638d589079"
+          "sha256": "211d575496b7133caed9bb63cbf41e2636f172da2c71a97210678f59dd72b82b"
         },
         "edges-compact-4-full-catalog/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "67178d7857e82abd800aea9b751517635afbf2c6d2304cf57a9aab063d5a6032"
+          "sha256": "93dd0142521dd100c7e9cb69d4ce99c634d6134abed28ae8d7d042bbbe0d96be"
         },
         "edges-compact-4-independent/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "97c813a1e701d18a14da1ff3a7b017dba8b525a60d27e57880dd66bcda192765"
+          "sha256": "ac3a15f31f73fc15f2d36def9754eb926fe047952b460e540e4dfcf2cec32f9e"
         },
         "edges-compact-4-json/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "8eb991c85a4102accf6fba56bbc1cd576d63b61c08ef2c530fb6cab624c691af"
+          "sha256": "7119bf562862cf54ea5ef23533a818aedfb38ecb5714ebe7b4b6b916a3406bd9"
         },
         "edges-compact-8-independent/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "0aa3ccdaea2cf159dde21e07e9881ad5fbd7a89e77135eb08785dd16e09c2aed"
+          "sha256": "53693dd0048a62e68a4cf860e347a9c3abed9e81d81a822bb737db4568f86ea7"
         },
         "edges-compact-8-json/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "e22ac50caaaa0faa923b3f44139d3b8910d3f06397d24f90a4acd48e49fcaa78"
+          "sha256": "b3ecc3d409fd13f6ed1eeea4073e511464b89540b8794c54aab042ddf07e6e1a"
         },
         "edges-reuse-4-full-catalog/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "0adf811959d544bea88c94b53678a14a3cd00fd0c530000512781755ee0e9103"
+          "sha256": "428f84f7f16bb8806bab3edfb8c0a2ea779575673af4534f7e13987c08402ea1"
         },
         "edges-reuse-4-independent/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "33fe92f09d8493eb53b6db97a4163c9f6ae9047c991f4acb59e9e1268653e501"
+          "sha256": "9daa9eb88de68123717e72b29dda07821d39a035e862146b3b4bcc9676e9c184"
         },
         "edges-reuse-4-json/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "2f5e917e7197b5ae14666f2516375a4609269b10800c42bf93c685341ad11021"
+          "sha256": "a727c24056ec696f0557beaff6ee16249440c72fa2105c6f13bc463e9d446ca7"
         },
         "after-4/edges/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "bf909202d89c2df4f21b8a526b39782f6733627ee73f9ce98e2219f9db25de4a"
+          "sha256": "6324e5b54b9e77846dd132085533f5af2b1f86aba58fe70662433f5fd582c72b"
         },
         "after-8/edges/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "3141b9253b4cc251693660ade829df6b511eb32668dcc235acacf6568c1dd7f6"
+          "sha256": "7f2403565f600adef21bd577e1ef134c827a97bee16e97006233cc15d1f62eff"
         },
         "compact-4/edges/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "bf82f3cb1f8d16315fb68b1a6aed0018c6702328934c45e034b7c7b6c3dfae32"
+          "sha256": "f4dbb9995b95298c1916695aa65f120bd2a4963687e75103cbbe1fb4397129c6"
         },
         "compact-8/edges/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "d58b98cb31f1c9ba749364d789a6250913c6dd718259a9f41231c0f26b3281e1"
+          "sha256": "766be8ae01ec07e449273117fd34c843979479c03b8c4683df7b760c4c9d2fd5"
         },
         "reuse-4/edges/edge-fixtures.json": {
           "cases": 31,
-          "sha256": "180c1f642fe65c13d5815dfc4d8af3e768874e9bd0fb5ebcfe408a2b8e69b1ec"
+          "sha256": "a047b2e79eec9234456998a01fc1a2c946b4d22bb6daf5dcb11848be4d62b6ac"
         }
       },
       "decoded_bundle_files_exact": 65,
       "finite_denials_exact": 48,
       "finite_small_full_successes_exact": 12,
       "forged_frontier_rejections": 16,
-      "gpu_passed": 858,
-      "inherited_gpu_failures": [
+      "gpu_passed": 863,
+      "inherited_failures": [
         "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
         "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
       ],
-      "ci_selected_names_passed": 363,
-      "core_tests_reused_from_identical_IR238_sources": 393,
-      "relevant_engine_tests_reused_from_identical_IR238_sources": 289,
-      "scalar_all_nontiming_rows_exact_IR238": 128,
-      "compression_all_nontiming_rows_exact_IR238": 5,
-      "runtime_only_and_unmodified_generated_app_passed": true,
+      "ci_selected_names_passed": 368,
+      "core_passed": 393,
+      "relevant_engine_passed": 289,
+      "source_layers_reused_only_with_identical_source_and_flags": true,
+      "scalar_semantic_control_rows_exact": 128,
+      "compression_all_nontiming_rows_exact": 5,
+      "selected_source_additional_finite_denials_exact": 24,
+      "total_finite_denials_exact": 72,
+      "selected_source_additional_finite_successes_exact": 6,
+      "total_finite_successes_exact": 18,
+      "selected_source_additional_forged_frontier_rejections": 16,
+      "total_forged_frontier_rejections": 32,
+      "runtime_only_selected_source_full5000_exact": true,
+      "unmodified_generated_app_passed": true,
       "scalar_only_passed": true,
-      "genuine_old_versions_rejected": [
-        238,
-        239
-      ]
+      "genuine_old_objects_rejected": 2
     },
-    "selected_speed_checkpoint": "IR238 original source, four workers",
+    "selected_speed_checkpoint": "IR242 ordered-combinadic mask reuse, four workers",
     "current_performance_cohort_run": true,
-    "selected": false,
+    "selected": true,
     "goal_complete": false,
     "hosted_ci_green_claim": false,
     "raw_archives_remotely_uploaded": false,
-    "updated_utc": "2026-11-07T03:21:12.933920+00:00",
+    "updated_utc": "2026-11-07T05:40:06.680824+00:00",
     "source_inventory": "integration/source-inventory.json",
-    "status": "integration/ir240-review-status.json"
+    "status": "integration/ir242-review-status.json",
+    "pending_newer_973": {
+      "head": "65436c6b01d6939b9ad9cb3d479c1020c1c16287",
+      "integrated": false,
+      "observed_utc": "2026-11-07T05:41:59.745475+00:00"
+    }
   },
   "integration_history": [
     {
@@ -12825,6 +13999,122 @@
       "local_archive_verified_files": 4955,
       "updated_utc": "2026-11-07T02:01:15.495076+00:00",
       "source_inventory": "integration/source-inventory.json"
+    },
+    {
+      "schema": "mech.related-post-gen.current-compiler-review.v1",
+      "compiler": "deebf08df690e37ddf763635d70fd25aaf0bedb4",
+      "identity": "IR240/work115/ABI41/image9",
+      "incoming": "54280db43e2d26e2554ff2651f24e929e11571c4",
+      "source_files": 2468,
+      "target_pr": 973,
+      "target_branch": "codex/level12-compression-consolidated",
+      "qualification": {
+        "status": "passed",
+        "loader_fixtures_exact": 558,
+        "fixtures": {
+          "edges-after-4-full-catalog/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "a6ca02c96c7dfb2845dd9afe6afe90e27e2c2f84575ff7f071e2c21a4c35cbad"
+          },
+          "edges-after-4-independent/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "e635ccea7e965db56cae1e1d49bb56a29d421e677c72bd23274b7e1293ce883d"
+          },
+          "edges-after-4-json/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "d5a62f38919a2ab25d80963b01fa8ab69d129e954ace7cb6ce93aed363a2494e"
+          },
+          "edges-after-8-independent/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "cae8b66e363de2e1e138ebb6e4cceaaa132125ec7e00025f1b4e5897cd2cc21e"
+          },
+          "edges-after-8-json/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "498996bbc4b2261fcb32ec579ec437c44e23b30aa3ec6f28f71a58638d589079"
+          },
+          "edges-compact-4-full-catalog/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "67178d7857e82abd800aea9b751517635afbf2c6d2304cf57a9aab063d5a6032"
+          },
+          "edges-compact-4-independent/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "97c813a1e701d18a14da1ff3a7b017dba8b525a60d27e57880dd66bcda192765"
+          },
+          "edges-compact-4-json/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "8eb991c85a4102accf6fba56bbc1cd576d63b61c08ef2c530fb6cab624c691af"
+          },
+          "edges-compact-8-independent/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "0aa3ccdaea2cf159dde21e07e9881ad5fbd7a89e77135eb08785dd16e09c2aed"
+          },
+          "edges-compact-8-json/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "e22ac50caaaa0faa923b3f44139d3b8910d3f06397d24f90a4acd48e49fcaa78"
+          },
+          "edges-reuse-4-full-catalog/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "0adf811959d544bea88c94b53678a14a3cd00fd0c530000512781755ee0e9103"
+          },
+          "edges-reuse-4-independent/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "33fe92f09d8493eb53b6db97a4163c9f6ae9047c991f4acb59e9e1268653e501"
+          },
+          "edges-reuse-4-json/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "2f5e917e7197b5ae14666f2516375a4609269b10800c42bf93c685341ad11021"
+          },
+          "after-4/edges/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "bf909202d89c2df4f21b8a526b39782f6733627ee73f9ce98e2219f9db25de4a"
+          },
+          "after-8/edges/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "3141b9253b4cc251693660ade829df6b511eb32668dcc235acacf6568c1dd7f6"
+          },
+          "compact-4/edges/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "bf82f3cb1f8d16315fb68b1a6aed0018c6702328934c45e034b7c7b6c3dfae32"
+          },
+          "compact-8/edges/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "d58b98cb31f1c9ba749364d789a6250913c6dd718259a9f41231c0f26b3281e1"
+          },
+          "reuse-4/edges/edge-fixtures.json": {
+            "cases": 31,
+            "sha256": "180c1f642fe65c13d5815dfc4d8af3e768874e9bd0fb5ebcfe408a2b8e69b1ec"
+          }
+        },
+        "decoded_bundle_files_exact": 65,
+        "finite_denials_exact": 48,
+        "finite_small_full_successes_exact": 12,
+        "forged_frontier_rejections": 16,
+        "gpu_passed": 858,
+        "inherited_gpu_failures": [
+          "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+          "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+        ],
+        "ci_selected_names_passed": 363,
+        "core_tests_reused_from_identical_IR238_sources": 393,
+        "relevant_engine_tests_reused_from_identical_IR238_sources": 289,
+        "scalar_all_nontiming_rows_exact_IR238": 128,
+        "compression_all_nontiming_rows_exact_IR238": 5,
+        "runtime_only_and_unmodified_generated_app_passed": true,
+        "scalar_only_passed": true,
+        "genuine_old_versions_rejected": [
+          238,
+          239
+        ]
+      },
+      "selected_speed_checkpoint": "IR238 original source, four workers",
+      "current_performance_cohort_run": true,
+      "selected": false,
+      "goal_complete": false,
+      "hosted_ci_green_claim": false,
+      "raw_archives_remotely_uploaded": false,
+      "updated_utc": "2026-11-07T03:21:12.933920+00:00",
+      "source_inventory": "integration/source-inventory.json",
+      "status": "integration/ir240-review-status.json"
     }
   ]
 }
