@@ -191,22 +191,54 @@ pub struct NativeProgramLibraryTemplate {
     // A selected leaf already owns this immutable metadata. Keep only that
     // owner in native-enabled builds instead of deep-cloning a second copy.
     // The featureless compiler representation has no selected leaf variant.
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     origin: super::NativeMatchOrigin,
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     revision: ProgramRevision,
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     inputs: Box<[Schema]>,
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     output: Schema,
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     contract: mech_core::ResolvedOperationContract,
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     selected_key: mech_core::ResidentOperationKey,
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     selected: SelectedLibrary,
 }
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 enum SelectedLibrary {
     Root(super::NativeCollectionOperationTemplate),
@@ -215,7 +247,11 @@ enum SelectedLibrary {
 impl serde::Serialize for NativeProgramLibraryTemplate {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
-        let fields = if cfg!(any(feature = "pure_text", feature = "map_ops")) {
+        let fields = if cfg!(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )) {
             7
         } else {
             6
@@ -229,79 +265,127 @@ impl serde::Serialize for NativeProgramLibraryTemplate {
         record.serialize_field("output", self.output())?;
         record.serialize_field("contract", self.contract())?;
         record.serialize_field("selected_key", self.selected_key())?;
-        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        #[cfg(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        ))]
         record.serialize_field("selected", &self.selected)?;
         record.end()
     }
 }
 impl NativeProgramLibraryTemplate {
     pub fn inputs(&self) -> &[Schema] {
-        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        #[cfg(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        ))]
         {
             match &self.selected {
                 SelectedLibrary::Root(t) => t.inputs(),
                 SelectedLibrary::Lexical(t) => t.inputs(),
             }
         }
-        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        #[cfg(not(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )))]
         {
             &self.inputs
         }
     }
     pub fn output(&self) -> &Schema {
-        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        #[cfg(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        ))]
         {
             match &self.selected {
                 SelectedLibrary::Root(t) => t.output(),
                 SelectedLibrary::Lexical(t) => t.output(),
             }
         }
-        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        #[cfg(not(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )))]
         {
             &self.output
         }
     }
     pub fn contract(&self) -> &mech_core::ResolvedOperationContract {
-        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        #[cfg(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        ))]
         {
             match &self.selected {
                 SelectedLibrary::Root(t) => t.contract(),
                 SelectedLibrary::Lexical(t) => t.contract(),
             }
         }
-        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        #[cfg(not(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )))]
         {
             &self.contract
         }
     }
     pub fn selected_key(&self) -> &mech_core::ResidentOperationKey {
-        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        #[cfg(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        ))]
         {
             match &self.selected {
                 SelectedLibrary::Root(t) => t.selected_key(),
                 SelectedLibrary::Lexical(t) => t.selected_key(),
             }
         }
-        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        #[cfg(not(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )))]
         {
             &self.selected_key
         }
     }
     pub const fn program_revision(&self) -> ProgramRevision {
-        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        #[cfg(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        ))]
         {
             match &self.selected {
                 SelectedLibrary::Root(t) => t.program_revision(),
                 SelectedLibrary::Lexical(t) => t.program_revision(),
             }
         }
-        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        #[cfg(not(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )))]
         {
             self.revision
         }
     }
     pub const fn origin(&self) -> super::NativeMatchOrigin {
-        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        #[cfg(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        ))]
         {
             match &self.selected {
                 SelectedLibrary::Root(t) => super::NativeMatchOrigin {
@@ -316,46 +400,74 @@ impl NativeProgramLibraryTemplate {
                 },
             }
         }
-        #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+        #[cfg(not(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )))]
         {
             self.origin
         }
     }
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub fn primitive(&self) -> super::NativeCollectionPrimitive {
         match &self.selected {
             SelectedLibrary::Root(t) => t.primitive(),
             SelectedLibrary::Lexical(t) => t.primitive(),
         }
     }
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub fn implementation_memory(&self) -> mech_core::ImplementationMemoryClass {
         match &self.selected {
             SelectedLibrary::Root(t) => t.implementation_memory(),
             SelectedLibrary::Lexical(t) => t.implementation_memory(),
         }
     }
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub fn root(&self) -> Option<&super::NativeCollectionOperationTemplate> {
         match &self.selected {
             SelectedLibrary::Root(t) => Some(t),
             SelectedLibrary::Lexical(_) => None,
         }
     }
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub fn lexical(&self) -> Option<&super::NativeCollectionLexicalTemplate> {
         match &self.selected {
             SelectedLibrary::Root(_) => None,
             SelectedLibrary::Lexical(t) => Some(t),
         }
     }
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub(crate) fn from_root(t: super::NativeCollectionOperationTemplate) -> Self {
         Self {
             selected: SelectedLibrary::Root(t),
         }
     }
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub(crate) fn from_lexical(t: super::NativeCollectionLexicalTemplate) -> Self {
         Self {
             selected: SelectedLibrary::Lexical(t),
@@ -363,8 +475,15 @@ impl NativeProgramLibraryTemplate {
     }
 }
 
+/// Default allowance for the conservative size of one definition table, not
+/// total compiler memory or simultaneously live nested analysis scratch.
+pub const DEFAULT_NATIVE_DEFINITION_TABLE_BYTES: u64 = 64 * 1024 * 1024;
+
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeProgramArtifactPlan {
+    // Compiler admission policy is not part of program semantics or image identity.
+    #[serde(skip)]
+    pub(crate) definition_table_byte_limit: u64,
     pub(crate) revision: ProgramRevision,
     pub(crate) resource_requirements: Box<[ExecutionResourceRequest]>,
     pub(crate) observations: Box<[NativeProgramObservation]>,
@@ -383,6 +502,11 @@ pub struct NativeProgramArtifactPlan {
     pub(crate) activation_boundary: Option<u32>,
 }
 impl NativeProgramArtifactPlan {
+    /// Compiler-only per-table estimate allowance; excluded from image identity.
+    pub const fn definition_table_byte_limit(&self) -> u64 {
+        self.definition_table_byte_limit
+    }
+
     pub const fn program_revision(&self) -> ProgramRevision {
         self.revision
     }
@@ -475,8 +599,14 @@ impl NativeProgramArtifactPlan {
         self.activation_boundary
     }
     pub fn validate_current_visits(&self) -> Result<(), &'static str> {
+        self.validate_current_visits_detailed()
+            .map_err(super::iteration_validation::ValidationError::reason)
+    }
+    pub(crate) fn validate_current_visits_detailed(
+        &self,
+    ) -> Result<(), super::iteration_validation::ValidationError> {
         super::range_cursor::validate(self)?;
         super::phase_validation::validate(self)?;
-        super::iteration_validation::validate(self)
+        super::iteration_validation::validate_detailed(self)
     }
 }

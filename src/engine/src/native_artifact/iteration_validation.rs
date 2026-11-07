@@ -2,13 +2,18 @@
 //! Backedges are validated only through a declared loop. Each lexical body is
 //! checked once as an acyclic graph, beginning with ancestors plus its carrier;
 //! previous-visit body locals are never part of that initial definition set.
+#[cfg(all(feature = "map_ops", feature = "convert"))]
+use super::NativeScalarValue;
 use super::{
     NativeControlLoopRef as Loop, NativeIterationAction as Action, NativeIterationArtifactPlan,
     NativeIterationTerminator as Terminator, NativeIterationValueScope as Scope,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
-    NativeScalarKind, NativeScalarValue,
+    NativeScalarKind,
 };
 use std::collections::VecDeque;
+#[path = "definition_set.rs"]
+mod definitions;
+use definitions::DefinitionSet;
 
 pub(crate) trait ControlType: Eq {
     fn is_bool(&self) -> bool;
@@ -46,6 +51,9 @@ pub(crate) trait ControlPlan {
     fn lifecycle_barrier(&self, _block: usize) -> bool {
         false
     }
+    fn definition_table_byte_limit(&self) -> u64 {
+        super::DEFAULT_NATIVE_DEFINITION_TABLE_BYTES
+    }
     fn cursor_cells(&self) -> usize {
         0
     }
@@ -54,7 +62,7 @@ pub(crate) trait ControlPlan {
     fn unavailable_before_turn(&self, _value: Value, _block: usize) -> bool {
         false
     }
-    fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str>;
+    fn initialize(&self, initial: &mut DefinitionSet) -> Result<(), &'static str>;
     fn output_values(&self) -> Box<dyn Iterator<Item = (Value, &Self::Type)> + '_>;
     fn effect_values(&self) -> Box<dyn Iterator<Item = (Value, &Self::Type)> + '_> {
         Box::new(std::iter::empty())
@@ -101,7 +109,7 @@ fn initialize_value<P: ControlPlan>(
     plan: &P,
     value: Value,
     ty: &P::Type,
-    initial: &mut [bool],
+    initial: &mut DefinitionSet,
 ) -> Result<(), &'static str> {
     let id = value.get() as usize;
     if plan.values().get(id) != Some(ty)
@@ -110,7 +118,7 @@ fn initialize_value<P: ControlPlan>(
     {
         return Err(BAD);
     }
-    initial[id] = true;
+    initial.set(id, true)?;
     Ok(())
 }
 impl ControlPlan for NativeIterationArtifactPlan {
@@ -118,7 +126,7 @@ impl ControlPlan for NativeIterationArtifactPlan {
     fn collections(&self) -> &[super::NativeProgramCollection] {
         &[]
     }
-    fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str> {
+    fn initialize(&self, initial: &mut DefinitionSet) -> Result<(), &'static str> {
         for input in self.inputs() {
             initialize_value(self, input.value(), input.declaration().ty(), initial)?;
         }
@@ -127,12 +135,7 @@ impl ControlPlan for NativeIterationArtifactPlan {
                 .values()
                 .get(constant.value().get() as usize)
                 .ok_or(BAD)?;
-            let kind = match constant.scalar() {
-                NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
-                NativeScalarValue::U64(_) => NativeScalarKind::U64,
-                NativeScalarValue::I64(_) => NativeScalarKind::I64,
-                NativeScalarValue::F64(_) => NativeScalarKind::F64,
-            };
+            let kind = constant.scalar().kind();
             if ty.kind() != kind {
                 return Err(BAD);
             }
@@ -151,6 +154,9 @@ impl ControlPlan for NativeIterationArtifactPlan {
     }
 }
 impl ControlPlan for super::NativeProgramArtifactPlan {
+    fn definition_table_byte_limit(&self) -> u64 {
+        self.definition_table_byte_limit()
+    }
     common_plan_view!(super::NativeProgramArtifactPlan, super::NativeProgramType);
     fn collections(&self) -> &[super::NativeProgramCollection] {
         self.collections()
@@ -184,7 +190,7 @@ impl ControlPlan for super::NativeProgramArtifactPlan {
                     .iter()
                     .any(|input| input.value() == value))
     }
-    fn initialize(&self, initial: &mut [bool]) -> Result<(), &'static str> {
+    fn initialize(&self, initial: &mut DefinitionSet) -> Result<(), &'static str> {
         for input in self.inputs() {
             initialize_value(self, input.value(), input.ty(), initial)?;
         }
@@ -269,7 +275,26 @@ impl ControlPlan for super::NativeProgramArtifactPlan {
 }
 
 const BAD: &str = "invalid counted-loop ownership or current-visit definitions";
-const ANALYSIS_CELLS: usize = 16 * 1024 * 1024;
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ValidationError {
+    Invalid(&'static str),
+    DefinitionTableLimit { required: u64, limit: u64 },
+}
+impl ValidationError {
+    pub(crate) const fn reason(self) -> &'static str {
+        match self {
+            Self::Invalid(reason) => reason,
+            Self::DefinitionTableLimit { .. } => {
+                "current-visit definition table exceeds its configured byte limit"
+            }
+        }
+    }
+}
+impl From<&'static str> for ValidationError {
+    fn from(reason: &'static str) -> Self {
+        Self::Invalid(reason)
+    }
+}
 fn cursor_cell(plan: &impl ControlPlan, iteration: u32) -> Result<usize, &'static str> {
     if iteration as usize >= plan.cursor_cells()
         || !matches!(plan.iteration(iteration as usize), Loop::Collection(data)
@@ -307,7 +332,7 @@ fn scalar_successors(term: Term) -> [Option<u32>; 2] {
     match term {
         Term::Jump(next) => [Some(next), None],
         Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. } => [Some(yes), Some(no)],
-        Term::Complete | Term::Reject => [None, None],
+        Term::Complete | Term::Reject | Term::IntegrityFailure => [None, None],
     }
 }
 /// Two disjoint analysis cells encode Empty -> SelectorReady -> SpanReady ->
@@ -407,9 +432,6 @@ fn structural_body<'a>(
         .get(source.get() as usize)
         .and_then(ControlType::definition)
         .ok_or(BAD)?;
-    if !schema.dimension_parameters().is_empty() {
-        return Err(BAD);
-    }
     let mut body = schema.body();
     for step in path {
         body = match (step, body) {
@@ -429,6 +451,10 @@ fn structural_body<'a>(
 /// Called before the opaque engine plan is returned, including runtime-only
 /// same-Object rederivation. No caller can construct or mutate a certified plan.
 pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
+    validate_detailed(plan).map_err(ValidationError::reason)
+}
+
+pub(crate) fn validate_detailed(plan: &impl ControlPlan) -> Result<(), ValidationError> {
     let blocks = plan.blocks();
     let count = plan.values().len();
     let cells = count
@@ -454,17 +480,22 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             )
         })
         .ok_or(BAD)?;
-    if plan.entry() as usize >= blocks.len()
-        || plan.value_scopes().len() != count
-        || blocks
-            .len()
-            .checked_mul(cells)
-            .is_none_or(|n| n > ANALYSIS_CELLS)
-    {
-        return Err(BAD);
+    if plan.entry() as usize >= blocks.len() {
+        return Err("current-visit entry is outside the control blocks".into());
+    }
+    if plan.value_scopes().len() != count {
+        return Err("current-visit scope count differs from value count".into());
+    }
+    let table_bytes = DefinitionSet::storage_bytes(blocks.len(), cells)
+        .ok_or("current-visit definition table size overflow")?;
+    let required =
+        u64::try_from(table_bytes).map_err(|_| "current-visit definition table size overflow")?;
+    let limit = plan.definition_table_byte_limit();
+    if required > limit {
+        return Err(ValidationError::DefinitionTableLimit { required, limit });
     }
     let ty = |v: Value| plan.values().get(v.get() as usize).ok_or(BAD);
-    let mut initial = vec![false; cells];
+    let mut initial = DefinitionSet::new(cells).ok_or(BAD)?;
     plan.initialize(&mut initial)?;
     let mut roles = vec![None; blocks.len()];
     for id in 0..plan.iteration_count() {
@@ -473,14 +504,14 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             .parent()
             .is_some_and(|parent| parent as usize >= id)
         {
-            return Err(BAD);
+            return Err(BAD.into());
         }
         let mut depth = 0;
         let mut parent = iteration.parent();
         while let Some(p) = parent {
             depth += 1;
             if depth > crate::MAX_CONTROL_DEPTH {
-                return Err(BAD);
+                return Err(BAD.into());
             }
             parent = plan.iteration(p as usize).parent();
         }
@@ -493,7 +524,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                         iteration: id as u32,
                     })
             {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
         if let Loop::Tail(tail) = iteration {
@@ -512,14 +543,8 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     != (Scope::Immutable {
                         iteration: Some(id as u32),
                     })
-                || !matches!(
-                    ty(tail.carrier())?
-                        .definition()
-                        .map(mech_core::Schema::body),
-                    Some(mech_core::SchemaBody::Enum { .. })
-                )
             {
-                return Err(BAD);
+                return Err(BAD.into());
             }
             let finish = blocks.get(tail.finish() as usize).ok_or(BAD)?;
             if finish.iteration() != Some(id as u32)
@@ -531,7 +556,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     .replace((id as u32, 4))
                     .is_some()
             {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
         for (block, role) in [
@@ -542,7 +567,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
         ] {
             let entry = roles.get_mut(block as usize).ok_or(BAD)?;
             if entry.replace((id as u32, role)).is_some() {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
         let init = &blocks[iteration.initialize() as usize];
@@ -591,7 +616,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 .iteration()
                 != Some(id as u32)
         {
-            return Err(BAD);
+            return Err(BAD.into());
         }
     }
     for (id, scope) in plan.value_scopes().iter().enumerate() {
@@ -600,7 +625,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             Scope::Carrier { iteration } => Some(*iteration),
         };
         if owner.is_some_and(|n| n as usize >= plan.iteration_count()) {
-            return Err(BAD);
+            return Err(BAD.into());
         }
         if let Scope::Carrier { iteration } = scope {
             if !match plan.iteration(*iteration as usize) {
@@ -608,7 +633,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 Loop::Tail(tail) => tail.carrier().get() as usize == id,
                 Loop::Collection(_) => false,
             } {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
     }
@@ -619,7 +644,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             .iteration()
             .is_some_and(|n| n as usize >= plan.iteration_count())
         {
-            return Err(BAD);
+            return Err(BAD.into());
         }
         let successors = match block.terminator() {
             Terminator::Scalar(term) => scalar_successors(term),
@@ -640,19 +665,19 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 _ => block.iteration() == next_block.iteration(),
             };
             if !special {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
         if let Terminator::Header { iteration, .. } = block.terminator() {
             if roles[id] != Some((iteration, 1)) {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
         if let Terminator::TailHeader { iteration, .. } = block.terminator()
             && (roles[id] != Some((iteration, 1))
                 || !matches!(plan.iteration(iteration as usize), Loop::Tail(_)))
         {
-            return Err(BAD);
+            return Err(BAD.into());
         }
         match block.action() {
             Action::Structural {
@@ -665,28 +690,30 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 use mech_core::{IntegerWidth, SchemaBody};
                 let body = structural_body(plan, *source, path)?;
                 let target = ty(*output)?.definition().ok_or(BAD)?;
-                if !target.dimension_parameters().is_empty()
-                    || !match observation {
-                        Observation::CanonicalValue => {
-                            target.body() == body && super::structural_values::supported(body)
-                        }
-                        Observation::U64 => {
-                            body == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
-                                && target.body() == body
-                        }
-                        Observation::EnumOrdinal { ordinal } => {
-                            matches!(body, SchemaBody::Enum { variants, .. } if (*ordinal as usize) < variants.len())
-                                && target.body() == &SchemaBody::Bool
-                        }
-                        Observation::StringEqual { peer } => {
-                            path.is_empty()
-                                && body == &SchemaBody::String
-                                && ty(*peer)? == ty(*source)?
-                                && target.body() == &SchemaBody::Bool
-                        }
+                if !match observation {
+                    Observation::CanonicalValue => {
+                        super::structural_values::carrier_component_matches(target.body(), body)
+                            && super::structural_values::supported(body)
                     }
-                {
-                    return Err(BAD);
+                    Observation::U64 => {
+                        target.dimension_parameters().is_empty()
+                            && body == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                            && target.body() == body
+                    }
+                    Observation::EnumOrdinal { ordinal } => {
+                        target.dimension_parameters().is_empty()
+                            && matches!(body, SchemaBody::Enum { variants, .. } if (*ordinal as usize) < variants.len())
+                            && target.body() == &SchemaBody::Bool
+                    }
+                    Observation::StringEqual { peer } => {
+                        target.dimension_parameters().is_empty()
+                            && path.is_empty()
+                            && body == &SchemaBody::String
+                            && ty(*peer)? == ty(*source)?
+                            && target.body() == &SchemaBody::Bool
+                    }
+                } {
+                    return Err(BAD.into());
                 }
             }
             Action::CollectionBegin { collection }
@@ -699,14 +726,14 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     _ => collection.push(),
                 };
                 if expected as usize != id {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
             }
             Action::CollectionElement { iteration } => {
                 if *iteration as usize >= plan.iteration_count()
                     || !matches!(plan.iteration(*iteration as usize), Loop::Collection(data) if data.body() as usize == id)
                 {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
             }
             Action::LibraryCall {
@@ -719,10 +746,10 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             Action::TextJoinFinish { collection } => {
                 let data = plan.collections().get(*collection as usize).ok_or(BAD)?;
                 let super::NativeCollectionResult::TextJoin(sink) = data.result() else {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 };
                 if sink.consumer() as usize != id || block.iteration() != data.parent() {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -734,10 +761,10 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             Action::HistogramFinish { collection } => {
                 let data = plan.collections().get(*collection as usize).ok_or(BAD)?;
                 let super::NativeCollectionResult::Histogram(sink) = data.result() else {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 };
                 if sink.consumer() as usize != id || block.iteration() != data.parent() {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -750,11 +777,11 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 let data = plan.collections().get(*collection as usize).ok_or(BAD)?;
                 let super::NativeCollectionResult::GuardedHistogramQuery(sink) = data.result()
                 else {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 };
                 let step = sink.steps().get(*step as usize).ok_or(BAD)?;
                 if step.site() as usize != id || block.iteration() != data.parent() {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 if let Some(template) = step.template() {
                     plan.library(
@@ -768,27 +795,27 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     match step.kind() {
                         K::Alias { .. } => {
                             let [source] = step.operands() else {
-                                return Err(BAD);
+                                return Err(BAD.into());
                             };
                             if ty(*source)? != ty(step.output().ok_or(BAD)?)? {
-                                return Err(BAD);
+                                return Err(BAD.into());
                             }
                         }
                         K::Cleanup if step.operands().is_empty() && step.output().is_none() => {}
-                        _ => return Err(BAD),
+                        _ => return Err(BAD.into()),
                     }
                 }
             }
             Action::PrepareU64Range { iteration } => {
                 cursor_cell(plan, *iteration)?;
                 let Loop::Collection(data) = plan.iteration(*iteration as usize) else {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 };
                 let super::NativeCollectionSource::U64Range(cursor) = data.source() else {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 };
                 if cursor.prepare() as usize != id {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -802,7 +829,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 let data = &plan.collections()[*collection as usize];
                 let p = data.string_span_projection().ok_or(BAD)?;
                 if p.range_site() as usize != id {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -816,7 +843,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 let data = &plan.collections()[*collection as usize];
                 let p = data.string_span_projection().ok_or(BAD)?;
                 if p.selection_site() as usize != id {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -831,7 +858,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     .string_element_map_projection()
                     .ok_or(BAD)?;
                 if p.selection_site() as usize != id {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -841,32 +868,36 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 )?;
             }
             Action::Initialize { iteration } if roles[id] != Some((*iteration, 0)) => {
-                return Err(BAD);
+                return Err(BAD.into());
             }
-            Action::Latch { iteration } if roles[id] != Some((*iteration, 2)) => return Err(BAD),
+            Action::Latch { iteration } if roles[id] != Some((*iteration, 2)) => {
+                return Err(BAD.into());
+            }
             Action::Scalar(Scalar::Primitive {
                 operands, output, ..
             }) => {
                 ty(*output)?;
                 if operands.iter().any(|v| ty(*v).is_err()) {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
             }
             Action::Scalar(Scalar::Copy { source, output }) if ty(*source)? != ty(*output)? => {
-                return Err(BAD);
+                return Err(BAD.into());
             }
             _ => {}
         }
         match block.terminator() {
             Terminator::Scalar(Term::Branch { condition, .. }) if !ty(condition)?.is_bool() => {
-                return Err(BAD);
+                return Err(BAD.into());
             }
             Terminator::Scalar(Term::LiteralBranch { left, right, .. })
                 if ty(left)? != ty(right)? =>
             {
-                return Err(BAD);
+                return Err(BAD.into());
             }
-            Terminator::Scalar(Term::Complete) if block.iteration().is_some() => return Err(BAD),
+            Terminator::Scalar(Term::Complete) if block.iteration().is_some() => {
+                return Err(BAD.into());
+            }
             _ => {}
         }
     }
@@ -881,7 +912,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             && !(matches!(block.action(), Action::Scalar(Scalar::None))
                 && matches!(block.terminator(), Terminator::Scalar(Term::Reject)))
         {
-            return Err(BAD);
+            return Err(BAD.into());
         }
     }
     Ok(())
@@ -902,7 +933,7 @@ fn check_scope(
     plan: &impl ControlPlan,
     scope: Option<u32>,
     entry: u32,
-    initial: Vec<bool>,
+    initial: DefinitionSet,
     roles: &[Option<(u32, u8)>],
     visited: &mut [bool],
 ) -> Result<(), &'static str> {
@@ -926,7 +957,7 @@ fn check_scope(
             pending.push(next);
         }
     }
-    let mut ends = vec![Vec::new(); plan.blocks().len()];
+    let mut ends = vec![DefinitionSet::empty(); plan.blocks().len()];
     let mut ready = (0..degrees.len())
         .filter(|&i| reachable[i] && degrees[i] == 0)
         .collect::<VecDeque<_>>();
@@ -941,11 +972,9 @@ fn check_scope(
             initial.clone()
         };
         for &previous in incoming[id].iter().skip(1) {
-            for (bit, &other) in known.iter_mut().zip(&ends[previous]) {
-                *bit &= other;
-            }
+            known.intersect(&ends[previous])?;
         }
-        let read = |v: Value, known: &[bool]| -> Result<(), &'static str> {
+        let read = |v: Value, known: &DefinitionSet| -> Result<(), &'static str> {
             let tail_return = roles[id].is_some_and(|(loop_id, role)|
                 role == 3 && matches!(plan.iteration(loop_id as usize), Loop::Tail(tail) if tail.returned() == v));
             if !plan.unavailable_before_turn(v, id)
@@ -974,7 +1003,7 @@ fn check_scope(
                 {
                     return Err(BAD);
                 }
-                known[ordinal] = true;
+                known.set(ordinal, true)?;
             }
             Action::LibraryCall {
                 operands, output, ..
@@ -988,7 +1017,7 @@ fn check_scope(
                 {
                     return Err(BAD);
                 }
-                known[ordinal] = true;
+                known.set(ordinal, true)?;
             }
             Action::PrepareU64Range { iteration } => {
                 let Loop::Collection(data) = plan.iteration(*iteration as usize) else {
@@ -1004,7 +1033,7 @@ fn check_scope(
                 if known[cell] || known[cursor.semantic_output().get() as usize] {
                     return Err(BAD);
                 }
-                known[cell] = true;
+                known.set(cell, true)?;
             }
             Action::PrepareStringSpanSelector { collection } => {
                 let p = plan.collections()[*collection as usize]
@@ -1018,14 +1047,13 @@ fn check_scope(
                     || known[span]
                     || known[p.selector().get() as usize]
                     || known[p.output().get() as usize]
-                    || known[plan.values().len()..plan.values().len() + plan.collections().len()]
-                        .iter()
-                        .rposition(|live| *live)
-                        != Some(*collection as usize)
+                    || known.last_set(
+                        plan.values().len()..plan.values().len() + plan.collections().len(),
+                    ) != Some(*collection as usize)
                 {
                     return Err(BAD);
                 }
-                known[selector] = true;
+                known.set(selector, true)?;
             }
             Action::ProjectStringSpan { collection } => {
                 let p = plan.collections()[*collection as usize]
@@ -1040,8 +1068,8 @@ fn check_scope(
                 {
                     return Err(BAD);
                 }
-                known[selector] = false;
-                known[span] = true;
+                known.set(selector, false)?;
+                known.set(span, true)?;
             }
             Action::ProjectStringMapEntry { collection } => {
                 let p = plan.collections()[*collection as usize]
@@ -1056,8 +1084,8 @@ fn check_scope(
                 {
                     return Err(BAD);
                 }
-                known[key] = false;
-                known[entry] = true;
+                known.set(key, false)?;
+                known.set(entry, true)?;
             }
             Action::Initialize { iteration } => {
                 let child = plan.iteration(*iteration as usize);
@@ -1065,7 +1093,7 @@ fn check_scope(
                 match child {
                     Loop::Iteration(fold) => {
                         read(fold.seed(), &known)?;
-                        body_initial[fold.carrier().get() as usize] = true;
+                        body_initial.set(fold.carrier().get() as usize, true)?;
                     }
                     Loop::Collection(collection) => match collection.source() {
                         super::NativeCollectionSource::Value(value) => read(*value, &known)?,
@@ -1077,7 +1105,7 @@ fn check_scope(
                     },
                     Loop::Tail(tail) => {
                         read(tail.seed(), &known)?;
-                        body_initial[tail.carrier().get() as usize] = true;
+                        body_initial.set(tail.carrier().get() as usize, true)?;
                     }
                 }
                 // The header is not part of the body DAG; it owns the only
@@ -1092,19 +1120,19 @@ fn check_scope(
                     visited,
                 )?;
                 if let Loop::Iteration(fold) = child {
-                    known[fold.carrier().get() as usize] = true;
+                    known.set(fold.carrier().get() as usize, true)?;
                 }
                 if let Loop::Tail(tail) = child {
                     // Reaching the parent exit implies the unique child return
                     // endpoint proved the returned value in this invocation.
-                    known[tail.returned().get() as usize] = true;
+                    known.set(tail.returned().get() as usize, true)?;
                 }
                 if let Loop::Collection(data) = child
                     && matches!(data.source(), super::NativeCollectionSource::U64Range(_))
                 {
                     // The unique loop exit consumes the prepared source. Body
                     // backedges preserve it; a later lexical invocation starts empty.
-                    known[cursor_cell(plan, *iteration)?] = false;
+                    known.set(cursor_cell(plan, *iteration)?, false)?;
                 }
             }
             Action::Latch { iteration } => {
@@ -1114,7 +1142,7 @@ fn check_scope(
                 if let Loop::Tail(tail) = plan.iteration(*iteration as usize) {
                     read(tail.next(), &known)?;
                 }
-                if known[plan.values().len()..] != initial[plan.values().len()..] {
+                if !known.same_suffix(&initial, plan.values().len()) {
                     return Err(BAD);
                 }
             }
@@ -1146,17 +1174,15 @@ fn check_scope(
                             || known[key]
                             || known[entry]
                             || known[p.output().get() as usize]
-                            || known[plan.values().len()
-                                ..plan.values().len() + plan.collections().len()]
-                                .iter()
-                                .rposition(|live| *live)
-                                != Some(collection.collection() as usize)
+                            || known.last_set(
+                                plan.values().len()..plan.values().len() + plan.collections().len(),
+                            ) != Some(collection.collection() as usize)
                         {
                             return Err(BAD);
                         }
-                        known[key] = true;
+                        known.set(key, true)?;
                     } else {
-                        known[ordinal] = true;
+                        known.set(ordinal, true)?;
                     }
                 }
             }
@@ -1177,19 +1203,17 @@ fn check_scope(
                     return Err(BAD);
                 }
                 let offset = plan.values().len();
-                let active = known[offset..offset + plan.collections().len()]
-                    .iter()
-                    .rposition(|live| *live)
+                let active = known
+                    .last_set(offset..offset + plan.collections().len())
                     .map(|id| id as u32);
                 if active != data.parent_collection() || known[offset + *collection as usize] {
                     return Err(BAD);
                 }
-                known[offset + *collection as usize] = true;
+                known.set(offset + *collection as usize, true)?;
             }
             Action::CollectionPush { collection, value } => {
-                if known[plan.values().len()..plan.values().len() + plan.collections().len()]
-                    .iter()
-                    .rposition(|live| *live)
+                if known
+                    .last_set(plan.values().len()..plan.values().len() + plan.collections().len())
                     != Some(*collection as usize)
                 {
                     return Err(BAD);
@@ -1204,7 +1228,7 @@ fn check_scope(
                     {
                         return Err(BAD);
                     }
-                    known[span] = false;
+                    known.set(span, false)?;
                 } else if let Some(p) =
                     plan.collections()[*collection as usize].string_element_map_projection()
                 {
@@ -1217,21 +1241,19 @@ fn check_scope(
                     {
                         return Err(BAD);
                     }
-                    known[entry] = false;
+                    known.set(entry, false)?;
                 } else {
                     read(*value, &known)?;
                 }
             }
             Action::CollectionFinish { collection } => {
                 let offset = plan.values().len();
-                if known[offset..offset + plan.collections().len()]
-                    .iter()
-                    .rposition(|live| *live)
+                if known.last_set(offset..offset + plan.collections().len())
                     != Some(*collection as usize)
                 {
                     return Err(BAD);
                 }
-                known[offset + *collection as usize] = false;
+                known.set(offset + *collection as usize, false)?;
                 if !matches!(
                     plan.collections()[*collection as usize].result(),
                     super::NativeCollectionResult::Materialized
@@ -1240,7 +1262,7 @@ fn check_scope(
                     if known[cell] {
                         return Err(BAD);
                     }
-                    known[cell] = true;
+                    known.set(cell, true)?;
                     // No Matrix Value exists. The original semantic result is
                     // deliberately NOT marked known.
                 } else {
@@ -1250,7 +1272,7 @@ fn check_scope(
                     {
                         return Err(BAD);
                     }
-                    known[output] = true;
+                    known.set(output, true)?;
                 }
             }
             Action::TextJoinFinish { collection } => {
@@ -1269,8 +1291,8 @@ fn check_scope(
                 {
                     return Err(BAD);
                 }
-                known[cell] = false;
-                known[output] = true;
+                known.set(cell, false)?;
+                known.set(output, true)?;
             }
             Action::HistogramFinish { collection } => {
                 let data = &plan.collections()[*collection as usize];
@@ -1287,8 +1309,8 @@ fn check_scope(
                 {
                     return Err(BAD);
                 }
-                known[cell] = false;
-                known[output] = true;
+                known.set(cell, false)?;
+                known.set(output, true)?;
             }
             Action::HistogramQueryStep { collection, step } => {
                 use super::NativeHistogramQueryStepKind as K;
@@ -1320,12 +1342,12 @@ fn check_scope(
                         return Err(BAD);
                     }
                     if matches!(step.kind(), K::Membership | K::Lookup) {
-                        known[output] = true;
+                        known.set(output, true)?;
                     }
                     // Every other semantic result is deliberately left absent.
                 }
                 if matches!(step.kind(), K::Cleanup) {
-                    known[cell] = false;
+                    known.set(cell, false)?;
                 }
             }
             Action::Scalar(action) => {
@@ -1351,7 +1373,7 @@ fn check_scope(
                     {
                         return Err(BAD);
                     }
-                    known[ordinal] = true;
+                    known.set(ordinal, true)?;
                 }
             }
         }
@@ -1360,7 +1382,7 @@ fn check_scope(
                 return Err(BAD);
             };
             read(tail.returned(), &known)?;
-            if known[plan.values().len()..] != initial[plan.values().len()..] {
+            if !known.same_suffix(&initial, plan.values().len()) {
                 return Err(BAD);
             }
         }
@@ -1372,7 +1394,7 @@ fn check_scope(
                     read(right, &known)?;
                 }
                 Term::Complete => {
-                    if known[plan.values().len()..].iter().any(|live| *live) {
+                    if known.any_suffix(plan.values().len()) {
                         return Err(BAD);
                     }
                     for (output, ty) in plan.output_values().chain(plan.effect_values()) {

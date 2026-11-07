@@ -16,6 +16,7 @@ enum MemoryClassImage {
     MatrixSolve,
     CanonicalFinalize,
     PackedStringMatrixOrCanonicalFinalize,
+    PackedUnsignedMatrixUpdateOrCanonicalFinalize,
     CanonicalSortUnique,
 }
 impl From<ImplementationMemoryClass> for MemoryClassImage {
@@ -30,6 +31,9 @@ impl From<ImplementationMemoryClass> for MemoryClassImage {
             M::MatrixSolve => Self::MatrixSolve,
             M::CanonicalFinalize => Self::CanonicalFinalize,
             M::PackedStringMatrixOrCanonicalFinalize => Self::PackedStringMatrixOrCanonicalFinalize,
+            M::PackedUnsignedMatrixUpdateOrCanonicalFinalize => {
+                Self::PackedUnsignedMatrixUpdateOrCanonicalFinalize
+            }
             M::CanonicalSortUnique => Self::CanonicalSortUnique,
         }
     }
@@ -79,6 +83,10 @@ fn memory_class_image_preserves_all_descriptive_tags_and_full_width_fields() {
             M::CanonicalSortUnique,
             serde_json::json!("CanonicalSortUnique"),
         ),
+        (
+            M::PackedUnsignedMatrixUpdateOrCanonicalFinalize,
+            serde_json::json!("PackedUnsignedMatrixUpdateOrCanonicalFinalize"),
+        ),
     ] {
         assert_eq!(
             serde_json::to_value(MemoryClassImage::from(memory)).unwrap(),
@@ -94,12 +102,20 @@ mod tests;
 pub(super) fn specialize_primitive(
     primitive: NativeCollectionPrimitive,
     inputs: &[Schema],
+    _output: &Schema,
 ) -> NativeCollectionPrimitive {
     use NativeCollectionPrimitive as P;
     match primitive {
         P::CompositePack(_) => P::CompositePack(inputs.len()),
+        P::MatrixHorizontal(_) => P::MatrixHorizontal(inputs.len()),
+        P::MatrixVertical(_) => P::MatrixVertical(inputs.len()),
+        #[cfg(feature = "convert")]
+        P::MatrixConversion if is_unsigned_word_conversion(inputs, _output) => {
+            P::UnsignedWordConversion
+        }
         P::StringScalarAccess => match inputs.first().map(Schema::body) {
             Some(SchemaBody::Matrix { .. }) => P::MatrixScalarAccess,
+            Some(SchemaBody::Tuple(_)) => P::TupleScalarProjection,
             Some(SchemaBody::Map { .. }) => P::MapKeyAccess,
             _ => primitive,
         },
@@ -154,7 +170,7 @@ fn leaf(
         .map(schema)
         .collect::<Result<Box<[_]>, _>>()?;
     let output = schema(&wire.output)?;
-    let primitive = specialize_primitive(primitive, &inputs);
+    let primitive = specialize_primitive(primitive, &inputs, &output);
     let memory = entry.implementation_memory();
     if serde_json::to_value(primitive).map_err(|e| e.to_string())? != wire.primitive
         || serde_json::to_value(MemoryClassImage::from(memory)).map_err(|e| e.to_string())?

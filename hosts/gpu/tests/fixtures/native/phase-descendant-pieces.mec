@@ -1,0 +1,43 @@
+// Ordinary current byte reads after nested calls and real cold collection exits.
++> bits
+rebase-node(node<u8>) => (out<u8>) :=
+  wide<u64> := node
+  out<u8> := ((wide < 128u64)? | true => 0u64 | false => wide - 128u64).
+rebase-nodes(nodes<[u8]>) => (out<[u8]>) :=
+  out := rebase-node(nodes).
+poke(nodes<[u8]>) => (out<[u8]>) :=
+  old<u64> := nodes[1u64]
+  value<u8> := bits/and(old + 1u64, 255u64)
+  ~next := nodes
+  next[1u64] = value
+  out := next.
+leaf(nodes<[u8]>, at<u64>, end<u64>) => (out<[u8]>) :=
+  more := at < end
+  next := (more? | true => poke(nodes) | false => nodes)
+  out := (more? | true => leaf(next, at + 1u64, end) | false => nodes).
+child(nodes<[u8]>, at<u64>, end<u64>, checkpoint<u64>, reject<u64>, probe<u64>) => (out<[u8]>) :=
+  allowed! := at != reject
+  more := at < end
+  next := (more? | true => leaf(nodes, 0u64, 1u64) | false => nodes)
+  slide := more && (at == checkpoint)
+  current := (slide? | true => rebase-nodes(next) | false => next)
+  left<u64> := current[probe + 1u64]
+  right<u64> := current[probe + 2u64]
+  bounded! := left + right < 512u64
+  out := (more? | true => child(current, at + 1u64, end, checkpoint, reject, probe) | false => current).
+walk(nodes<[u8]>, cache<[u32]>, at<u64>, end<u64>, checkpoint<u64>, child-checkpoint<u64>, reject<u64>, child-reject<u64>, probe<u64>) => (out<([u8],[u32],u64)>) :=
+  allowed! := at != reject
+  more := at < end
+  next := (more? | true => child(nodes, 0u64, 2u64, child-checkpoint, child-reject, probe) | false => nodes)
+  slide := more && (at == checkpoint)
+  current := (slide? | true => rebase-nodes(next) | false => next)
+  ~counted := cache
+  counted[1u64] = cache[1u64] + (more? | true => 1u32 | false => 0u32)
+  out := (more?
+    | true => walk(current, counted, at + 1u64, end, checkpoint, child-checkpoint, reject, child-reject, probe)
+    | false => (current, counted, at)).
+inspect(nodes<[u8]>, cache<[u32]>, steps<u64>, checkpoint<u64>, child-checkpoint<u64>, reject<u64>, child-reject<u64>, probe<u64>) => (out<([u8],[u32],u64)>) :=
+  (tree, entries, position) := walk(nodes, cache, 0u64, steps, checkpoint, child-checkpoint, reject, child-reject, probe)
+  out := (tree, entries, position).
+answer := inspect(nodes<[u8]>, cache<[u32]>, steps<u64>, checkpoint<u64>, child-checkpoint<u64>, reject<u64>, child-reject<u64>, probe<u64>)
+answer

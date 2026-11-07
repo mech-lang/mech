@@ -7,6 +7,21 @@ use crate::native_artifact::{NativeValueHandle, NativeWorkMeter};
 use mech_core::{MemoryBudgetLimits, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 
+mod buffer_frames;
+pub(super) mod continuation;
+mod helper_fallbacks;
+mod numeric_exits;
+mod numeric_segments;
+mod numeric_writes;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod paid_iterations;
+mod readonly_numeric;
+mod selected_calls;
+mod unsigned_buffers;
+mod word_collections;
+mod word_reads;
+mod word_updates;
+
 /// A synchronous reborrow with a map-specific surface, not execution authority.
 /// The enclosing invocation still owns phase validation and terminal handling.
 pub(in crate::native_artifact::program::runtime) struct MapExecution<'borrow, 'state, 'visit, 'plan>
@@ -63,13 +78,13 @@ impl<'borrow, 'state, 'visit, 'plan> MapExecution<'borrow, 'state, 'visit, 'plan
         self.invocation.result
     }
     #[inline]
-    pub(in crate::native_artifact::program::runtime) fn caches(&self) -> &CallCacheLane {
+    pub(in crate::native_artifact::program::runtime) fn caches(&self) -> &CallCacheLane<'plan> {
         &self.invocation.state.call_caches
     }
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn caches_and_library(
         &mut self,
-    ) -> (&mut CallCacheLane, &NativeLibraryWorkBudget) {
+    ) -> (&mut CallCacheLane<'plan>, &NativeLibraryWorkBudget) {
         (
             &mut self.invocation.state.call_caches,
             &self.invocation.state.library,
@@ -145,6 +160,20 @@ impl<'borrow, 'state, 'visit, 'plan> MapExecution<'borrow, 'state, 'visit, 'plan
     }
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct NumericPrepaid {
+    region: usize,
+    /// Deepest active traversal already paid before an exact cold edge.
+    deepest: u32,
+}
+impl NumericPrepaid {
+    /// Validated parents have smaller IDs, so no paid ancestor can be newer
+    /// than the deepest paid iteration. This negative grants no source credit.
+    fn may_include_iteration(self, wanted: Option<u32>) -> bool {
+        wanted.is_some_and(|wanted| wanted <= self.deepest)
+    }
+}
+
 pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visit, 'plan> {
     pub(in crate::native_artifact::program::runtime) state: &'state mut ExecutionState<'plan>,
     pub(in crate::native_artifact::program::runtime) descriptor: &'plan NativeProgramDescriptor,
@@ -153,6 +182,9 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
     pub(in crate::native_artifact::program::runtime) borrowed_strings: Option<borrowed::State>,
     pub(in crate::native_artifact::program::runtime) closed_tail:
         Option<crate::native_artifact::program::runtime::invocation::tail::State>,
+    pub(super) numeric_prepaid: Option<NumericPrepaid>,
+    // Scalar edge identity only; all owners remain in the inventoried frame/arena banks.
+    pub(in crate::native_artifact::program::runtime) parent_continuation: continuation::Pending,
     pub(in crate::native_artifact::program::runtime) selected_join:
         Option<crate::native_artifact::program::runtime::invocation::joins::State>,
     pub(in crate::native_artifact::program::runtime) limits: MemoryBudgetLimits,
@@ -174,6 +206,73 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
         Option<&'visit mech_engine::native_artifact::NativeTextLineWindow<'visit>>,
 }
 impl Invocation<'_, '_, '_> {
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn active_numeric_tail(
+        &self,
+    ) -> Option<usize> {
+        self.closed_tail
+            .as_ref()
+            .and_then(|state| match state.region {
+                tail::Region::Tail(id) => Some(id),
+                tail::Region::Segment(_) => None,
+            })
+    }
+
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn numeric_tail_partial(&self) -> bool {
+        self.closed_tail.as_ref().is_some_and(|state| state.partial)
+    }
+
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn numeric_prepaid_cursor(
+        &self,
+    ) -> Option<(usize, u32)> {
+        self.numeric_prepaid
+            .map(|route| (route.region, route.deepest))
+    }
+
+    pub(in crate::native_artifact::program::runtime) fn numeric_prepaid_region(
+        &self,
+    ) -> Option<usize> {
+        self.numeric_prepaid.map(|route| route.region)
+    }
+
+    fn numeric_source_prepaid(&self, site: usize) -> bool {
+        let Some(route) = self.numeric_prepaid else {
+            return false;
+        };
+        let metadata = self.descriptor.metadata();
+        let region = &metadata.closed_tails.regions[route.region];
+        let Some(proof) = &region.numeric else {
+            return false;
+        };
+        if if proof.prepaid_sites.is_empty() {
+            // Both inventories come from ordered sets and are independently
+            // reconstructed on image load. Cold continuations can visit every
+            // element of a large collection; do not scan the entire native
+            // source inventory again at each ordinary source visit.
+            proof.sites.binary_search(&site).is_err()
+        } else {
+            proof.prepaid_sites.binary_search(&site).is_err()
+        } {
+            return false;
+        }
+        let wanted = metadata.plan.blocks()[site].iteration();
+        let mut at = route.deepest;
+        loop {
+            if wanted == Some(at) {
+                return true;
+            }
+            if at == region.iteration {
+                return false;
+            }
+            let Some(parent) = metadata.plan.iterations()[at as usize].as_ref().parent() else {
+                return false;
+            };
+            at = parent;
+        }
+    }
+
     pub(in crate::native_artifact::program::runtime) fn control(
         &mut self,
     ) -> Control<'_, '_, NativeProgramDescriptor> {
@@ -187,8 +286,11 @@ impl Invocation<'_, '_, '_> {
 }
 
 impl Invocation<'_, '_, '_> {
+    // Only the separate admitted transport bank changes. Immutable current
+    // owner borrows can coexist with a write; no reference to this bank escapes
+    // the callback, and generated code remains suspended until it returns.
     pub(in crate::native_artifact::program::runtime) fn write_borrowed_word(
-        &mut self,
+        &self,
         index: usize,
         word: u64,
     ) -> Result<(), NativeProgramExecutionError> {
@@ -201,6 +303,17 @@ impl Invocation<'_, '_, '_> {
             *self.arguments.add(index) = word;
         }
         Ok(())
+    }
+    pub(in crate::native_artifact::program::runtime) fn read_borrowed_word(
+        &self,
+        index: usize,
+    ) -> Result<u64, NativeProgramExecutionError> {
+        if self.arguments.is_null() || index >= self.argument_capacity {
+            return Err(invalid("native reconciliation word outside admitted lane"));
+        }
+        // SAFETY: the owning session registers this exact admitted lane. The
+        // generated entry is suspended and no Rust reference crosses execution.
+        Ok(unsafe { *self.arguments.add(index) })
     }
     pub(in crate::native_artifact::program::runtime) fn write_window_arguments(
         &mut self,
@@ -311,6 +424,15 @@ impl Invocation<'_, '_, '_> {
         let ty = &descriptor.metadata().plan.values()[value.get() as usize];
         let data = match ty.scalar_kind() {
             Some(NativeScalarKind::Bool) if word <= 1 => ValueDataDraft::Bool(word != 0),
+            Some(NativeScalarKind::U8) => ValueDataDraft::U8(
+                u8::try_from(word).map_err(|_| invalid("narrow scalar word exceeds its type"))?,
+            ),
+            Some(NativeScalarKind::U16) => ValueDataDraft::U16(
+                u16::try_from(word).map_err(|_| invalid("narrow scalar word exceeds its type"))?,
+            ),
+            Some(NativeScalarKind::U32) => ValueDataDraft::U32(
+                u32::try_from(word).map_err(|_| invalid("narrow scalar word exceeds its type"))?,
+            ),
             Some(NativeScalarKind::U64) => ValueDataDraft::U64(word),
             Some(NativeScalarKind::I64) => ValueDataDraft::I64(word as i64),
             Some(NativeScalarKind::F64) => ValueDataDraft::F64(F64Bits::from_bits(word)),
@@ -342,6 +464,7 @@ impl Invocation<'_, '_, '_> {
         .into_memory_budget(&mut reservation)
         .map_err(Into::into)
     }
+    #[inline(always)]
     pub(in crate::native_artifact::program::runtime) fn helper(
         &mut self,
         site: u64,
@@ -359,6 +482,21 @@ impl Invocation<'_, '_, '_> {
         if tag == GlobalHelper::ClosedTailEnd {
             let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
             return self.end_closed_tail(site, args);
+        }
+        if tag == GlobalHelper::ClosedTailBegin {
+            let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
+            return self.begin_closed_tail(site, args);
+        }
+        if tag == GlobalHelper::NumericWritePrepare {
+            let site = usize::try_from(site)
+                .map_err(|_| invalid("numeric materialization site overflow"))?;
+            return self.prepare_numeric_write(site, args);
+        }
+        if tag == GlobalHelper::NumericSegmentEnd {
+            return self.end_numeric_segment(
+                usize::try_from(site).map_err(|_| invalid("parent segment site overflow"))?,
+                args,
+            );
         }
         if self.closed_tail.is_some() {
             return Err(invalid(
@@ -402,8 +540,8 @@ impl Invocation<'_, '_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         crate::native_artifact::program::runtime::collections::before_span_helper(self, site)?;
         let descriptor = self.descriptor;
-        if tag == GlobalHelper::ClosedTailBegin {
-            return self.begin_closed_tail(site, args);
+        if tag == GlobalHelper::NumericSegmentBegin {
+            return self.begin_numeric_segment(site, args);
         }
         if matches!(
             tag,
@@ -453,6 +591,10 @@ impl Invocation<'_, '_, '_> {
             self.prepare_string_map_region(site, args)
         } else if tag == GlobalHelper::StringMapFinish {
             self.finish_string_map_region(site, args)
+        } else if tag == GlobalHelper::WordCollectionPrepare {
+            self.prepare_word_collection(site, args)
+        } else if tag == GlobalHelper::WordCollectionFinish {
+            self.finish_word_collection(site, args)
         } else if tag == GlobalHelper::JoinMapPrepare {
             self.prepare_join_map_chunk(site, args)
         } else if tag == GlobalHelper::JoinMapFinish {
@@ -463,129 +605,11 @@ impl Invocation<'_, '_, '_> {
             if self.state.consumed || args != [0; 3] {
                 return Err(invalid("duplicate or malformed structural observation"));
             }
-            let NativeIterationAction::Structural {
-                source,
-                path,
-                observation,
-                ..
-            } = descriptor.metadata().plan.blocks()[site].action()
-            else {
-                return Err(invalid(
-                    "structural helper outside its exact canonical site",
-                ));
-            };
-            use mech_engine::native_artifact::{
-                NativeStructuralObservation as Observation, NativeStructuralStep as Step,
-            };
-            let work = (path.len() as u64)
-                .checked_mul(32)
-                .and_then(|n| n.checked_add(64))
-                .ok_or_else(|| invalid("structural observation work overflow"))?;
-            self.state.control.work.charge(
-                NativeExecutionPhase::Node(
-                    descriptor.metadata().plan.blocks()[site].origin().node(),
-                ),
-                work,
-            )?;
-            let root = self
-                .state
-                .arena
-                .copy_current(source.get(), &mut self.state.control.work)?;
-            if *observation == Observation::CanonicalValue {
-                let NativeIterationAction::Structural { output, .. } =
-                    descriptor.metadata().plan.blocks()[site].action()
-                else {
-                    unreachable!()
-                };
-                let prior = if self
-                    .state
-                    .arena
-                    .current_retained_bytes(output.get(), &mut self.state.control.work)?
-                    .is_some()
-                {
-                    Some(
-                        self.state
-                            .arena
-                            .copy_current(output.get(), &mut self.state.control.work)?,
-                    )
-                } else {
-                    None
-                };
-                let result = mech_engine::native_artifact::native_project_structural_value(
-                    &descriptor.metadata().plan,
-                    site,
-                    &descriptor.metadata().schemas,
-                    &root,
-                    prior.as_ref(),
-                    self.limits,
-                    &self.state.library,
-                )
-                .map_err(|error| NativeProgramExecutionError::Library {
-                    origin: descriptor.metadata().plan.blocks()[site].origin(),
-                    error,
-                })?;
-                self.state
-                    .arena
-                    .put(output.get(), &result, &mut self.state.control.work)?;
+            if let Some(result) = self.buffer_frame_action(site, tag, &[])? {
                 self.state.consumed = true;
-                return descriptor.metadata().plan.values()[output.get() as usize]
-                    .scalar_kind()
-                    .map(|kind| bits(&result, kind))
-                    .transpose();
+                return Ok(result);
             }
-            let mut data = root.data();
-            for step in path {
-                data = match (step, data) {
-                    (Step::EnumPayload { ordinal }, ValueData::Enum(value))
-                        if value.ordinal() == *ordinal =>
-                    {
-                        value
-                            .payload()
-                            .ok_or_else(|| invalid("structural enum has no payload"))?
-                    }
-                    (Step::TupleItem { ordinal }, ValueData::Tuple(values)) => values
-                        .get(*ordinal as usize)
-                        .ok_or_else(|| invalid("structural tuple index"))?,
-                    _ => {
-                        return Err(invalid(
-                            "structural observation path differs from its admitted schema",
-                        ));
-                    }
-                };
-            }
-            let word = match (observation, data) {
-                (Observation::U64, ValueData::U64(value)) => *value,
-                (Observation::EnumOrdinal { ordinal }, ValueData::Enum(value)) => {
-                    u64::from(value.ordinal() == *ordinal)
-                }
-                (Observation::StringEqual { peer }, ValueData::String(left)) => {
-                    let peer = self
-                        .state
-                        .arena
-                        .copy_current(peer.get(), &mut self.state.control.work)?;
-                    let ValueData::String(right) = peer.data() else {
-                        return Err(invalid("structural String peer has another kind"));
-                    };
-                    let work = u64::try_from(left.len().max(right.len()))
-                        .map_err(|_| invalid("structural String comparison work overflow"))?;
-                    // Both finite cumulative compute and comparison accounts
-                    // admit the complete worst-case raw-byte equality first.
-                    self.state.library.charge(work, work).map_err(|error| {
-                        NativeProgramExecutionError::Collection {
-                            origin: descriptor.metadata().plan.blocks()[site].origin(),
-                            error,
-                        }
-                    })?;
-                    u64::from(left == right)
-                }
-                _ => {
-                    return Err(invalid(
-                        "structural result differs from its exact native kind",
-                    ));
-                }
-            };
-            self.state.consumed = true;
-            Ok(Some(word))
+            self.canonical_structural_observation(site)
         } else if tag == GlobalHelper::Library {
             if self.state.consumed {
                 return Err(invalid("duplicate library helper"));
@@ -608,6 +632,10 @@ impl Invocation<'_, '_, '_> {
             // the synchronous entry. Native code is suspended in this callback;
             // no Rust reference to the lane survives across native writes.
             let words = unsafe { core::slice::from_raw_parts(self.arguments, operands.len()) };
+            if let Some(result) = self.prepared_library_call(site, words)? {
+                self.state.consumed = true;
+                return Ok(result);
+            }
             if let Some(result) = self.line_matrix_call(site, words)? {
                 self.state.consumed = true;
                 return Ok(result);
@@ -620,51 +648,7 @@ impl Invocation<'_, '_, '_> {
                 self.state.consumed = true;
                 return Ok(self.join_map_is_fusing().then_some(1));
             }
-            for (index, &operand) in operands.iter().enumerate() {
-                let value = if descriptor.metadata().plan.values()[operand.get() as usize]
-                    .scalar_kind()
-                    .is_some()
-                {
-                    self.scalar(operand, words[index])?
-                } else {
-                    if words[index] != 0 {
-                        return Err(invalid("managed operand has a native payload"));
-                    }
-                    self.state
-                        .arena
-                        .copy_current(operand.get(), &mut self.state.control.work)?
-                };
-                self.state.call_inputs.values_mut()[index] = Some(value);
-            }
-            let call = descriptor.metadata().calls[site]
-                .as_ref()
-                .ok_or_else(|| invalid("missing exact prepared selection"))?;
-            let mut result = None;
-            let outcome = self.state.call_caches.invoke(
-                site,
-                call,
-                &self.state.call_inputs.values()[..operands.len()],
-                &mut result,
-                self.limits,
-                &self.state.library,
-            );
-            // Every scalar/imported owner prepaid retirement before insertion.
-            // Clear both successful and failed calls without retaining an old
-            // call's owners while the next site is being constructed.
-            self.state.call_inputs.values_mut()[..operands.len()].fill(None);
-            outcome.map_err(|error| NativeProgramExecutionError::Library {
-                origin: descriptor.metadata().plan.blocks()[site].origin(),
-                error,
-            })?;
-            let result = result.ok_or_else(|| invalid("library omitted output"))?;
-            self.state
-                .arena
-                .put(output.get(), &result, &mut self.state.control.work)?;
-            self.state.consumed = true;
-            descriptor.metadata().plan.values()[output.get() as usize]
-                .scalar_kind()
-                .map(|kind| bits(&result, kind))
-                .transpose()
+            self.canonical_library_call(site, operands, *output, words)
         } else if tag == GlobalHelper::Move {
             if self.state.consumed {
                 return Err(invalid("duplicate managed move"));
@@ -672,17 +656,18 @@ impl Invocation<'_, '_, '_> {
             let (source, output) = self
                 .needs_move(site)
                 .ok_or_else(|| invalid("move outside managed copy/carrier"))?;
-            if self.move_joined_map(source.get(), output.get())? {
+            let frame_move = self.buffer_frame_action(site, tag, &[])?.is_some();
+            if !frame_move && self.move_joined_map(source.get(), output.get())? {
                 self.state.consumed = true;
                 return Ok(None);
             }
-            let value = self
-                .state
-                .arena
-                .copy_current(source.get(), &mut self.state.control.work)?;
-            self.state
-                .arena
-                .put(output.get(), &value, &mut self.state.control.work)?;
+            if !frame_move {
+                self.state.arena.copy_current_to(
+                    source.get(),
+                    output.get(),
+                    &mut self.state.control.work,
+                )?;
+            }
             if let NativeIterationAction::Latch { iteration } =
                 descriptor.metadata().plan.blocks()[site].action()
                 && matches!(
@@ -698,59 +683,9 @@ impl Invocation<'_, '_, '_> {
             if self.state.consumed || args[2] != 0 {
                 return Err(invalid("duplicate collection helper"));
             }
-            let mut state = self
-                .state
-                .collections
-                .take()
-                .ok_or_else(|| invalid("collection helper without state"))?;
-            let result = state.helper(
-                &mut CollectionExecution::new(self),
-                site,
-                [args[0], args[1]],
-            );
-            self.state.collections = Some(state);
-            let result = result?;
-            self.state.consumed = true;
-            Ok(result)
+            self.collection_helper(site, args)
         } else {
-            if tag != GlobalHelper::decode(OUTPUT_BASE + self.state.output_cursor as u64)
-                || (self.action_required(site) && !self.state.consumed)
-                || descriptor.metadata().plan.blocks()[site].terminator()
-                    != NativeIterationTerminator::Scalar(NativeMatchTerminator::Complete)
-            {
-                return Err(invalid("typed output outside exact completion order"));
-            }
-            if self.state.output_cursor >= descriptor.metadata().plan.transport_output_count() {
-                return Err(invalid("extra typed output"));
-            }
-            let out = descriptor
-                .metadata()
-                .plan
-                .transport_output_value(self.state.output_cursor);
-            let ty = descriptor
-                .metadata()
-                .plan
-                .transport_output_type(self.state.output_cursor);
-            let value = if ty.scalar_kind().is_some() {
-                self.scalar(out, args[0])?
-            } else {
-                self.state
-                    .arena
-                    .copy_current(out.get(), &mut self.state.control.work)?
-            };
-            let target = descriptor
-                .metadata()
-                .plan
-                .values()
-                .len()
-                .checked_add(self.state.output_cursor)
-                .and_then(|n| u32::try_from(n).ok())
-                .ok_or_else(|| invalid("typed output slot overflow"))?;
-            self.state
-                .arena
-                .put(target, &value, &mut self.state.control.work)?;
-            self.state.output_cursor += 1;
-            Ok(None)
+            self.typed_output_helper(site, tag, args)
         }
     }
     pub(in crate::native_artifact::program::runtime) fn visit(
@@ -791,50 +726,27 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("entry omitted current required helper"));
         }
-        let previous = if let Some((from, to)) = self.state.map_owners.closed_exit {
-            if self.state.control.previous != Some(from) || site != u64::from(to) {
-                return Err(invalid("visit outside closed map exit frontier"));
-            }
-            Some(from)
-        } else if let Some(previous) = self.state.control.previous
-            && let Some(group) = self
-                .descriptor
-                .metadata()
-                .map_admission
-                .group(previous as usize)
-            && self.state.map_owners.has_retained_binding(group.owner)
-        {
-            if previous != group.start() {
-                return Err(invalid("native path lost its entry"));
-            }
-            Some(
-                group
-                    .predecessor(
-                        u32::try_from(site).map_err(|_| invalid("map path frontier overflow"))?,
-                    )
-                    .ok_or_else(|| invalid("visit outside prepaid native path frontier"))?,
-            )
-        } else {
-            self.state.control.previous
-        };
-        // A native aggregate latch has no managed move callback. Retire the
+        let previous = self.admission_predecessor(site)?;
+        self.complete_parent_continuation(previous, site)?;
+        // A native scalar/aggregate latch has no managed move callback. Retire the
         // OTHER managed loop locals after that generated copy, before the next
         // visit, exactly as the managed latch used to do. Aggregate words own
         // no heap payload and are absent from the retirement inventory.
         if let Some(previous) = previous
+            && let NativeIterationAction::Latch { iteration } =
+                self.descriptor.metadata().plan.blocks()[previous as usize].action()
+            && let mech_engine::native_artifact::NativeControlLoop::Tail(tail) =
+                &self.descriptor.metadata().plan.iterations()[*iteration as usize]
             && (self
                 .descriptor
                 .metadata()
                 .scalar_aggregates
                 .action(previous as usize)
                 .is_some()
-                || self.retained_native_action(previous as usize))
-            && let NativeIterationAction::Latch { iteration } =
-                self.descriptor.metadata().plan.blocks()[previous as usize].action()
-            && matches!(
-                self.descriptor.metadata().plan.iterations()[*iteration as usize],
-                mech_engine::native_artifact::NativeControlLoop::Tail(_)
-            )
+                || self.retained_native_action(previous as usize)
+                || self.descriptor.metadata().plan.values()[tail.carrier().get() as usize]
+                    .scalar_kind()
+                    .is_some())
         {
             self.retire_tail_locals(*iteration, RetirementKind::TailLatch)?;
         }
@@ -862,14 +774,44 @@ impl Invocation<'_, '_, '_> {
         if let Some(state) = &self.state.collections {
             state.validate_span_boundary(block.action())?;
         }
+        let prepaid = self.numeric_source_prepaid(index);
+        #[cfg(test)]
+        if prepaid {
+            super::composition_tests::observe::prepaid_source_visit(index);
+        }
         let group = self
             .descriptor
             .metadata()
             .map_admission
             .group(index)
-            .filter(|group| self.state.map_owners.has_retained_binding(group.owner));
+            .filter(|group| match group.owner {
+                Some(owner) => self.state.map_owners.has_retained_binding(owner),
+                None => {
+                    group.start() as usize == index
+                        && self.worker.is_none()
+                        && self
+                            .state
+                            .library
+                            .unscoped_remaining()
+                            .is_some_and(|remaining| remaining.0 >= group.work)
+                        && self
+                            .state
+                            .control
+                            .work
+                            .limit()
+                            .checked_sub(self.state.control.work.used())
+                            .is_some_and(|remaining| remaining >= group.work)
+                }
+            });
         if group.is_some_and(|group| u64::from(group.start()) != site) {
             return Err(invalid("ordinary visit inside admitted scalar group"));
+        }
+        // Closed numeric membership excludes ordinary scalar groups. A later
+        // grouping extension must prove its own paid coverage, not inherit it.
+        if prepaid && group.is_some() {
+            return Err(invalid(
+                "prepaid numeric visit overlaps a scalar admission group",
+            ));
         }
         if previous.is_none() && self.worker.is_some() {
             let worker = self.worker.as_ref().unwrap();
@@ -884,11 +826,46 @@ impl Invocation<'_, '_, '_> {
                 return Err(invalid("worker entry outside constructor proof"));
             }
             self.control().visit_outlined_entry(site, region.begin)?;
+        } else if prepaid {
+            #[cfg(test)]
+            let already_paid = self.state.control.work.used();
+            self.control().visit_prepaid_from(site, previous)?;
+            #[cfg(test)]
+            assert_eq!(
+                self.state.control.work.used(),
+                already_paid,
+                "a prepaid source visit must neither debit twice nor renew work"
+            );
         } else {
             self.control()
                 .visit_from(site, group.map(|group| group.work), previous)?;
         }
+        self.arm_parent_continuation(index)?;
+        self.state.scalar_path = group
+            .filter(|group| group.owner.is_none())
+            .map(|group| group.start());
         self.state.map_owners.closed_exit = None;
+        if let Some(route) = self.numeric_prepaid {
+            let metadata = self.descriptor.metadata();
+            let mech_engine::native_artifact::NativeControlLoop::Tail(tail) =
+                &metadata.plan.iterations()[route.deepest as usize]
+            else {
+                return Err(invalid("prepaid continuation lost its Tail"));
+            };
+            if index == tail.latch() as usize || index == tail.finish() as usize {
+                self.numeric_prepaid =
+                    if route.deepest == metadata.closed_tails.regions[route.region].iteration {
+                        None
+                    } else {
+                        Some(NumericPrepaid {
+                            region: route.region,
+                            deepest: tail
+                                .parent()
+                                .ok_or_else(|| invalid("prepaid continuation lost its ancestor"))?,
+                        })
+                    };
+            }
+        }
         let descriptor = self.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
             self.borrowed_action(index)
@@ -949,11 +926,76 @@ impl Invocation<'_, '_, '_> {
         if self.state.control.completed && self.has_retained_maps() {
             return Err(invalid("completion with an active retained map owner"));
         }
+        if self.state.control.completed && self.parent_continuation.is_pending() {
+            return Err(invalid("completion with pending parent child edge"));
+        }
         self.state.consumed = false;
         // Keep the actual admitted anchor. The next callback must belong to
         // this prepaid path's exact frontier; interior failures retain their
         // original source sites. No synthetic per-instruction visits occur.
         Ok(())
+    }
+
+    /// Read the same proved predecessor at visits and phase checkpoints.
+    /// A paid entry remains stored until the next boundary is actually visited.
+    #[inline]
+    pub(in crate::native_artifact::program::runtime) fn admission_predecessor(
+        &self,
+        site: u64,
+    ) -> Result<Option<u32>, NativeProgramExecutionError> {
+        Ok(
+            if let Some((from, to)) = self.state.map_owners.closed_exit {
+                if self.state.control.previous != Some(from) || site != u64::from(to) {
+                    return Err(invalid("visit outside closed map exit frontier"));
+                }
+                Some(from)
+            } else if let Some(previous) = self.state.control.previous
+                && let Some(group) = self
+                    .descriptor
+                    .metadata()
+                    .map_admission
+                    .group(previous as usize)
+                && self.admission_active(group)
+            {
+                if previous != group.start() {
+                    return Err(invalid("native path lost its entry"));
+                }
+                Some(
+                    group
+                        .predecessor(
+                            u32::try_from(site)
+                                .map_err(|_| invalid("map path frontier overflow"))?,
+                        )
+                        .ok_or_else(|| invalid("visit outside prepaid native path frontier"))?,
+                )
+            } else {
+                self.state.control.previous
+            },
+        )
+    }
+
+    fn admission_active(
+        &self,
+        group: &crate::native_artifact::program::prepare::map_admission::Group,
+    ) -> bool {
+        match group.owner {
+            Some(owner) => self.state.map_owners.has_retained_binding(owner),
+            None => self.state.scalar_path == Some(group.start()),
+        }
+    }
+
+    /// The existing one-word callback result is scratch between helpers.
+    /// Scalar interiors contain no helper that could overwrite this decision.
+    pub(in crate::native_artifact::program::runtime) fn scalar_admission_word(
+        &self,
+        site: u64,
+    ) -> Option<u64> {
+        self.descriptor
+            .metadata()
+            .map_admission
+            .group(site as usize)
+            .filter(|group| group.owner.is_none())
+            .map(|group| u64::from(self.state.scalar_path == Some(group.start())))
     }
 
     pub(in crate::native_artifact::program::runtime) fn failure_site(
@@ -971,7 +1013,7 @@ impl Invocation<'_, '_, '_> {
         }
         let layout = &self.descriptor.metadata().map_admission;
         if let Some(group) = layout.group(previous as usize)
-            && self.state.map_owners.has_retained_binding(group.owner)
+            && self.admission_active(group)
             && group.start() == previous
             && group.sites.contains(&site)
         {
@@ -993,17 +1035,18 @@ impl Invocation<'_, '_, '_> {
             .retirements
             .slots(self.retirements, iteration, kind)
             .map_err(invalid)?;
-        let scan = amount(slots.len(), 16, 64)?;
-        self.state
-            .control
-            .work
-            .charge(NativeExecutionPhase::Setup, scan)?;
-        for &slot in slots {
-            self.state
-                .arena
-                .retire_current(slot as u32, &mut self.state.control.work)?;
-        }
-        Ok(())
+        super::retirement::run(
+            slots,
+            &self.descriptor.metadata().frame_retirements,
+            &mut self.state.buffer_frames,
+            &mut self.state.arena,
+            &mut self.state.control.work,
+            self.descriptor
+                .metadata()
+                .cleanup_effects
+                .get(iteration, kind),
+        )
+        .map(|_| ())
     }
 }
 
@@ -1043,13 +1086,13 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
         self.invocation.limits
     }
     #[inline]
-    pub(in crate::native_artifact::program::runtime) fn caches(&self) -> &CallCacheLane {
+    pub(in crate::native_artifact::program::runtime) fn caches(&self) -> &CallCacheLane<'plan> {
         &self.invocation.state.call_caches
     }
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn caches_and_library(
         &mut self,
-    ) -> (&mut CallCacheLane, &NativeLibraryWorkBudget) {
+    ) -> (&mut CallCacheLane<'plan>, &NativeLibraryWorkBudget) {
         (
             &mut self.invocation.state.call_caches,
             &self.invocation.state.library,
@@ -1124,6 +1167,11 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
     pub(in crate::native_artifact::program::runtime) fn retirements(&self) -> &'visit [u64] {
         self.invocation.retirements
     }
+    pub(in crate::native_artifact::program::runtime) fn frozen_retirement_work(
+        &self,
+    ) -> Result<u64, Error> {
+        self.invocation.frozen_retirement_work()
+    }
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn worker(&self) -> &Option<parallel::Worker> {
         &self.invocation.worker
@@ -1194,7 +1242,7 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
         let state = &mut *self.invocation.state;
         collections::charge(
             &mut state.control.work,
-            amount(state.call_inputs.values().len(), 16, 128)?,
+            amount(state.call_inputs.funded_len(), 16, 128)?,
         )
     }
 }

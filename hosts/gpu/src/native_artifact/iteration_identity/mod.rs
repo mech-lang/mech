@@ -9,8 +9,9 @@ use mech_engine::native_artifact::{
 use sha2::{Digest, Sha256};
 
 pub const NATIVE_ITERATION_LINK_IDENTITY_BYTES: usize = 176;
-pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 1;
-pub const NATIVE_ITERATION_WORK_POLICY_VERSION: u64 = 1;
+// Exact-width unsigned comparison primitives retain their semantic kinds.
+pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 5;
+pub const NATIVE_ITERATION_WORK_POLICY_VERSION: u64 = 2;
 const MAGIC: &[u8; 16] = b"MECHNATIVEITER\0\0";
 
 /// Read-only same-Object metadata; only the checked emitter constructs it.

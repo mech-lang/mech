@@ -88,6 +88,11 @@ pub enum ControlOperationBody<C = OperationContractId> {
     /// resident executor admits a bounded call frame before following it.
     Recur(u8),
 
+    /// Check the single Bool operand at this exact lexical visit. False fails
+    /// the candidate; true produces the same Bool. This is engine-owned
+    /// control, not a document constraint or a selected library implementation.
+    Assert,
+
     /// Suspend the enclosing declared FSM with the operation's single state
     /// input. Suspension publishes no result in the current turn; resident
     /// execution resumes the same lexical match on a later turn.
@@ -96,6 +101,19 @@ pub enum ControlOperationBody<C = OperationContractId> {
     /// the same arm. Publication commits atomically with any suspension.
     Publish,
     Iteration(super::IterationDeclaration<C>),
+}
+
+pub(super) fn is_assertion_signature(
+    schemas: &mech_core::SchemaTable,
+    inputs: &[SchemaId],
+    output: SchemaId,
+) -> bool {
+    inputs.len() == 1
+        && inputs.iter().chain(core::iter::once(&output)).all(|id| {
+            schemas
+                .get(*id)
+                .is_some_and(|schema| schema.body() == &mech_core::SchemaBody::Bool)
+        })
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -729,7 +747,10 @@ pub(super) fn validate_match_inner(
             "match requires a supported result and scalar literal-pattern scrutinee",
         ));
     }
-    if !closed_value(scrutinee)
+    if !draft
+        .schemas
+        .get(scrutinee)
+        .is_some_and(is_control_pattern_schema)
         && declaration.arms.iter().any(|arm| {
             matches!(
                 &arm.pattern,
@@ -737,7 +758,7 @@ pub(super) fn validate_match_inner(
             )
         })
     {
-        return Err(invalid("match bindings require a closed value schema"));
+        return Err(invalid("match bindings require a supported value schema"));
     }
     let mut used_inputs = std::collections::BTreeSet::from([declaration.scrutinee]);
     let mut captured_inputs = std::collections::BTreeSet::new();
@@ -923,6 +944,13 @@ pub(super) fn validate_match_inner(
                                 guarded,
                             )?;
                         }
+                        ControlOperationBody::Assert => {
+                            if !is_assertion_signature(&draft.schemas, &inputs, operation.schema) {
+                                return Err(invalid(
+                                    "lexical assertion requires one Bool input and Bool result",
+                                ));
+                            }
+                        }
                         ControlOperationBody::Recur(ancestor) => {
                             let target = match_schemas
                                 .len()
@@ -1059,19 +1087,30 @@ pub(super) fn validate_match_inner(
                     }
                 }
                 let port = &contract.outputs[0];
+                // A branch owns every local result. RMW is still a pure value
+                // operation: execution seeds a fresh result from its explicit
+                // base, then passes only the remaining operands to the kernel.
+                let construction_supported = match port.construction {
+                    OutputConstruction::FullWrite { .. }
+                    | OutputConstruction::Build { .. }
+                    | OutputConstruction::Replace { .. } => {
+                        port.access == AccessMode::Write && port.alias == AliasPolicy::NoAlias
+                    }
+                    OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                        port.access == AccessMode::ReadWrite
+                            && port.alias == (AliasPolicy::MayAlias { input: base_input })
+                            && contract
+                                .inputs
+                                .get(usize::from(base_input))
+                                .is_some_and(|base| base.schema == operation.schema)
+                    }
+                };
                 if port.schema != operation.schema
-                    || port.access != AccessMode::Write
                     || port.delivery != DeliveryMode::Signal
-                    || port.alias != AliasPolicy::NoAlias
-                    || !matches!(
-                        port.construction,
-                        OutputConstruction::FullWrite { .. }
-                            | OutputConstruction::Build { .. }
-                            | OutputConstruction::Replace { .. }
-                    )
+                    || !construction_supported
                 {
                     return Err(invalid(
-                        "block operation must fully write its exact owned result",
+                        "block operation must construct its exact owned result",
                     ));
                 }
             }
@@ -1112,7 +1151,10 @@ pub(super) fn validate_match_inner(
 }
 
 /// Structural admission limits shared by source finalization and wire defaults.
-pub const MAX_CONTROL_ARMS: usize = 4_096;
+// A composed program with 4,867 arms fits the existing block, operation,
+// operand, local-slot and depth bounds. Share this finite arm budget with wire
+// preflight; callers can still request a smaller decode budget.
+pub const MAX_CONTROL_ARMS: usize = 8_192;
 pub const MAX_CONTROL_BLOCKS: usize = 8_192;
 pub const MAX_CONTROL_OPERATIONS: usize = 65_536;
 pub const MAX_CONTROL_OPERANDS: usize = 262_144;
@@ -1120,7 +1162,11 @@ pub const MAX_CONTROL_OPERANDS: usize = 262_144;
 /// share that one namespace during resident activation.
 pub const MAX_CONTROL_LOCALS: usize = u16::MAX as usize + 1;
 /// Keeps validation, encoding and execution recursion within a bounded stack.
-pub const MAX_CONTROL_DEPTH: usize = 8;
+// Ordinary function frames and their selected match expressions share this
+// lexical nesting bound. Keep a finite stack limit without excluding a small
+// chain of recursive helpers; total declarations/operations remain separately
+// bounded by MAX_CONTROL_BLOCKS and the artifact admission limits.
+pub const MAX_CONTROL_DEPTH: usize = 32;
 
 enum ControlRef<'a, C> {
     Match(&'a MatchDeclaration<C>),
@@ -1128,7 +1174,40 @@ enum ControlRef<'a, C> {
     Iteration(&'a super::IterationDeclaration<C>),
 }
 
-fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
+const CONTROL_RESOURCES: [&str; 5] = [
+    "control arms",
+    "control blocks",
+    "control operations",
+    "control operands",
+    "control local slots",
+];
+
+fn add_control_count(
+    node: mech_core::NodeId,
+    resource: &'static str,
+    count: &mut usize,
+    amount: usize,
+    limit: usize,
+) -> Result<(), super::ArtifactBuildError> {
+    let required = count
+        .checked_add(amount)
+        .ok_or(super::ArtifactBuildError::ControlAdmissionOverflow { node, resource })?;
+    if required > limit {
+        return Err(super::ArtifactBuildError::ControlAdmissionLimit {
+            node,
+            resource,
+            required,
+            limit,
+        });
+    }
+    *count = required;
+    Ok(())
+}
+
+fn control_counts<C>(
+    root: ControlRef<'_, C>,
+    node: mech_core::NodeId,
+) -> Result<[usize; 5], super::ArtifactBuildError> {
     let mut counts = [0usize; 5];
     let limits = [
         MAX_CONTROL_ARMS,
@@ -1140,11 +1219,28 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
     let mut pending = vec![(root, 1usize)];
     while let Some((control, depth)) = pending.pop() {
         if depth > MAX_CONTROL_DEPTH {
-            return None;
+            return Err(super::ArtifactBuildError::ControlAdmissionLimit {
+                node,
+                resource: "control nesting depth",
+                required: depth,
+                limit: MAX_CONTROL_DEPTH,
+            });
         }
-        let mut add = |index: usize, amount: usize| -> Option<()> {
-            counts[index] = counts[index].checked_add(amount)?;
-            (counts[index] <= limits[index]).then_some(())
+        let nested_depth =
+            depth
+                .checked_add(1)
+                .ok_or(super::ArtifactBuildError::ControlAdmissionOverflow {
+                    node,
+                    resource: "control nesting depth",
+                })?;
+        let mut add = |index: usize, amount: usize| {
+            add_control_count(
+                node,
+                CONTROL_RESOURCES[index],
+                &mut counts[index],
+                amount,
+                limits[index],
+            )
         };
         match control {
             ControlRef::Match(control) => {
@@ -1152,7 +1248,12 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                 add(3, control.captures.len())?;
                 for arm in &control.arms {
                     if let MatchPattern::Structural(pattern) = &arm.pattern {
-                        let metrics = super::comprehension::pattern_metrics(pattern)?;
+                        let metrics = super::comprehension::pattern_metrics(pattern).ok_or(
+                            super::ArtifactBuildError::InvalidControl {
+                                node,
+                                reason: "control pattern admission limit",
+                            },
+                        )?;
                         add(3, metrics.nodes)?;
                         add(4, metrics.bindings)?;
                     }
@@ -1165,17 +1266,18 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                             add(3, operation.inputs.len())?;
                             match &operation.body {
                                 ControlOperationBody::Match(nested) => {
-                                    pending.push((ControlRef::Match(nested), depth.checked_add(1)?))
+                                    pending.push((ControlRef::Match(nested), nested_depth))
                                 }
-                                ControlOperationBody::Comprehension(nested) => pending.push((
-                                    ControlRef::Comprehension(nested),
-                                    depth.checked_add(1)?,
-                                )),
-                                ControlOperationBody::Iteration(nested) => pending
-                                    .push((ControlRef::Iteration(nested), depth.checked_add(1)?)),
+                                ControlOperationBody::Comprehension(nested) => {
+                                    pending.push((ControlRef::Comprehension(nested), nested_depth))
+                                }
+                                ControlOperationBody::Iteration(nested) => {
+                                    pending.push((ControlRef::Iteration(nested), nested_depth))
+                                }
                                 ControlOperationBody::Operation { .. }
                                 | ControlOperationBody::Recur(_)
                                 | ControlOperationBody::Suspend
+                                | ControlOperationBody::Assert
                                 | ControlOperationBody::Publish => {}
                             }
                         }
@@ -1188,7 +1290,12 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                 for step in &control.steps {
                     match step {
                         super::ComprehensionStep::Generator { pattern, .. } => {
-                            let metrics = super::comprehension::pattern_metrics(pattern)?;
+                            let metrics = super::comprehension::pattern_metrics(pattern).ok_or(
+                                super::ArtifactBuildError::InvalidControl {
+                                    node,
+                                    reason: "control pattern admission limit",
+                                },
+                            )?;
                             add(3, metrics.nodes)?;
                             add(4, metrics.bindings)?;
                         }
@@ -1198,17 +1305,18 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                             add(4, 1)?;
                             match &operation.body {
                                 ControlOperationBody::Match(nested) => {
-                                    pending.push((ControlRef::Match(nested), depth.checked_add(1)?))
+                                    pending.push((ControlRef::Match(nested), nested_depth))
                                 }
-                                ControlOperationBody::Comprehension(nested) => pending.push((
-                                    ControlRef::Comprehension(nested),
-                                    depth.checked_add(1)?,
-                                )),
-                                ControlOperationBody::Iteration(nested) => pending
-                                    .push((ControlRef::Iteration(nested), depth.checked_add(1)?)),
+                                ControlOperationBody::Comprehension(nested) => {
+                                    pending.push((ControlRef::Comprehension(nested), nested_depth))
+                                }
+                                ControlOperationBody::Iteration(nested) => {
+                                    pending.push((ControlRef::Iteration(nested), nested_depth))
+                                }
                                 ControlOperationBody::Operation { .. }
                                 | ControlOperationBody::Recur(_)
                                 | ControlOperationBody::Suspend
+                                | ControlOperationBody::Assert
                                 | ControlOperationBody::Publish => {}
                             }
                         }
@@ -1227,28 +1335,32 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                     add(3, operation.inputs.len())?;
                     match &operation.body {
                         ControlOperationBody::Match(nested) => {
-                            pending.push((ControlRef::Match(nested), depth.checked_add(1)?))
+                            pending.push((ControlRef::Match(nested), nested_depth))
                         }
                         ControlOperationBody::Comprehension(nested) => {
-                            pending.push((ControlRef::Comprehension(nested), depth.checked_add(1)?))
+                            pending.push((ControlRef::Comprehension(nested), nested_depth))
                         }
                         ControlOperationBody::Iteration(nested) => {
-                            pending.push((ControlRef::Iteration(nested), depth.checked_add(1)?))
+                            pending.push((ControlRef::Iteration(nested), nested_depth))
                         }
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
+                        | ControlOperationBody::Assert
                         | ControlOperationBody::Publish => {}
                     }
                 }
             }
         }
     }
-    Some(counts)
+    Ok(counts)
 }
 
-fn match_counts<C>(root: &MatchDeclaration<C>) -> Option<[usize; 5]> {
-    control_counts(ControlRef::Match(root))
+fn match_counts<C>(
+    root: &MatchDeclaration<C>,
+    node: mech_core::NodeId,
+) -> Result<[usize; 5], super::ArtifactBuildError> {
+    control_counts(ControlRef::Match(root), node)
 }
 
 fn validate_control_depth<C>(
@@ -1286,6 +1398,7 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
+                        | ControlOperationBody::Assert
                         | ControlOperationBody::Publish => {}
                     }
                 }
@@ -1309,6 +1422,7 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
+                        | ControlOperationBody::Assert
                         | ControlOperationBody::Publish => {}
                     }
                 }
@@ -1328,6 +1442,7 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
+                        | ControlOperationBody::Assert
                         | ControlOperationBody::Publish => {}
                     }
                 }
@@ -1349,34 +1464,34 @@ pub(super) fn validate_control_counts(
 ) -> Result<(), super::ArtifactBuildError> {
     let mut counts = [0usize; 4];
     for node in &draft.nodes {
-        let invalid = || super::ArtifactBuildError::InvalidControl {
-            node: node.node,
-            reason: "control graph admission limit",
-        };
-        let mut add = |index: usize, amount: usize| -> Result<(), super::ArtifactBuildError> {
-            counts[index] = counts[index].checked_add(amount).ok_or_else(invalid)?;
-            if counts[index]
-                > [
+        let mut add = |index: usize, amount: usize| {
+            add_control_count(
+                node.node,
+                [
+                    "artifact control arms",
+                    "artifact control blocks",
+                    "artifact control operations",
+                    "artifact control operands",
+                ][index],
+                &mut counts[index],
+                amount,
+                [
                     MAX_CONTROL_ARMS,
                     MAX_CONTROL_BLOCKS,
                     MAX_CONTROL_OPERATIONS,
                     MAX_CONTROL_OPERANDS,
-                ][index]
-            {
-                return Err(invalid());
-            }
-            Ok(())
+                ][index],
+            )
         };
         if let super::ExecutableNodeBody::Comprehension(control) = &node.body {
-            let control_counts =
-                control_counts(ControlRef::Comprehension(control)).ok_or_else(invalid)?;
+            let control_counts = control_counts(ControlRef::Comprehension(control), node.node)?;
             for (index, count) in control_counts[..4].iter().copied().enumerate() {
                 add(index, count)?;
             }
             continue;
         }
         if let super::ExecutableNodeBody::Iteration(control) = &node.body {
-            let nested = control_counts(ControlRef::Iteration(control)).ok_or_else(invalid)?;
+            let nested = control_counts(ControlRef::Iteration(control), node.node)?;
             for (index, count) in nested[..4].iter().copied().enumerate() {
                 add(index, count)?;
             }
@@ -1401,7 +1516,7 @@ pub(super) fn validate_control_counts(
             | super::ExecutableNodeBody::Activation(control) => control,
             _ => continue,
         };
-        let control_counts = match_counts(control).ok_or_else(invalid)?;
+        let control_counts = match_counts(control, node.node)?;
         for (index, count) in control_counts[..4].iter().copied().enumerate() {
             add(index, count)?;
         }
@@ -1424,6 +1539,7 @@ impl<C> MatchDeclaration<C> {
                     ControlOperationBody::Iteration(nested) => nested.contains_suspend(),
                     ControlOperationBody::Operation { .. }
                     | ControlOperationBody::Recur(_)
+                    | ControlOperationBody::Assert
                     | ControlOperationBody::Publish => false,
                 })
         })
@@ -1493,6 +1609,7 @@ impl<C> MatchDeclaration<C> {
                                 ControlOperationBody::Recur(ancestor) => {
                                     ControlOperationBody::Recur(*ancestor)
                                 }
+                                ControlOperationBody::Assert => ControlOperationBody::Assert,
 
                                 ControlOperationBody::Suspend => ControlOperationBody::Suspend,
                                 ControlOperationBody::Publish => ControlOperationBody::Publish,
@@ -1537,6 +1654,7 @@ impl<C> super::ComprehensionDeclaration<C> {
                 ControlOperationBody::Iteration(nested) => nested.contains_suspend(),
                 ControlOperationBody::Operation { .. }
                 | ControlOperationBody::Recur(_)
+                | ControlOperationBody::Assert
                 | ControlOperationBody::Publish => false,
             }
         })
@@ -1601,6 +1719,68 @@ pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
         && !matches!(schema.body(), mech_core::SchemaBody::Dynamic)
 }
 
+// Fixed record/tuple elements carry no child-container dimensions. A matrix
+// of these values uses the same turn-local geometry as an unsigned buffer.
+pub(crate) fn is_control_fixed_aggregate_element(body: &mech_core::SchemaBody) -> bool {
+    use mech_core::SchemaBody as B;
+    fn field(body: &B) -> bool {
+        matches!(
+            body,
+            B::Bool
+                | B::Index
+                | B::Id
+                | B::Atom(_)
+                | B::String
+                | B::UnsignedInteger(_)
+                | B::SignedInteger(_)
+                | B::FloatingPoint(_)
+        ) || is_control_fixed_aggregate_element(body)
+    }
+    match body {
+        B::Record(fields) => fields.iter().all(|entry| field(&entry.schema)),
+        B::Tuple(fields) => fields.iter().all(field),
+        _ => false,
+    }
+}
+
+/// A turn-shaped unsigned or fixed-aggregate matrix carries its live dimensions
+/// in a canonical snapshot. This is structural-pattern authority; closed-value,
+/// literal and capture eligibility remain separate predicates.
+pub(crate) fn is_control_pattern_schema(schema: &mech_core::Schema) -> bool {
+    fn carrier(body: &mech_core::SchemaBody) -> Option<bool> {
+        use mech_core::SchemaBody as B;
+        match body {
+            B::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2
+                && (matches!(element.as_ref(), B::UnsignedInteger(_))
+                    || is_control_fixed_aggregate_element(element)) =>
+            {
+                Some(true)
+            }
+            B::Tuple(fields) => fields.iter().try_fold(false, |matrix, body| {
+                carrier(body).map(|child| matrix || child)
+            }),
+            B::Bool
+            | B::Index
+            | B::Id
+            | B::Atom(_)
+            | B::String
+            | B::UnsignedInteger(_)
+            | B::SignedInteger(_)
+            | B::FloatingPoint(_) => Some(false),
+            _ => None,
+        }
+    }
+    is_control_value_schema(schema)
+        || (schema
+            .dimension_parameters()
+            .iter()
+            .all(|parameter| parameter.lifetime() == mech_core::DimensionLifetime::Turn)
+            && carrier(schema.body()) == Some(true))
+}
+
 /// Selected control results may retain per-turn Matrix geometry in an
 /// immutable canonical snapshot. This is a result-only authority: patterns,
 /// scrutinees, lexical captures and state carriers keep their own gates.
@@ -1647,33 +1827,377 @@ pub(crate) fn is_control_result_schema(schema: &mech_core::Schema) -> bool {
             && matrix_result(schema.body()) == Some(true))
 }
 
-/// A lexical matrix capture may retain its turn-local shape in a canonical
-/// snapshot. This does not make variable-shaped scrutinees, structural pattern
-/// bindings, or block results closed control values.
+/// Lexical matrices and records of matrices retain their turn-local geometry
+/// in a canonical snapshot. This does not widen pattern or state eligibility.
 pub(crate) fn is_control_capture_schema(schema: &mech_core::Schema) -> bool {
     use mech_core::{DimensionLifetime, SchemaBody};
-    is_control_value_schema(schema)
-        || (matches!(
-            schema.body(),
-            SchemaBody::Matrix { element, dimensions }
-                if dimensions.len() == 2
-                    && matches!(element.as_ref(),
+    fn carrier(body: &SchemaBody) -> Option<bool> {
+        match body {
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2
+                && (is_control_fixed_aggregate_element(element)
+                    || matches!(
+                        element.as_ref(),
                         SchemaBody::Bool
                             | SchemaBody::Index
                             | SchemaBody::String
                             | SchemaBody::UnsignedInteger(_)
                             | SchemaBody::SignedInteger(_)
-                            | SchemaBody::FloatingPoint(_))
-        ) && schema
-            .dimension_parameters()
-            .iter()
-            .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn))
+                            | SchemaBody::FloatingPoint(_)
+                    )) =>
+            {
+                Some(true)
+            }
+            SchemaBody::Record(fields) => fields.iter().try_fold(false, |matrix, field| {
+                carrier(&field.schema).map(|child| matrix || child)
+            }),
+            body if is_builtin_control_scalar_body(body)
+                || matches!(
+                    body,
+                    SchemaBody::String | SchemaBody::Id | SchemaBody::Atom(_)
+                ) =>
+            {
+                Some(false)
+            }
+            _ => None,
+        }
+    }
+    is_control_value_schema(schema)
+        || (carrier(schema.body()) == Some(true)
+            && schema
+                .dimension_parameters()
+                .iter()
+                .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use mech_core::{DimensionExpr, FloatWidth, SchemaBody, SchemaDraft, SchemaTableBuilder};
+
+    fn admission_block(operations: usize) -> ControlBlock {
+        ControlBlock {
+            id: ControlBlockId(0),
+            parameters: Box::new([]),
+            operations: vec![
+                ControlOperation {
+                    node: 0,
+                    body: ControlOperationBody::Publish,
+                    inputs: Box::new([]),
+                    schema: SchemaId::new(0),
+                };
+                operations
+            ]
+            .into_boxed_slice(),
+            yield_value: ControlValue::Constant(ConstantId::new(0)),
+        }
+    }
+
+    fn admission_match(arms: usize, guarded: bool) -> MatchDeclaration {
+        MatchDeclaration {
+            scrutinee: 0,
+            partial: false,
+            captures: Box::new([]),
+            arms: vec![
+                ControlMatchArm {
+                    pattern: MatchPattern::Wildcard,
+                    guard: guarded.then(|| admission_block(0)),
+                    body: admission_block(0),
+                };
+                arms
+            ]
+            .into_boxed_slice(),
+        }
+    }
+
+    fn admission_iteration(operations: usize) -> super::super::IterationDeclaration {
+        super::super::IterationDeclaration {
+            count: super::super::IterationCount::Literal(1),
+            seed: 0,
+            captures: Box::new([]),
+            carrier: SchemaId::new(0),
+            body: admission_block(operations),
+        }
+    }
+
+    fn expect_admission_limit(
+        result: Result<[usize; 5], super::super::ArtifactBuildError>,
+        resource: &str,
+        required: usize,
+        limit: usize,
+    ) {
+        let error = result.unwrap_err();
+        assert!(
+            matches!(error, super::super::ArtifactBuildError::ControlAdmissionLimit {
+            node: mech_core::NodeId(7), resource: actual, required: used, limit: bound,
+        } if actual == resource && used == required && bound == limit),
+            "{error:?}"
+        );
+        let message = format!("{error:?}");
+        assert!(message.contains(resource));
+        assert!(message.contains(&format!("required: {required}")));
+        assert!(message.contains(&format!("limit: {limit}")));
+    }
+
+    #[test]
+    fn control_admission_reports_arm_limit() {
+        let at_limit = admission_match(MAX_CONTROL_ARMS, false);
+        assert!(match_counts(&at_limit, mech_core::NodeId(7)).is_ok());
+        let over = admission_match(MAX_CONTROL_ARMS + 1, false);
+        expect_admission_limit(
+            match_counts(&over, mech_core::NodeId(7)),
+            "control arms",
+            MAX_CONTROL_ARMS + 1,
+            MAX_CONTROL_ARMS,
+        );
+    }
+
+    #[test]
+    fn control_admission_reports_nested_block_limit() {
+        let mut root = admission_iteration(1);
+        root.body.operations[0].body =
+            ControlOperationBody::Match(admission_match(MAX_CONTROL_ARMS, true));
+        expect_admission_limit(
+            control_counts(ControlRef::Iteration(&root), mech_core::NodeId(7)),
+            "control blocks",
+            MAX_CONTROL_BLOCKS + 1,
+            MAX_CONTROL_BLOCKS,
+        );
+    }
+
+    #[test]
+    fn control_admission_reports_operation_limit() {
+        let root = admission_iteration(MAX_CONTROL_OPERATIONS + 1);
+        expect_admission_limit(
+            control_counts(ControlRef::Iteration(&root), mech_core::NodeId(7)),
+            "control operations",
+            MAX_CONTROL_OPERATIONS + 1,
+            MAX_CONTROL_OPERATIONS,
+        );
+    }
+
+    #[test]
+    fn control_admission_reports_operand_limit() {
+        let mut root = admission_match(1, false);
+        root.captures = vec![
+            ControlCapture {
+                input: 0,
+                schema: SchemaId::new(0),
+                freeze_on_suspend: false,
+            };
+            MAX_CONTROL_OPERANDS + 1
+        ]
+        .into_boxed_slice();
+        expect_admission_limit(
+            match_counts(&root, mech_core::NodeId(7)),
+            "control operands",
+            MAX_CONTROL_OPERANDS + 1,
+            MAX_CONTROL_OPERANDS,
+        );
+    }
+
+    #[test]
+    fn control_admission_reports_shared_local_slot_limit() {
+        let root = admission_iteration(MAX_CONTROL_LOCALS);
+        expect_admission_limit(
+            control_counts(ControlRef::Iteration(&root), mech_core::NodeId(7)),
+            "control local slots",
+            MAX_CONTROL_LOCALS + 1,
+            MAX_CONTROL_LOCALS,
+        );
+    }
+
+    #[test]
+    fn control_admission_reports_artifact_total_and_originating_node() {
+        let schemas = SchemaTableBuilder::new().finish().unwrap().table;
+        let constants = mech_core::ConstantStoreBuilder::new(&schemas)
+            .finish()
+            .unwrap()
+            .store;
+        let contracts = mech_core::OperationContractTableBuilder::new()
+            .finish()
+            .unwrap()
+            .table;
+        let draft = super::super::ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: super::super::ApplicationRequirementTable::empty(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+            nodes: [4, 7]
+                .into_iter()
+                .map(|id| super::super::NodeDeclaration {
+                    node: mech_core::NodeId(id),
+                    body: super::super::ExecutableNodeBody::Match(admission_match(
+                        MAX_CONTROL_ARMS / 2 + 1,
+                        false,
+                    )),
+                    input_bindings: 0..0,
+                    output_bindings: 0..0,
+                })
+                .collect(),
+        };
+        expect_admission_limit(
+            validate_control_counts(&draft).map(|()| [0; 5]),
+            "artifact control arms",
+            MAX_CONTROL_ARMS + 2,
+            MAX_CONTROL_ARMS,
+        );
+    }
+
+    #[test]
+    fn control_admission_distinguishes_counter_overflow() {
+        let mut count = usize::MAX;
+        let error = add_control_count(
+            mech_core::NodeId(7),
+            "control operands",
+            &mut count,
+            1,
+            usize::MAX,
+        )
+        .unwrap_err();
+        assert!(matches!(
+            error,
+            super::super::ArtifactBuildError::ControlAdmissionOverflow {
+                node: mech_core::NodeId(7),
+                resource: "control operands",
+            }
+        ));
+        assert_eq!(count, usize::MAX);
+    }
+
+    #[cfg(feature = "full_source")]
+    #[test]
+    fn composed_boolean_checks_exceed_former_arm_budget_and_round_trip() {
+        use core::fmt::Write;
+        use mech_syntax::document::{
+            AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+            parse_canonical_document,
+        };
+        let mut source = String::from("checked(flag<bool>, allowed<bool>) => (out<bool>) :=\n");
+        for index in 0..2049 {
+            writeln!(
+                source,
+                "  gate{index}! := (flag? | true => allowed | false => true)"
+            )
+            .unwrap();
+        }
+        source.push_str("  out := allowed.\nchecked(flag<bool>, allowed<bool>)\n");
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(9), Revision(1), source.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        let original = crate::CanonicalSourceFrontend
+            .compile_document(&syntax)
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        assert!(original.nodes().iter().any(|node| {
+            let counts = match &node.body {
+                super::super::ExecutableNodeBody::Match(value)
+                | super::super::ExecutableNodeBody::Activation(value) => {
+                    match_counts(value, node.node)
+                }
+                super::super::ExecutableNodeBody::Comprehension(value) => {
+                    control_counts(ControlRef::Comprehension(value), node.node)
+                }
+                super::super::ExecutableNodeBody::Iteration(value) => {
+                    control_counts(ControlRef::Iteration(value), node.node)
+                }
+                _ => return false,
+            };
+            counts.unwrap()[0] > 4096
+        }));
+        let bytes = crate::encode_program_artifact_bytecode_v1(&original).unwrap();
+        let decoded = crate::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(original.revision(), decoded.revision());
+        let sections = mech_core::CanonicalArtifactBytecode::from_bytes(&bytes).unwrap();
+        let error = crate::decode_program_artifact_sections_with_limits(
+            &sections.artifact,
+            crate::ArtifactDecodeLimits {
+                max_control_arms: 4096,
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(&error, crate::ArtifactBytecodeError::Json(_)));
+        assert!(format!("{error:?}").contains("control graph item limit"));
+    }
+
+    #[test]
+    fn turn_record_matrix_carriers_reject_child_containers_and_other_lifetimes() {
+        use mech_core::{
+            DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaField,
+        };
+        let record = |field| {
+            SchemaBody::Record(
+                vec![SchemaField {
+                    name: "value".into(),
+                    schema: field,
+                }]
+                .into_boxed_slice(),
+            )
+        };
+        let schema = |element, lifetime| {
+            SchemaDraft {
+                body: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    ]
+                    .into_boxed_slice(),
+                },
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                }]
+                .into_boxed_slice(),
+            }
+            .finalize()
+            .unwrap()
+        };
+        let fixed = record(SchemaBody::Tuple(
+            vec![
+                SchemaBody::Bool,
+                SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W32),
+            ]
+            .into_boxed_slice(),
+        ));
+        for lifetime in [DimensionLifetime::Turn, DimensionLifetime::Activation] {
+            let value = schema(fixed.clone(), lifetime);
+            assert_eq!(
+                is_control_pattern_schema(&value),
+                lifetime == DimensionLifetime::Turn
+            );
+            assert_eq!(
+                is_control_capture_schema(&value),
+                lifetime == DimensionLifetime::Turn
+            );
+            assert!(!is_control_value_schema(&value));
+        }
+        let child = record(SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                .into_boxed_slice(),
+        });
+        let value = schema(child, DimensionLifetime::Turn);
+        assert!(!is_control_pattern_schema(&value));
+        assert!(!is_control_capture_schema(&value));
+    }
 
     #[test]
     fn turn_matrix_capture_eligibility_does_not_widen_closed_values() {
@@ -1792,13 +2316,13 @@ mod tests {
             assert!(is_control_result_schema(&turn));
             assert!(!is_control_value_schema(&turn));
             assert!(!is_control_literal_schema(&turn));
-            if !matches!(body, SchemaBody::Matrix { .. }) {
-                assert!(!is_control_capture_schema(&turn));
-            }
-            assert!(!is_control_result_schema(&schema(
-                body,
-                DimensionLifetime::Activation
-            )));
+            assert_eq!(
+                is_control_capture_schema(&turn),
+                matches!(body, SchemaBody::Matrix { .. } | SchemaBody::Record(_))
+            );
+            let activation = schema(body, DimensionLifetime::Activation);
+            assert!(!is_control_result_schema(&activation));
+            assert!(!is_control_capture_schema(&activation));
         }
         let bounded = schema(matrix.clone(), DimensionLifetime::Turn);
         assert!(mech_core::shape_for_resolved_extents(&bounded, &[1, 8]).is_ok());
@@ -2004,7 +2528,7 @@ mod tests {
             }]
             .into_boxed_slice(),
         };
-        assert_eq!(match_counts(&control), None);
+        assert!(match_counts(&control, mech_core::NodeId(0)).is_err());
     }
 
     #[test]
@@ -2052,7 +2576,15 @@ mod tests {
                 }]
                 .into_boxed_slice(),
             };
+            if depth == MAX_CONTROL_DEPTH - 1 {
+                match_counts(&control, mech_core::NodeId(7)).unwrap();
+            }
         }
-        assert_eq!(match_counts(&control), None);
+        expect_admission_limit(
+            match_counts(&control, mech_core::NodeId(7)),
+            "control nesting depth",
+            MAX_CONTROL_DEPTH + 1,
+            MAX_CONTROL_DEPTH,
+        );
     }
 }

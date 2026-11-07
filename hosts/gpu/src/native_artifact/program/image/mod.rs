@@ -21,7 +21,7 @@ pub(in crate::native_artifact) struct NativeCodeFootprint {
 impl serde::Serialize for NativeProgramDescriptor {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
-        let mut fields = serializer.serialize_struct("NativeProgramDescriptor", 25)?;
+        let mut fields = serializer.serialize_struct("NativeProgramDescriptor", 26)?;
         fields.serialize_field("plan", &self.metadata.plan)?;
         #[derive(serde::Serialize)]
         struct Schemas<'a>(
@@ -42,6 +42,7 @@ impl serde::Serialize for NativeProgramDescriptor {
             &self.metadata.observation_schema_bytes,
         )?;
         fields.serialize_field("max_library_inputs", &self.metadata.max_library_inputs)?;
+        fields.serialize_field("word_collections", &self.metadata.word_collections)?;
         fields.serialize_field("window_regions", &self.metadata.window_regions)?;
         fields.serialize_field("string_map_regions", &self.metadata.string_map_regions)?;
         fields.serialize_field("scalar_aggregates", &self.metadata.scalar_aggregates)?;

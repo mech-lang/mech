@@ -1,0 +1,6 @@
++> sequence
+constant-choice(flag<bool>, divisor<u64>) => (out<[u8]>) :=
+  table := [1u8,2u8,3u8]
+  count := (flag? | true => 8u64 | false => 8u64 / divisor)
+  out := ((count > 0u64)? | true => (flag? | true => table | false => [4u8,5u8,6u8]) | false => [7u8,8u8,9u8]).
+constant-choice(flag<bool>, divisor<u64>)

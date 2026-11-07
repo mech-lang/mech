@@ -78,7 +78,7 @@ class MemoryRuntimeCheckerTests(unittest.TestCase):
     def test_00b_receipt_cache_must_live_on_the_shared_data_owner(self):
         root = self.fixture()
         self.replace(root, "src/core/src/snapshot/validation.rs",
-                     "resident_token: SharedOwnershipCell<u64>", "resident_token: u64")
+                     "resident_token: SharedOwnershipCell<(u64, u64)>", "resident_token: (u64, u64)")
         self.assert_failure(root, "do not preserve shared frozen ownership")
 
     def test_00c_receipt_cache_must_not_be_an_independent_value_field(self):
@@ -90,7 +90,51 @@ class MemoryRuntimeCheckerTests(unittest.TestCase):
     def test_00d_receipt_lookup_must_use_the_actual_owner_cache(self):
         root = self.fixture()
         self.replace(root, "src/core/src/snapshot/validation.rs",
-                     "*self.root.data.resident_token.get_or_init", "*SharedOwnershipCell::new().get_or_init")
+                     ".resident_token\n            .get_or_init", ".independent_receipt\n            .get_or_init")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_receipt_cache_must_use_the_current_schema_and_shape_prefix(self):
+        for old, new in (
+            ("token_bytes(RESIDENT_TOKEN_SEED, self.schema_key.as_bytes())", "token_bytes(RESIDENT_TOKEN_SEED, &[0; 32])"),
+            ("prefix = token_word(prefix, *value);", "prefix = token_word(prefix, 0);"),
+        ):
+            with self.subTest(mutation=old):
+                root = self.fixture()
+                self.replace(root, "src/core/src/snapshot/validation.rs", old, new)
+                self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_receipt_cache_hit_cannot_ignore_the_prefix(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "if cached_prefix == prefix", "if true")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_receipt_cache_miss_cannot_return_the_stale_token(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "} else {\n            token_data(prefix, &self.root.data.data)",
+                     "} else {\n            cached_token")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_shared_matrix_rebind_cannot_skip_target_shape_admission(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "context.try_arc(target_schema.instantiate_shape(parameters.into_boxed_slice())?)?",
+                     "Arc::new(target_schema.instantiate_shape(parameters.into_boxed_slice())?)")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_shared_matrix_rebind_cannot_skip_equal_primitive_geometry(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "if equivalent_at_shape\n            && matches!(target_schema.body()",
+                     "if true\n            && matches!(target_schema.body()")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_shared_matrix_rebind_cannot_keep_the_old_shape(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "                shape,\n                root: self.root.clone(),",
+                     "                shape: self.shape.clone(),\n                root: self.root.clone(),")
         self.assert_failure(root, "do not preserve shared frozen ownership")
 
     def test_00e_each_finalizer_must_initialize_a_fresh_owner_cache(self):

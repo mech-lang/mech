@@ -58,6 +58,7 @@ fn selected_template(
         M::CanonicalFinalize => (6, 0, 0),
         M::CanonicalSortUnique => (7, 0, 0),
         M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
+        M::PackedUnsignedMatrixUpdateOrCanonicalFinalize => (9, 0, 0),
     };
     for number in [tag as u64, a as u64, b as u64] {
         word(hash, number);
@@ -203,7 +204,163 @@ fn selected_template(
 // no runtime frame, resource price or library/storage ABI changes.
 // IR94 reads the two initialized narrow-slot words together; wide slots retain
 // separate full-width accesses. Runtime storage and original prices are unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 94;
+// IR95 adds the maintained U64 word primitives. IR96 additionally selects
+// checked unsigned scalar conversions through the original conversion leaf.
+// IR97 includes pure indexed matrix replacements in local transition code.
+// IR98 selects witnessed constant tuple reads as checked structural projections.
+// IR99 represents U8/U16/U32 scalars and exact checked unsigned casts.
+// IR100 admits witnessed tuple/record construction with runtime-shaped unsigned
+// buffers. Component parameters are resolved in their own schema arenas.
+// IR101 carries live unsigned buffer dimensions through structural projections
+// and lowers structurally total ordinary tail recursion on real argument values.
+// IR102 routes selected nested tail calls to the exact lexical target and does
+// not manufacture result copies for branches that only recur.
+// IR103 admits ordinary recursive statement frames and up to 32 lexical control
+// levels, with canonical identity conformance for compound function outputs.
+// IR104 preserves lexical Assert operations as checked branches with distinct
+// integrity-failure terminals; no document constraint is hoisted out of a visit.
+// Exact-width unsigned comparison primitives retain their semantic kinds.
+// IR106 admits record-field access through the maintained snapshot selector.
+// IR107 binds pure uniform unsigned construction to its same-plan header.
+// IR108 selects checked U32 counter addition through the maintained scalar leaf.
+// IR109 derives original-site last-use candidates for packed buffer calls.
+// The cache is rebuilt from the validated plan, not accepted as image authority.
+// IR110 adds checked U8 addition and U32 subtraction.
+// IR111 adds bulk little-endian byte append with an explicit count operand.
+// IR112 admits scalar selection of fixed-schema record/tuple matrix elements.
+// IR113 admits fixed record/tuple matrix arguments across control frames.
+// IR114 retains immutable aggregate-matrix leaves in private buffer frames.
+// IR115 adds a borrowed packed source range to selected unsigned-buffer calls.
+// IR116 adds independently rederived read-only numeric leaf/view/carrier proofs.
+// IR117 adds current-version proofs, fixed private unsigned writes and prepaid publication.
+// IR118 derives private flat one-array/scalar terminal result recipes.
+// IR119 admits repeated current-Bool correlation in the existing numeric
+// version proof. Images rederive the eligibility from the restored plan.
+// IR120 admits opaque canonical tuple/record siblings in the existing private
+// managed-owner frame. The unchanged component use checks remain authoritative.
+// IR121 derives private flat scalar records and constant named observations
+// through the existing scalar aggregate storage, escape proof and emitter.
+// IR122 composes private structural spans in the existing scalar/owner lanes;
+// current leaf shape/admission recipes are rederived on image loading.
+// IR123 retains the constructor for dynamic opaque siblings or incompatible
+// structural bindings that the private leaf-shape recipe cannot represent.
+// IR127 adds proved reserved-capacity appends, current length/capacity lanes,
+// header capacity fallback and final initialized-prefix reconciliation.
+// IR128 derives dead canonical alias candidates through structural transport;
+// original last-use barriers, runtime identity and Core exclusivity remain.
+// IR129 composes exact private flat scalar aggregate results and their shared
+// word-bank actions with numeric leaves. The restored plan rederives selection.
+// IR131 checks a single-use child continuation; IR130 composes current parent frame sources around already-qualified children.
+// IR132 assigns one numeric scratch bank while keeping independent region
+// readiness/fuel and original logical setup prices. Images rederive both homes.
+// IR133 derives acyclic parent pieces around multiple ordinary child boundaries.
+// Exact nested child edges reuse validated ancestry and one invocation marker;
+// every piece reacquires owners/views and images reconstruct the same inventory.
+// IR134 retains structural unsigned-array projections as proved aliases inside
+// parent pieces. Images reconstruct current-source and exact exit-use proofs.
+// IR135 separates immutable managed owner transport from typed numeric views.
+// Matrix-of-records/String carriers keep exact source/exit proofs and ordinary
+// child boundaries. Numeric factories still admit each actual unsigned view.
+// IR136 retains constant, unambiguous named managed projections in parent
+// pieces. Images rederive the selector, owner and declared-output proofs.
+// IR137 composes a larger parent piece with its complete ordinary scalar
+// prefix. A declined entry restores the existing scalar readiness word;
+// independently restored images rederive the containment and selection proof.
+// IR138 retains immutable constants but omits invocation owners with no all-path
+// semantic consumer. Images rederive the exact constant ownership bounds.
+// IR140 exports only independently derived exit-consumed parent argument words.
+// Slot ordinals, full capacity checks, local spills and conservative prices stay.
+// IR141 initializes private parent scratch directly from checked arguments and
+// spills only source homes. Exit exports, capacity guards and prices stay.
+// IR143 reconstructs finite ordinary collection-source reads through finalization.
+// IR142 belongs to the rejected adjacent-seed experiment and is not reused.
+// IR144 belongs to the held aggregate-in-numeric-pieces experiment.
+// IR145 funds the existing private scalar aggregate word actions through the
+// ordinary scalar path. Images rederive those same current source frontiers.
+// IR146 composes synchronous numeric children into one phase with current buffer
+// versions, distinct live scalar homes, and independently reconstructed exits.
+// IR147 is reserved for the held strided-phase eligibility experiment.
+// IR148 binds numeric first-change handoff to the independently reconstructed
+// ordinary source-site canonical alias-retirement proof.
+// IR149 independently derives the canonical argument prefix separately from
+// numeric reconciliation words. Physical backing and original prices remain.
+// IR150 rederives checked-offset positive-stride phase bounds on the retained
+// canonical first-change handoff and independently bounded argument owners.
+// IR151 reconstructs exact current-state cold child exits for numeric loops.
+// IR152 adds actual cold source cuts and independently proved prepaid membership.
+// IR153 keeps SSA and boundary accesses in each private home's same alias region.
+// IR154 independently reconstructs dead root carrier retirement after all live
+// values have been exported at an actual native interval boundary.
+// IR155 reconstructs ordinary parent pieces on a native interval's cold route.
+// Source-price coverage belongs to the exact current root continuation only.
+// Acyclic prefixes retain their existing parent pieces.
+// IR156 reconstructs fixed-size mutable child effects, current owner returns
+// and conservative first-change funding on the same invocation account.
+// IR157 reconstructs checked child-visit funding, exact nested continuations
+// and already-paid ancestor traversal membership. Static paths retain prices.
+// IR158 reconstructs physical cleanup from native segment representations;
+// unmaterialized frames/aliases retain ordered original charges, not drops.
+// IR159 keeps unchanged cleanup groups on their original route and checks
+// canonical emptiness only for the frame retirements actually omitted.
+// IR160 composes current-funded Tail children with exact cold Collection exits,
+// restoring the reached active Tail and only its paid ancestor traversal credit.
+// IR161 was a rejected terminal-error transport experiment. IR162 narrows only
+// bounds-error snapshots to exact settlement inputs and current call operands.
+// IR163 binds total unsigned pointwise CFGs to admitted collection views.
+// IR164 reconstructs fresh private SSA values at each lexical root traversal.
+// IR165 reconstructs exact current consumer values for every numeric exit family.
+// IR166 shares the checked view's matrix-address quotient and remainder.
+// IR167 emits checked unsigned add/sub directly as exact word comparisons.
+// IR168 lowers checked bulk little-endian byte appends in private numeric loops.
+// IR169/170 were rejected refusal/private-store experiments. IR171 checks
+// current unit-dimension geometry in the shared numeric address emitter.
+// IR172 emits guarded whole-word loads for confined source byte packs.
+// IR173 restores exact cold child markers and selects fully charged ordinary
+// descendant parent pieces; current paid overlaps retain ordinary execution.
+// IR174's pure geometry-placement experiment was rejected. IR175 reconstructs
+// current comparison-produced complementary case edges within numeric entries.
+// IR176's guarded-subtraction emission experiment was rejected.
+// IR177 reconstructs complete child re-entry after a partial parent's cold
+// handoff, retaining primary source ownership and one invocation-current loan.
+// IR178 reuses a freshly executed source window check for confined packed
+// reads. Current geometry and the original lexical checks remain required.
+// IR179 rederives current-traversal aggregate guard facts for numeric regions
+// with the same fact engine as packed maps. No fact crosses a source latch.
+// IR180 binds the shared traversal transfer to the original ordered Pack/
+// Project and parallel Copy recipe, including overlapping private word homes.
+// IR181 recognizes fresh normalized U32 comparisons at the same confined
+// numeric complementary cases; arbitrary raw Bool homes retain their defaults.
+// IR182 rederives current immutable-view lengths and selected normalized Bool
+// relations before omitting an exact one-based scalar-read bounds guard.
+// IR183 rederives activation-current complete child read windows and paired
+// checked/native bodies. No persisted guard grants execution authority.
+// IR184 also reconstructs bounded unsigned SSA word facts for early CFG cleanup.
+// IR185/186 were rejected experiments. IR187 reconstructs dominance-scoped
+// invariant phi chains without changing source operations or their prices.
+// IR188 rederives activation-current affine read windows after local-phi cleanup.
+// IR189 also merges activation entries before invariant local-phi analysis.
+// IR193's empty-block experiment was rejected. IR194 gates bounded immutable
+// children once for maximum funding while retaining exact per-visit debits.
+// IR195's reverse-input permutation experiment was rejected. IR196 consumes
+// selected nonempty-entry facts in the compact scalar reduction's backedge.
+// IR197 derives affine read-address bases once at the current selected entry.
+// IR199 retains local facts through shape-preserving writes and closed supported
+// prefixes. Opaque continuations never inherit their predecessor's permission.
+// IR200 queries current transferred child arguments for individual admission
+// predicates. Residual view checks, ownership and funding remain independent.
+// IR201 retains normalized conjunction/disjunction structure and consumes only
+// selected operand facts for current smaller windows of a checked sum.
+// IR202 retires only native SSA values and interior arguments with no path to
+// control or effects, preserving trapping loads and the declared entry ABI.
+// IR203 marks initialized, checked ordinary Program homes nontrapping. They
+// retain their default alias region and current boundary synchronization.
+// IR204 combines unsigned bounds of the same immutable word into one private
+// wrapping interval predicate. Source checks, effects and debits remain.
+// IR205 consumes only dominating selected-edge bounds of immutable SSA words.
+// Facts leave scope at dominator joins; they never grant memory permissions.
+// IR206 preserves proved zero-or-one SSA transfers through current loop phis.
+// IR211 gives complete primary numeric phases an invocation-owned native call.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 211;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -338,7 +495,85 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 94;
 // Policy69 admits the actual composition-state layout and requires a bounded
 // chunk/table computation to fit the original prepaid join envelope. Source
 // operation prices, finite allowances and later map charges are unchanged.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 69;
+// Policy70 returns selected linear U64 matrix reads into the already admitted
+// scalar frame, with current source/active-call admission and no temporary Values.
+// Policy71 also returns selected U8/U16/U32 reads into native scalar words.
+// Policy72 resolves eligible aggregate output shapes from current children
+// inside the existing prepaid binding envelope, including cache rebindings.
+// Policy73 prepays schema closure and dimension witnesses before projecting a
+// runtime-shaped child, alongside its packed-to-draft expansion and publication.
+// Policy74 transports scalar Tail carriers in native words and retires their
+// other managed locals after the generated latch, as for native aggregates.
+// Policy75 charges each assertion's actual generated branch/copy/failure visit
+// and seals integrity status to the precise admitted failure terminal.
+// Policy76 stores collected unsigned words at their exact widths and admits
+// their packed publication and relocating growth without scalar draft arrays.
+// Computed cursor words and transferred packed output have no payload clone;
+// their source checks and arithmetic/construction work remain charged.
+// Policy77 projects unsigned matrix arguments with one admitted packed copy
+// through the existing typed constructor, without scalar draft expansion.
+// Policy78 keeps selected unsigned aggregate fields packed in the maintained
+// access leaf, with unchanged selector/shape checks and copy admission.
+// Policy79 constructs plain unsigned indexed updates in packed storage after
+// the existing routing, bounds, finalization and publication admission.
+// Policy80 admits optional binding caches only when the unchanged finite call
+// scope can coexist, otherwise invoking the same maintained leaf uncached.
+// Policy81 shares already-prepaid immutable arena owners for generated copies,
+// charging fixed alias work without repaying the one payload destruction.
+// Policy82 charges one admitted typed fill rather than unexecuted per-word
+// control/helper visits. Byte work, clone limits and publication stay funded.
+// Policy83 reads selected unsigned-matrix length into its admitted native word
+// without constructing an unused general binding or canonical scalar owner.
+// Policy84 returns selected scalar record fields into their native lane without
+// general call binding, dimension closure or a canonical scalar result owner.
+// Policy85 funds selected packed-buffer operations, actual capacity/copy
+// coexistence, consuming ownership transfer and checked fresh publication.
+// Policy86 admits the complete old backing when consuming growth reallocates,
+// and enforces the copy-byte quota through ResourceDemand's correct field.
+// Policy87 retains nonescaping buffer argument frames in planned handle lanes.
+// Policy88 uses the core composite binding witness for frame metadata admission.
+// Policy89 retains private record fields through validated reference transport.
+// Policy90 packs current-visit proof rows within the existing finite byte bound.
+// Policy91 admits numeric views once per invocation and prices native leaf bodies
+// with the existing finite conservative closed-tail envelopes. Elided frame and
+// library transactions no longer debit their physical canonical construction.
+// Policy92 funds fixed-shape publication before entry, charges store comparisons,
+// and settles/reopens the same account only at a first changed write.
+// Policy93 also funds synchronization of the actual private terminal frame.
+// Policy95 includes checked child-edge transitions within source admission.
+// Policy94 settles acyclic parent envelopes and reached lexical retirements
+// before ordinary child entry; it does not renew a child or parent allowance.
+// Policy96 prices current alias previews and funds ordinary canonical escape
+// installation before a parent piece, without materializing its private aliases.
+// Policy97 prices named managed projections as native owner aliases. The
+// compile-time selector proof removes physical lookup/comparison work; current
+// source admission, declared result limits and reached retirement stay checked.
+// Policy98 retains the paid scalar-prefix debit, then funds the existing parent
+// envelope from the same current account. No debit is refunded or permission
+// carried across a child; a refusal retains the original scalar continuation.
+// Policy99 prices only reached setup construction for constants with a runtime
+// consumer. Unread constants retain their immutable plan/type/local metadata,
+// but no independent admission, arena installation or owner cleanup is needed.
+// Policy100 retains existing leaf and parent prices. Nested phases separately
+// prove an outer admission envelope and settle actual per-loop traversal debits;
+// their finite boundary allowance follows the phase's source word inventory.
+// Policy101 is reserved for the held strided-phase eligibility experiment.
+// Policy102 funds the existing same-plan canonical alias checks and ordered
+// matching retirements before a nested phase first-change consuming handoff.
+// Existing child-free leaf handoffs and their prices remain unchanged.
+// Policy103 composes reached traversal prices in positive-stride phases.
+// Admission envelopes remain conservative bounds, never prepaid debits.
+// Existing leaf/parent prices and original per-site failure order remain.
+// Policy104 retains the paid root traversal across an ordinary child and suffix.
+// Only those proved source visits are prepaid; child/factory work stays dynamic.
+// Policy105 extends that membership to exact interval cuts and retains each
+// private fuel home's boundary alias region.
+// Policy106 charges the existing frame retirement recipe when a dead interval
+// carrier releases its pins after exporting the ordinary continuation.
+// Policy107 retains the paid root source visits across an ordinary parent
+// piece. Its own entry, per-site overhead, synchronization and cleanup are
+// still charged; neither a source debit nor an account is renewed or refunded.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 107;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -688,6 +923,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
                     M::CanonicalFinalize => (6, 0, 0),
                     M::CanonicalSortUnique => (7, 0, 0),
                     M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
+                    M::PackedUnsignedMatrixUpdateOrCanonicalFinalize => (9, 0, 0),
                 };
                 for n in [tag, a as u64, b as u64] {
                     word(&mut hash, n);

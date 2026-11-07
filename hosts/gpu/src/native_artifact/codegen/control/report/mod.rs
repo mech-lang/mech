@@ -14,6 +14,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub lookup_facts: LookupFacts,
     pub cfg_cleanup: Option<CfgCleanup>,
     pub outlined_loops: Vec<OutlinedLoop>,
+    pub numeric_outlines: Vec<crate::native_artifact::program::codegen::numeric_outlined::Report>,
     pub loop_invariants: Vec<InvariantLoop>,
     pub bound_call_shim: Option<BoundCallShim>,
     pub preserving_call_regions: Vec<PreservingCallRegion>,
@@ -23,6 +24,11 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub steady_loops: Vec<SteadyLoop>,
     pub join_map_copies: Vec<JoinMapCopy>,
     pub scalar_loops: Vec<ScalarLoop>,
+    pub readonly_numeric_loops:
+        Vec<crate::native_artifact::program::codegen::readonly_numeric::Report>,
+    pub numeric_write_loops:
+        Vec<crate::native_artifact::program::codegen::readonly_numeric::Report>,
+    pub numeric_segments: Vec<crate::native_artifact::program::codegen::numeric_segments::Report>,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,
@@ -142,12 +148,20 @@ pub(in crate::native_artifact) struct CfgCleanup {
     pub enabled: bool,
     pub rounds: usize,
     pub constant_branches_removed: usize,
+    pub unsigned_intervals_combined: usize,
+    pub selected_range_branches_removed: usize,
+    pub boolean_phi_values: usize,
     pub before_blocks: usize,
     pub before_instructions: usize,
     pub after_blocks: usize,
     pub after_instructions: usize,
     pub fixed_point: bool,
     pub pre_codegen_data_passes: usize,
+    pub local_phi_parameters_removed: usize,
+    pub local_phi_preheaders: usize,
+    pub dead_parameters_removed: usize,
+    pub dead_instructions_removed: usize,
+    pub dead_loads_removed: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct OutlinedLoop {
@@ -622,7 +636,7 @@ impl CodegenReport {
         if let Some(cfg) = &self.cfg_cleanup {
             counts.cfg_cleanup = (usize::from(cfg.enabled), cfg.constant_branches_removed);
         }
-        counts.loop_outlining = self.outlined_loops.len();
+        counts.loop_outlining = self.outlined_loops.len() + self.numeric_outlines.len();
         counts.loop_invariants = (
             self.loop_invariants.len(),
             self.loop_invariants

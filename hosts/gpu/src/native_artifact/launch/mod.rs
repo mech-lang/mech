@@ -9,6 +9,8 @@ pub use crate::native_artifact::launch::scalar::{
 #[cfg(feature = "canonical-native-program-runtime")]
 mod managed;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod policy;
+#[cfg(feature = "canonical-native-program-runtime")]
 mod program;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::launch::managed::run_program_application;

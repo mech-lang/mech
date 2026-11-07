@@ -82,6 +82,7 @@ struct Visit {
     complete: bool,
     arithmetic: bool,
     reject: bool,
+    integrity: bool,
     work: u64,
 }
 impl From<Visit> for native::iteration_abi::NativeIterationVisit {
@@ -94,6 +95,7 @@ impl From<Visit> for native::iteration_abi::NativeIterationVisit {
             complete: w.complete,
             arithmetic: w.arithmetic,
             reject: w.reject,
+            integrity: w.integrity,
             work: w.work,
         }
     }
@@ -113,6 +115,7 @@ struct Descriptor<'a> {
     scalar_bytes: u64,
     observation_schema_bytes: u64,
     max_library_inputs: usize,
+    word_collections: Box<[native::program::prepare::word_collections::Region]>,
     #[serde(deserialize_with = "proof")]
     window_regions: Box<[NativeWindowRegion]>,
     #[serde(deserialize_with = "proof")]
@@ -156,7 +159,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     // reader; it retains all metadata until exact checked-build provenance holds.
     let plan =
         unsafe { decode_build_owned_native_plan_body(w.plan.get().as_bytes(), &schemas, catalog)? };
-    let calls = w
+    let mut calls = w
         .calls
         .iter()
         .map(|image| {
@@ -194,13 +197,51 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         || calls.len() != plan.blocks().len()
         || types.len() != plan.values().len() + plan.transport_output_count()
         || w.constant_bytes.len() != plan.constants().len()
-        || types
-            .iter()
-            .any(|t| schemas.get(t.schema).is_none_or(|s| s.key() != t.key))
     {
         return Err("descriptor image inventory differs from its plan".into());
     }
-    let closed_tails = w.closed_tails.into();
+    native::program::prepare::validate_type_slots(&plan, &schemas, &types)
+        .map_err(str::to_owned)?;
+    if w.constant_bytes
+        != native::program::prepare::constant_owners::admission_bounds(&plan.facts())?
+    {
+        return Err("constant ownership bounds differ from canonical runtime reads".into());
+    }
+    let closed_tails: native::program::prepare::tail::Layout = w.closed_tails.into();
+    let buffer_frames = plan.facts().buffer_frames();
+    native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
+    native::program::prepare::tail::validate_image(
+        &plan,
+        &buffer_frames,
+        &w.scalar_aggregates,
+        &calls,
+        &closed_tails,
+    )?;
+    let visits = w
+        .visits
+        .into_vec()
+        .into_iter()
+        .map(Into::into)
+        .collect::<Box<[_]>>();
+    let admission = native::program::prepare::map_admission::Layout::derive(
+        &plan,
+        &w.scalar_aggregates,
+        w.map_owner_words.as_ref(),
+        &visits,
+        &closed_tails,
+    )
+    .map_err(str::to_owned)?;
+    if admission != w.map_admission {
+        return Err("native path admission differs from its source frontiers".into());
+    }
+    let word_collections =
+        native::program::prepare::word_collections::derive(&plan, &visits, &admission)
+            .into_boxed_slice();
+    if word_collections != w.word_collections
+        || (!word_collections.is_empty() && w.max_library_inputs < 3)
+    {
+        return Err("word collection proof differs from its total scalar source CFG".into());
+    }
     let frozen_maps = w
         .map_owner_words
         .as_ref()
@@ -218,13 +259,61 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     if selected_joins.maps != w.selected_joins.maps {
         return Err("selected-join map proof differs from its complete source uses".into());
     }
+    let uniform_word_collections = plan
+        .facts()
+        .uniform_unsigned_collections()
+        .into_boxed_slice();
+    let unsigned_buffer_calls = plan.unsigned_buffer_calls().into_boxed_slice();
+    let call_routes = native::program::prepare::call_routes::derive(
+        &plan,
+        &buffer_frames,
+        &unsigned_buffer_calls,
+        &calls,
+    );
+    let frame_retirements = native::program::prepare::frame_retirement::FrameRetirements::derive(
+        &buffer_frames,
+        plan.values().len(),
+    )?;
+    let cleanup_effects = native::program::prepare::cleanup_effects::Layout::derive(
+        &plan,
+        &w.retirements,
+        &buffer_frames,
+        &frame_retirements,
+    )?;
+    let call_cache = native::program::prepare::call_cache::Layout::derive(&plan, &calls)?;
+    let compositions = native::program::prepare::composition::Layout::derive(
+        &plan,
+        &buffer_frames,
+        &w.scalar_aggregates,
+        &calls,
+        &closed_tails,
+        &visits,
+        &frame_retirements,
+        &w.map_admission,
+    )?;
+    if w.max_library_inputs < compositions.argument_words() {
+        return Err("restored parent native argument bank is too small".into());
+    }
+    // The managed prefix is not serialized permission. Reconstruct it from
+    // source calls, checked parent pieces and source-derived window candidates.
+    let max_call_values = native::program::prepare::call_value_bound(
+        &plan,
+        &compositions,
+        !plan.window_regions().is_empty() || !plan.string_map_regions().is_empty(),
+    );
+    if max_call_values > w.max_library_inputs {
+        return Err("restored canonical arguments exceed admitted backing".into());
+    }
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
             schemas,
             calls,
+            call_cache,
+            compositions,
+            call_routes,
             types,
-            visits: w.visits.into_vec().into_iter().map(Into::into).collect(),
+            visits,
             retirements: w.retirements,
             constant_admission_bytes:
                 crate::native_artifact::program::prepare::constant_admission_total(
@@ -234,6 +323,13 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             scalar_bytes: w.scalar_bytes,
             observation_schema_bytes: w.observation_schema_bytes,
             max_library_inputs: w.max_library_inputs,
+            max_call_values,
+            uniform_word_collections,
+            word_collections,
+            unsigned_buffer_calls,
+            buffer_frames,
+            frame_retirements,
+            cleanup_effects,
             window_regions: w.window_regions,
             string_map_regions: w.string_map_regions,
             scalar_aggregates: w.scalar_aggregates,

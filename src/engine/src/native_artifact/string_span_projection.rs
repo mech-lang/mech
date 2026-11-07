@@ -2,9 +2,17 @@
 //! selection and one already-proved streaming sink. Every original visit,
 //! generated arithmetic operation and branch remains in the same native CFG.
 use super::iteration_validation::ControlPlan;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 use super::iteration_validation::ControlType;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 use super::{
     NativeCollectionResult as ResultKind, NativeIterationTerminator as Terminator,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
@@ -16,7 +24,11 @@ use super::{
 
 const BAD: &str = "invalid native selected String span projection";
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 fn adjacent(plan: &impl ControlPlan, from: u32, to: u32) -> bool {
     let Some(first) = plan.blocks().get(from as usize) else {
         return false;
@@ -200,7 +212,11 @@ mod tests {
     }
 }
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 fn candidate(
     plan: &impl ControlPlan,
     collection: usize,
@@ -226,7 +242,11 @@ fn candidate(
 
 /// Shared selected range/String proof. The consumer must separately prove
 /// every output use and preserve the lifetime of the genuine String owner.
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub(super) fn selected_pair(
     plan: &impl ControlPlan,
     output: &Value,
@@ -346,7 +366,11 @@ pub(super) fn selected_pair(
     })
 }
 
-#[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+#[cfg(not(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+)))]
 fn candidate(
     _: &impl ControlPlan,
     _: usize,

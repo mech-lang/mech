@@ -15,8 +15,12 @@ pub struct NativeWorkMeter {
     memory: Option<ManagedMemoryBudget>,
 }
 
+#[cfg(feature = "canonical-native-program-runtime")]
+mod retirement;
 #[cfg(test)]
 mod tests;
+#[cfg(feature = "canonical-native-program-runtime")]
+pub(in crate::native_artifact) use retirement::PaidRetirements;
 impl NativeWorkMeter {
     /// Attach a meter to a consumed parent-backed worker loan. This does not
     /// promote a scalar ledger, mint root fuel or copy thread-local scopes.
@@ -158,19 +162,25 @@ impl NativeWorkMeter {
             error => NativeExecutionError::LibraryWork { phase, error },
         }
     }
+    #[inline]
     pub(in crate::native_artifact) fn charge(
         &mut self,
         phase: NativeExecutionPhase,
         amount: u64,
     ) -> Result<(), NativeExecutionError> {
-        if self.library.is_none() && NativeLibraryWorkBudget::has_active_scope() {
+        if let Some(budget) = &self.library {
+            return budget
+                .charge_compute_with_limit(amount, self.limit)
+                .map_err(|error| Self::library_error(phase, error));
+        }
+        if NativeLibraryWorkBudget::has_active_scope() {
             return Err(Self::library_error(
                 phase,
                 ResidentKernelError::InvalidInput,
             ));
         }
         let required = self
-            .used()
+            .used
             .checked_add(amount)
             .ok_or(NativeExecutionError::WorkLimit {
                 phase,
@@ -184,13 +194,7 @@ impl NativeWorkMeter {
                 limit: self.limit,
             });
         }
-        if let Some(budget) = &self.library {
-            budget
-                .charge(amount, 0)
-                .map_err(|error| Self::library_error(phase, error))?;
-        } else {
-            self.used = required;
-        }
+        self.used = required;
         Ok(())
     }
 }

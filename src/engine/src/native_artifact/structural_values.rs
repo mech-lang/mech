@@ -1,7 +1,9 @@
-//! Canonical child trees covered by the native projection's draft witness.
-//! Packed collections, field-label drafts and foreign Dynamic roots require
-//! their own expansion/ownership witnesses before this route can select them.
+//! Canonical child trees covered by the native projection's construction witness.
+//! Word matrices use their typed packed constructor with admitted shape closure.
+//! Field-label drafts and foreign Dynamic roots still require their own witnesses.
 use mech_core::SchemaBody;
+
+pub(crate) use crate::resident::structural_values::{carrier_component_matches, carrier_matrix};
 
 pub(crate) fn supported(body: &SchemaBody) -> bool {
     fn visit(body: &SchemaBody, depth: usize) -> bool {
@@ -19,6 +21,7 @@ pub(crate) fn supported(body: &SchemaBody) -> bool {
             | SchemaBody::FloatingPoint(_)
             | SchemaBody::Complex(_)
             | SchemaBody::Rational64 => true,
+            SchemaBody::Matrix { .. } => carrier_matrix(body),
             SchemaBody::Tuple(items) => items.iter().all(|item| visit(item, depth + 1)),
             SchemaBody::Option(item) | SchemaBody::Set { element: item, .. } => {
                 visit(item, depth + 1)

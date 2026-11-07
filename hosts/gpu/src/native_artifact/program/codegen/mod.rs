@@ -32,3 +32,31 @@ pub(in crate::native_artifact) mod tag_threading;
 pub(in crate::native_artifact) mod tail;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod window;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod word_collections;
+
+#[cfg(feature = "canonical-native-program")]
+mod numeric_branches;
+mod numeric_fuel;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_outlined;
+#[cfg(feature = "canonical-native-program")]
+mod numeric_read_packs;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_segments;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_words;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod ordinary_helpers;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod readonly_numeric;
+
+#[cfg(feature = "canonical-native-program")]
+mod traversal_facts;
+
+pub(in crate::native_artifact) mod numeric_child_funding;
+mod numeric_loop_prepayment;
+mod numeric_loop_windows;
+#[cfg(feature = "canonical-native-program")]
+mod numeric_traversal;
+mod ordered_reduction;

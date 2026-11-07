@@ -1,0 +1,113 @@
+// Dynamic header precomputation from BlockOut.roc:66-247,
+// pinned at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include deflate-huffman-level12.mec first.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+<block-precode-items> := <{freqs<[u32]> items<[u32]> num-items<u64>}>
+<block-precode> := <{freqs<[u32]> lens<[u8]> codewords<[u32]> items<[u32]> num-items<u64> num-litlen-syms<u64> num-offset-syms<u64> num-explicit-lens<u64>}>
+
+block-header-run-end(lens<[u8]>, number<u64>, value<u8>, end<u64>) => <u64>
+  | (lens, number, value, end) => (((end != number) && (value == huff-get8(lens, end)))? | true => block-header-run-end(lens, number, value, end + 1u64) | false => end).
+block-header-token(freqs<[u32]>, items<[u32]>, number<u64>, symbol<u64>, extra<u64>) => (out<([u32],[u32],u64)>) :=
+  count := huff-get32(freqs, symbol) + 1u32
+  next-freqs := huff-set32(freqs, symbol, count)
+  item := huff-packed(bits/or(symbol, bits/shift-left-wrap(huff-word(huff-packed(extra)), 5u64)))
+  next-items := huff-set32(items, number, item)
+  out := (next-freqs, next-items, number + 1u64).
+block-header-zero-long-step(freqs<[u32]>, items<[u32]>, number<u64>, start<u64>, end<u64>) => (out<([u32],[u32],u64,u64)>) :=
+  extra := huff-minimum((end - start) - 11u64, 127u64)
+  (next-freqs, next-items, next-number) := block-header-token(freqs, items, number, 18u64, extra)
+  out := (next-freqs, next-items, next-number, start + 11u64 + extra).
+block-header-zero-long(freqs<[u32]>, items<[u32]>, number<u64>, start<u64>, end<u64>) => (out<([u32],[u32],u64,u64)>) :=
+  more := (end - start) >= 11u64
+  step := (more? | true => block-header-zero-long-step(freqs, items, number, start, end) | false => (freqs, items, number, start))
+  (next-freqs, next-items, next-number, next-start) := step
+  out := (more? | true => block-header-zero-long(next-freqs, next-items, next-number, next-start, end) | false => (freqs, items, number, start)).
+block-header-zero-short-step(freqs<[u32]>, items<[u32]>, number<u64>, start<u64>, end<u64>) => (out<([u32],[u32],u64,u64)>) :=
+  extra := huff-minimum((end - start) - 3u64, 7u64)
+  (next-freqs, next-items, next-number) := block-header-token(freqs, items, number, 17u64, extra)
+  out := (next-freqs, next-items, next-number, start + 3u64 + extra).
+block-header-zero-run(freqs<[u32]>, items<[u32]>, number<u64>, start<u64>, end<u64>) => (out<([u32],[u32],u64,u64)>) :=
+  (next-freqs, next-items, next-number, next-start) := block-header-zero-long(freqs, items, number, start, end)
+  out := (((end - next-start) >= 3u64)? | true => block-header-zero-short-step(next-freqs, next-items, next-number, next-start, end) | false => (next-freqs, next-items, next-number, next-start)).
+block-header-repeat(freqs<[u32]>, items<[u32]>, number<u64>, start<u64>, end<u64>) => (out<([u32],[u32],u64,u64)>) :=
+  extra := huff-minimum((end - start) - 3u64, 3u64)
+  (next-freqs, next-items, next-number) := block-header-token(freqs, items, number, 16u64, extra)
+  next-start := start + 3u64 + extra
+  out := (((end - next-start) >= 3u64)? | true => block-header-repeat(next-freqs, next-items, next-number, next-start, end) | false => (next-freqs, next-items, next-number, next-start)).
+block-header-nonzero-repeat(freqs<[u32]>, items<[u32]>, number<u64>, value<u8>, start<u64>, end<u64>) => (out<([u32],[u32],u64,u64)>) :=
+  symbol<u64> := value
+  (next-freqs, next-items, next-number) := block-header-token(freqs, items, number, symbol, 0u64)
+  next-start := start + 1u64
+  out := block-header-repeat(next-freqs, next-items, next-number, next-start, end).
+block-header-nonzero-run(freqs<[u32]>, items<[u32]>, number<u64>, value<u8>, start<u64>, end<u64>) => (out<([u32],[u32],u64,u64)>) :=
+  out := (((end - start) >= 4u64)? | true => block-header-nonzero-repeat(freqs, items, number, value, start, end) | false => (freqs, items, number, start)).
+block-header-plain-step(freqs<[u32]>, items<[u32]>, number<u64>, value<u8>, start<u64>) => (out<([u32],[u32],u64,u64)>) :=
+  symbol<u64> := value
+  (next-freqs, next-items, next-number) := block-header-token(freqs, items, number, symbol, 0u64)
+  out := (next-freqs, next-items, next-number, start + 1u64).
+block-header-plain(freqs<[u32]>, items<[u32]>, number<u64>, value<u8>, start<u64>, end<u64>) => (out<([u32],[u32],u64,u64)>) :=
+  more := start != end
+  step := (more? | true => block-header-plain-step(freqs, items, number, value, start) | false => (freqs, items, number, start))
+  (next-freqs, next-items, next-number, next-start) := step
+  out := (more? | true => block-header-plain(next-freqs, next-items, next-number, value, next-start, end) | false => (freqs, items, number, start)).
+block-header-run(lens<[u8]>, num-lens<u64>, freqs<[u32]>, items<[u32]>, number<u64>, start<u64>) => (out<([u32],[u32],u64,u64)>) :=
+  value := huff-get8(lens, start)
+  end := block-header-run-end(lens, num-lens, value, start + 1u64)
+  step := ((value == 0u8)? | true => block-header-zero-run(freqs, items, number, start, end) | false => block-header-nonzero-run(freqs, items, number, value, start, end))
+  (next-freqs, next-items, next-number, next-start) := step
+  out := block-header-plain(next-freqs, next-items, next-number, value, next-start, end).
+block-header-runs(lens<[u8]>, num-lens<u64>, freqs<[u32]>, items<[u32]>, number<u64>, start<u64>) => (out<block-precode-items>) :=
+  more := start != num-lens
+  step := (more? | true => block-header-run(lens, num-lens, freqs, items, number, start) | false => (freqs, items, number, start))
+  (next-freqs, next-items, next-number, next-start) := step
+  out := (more? | true => block-header-runs(lens, num-lens, next-freqs, next-items, next-number, next-start) | false => {freqs: freqs, items: items, num-items: number}).
+block-compute-precode-items(lens<[u8]>, num-lens<u64>, freqs0<[u32]>, items0<[u32]>) => (out<block-precode-items>) :=
+  out := block-header-runs(lens, num-lens, freqs0, items0, 0u64, 0u64).
+
+block-header-trim(lens<[u8]>, number<u64>, minimum<u64>) => (out<u64>) :=
+  more := number > minimum
+  last := (more? | true => huff-get8(lens, number - 1u64) | false => 1u8)
+  out := ((more && (last == 0u8))? | true => block-header-trim(lens, number - 1u64, minimum) | false => number).
+block-header-append-lens(lens<[u8]>, source<[u8]>, i<u64>, number<u64>) => <[u8]>
+  | (lens, source, i, number) => ((i < number)? | true => block-header-append-lens(sequence/append(lens, huff-get8(source, i)), source, i + 1u64, number) | false => lens).
+block-header-trim-precode(lens<[u8]>, permutation<[u8]>, number<u64>) => (out<u64>) :=
+  more := number > 4u64
+  perm<u64> := (more? | true => huff-get8(permutation, number - 1u64) | false => 0u8)
+  last := (more? | true => huff-get8(lens, perm) | false => 1u8)
+  out := ((more && (last == 0u8))? | true => block-header-trim-precode(lens, permutation, number - 1u64) | false => number).
+block-precompute-huffman-header(litlen-lens<[u8]>, offset-lens<[u8]>, permutation<[u8]>, reversed<[u8]>) => (out<block-precode>) :=
+  num-litlen := block-header-trim(litlen-lens, 288u64, 257u64)
+  num-offset := block-header-trim(offset-lens, 32u64, 1u64)
+  num-lens := num-litlen + num-offset
+  lens0 := sequence/with-capacity(0u8, num-lens)
+  lens1 := block-header-append-lens(lens0, litlen-lens, 0u64, num-litlen)
+  lens := block-header-append-lens(lens1, offset-lens, 0u64, num-offset)
+  freqs0 := [0u32 | i <- 0u64..=19u64, i < 19u64]
+  items0 := [0u32 | i <- 0u64..=320u64, i < 320u64]
+  computed := block-compute-precode-items(lens, num-lens, freqs0, items0)
+  precode-lens0 := [0u8 | i <- 0u64..=19u64, i < 19u64]
+  precode-words0 := [0u32 | i <- 0u64..=19u64, i < 19u64]
+  precode := huff-make-code(19u64, 7u64, computed.freqs, precode-lens0, precode-words0, reversed)
+  explicit := block-header-trim-precode(precode.lens, permutation, 19u64)
+  out := {freqs: computed.freqs, lens: precode.lens, codewords: precode.codewords, items: computed.items, num-items: computed.num-items, num-litlen-syms: num-litlen, num-offset-syms: num-offset, num-explicit-lens: explicit}.
+
+optimal-true-cost-extra(freqs<[u32]>, lens<[u8]>, extras<[u8]>, base<u64>, sym<u64>, end<u64>, cost<u64>) => (out<u64>) :=
+  more := sym < end
+  extra<u64> := (more? | true => huff-get8(extras, sym - base) | false => 0u8)
+  frequency := (more? | true => huff-word(huff-get32(freqs, sym)) | false => 0u64)
+  width<u64> := (more? | true => huff-get8(lens, sym) | false => 0u8)
+  next := cost + frequency * (width + extra)
+  out := (more? | true => optimal-true-cost-extra(freqs, lens, extras, base, sym + 1u64, end, next) | false => cost).
+optimal-true-cost-literals(freqs<[u32]>, lens<[u8]>, sym<u64>, cost<u64>) => (out<u64>) :=
+  more := sym < 257u64
+  frequency := (more? | true => huff-word(huff-get32(freqs, sym)) | false => 0u64)
+  width<u64> := (more? | true => huff-get8(lens, sym) | false => 0u8)
+  next := cost + frequency * width
+  out := (more? | true => optimal-true-cost-literals(freqs, lens, sym + 1u64, next) | false => cost).
+optimal-compute-true-cost(litlen-lens<[u8]>, offset-lens<[u8]>, freqs-litlen<[u32]>, freqs-offset<[u32]>, permutation<[u8]>, extra-precode<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>, reversed<[u8]>) => (out<u64>) :=
+  precode := block-precompute-huffman-header(litlen-lens, offset-lens, permutation, reversed)
+  cost0 := 5u64 + 5u64 + 4u64 + 3u64 * precode.num-explicit-lens
+  cost1 := optimal-true-cost-extra(precode.freqs, precode.lens, extra-precode, 0u64, 0u64, 19u64, cost0)
+  cost2 := optimal-true-cost-literals(freqs-litlen, litlen-lens, 0u64, cost1)
+  cost3 := optimal-true-cost-extra(freqs-litlen, litlen-lens, extra-lengths, 257u64, 257u64, 286u64, cost2)
+  out := optimal-true-cost-extra(freqs-offset, offset-lens, extra-offsets, 0u64, 0u64, 32u64, cost3).

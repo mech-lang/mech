@@ -1,0 +1,17 @@
+# Minimal native adapter: diagnostic baseline
+
+R192 completes Experiment A from the native execution brief. **Production stays R191**; no new whole-compressor speedup is claimed. The source and bytecode remain pinned. All four actual linked numeric-phase bodies are byte-for-byte identical to the retained executable.
+
+The adapter receives real owned typed buffers/views, including the1,500,513-word U32 cache and305,257-entry U64 node reservation. It runs one complete selected optimal-path phase and performs actual source-exit transport, fuel/counter settlement and initialized-length completion. Unknown operations fail explicitly. The old internal scratch contents are ignored; current entry fields come from the shared numeric Plan. No source algorithm is rewritten.
+
+Five real-input witnesses pass680 phase calls with exact final nodes and scalar fields. Fifteen full-compressor capture calls preserve exact output, independent inflation, aliases, capacity and zero final managed memory. The adapter itself does not produce a complete stream. Ordinary canonical admission/publication, precise finite-prefix/recovery and activation/import observation contracts remain outside this diagnostic. It is not ordinary NoLimits or a qualified production entry.
+
+Kernel-only timing and required-adapter timing are distinct. The latter includes writable reservation, initialization, transport and drop in two disjoint windows, with oracle/JSON outside. Neither is compared with a full reference call. The primary first natural-text phase covers5,000positions:139.604µs kernel and137.938µs required adapter in independent medians. The differing storage layouts and medians prevent subtraction as an overhead estimate. The random32 counter cohort is substantially faster than its primary cohort; both remain archived, with no matched speedup claim. Clock/counter calibration and all contrary observations are retained.
+
+The phase adapter still initializes201,888 source-word bytes and472 argument bytes. Source node capacity requests2,442,056bytes while only the actual prefix is initialized;6,004,496read-only bytes are borrowed. These are representation sizes, not an allocation trace, copy count or whole-program memory saving.
+
+Three introduced diagnostic setup defects were corrected: fuel captured before its outer caller installed transport, final settlement incorrectly expected inside the native body, and a missing counter-observer link Object. Failed receipts and old captures remain; no unsuccessful attempt is relabeled passed.
+
+Next is Experiment B: compact typed state from the same numeric Plan, source actions, scalar/array emitters and backend, before generic owner/recovery expansion. Then restore and measure each named contract increment. The unchanged A body still carries per-root conservative funding/capacity gates, per-loop debits and recovery state. Reducing those native costs is separate from eliminating adapter setup. The milestone remains the entire qualified compressor.
+
+The existing20-case production results and668native/fivefocused/251executed-CI qualification remain R191's unchanged evidence. This evidence-only commit does not rerun that campaign or fresh dependencies. Exact source revisions, all281 archived files, failure dispositions, raw cohorts, linked-body proofs and receipt-only replay are in [R192 of the external index](../../benchmarks/mech-deflate/experiments.json). No native binaries, bytecode or raw trace stores are uploaded.

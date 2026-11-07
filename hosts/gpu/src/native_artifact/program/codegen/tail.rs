@@ -1,7 +1,7 @@
 //! Native finite fuel for closed scalar/map Tail bodies, inside the same round.
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::options::OptimizationOptions;
-use crate::native_artifact::compiler::offset;
+use crate::native_artifact::compiler::{backend, offset};
 use crate::native_artifact::program::codegen::hooks::Hooks;
 use crate::native_artifact::program::prepare::tail::{Layout, Region};
 #[cfg(feature = "canonical-native-program-runtime")]
@@ -41,13 +41,79 @@ fn store(
         .store(flags(options, region), value, locals, offset(word)?);
     Ok(())
 }
-fn leave(
+pub(in crate::native_artifact) fn leave(
     options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
     region: &Region,
     site: Value,
     mode: i64,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<(), NativeCompileError> {
+    leave_at(options, b, locals, region, site, mode, None, hooks, error)
+}
+
+/// Exact relative argument-bank inputs consumed by numeric synchronization.
+/// Preserve store order and duplicates: this also describes existing success
+/// and ordinary-continuation transport, which is not narrowed here.
+pub(in crate::native_artifact) fn numeric_exit_words(
+    region: &Region,
+    mode: i64,
+    continuation: Option<usize>,
+) -> Result<Vec<usize>, NativeCompileError> {
+    let proof = region
+        .numeric
+        .as_ref()
+        .ok_or_else(|| backend("numeric exit inventory lacks its proof"))?;
+    let terminal = proof
+        .result
+        .frame()
+        .filter(|_| mode == 0)
+        .and_then(|value| proof.fields(value))
+        .unwrap_or(&[]);
+    let mut words = proof
+        .fields(region.tail.carrier().get())
+        .unwrap()
+        .iter()
+        .chain(terminal.iter())
+        .flatten()
+        .copied()
+        .collect::<Vec<_>>();
+    if matches!(mode, 6 | 7) {
+        for value in proof
+            .exits
+            .iter()
+            .filter(|exit| continuation.is_none_or(|site| exit.to == site))
+            .flat_map(|exit| &exit.frames)
+        {
+            words.extend(
+                proof
+                    .fields(*value)
+                    .ok_or_else(|| backend("cold frame lacks scalar lanes"))?
+                    .iter()
+                    .flatten()
+                    .copied(),
+            );
+        }
+    }
+    if let Some(phase) = &proof.phase {
+        words.extend(phase.loops.iter().map(|debit| debit.counter));
+    }
+    for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
+        words.push(proof.view(array) + 1);
+    }
+    Ok(words)
+}
+
+pub(in crate::native_artifact) fn leave_at(
+    options: OptimizationOptions,
+    b: &mut FunctionBuilder,
+    locals: Value,
+    region: &Region,
+    site: Value,
+    mode: i64,
+    continuation: Option<usize>,
     hooks: &Hooks,
     error: Block,
 ) -> Result<(), NativeCompileError> {
@@ -61,6 +127,17 @@ fn leave(
     let comparison = load(options, b, locals, region, region.words + 2)?;
     let zero = b.ins().iconst(types::I64, 0);
     store(options, b, locals, region, region.words, zero)?;
+    if let Some(proof) = &region.numeric {
+        let shadow = region
+            .shadow
+            .ok_or_else(|| backend("numeric exit lacks scratch home"))?;
+        hooks.require_argument_words(b, proof.words + 2, error);
+        for slot in numeric_exit_words(region, mode, continuation)? {
+            let value = load(options, b, locals, region, shadow + slot)?;
+            b.ins()
+                .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
+        }
+    }
     let mode = b.ins().iconst(types::I64, mode);
     hooks.call_at(
         b,
@@ -124,6 +201,11 @@ pub(in crate::native_artifact) fn prepare(
         return Ok(());
     };
     let region = &layout.regions[region];
+    if region.numeric.is_some()
+        && !options.enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
+    {
+        return Ok(());
+    }
     prepare_region(
         options,
         b,
@@ -218,12 +300,73 @@ fn prepare_region(
     hooks.call(b, site, GlobalHelper::decode(operation), [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     store(options, b, locals, region, region.words, ready)?;
-    for i in 0..if region.map.is_some() { 4 } else { 2 } {
+    let inputs = if let Some(proof) = &region.numeric {
+        (0..2)
+            .chain(
+                proof
+                    .entry_words(region.tail.carrier().get())
+                    .map_err(backend)?
+                    .into_iter()
+                    .map(|word| word + 2),
+            )
+            .collect::<Vec<_>>()
+    } else {
+        (0..if region.map.is_some() { 4 } else { 2 }).collect()
+    };
+    for i in inputs {
         let word = b
             .ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, offset(i)?);
-        store(options, b, locals, region, region.words + 1 + i, word)?;
+        let destination = if region.numeric.is_some() && i >= 2 {
+            region
+                .shadow
+                .ok_or_else(|| backend("numeric entry lacks scratch home"))?
+                + i
+                - 2
+        } else {
+            region.words + 1 + i
+        };
+        store(options, b, locals, region, destination, word)?;
     }
+    if let Some(word) = region.cold_resume() {
+        store(options, b, locals, region, word, zero)?;
+    }
+    Ok(())
+}
+
+/// A cold ordinary suffix may re-enter only at the original next header. The
+/// flag is per invocation and cleared even when the fresh same-account view
+/// preview declines; an ordinary loop never repeatedly attempts a refused loan.
+pub(in crate::native_artifact) fn resume_cold(
+    options: OptimizationOptions,
+    b: &mut FunctionBuilder<'_>,
+    locals: Value,
+    region: &Region,
+    site: usize,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<(), NativeCompileError> {
+    let Some(word) = region.cold_resume() else {
+        return Ok(());
+    };
+    let pending = load(options, b, locals, region, word)?;
+    let resume = b.create_block();
+    let ready = b.create_block();
+    b.set_cold_block(resume);
+    b.ins().brif(pending, resume, &[], ready, &[]);
+    b.switch_to_block(resume);
+    prepare_region(
+        options,
+        b,
+        locals,
+        region,
+        site,
+        program_abi::CLOSED_TAIL_BEGIN,
+        hooks,
+        error,
+    )?;
+    b.ins().jump(ready, &[]);
+    b.switch_to_block(ready);
     Ok(())
 }
 /// Emit native admission or leave in the ordinary callback arm; the caller

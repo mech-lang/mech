@@ -73,7 +73,11 @@ pub(super) fn appended_entry_work(
 /// keys. All String maps share this same header scan and raw canonical search.
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(in crate::resident) fn find(
     map: &MapValue,
@@ -91,7 +95,11 @@ pub(in crate::resident) fn find(
 
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(super) fn find_with_compare(
     map: &MapValue,

@@ -52,6 +52,7 @@ impl PendingComprehension {
                         PendingControlOperationBody::Operation { .. }
                         | PendingControlOperationBody::Recur(_)
                         | PendingControlOperationBody::Suspend
+                        | PendingControlOperationBody::Assert
                         | PendingControlOperationBody::Publish => {}
                         PendingControlOperationBody::Match(nested) => {
                             nested.visit_schemas(constants, visit);
@@ -749,6 +750,24 @@ impl SemanticBuilder {
             })?;
             match node.body {
                 PendingNodeBody::CollectionBinding => {}
+                PendingNodeBody::LocalAssert if node.state.is_none() => {
+                    let inputs = require_preceding_collection_inputs(
+                        node.inputs
+                            .into_iter()
+                            .map(&mut capture)
+                            .collect::<Result<Box<[_]>, _>>()?,
+                        scheduled_local,
+                        syntax,
+                    )?;
+                    steps.push(PendingComprehensionStep::Operation(
+                        PendingComprehensionOperation {
+                            local: scheduled_local,
+                            body: PendingControlOperationBody::Assert,
+                            schema: node.schema,
+                            inputs,
+                        },
+                    ));
+                }
                 PendingNodeBody::Operation {
                     operation,
                     contract: Some(contract),
@@ -992,7 +1011,12 @@ impl SemanticBuilder {
                                 .map(|annotation| self.annotation_schema_draft(&annotation))
                                 .transpose()?
                                 .unwrap_or_else(|| expected.clone());
-                            if !schema.dimension_parameters.is_empty()
+                            // An unannotated binding already has the exact
+                            // component schema. Re-solving that schema against
+                            // itself can change parameter declaration origins
+                            // and incorrectly reject a runtime-shaped field.
+                            if schema != *expected
+                                && !schema.dimension_parameters.is_empty()
                                 && !is_dynamic_schema_draft(expected)
                             {
                                 schema = specialize_annotation_dimensions(
@@ -1373,6 +1397,9 @@ pub(super) fn resolve_comprehension(
                     ComprehensionStep::Operation(ComprehensionOperation {
                         local: operation.local,
                         body: match &operation.body {
+                            PendingControlOperationBody::Assert => {
+                                crate::ControlOperationBody::Assert
+                            }
                             PendingControlOperationBody::Operation {
                                 operation,
                                 contract,
@@ -1550,10 +1577,12 @@ mod tests {
             if count > crate::MAX_CONTROL_OPERATIONS {
                 assert!(matches!(
                     draft.finalize(),
-                    Err(crate::ArtifactBuildError::InvalidControl {
-                        reason: "control graph admission limit",
+                    Err(crate::ArtifactBuildError::ControlAdmissionLimit {
+                        resource: "control operations",
+                        required,
+                        limit: crate::MAX_CONTROL_OPERATIONS,
                         ..
-                    })
+                    }) if required == count
                 ));
             } else {
                 let artifact = draft.finalize().unwrap();

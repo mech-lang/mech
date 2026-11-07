@@ -1,0 +1,26 @@
+// Dynamic optimization loop from CompressOptimal.roc:1055-1108,
+// pinned at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Level 12 uses ten passes and a one-bit improvement threshold.
+// Include the costs, path, tally, Huffman and header components first.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+<optimal-optimization> := <{nodes<[u64]> costs<optimal-costs> saved<optimal-costs> tallied<optimal-tally> best-true-cost<u64> actual-cost<u64> passes-remaining<u64>}>
+
+optimal-optimize-loop(block-length<u64>, cache<[u32]>, cache-end<u64>, nodes0<[u64]>, literal0<[u32]>, length0<[u32]>, offset0<[u32]>, saved-literal<[u32]>, saved-length<[u32]>, saved-offset<[u32]>, best<u64>, remaining<u64>, length-slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>, offset-slots<[u8]>, permutation<[u8]>, extra-precode<[u8]>, reversed<[u8]>) => (out<optimal-optimization>) :=
+  path := optimal-find-min-cost-path(block-length, cache, cache-end, nodes0, literal0, length0, offset0, offset-slots)
+  tallied := optimal-tally-and-build-codes(path.nodes, block-length, length-slots, offset-slots, reversed)
+  actual-cost := optimal-compute-true-cost(tallied.litlen-lens, tallied.offset-lens, tallied.freqs-litlen, tallied.freqs-offset, permutation, extra-precode, extra-lengths, extra-offsets, reversed)
+  improving := actual-cost + 1u64 <= best
+  next-best := (improving? | true => actual-cost | false => best)
+  saved := (improving? | true => {literal: literal0, length: length0, offset-slot: offset0} | false => {literal: saved-literal, length: saved-length, offset-slot: saved-offset})
+  costs := (improving? | true => optimal-set-costs-from-codes(tallied.litlen-lens, tallied.offset-lens, literal0, length0, offset0, length-slots, extra-lengths, extra-offsets) | false => {literal: literal0, length: length0, offset-slot: offset0})
+  passes := (improving? | true => remaining - 1u64 | false => remaining)
+  next-literal := costs.literal
+  next-length := costs.length
+  next-offset := costs.offset-slot
+  next-saved-literal := saved.literal
+  next-saved-length := saved.length
+  next-saved-offset := saved.offset-slot
+  nodes := path.nodes
+  out := ((improving && (passes != 0u64))?
+    | true => optimal-optimize-loop(block-length, cache, cache-end, nodes, next-literal, next-length, next-offset, next-saved-literal, next-saved-length, next-saved-offset, next-best, passes, length-slots, extra-lengths, extra-offsets, offset-slots, permutation, extra-precode, reversed)
+    | false => {nodes: nodes, costs: costs, saved: saved, tallied: tallied, best-true-cost: next-best, actual-cost: actual-cost, passes-remaining: passes}).

@@ -262,7 +262,7 @@ fn pure_control(artifact: &ProgramArtifact, body: &ControlOperationBody) -> bool
             .operations
             .iter()
             .all(|operation| pure_control(artifact, &operation.body)),
-        ControlOperationBody::Recur(_) => true,
+        ControlOperationBody::Recur(_) | ControlOperationBody::Assert => true,
         ControlOperationBody::Suspend | ControlOperationBody::Publish => false,
     }
 }

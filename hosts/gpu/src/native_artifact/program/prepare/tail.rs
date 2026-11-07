@@ -20,12 +20,32 @@ pub(in crate::native_artifact) struct Region {
     /// Exclusive retained-map owner. Its private storage callbacks may debit
     /// the same account; scalar body work is prepaid in bounded batches.
     pub map: Option<usize>,
+    pub numeric: Option<super::readonly_numeric::Proof>,
     /// Invariant key width only; actual packed storage requires runtime entry.
     pub packed: Option<crate::native_artifact::program::prepare::packed_map::Proof>,
     // Emission and checkpoint validation use the identical admitted word lane.
     pub words: usize,
+    /// Numeric-only scratch. Readiness/fuel always retain private word homes.
+    pub shadow: Option<usize>,
     pub compute: u64,
     pub comparison: u64,
+}
+impl Region {
+    /// Ordinary children may use the phases' shared scratch bank. Pending
+    /// continuation identity therefore lives beside this region's fuel.
+    pub fn cold_resume(&self) -> Option<usize> {
+        self.numeric
+            .as_ref()
+            .is_some_and(|proof| !proof.exits.is_empty())
+            .then(|| self.words + 3)
+    }
+    fn state_words(&self) -> usize {
+        if self.map.is_some() {
+            5
+        } else {
+            3 + usize::from(self.cold_resume().is_some())
+        }
+    }
 }
 #[derive(Debug, Default, serde::Serialize)]
 #[serde(deny_unknown_fields)]
@@ -35,6 +55,8 @@ pub(in crate::native_artifact) struct Layout {
     pub initializers: Vec<Option<usize>>,
     pub exits: Vec<Option<usize>>,
     pub words: usize,
+    /// Original independent-bank count for unchanged setup work/admission.
+    pub logical_words: usize,
 }
 impl Layout {
     pub fn derive(
@@ -43,6 +65,8 @@ impl Layout {
         visits: &[NativeIterationVisit],
         aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
         owners: &mech_engine::native_artifact::NativeMapOwnerWords,
+        frames: &mech_engine::native_artifact::NativeBufferFrames,
+        calls: &[Option<mech_engine::native_artifact::NativePreparedLibraryCall>],
     ) -> Result<Self, &'static str> {
         let mut layout = Self {
             sites: vec![None; plan.blocks().len()],
@@ -57,10 +81,26 @@ impl Layout {
             .and_then(|n| n.checked_add(aggregates.words()))
             .and_then(|n| n.checked_add(borrowed.words))
             .ok_or("Tail word count overflow")?;
+        let mut secondary_sites = vec![false; plan.blocks().len()];
         for (iteration, control) in plan.iterations().iter().enumerate() {
             let NativeControlLoop::Tail(tail) = control else {
                 continue;
             };
+            // Primary source ownership remains outermost. A complete child
+            // may additionally enter after its partial parent exported a cold
+            // continuation; never select overlapping secondary children.
+            let primary = layout.sites[tail.header() as usize];
+            if secondary_sites[tail.header() as usize]
+                || primary.is_some_and(|id| {
+                    !layout.regions[id].numeric.as_ref().is_some_and(|proof| {
+                        proof.exits.iter().any(|exit| {
+                            matches!(exit.kind, super::numeric_plan::ExitKind::Unsupported)
+                        })
+                    })
+                })
+            {
+                continue;
+            }
             let map = owners
                 .initializer(tail.initialize() as usize)
                 .filter(|&owner| {
@@ -82,8 +122,56 @@ impl Layout {
             // A closed map body may run inside an ordinary comprehension.
             // Its own body must still contain no child loop; the parent is
             // suspended until this private owner publishes at the Tail exit.
-            if (tail.parent().is_some() && map.is_none())
-                || (map.is_none() && aggregates.action(tail.initialize() as usize).is_none())
+            let numeric = if map.is_none() && frames.action(tail.initialize() as usize).is_some() {
+                super::readonly_numeric::derive(plan, tail, frames, aggregates, calls, visits).ok()
+            } else {
+                None
+            };
+            if let Some(owner) = primary {
+                let parent = layout.regions[owner].numeric.as_ref().unwrap();
+                if map.is_some()
+                    || layout.initializers[tail.initialize() as usize].is_some()
+                    || layout.exits[tail.exit() as usize].is_some()
+                    || !numeric.as_ref().is_some_and(|proof| {
+                        proof.exits.is_empty()
+                            && proof.prepaid_sites.is_empty()
+                            && proof
+                                .sites
+                                .iter()
+                                .all(|site| parent.sites.binary_search(site).is_ok())
+                    })
+                {
+                    continue;
+                }
+            }
+            let successors = |site: usize| {
+                if numeric.as_ref().is_some_and(|proof| {
+                    proof.exits.iter().any(|exit| {
+                        exit.to == site
+                            && matches!(exit.kind, super::numeric_plan::ExitKind::Unsupported)
+                    })
+                }) {
+                    return Vec::new();
+                }
+                numeric
+                    .as_ref()
+                    .and_then(|proof| proof.phase.as_ref())
+                    .and_then(|phase| phase.cold.iter().find(|child| child.initialize == site))
+                    .map_or_else(
+                        || {
+                            visits[site]
+                                .successors
+                                .into_iter()
+                                .flatten()
+                                .collect::<Vec<_>>()
+                        },
+                        |child| vec![child.exit as u32],
+                    )
+            };
+            if (tail.parent().is_some() && map.is_none() && numeric.is_none())
+                || (map.is_none()
+                    && numeric.is_none()
+                    && aggregates.action(tail.initialize() as usize).is_none())
             {
                 continue;
             }
@@ -97,7 +185,10 @@ impl Layout {
                 }
                 seen[site as usize] = true;
                 let block = &plan.blocks()[site as usize];
-                let native = aggregates.action(site as usize).is_some()
+                let native = numeric
+                    .as_ref()
+                    .is_some_and(|p| p.action(site as usize).is_some())
+                    || aggregates.action(site as usize).is_some()
                     || borrowed.action(site as usize).is_some()
                     || map.is_some_and(|owner| {
                         owners.action_region(site as usize) == Some(owner)
@@ -112,7 +203,10 @@ impl Layout {
                     )
                     || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
                         if plan.values()[output.get() as usize].scalar_kind().is_some());
-                if block.iteration() != Some(iteration as u32)
+                if !(block.iteration() == Some(iteration as u32)
+                    || numeric
+                        .as_ref()
+                        .is_some_and(|p| p.sites.contains(&(site as usize))))
                     || !native
                     || (map.is_some() && borrowed.action(site as usize).is_some())
                     || plan.activation_boundary() == Some(site)
@@ -120,7 +214,7 @@ impl Layout {
                     closed = false;
                     break;
                 }
-                for next in visits[site as usize].successors.into_iter().flatten() {
+                for next in successors(site as usize) {
                     if next == tail.exit() && site != tail.finish() {
                         closed = false;
                     }
@@ -128,15 +222,36 @@ impl Layout {
                 }
                 sites.push(site);
             }
-            if !closed || !seen[tail.finish() as usize] || !seen[tail.latch() as usize] {
+            let partial = numeric
+                .as_ref()
+                .is_some_and(|proof| !proof.prepaid_sites.is_empty());
+            if !closed
+                || (!partial && (!seen[tail.finish() as usize] || !seen[tail.latch() as usize]))
+            {
                 continue;
             }
-            // Removing the sole declared latch backedge must make the region a
-            // DAG. Then summing every block bounds any one header-to-boundary path.
+            // Cut all and only the declared backedges in the selected phase.
+            let backedges = numeric.as_ref().and_then(|p| p.phase.as_ref()).map_or_else(
+                || std::collections::BTreeSet::from([(tail.latch(), tail.header())]),
+                |phase| {
+                    phase
+                        .loops
+                        .iter()
+                        .map(|loop_| {
+                            let NativeControlLoop::Tail(t) =
+                                &plan.iterations()[loop_.iteration as usize]
+                            else {
+                                unreachable!()
+                            };
+                            (t.latch(), t.header())
+                        })
+                        .collect()
+                },
+            );
             let mut incoming = vec![0usize; plan.blocks().len()];
             for &site in &sites {
-                for next in visits[site as usize].successors.into_iter().flatten() {
-                    if next != tail.exit() && !(site == tail.latch() && next == tail.header()) {
+                for next in successors(site as usize) {
+                    if next != tail.exit() && !backedges.contains(&(site, next)) {
                         incoming[next as usize] += 1;
                     }
                 }
@@ -149,8 +264,8 @@ impl Layout {
             let mut count = 0;
             while let Some(site) = ready.pop() {
                 count += 1;
-                for next in visits[site as usize].successors.into_iter().flatten() {
-                    if next == tail.exit() || (site == tail.latch() && next == tail.header()) {
+                for next in successors(site as usize) {
+                    if next == tail.exit() || backedges.contains(&(site, next)) {
                         continue;
                     }
                     incoming[next as usize] -= 1;
@@ -180,10 +295,42 @@ impl Layout {
                         .checked_add(32)
                         .ok_or("Tail comparison work overflow")?;
                 }
+                if numeric
+                    .as_ref()
+                    .and_then(|p| p.action(site as usize))
+                    .is_some_and(|a| matches!(a, super::readonly_numeric::Operation::Write { .. }))
+                {
+                    comparison = comparison
+                        .checked_add(1)
+                        .ok_or("Tail store comparison work overflow")?;
+                }
+            }
+            if let Some(fields) = numeric
+                .as_ref()
+                .and_then(|p| p.result.frame().and_then(|value| p.fields(value)))
+            {
+                // Current result fields synchronize once at exit, in the
+                // already admitted frame lanes. Conservatively fund that
+                // bounded work on every traversal, including the terminal one.
+                compute = compute
+                    .checked_add(
+                        (fields.len() as u64)
+                            .checked_mul(64)
+                            .ok_or("numeric result work overflow")?,
+                    )
+                    .ok_or("numeric result synchronization work overflow")?;
+            }
+            if let Some(phase) = numeric.as_ref().and_then(|p| p.phase.as_ref()) {
+                compute = phase.loops[0].compute;
+                comparison = phase.loops[0].comparison;
             }
             let index = layout.regions.len();
             for site in sites {
-                layout.sites[site as usize] = Some(index);
+                if primary.is_some() {
+                    secondary_sites[site as usize] = true;
+                } else {
+                    layout.sites[site as usize] = Some(index);
+                }
             }
             layout.initializers[tail.initialize() as usize] = Some(index);
             layout.exits[tail.exit() as usize] = Some(index);
@@ -202,25 +349,143 @@ impl Layout {
                         plan, &owners, owner, visits,
                     )
                 }),
+                numeric,
                 words: _word_offset,
+                shadow: None,
                 compute,
                 comparison,
             });
+            layout.logical_words = layout
+                .logical_words
+                .checked_add(
+                    layout.regions.last().unwrap().state_words()
+                        + layout
+                            .regions
+                            .last()
+                            .and_then(|r| r.numeric.as_ref())
+                            .map_or(0, |p| p.words),
+                )
+                .ok_or("Tail words overflow")?;
             layout.words = layout
                 .words
-                .checked_add(if map.is_some() { 5 } else { 3 })
-                .ok_or("Tail words overflow")?;
+                .checked_add(layout.regions.last().unwrap().state_words())
+                .ok_or("Tail state words overflow")?;
         }
+        // Distinct phases never overlap at runtime. Each includes its own
+        // simultaneously live parent/child homes. The runtime admits only
+        // one closed loan and reconciles it before ordinary/parent execution.
+        // Sharing the flags too would let global abort export the wrong region.
+        let maximum = layout
+            .regions
+            .iter()
+            .filter_map(|r| r.numeric.as_ref().map(|p| p.words))
+            .max()
+            .unwrap_or(0);
+        let shadow = base
+            .checked_add(layout.words)
+            .ok_or("numeric shadow offset overflows")?;
+        for region in &mut layout.regions {
+            if region.numeric.is_some() {
+                region.shadow = Some(shadow);
+            }
+        }
+        layout.words = layout
+            .words
+            .checked_add(maximum)
+            .ok_or("numeric shadow size overflows")?;
         Ok(layout)
+    }
+    /// Find the independently reconstructed entry and readiness home for a header.
+    #[cfg(feature = "canonical-native-program")]
+    pub fn header(&self, site: usize) -> Option<usize> {
+        self.regions
+            .iter()
+            .position(|region| region.tail.header() as usize == site)
     }
     pub fn extra_work(&self, site: usize) -> u64 {
         if self.sites.get(site).copied().flatten().is_some()
             || self.initializers.get(site).copied().flatten().is_some()
             || self.exits.get(site).copied().flatten().is_some()
+            || self.prepaid_site(site)
         {
             OVERHEAD
         } else {
             0
         }
     }
+    pub fn prepaid_site(&self, site: usize) -> bool {
+        self.regions
+            .iter()
+            .filter_map(|region| region.numeric.as_ref())
+            .any(|proof| proof.prepaid_sites.binary_search(&site).is_ok())
+    }
+}
+
+/// Independently reconstruct all raw-view offsets, carrier/factory proofs,
+/// boundaries and finite body prices from the validated plan. Deserialized
+/// closed-tail metadata never grants new numeric access authority.
+pub(in crate::native_artifact) fn validate_image(
+    plan: &NativeProgramArtifactPlan,
+    frames: &mech_engine::native_artifact::NativeBufferFrames,
+    serialized_aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
+    calls: &[Option<mech_engine::native_artifact::NativePreparedLibraryCall>],
+    serialized: &Layout,
+) -> Result<(), String> {
+    let facts = plan.facts();
+    let aggregates = facts.scalar_aggregates();
+    // The numeric result proof and the emitted shared aggregate actions use
+    // these same global lanes. A rederived region cannot validate a different
+    // serialized word bank, even if that bank has a plausible total size.
+    if serde_json::to_vec(&aggregates).map_err(|e| e.to_string())?
+        != serde_json::to_vec(serialized_aggregates).map_err(|e| e.to_string())?
+    {
+        return Err(
+            "scalar aggregate lanes differ from independently validated source uses".into(),
+        );
+    }
+    let borrowed = super::borrowed::Layout::derive(plan, &aggregates)?;
+    let selected = super::selected_join::Layout::derive(plan, &plan.string_map_regions())?;
+    let mut visits = crate::native_artifact::iteration_abi::control_visits(
+        plan.blocks(),
+        plan.iterations().iter().map(Into::into),
+        0,
+    )
+    .map_err(str::to_owned)?;
+    selected
+        .fund_visit_checks(&mut visits)
+        .map_err(str::to_owned)?;
+    let prefix = super::prefix::derive_with_frontiers(
+        plan,
+        &borrowed,
+        &visits,
+        &aggregates,
+        &facts.text_line_retention_frontiers(),
+    )?;
+    let owners = facts.map_owner_words().map_err(str::to_owned)?;
+    for (site, visit) in visits.iter_mut().enumerate() {
+        visit.work = visit
+            .work
+            .checked_add(borrowed.extra_work(site)?)
+            .and_then(|n| n.checked_add(super::prefix::extra_work(prefix.as_ref(), site)))
+            .and_then(|n| n.checked_add(super::map_owner::extra_work(&owners, site).ok()?))
+            .ok_or("restored closed-tail price overflows")?;
+    }
+    let proved = Layout::derive(
+        plan,
+        &borrowed,
+        &visits,
+        &aggregates,
+        &owners,
+        frames,
+        calls,
+    )?;
+    if serde_json::to_vec(&proved).map_err(|e| e.to_string())?
+        != serde_json::to_vec(serialized).map_err(|e| e.to_string())?
+    {
+        return Err(
+            "closed-tail proof differs from independently validated source dataflow and prices"
+                .into(),
+        );
+    }
+    Ok(())
 }

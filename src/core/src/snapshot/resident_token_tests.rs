@@ -82,7 +82,10 @@ fn demand_token_is_exact_and_no_payload_walk_occurs_at_construction() {
             let expected = eager(&value);
             assert!(value.root.data.resident_token.get().is_none());
             assert_eq!(value.resident_token(), expected);
-            assert_eq!(value.root.data.resident_token.get(), Some(&expected));
+            assert_eq!(
+                value.root.data.resident_token.get().map(|entry| entry.1),
+                Some(expected)
+            );
             assert_eq!(value.resident_token(), expected);
         }
     }
@@ -119,7 +122,10 @@ fn demand_token_cache_is_shared_by_clone_rebind_and_independent_budget_wrappers(
     assert!(imported.root.data.resident_token.get().is_none());
     let expected = eager(&raw);
     assert_eq!(imported.resident_token(), expected);
-    assert_eq!(raw.root.data.resident_token.get(), Some(&expected));
+    assert_eq!(
+        raw.root.data.resident_token.get().map(|entry| entry.1),
+        Some(expected)
+    );
     assert_eq!(raw.clone().resident_token(), expected);
     assert_eq!(
         memory.used_bytes(),
@@ -218,5 +224,113 @@ fn concurrent_receipt_requests_share_one_complete_immutable_cache() {
             scope.spawn(move || assert_eq!(clone.resident_token(), expected));
         }
     });
-    assert_eq!(raw.root.data.resident_token.get(), Some(&expected));
+    assert_eq!(
+        raw.root.data.resident_token.get().map(|entry| entry.1),
+        Some(expected)
+    );
+}
+#[test]
+fn equivalent_computed_matrix_rebind_shares_payload_and_keeps_receipts() {
+    use crate::{
+        DimensionExpr as D, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, IntegerWidth,
+    };
+    let mut builder = SchemaTableBuilder::new();
+    let parameter = DimensionParameterId::new(0);
+    let schema = |computed| {
+        SchemaDraft {
+            dimension_parameters: vec![DimensionParameterDeclaration {
+                id: parameter,
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: D::Constant(0),
+                upper_bound: None,
+            }]
+            .into_boxed_slice(),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                dimensions: vec![
+                    D::Constant(1),
+                    if computed {
+                        D::Add(vec![D::Constant(1), D::Parameter(parameter)].into_boxed_slice())
+                    } else {
+                        D::Parameter(parameter)
+                    },
+                ]
+                .into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap()
+    };
+    let from = builder.insert(schema(true)).unwrap();
+    let to = builder.insert(schema(false)).unwrap();
+    let build = builder.finish().unwrap();
+    let from = build.resolve(from).unwrap();
+    let to = build.resolve(to).unwrap();
+    let schemas = Arc::new(build.table);
+    let context = SnapshotValidationContext::with_shared_schemas(&schemas);
+    let value = ValueDraft {
+        schema: from,
+        shape_values: vec![2].into_boxed_slice(),
+        data: ValueDataDraft::Matrix(vec![ValueDataDraft::U64(7); 3].into_boxed_slice()),
+    }
+    .finalize(&context)
+    .unwrap();
+    let before = value.resident_token();
+    let shape = schemas
+        .get(to)
+        .unwrap()
+        .instantiate_shape(vec![3].into_boxed_slice())
+        .unwrap();
+    let rebound = value.rebind_with_context(to, &shape, &context).unwrap();
+    assert!(
+        value.shares_frozen_storage(&rebound),
+        "reifying an equivalent extent must not copy matrix elements"
+    );
+    assert_eq!(rebound.resident_token(), eager(&rebound));
+    assert_ne!(before, rebound.resident_token());
+    assert_eq!(before, value.resident_token());
+    assert_eq!(
+        value.canonical_data_draft().unwrap(),
+        rebound.canonical_data_draft().unwrap()
+    );
+    let wrong = schemas
+        .get(to)
+        .unwrap()
+        .instantiate_shape(vec![4].into_boxed_slice())
+        .unwrap();
+    assert!(value.rebind_with_context(to, &wrong, &context).is_err());
+    let memory = crate::ManagedMemoryBudget::new(1_000_000);
+    let import = |value: Value| {
+        let needed = value.memory_budget_admission_bytes(&memory).unwrap();
+        let mut reservation = memory.reserve_capacity(needed).unwrap();
+        let imported = value.into_memory_budget(&mut reservation).unwrap();
+        drop(reservation);
+        imported
+    };
+    let original = import(value.clone());
+    // Resident inputs already carry a budget wrapper. Rebinding must not
+    // mistake that old wrapper for admission of the new shape owner.
+    let rebound = original.rebind_with_context(to, &shape, &context).unwrap();
+    let before = memory.used_bytes();
+    assert!(before > 0);
+    // Sharing the data does not mean the new shape metadata is admitted.
+    assert!(rebound.memory_budget_retained_bytes(&memory).is_none());
+    let needed = rebound.memory_budget_admission_bytes(&memory).unwrap();
+    assert!(needed > 0);
+    let mut denied = memory.reserve_capacity(needed - 1).unwrap();
+    assert!(rebound.clone().into_memory_budget(&mut denied).is_err());
+    drop(denied);
+    assert_eq!(memory.used_bytes(), before);
+    let imported = import(rebound.clone());
+    assert!(original.shares_frozen_storage(&imported));
+    assert_eq!(imported.shape().parameter_values(), &[3]);
+    assert_eq!(original.shape().parameter_values(), &[2]);
+    let admitted = memory.used_bytes();
+    let repeated = import(imported.clone());
+    assert_eq!(memory.used_bytes(), admitted);
+    assert_eq!(repeated.resident_token(), eager(&repeated));
+    drop((original, imported, repeated, rebound));
+    assert_eq!(memory.used_bytes(), 0);
 }

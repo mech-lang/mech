@@ -1,12 +1,19 @@
-//! Fold literal native branches after data optimization, then retire unreachable
-//! blocks and their phi inputs before register allocation. No runtime predicate,
-//! source operation, failure or work debit is assumed away.
+//! Fold native branches proved by immutable integer SSA definitions, then retire
+//! unreachable blocks and their phi inputs before register allocation. Source
+//! work debits and runtime predicates without a word proof remain unchanged.
+mod boolean_words;
+mod dead_values;
+mod local_phis;
+mod preheaders;
+mod selected_ranges;
+mod unsigned_intervals;
+mod word_ranges;
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::control::CfgCleanup;
 use crate::native_artifact::codegen::options::{CompilationControls, OptimizationPass};
 use crate::native_artifact::compiler::backend;
 use cranelift_codegen::Context;
-use cranelift_codegen::ir::{Function, InstBuilder, InstructionData, Opcode, Value, ValueDef};
+use cranelift_codegen::ir::{Function, InstBuilder, InstructionData};
 use cranelift_codegen::isa::TargetIsa;
 
 const MAX_ROUNDS: usize = 8;
@@ -21,29 +28,8 @@ fn counts(function: &Function) -> (usize, usize) {
             .sum(),
     )
 }
-fn constant_condition(function: &Function, value: Value) -> Option<bool> {
-    let value = function.dfg.resolve_aliases(value);
-    let ty = function.dfg.value_type(value);
-    if !ty.is_int() || ty.bits() > 64 {
-        return None;
-    }
-    let ValueDef::Result(inst, 0) = function.dfg.value_def(value) else {
-        return None;
-    };
-    let InstructionData::UnaryImm {
-        opcode: Opcode::Iconst,
-        imm,
-        ..
-    } = function.dfg.insts[inst]
-    else {
-        return None;
-    };
-    // Iconst's immediate is sign extended; branch truth uses only the actual
-    // integer type's low bits, including noncanonical nonzero boolean words.
-    let mask = u64::MAX >> (64 - ty.bits());
-    Some(imm.bits() as u64 & mask != 0)
-}
 fn fold(function: &mut Function) -> usize {
+    let mut facts = word_ranges::Facts::new(function);
     let changes = function
         .layout
         .blocks()
@@ -52,7 +38,7 @@ fn fold(function: &mut Function) -> usize {
             let InstructionData::Brif { arg, blocks, .. } = &function.dfg.insts[inst] else {
                 return None;
             };
-            let selected = &blocks[usize::from(!constant_condition(function, *arg)?)];
+            let selected = &blocks[usize::from(!facts.condition(*arg)?)];
             Some((
                 inst,
                 selected.block(&function.dfg.value_lists),
@@ -78,17 +64,25 @@ pub(in crate::native_artifact) fn optimize(
         enabled,
         rounds: 0,
         constant_branches_removed: 0,
+        unsigned_intervals_combined: 0,
+        selected_range_branches_removed: 0,
+        boolean_phi_values: 0,
         before_blocks,
         before_instructions,
         after_blocks: before_blocks,
         after_instructions: before_instructions,
         fixed_point: !enabled,
         pre_codegen_data_passes: 0,
+        local_phi_parameters_removed: 0,
+        local_phi_preheaders: 0,
+        dead_parameters_removed: 0,
+        dead_instructions_removed: 0,
+        dead_loads_removed: 0,
     };
     if !enabled {
         return Ok(report);
     }
-    // Retire literal source specializations BEFORE data optimization. Running
+    // Retire proved source specializations BEFORE data optimization. Running
     // the egraph repeatedly here and once again in define_function can change
     // placement/rematerialization and increase register pressure. Leave exactly
     // one ordinary data/speed pass to the final backend compilation.
@@ -109,6 +103,29 @@ pub(in crate::native_artifact) fn optimize(
     context.compute_domtree();
     context.eliminate_unreachable_code(isa).map_err(backend)?;
     context.remove_constant_phis(isa).map_err(backend)?;
+    report.local_phi_preheaders =
+        preheaders::normalize(&mut context.func, &context.cfg, &context.domtree);
+    if report.local_phi_preheaders != 0 {
+        context.compute_cfg();
+        context.compute_domtree();
+    }
+    report.local_phi_parameters_removed =
+        local_phis::simplify(&mut context.func, &context.cfg, &context.domtree);
+    report.unsigned_intervals_combined = unsigned_intervals::combine(&mut context.func);
+    (
+        report.selected_range_branches_removed,
+        report.boolean_phi_values,
+    ) = selected_ranges::fold(&mut context.func, &context.cfg, &context.domtree);
+    if report.selected_range_branches_removed != 0 {
+        context.compute_cfg();
+        context.compute_domtree();
+        context.eliminate_unreachable_code(isa).map_err(backend)?;
+        context.remove_constant_phis(isa).map_err(backend)?;
+    }
+    let dead = dead_values::eliminate(&mut context.func);
+    report.dead_parameters_removed = dead.parameters;
+    report.dead_instructions_removed = dead.instructions;
+    report.dead_loads_removed = dead.loads;
     let (blocks, instructions) = counts(&context.func);
     report.after_blocks = blocks;
     report.after_instructions = instructions;

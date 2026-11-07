@@ -93,7 +93,7 @@ impl<'a> NativeProjectionIndexContext<'a> {
             .retained_nodes
             .checked_add(nodes)
             .ok_or(ResidentKernelError::InvalidShape)?;
-        if let Some(violation) = mech_core::evaluate_call_memory_budget(
+        if let Some(violation) = mech_core::first_call_memory_budget_violation(
             mech_core::MemoryObjectOwner::DirectCallPort {
                 call: 0,
                 direction: mech_core::PortDirection::Input,
@@ -103,10 +103,8 @@ impl<'a> NativeProjectionIndexContext<'a> {
             0,
             0,
             self.limits,
-        )
-        .first()
-        {
-            return Err(resource_budget_error(violation));
+        ) {
+            return Err(resource_budget_error(&violation));
         }
         Ok(())
     }
@@ -121,6 +119,14 @@ impl<'a> NativeProjectionIndexContext<'a> {
     ) -> Result<(), ResidentKernelError> {
         self.check(compute, comparison, 0, 0)?;
         self.work.charge(compute, comparison)
+    }
+
+    /// Only a completely funded original prefix may skip its intermediate
+    /// checks. Include this projection's prior demand before the same scoped
+    /// account checks; every declined preview leaves all observations intact.
+    pub(in crate::resident) fn try_charge_prefix(&self, compute: u64, comparison: u64) -> bool {
+        self.check(compute, comparison, 0, 0).is_ok()
+            && self.work.try_charge_scoped_prefix(compute, comparison)
     }
 
     pub(in crate::resident) fn check_capacity(

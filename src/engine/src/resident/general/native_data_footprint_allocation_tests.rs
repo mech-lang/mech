@@ -23,6 +23,7 @@ fn oversized_memo_slots_fail_before_initialization_without_publication_or_refund
             + core::mem::size_of::<ResourceDemand>()
             + core::mem::size_of::<mech_core::MemoryBudgetLimits>()
             + core::mem::size_of::<mech_core::ManagedMemoryReservation>()
+            + core::mem::size_of::<mech_core::ManagedNodeReservation>()
             + 3 * core::mem::size_of::<u64>()) as u64;
         let owner = NativeTurnPlanCache::construction_owner_bytes(call.memory_plan()).unwrap();
         let construction_work =

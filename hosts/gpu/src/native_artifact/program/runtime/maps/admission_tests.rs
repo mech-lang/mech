@@ -10,6 +10,7 @@ enum Mode {
     Fallback,
     Limited,
     LimitedHelper,
+    ScalarLimited,
 }
 #[derive(Default, Debug)]
 struct Observation {
@@ -24,6 +25,13 @@ struct Observation {
     fused: usize,
     helper_probes: usize,
     limited_helper: bool,
+    scalar_groups: usize,
+    scalar_interiors: usize,
+    scalar_fallbacks: usize,
+    scalar_limited: bool,
+    scalar_probes: usize,
+    parent_attempts: usize,
+    unfunded_parent_declines: usize,
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Native) };
@@ -37,7 +45,40 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
     // SAFETY: this is the exact callback/context supplied by the checked entry.
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     let group = ctx.descriptor.metadata().map_admission.group(site as usize);
-    let native = group.is_some_and(|group| ctx.state.map_owners.has_retained_binding(group.owner));
+    let native = group
+        .and_then(|group| group.owner)
+        .is_some_and(|owner| ctx.state.map_owners.has_retained_binding(owner));
+    let scalar = group.filter(|group| group.owner.is_none());
+    let scalar_limited = scalar.is_some_and(|group| {
+        group.start() as u64 == site
+            && group.sites.iter().any(|&s| {
+                matches!(
+                    ctx.descriptor.metadata().plan.blocks()[s as usize].action(),
+                    mech_engine::native_artifact::NativeIterationAction::Scalar(
+                        mech_engine::native_artifact::NativeMatchAction::Primitive {
+                            op: mech_engine::native_artifact::NativeScalarOp::U64Div,
+                            ..
+                        }
+                    )
+                )
+            })
+    }) && MODE.with(Cell::get) == Mode::ScalarLimited
+        && !OBS.with(|r| r.borrow().scalar_limited);
+    if scalar_limited {
+        let used = ctx.state.library.used();
+        if ctx
+            .state
+            .library
+            .restrict(used.0 + scalar.unwrap().work - 1, used.1)
+            .is_err()
+        {
+            note(|r| {
+                r.errors
+                    .push("could not establish one-short scalar funding")
+            });
+        }
+        note(|r| r.scalar_limited = true);
+    }
     note(|r| {
         r.calls += 1;
         if let Some(group) = group {
@@ -74,6 +115,56 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
     // SAFETY: delegate unchanged to the real current-visit admission callback.
     let status = unsafe { crate::native_artifact::program::runtime::hooks::admit(raw, site) };
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
+    if let Some(group) = scalar {
+        let active = ctx.state.scalar_path == Some(group.start());
+        if group.start() as u64 != site {
+            note(|r| {
+                if active {
+                    r.scalar_interiors += 1
+                } else {
+                    r.scalar_fallbacks += 1
+                }
+            });
+        } else if status == STATUS_OK && active {
+            note(|r| r.scalar_groups += 1);
+            if !OBS.with(|r| r.borrow().scalar_probes != 0) {
+                let before = (
+                    ctx.state.control.previous,
+                    ctx.state.control.work.used(),
+                    ctx.state.scalar_path,
+                );
+                if ctx.visit(site).is_ok()
+                    || ctx.visit(u64::from(group.sites[1])).is_ok()
+                    || ctx.failure_site(u64::MAX).is_ok()
+                {
+                    note(|r| {
+                        r.errors
+                            .push("scalar replay/interior/foreign origin was accepted")
+                    });
+                }
+                if (
+                    ctx.state.control.previous,
+                    ctx.state.control.work.used(),
+                    ctx.state.scalar_path,
+                ) != before
+                {
+                    note(|r| {
+                        r.errors
+                            .push("rejected scalar probe changed its ledger or entry")
+                    });
+                }
+                note(|r| r.scalar_probes += 3);
+            }
+        }
+        if scalar_limited {
+            if active {
+                note(|r| {
+                    r.errors
+                        .push("underfunded scalar group bypassed ordered visits")
+                });
+            }
+        }
+    }
     if limited
         && (status == STATUS_OK
             || before != (ctx.state.control.previous, ctx.state.control.work.used()))
@@ -166,6 +257,23 @@ unsafe extern "C" fn observe_helper(
     };
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     ctx.limits = previous;
+    if operation == GlobalHelper::NumericSegmentBegin.raw()
+        && status == STATUS_OK
+        && ctx
+            .descriptor
+            .metadata()
+            .map_admission
+            .group(site as usize)
+            .is_some_and(|group| group.owner.is_none() && u64::from(group.start()) == site)
+    {
+        // SAFETY: the real successful helper has filled this checked result.
+        let declined = unsafe { *result == 0 };
+        let unfunded = ctx.state.scalar_path.is_none();
+        note(|r| {
+            r.parent_attempts += 1;
+            r.unfunded_parent_declines += usize::from(declined && unfunded);
+        });
+    }
     if limited
         && (status == STATUS_OK
             || before
@@ -417,5 +525,356 @@ fn native_map_group_arithmetic_failure_keeps_the_original_interior_origin() {
             (memory.used_bytes(), memory.retained_snapshot_nodes()),
             (0, 0)
         );
+    }
+}
+
+#[test]
+fn ordinary_scalar_groups_keep_interior_origins_and_one_short_funding_falls_back() {
+    let body = include_str!("../../../../../tests/fixtures/native/scalar-path-admission.mec")
+        .split("store(data")
+        .next()
+        .unwrap();
+    let aggregate_body = body
+        .replace("  selected := (flag?", "  packed := (advanced, flag, divisor)\n  (current-number, current-flag, current-divisor) := packed\n  selected := (current-flag?")
+        .replace("advanced *", "current-number *")
+        .replace("selected / divisor", "selected / current-divisor");
+    for (has_aggregate, body) in [(false, body.to_owned()), (true, aggregate_body)] {
+        let source = format!("{body}\ncalculate(word<u64>,flag<bool>,permit<bool>,divisor<u64>)\n");
+        for artifact in artifacts(&source) {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let image = jit.descriptor().encode_build_owned_image().unwrap();
+            // SAFETY: the same checked JIT owner pins this build image and entry.
+            let restored =
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }
+                    .unwrap();
+            assert_eq!(restored.encode_build_owned_image().unwrap(), image);
+            for descriptor in [jit.descriptor(), &restored] {
+                assert!(
+                    descriptor
+                        .metadata()
+                        .map_admission
+                        .groups
+                        .iter()
+                        .any(|g| g.owner.is_none())
+                );
+                if has_aggregate {
+                    assert!(
+                        descriptor
+                            .metadata()
+                            .map_admission
+                            .groups
+                            .iter()
+                            .any(|group| {
+                                group.owner.is_none()
+                                    && group.sites.iter().any(|&site| {
+                                        site != group.start()
+                                            && descriptor
+                                                .metadata()
+                                                .scalar_aggregates
+                                                .action(site as usize)
+                                                .is_some()
+                                    })
+                            }),
+                        "aggregate word still has independent ordinary admission"
+                    );
+                }
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let mut outputs = vec![None; artifact.outputs().len()];
+                for (word, flag, permit, divisor, mode) in [
+                    (7, true, true, 1, Mode::Native),
+                    (7, true, true, 0, Mode::Native),
+                    (7, true, true, 0, Mode::ScalarLimited),
+                    (11, true, true, 2, Mode::Native),
+                    (u64::MAX, false, false, 0, Mode::Native),
+                    (13, false, true, 2, Mode::Native),
+                    (19, true, true, 3, Mode::Native),
+                ] {
+                    let args = artifact
+                        .inputs()
+                        .iter()
+                        .map(|port| {
+                            let name = mech_engine::decode_source_input_name(&port.name).unwrap();
+                            let data = match name.as_str() {
+                                "word" => ValueDataDraft::U64(word),
+                                "flag" => ValueDataDraft::Bool(flag),
+                                "permit" => ValueDataDraft::Bool(permit),
+                                "divisor" => ValueDataDraft::U64(divisor),
+                                _ => panic!("{name}"),
+                            };
+                            let value = ValueDraft {
+                                schema: port.schema,
+                                shape_values: Box::new([]),
+                                data,
+                            }
+                            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                            .unwrap();
+                            let mut claim = memory
+                                .reserve_capacity(
+                                    value.memory_budget_admission_bytes(&memory).unwrap(),
+                                )
+                                .unwrap();
+                            value.into_memory_budget(&mut claim).unwrap()
+                        })
+                        .collect::<Vec<_>>();
+                    let aliases = args.clone();
+                    let prior = outputs.clone();
+                    let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let (outcome, observed) =
+                        run(&jit, descriptor, mode, &args, &mut outputs, &memory);
+                    assert!(observed.errors.is_empty(), "{observed:?}");
+                    assert_eq!(
+                        observed.scalar_interiors, 0,
+                        "funded interiors must have no callbacks: {observed:?}"
+                    );
+                    if permit && divisor != 0 {
+                        outcome.unwrap();
+                        assert!(
+                            matches!(outputs[0].as_ref().unwrap().data(),ValueData::U64(n) if *n==(if flag { (word+1)*3+5 } else { (word+1)*7+11 })/divisor+17)
+                        );
+                        assert!(
+                            observed.scalar_groups > 0 && observed.scalar_probes == 3,
+                            "{observed:?}"
+                        );
+                    } else {
+                        let error = outcome.unwrap_err();
+                        if !permit {
+                            assert!(
+                                matches!(
+                                    error,
+                                    NativeProgramExecutionError::Control(
+                                        NativeIterationExecutionError::Integrity { .. }
+                                    )
+                                ),
+                                "{error:?}"
+                            );
+                        } else {
+                            let NativeProgramExecutionError::Control(
+                                NativeIterationExecutionError::Arithmetic { origin },
+                            ) = error
+                            else {
+                                panic!(
+                                    "expected source arithmetic rather than admission denial: {error:?} {observed:?}"
+                                )
+                            };
+                            let (failed, previous) =
+                                observed.failure.expect("original arithmetic site");
+                            assert_eq!(
+                                origin,
+                                descriptor.metadata().visits[failed as usize].origin
+                            );
+                            if mode == Mode::ScalarLimited {
+                                assert!(
+                                    observed.scalar_limited && observed.scalar_fallbacks > 0,
+                                    "{observed:?}"
+                                );
+                                assert_eq!(
+                                    previous,
+                                    Some(failed as u32),
+                                    "ordered fallback must reach the original failing visit"
+                                );
+                            } else {
+                                assert_ne!(
+                                    previous,
+                                    Some(failed as u32),
+                                    "funded failure must be interior"
+                                );
+                            }
+                        }
+                        assert!(outputs.iter().zip(&prior).all(|(a, b)| {
+                            a.as_ref()
+                                .unwrap()
+                                .shares_frozen_storage(b.as_ref().unwrap())
+                        }));
+                        assert_eq!(
+                            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                            before
+                        );
+                    }
+                    assert!(
+                        args.iter()
+                            .zip(&aliases)
+                            .all(|(a, b)| a.shares_frozen_storage(b))
+                    );
+                }
+                drop(outputs);
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn unfunded_scalar_prefix_declines_parent_and_keeps_ordered_error_and_retry() {
+    let source =
+        include_str!("../../../../../tests/fixtures/native/numeric-parent-admission-overlap.mec")
+            .replace(
+                "projection-parent(data<[u8]>, left<u64>)",
+                "projection-parent(data<[u8]>, left<u64>, divisor<u64>)",
+            )
+            .replace("future := left + 1u64", "future := (left + 1u64) / divisor")
+            .replace(
+                "projection-parent(child, left - 1u64)",
+                "projection-parent(child, left - 1u64, divisor)",
+            )
+            .replace(
+                "projection-parent(bytes<[u8]>, steps<u64>)",
+                "projection-parent(bytes<[u8]>, steps<u64>, divisor<u64>)",
+            );
+    for artifact in artifacts(&source) {
+        let mode = crate::native_artifact::NativeProgramLimitMode::NoLimits;
+        let catalog = mech_stdlib::source_catalog();
+        let jit = JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+            .unwrap();
+        let restored = super::super::tests::restore_admitted_helper_descriptor(&jit);
+        for descriptor in [jit.descriptor(), &restored] {
+            let metadata = descriptor.metadata();
+            assert!(metadata.compositions.parents.iter().any(|parent| {
+                parent.segments.iter().any(|piece| {
+                    metadata.compositions.entry(piece.entry as usize).is_some()
+                        && metadata
+                            .map_admission
+                            .group(piece.entry as usize)
+                            .is_some_and(|group| {
+                                group.owner.is_none()
+                                    && group.sites.iter().any(|&site| {
+                                        matches!(
+                                metadata.plan.blocks()[site as usize].action(),
+                                mech_engine::native_artifact::NativeIterationAction::Scalar(
+                                    mech_engine::native_artifact::NativeMatchAction::Primitive {
+                                        op: mech_engine::native_artifact::NativeScalarOp::U64Div, ..
+                                    }
+                                )
+                            )
+                                    })
+                            })
+                })
+            }));
+            let memory = mode.memory_budget();
+            let mut outputs = vec![None; artifact.outputs().len()];
+            let mut expected_error = None;
+            for (divisor, run_mode) in [
+                (1, Mode::Native),
+                (0, Mode::Native),
+                (0, Mode::ScalarLimited),
+                (1, Mode::Native),
+            ] {
+                let args = artifact
+                    .inputs()
+                    .iter()
+                    .map(|port| {
+                        let name = mech_engine::decode_source_input_name(&port.name).unwrap();
+                        let data = match name.as_str() {
+                            "bytes" => {
+                                ValueDataDraft::Matrix(vec![ValueDataDraft::U8(97); 3].into())
+                            }
+                            "steps" => ValueDataDraft::U64(2),
+                            "divisor" => ValueDataDraft::U64(divisor),
+                            _ => panic!("{name}"),
+                        };
+                        let shape_values: Box<[u64]> = if matches!(data, ValueDataDraft::Matrix(_))
+                        {
+                            mech_core::shape_for_resolved_extents(
+                                artifact.schemas().get(port.schema).unwrap(),
+                                &[1, 3],
+                            )
+                            .unwrap()
+                            .parameter_values()
+                            .into()
+                        } else {
+                            Box::new([])
+                        };
+                        let value = ValueDraft {
+                            schema: port.schema,
+                            shape_values,
+                            data,
+                        }
+                        .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                        .unwrap();
+                        let mut claim = memory
+                            .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+                            .unwrap();
+                        value.into_memory_budget(&mut claim).unwrap()
+                    })
+                    .collect::<Vec<_>>();
+                let aliases = args.clone();
+                let before_values = args
+                    .iter()
+                    .map(|v| v.canonical_data_draft().unwrap())
+                    .collect::<Vec<_>>();
+                let prior = outputs.clone();
+                let held = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                let (result, observed) =
+                    run(&jit, descriptor, run_mode, &args, &mut outputs, &memory);
+                assert!(observed.errors.is_empty(), "{observed:?}");
+                assert!(observed.parent_attempts > 0, "{observed:?}");
+                if divisor == 0 {
+                    let error = result.unwrap_err();
+                    assert!(
+                        matches!(
+                            error,
+                            NativeProgramExecutionError::Control(
+                                NativeIterationExecutionError::Arithmetic { .. }
+                            )
+                        ),
+                        "{error:?} {observed:?}"
+                    );
+                    let text = format!("{error:?}");
+                    assert_eq!(text, *expected_error.get_or_insert(text.clone()));
+                    if run_mode == Mode::ScalarLimited {
+                        assert!(
+                            observed.scalar_limited
+                                && observed.unfunded_parent_declines > 0
+                                && observed.scalar_fallbacks > 0,
+                            "{observed:?}"
+                        );
+                        let (failed, previous) = observed.failure.unwrap();
+                        assert_eq!(previous, Some(failed as u32));
+                    }
+                    assert!(outputs.iter().zip(&prior).all(|(a, b)| {
+                        a.as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(b.as_ref().unwrap())
+                    }));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        held
+                    );
+                } else {
+                    result.unwrap();
+                    assert_eq!(
+                        outputs
+                            .last()
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        ValueDataDraft::Matrix([105, 97, 97].map(ValueDataDraft::U8).into())
+                    );
+                }
+                assert_eq!(
+                    args.iter()
+                        .map(|v| v.canonical_data_draft().unwrap())
+                        .collect::<Vec<_>>(),
+                    before_values
+                );
+                assert_eq!(
+                    aliases
+                        .iter()
+                        .map(|v| v.canonical_data_draft().unwrap())
+                        .collect::<Vec<_>>(),
+                    before_values
+                );
+            }
+            drop(outputs);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
     }
 }

@@ -1,10 +1,12 @@
 //! Finalized semantic schemas, shape instances, and deterministic schema tables.
 
+mod dimension_relations;
 mod encoding;
 mod shape;
 mod table;
 mod validation;
 
+pub use self::dimension_relations::*;
 pub use self::shape::*;
 pub use self::table::*;
 pub use self::validation::rebase_schema_draft_dimensions;

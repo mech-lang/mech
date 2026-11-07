@@ -1,0 +1,55 @@
+// Level-12-reachable block heuristics from CompressLazy.roc at
+// 671077457ff7ef3a3d44caf715a3fc595addf379. Shared helpers precede this file.
+
+optimal-choose-minimum(used<u64>) => (out<u64>) :=
+  lengths := [9u8,9u8,9u8,9u8,9u8,9u8,8u8,8u8,7u8,7u8,6u8,6u8,6u8,6u8,6u8,6u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,5u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8,4u8]
+  out := ((used >= 80u64)? | true => 3u64 | false => byte(lengths, used)).
+
+optimal-used-count(used<[u8]>, index<u64>, count<u64>) => (out<u64>) :=
+  out := ((index < 256u64)?
+    | true => optimal-used-count(used, index + 1u64, count + byte(used, index))
+    | false => count).
+
+optimal-mark-used(used<[u8]>, input<[u8]>, at<u64>) => (out<[u8]>) :=
+  ~next := used
+  next[byte(input, at) + 1u64] = 1u8
+  out := next.
+
+optimal-sample-used(used<[u8]>, input<[u8]>, at<u64>, count<u64>, index<u64>) => (out<[u8]>) :=
+  next := ((index < count)? | true => optimal-mark-used(used, input, at + index) | false => used)
+  out := ((index < count)?
+    | true => optimal-sample-used(next, input, at, count, index + 1u64)
+    | false => next).
+
+optimal-sampled-minimum(input<[u8]>, at<u64>, count<u64>) => (out<u64>) :=
+  used := [0u8 | index <- 0u64..=256u64, index < 256u64]
+  sampled := optimal-sample-used(used, input, at, bt-minimum(count, 4096u64), 0u64)
+  out := optimal-choose-minimum(optimal-used-count(sampled, 0u64, 0u64)).
+
+optimal-minimum-match(input<[u8]>, at<u64>, count<u64>) => (out<u64>) :=
+  out := ((count < 512u64)? | true => 3u64 | false => optimal-sampled-minimum(input, at, count)).
+
+optimal-maximum-block-end(begin<u64>, end<u64>) => (out<u64>) :=
+  out := ((end - begin < 305000u64)? | true => end | false => begin + 300000u64).
+
+optimal-observation-delta(fresh<[u32]>, total<[u32]>, num-fresh<u64>, num-total<u64>, index<u64>, delta<u64>) => (out<u64>) :=
+  expected := ((index < 10u64)? | true => bt-word32(optimal-counter(total, index)) * num-fresh | false => 0u64)
+  actual := ((index < 10u64)? | true => bt-word32(optimal-counter(fresh, index)) * num-total | false => 0u64)
+  difference := ((actual > expected)? | true => actual - expected | false => expected - actual)
+  out := ((index < 10u64)?
+    | true => optimal-observation-delta(fresh, total, num-fresh, num-total, index + 1u64, delta + difference)
+    | false => delta).
+
+optimal-end-check-present(fresh<[u32]>, total<[u32]>, num-fresh<u64>, num-total<u64>, block-length<u64>) => (out<u64>) :=
+  delta := optimal-observation-delta(fresh, total, num-fresh, num-total, 0u64, 0u64)
+  items := num-total + num-fresh
+  initial-cutoff := (num-fresh * 200u64 / 512u64) * num-total
+  cutoff := (((block-length < 10000u64) && (items < 8192u64))?
+    | true => initial-cutoff + initial-cutoff * (8192u64 - items) / 8192u64
+    | false => initial-cutoff)
+  out := ((delta + (block-length / 4096u64) * num-total >= cutoff)? | true => 1u64 | false => 0u64).
+
+optimal-end-block-check(fresh<[u32]>, total<[u32]>, num-fresh<u64>, num-total<u64>, block-length<u64>) => (out<u64>) :=
+  out := ((num-total > 0u64)?
+    | true => optimal-end-check-present(fresh, total, num-fresh, num-total, block-length)
+    | false => 0u64).

@@ -1,0 +1,22 @@
+// Ordinary fixed-size buffer children, including a write before a later call.
+// Header run generation needs the same current-buffer return and update contract.
++> sequence
+
+mutable-store(values<[u32]>, at<u64>, amount<u32>) => (out<[u32]>) :=
+  ~next := values
+  next[at + 1u64] = values[at + 1u64] + amount
+  out := next.
+
+mutable-child(values<[u32]>, at<u64>, end<u64>, amount<u32>, reject<u64>) => (out<[u32]>) :=
+  permitted! := at != reject
+  more := at < end
+  next := (more? | true => mutable-store(values, at, amount) | false => values)
+  out := (more? | true => mutable-child(next, at + 1u64, end, amount, reject) | false => values).
+
+mutable-parent(values<[u32]>, at<u64>, end<u64>, amount<u32>, prime<bool>, reject<u64>) => (out<[u32]>) :=
+  more := at < end
+  primed := (more? | true => (prime? | true => mutable-store(values, 0u64, amount) | false => values) | false => values)
+  next := (more? | true => mutable-child(primed, 0u64, sequence/length(values), amount, reject) | false => values)
+  out := (more? | true => mutable-parent(next, at + 1u64, end, amount, prime, reject) | false => values).
+
+mutable-parent(values<[u32]>, 0u64, rounds<u64>, amount<u32>, prime<bool>, reject<u64>)

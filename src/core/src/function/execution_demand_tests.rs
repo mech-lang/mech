@@ -806,6 +806,7 @@ fn assert_canonical_output_envelope(function: &FunctionInstance, output: &ValueC
 fn canonical_numeric_outputs_keep_factory_construction_authority() {
     for class in [
         ImplementationMemoryClass::CanonicalFinalize,
+        ImplementationMemoryClass::PackedUnsignedMatrixUpdateOrCanonicalFinalize,
         ImplementationMemoryClass::CanonicalSortUnique,
         ImplementationMemoryClass::CanonicalCloneInput { input: 0 },
     ] {
@@ -831,7 +832,11 @@ fn canonical_numeric_outputs_keep_factory_construction_authority() {
             PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W64))
         );
         assert_canonical_output_envelope(&function, &output);
-        if class == ImplementationMemoryClass::CanonicalFinalize {
+        if matches!(
+            class,
+            ImplementationMemoryClass::CanonicalFinalize
+                | ImplementationMemoryClass::PackedUnsignedMatrixUpdateOrCanonicalFinalize
+        ) {
             function.solve_result().unwrap();
             assert!(matches!(
                 output.snapshot().unwrap().data(),

@@ -73,11 +73,12 @@ fn layout(
     node: NodeId,
     id: SchemaId,
     schema: &Schema,
+    key: mech_core::SchemaKey,
     parameters: &[u64],
 ) -> Result<ResidentPortLayout, Error> {
     Ok(ResidentPortLayout {
         schema_id: id,
-        schema_key: schema.key(),
+        schema_key: key,
         // The physical carrier is one immutable value handle; its semantic
         // matrix/map dimensions remain in the exact schema/shape instance.
         kind: ResidentValueKind::Snapshot,
@@ -213,14 +214,49 @@ fn bind_selected(
             node: template.origin().node(),
         })?
         .factory();
+    let selector = constant_record_selector(artifact, &template);
     bind_current(
         artifact.schemas(),
         template,
         factory,
+        None,
         input_parameters,
         output_parameters,
+        selector,
         limits,
     )
+}
+
+fn constant_record_selector(
+    artifact: &ProgramArtifact,
+    template: &NativeProgramLibraryTemplate,
+) -> Option<u64> {
+    use super::native_collection_templates::NativeCollectionLexicalSource as Source;
+    if template.primitive() != crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+    {
+        return None;
+    }
+    let constant = template
+        .root()
+        .and_then(|root| match root.sources().get(1) {
+            Some(crate::ArtifactSource::Constant(id)) => Some(*id),
+            _ => None,
+        })
+        .or_else(|| {
+            template
+                .lexical()
+                .and_then(|lexical| match lexical.sources().get(1) {
+                    Some(Source::Control(crate::ControlValue::Constant(id)))
+                    | Some(Source::Comprehension(crate::ComprehensionValue::Constant(id))) => {
+                        Some(*id)
+                    }
+                    _ => None,
+                })
+        })?;
+    match artifact.constants().get(constant)?.data() {
+        mech_core::ValueData::Id(id) => Some(*id),
+        _ => None,
+    }
 }
 
 pub(super) fn finite_limits(node: NodeId, limits: MemoryBudgetLimits) -> Result<(), Error> {
@@ -244,16 +280,30 @@ pub(super) fn finite_limits(node: NodeId, limits: MemoryBudgetLimits) -> Result<
     Ok(())
 }
 
+struct PreparedBindingMetadata<'a> {
+    descriptors: Option<&'a [ResolvedValueDescriptor]>,
+    input_keys: &'a [mech_core::SchemaKey],
+    output_key: mech_core::SchemaKey,
+}
+
 fn bind_current(
     schemas: &mech_core::SchemaTable,
     template: NativeProgramLibraryTemplate,
     factory: ResidentKernelFactory,
+    prepared: Option<PreparedBindingMetadata<'_>>,
     input_parameters: &[&[u64]],
     output_parameters: &[u64],
+    record_selector: Option<u64>,
     limits: MemoryBudgetLimits,
 ) -> Result<NativeCollectionCall, Error> {
     let node = template.origin().node();
     if input_parameters.len() != template.inputs().len() {
+        return Err(invalid(node));
+    }
+    if prepared
+        .as_ref()
+        .is_some_and(|metadata| metadata.input_keys.len() != template.inputs().len())
+    {
         return Err(invalid(node));
     }
     // NativeHost has no implicit quota. Require an explicit finite policy for
@@ -262,22 +312,63 @@ fn bind_current(
     let ResolvedOperationContract::Declared(contract) = template.contract() else {
         return Err(invalid(node));
     };
-    let inputs = contract
+    let current_key = |id, schema: &Schema, prepared_key: Option<mech_core::SchemaKey>| {
+        let entry = schemas.entry(id).ok_or_else(|| invalid(node))?;
+        if entry.schema() != schema || prepared_key.is_some_and(|key| key != entry.key()) {
+            return Err(invalid(node));
+        }
+        Ok(entry.key())
+    };
+    let mut inputs = contract
         .inputs
         .iter()
         .zip(template.inputs())
         .zip(input_parameters)
-        .map(|((port, schema), parameters)| layout(node, port.schema, schema, parameters))
+        .enumerate()
+        .map(|(index, ((port, schema), parameters))| {
+            let key = current_key(
+                port.schema,
+                schema,
+                prepared.as_ref().map(|metadata| metadata.input_keys[index]),
+            )?;
+            layout(node, port.schema, schema, key, parameters)
+        })
         .collect::<Result<Box<[_]>, _>>()?;
+    if template.primitive() == crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+    {
+        // The maintained heterogeneous-record binder needs the actual field
+        // selector, just as resident activation does. It still checks the
+        // selected component's schema and validates the live Id at invocation.
+        inputs
+            .get_mut(1)
+            .ok_or_else(|| invalid(node))?
+            .resolved_selector = Some(mech_core::ResidentResolvedSelector::Id(
+            record_selector.ok_or_else(|| invalid(node))?,
+        ));
+    }
     let output = layout(
         node,
         contract.outputs[0].schema,
         template.output(),
+        current_key(
+            contract.outputs[0].schema,
+            template.output(),
+            prepared.as_ref().map(|metadata| metadata.output_key),
+        )?,
         output_parameters,
     )?;
-    let descriptor = |schema: &Schema, layout: &ResidentPortLayout| {
-        ResolvedValueDescriptor::from_schema(schema.clone(), layout.shape_instance.clone())
-            .map_err(|_| invalid(node))
+    let descriptor = |index: usize, schema: &Schema, layout: &ResidentPortLayout| {
+        match prepared.as_ref().and_then(|metadata| metadata.descriptors) {
+            Some(templates) => {
+                let prototype = templates.get(index).ok_or_else(|| invalid(node))?;
+                debug_assert_eq!(prototype.schema(), schema);
+                prototype.with_current_shape(layout.shape_instance.clone())
+            }
+            None => {
+                ResolvedValueDescriptor::from_schema(schema.clone(), layout.shape_instance.clone())
+            }
+        }
+        .map_err(|_| invalid(node))
     };
     let semantic = ResolvedOperationDescriptor::from_resolved_contract(
         template.primitive().name().to_owned(),
@@ -290,9 +381,10 @@ fn bind_current(
             .inputs()
             .iter()
             .zip(&inputs)
-            .map(|(schema, layout)| descriptor(schema, layout))
+            .enumerate()
+            .map(|(index, (schema, layout))| descriptor(index, schema, layout))
             .collect::<Result<Box<[_]>, _>>()?,
-        Box::new([descriptor(template.output(), &output)?]),
+        Box::new([descriptor(inputs.len(), template.output(), &output)?]),
         template.selected_key().clone(),
         ExecutionTarget::Native,
     )

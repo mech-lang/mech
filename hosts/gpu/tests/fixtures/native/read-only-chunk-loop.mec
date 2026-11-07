@@ -1,0 +1,48 @@
+// Immutable chunk/byte comparison recurrences; see deflate-huffman-LICENSES.md.
++> bits
++> sequence
+cell-readable(bytes<[u8]>, at<u64>) => (out<u64>) :=
+  out<u64> := bytes[at + 1u64].
+// List.get defaults to zero; the one-based selector is only formed on the
+// readable path, so an arbitrary zero-based U64 offset cannot overflow it.
+read-cell(bytes<[u8]>, at<u64>) => (out<u64>) :=
+  out := ((at < sequence/length(bytes))? | true => cell-readable(bytes, at) | false => 0u64).
+chunk-readable(bytes<[u8]>, at<u64>) => (out<u64>) :=
+  a := bits/or(cell-readable(bytes, at), bits/shift-left-wrap(cell-readable(bytes, at + 1u64), 8u64))
+  b := bits/or(cell-readable(bytes, at + 2u64), bits/shift-left-wrap(cell-readable(bytes, at + 3u64), 8u64))
+  c := bits/or(cell-readable(bytes, at + 4u64), bits/shift-left-wrap(cell-readable(bytes, at + 5u64), 8u64))
+  d := bits/or(cell-readable(bytes, at + 6u64), bits/shift-left-wrap(cell-readable(bytes, at + 7u64), 8u64))
+  lo := bits/or(a, bits/shift-left-wrap(b, 16u64))
+  hi := bits/or(c, bits/shift-left-wrap(d, 16u64))
+  out := bits/or(lo, bits/shift-left-wrap(hi, 32u64)).
+read-chunk(bytes<[u8]>, at<u64>) => (out<u64>) :=
+  available := sequence/length(bytes)
+  out := ((available >= 8u64)? | true => ((at <= available - 8u64)? | true => chunk-readable(bytes, at) | false => 0u64) | false => 0u64).
+chunk-difference(bytes<[u8]>, left<u64>, right<u64>, at<u64>) => (out<u64>) :=
+  left-word := read-chunk(bytes, bits/wrapping-add(left, at))
+  right-word := read-chunk(bytes, bits/wrapping-add(right, at))
+  out := bits/xor(right-word, left-word).
+compare-tail(bytes<[u8]>, left<u64>, right<u64>, at<u64>, limit<u64>) => <u64>
+  | (bytes, left, right, at, limit) => ((at < limit)?
+      | false => at
+      | true => ((read-cell(bytes, bits/wrapping-add(left, at)) == read-cell(bytes, bits/wrapping-add(right, at)))?
+          | true => compare-tail(bytes, left, right, bits/wrapping-add(at, 1u64), limit)
+          | false => at)).
+compare-chunks(bytes<[u8]>, left<u64>, right<u64>, at<u64>, limit<u64>) => <u64>
+  | (bytes, left, right, at, limit) => ((at + 8u64 <= limit)?
+      | false => compare-tail(bytes, left, right, at, limit)
+      | true => (chunk-difference(bytes, left, right, at)?
+          | 0u64 => compare-chunks(bytes, left, right, bits/wrapping-add(at, 8u64), limit)
+          | difference => bits/wrapping-add(at, bits/shift-right-wrap(bits/trailing-zeros(difference), 3u64)))).
+scan-sentinel(bytes<[u8]>, at<u64>) => (out<u64>) :=
+  value := read-cell(bytes, at)
+  out := ((value == 0u64)? | true => at | false => scan-sentinel(bytes, at + 1u64)).
+repeat-chunks(bytes<[u8]>, turn<u64>, rounds<u64>, left<u64>, right<u64>, start<u64>, limit<u64>, total<u64>) => (out<u64>) :=
+  more := turn < rounds
+  odd := bits/and(turn, 1u64) != 0u64
+  a := (odd? | true => right | false => left)
+  b := (odd? | true => left | false => right)
+  selected := (more? | true => scan-sentinel(bytes, a) | false => a)
+  found := (more? | true => compare-chunks(bytes, selected, b, start, limit) | false => 0u64)
+  out := (more? | true => repeat-chunks(bytes, turn + 1u64, rounds, left, right, start, limit, total + found) | false => total).
+repeat-chunks(bytes<[u8]>, 0u64, rounds<u64>, left<u64>, right<u64>, start<u64>, limit<u64>, 0u64)

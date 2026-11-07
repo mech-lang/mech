@@ -1050,13 +1050,11 @@ fn snapshot_managed_host_data_with_construction(
         };
     }
     match representation {
-        #[cfg(feature = "u8")]
         FunctionValueRepresentation::U8 => scalar!(u8, U8, |value| value),
-        #[cfg(feature = "u16")]
         FunctionValueRepresentation::U16 => scalar!(u16, U16, |value| value),
-        #[cfg(feature = "u32")]
         FunctionValueRepresentation::U32 => scalar!(u32, U32, |value| value),
-        #[cfg(feature = "u64")]
+        // Canonical unsigned words use the admitted scalar codec independently
+        // of the legacy cell/factory features, including skinny buffer profiles.
         FunctionValueRepresentation::U64 => scalar!(u64, U64, |value| value),
         #[cfg(feature = "u128")]
         FunctionValueRepresentation::U128 => scalar!(u128, U128, |value| value),
@@ -1256,13 +1254,11 @@ pub(crate) fn initialize_managed_object_from_value(
     }
 
     match representation {
-        #[cfg(feature = "u8")]
         FunctionValueRepresentation::U8 => scalar!(u8, U8, |value| value),
-        #[cfg(feature = "u16")]
         FunctionValueRepresentation::U16 => scalar!(u16, U16, |value| value),
-        #[cfg(feature = "u32")]
         FunctionValueRepresentation::U32 => scalar!(u32, U32, |value| value),
-        #[cfg(feature = "u64")]
+        // Canonical unsigned words use the admitted scalar codec independently
+        // of the legacy cell/factory features, including skinny buffer profiles.
         FunctionValueRepresentation::U64 => scalar!(u64, U64, |value| value),
         #[cfg(feature = "u128")]
         FunctionValueRepresentation::U128 => scalar!(u128, U128, |value| value),

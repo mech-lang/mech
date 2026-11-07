@@ -1,0 +1,34 @@
+// BlockOut.flush_block at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include the qualified Huffman/header/cost/table/path/sequence/stored writers.
+// See deflate-huffman-LICENSES.md for attribution and licenses.
+block-pad-packed(packed<[u64]>, n<u64>) => (out<[u64]>) :=
+  length := sequence/length(packed)
+  out := ((length < n)? | true => [packed [0u64 | i <- 0u64..=n, i < n - length]] | false => packed).
+block-write-packed(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, begin<u64>, seqs<[block-sequence]>, litlen-words<[u32]>, litlen-lens<[u8]>, full-words<[u32]>, full-lens<[u8]>, offset-words<[u32]>, offset-lens<[u8]>, offset-extra<[u8]>, offset-bases<[u32]>) => (out<path-written>) :=
+  literals := block-pad-packed(block-pack-codes(litlen-words, litlen-lens), 288u64)
+  lengths := block-pad-packed(block-pack-codes(full-words, full-lens), 512u64)
+  offsets := block-pad-packed(block-pack-offsets(offset-words, offset-lens, offset-extra, offset-bases), 32u64)
+  packed := [[literals lengths] offsets]
+  out := block-write-sequences(bytes, bitbuf, bitcount, input, begin, seqs, packed).
+<block-flushed> := <{bytes<[u8]> bitbuf<u64> bitcount<u64> seqs<[block-sequence]> items<[u64]> litlen-lens<[u8]> litlen-codewords<[u32]> offset-lens<[u8]> offset-codewords<[u32]> static-litlen-lens<[u8]> static-litlen-codewords<[u32]> static-offset-lens<[u8]> static-offset-codewords<[u32]>}>
+block-write-compressed(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, begin<u64>, length<u64>, seqs<[block-sequence]>, items<[u64]>, use-items<u64>, final<u64>, use-static<bool>, precode<block-precode>, litlen-lens<[u8]>, litlen-codewords<[u32]>, offset-lens<[u8]>, offset-codewords<[u32]>, static-litlen-lens<[u8]>, static-litlen-codewords<[u32]>, static-offset-lens<[u8]>, static-offset-codewords<[u32]>, permutation<[u8]>, extra-precode<[u8]>, length-slots<[u8]>, length-bases<[u32]>, length-extra<[u8]>, offset-slots<[u8]>, offset-bases<[u32]>, offset-extra<[u8]>) => (out<path-written>) :=
+  header := (use-static? | true => block-write-static-header(bytes, bitbuf, bitcount, final) | false => block-write-dynamic-header(bytes, bitbuf, bitcount, final, precode, permutation, extra-precode))
+  w-litlen-lens := (use-static? | true => static-litlen-lens | false => litlen-lens)
+  w-litlen-words := (use-static? | true => static-litlen-codewords | false => litlen-codewords)
+  w-offset-lens := (use-static? | true => static-offset-lens | false => offset-lens)
+  w-offset-words := (use-static? | true => static-offset-codewords | false => offset-codewords)
+  full := block-compute-full-length-codewords(w-litlen-lens, w-litlen-words, length-slots, length-bases, length-extra)
+  top := bits/wrapping-sub(sequence/length(items), 1u64)
+  at := ((use-items == 1u64)? | true => 0u64 | false => length)
+  path := path-write-at(header.bytes, header.bitbuf, header.bitcount, items, top, at, length, w-litlen-words, w-litlen-lens, full.codewords, full.lens, w-offset-words, w-offset-lens, offset-slots, offset-bases, offset-extra)
+  payload := ((use-items == 0u64)? | true => block-write-packed(path.bytes, path.bitbuf, path.bitcount, input, begin, seqs, w-litlen-words, w-litlen-lens, full.codewords, full.lens, w-offset-words, w-offset-lens, offset-extra, offset-bases) | false => path)
+  word<u64> := huff-get32(w-litlen-words, 256u64)
+  buf := bits/or(payload.bitbuf, bits/shift-left-wrap(word, bits/and(payload.bitcount, 255u64)))
+  width<u64> := huff-get8(w-litlen-lens, 256u64)
+  out := path-write-flush(payload.bytes, buf, payload.bitcount + width).
+block-flush(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, begin<u64>, length<u64>, seqs<[block-sequence]>, freqs-litlen<[u32]>, freqs-offset<[u32]>, litlen-lens<[u8]>, litlen-codewords<[u32]>, offset-lens<[u8]>, offset-codewords<[u32]>, static-litlen-lens<[u8]>, static-litlen-codewords<[u32]>, static-offset-lens<[u8]>, static-offset-codewords<[u32]>, items<[u64]>, use-items<u64>, final<u64>, permutation<[u8]>, reversed<[u8]>, extra-precode<[u8]>, length-slots<[u8]>, length-bases<[u32]>, length-extra<[u8]>, offset-slots<[u8]>, offset-bases<[u32]>, offset-extra<[u8]>) => (out<block-flushed>) :=
+  precode := block-precompute-huffman-header(litlen-lens, offset-lens, permutation, reversed)
+  costs := block-compute-costs(precode, freqs-litlen, freqs-offset, litlen-lens, offset-lens, static-litlen-lens, extra-precode, length-extra, offset-extra, length, bitcount)
+  in-end := begin + length
+  written := ((costs.kind == 0u64)? | true => block-store-at(bytes, bitbuf, bitcount, input, begin, in-end, final) | false => block-write-compressed(bytes, bitbuf, bitcount, input, begin, length, seqs, items, use-items, final, costs.kind == 1u64, precode, litlen-lens, litlen-codewords, offset-lens, offset-codewords, static-litlen-lens, static-litlen-codewords, static-offset-lens, static-offset-codewords, permutation, extra-precode, length-slots, length-bases, length-extra, offset-slots, offset-bases, offset-extra))
+  out := {bytes: written.bytes, bitbuf: written.bitbuf, bitcount: written.bitcount, seqs: seqs, items: items, litlen-lens: litlen-lens, litlen-codewords: litlen-codewords, offset-lens: offset-lens, offset-codewords: offset-codewords, static-litlen-lens: static-litlen-lens, static-litlen-codewords: static-litlen-codewords, static-offset-lens: static-offset-lens, static-offset-codewords: static-offset-codewords}.
