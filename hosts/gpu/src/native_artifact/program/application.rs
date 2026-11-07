@@ -45,6 +45,57 @@ pub fn generate_linked_program_application_with_limits(
     let workspace = prepare_destination(workspace, directory, binary_name)?;
     let object = crate::native_artifact::emit_program_object_with_limits(artifact, catalog, limits)
         .map_err(NativeApplicationError::Compile)?;
+    write_program_application(
+        &workspace,
+        directory,
+        binary_name,
+        artifact,
+        catalog,
+        source_provenance,
+        object,
+        "canonical-artifact-program-cranelift-object",
+    )
+}
+
+/// Generate the same runtime-only application using a checked LLVM Object.
+/// The explicit compile-time toolchain is never embedded in the application.
+pub fn generate_linked_llvm_program_application_with_limits(
+    workspace: &Path,
+    directory: &Path,
+    binary_name: &str,
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    source_provenance: &[u8],
+    limits: crate::native_artifact::NativeCompileLimits,
+    toolchain: &crate::native_artifact::NativeLlvmToolchain,
+) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
+    let workspace = prepare_destination(workspace, directory, binary_name)?;
+    let object = crate::native_artifact::emit_program_llvm_object_with_limits(
+        artifact, catalog, limits, toolchain,
+    )
+    .map_err(NativeApplicationError::Compile)?;
+    write_program_application(
+        &workspace,
+        directory,
+        binary_name,
+        artifact,
+        catalog,
+        source_provenance,
+        object,
+        "canonical-artifact-program-llvm-object",
+    )
+}
+
+fn write_program_application(
+    workspace: &Path,
+    directory: &Path,
+    binary_name: &str,
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    source_provenance: &[u8],
+    object: crate::native_artifact::NativeProgramObject,
+    route: &'static str,
+) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
     let bytecode = encode_program_artifact_bytecode_v1(artifact)
         .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
     let main = render_main(
@@ -81,7 +132,7 @@ pub fn generate_linked_program_application_with_limits(
             ),
             manifest_schema: "mech.canonical-linked-program-application.v1",
             resource_image: None,
-            route: "canonical-artifact-program-cranelift-object",
+            route,
         },
     )
 }

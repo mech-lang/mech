@@ -102,15 +102,35 @@ pub(super) fn module<'a>(
     }
     let mut intrinsics = BTreeSet::new();
     let mut bodies = Vec::new();
+    let retained = definitions
+        .iter()
+        .map(|d| {
+            Ok(format!(
+                "ptr {}",
+                symbol(
+                    declarations
+                        .get_function_decl(d.id)
+                        .name
+                        .as_deref()
+                        .ok_or("anonymous LLVM definition")?
+                )?
+            ))
+        })
+        .collect::<Result<Vec<_>>>()?;
     for def in definitions {
         bodies.push(Function::new(&def.function, declarations, &mut intrinsics).emit(def.id)?);
     }
     Ok(format!(
         "; Mech verified SSA; not a native descriptor or an executable image.\n\
-         target triple = \"arm64-apple-macosx26.0.0\"\n\n{}\n{}\n{}\n\
+         target triple = \"arm64-apple-macosx26.0.0\"\n\n{}\n{}\n{}\n{}\n\
          attributes #0 = {{ noinline uwtable \"frame-pointer\"=\"all\" }}\n",
         imports.join("\n"),
         intrinsics.into_iter().collect::<Vec<_>>().join("\n"),
+        format!(
+            "@llvm.used = appending global [{} x ptr] [{}], section \"llvm.metadata\"",
+            retained.len(),
+            retained.join(", ")
+        ),
         bodies.join("\n\n")
     ))
 }

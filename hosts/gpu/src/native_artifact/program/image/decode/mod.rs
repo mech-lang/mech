@@ -67,6 +67,9 @@ impl NativeProgramDescriptor {
     /// V2 includes frozen frame recipes. Only the exact Object-bound path may
     /// reuse them without source analysis; independent loading rederives them.
     pub fn encode_build_owned_image(&self) -> Result<Vec<u8>, serde_json::Error> {
+        if self.machine_backend.is_some() {
+            return self.encode_llvm_json_image();
+        }
         #[derive(Serialize)]
         struct Image<'a> {
             format: &'static str,
@@ -77,6 +80,20 @@ impl NativeProgramDescriptor {
             format: "mech.build-owned-native-descriptor",
             version: 2,
             descriptor: self,
+        })
+    }
+
+    fn encode_llvm_json_image(&self) -> Result<Vec<u8>, serde_json::Error> {
+        #[derive(Serialize)]
+        struct Image<'a> {
+            format: &'static str,
+            version: u32,
+            descriptor: super::TableDescriptor<'a>,
+        }
+        serde_json::to_vec(&Image {
+            format: "mech.build-owned-native-descriptor",
+            version: 10,
+            descriptor: super::TableDescriptor(self),
         })
     }
 
@@ -95,7 +112,11 @@ impl NativeProgramDescriptor {
         }
         let json = serde_json::to_vec(&Image {
             format: "mech.build-owned-native-descriptor",
-            version: 9,
+            version: if self.machine_backend.is_some() {
+                10
+            } else {
+                9
+            },
             descriptor: super::TableDescriptor(self),
         })?;
         mech_engine::native_artifact::encode_native_metadata_image(&json)

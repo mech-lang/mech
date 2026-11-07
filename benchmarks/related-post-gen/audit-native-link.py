@@ -58,6 +58,95 @@ def audit(object_path, executable_path):
         at, info = struct.unpack_from('<iI', ob, text['relocations'] + ordinal * 8)
         assert at not in pending
         pending[at] = info
+    # PAGE21/PAGEOFF12 are independently defined relocations. LLVM can hoist
+    # one ADRP across blocks and share it among loads, so adjacency is not a
+    # proof requirement. Constrain every relocation of a symbol to one common
+    # exact linked address; compare complete literal/constant bytes when local
+    # assembler symbols disappear. All opcode/register bits remain identical.
+    pristine = bytes(actual)
+    page_candidates, page_records = {}, []
+    def exact_targets(index):
+        if index in page_candidates:
+            return page_candidates[index]
+        target = symbols[index]
+        assert target['section'], 'PAGE relocation has no defined source target'
+        section = os[target['section'] - 1]
+        if section['name'] in ('__literal4', '__literal8', '__literal16'):
+            size = int(section['name'].removeprefix('__literal'))
+            alignment = size
+        elif section['name'] == '__const' and not target['name'].startswith('_'):
+            assert not section['relocation_count']
+            end = min([s['value'] for s in symbols if s['section'] == target['section']
+                       and s['value'] > target['value']] + [section['address'] + section['size']])
+            size, alignment = end - target['value'], 1
+            assert 0 < size <= 4096, 'Unbounded unnamed constant span'
+        else:
+            assert target['name'] in linked and linked[target['name']]['section']
+            value = linked[target['name']]['value']
+            page_candidates[index] = {value}
+            return page_candidates[index]
+        start = section['offset'] + target['value'] - section['address']
+        expected = ob[start:start + size]
+        assert len(expected) == size
+        candidates = set()
+        for destination_section in es:
+            if destination_section['segment'] != '__TEXT' or destination_section['name'] not in ('__const','__literal4','__literal8','__literal16'):
+                continue
+            data = eb[destination_section['offset']:destination_section['offset'] + destination_section['size']]
+            offset = data.find(expected)
+            while offset >= 0:
+                value = destination_section['address'] + offset
+                if value % alignment == 0:
+                    candidates.add(value)
+                offset = data.find(expected, offset + 1)
+        assert candidates, ('No exact linked constant target', target['name'])
+        page_candidates[index] = candidates
+        return candidates
+
+    high_mask, low_mask = (3 << 29) | (0x7ffff << 5), 0xfff << 10
+    for at, info in pending.items():
+        kind, index = info >> 28, info & 0xffffff
+        if kind not in (3, 4):
+            continue
+        relative, length, external = (info >> 24) & 1, (info >> 25) & 3, (info >> 27) & 1
+        assert (relative, length, external) == (int(kind == 3), 2, 1)
+        before = struct.unpack_from('<I', original, at)[0]
+        after = struct.unpack_from('<I', pristine, at)[0]
+        candidates = exact_targets(index)
+        if kind == 3:
+            assert before & 0x9f000000 == 0x90000000
+            assert before & high_mask == 0, 'Unsupported nonzero page addend'
+            assert after & ~high_mask == before
+            immediate = ((after >> 5 & 0x7ffff) << 2) | (after >> 29 & 3)
+            page = ((address + at) & ~0xfff) + ((immediate ^ 0x100000) - 0x100000) * 4096
+            page_candidates[index] = {v for v in candidates if v & ~0xfff == page}
+            struct.pack_into('<I', actual, at, after & ~high_mask)
+            constraint = dict(linked_page=page)
+        else:
+            assert before & low_mask == 0, 'Unsupported nonzero page-offset addend'
+            assert after & ~low_mask == before
+            if before & 0xffc00000 == 0x91000000:  # ADD X, unshifted immediate
+                scale = 1
+            elif before & 0x3b000000 == 0x39000000:  # unsigned-offset LDR/STR
+                # Literal references are loads only. SIMD Q encodes its width
+                # separately from the scalar size bits.
+                assert before & (1 << 22), 'Unsupported page-offset store'
+                scale = 16 if before & 0xffc00000 == 0x3dc00000 else 1 << (before >> 30)
+            else:
+                raise AssertionError(('Unsupported page-offset opcode', hex(before)))
+            low = (after >> 10 & 0xfff) * scale
+            assert low < 4096
+            page_candidates[index] = {v for v in candidates if v & 0xfff == low}
+            struct.pack_into('<I', actual, at, after & ~low_mask)
+            constraint = dict(linked_page_offset=low, scale=scale)
+        assert page_candidates[index], ('Inconsistent PAGE target', symbols[index]['name'], at)
+        consumed.add(at)
+        page_records.append(dict(offset=at, symbol=symbols[index]['name'], relocation_kind=kind,
+                                 verified=True, **constraint))
+    for record in page_records:
+        index = pending[record['offset']] & 0xffffff
+        record['exact_linked_targets'] = sorted(page_candidates[index])
+        relocations.append(record)
     for at, info in pending.items():
         if at in consumed:
             continue
@@ -104,66 +193,6 @@ def audit(object_path, executable_path):
             relocations.append(dict(offset=high, paired_offset=low, symbol=target['name'],
                                     resolved_target=resolved, verified=True,
                                     pointer_load_relaxation=relaxation))
-            continue
-        # LLVM emits adjacent ADRP + LDR Q/ADD pairs. Local literal names may
-        # disappear during linking, so bind their decoded addresses to all 16
-        # original literal bytes instead of trusting a missing symbol name.
-        if kind in (3, 4):
-            high = at if kind == 3 else at - 4
-            low = high + 4
-            hi, lo = pending[high], pending[low]
-            assert hi >> 28 == 3 and lo >> 28 == 4
-            assert hi & 0x0fffffff == (index | (1 << 24) | (2 << 25) | (1 << 27))
-            assert lo & 0x0fffffff == (index | (2 << 25) | (1 << 27))
-            target = symbols[index]
-            before_hi, before_lo = struct.unpack_from('<II', original, high)
-            after_hi, after_lo = struct.unpack_from('<II', actual, high)
-            high_mask, low_mask = (3 << 29) | (0x7ffff << 5), 0xfff << 10
-            assert before_hi & 0x9f000000 == 0x90000000  # ADRP
-            assert before_hi & high_mask == before_lo & low_mask == 0, 'Unsupported nonzero addend'
-            assert after_hi & ~high_mask == before_hi
-            assert after_lo & ~low_mask == before_lo
-            assert before_hi & 31 == before_lo >> 5 & 31, 'ADRP base register differs'
-            imm = ((after_hi >> 5 & 0x7ffff) << 2) | (after_hi >> 29 & 3)
-            signed = (imm ^ 0x100000) - 0x100000
-            page = ((address + high) & ~0xfff) + signed * 4096
-            if before_lo & 0xffc00000 == 0x3dc00000:  # unsigned LDR Q, scale 16
-                resolved = page + (after_lo >> 10 & 0xfff) * 16
-                section = os[target['section'] - 1]
-                assert section['name'] == '__literal16'
-                source_offset = section['offset'] + target['value'] - section['address']
-                destination_section = next(s for s in es if s['address'] <= resolved and
-                                           resolved + 16 <= s['address'] + s['size'])
-                destination_offset = destination_section['offset'] + resolved - destination_section['address']
-                expected_bytes = ob[source_offset:source_offset + 16]
-                assert expected_bytes == eb[destination_offset:destination_offset + 16]
-                binding = dict(literal_bytes_hex=expected_bytes.hex())
-            else:
-                assert before_lo & 0xffc00000 == 0x91000000, 'Unsupported page-offset instruction'
-                resolved = page + (after_lo >> 10 & 0xfff)
-                if target['name'] in linked:
-                    assert resolved == linked[target['name']]['value']
-                    binding = dict(defined_symbol=target['name'])
-                else:
-                    section = os[target['section'] - 1]
-                    assert section['name'] == '__const' and not section['relocation_count']
-                    end = min([s['value'] for s in symbols if
-                               s['section'] == target['section'] and s['value'] > target['value']]
-                              + [section['address'] + section['size']])
-                    size = end - target['value']
-                    assert 0 < size <= 4096, 'Unbounded unnamed constant span'
-                    source_offset = section['offset'] + target['value'] - section['address']
-                    destination_section = next(s for s in es if s['address'] <= resolved and
-                                               resolved + size <= s['address'] + s['size'])
-                    destination_offset = destination_section['offset'] + resolved - destination_section['address']
-                    expected_bytes = ob[source_offset:source_offset + size]
-                    assert expected_bytes == eb[destination_offset:destination_offset + size]
-                    binding = dict(constant_bytes_hex=expected_bytes.hex(), constant_bytes=size)
-            struct.pack_into('<II', original, high, before_hi, before_lo)
-            struct.pack_into('<II', actual, high, after_hi & ~high_mask, after_lo & ~low_mask)
-            consumed.update((high, low))
-            relocations.append(dict(offset=high, paired_offset=low, symbol=target['name'],
-                                    resolved_target=resolved, verified=True, **binding))
             continue
         assert at >= 0 and kind == 2 and relative and external and length == 2, (
             'Unrecognized relocation; no bytes are silently ignored', at, info)
@@ -258,7 +287,7 @@ def audit(object_path, executable_path):
             size = 64 if binding else 192
         expected = exported_bytes(ob, os, symbol, size)
         object_section = os[symbol['section'] - 1]
-        assert object_section['name'] == '__const' and not object_section['relocation_count']
+        assert object_section['segment'] == '__TEXT' and object_section['name'] in ('__const', '__mech_meta') and not object_section['relocation_count']
         if symbol['name'] not in linked:
             # Legacy JSON and independent loaders need not retain the optional
             # typed-data/binding exports. The chosen launch profile separately
@@ -268,7 +297,7 @@ def audit(object_path, executable_path):
             continue
         observed = exported_bytes(eb, es, linked[symbol['name']], size)
         linked_section = es[linked[symbol['name']]['section'] - 1]
-        assert linked_section['name'] == '__const' and linked_section['segment'] == '__TEXT'
+        assert linked_section['name'] == object_section['name'] and linked_section['segment'] == '__TEXT'
         assert expected == observed, 'Object identity or descriptor-binding data differs after linking'
         if binding:
             assert expected[:16] == b'MECHIMAGEPIN\0\0\0\0'
@@ -288,7 +317,7 @@ def audit(object_path, executable_path):
         object_pins.append(dict(symbol=symbol['name'], bytes=size, linked=True, complete_bytes_equal=True,
                                 object_data_has_no_relocations=True, linked_data_is_read_only=True))
     pin = lambda path: dict(path=str(path.resolve()), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
-    return dict(schema='mech.related-post-gen.native-link-audit.v8', status='passed',
+    return dict(schema='mech.related-post-gen.native-link-audit.v9', status='passed',
                 object=pin(object_path), executable=pin(executable_path),
                 object_text=text, linked_text_address=address, linked_text_file_offset=offset,
                 entry_symbol=entry, defined_native_function_count=len(functions),
@@ -300,8 +329,8 @@ def audit(object_path, executable_path):
                 object_owned_data_exports=object_pins,
                 relocations=relocations,
                 scope='All native object text bytes compared. ARM64 BRANCH26 displacements '
-                      'bind to exact named defined symbols. Adjacent PAGE21/PAGEOFF12 pairs '
-                      'bind to all original literal/constant bytes or exact defined symbols. '
+                      'bind to exact named defined symbols. Every PAGE21/PAGEOFF12 relocation '
+                      'constrains its symbol to consistent exact literal/constant bytes or a defined address. '
                       'GOT address loads, including checked LDR-to-ADD linker relaxation, '
                       'bind to exact defined function addresses. Nonzero page addends '
                       'and other relocation forms fail closed.')

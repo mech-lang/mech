@@ -23,7 +23,8 @@ def run(command, cwd, receipt, environment=None):
     started = time.monotonic()
     result = subprocess.run(list(map(str, command)), cwd=cwd, env=environment, capture_output=True, text=True)
     receipt.write_text(json.dumps(dict(command=list(map(str, command)), cwd=str(cwd), exit=result.returncode,
-                                      seconds=time.monotonic()-started, stdout=result.stdout, stderr=result.stderr), indent=2)+'\n')
+                                      seconds=time.monotonic()-started, stdout=result.stdout, stderr=result.stderr,
+                                      rustflags=(environment or {}).get('RUSTFLAGS')), indent=2)+'\n')
     if result.returncode:
         raise SystemExit(result.stdout+result.stderr)
 
@@ -159,12 +160,16 @@ def main():
             destination = out/'src/main.rs'
             destination.write_text(text)
             env = {**os.environ, 'RUSTC':str(RUST/'rustc'), 'CARGO_TARGET_DIR':str(args.out/'target')}
+            if 'rustflags' in original:
+                env['RUSTFLAGS'] = original['rustflags']
             run([RUST/'cargo', 'build', '--release', '--locked', '--offline'], out, out/'build.json', env)
             binary = tomllib.loads((out/'Cargo.toml').read_text())['package']['name']
             shutil.copy2(args.out/'target/release'/binary, out/'runner-metrics')
             variant = dict(name=('rust-standard' if name == base['reference'] else name)+'-instrumented', kind='upstream',
                            category=original['category']+'_instrumented', executable=str(out/'runner-metrics'),
                            source=str(destination), receipt=str(out/'build.json'), output=original['output'])
+            if 'rustflags' in original:
+                variant['rustflags'] = original['rustflags']
         restored = text
         # The injected module prefix must be removed before reversing inserted
         # allocator/timer code. No algorithm statement is altered.

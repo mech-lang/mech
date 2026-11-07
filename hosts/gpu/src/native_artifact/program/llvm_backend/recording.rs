@@ -28,6 +28,20 @@ impl<M: Module> RecordingModule<M> {
     pub(in crate::native_artifact::program) fn llvm_ir(&self) -> Result<String, String> {
         super::lower::module(self.declarations(), self.definitions.values())
     }
+    pub(in crate::native_artifact::program) fn definition_names(
+        &self,
+    ) -> Result<Vec<String>, String> {
+        self.definitions
+            .values()
+            .map(|d| {
+                self.declarations()
+                    .get_function_decl(d.id)
+                    .name
+                    .clone()
+                    .ok_or_else(|| "anonymous sealed LLVM definition".into())
+            })
+            .collect()
+    }
 }
 
 fn unsupported(message: &str) -> ModuleError {
