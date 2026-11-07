@@ -1,5 +1,11 @@
 # Native compression milestone
 
+## R192 — minimal typed adapter baseline; production unchanged
+
+Experiment A is complete: all four actual linked phase bodies remain byte-identical to R191. Five real typed-buffer witnesses pass680exact-node/scalar phase calls;15full-compressor capture calls preserve bytes, inflation, aliases, capacity and cleanup0. The real1,500,513-word cache and305,257-entry node reservation remain. This diagnostic supplies actual exit adaptation and settlement, with explicit unsupported failures, while ordinary canonical admission/publication and precise recovery contracts remain unqualified.
+
+No whole-compressor speedup or phase-versus-reference ratio is claimed. Timer/counter variation and three repaired diagnostic setup defects remain in evidence. Production timings below are unchanged R191 results. Next is compact native lowering from the same shared numeric Plan, then named contract restoration and whole-compressor qualification. [Scope, evidence and limitations](native-minimal-adapter-baseline.md).
+
 ## R191 — complete numeric phases outlined
 
 **Production is R191/IR211.** Complete nested numeric phases execute through the same shared body in private native functions. Natural32 improves **3.630507×→3.346257×** reference (−7.829484%); natural16 **4.340731×→4.031470×** (−7.124627%), both in all8 blocks. The full20-case geometric elapsed gain is1.087154%; all original1.05gates pass. Seven compressor medians and all12scalar medians are adverse; scalar changes0.285–1.298% remain within unchanged gates.

@@ -40184,6 +40184,63 @@
         }
       },
       "verification": "Exact raw observations reconstruct both outputs byte-identically; all20 fixture bytes independently inflate. No compiler/compressor execution in receipt replay."
+    },
+    "192": {
+      "base": "ee1479f505976b729e961e96d9624d63b1c8ec9b",
+      "production": "ee1479f505976b729e961e96d9624d63b1c8ec9b",
+      "compiler_source": "cadaabefcf7dfb64b1b32a724e53c300f7c1fca1",
+      "versions": {
+        "ir": 211,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "retained": false,
+      "decision": "Preserve A as diagnostic computation/adapter baseline. Keep production R191. The newer brief remains active: compact Plan-driven lowering B and whole-compressor qualification are not complete.",
+      "release_tag": "evidence-native-compression-experiments-6",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-6",
+      "archive_publication": "published; fresh public download verifies all281files and byte-identical numerical outputs",
+      "events": [
+        {
+          "event": "same-body-typed-adapter-diagnostic",
+          "source_revision": "ee1479f505976b729e961e96d9624d63b1c8ec9b",
+          "asset": "r192-same-body-adapter-ba962024af56.tar.gz",
+          "sha256": "ba962024af561b33c3ff3021a55fb35293e9821249fb1ed26500db14fb19f57d",
+          "manifest_sha256": "bffcb0a9d0ac9fe1d4055efd3435c9942a9765fabe382ed197959baa3b7b65ac",
+          "bytes": 1779785,
+          "files": 281,
+          "publication": "published and independently downloaded/replayed",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r192-same-body-adapter-ba962024af56.tar.gz"
+        }
+      ],
+      "analysis": {
+        "script": "checkpoint.py",
+        "description": "Verify real capture hashes, correct phase/exit observations, typed geometry, failures and separate cohorts; no compiler/native execution.",
+        "expected_outputs": {
+          "REPORT.md": "8618486a4e71837315ec5427d5269accbfc748365a17f0399339206854d4f9ad",
+          "results.json": "7b0de21591f16bfa711ec54917e4617aa30ec496f538eb3f3b66105faf0d316b"
+        }
+      },
+      "scope": "Phase-only diagnostic. Same actual linked instruction bytes; no whole-compressor ratio or production acceleration claimed.",
+      "qualification": {
+        "whole_capture_calls": 15,
+        "phase_calls": 680,
+        "exact_phase_outputs": true,
+        "actual_linked_bodies_identical": 4
+      },
+      "next": "B: compact typed state from shared numeric Plan; restore named contracts and qualify whole compressor. Source fixed.",
+      "public_verification": {
+        "byte_identical_outputs": [
+          "REPORT.md",
+          "results.json"
+        ],
+        "paths_with_multiple_preserved_versions": 0,
+        "round": 192,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 281,
+        "verified_archives": 1,
+        "verified_file_occurrences": 281
+      }
     }
   },
   "repository": "mech-lang/mech",
