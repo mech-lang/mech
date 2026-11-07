@@ -157,3 +157,9 @@ mod codegen;
 
 #[cfg(feature = "canonical-native-runtime")]
 pub mod launch;
+
+/// Snapshot custom-build JIT instrumentation; absent from normal builds.
+#[cfg(all(feature = "canonical-native-program", mech_native_check_census))]
+pub fn diagnostic_native_check_census() -> serde_json::Value {
+    program::codegen::check_census::snapshot()
+}

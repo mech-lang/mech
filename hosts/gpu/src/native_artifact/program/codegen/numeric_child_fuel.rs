@@ -61,6 +61,8 @@ pub(super) fn emit(
     let cold = b.create_block();
     b.set_cold_block(cold);
     boundaries.insert(cold);
+    #[cfg(mech_native_check_census)]
+    super::super::check_census::record(b, "child-funding", region.tail.header() as usize, site, false, Some(enough));
     b.ins().brif(enough, funded, &[], cold, &[]);
     b.switch_to_block(cold);
     let exit = proof

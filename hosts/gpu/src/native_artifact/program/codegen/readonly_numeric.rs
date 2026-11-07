@@ -202,6 +202,8 @@ pub(in crate::native_artifact) fn emit_entry(
         offset(region.words)?,
     );
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
+    #[cfg(mech_native_check_census)]
+    super::check_census::record(b, "numeric-entry", site, site, false, Some(ready));
     b.ins().brif(ready, selected, &[], ordinary, &[]);
     b.switch_to_block(selected);
     if let Some(function) = outlined_function {
@@ -734,6 +736,10 @@ pub(in crate::native_artifact) fn emit_entry(
                 comparison,
                 comparison_bound,
             );
+            #[cfg(mech_native_check_census)]
+            for (kind, condition) in [("funding-compute", a), ("funding-comparison", c), ("funding-envelope", valid)] {
+                super::check_census::record(b, kind, region.tail.header() as usize, site, version.is_some(), Some(condition));
+            }
             let mut enough = b.ins().band(a, c);
             enough = b.ins().band(enough, valid);
             // Capacity is checked before ANY source operation in this visit.
@@ -773,10 +779,14 @@ pub(in crate::native_artifact) fn emit_entry(
                     .ins()
                     .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, spare, count as i64);
                 let fits = b.ins().band(valid, fits);
+                #[cfg(mech_native_check_census)]
+                super::check_census::record(b, "append-capacity", region.tail.header() as usize, site, version.is_some(), Some(fits));
                 enough = b.ins().band(enough, fits);
                 report.capacity_guards.push((array, count));
             }
             let funded = b.create_block();
+            #[cfg(mech_native_check_census)]
+            super::check_census::record(b, "funded-body", region.tail.header() as usize, site, version.is_some(), Some(enough));
             b.ins().brif(enough, funded, &[], bailouts[&site], &[]);
             b.switch_to_block(funded);
             let cost = b.ins().iconst(types::I64, compute_cost as i64);
@@ -877,6 +887,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 let done = b.create_block();
                 b.set_cold_block(materialize);
                 boundaries.insert(materialize);
+                #[cfg(mech_native_check_census)]
+                super::check_census::record(b, "private-owner", region.tail.header() as usize, site, version.is_some(), Some(private));
                 b.ins().brif(private, store, &[], materialize, &[]);
                 b.switch_to_block(materialize);
                 let index = b.ins().iadd_imm(length, 1);
@@ -955,6 +967,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.switch_to_block(changed);
                 let incoming = words.read(b, *incoming as usize);
                 let private = words.read(b, shadow + proof.private_flag(*array));
+                #[cfg(mech_native_check_census)]
+                super::check_census::record(b, "private-owner", region.tail.header() as usize, site, version.is_some(), Some(private));
                 b.ins().brif(private, store, &[], materialize, &[]);
                 b.switch_to_block(materialize);
                 boundary::materialize(
@@ -1009,15 +1023,21 @@ pub(in crate::native_artifact) fn emit_entry(
                 if let Operation::Read { array, index, .. } = operation
                     && traversal.read(site, *array, *index)
                 {
+                    #[cfg(mech_native_check_census)]
+                    super::check_census::record(b, "read-proof-consumed", region.tail.header() as usize, site, version.is_some(), None);
                     report
                         .proven_scalar_read_guards
                         .push((site, *array, *index));
                 } else {
+                    #[cfg(mech_native_check_census)]
+                    let census_kind = if matches!(operation, Operation::Read { .. }) { "read-bounds" } else { "write-bounds" };
                     let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, length);
                     let good = b.create_block();
                     let bad = b.create_block();
                     b.set_cold_block(bad);
                     boundaries.insert(bad);
+                    #[cfg(mech_native_check_census)]
+                    super::check_census::record(b, census_kind, region.tail.header() as usize, site, version.is_some(), Some(valid));
                     b.ins().brif(valid, good, &[], bad, &[]);
                     b.switch_to_block(bad);
                     if region.numeric_tree.is_some() || proof.boundary_values.candidates.is_empty()
@@ -1152,7 +1172,9 @@ pub(in crate::native_artifact) fn emit_entry(
                         let materialize = b.create_block();
                         b.set_cold_block(materialize);
                         boundaries.insert(materialize);
-                        b.ins().brif(private, store, &[], materialize, &[]);
+                        #[cfg(mech_native_check_census)]
+                super::check_census::record(b, "private-owner", region.tail.header() as usize, site, version.is_some(), Some(private));
+                b.ins().brif(private, store, &[], materialize, &[]);
                         b.switch_to_block(materialize);
                         boundary::materialize(
                             controls,

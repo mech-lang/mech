@@ -95,6 +95,8 @@ impl JitProgramArtifact {
         let mut module = codegen_backend::jit(PROGRAM_CODEGEN_FLAGS)?;
         preflight(&plan, &module, limits)?;
         let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+        #[cfg(mech_native_check_census)]
+        let _census = super::codegen::check_census::begin();
         let (function, stack, code, _codegen) =
             crate::native_artifact::codegen::control::define_cfg(
                 CodePlan::Program(&prepared),

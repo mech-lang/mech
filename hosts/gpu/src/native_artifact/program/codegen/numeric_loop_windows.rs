@@ -321,6 +321,8 @@ impl Version {
             let valid = b.ins().band(safe, fits);
             enough = b.ins().band(enough, valid);
         }
+        #[cfg(mech_native_check_census)]
+        super::check_census::record(b, "child-window-selection", self.header, self.initialize, true, Some(enough));
         if let Some(prepaid) = &self.prepaid {
             let scalar = self.blocks[&(self.header as u32)];
             let selected = if self.reduction.is_some() {

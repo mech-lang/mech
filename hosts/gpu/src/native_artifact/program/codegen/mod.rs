@@ -85,3 +85,6 @@ mod numeric_loop_windows;
 mod numeric_traversal;
 #[cfg(feature = "canonical-native-program")]
 mod ordered_reduction;
+
+#[cfg(mech_native_check_census)]
+pub(in crate::native_artifact) mod check_census;
