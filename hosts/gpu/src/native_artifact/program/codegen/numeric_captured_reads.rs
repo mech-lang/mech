@@ -16,15 +16,8 @@ use crate::native_artifact::program::prepare::readonly_numeric::{ArrayStorage, O
 use crate::native_artifact::program::prepare::tail::Region;
 use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
-use mech_core::{DimensionExpr, SchemaBody};
-use mech_engine::native_artifact::NativeIterationAction as Action;
+use mech_core::SchemaBody;
 use std::collections::BTreeSet;
-
-fn vector(schema: &SchemaBody) -> bool {
-    matches!(schema, SchemaBody::Matrix { dimensions, .. }
-        if dimensions.len() == 2 && dimensions.iter().any(|dimension|
-            matches!(dimension, DimensionExpr::Constant(1))))
-}
 
 pub(super) fn stable_arrays(code: CodePlan<'_>, region: &Region, proof: &Proof) -> BTreeSet<usize> {
     let CodePlan::Program(program) = code else {
@@ -74,10 +67,7 @@ pub(super) fn stable_arrays(code: CodePlan<'_>, region: &Region, proof: &Proof) 
             }) {
                 return None;
             }
-            let Action::LibraryCall { template, .. } = code.blocks()[array.witness].action() else {
-                return None;
-            };
-            vector(template.inputs()[0].body()).then_some(at)
+            Some(at)
         })
         .collect()
 }
@@ -94,7 +84,10 @@ pub(super) fn address(
     ordinal: Value,
     length: Value,
     base: Value,
+    rows: Value,
+    columns: Value,
     width: u8,
+    schema: &SchemaBody,
 ) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
     // A validated Rust slice has at most isize::MAX initialized bytes. Its
     // clamped byte offset therefore fits, including an arbitrary raw selector.
@@ -105,20 +98,13 @@ pub(super) fn address(
     let last = b.ins().select(nonempty, last, zero);
     let before = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, last);
     let safe = b.ins().select(before, ordinal, last);
-    let bytes = b.ins().imul_imm(safe, i64::from(width));
-    let address = b.ins().iadd(base, bytes);
-    let ty = match width {
-        1 => types::I8,
-        2 => types::I16,
-        4 => types::I32,
-        8 => types::I64,
-        _ => {
-            return Err(crate::native_artifact::compiler::backend(
-                "movable capture width differs",
-            ));
-        }
-    };
-    Ok((address, ty))
+    // A nonempty validated view has nonzero rows. Empty matrices can have any
+    // other dimension, so give their zero ordinal a nonzero divisor as well.
+    // Both generic and unit-axis geometry are safe without a control guard.
+    let nonzero_rows = b.ins().icmp_imm(IntCC::NotEqual, rows, 0);
+    let one = b.ins().iconst(types::I64, 1);
+    let rows = b.ins().select(nonzero_rows, rows, one);
+    super::numeric_words::linear_address(b, safe, rows, columns, width, schema, |_| base)
 }
 
 #[cfg(test)]
@@ -128,6 +114,7 @@ mod tests {
     use cranelift_frontend::FunctionBuilderContext;
     use cranelift_jit::{JITBuilder, JITModule};
     use cranelift_module::{Linkage, Module};
+    use mech_core::{DimensionExpr as Dim, DimensionParameterId, IntegerWidth};
 
     #[test]
     fn movable_capture_reads_clamp_every_unsigned_width_without_control_guards() {
@@ -136,10 +123,28 @@ mod tests {
         assert!(!memory.aligned());
         assert!(memory.alias_region().is_none());
         for width in [1u8, 2, 4, 8] {
-            let mut module =
-                JITModule::new(JITBuilder::new(cranelift_module::default_libcall_names()).unwrap());
+            let schema = SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(match width {
+                    1 => IntegerWidth::W8,
+                    2 => IntegerWidth::W16,
+                    4 => IntegerWidth::W32,
+                    8 => IntegerWidth::W64,
+                    _ => unreachable!(),
+                })),
+                dimensions: Box::new([
+                    Dim::Parameter(DimensionParameterId::new(0)),
+                    Dim::Parameter(DimensionParameterId::new(1)),
+                ]),
+            };
+            let mut module = JITModule::new(
+                JITBuilder::with_flags(
+                    &[("opt_level", "speed")],
+                    cranelift_module::default_libcall_names(),
+                )
+                .unwrap(),
+            );
             let mut context = module.make_context();
-            context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+            context.func.signature.params = vec![AbiParam::new(types::I64); 5];
             context.func.signature.returns = vec![AbiParam::new(types::I64)];
             let function = module
                 .declare_function("read", Linkage::Export, &context.func.signature)
@@ -151,9 +156,12 @@ mod tests {
                 b.append_block_params_for_function_params(block);
                 b.switch_to_block(block);
                 let args = b.block_params(block).to_vec();
-                let (address, ty) = address(&mut b, args[2], args[1], args[0], width).unwrap();
-                // Deliberately no selector guard: even an invalid raw ordinal
-                // must access an initialized cell after arbitrary code motion.
+                let (address, ty) = address(
+                    &mut b, args[4], args[1], args[0], args[2], args[3], width, &schema,
+                )
+                .unwrap();
+                // Deliberately no selector guard: an invalid raw ordinal must
+                // still access initialized storage after arbitrary code motion.
                 let loaded = b.ins().load(ty, memory, address, 0);
                 let loaded = if width < 8 {
                     b.ins().uextend(types::I64, loaded)
@@ -166,20 +174,40 @@ mod tests {
             }
             module.define_function(function, &mut context).unwrap();
             module.finalize_definitions().unwrap();
-            // SAFETY: the generated signature has three U64 parameters and
-            // one U64 result, and the module outlives every invocation below.
-            let read: unsafe extern "C" fn(u64, u64, u64) -> u64 =
+            // SAFETY: the signature has five U64 parameters and one U64 result.
+            // The module outlives every invocation below.
+            let read: unsafe extern "C" fn(u64, u64, u64, u64, u64) -> u64 =
                 unsafe { core::mem::transmute(module.get_finalized_function(function)) };
             let bytes = core::array::from_fn::<_, 64, _>(|i| (i * 37 + 11) as u8);
             static ZERO: u64 = 0;
-            for length in 0..=8u64 {
+            for (rows, columns) in [
+                (0u64, 0u64),
+                (0, u64::MAX),
+                (u64::MAX, 0),
+                (1, 0),
+                (0, 1),
+                (1, 1),
+                (1, 8),
+                (8, 1),
+                (2, 3),
+                (3, 2),
+                (2, 4),
+                (4, 2),
+            ] {
+                let length = rows * columns;
                 let base = if length == 0 {
                     (&ZERO as *const u64) as u64
                 } else {
                     bytes.as_ptr() as u64
                 };
                 for ordinal in (0..=length + 2).chain([1 << 63, u64::MAX]) {
-                    let at = ordinal.min(length.saturating_sub(1)) as usize * usize::from(width);
+                    let logical = ordinal.min(length.saturating_sub(1));
+                    let physical = if length == 0 {
+                        0
+                    } else {
+                        (logical % rows) * columns + logical / rows
+                    };
+                    let at = physical as usize * usize::from(width);
                     let expected = if length == 0 {
                         0
                     } else {
@@ -197,10 +225,10 @@ mod tests {
                     };
                     // SAFETY: nonempty cases lend length initialized cells;
                     // empty cases lend the static initialized zero cell.
-                    let actual = unsafe { read(base, length, ordinal) };
+                    let actual = unsafe { read(base, length, rows, columns, ordinal) };
                     assert_eq!(
                         actual, expected,
-                        "width={width}, length={length}, ordinal={ordinal}"
+                        "width={width}, rows={rows}, columns={columns}, ordinal={ordinal}"
                     );
                 }
             }

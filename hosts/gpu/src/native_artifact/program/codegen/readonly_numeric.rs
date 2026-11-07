@@ -1076,7 +1076,16 @@ pub(in crate::native_artifact) fn emit_entry(
                 let (address, ty) = if movable {
                     report.movable_capture_reads.push((site, *array));
                     let base = words.read(b, view);
-                    super::numeric_captured_reads::address(b, ordinal, length, base, width)?
+                    super::numeric_captured_reads::address(
+                        b,
+                        ordinal,
+                        length,
+                        base,
+                        rows,
+                        columns,
+                        width,
+                        template.inputs()[0].body(),
+                    )?
                 } else {
                     super::numeric_words::linear_address(
                         b,

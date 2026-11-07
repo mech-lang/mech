@@ -5,15 +5,17 @@ direct immutable ancestor captures. It applies inside outlined numeric callees.
 The root has admitted each current view before calling that callee, and resumes
 ordinary source execution only after the callee returns.
 
-The compiler excludes mutable arrays, carrier arrays, frame captures, generic
-matrix geometry, values defined inside the region, publication destinations,
+The compiler excludes mutable arrays, carrier arrays, frame captures,
+values defined inside the region, publication destinations,
 and any canonical slot a selected write could retire. The remaining ancestor
 slot keeps its backing alive throughout the call. A writable alias must use
 the existing copy-on-write path while that owner remains live. The selected
 first-change callback cannot retire this slot or mutate that backing.
 
-Read addresses are safe without relying on the source selector branch. For a
-vector, the physical ordinal is clamped to the last initialized element. An
+Read addresses are safe without relying on the source selector branch. The
+logical ordinal is clamped to the last initialized element before the existing
+column-major to row-major translation. Empty views use a nonzero safe divisor
+without changing their original logical dimensions or source guards. An
 empty capture lends a static, immutable zero cell and retains logical length
 zero. Even a raw zero or maximum unsigned selector therefore produces a valid
 physical address. This permits readonly, nonfaulting and movable native loads;
