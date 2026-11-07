@@ -401,7 +401,9 @@ fn selected_template(
 // traversal and the independently proved complete-child funding path.
 // IR236 integrates PR973/IR199's facts through checked shape-preserving writes
 // and closed supported prefixes. Opaque continuations retain their guards.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 236;
+// IR237's descriptor-copy experiment remains unselected. IR238 encodes nested
+// canonical schema nodes into one buffer and reuses their bytes for table keys.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 238;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
