@@ -6,11 +6,27 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import struct
 import time
 
 
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def executable_validation_error(path, compiler_stderr):
+    # rustc can return zero after rust-objcopy fails, leaving a damaged output.
+    # This retained local closure targets thin AArch64 Mach-O executables.
+    if "stripping debug info with" in compiler_stderr and "failed" in compiler_stderr:
+        return "Rust reported failed executable postprocessing"
+    try:
+        with Path(path).open("rb") as executable:
+            header = executable.read(32)
+    except OSError as error:
+        return f"Executable is unavailable: {error}"
+    if len(header) != 32 or struct.unpack_from("<II", header) != (0xfeedfacf, 0x100000c):
+        return "Expected a complete AArch64 Mach-O executable header"
+    return None
 
 
 def main():
@@ -69,14 +85,18 @@ def main():
     args.out.parent.mkdir(parents=True, exist_ok=True)
     started = time.monotonic()
     result = subprocess.run(command, capture_output=True, text=True, env={**os.environ, "RUSTC_BOOTSTRAP": "1"})
-    receipt = {"schema": "mech.related-post-gen.local-host-build.v1", "compiler_build": str(args.compiler_build.resolve()), "compiler_build_sha256": sha(args.compiler_build), "compiler_source_sha256": build["source_sha256"], "source_path": str(args.source.resolve()), "source_sha256": sha(args.source), "command": command, "libraries": libraries, "bundle": bundle, "seconds": time.monotonic()-started, "exit": result.returncode, "stdout": result.stdout, "stderr": result.stderr, "allocator": "Rust default system allocator"}
-    if result.returncode == 0:
+    artifact_error = executable_validation_error(args.out, result.stderr) if result.returncode == 0 else None
+    exit_code = result.returncode or int(artifact_error is not None)
+    receipt = {"schema": "mech.related-post-gen.local-host-build.v1", "compiler_build": str(args.compiler_build.resolve()), "compiler_build_sha256": sha(args.compiler_build), "compiler_source_sha256": build["source_sha256"], "source_path": str(args.source.resolve()), "source_sha256": sha(args.source), "command": command, "libraries": libraries, "bundle": bundle, "seconds": time.monotonic()-started, "exit": exit_code, "compiler_exit": result.returncode, "executable_validation_error": artifact_error, "stdout": result.stdout, "stderr": result.stderr, "allocator": "Rust default system allocator"}
+    if args.out.is_file():
         receipt["executable_sha256"] = sha(args.out)
     args.out.with_suffix(args.out.suffix + ".build.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(result.stdout, end="")
     print(result.stderr, end="")
+    if artifact_error:
+        print(artifact_error, flush=True)
     print(json.dumps({k: receipt[k] for k in ("seconds", "exit")}), flush=True)
-    raise SystemExit(result.returncode)
+    raise SystemExit(exit_code)
 
 
 if __name__ == "__main__":
