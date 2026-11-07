@@ -600,8 +600,9 @@ fn derive_with_children(
         actions.push((site, operation));
     }
     if arrays.iter().any(|array| array.witness == usize::MAX)
-        && !arrays.iter().any(|array| {
-            array.witness != usize::MAX && array.width != 0 && !array.writable && !array.appends
+        && !actions.iter().any(|(_, action)| {
+            matches!(action, Operation::Read { array, .. }
+                if !arrays[*array].writable && !arrays[*array].appends)
         })
     {
         return Err("unwitnessed retained array");

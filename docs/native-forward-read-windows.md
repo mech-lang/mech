@@ -1,6 +1,6 @@
 # Activation-current forward read windows
 
-IR261 extends the existing immutable child-window versioning beyond its original
+IR262 extends the existing immutable child-window versioning beyond its original
 paired forward/reverse restriction. Paired selection retains priority. A forward
 group must contain only non-writable, non-appending views, share the same current
 induction/count coordinates, pass the existing recurrence/scope proof, and prove
@@ -45,3 +45,10 @@ two-predicate profitability floor still rejects it. IR261 uses a one-predicate
 floor for the forward family while preserving the paired floor, two-successor
 minimum and requirement for a newly proved source branch/read check. All safety
 proofs and the original positive, changing-bound and finite tests remain.
+
+IR261 passes both one- and two-view positive assertions and both semantic/finite
+contracts, but the purely opaque negative fixture still selects an outer numeric
+phase. Its retained `sequence/length(nodes)` supplies a width/witness without
+reading an element. IR262 consequently tests the selected actions for an actual
+immutable `Read` before admitting flat opaque forwarding. The negative fixture
+and its direct-scalar assertion are unchanged; the failed IR261 receipt remains.

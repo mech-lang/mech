@@ -1168,8 +1168,9 @@ fn derive_inner(
     }) && !frames
         .fields(tail.carrier())
         .is_some_and(|fields| numeric_fields::has_nested_managed(frames, fields))
-        && !arrays.iter().any(|array| {
-            array.witness != usize::MAX && array.width != 0 && !array.writable && !array.appends
+        && !actions.iter().any(|(_, action)| {
+            matches!(action, Operation::Read { array, .. }
+                if !arrays[*array].writable && !arrays[*array].appends)
         })
     {
         // Retain the efficient scalar route for a flat carrier with no actual
