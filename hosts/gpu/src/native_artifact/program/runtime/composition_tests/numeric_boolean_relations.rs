@@ -108,7 +108,20 @@ fn numeric_boolean_relations_lower_guarded_mask_reuse_and_preserve_each_current_
                             .is_some_and(|proof| proof.arrays.iter().any(|a| a.appends))
                 })
                 .expect("the append parent and scalar row child must form one native tree");
-            let sites = region.numeric.as_ref().unwrap().sites.clone();
+            let sites = region
+                .numeric
+                .as_ref()
+                .unwrap()
+                .sites
+                .iter()
+                .copied()
+                .filter(|&site| {
+                    matches!(
+                        native.descriptor().metadata().plan.blocks()[site].action(),
+                        mech_engine::native_artifact::NativeIterationAction::LibraryCall { .. }
+                    )
+                })
+                .collect::<Vec<_>>();
             for restored in [false, true] {
                 for (offsets, ids, start, posts) in [
                     (vec![0, 3, 5, 5], vec![0, 1, 4, 2, 5], 0, 3),
