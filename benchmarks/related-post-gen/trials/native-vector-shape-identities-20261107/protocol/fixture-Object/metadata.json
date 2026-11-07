@@ -1,0 +1,598 @@
+{
+  "abi_version": 41,
+  "borrowed_string_regions": 0,
+  "captured_numeric_candidates": [
+    {
+      "header": 4,
+      "iteration": 0,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    }
+  ],
+  "closed_tail_regions": 1,
+  "code_bytes": 5328,
+  "compiled_borrowed_record_maps": [],
+  "compiled_bound_call_shim": null,
+  "compiled_captured_numeric_loops": [],
+  "compiled_cfg_cleanup": {
+    "after_blocks": 203,
+    "after_instructions": 787,
+    "before_blocks": 203,
+    "before_instructions": 800,
+    "boolean_conditions_simplified": 0,
+    "boolean_phi_values": 0,
+    "constant_branches_removed": 0,
+    "dead_instructions_removed": 13,
+    "dead_loads_removed": 4,
+    "dead_parameters_removed": 0,
+    "enabled": true,
+    "fixed_point": true,
+    "local_phi_parameters_removed": 0,
+    "local_phi_preheaders": 0,
+    "neutral_operations_removed": 0,
+    "pre_codegen_data_passes": 0,
+    "rounds": 1,
+    "selected_range_branches_removed": 4,
+    "unsigned_intervals_combined": 0
+  },
+  "compiled_count_value_loops": [],
+  "compiled_frame_effects": {
+    "complete": true,
+    "regions": []
+  },
+  "compiled_guarded_loops": {
+    "complete": true,
+    "regions": []
+  },
+  "compiled_header_continuation_regions": 0,
+  "compiled_join_map_copies": [],
+  "compiled_lookup_facts": {
+    "complete": true,
+    "regions": []
+  },
+  "compiled_loop_constants": {
+    "callers": [],
+    "complete": true
+  },
+  "compiled_loop_invariants": [],
+  "compiled_module_symbol": "mech_canonical_program_identity_v1_83a952cd8887935d12a0ba8d60df828958660d47dcdd63bdfc715a7a146778e3_compiled_module_v1",
+  "compiled_module_version": 1,
+  "compiled_mutation_loops": [],
+  "compiled_numeric_functions": [
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 74,
+        "after_instructions": 339,
+        "before_blocks": 96,
+        "before_instructions": 711,
+        "boolean_conditions_simplified": 1,
+        "boolean_phi_values": 1,
+        "constant_branches_removed": 0,
+        "dead_instructions_removed": 13,
+        "dead_loads_removed": 8,
+        "dead_parameters_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1,
+        "selected_range_branches_removed": 0,
+        "unsigned_intervals_combined": 0
+      },
+      "code_bytes": 1560,
+      "header": 4,
+      "stack_bytes": 128,
+      "symbol": "mech_canonical_program_entry_v1_numeric_4",
+      "unsigned_guards": 2
+    }
+  ],
+  "compiled_numeric_map_regions": [],
+  "compiled_numeric_segments": [],
+  "compiled_numeric_write_loops": [
+    {
+      "append_sites": [],
+      "boundary_spill_words": [
+        [
+          "header",
+          4,
+          8
+        ],
+        [
+          "exit",
+          30,
+          5
+        ],
+        [
+          "failure",
+          4,
+          5
+        ]
+      ],
+      "bounds_error_spill_words": [
+        [
+          19,
+          6
+        ],
+        [
+          22,
+          7
+        ]
+      ],
+      "bulk_append_sites": [],
+      "canonical_vector_views": [],
+      "capacity_guards": [],
+      "cold_exits": [],
+      "direct_child_edges": [],
+      "entry_shadow_argument_copies": 0,
+      "first_change_boundaries": [
+        22
+      ],
+      "fixed_template_instructions": 174,
+      "fresh_traversal_words": 10,
+      "fuel_derived_child_debit_nodes": 0,
+      "fully_lowered_read_packs": [],
+      "guarded_loop_windows": [],
+      "header": 4,
+      "length_sites": [],
+      "maximum_source_instructions": 109,
+      "movable_capture_reads": [],
+      "ordinary_capture_reads": [],
+      "parent": null,
+      "private_boundary_words": 2,
+      "projected_child_debit_nodes": 0,
+      "proven_boolean_successors": [
+        [
+          16,
+          27
+        ]
+      ],
+      "proven_child_entry_checks": [],
+      "proven_projection_guards": [],
+      "proven_scalar_arithmetic": [],
+      "proven_scalar_read_guards": [],
+      "read_pack_sites": [],
+      "register_words": 25,
+      "runtime_scalar_path_walks": 0,
+      "scalar_input_loads": 2,
+      "scalar_operations": 5,
+      "scalar_output_stores": 4,
+      "source_guarded_read_packs": [],
+      "source_home_words": 11,
+      "source_sites": [
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "successful_backedge_helpers": 0,
+      "terminal_scalar_words_omitted": 2,
+      "tree_nodes": [],
+      "typed_loads": [
+        [
+          19,
+          8
+        ],
+        [
+          22,
+          8
+        ]
+      ],
+      "typed_stores": [
+        [
+          22,
+          8
+        ]
+      ],
+      "version_entry_gates": []
+    }
+  ],
+  "compiled_outlined_loops": [],
+  "compiled_preserving_call_regions": [],
+  "compiled_readonly_numeric_loops": [],
+  "compiled_scalar_loops": [],
+  "compiled_scalar_selects": 0,
+  "compiled_source_edge_facts": {
+    "complete": true,
+    "regions": []
+  },
+  "compiled_steady_loops": [],
+  "compiled_string_map_regions": 0,
+  "compiled_tag_threading": {
+    "complete": true,
+    "regions": []
+  },
+  "compiled_unsigned_guards": 2,
+  "compiled_window_accumulator": null,
+  "compiled_window_histogram_regions": 0,
+  "compiled_window_query_regions": 0,
+  "effects": 0,
+  "entry_symbol": "mech_canonical_program_entry_v1",
+  "executed": false,
+  "identity_symbol": "mech_canonical_program_identity_v1_83a952cd8887935d12a0ba8d60df828958660d47dcdd63bdfc715a7a146778e3",
+  "image_binding_symbol": "mech_canonical_program_identity_v1_83a952cd8887935d12a0ba8d60df828958660d47dcdd63bdfc715a7a146778e3_descriptor_binding_v1",
+  "linked": false,
+  "native_descriptor_version": 9,
+  "native_metadata_binding_symbol": "mech_canonical_program_identity_v1_83a952cd8887935d12a0ba8d60df828958660d47dcdd63bdfc715a7a146778e3_native_metadata_binding_v1",
+  "native_metadata_bytes": 47166,
+  "native_metadata_format": "mech.typed-build-image.v3",
+  "native_metadata_symbol": "mech_canonical_program_identity_v1_83a952cd8887935d12a0ba8d60df828958660d47dcdd63bdfc715a7a146778e3_native_metadata_v1",
+  "numeric_parent_partitions": {
+    "parents": []
+  },
+  "numeric_tree_candidates": [
+    {
+      "header": 4,
+      "iteration": 0,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    }
+  ],
+  "numeric_write_regions": [
+    {
+      "compute_per_traversal": 20928,
+      "header": 4,
+      "iteration": 0,
+      "parent": null,
+      "proof": {
+        "actions": [
+          [
+            5,
+            "Frame"
+          ],
+          [
+            9,
+            "Frame"
+          ],
+          [
+            10,
+            "Frame"
+          ],
+          [
+            11,
+            "Frame"
+          ],
+          [
+            19,
+            {
+              "Read": {
+                "array": 0,
+                "index": 16,
+                "output": 17
+              }
+            }
+          ],
+          [
+            22,
+            {
+              "Write": {
+                "array": 0,
+                "incoming": 18,
+                "index": 19
+              }
+            }
+          ],
+          [
+            24,
+            "Frame"
+          ],
+          [
+            25,
+            "Frame"
+          ],
+          [
+            28,
+            "ArrayCopy"
+          ],
+          [
+            29,
+            "ArrayCopy"
+          ]
+        ],
+        "append_limits": [],
+        "arrays": [
+          {
+            "appends": false,
+            "root": 0,
+            "schema": 2,
+            "storage": {
+              "Carrier": {
+                "field": 0,
+                "physical": 1
+              }
+            },
+            "width": 8,
+            "witness": 19,
+            "writable": true
+          }
+        ],
+        "boundary_values": {
+          "candidates": [
+            3,
+            4,
+            5,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22
+          ],
+          "exit": [
+            10
+          ],
+          "header": [
+            3,
+            4,
+            5,
+            8
+          ]
+        },
+        "boundary_words": 25,
+        "boundary_work": 1024,
+        "cold_aliases": [],
+        "cold_frames": [],
+        "cold_scalars": [],
+        "exits": [],
+        "frames": [
+          {
+            "array_bindings": [
+              [
+                1,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              0,
+              1
+            ],
+            "maximum_arity": 3,
+            "scalar_node_count": 3,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                0
+              ],
+              [
+                [
+                  2
+                ],
+                1
+              ]
+            ],
+            "value": 8
+          },
+          {
+            "array_bindings": [
+              [
+                2,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              2,
+              3
+            ],
+            "maximum_arity": 3,
+            "scalar_node_count": 3,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                2
+              ],
+              [
+                [
+                  2
+                ],
+                3
+              ]
+            ],
+            "value": 9
+          },
+          {
+            "array_bindings": [
+              [
+                3,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              4,
+              5
+            ],
+            "maximum_arity": 3,
+            "scalar_node_count": 3,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                4
+              ],
+              [
+                [
+                  2
+                ],
+                5
+              ]
+            ],
+            "value": 22
+          }
+        ],
+        "fresh_values": [
+          12,
+          13,
+          14,
+          16,
+          17,
+          18,
+          19,
+          21,
+          22
+        ],
+        "nested_managed": false,
+        "phase": null,
+        "prepaid_sites": [],
+        "result": {
+          "Array": {
+            "array": 0
+          }
+        },
+        "scalar_captures": [],
+        "scalar_inputs": [
+          {
+            "kind": "U64",
+            "physical": 2,
+            "steps": 1,
+            "value": 8,
+            "word": 0
+          },
+          {
+            "kind": "U64",
+            "physical": 3,
+            "steps": 1,
+            "value": 8,
+            "word": 1
+          }
+        ],
+        "scalar_outputs": [],
+        "scalar_words": 6,
+        "sites": [
+          4,
+          5,
+          6,
+          7,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29
+        ],
+        "words": 11
+      }
+    }
+  ],
+  "object_bytes": 54264,
+  "object_optimization": "speed",
+  "observations": 0,
+  "ordinary_scalar_admission_groups": 0,
+  "ordinary_scalar_admission_sites": 0,
+  "private_frozen_map_candidates": 0,
+  "private_line_matrix_regions": 0,
+  "program_revision": "3ffd28ec2b22948483c90d83321c37d4b3692d7af93dc4c60aafc78c9a4af4e8",
+  "readonly_numeric_candidates": [
+    {
+      "header": 4,
+      "iteration": 0,
+      "origin": {
+        "block": null,
+        "local": null,
+        "node": 1
+      },
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    }
+  ],
+  "readonly_numeric_regions": [],
+  "requirements": 0,
+  "retained_map_scalar_admission_groups": 0,
+  "schema": "mech.canonical-managed-program-object.v1",
+  "selected_matrix_join_regions": 0,
+  "stack_bytes": 240,
+  "target_tag": [
+    1,
+    2,
+    1,
+    64,
+    1,
+    0,
+    0,
+    0
+  ],
+  "timing_samples": 0,
+  "transport_inputs": 2,
+  "transport_outputs": 1,
+  "typed_ir_sha256": "83a952cd8887935d12a0ba8d60df828958660d47dcdd63bdfc715a7a146778e3",
+  "typed_ir_version": 267,
+  "unboxed_scalar_aggregate_values": 0,
+  "work_policy_version": 115
+}

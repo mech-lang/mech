@@ -1,0 +1,7 @@
+{
+  "new_native_geometry2_passed": true,
+  "new_end_to_end_geometry1_passed": true,
+  "numeric_address_passed": true,
+  "actual_CI_names_exact": true,
+  "actual_CI_passed": 400
+}

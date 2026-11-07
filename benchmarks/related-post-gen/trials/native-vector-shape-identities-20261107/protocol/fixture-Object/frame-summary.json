@@ -1,0 +1,40 @@
+{
+  "actions": [
+    {
+      "operation": "Pack { output: NativeMatchValue(6) }",
+      "site": 2
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(6), output: NativeMatchValue(8) }",
+      "site": 3
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(9), output: NativeMatchValue(8) }",
+      "site": 5
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(8), ordinal: 0, output: NativeMatchValue(11) }",
+      "site": 9
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(8), ordinal: 1, output: NativeMatchValue(12) }",
+      "site": 10
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(8), ordinal: 2, output: NativeMatchValue(13) }",
+      "site": 11
+    },
+    {
+      "operation": "Pack { output: NativeMatchValue(22) }",
+      "site": 24
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(22), output: NativeMatchValue(9) }",
+      "site": 25
+    }
+  ],
+  "managed_fields": 4,
+  "retained_map_regions": [],
+  "scalar_fields": 8,
+  "uniform_unsigned_collections": []
+}

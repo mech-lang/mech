@@ -1,0 +1,11 @@
++> sequence
+shape-store(data<[u64]>, at<u64>) => (out<[u64]>) :=
+  ~next := data
+  next[at + 1u64] = data[at + 1u64] + 1u64
+  out := next.
+shape-bump(data<[u64]>, at<u64>, stop<u64>) => (out<[u64]>) :=
+  more := at < stop
+  out := (more? | true => shape-bump(shape-store(data, at), at + 1u64, stop) | false => data).
+original := data<[u64]>
+result := shape-bump(original, 0u64, stop<u64>)
+(result, original)

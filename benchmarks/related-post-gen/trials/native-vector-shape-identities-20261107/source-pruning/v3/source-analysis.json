@@ -1,0 +1,30 @@
+{
+  "schema": "mech.related-post-gen.unused-source-function-probe.v1",
+  "diagnostic_only": true,
+  "timing_claim": false,
+  "algorithm_unchanged_intent": true,
+  "source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+  "pruned_source_sha256": "608ea8d1d51803442fa91eac4c14d1dcfe616649d1d739864407b7122246f19e",
+  "ordinary_and_FSM_functions": 89,
+  "removed_functions": [
+    "#RelatedIntern",
+    "mask-build",
+    "mask-count",
+    "mask-count-step",
+    "mask-fast",
+    "mask-hit",
+    "mask-hits",
+    "mask-post-step",
+    "mask-posts",
+    "mask-tags",
+    "mask-visit",
+    "tier-post-step",
+    "tier-posts",
+    "tier-three-count",
+    "tier-three-hit",
+    "tier-three-hits",
+    "tier-three-step"
+  ],
+  "removed_lines": 93,
+  "conservative": "Call-reference probe for ordinary/FSM declarations, avoiding same-named type aliases. Compilation must reject any undefined non-call function reference. Type declarations retained; no image bypass."
+}

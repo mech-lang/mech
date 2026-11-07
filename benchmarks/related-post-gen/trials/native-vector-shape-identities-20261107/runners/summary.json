@@ -1,0 +1,39 @@
+{
+  "exact_outputs": 32,
+  "linked_audit_passed": true,
+  "runtime_only_GPU": true,
+  "LLVM_tools_used": false,
+  "typed_IR": 267,
+  "code_bytes": 886344,
+  "stack_bytes": 1536,
+  "query1282": {
+    "caller_template_bound": 112,
+    "cleanup": {
+      "after_blocks": 976,
+      "after_instructions": 6860,
+      "before_blocks": 1771,
+      "before_instructions": 82924,
+      "boolean_conditions_simplified": 25,
+      "boolean_phi_values": 19,
+      "constant_branches_removed": 0,
+      "dead_instructions_removed": 8001,
+      "dead_loads_removed": 249,
+      "dead_parameters_removed": 0,
+      "enabled": true,
+      "fixed_point": true,
+      "local_phi_parameters_removed": 326,
+      "local_phi_preheaders": 0,
+      "neutral_operations_removed": 1519,
+      "pre_codegen_data_passes": 0,
+      "rounds": 1,
+      "selected_range_branches_removed": 0,
+      "unsigned_intervals_combined": 0
+    },
+    "code_bytes": 31292,
+    "header": 1282,
+    "stack_bytes": 544,
+    "symbol": "mech_canonical_program_entry_v1_numeric_1282",
+    "unsigned_guards": 12
+  },
+  "canonical_vector_views": 141
+}

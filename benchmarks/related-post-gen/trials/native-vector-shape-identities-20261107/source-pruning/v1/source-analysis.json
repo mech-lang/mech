@@ -1,0 +1,29 @@
+{
+  "schema": "mech.related-post-gen.unused-source-function-probe.v1",
+  "diagnostic_only": true,
+  "timing_claim": false,
+  "algorithm_unchanged_intent": true,
+  "source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+  "pruned_source_sha256": "5c6633999c03eaa0b06ba7ec5467fd6af705caed80338fad3431fdb01e76a752",
+  "ordinary_functions": 87,
+  "removed_functions": [
+    "mask-build",
+    "mask-count",
+    "mask-count-step",
+    "mask-fast",
+    "mask-hit",
+    "mask-hits",
+    "mask-post-step",
+    "mask-posts",
+    "mask-tags",
+    "mask-visit",
+    "tier-post-step",
+    "tier-posts",
+    "tier-three-count",
+    "tier-three-hit",
+    "tier-three-hits",
+    "tier-three-step"
+  ],
+  "removed_lines": 79,
+  "conservative": "Only ordinary named functions. FSM declarations/bodies and type declarations retained; no compiled-image or source-authority bypass."
+}

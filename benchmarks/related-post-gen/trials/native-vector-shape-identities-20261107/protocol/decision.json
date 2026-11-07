@@ -1,0 +1,246 @@
+{
+  "schema": "mech.related-post-gen.vector-shape-identities-no-machine-change.v1",
+  "source": "/private/tmp/mech-related-native-vector-shape-identities-compiler-20261107",
+  "identity": "IR267/work115/ABI41/image9",
+  "selected": false,
+  "goal_complete": false,
+  "performance_measured": false,
+  "decision": "Reject for the related-post goal without running a latency cohort: the complete emitted native text is byte-exact to the matched IR264 parent. This source transformation adds no native processing optimization.",
+  "native_text_bytes": 889544,
+  "native_text_sha256": "a89fd61ff00cf98854fdc474ff3f57dbc0b2ac61412caffaca3db2f6dd66c3da",
+  "matched_parent_native_text_same": true,
+  "code_bytes": 886344,
+  "stack_bytes": 1536,
+  "query_code_bytes": 31292,
+  "reported_canonical_vector_views": 141,
+  "new_native_geometry_tests": 2,
+  "new_native_geometry_tests_passed": true,
+  "qualification_complete": false,
+  "first_failure": "The initial test incorrectly required a unit-axis specialization for a fully generic matrix witness. Emitted metadata proves the numeric read/write loop is selected, with general geometry. This is a test expectation error, not an unlowered program or a compiler rejection. Keep the specialization declined and correct the test to verify that behavior.",
+  "latest_authoritative_speed_cohort": "comparison-native-positional-metadata-20261107-5000-m3.json",
+  "next_action": "Target an executed emitted-code gap. Current Cranelift source identities already disappear in machine code; evaluate backend instruction combining or proven numeric-tree funding, retaining exact errors/accounting/fallback.",
+  "benchmark_32_outputs_exact": true,
+  "same_Object_link_audit_passed": true,
+  "scalar128_and_DEFLATE5_all_nontiming_fields_exact": true,
+  "scalar_allocation_measurements_exact": true,
+  "CI_not_executed_after_new_test_failure": true,
+  "unresolved_lowering_gap_claim_withdrawn": true,
+  "subsequent_CI_v2": {
+    "passed": 388,
+    "failed": 12,
+    "reason": "New helper indexed a synthetic capture/frame-only usize::MAX witness. Corrected to decline the optional static fact when no selected call exists; the ordinary native path stays unchanged.",
+    "raw_receipt": "/private/tmp/mech-related-native-vector-shape-identities-tests-20261107-v2/ci-execute.json"
+  },
+  "source_commit": "047ced1c9377bd784c01657c8de12894bb747aaa",
+  "initial_source_commit": "df81319b438209ca6f8fdd6a643980bd5e9ea1e8",
+  "qualification_complete_for_promotion": false,
+  "performed_checks_passed": true,
+  "new_end_to_end_test_passed": true,
+  "actual_CI": {
+    "new_native_geometry2_passed": true,
+    "new_end_to_end_geometry1_passed": true,
+    "numeric_address_passed": true,
+    "actual_CI_names_exact": true,
+    "actual_CI_passed": 400
+  },
+  "benchmark_qualification": {
+    "exact_outputs": 32,
+    "linked_audit_passed": true,
+    "runtime_only_GPU": true,
+    "LLVM_tools_used": false,
+    "typed_IR": 267,
+    "code_bytes": 886344,
+    "stack_bytes": 1536,
+    "query1282": {
+      "caller_template_bound": 112,
+      "cleanup": {
+        "after_blocks": 976,
+        "after_instructions": 6860,
+        "before_blocks": 1771,
+        "before_instructions": 82924,
+        "boolean_conditions_simplified": 25,
+        "boolean_phi_values": 19,
+        "constant_branches_removed": 0,
+        "dead_instructions_removed": 8001,
+        "dead_loads_removed": 249,
+        "dead_parameters_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 326,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1519,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1,
+        "selected_range_branches_removed": 0,
+        "unsigned_intervals_combined": 0
+      },
+      "code_bytes": 31292,
+      "header": 1282,
+      "stack_bytes": 544,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1282",
+      "unsigned_guards": 12
+    },
+    "canonical_vector_views": 141
+  },
+  "production_runners_v3_same_native_text": true,
+  "tests_v3": "/private/tmp/mech-related-native-vector-shape-identities-tests-20261107-v3",
+  "regressions_v3": "/private/tmp/mech-related-native-vector-shape-identities-regressions-20261107-v3",
+  "full_GPU_and_extended_loader_suite_not_run": true,
+  "initial_v1_stopped_before_existing_tests": true,
+  "initial_new_test_wrong_eligibility_assertion": true,
+  "source_pruning_probes": {
+    "1": {
+      "source_analysis": {
+        "schema": "mech.related-post-gen.unused-source-function-probe.v1",
+        "diagnostic_only": true,
+        "timing_claim": false,
+        "algorithm_unchanged_intent": true,
+        "source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+        "pruned_source_sha256": "5c6633999c03eaa0b06ba7ec5467fd6af705caed80338fad3431fdb01e76a752",
+        "ordinary_functions": 87,
+        "removed_functions": [
+          "mask-build",
+          "mask-count",
+          "mask-count-step",
+          "mask-fast",
+          "mask-hit",
+          "mask-hits",
+          "mask-post-step",
+          "mask-posts",
+          "mask-tags",
+          "mask-visit",
+          "tier-post-step",
+          "tier-posts",
+          "tier-three-count",
+          "tier-three-hit",
+          "tier-three-hits",
+          "tier-three-step"
+        ],
+        "removed_lines": 79,
+        "conservative": "Only ordinary named functions. FSM declarations/bodies and type declarations retained; no compiled-image or source-authority bypass."
+      },
+      "files": {
+        "artifact.mecb": {
+          "parent_bytes": 434828,
+          "probe_bytes": 434828,
+          "byte_exact": true
+        },
+        "native-metadata.bin": {
+          "parent_bytes": 4913076,
+          "probe_bytes": 4913076,
+          "byte_exact": true
+        },
+        "object.o": {
+          "parent_bytes": 5807872,
+          "probe_bytes": 5807872,
+          "byte_exact": true
+        }
+      },
+      "processing_timing_claim": false,
+      "output_qualification_not_run": true
+    },
+    "2": {
+      "source_analysis": {
+        "schema": "mech.related-post-gen.unused-source-function-probe.v1",
+        "diagnostic_only": true,
+        "timing_claim": false,
+        "algorithm_unchanged_intent": true,
+        "source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+        "pruned_source_sha256": "608ea8d1d51803442fa91eac4c14d1dcfe616649d1d739864407b7122246f19e",
+        "ordinary_and_FSM_functions": 89,
+        "removed_functions": [
+          "#RelatedIntern",
+          "mask-build",
+          "mask-count",
+          "mask-count-step",
+          "mask-fast",
+          "mask-hit",
+          "mask-hits",
+          "mask-post-step",
+          "mask-posts",
+          "mask-tags",
+          "mask-visit",
+          "tier-post-step",
+          "tier-posts",
+          "tier-three-count",
+          "tier-three-hit",
+          "tier-three-hits",
+          "tier-three-step"
+        ],
+        "removed_lines": 93,
+        "conservative": "Ordinary and FSM named declarations; each FSM initializer remains attached to its definition. Type declarations retained. No compiled-image or source-authority bypass."
+      },
+      "files": {
+        "artifact.mecb": {
+          "parent_bytes": 434828,
+          "probe_bytes": 433828,
+          "byte_exact": false
+        },
+        "native-metadata.bin": {
+          "parent_bytes": 4913076,
+          "probe_bytes": 4910003,
+          "byte_exact": false
+        },
+        "object.o": {
+          "parent_bytes": 5807872,
+          "probe_bytes": 5804800,
+          "byte_exact": false
+        }
+      },
+      "processing_timing_claim": false,
+      "output_qualification_not_run": true
+    },
+    "3": {
+      "source_analysis": {
+        "schema": "mech.related-post-gen.unused-source-function-probe.v1",
+        "diagnostic_only": true,
+        "timing_claim": false,
+        "algorithm_unchanged_intent": true,
+        "source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+        "pruned_source_sha256": "608ea8d1d51803442fa91eac4c14d1dcfe616649d1d739864407b7122246f19e",
+        "ordinary_and_FSM_functions": 89,
+        "removed_functions": [
+          "#RelatedIntern",
+          "mask-build",
+          "mask-count",
+          "mask-count-step",
+          "mask-fast",
+          "mask-hit",
+          "mask-hits",
+          "mask-post-step",
+          "mask-posts",
+          "mask-tags",
+          "mask-visit",
+          "tier-post-step",
+          "tier-posts",
+          "tier-three-count",
+          "tier-three-hit",
+          "tier-three-hits",
+          "tier-three-step"
+        ],
+        "removed_lines": 93,
+        "conservative": "Call-reference probe for ordinary/FSM declarations, avoiding same-named type aliases. Compilation must reject any undefined non-call function reference. Type declarations retained; no image bypass."
+      },
+      "files": {
+        "artifact.mecb": {
+          "parent_bytes": 434828,
+          "probe_bytes": 433828,
+          "byte_exact": false
+        },
+        "native-metadata.bin": {
+          "parent_bytes": 4913076,
+          "probe_bytes": 4910003,
+          "byte_exact": false
+        },
+        "object.o": {
+          "parent_bytes": 5807872,
+          "probe_bytes": 5804800,
+          "byte_exact": false
+        }
+      },
+      "processing_timing_claim": false,
+      "output_qualification_not_run": true
+    }
+  },
+  "source_pruning_conclusion": "Unused ordinary function bodies already disappear before artifact emission. Removing one unused FSM declaration changes only about1KB of artifact/3KB of metadata; it leaves native text unchanged. No large dead-function or generic-addressing win was found; no performance/source adoption claim."
+}

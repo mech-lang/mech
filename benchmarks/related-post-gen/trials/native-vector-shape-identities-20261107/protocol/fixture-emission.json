@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-vector-shape-identities-runners-20261107-v1/compiler",
+    "/private/tmp/mech-related-native-vector-shape-identities-20261107-v1/unlowered-fixture.mec",
+    "/private/tmp/mech-related-native-vector-shape-identities-20261107-v1/fixture-Object"
+  ],
+  "exit": 0,
+  "seconds": 0.16510087507776916,
+  "stdout": "{\"code_bytes\":5328,\"inputs\":[\"data\",\"stop\"],\"outputs\":1,\"stack_bytes\":240}\n",
+  "stderr": ""
+}

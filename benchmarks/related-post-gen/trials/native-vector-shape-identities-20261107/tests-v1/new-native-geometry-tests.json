@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-vector-shape-identities-tests-20261107-v1/gpu-tests",
+    "numeric_geometry",
+    "--test-threads=1"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.3476073341444135,
+  "stdout": "\nrunning 2 tests\ntest native_artifact::program::codegen::numeric_geometry::tests::admitted_unit_axes_keep_empty_and_large_native_geometry_exact ... ok\ntest native_artifact::program::codegen::numeric_geometry::tests::general_and_zero_axes_keep_their_actual_geometry ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 905 filtered out; finished in 0.00s\n\n",
+  "stderr": ""
+}

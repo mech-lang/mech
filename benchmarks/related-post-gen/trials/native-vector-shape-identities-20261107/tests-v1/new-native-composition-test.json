@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-vector-shape-identities-tests-20261107-v1/gpu-tests",
+    "vector_geometry_keeps_mutation_errors_aliases_finite_prefixes_and_retry",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {},
+  "exit": 101,
+  "seconds": 0.12349549983628094,
+  "stdout": "\nrunning 1 test\ntest native_artifact::program::runtime::composition_tests::invariant_vector_geometry::vector_geometry_keeps_mutation_errors_aliases_finite_prefixes_and_retry ... FAILED\n\nfailures:\n\nfailures:\n    native_artifact::program::runtime::composition_tests::invariant_vector_geometry::vector_geometry_keeps_mutation_errors_aliases_finite_prefixes_and_retry\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 906 filtered out; finished in 0.11s\n\n",
+  "stderr": "\nthread 'native_artifact::program::runtime::composition_tests::invariant_vector_geometry::vector_geometry_keeps_mutation_errors_aliases_finite_prefixes_and_retry' (21105494) panicked at /private/tmp/mech-related-native-vector-shape-identities-compiler-20261107/hosts/gpu/src/native_artifact/program/runtime/composition_tests/invariant_vector_geometry.rs:28:9:\nassertion failed: [\"compiled_numeric_write_loops\",\n                    \"compiled_readonly_numeric_loops\"].into_iter().flat_map(|k|\n            m[k].as_array().unwrap()).any(|r|\n        !r[\"canonical_vector_views\"].as_array().unwrap().is_empty())\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+}
