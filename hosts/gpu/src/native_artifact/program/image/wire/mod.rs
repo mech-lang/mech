@@ -231,6 +231,11 @@ pub(in crate::native_artifact::program::image::decode) fn decode_compiled_verifi
     decode_inner::<true, true, CompiledFrame>(verified.bytes(), catalog)
 }
 
+// Diagnostic-only synchronous observation. The executable supplies the hook;
+// this checkout changes no validation, allocation or source/native operation.
+unsafe extern "C" { fn mech_restore_phase_event(event:u64); }
+fn restore_phase(id:u64,enter:bool) { unsafe { mech_restore_phase_event(if enter{id}else{id|(1u64<<63)}) }; }
+
 fn decode_inner<
     'a,
     const OBJECT_BOUND: bool,
@@ -240,9 +245,11 @@ fn decode_inner<
     bytes: &'a [u8],
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramDescriptor, String> {
+    restore_phase(10,true);
     let mut reader = BuildOwnedImageReader::from_image(bytes).map_err(|e| e.to_string())?;
     let image: Image<'a, Frame> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
+    restore_phase(10,false);
     if image.format != "mech.build-owned-native-descriptor"
         || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9))
         || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9))
@@ -264,9 +271,12 @@ fn decode_inner<
     // untrusted field. V1 remains available through independent reconstruction;
     // new checked Objects bind V2 and have a distinct typed-IR identity.
     let frozen_layouts = OBJECT_BOUND;
+    restore_phase(20,true);
     let schemas = Arc::new(decode_native_schema_record(w.schemas)?);
+    restore_phase(20,false);
     // SAFETY: only the enclosing unsafe descriptor loader reaches this private
     // reader; it retains all metadata until exact checked-build provenance holds.
+    restore_phase(30,true);
     let plan = if image.version >= 5 {
         // SAFETY: the explicit image version selects the shared table reader;
         // provenance and independent validation retain the same policy.
@@ -278,6 +288,8 @@ fn decode_inner<
     } else {
         unsafe { decode_build_owned_native_plan_record(w.plan, &schemas, catalog)? }
     };
+    restore_phase(30,false);
+    restore_phase(40,true);
     let mut descriptor_templates = match w.schema_templates {
         Some(record) if COMPILED => {
             // SAFETY: only decode_compiled_verified selects this monomorph;
@@ -292,6 +304,8 @@ fn decode_inner<
         }
         None => NativeDescriptorTemplatePool::default(),
     };
+    restore_phase(40,false);
+    restore_phase(50,true);
     let mut calls = w
         .calls
         .iter()
@@ -359,6 +373,8 @@ fn decode_inner<
             key: s.key,
         })
         .collect::<Box<[_]>>();
+    restore_phase(50,false);
+    restore_phase(60,true);
     if w.stack == 0
         || w.code == 0
         || w.visits.len() != plan.blocks().len()
@@ -375,6 +391,8 @@ fn decode_inner<
     {
         return Err("constant ownership bounds differ from canonical runtime reads".into());
     }
+    restore_phase(60,false);
+    restore_phase(70,true);
     let closed_tails: native::program::prepare::tail::Layout = w.closed_tails.into();
     let image_frames = w
         .buffer_frames
@@ -418,6 +436,8 @@ fn decode_inner<
             &closed_tails,
         )?;
     }
+    restore_phase(70,false);
+    restore_phase(80,true);
     let borrowed_strings: native::program::prepare::borrowed::Layout = w.borrowed_strings.into();
     let map_owner_words = if frozen_layouts {
         w.map_owner_words.take()
@@ -707,6 +727,8 @@ fn decode_inner<
     if max_call_values > w.max_library_inputs {
         return Err("restored canonical arguments exceed admitted backing".into());
     }
+    restore_phase(80,false);
+    restore_phase(90,true);
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
@@ -755,6 +777,7 @@ fn decode_inner<
         },
         identity: w.identity,
     };
+    restore_phase(90,false);
     // Wire shape, canonical schemas and actual factories were checked above.
     // Full round-trip fidelity is tested at build time; re-encoding here would
     // retain compiler-side serializers without proving source/Object provenance.

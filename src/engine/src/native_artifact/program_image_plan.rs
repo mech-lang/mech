@@ -157,7 +157,9 @@ pub unsafe fn decode_build_owned_native_shared_table_plan_record(
     schemas: &SchemaTable,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, String> {
+    restore_phase(31,true);
     let plan = image.decode().map_err(|error| error.to_string())?;
+    restore_phase(31,false);
     restore_inner::<true, true>(plan, schemas, catalog)
 }
 
@@ -184,6 +186,11 @@ fn restore(
     restore_inner::<false, false>(w, schemas, catalog)
 }
 
+// Diagnostic-only synchronous observation. The executable supplies the hook;
+// this checkout changes no validation, allocation or source/native operation.
+unsafe extern "C" { fn mech_restore_phase_event(event:u64); }
+fn restore_phase(id:u64,enter:bool) { unsafe { mech_restore_phase_event(if enter{id}else{id|(1u64<<63)}) }; }
+
 fn restore_inner<const TABLES: bool, const SHARED_TEMPLATES: bool>(
     w: Plan<'_>,
     schemas: &SchemaTable,
@@ -195,7 +202,10 @@ fn restore_inner<const TABLES: bool, const SHARED_TEMPLATES: bool>(
     // SAFETY: this constructor remains inside the unchanged checked-build
     // loader. The table validates the actual linked factory and canonical
     // schemas for every definition; each source header remains independent.
+    restore_phase(32,true);
     let templates = unsafe { library::Templates::new(w.template_definitions, catalog, schemas)? };
+    restore_phase(32,false);
+    restore_phase(33,true);
     let resource_requirements = records(w.resource_requirements, |reader| nodes::request(reader))?;
     let inputs = records(w.inputs, |v| nodes::input(v, schemas))?;
     let observations = records(w.observations, |v| nodes::observation(v, schemas))?;
@@ -207,6 +217,8 @@ fn restore_inner<const TABLES: bool, const SHARED_TEMPLATES: bool>(
         .into_iter()
         .map(|v| nodes::constant(v, schemas))
         .collect::<Result<_, _>>()?;
+    restore_phase(33,false);
+    restore_phase(34,true);
     let mut types = nodes::TypeTable::new(schemas);
     let values = records(w.values, |v| {
         if TABLES {
@@ -217,16 +229,24 @@ fn restore_inner<const TABLES: bool, const SHARED_TEMPLATES: bool>(
     })?;
     let value_scopes = records(w.value_scopes, |reader| loops::scope(reader))?;
     let outputs = records(w.outputs, |v| nodes::output(v, schemas))?;
+    restore_phase(34,false);
+    restore_phase(35,true);
     // SAFETY: each private reader inherits the enclosing build-owned contract.
     let blocks = records(w.blocks, |v| unsafe { iteration::block(v, &templates) })?;
+    restore_phase(35,false);
     // SAFETY: same confined image, schemas and selected registry.
+    restore_phase(36,true);
     let iterations = records(w.iterations, |v| unsafe {
         loops::control_loop(v, &templates)
     })?;
+    restore_phase(36,false);
     // SAFETY: same confined image, schemas and selected registry.
+    restore_phase(37,true);
     let collections = records(w.collections, |v| unsafe {
         collections::collection(v, &templates)
     })?;
+    restore_phase(37,false);
+    restore_phase(38,true);
     let plan = NativeProgramArtifactPlan {
         // An image contains semantic selection, not its producer's budget.
         // Shape/ownership proofs and same-Object binding still run on load.
@@ -247,6 +267,7 @@ fn restore_inner<const TABLES: bool, const SHARED_TEMPLATES: bool>(
         activation_nodes: w.activation_nodes,
         activation_boundary: w.activation_boundary,
     };
+    restore_phase(38,false);
     // Full encode/decode equality belongs to build-side regression tests, not
     // startup. Re-encoding cannot authenticate a proof copied from this image.
     Ok(plan)
