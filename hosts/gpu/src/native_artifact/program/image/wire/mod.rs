@@ -142,51 +142,74 @@ impl From<Visit> for native::iteration_abi::NativeIterationVisit {
     }
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, bound(deserialize = "Frame: Deserialize<'de>"))]
 struct Descriptor<'a, Frame> {
     #[serde(borrow)]
+    #[serde(deserialize_with = "observe::<_, _, 101>")]
     plan: BuildOwnedImageRecord<'a>,
     #[serde(borrow)]
+    #[serde(deserialize_with = "observe::<_, _, 102>")]
     schemas: BuildOwnedImageRecord<'a>,
     #[serde(borrow)]
+    #[serde(deserialize_with = "observe::<_, _, 103>")]
     calls: Box<[Option<BuildOwnedImageRecord<'a>>]>,
+    #[serde(deserialize_with = "observe::<_, _, 104>")]
     types: Box<[Slot]>,
+    #[serde(deserialize_with = "observe::<_, _, 105>")]
     visits: Box<[Visit]>,
+    #[serde(deserialize_with = "observe::<_, _, 106>")]
     retirements: native::program::prepare::retirement::RetirementTables,
+    #[serde(deserialize_with = "observe::<_, _, 107>")]
     constant_bytes: Box<[u64]>,
+    #[serde(deserialize_with = "observe::<_, _, 108>")]
     scalar_bytes: u64,
+    #[serde(deserialize_with = "observe::<_, _, 109>")]
     observation_schema_bytes: u64,
+    #[serde(deserialize_with = "observe::<_, _, 110>")]
     max_library_inputs: usize,
     #[serde(default)]
+    #[serde(deserialize_with = "observe::<_, _, 111>")]
     word_collections: Box<[native::program::prepare::word_collections::Region]>,
-    #[serde(deserialize_with = "proof")]
+    #[serde(deserialize_with = "observe_proof::<_, _, 112>")]
     window_regions: Box<[NativeWindowRegion]>,
-    #[serde(deserialize_with = "proof")]
+    #[serde(deserialize_with = "observe_proof::<_, _, 113>")]
     string_map_regions: Box<[NativeStringMapRegion]>,
-    #[serde(deserialize_with = "proof")]
+    #[serde(deserialize_with = "observe_proof::<_, _, 114>")]
     scalar_aggregates: NativeScalarAggregates,
-    #[serde(borrow, default, deserialize_with = "present_raw")]
+    #[serde(borrow, default, deserialize_with = "observe_raw::<_, 115>")]
     buffer_frames: Option<BuildOwnedImageRecord<'a>>,
-    #[serde(deserialize_with = "proof")]
+    #[serde(deserialize_with = "observe_proof::<_, _, 116>")]
     map_owner_words: Option<NativeMapOwnerWords>,
+    #[serde(deserialize_with = "observe::<_, _, 117>")]
     borrowed_record_maps: native::program::prepare::borrowed_record_map::Layout,
     utf8_reads: native::program::prepare::utf8_reads::Layout,
-    #[serde(default, deserialize_with = "present_numeric_maps")]
+    #[serde(default, deserialize_with = "observe_numeric_maps")]
     numeric_maps: Option<native::program::prepare::numeric_maps::Layout>,
+    #[serde(deserialize_with = "observe::<_, _, 119>")]
     frozen_maps: native::program::prepare::frozen_map::Layout,
+    #[serde(deserialize_with = "observe::<_, _, 120>")]
     map_admission: native::program::prepare::map_admission::Layout,
+    #[serde(deserialize_with = "observe::<_, _, 121>")]
     parallel: native::program::prepare::parallel::Layout,
+    #[serde(deserialize_with = "observe::<_, _, 122>")]
     borrowed_strings: layouts::Borrowed,
+    #[serde(deserialize_with = "observe::<_, _, 123>")]
     closed_tails: layouts::Tails<Frame>,
+    #[serde(deserialize_with = "observe::<_, _, 124>")]
     selected_joins: layouts::SelectedJoins,
+    #[serde(deserialize_with = "observe::<_, _, 125>")]
     line_matrices: layouts::LineMatrices,
+    #[serde(deserialize_with = "observe::<_, _, 126>")]
     prefix: Option<layouts::Prefix>,
+    #[serde(deserialize_with = "observe::<_, _, 127>")]
     stack: u64,
+    #[serde(deserialize_with = "observe::<_, _, 128>")]
     code: u64,
+    #[serde(deserialize_with = "observe::<_, _, 129>")]
     identity: [u8; 32],
-    #[serde(borrow, default, deserialize_with = "present_raw")]
+    #[serde(borrow, default, deserialize_with = "observe_raw::<_, 130>")]
     static_layouts: Option<BuildOwnedImageRecord<'a>>,
-    #[serde(borrow, default, deserialize_with = "present_raw")]
+    #[serde(borrow, default, deserialize_with = "observe_raw::<_, 131>")]
     schema_templates: Option<BuildOwnedImageRecord<'a>>,
 }
 #[derive(Deserialize)]
@@ -196,6 +219,31 @@ struct Image<'a, Frame> {
     version: u32,
     #[serde(borrow)]
     descriptor: Descriptor<'a, Frame>,
+}
+
+fn observe<'de, D: Deserializer<'de>, T: Deserialize<'de>, const ID: u64>(d: D) -> Result<T, D::Error> {
+    restore_phase(ID, true);
+    let value = T::deserialize(d);
+    restore_phase(ID, false);
+    value
+}
+fn observe_proof<'de, D: Deserializer<'de>, T: ProofImage, const ID: u64>(d: D) -> Result<T, D::Error> {
+    restore_phase(ID, true);
+    let value = proof(d);
+    restore_phase(ID, false);
+    value
+}
+fn observe_raw<'de, D: Deserializer<'de>, const ID: u64>(d: D) -> Result<Option<BuildOwnedImageRecord<'de>>, D::Error> {
+    restore_phase(ID, true);
+    let value = present_raw(d);
+    restore_phase(ID, false);
+    value
+}
+fn observe_numeric_maps<'de, D: Deserializer<'de>>(d: D) -> Result<Option<native::program::prepare::numeric_maps::Layout>, D::Error> {
+    restore_phase(118, true);
+    let value = present_numeric_maps(d);
+    restore_phase(118, false);
+    value
 }
 
 fn present_numeric_maps<'de, D: Deserializer<'de>>(
