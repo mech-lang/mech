@@ -298,13 +298,6 @@
       "decoded_bytes": 4677,
       "decoded_sha256": "08575b1bb919cecca8e4669ae69e3fd9e4cca50ffcf65b32920ca898b506bb06"
     },
-    "first-tests/first-source.patch": {
-      "bytes": 4915,
-      "sha256": "4b00b25ca2bfcf1a2cd5a104f635927955d3cdafc05566c4fd905ab57f66621a",
-      "gzip": false,
-      "decoded_bytes": 4915,
-      "decoded_sha256": "4b00b25ca2bfcf1a2cd5a104f635927955d3cdafc05566c4fd905ab57f66621a"
-    },
     "first-tests/first-tests-boolean-chains.rs.txt": {
       "bytes": 7504,
       "sha256": "d7ed4d53f9e084af251470aa6531e5788f61b7473017d32a1dd3fb64dbcace57",
@@ -976,6 +969,13 @@
       "gzip": false,
       "decoded_bytes": 4487,
       "decoded_sha256": "dd744c8cebbdeb88b8a4033c61181e5de66510a8388aee2d77b20667ced4d18b"
+    },
+    "first-tests/first-source.patch.gz": {
+      "bytes": 1664,
+      "sha256": "48bd74d63c28ad4bf36e4e0873e08d1e8bee03a1dc64c5976b4540d380eb23f7",
+      "gzip": true,
+      "decoded_bytes": 4915,
+      "decoded_sha256": "4b00b25ca2bfcf1a2cd5a104f635927955d3cdafc05566c4fd905ab57f66621a"
     }
   }
 }
