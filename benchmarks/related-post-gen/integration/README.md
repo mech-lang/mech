@@ -1,5 +1,32 @@
 # Current related-post integration targeting #973
 
+Compiler **cbe5b47839b4fe2300fe16ebc1fcacfcfa03f98b**, **IR235 / work115 / ABI41 / image9**, integrates #973 through **176d8134133befb8e35a6413fb8f98387bacebb3**. [PR990](https://github.com/mech-lang/mech/pull/990) targets `codex/level12-compression-consolidated` (#973).
+
+This fills the compiler gap exposed by reusing eligibility masks. The compiler now proves that every Boolean producer yields zero or one, recognizes repeated reads of the same private tuple field, and carries true-conjunction/false-disjunction/negation implications through its current-array proof. Producers must dominate the current read and execute at most once per loop traversal. Facts reset at the relevant header/exit. Raw inputs, unknown joins, tags, cycles and unavailable values grant no implication. A genuinely stale returned array still declines. No production meter, source-price or funding code changes.
+
+The exact same mask-reuse source falls from **16.914833 ms to2.891875 ms** in a31-round randomized matched cohort. This repairs a source regression; the gain against the original source is modest. Every process computes all5000 posts. Continuous post-JSON includes admission, preparation, allocation, worker creation/run/join and materialization. Full process covers fresh launch through exit. All279 latency outputs and70 separate resource outputs are exact, with every schedule and initial/adverse sample retained.
+
+| Four-worker Mech variant | Post-JSON | × fastest matched Rust | Full process | × fastest full-process Rust |
+|---|---:|---:|---:|---:|
+| IR234 original control |2.947458 ms|1.844227×|37.544959 ms|1.530292×|
+| IR234 mask reuse, same source |16.914833 ms|10.583624×|53.275958 ms|2.171471×|
+| IR235 original source |2.944250 ms|1.842220×|37.371041 ms|1.523204×|
+| IR235 mask reuse |2.891875 ms|1.809448×|37.271916 ms|1.519163×|
+
+Fastest matched Rust is U8/U32, **1.598208 ms**. Fastest full-process Rust is U32, **24.534500 ms**. Standard Rust, streaming, U32, U8/U32 and the preinitialized full-process control remain in the matrix. The latter's short internal timer remains ineligible for matched processing. The new source wins31/31 pairs against its slow parent, but27/31 processing and only14/31 full-process pairs against same-compiler original source. **Full-process improvement is not established.** Ordered rows retain original output tag order; unordered unique rows take the exact general fallback and lose their old subset fast path. The source stays unselected; IR208 stays the selected speed checkpoint and Rust parity remains unmet.
+
+Processing instructions fall287,497,378→55,052,841 for the unchanged mask-reuse source; original-source IR235 is57,099,888 and matched Rust19,213,377. Requests fall33,847→3858, which equals original Mech and still exceeds Rust58. New-source requested bytes8,013,126 and peak live requested heap13,344,076 compare with Rust6,825,713 and7,663,209. Full-process instructions are347,008,059 versus full-process Rust167,992,662. Restoration alone remains132,499,754 instructions. New source emits876,720 native bytes versus original908,464; its hot query remains28,448 bytes with a528-byte frame.
+
+Fresh before/after profiles validate2000 exact invocations using each executable's actual linked native bytes. The slow parent's runtime segment, work-budget and admission positions largely disappear; the current native query is the leading application-code position, followed by UTF-8 preparation and other generated kernels. Current query observations still include stack traffic, comparisons, rank arithmetic and moves. Wait positions are separate. **PC observations are not CPU-time shares**, and profiled timings are excluded from comparisons. No earlier PC map is reused.
+
+Qualification: **849 GPU passes and exactly two inherited failures**; all128 scalar and five compression control rows equal IR234 in every non-timing field, allocations included. There are558 exact loader/source fixtures,65 byte-identical original/decoded bundle files,48 finite denials,12 finite first10/full5000 successes,16 forged-frontier rejections and three fresh genuine same-ABI/work-policy old Objects (IR234/232/233) rejected before entry. Scalar-only, runtime-only full5000 and unmodified generated-app success/error/denial checks pass. All354 selected CI names execute and pass in the full local run. The prior integrated guard218 was stale against IR234's349 names; the guard now includes the five new regressions without dropping a filter. Hosted CI is not claimed green.
+
+The first new test incorrectly assumed that total charged work must equal emission with every scalar loop disabled. Total work also charges actual owner/metadata/transport callbacks. The completed112-observation audit keeps every total, proves source-price tables unchanged and records monotonic callback debits. In its first case, the entire117,400,138 difference is inside callbacks; outside-callback work is907,408 for both. The original failed assertion, test-only compilation mistake and qualification-helper setup failures remain retained. No old control counter is exempted.
+
+See `ir235-review-status.json`, `evidence/boolean-implication-mask-reuse/summary.json`, `evidence/ir235-*` and `ir235-local-archive-index.json` (2647 SHA-verified local files, plus retained superseded executable references). Raw binaries are not remotely uploaded. Next targets are immutable first-call/restoration metadata, producer-derived posting/index ranges, bounded tree funding and cold scalar-home handling. **Draft; no merge requested.**
+
+## Retained IR234 and earlier evidence
+
 Compiler **c4649860a5e445c1ce1bdec8503870e8a455da17**, **IR234 / work115 / ABI41 / image9**, integrates #973 through **176d8134133befb8e35a6413fb8f98387bacebb3**. [PR990](https://github.com/mech-lang/mech/pull/990) targets `codex/level12-compression-consolidated` (#973).
 
 The latest upstream proof permits reduction bypass only when every exhausted source path preserves every payload. Nonidentity, missing or conflicting evidence retains the checked funded native source loop. The earlier changed-payload regression remains exact, with its selection assertion updated to require that safe native decline. The identity compressor path and all four related-post native text sections remain unchanged; no compiler speedup is claimed.

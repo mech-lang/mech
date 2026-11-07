@@ -229,6 +229,73 @@ if current_status.exists():
     assert len(selection['compiled_numeric_functions']) == 50
     assert next(x for x in selection['numeric_tree_candidates'] if x['iteration'] == 3)['rejection'] == 'numeric tree child returns an older array version'
 
+current_status = packet / 'integration/ir235-review-status.json'
+if current_status.exists():
+    status = json.loads(current_status.read_text())
+    assert status['identity'] == 'IR235/work115/ABI41/image9'
+    assert status['compiler'] == 'cbe5b47839b4fe2300fe16ebc1fcacfcfa03f98b'
+    assert status['target_pr'] == 973 and status['gpu_passed'] == 849
+    assert len(status['inherited_gpu_failures']) == 2
+    assert status['source_files'] == 2464 and status['cohort_outputs_exact'] == 349
+    assert not status['selected'] and not status['goal_complete']
+    tests = json.loads((evidence / 'ir235-gpu-test-run.json').read_text())
+    assert tests['expected_failures_exact'] and not tests['new_failures']
+    assert '849 passed; 2 failed' in tests['summary'][0]
+    for kind, count in [('scalar', 128), ('one-kib', 5)]:
+        def rows(path):
+            return [{k: v for k, v in json.loads(line).items()
+                     if k not in ('seconds', 'seconds_per_evaluation')}
+                    for line in json.loads(path.read_text())['stdout'].splitlines()
+                    if line.startswith('{')]
+        old = rows(evidence / f'ir234-control-{kind}-run.json')
+        new = rows(evidence / f'ir235-control-{kind}-run.json')
+        assert len(old) == len(new) == count and old == new
+    qualification = json.loads((evidence / 'ir235-qualification-summary.json').read_text())
+    assert qualification['loader_fixtures_exact'] == 558
+    assert qualification['decoded_bundle_files_exact'] == 65
+    assert qualification['finite_denials_exact'] == 48
+    assert qualification['finite_small_full_successes_exact'] == 12
+    assert qualification['forged_frontier_rejections'] == 16
+    assert len(qualification['fixtures']) == 18
+    for name in qualification['fixtures']:
+        data = json.loads((evidence / ('ir235-edges-'+name.replace('/', '-'))).read_text())
+        assert len(data) == 31
+        assert all(x['exit'] == 0 and x.get('exact_rust_output', x.get('exact_expected_output', False)) for x in data)
+    native = json.loads((evidence / 'ir235-native-text-equivalence.json').read_text())
+    assert len(native) == 4 and all(x['complete_native_text_byte_identical'] for x in native.values())
+    old = json.loads((evidence / 'ir235-old-object-summary.json').read_text())
+    assert old['fresh_old_objects'] == 3 and {x['old_typed_ir'] for x in old['rows']} == {234, 232, 233}
+    assert all(x['old_entry_never_invoked'] and x['object_bound_rejected'] and x['compiled_module_rejected'] for x in old['rows'])
+    audit = json.loads((evidence / 'ir235-gpu-boolean-accounting-audit.json').read_text())
+    assert audit['rows'] == len(audit['observations']) == 112
+    assert audit['complete_source_price_tables_equal'] and audit['all_totals_retained']
+    for row in audit['observations']:
+        assert row['source_prices_equal']
+        assert all(after >= before for _, _, before, after in row['callback_debits'])
+        assert sum(after-before for _, _, before, after in row['callback_debits']) == row['callback_work']
+        assert row['callback_work'] + row['outside_callback_work'] == row['work']
+    assert audit['first_case_difference_entirely_within_callbacks'] and audit['first_case_outside_callback_work_both'] == 907408
+    ci = json.loads((evidence / 'ir235-gpu-ci-selected-inventory-audit.json').read_text())
+    assert ci['current_selected_count'] == len(ci['selected_names']) == 354
+    assert ci['all_selected_names_executed_and_passed_in_complete_gpu_run']
+    assert len(ci['new_names']) == 5 and ci['filters_removed'] == []
+    assert (root / '.github/workflows/ci-full.yml').read_bytes() == (evidence / 'ir235-ci-full.yml').read_bytes()
+    assert (root / 'hosts/gpu/tests/fixtures/native/numeric-boolean-mask-reuse.mec').read_bytes() == (evidence / 'ir235-native-mask-reuse.mec').read_bytes()
+    experiment = evidence / 'boolean-implication-mask-reuse'
+    current = json.loads((experiment / 'summary.json').read_text())
+    assert current['source_unchanged_across_compilers']
+    assert current['source_sha256'] == hashlib.sha256((experiment / 'source.mec').read_bytes()).hexdigest()
+    for phase, expected in [('latency', 279), ('resources', 70)]:
+        run = json.loads(gzip.decompress((experiment / (phase+'.json.gz')).read_bytes()))
+        assert len(run['samples']) == expected and run['execution_order']['mode'] == 'randomized'
+        assert all(x['exit'] == 0 and x['exact_rust_output'] for x in run['samples'])
+    pairs = current['paired']['mech-current-reuse-4']['mech-current-original-4']
+    assert pairs['post_json_seconds']['wins'] == 27 and pairs['wall_seconds']['wins'] == 14
+    assert current['profile_invocations_exact'] == 2000
+    profile = json.loads((experiment / 'profile-summary.json').read_text())
+    assert set(profile['rows']) == {'before', 'after'}
+    assert all(x['all1000_index_arrays_and_final_rust_output_exact'] and x['profiled_timings_excluded'] for x in profile['rows'].values())
+
 report = json.loads((packet / 'results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json').read_text())
 assert report['summary']['mech-after-4']['median_post_json_seconds'] == 0.003140833
 assert report['matched_native_reference']['median_seconds'] == 0.001651875

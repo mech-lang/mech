@@ -1,6 +1,6 @@
 # Related-post native compiler review
 
-Current integration: [related-post compiler plus #973](integration/README.md), **IR231 / work115 / ABI41 / image9**, integrates #973 through3697147756 and targets its branch through [PR990](https://github.com/mech-lang/mech/pull/990). It also fixes the inherited reduction bug that bypassed final source payload updates. Current validation includes841 GPU passes with two inherited failures,133 exact scalar/compression control rows,434 loader fixtures, finite-budget/old-Object checks, runtime-only and unmodified generated-app execution. All four related-post native text sections remain byte-identical to measured IR228; **fresh randomized measurements** put current IR231 at **2.961916 ms /1.811938× matched Rust** and **38.391708 ms /1.551089× whole-process Rust**. The two direct-Boolean experiments are preserved as unselected source patches: their processing wins are14/31 and17/31 against this parent, with higher instruction counts. IR208 stays selected. Older IR228/227/225/223 measurements and the corrected control audit remain separately labeled; the timing table below is historical IR223 evidence.
+Current integration: [related-post compiler plus #973](integration/README.md), **IR235 / work115 / ABI41 / image9**, through176d8134133 and targeting [PR990](https://github.com/mech-lang/mech/pull/990). The compiler now lowers the unchanged mask-reuse source as native code: **2.891875 ms /1.809448× fastest matched Rust**, **37.271916 ms /1.519163× fastest full-process Rust**, against same-cohort references1.598208 ms and24.534500 ms. This repairs the slow source variant; its gain over original-source IR235 (2.944250 ms) is small and its full-process paired result is inconclusive. Current qualification is849 GPU passes with two inherited failures,133 exact control rows,558 loader/source fixtures,65 decoded bundle files and2000 exact profile invocations. All349 latest cohort outputs are exact. All four original-source native text sections are byte-identical to IR234. The source stays unselected and IR208 remains the selected speed checkpoint. Older results and failed receipts remain separately pinned; the table below is historical IR223 evidence.
 
 
 This branch contains the accepted compiler optimization series for
@@ -15,7 +15,7 @@ The measured compiler is **5925a2b3a4fd4dfcca7ada541e37a69d514171f8**
 matching the fastest eligible Rust implementation in both processing and
 complete fresh-process time.
 
-## Current measurements
+## Retained IR223 measurements
 
 These are the retained 15-round confirmation medians on the same Apple M3 and
 the same 5,000-post input. The continuous post-JSON timer includes input

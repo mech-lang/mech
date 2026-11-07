@@ -1,0 +1,60 @@
+{
+  "status": "passed",
+  "runtime_only_scalar_and_program_builds": true,
+  "runtime_only_full5000_exact_rust": true,
+  "generated_main_executed_unmodified": true,
+  "manifest_pins_exact": true,
+  "generated_main_sha256": "c549dbf3e29636d7d7293bd7f269f18019ba8fa30f8989e30f09887987a9eb8d",
+  "actual_native_object_exports_audited": true,
+  "cases": [
+    {
+      "case": "success",
+      "command": [
+        "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/managed-app/runner-standard",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "--",
+        "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/managed-app/success-input.json"
+      ],
+      "exit": 0,
+      "stdout": "6d6563682d736e617073686f742d7631008acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a480500000000000000010000000008000000000000002a00000000000000\n",
+      "stderr": ""
+    },
+    {
+      "case": "overflow",
+      "command": [
+        "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/managed-app/runner-standard",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "--",
+        "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/managed-app/overflow-input.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "canonical native program: Control(Arithmetic { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None } })\n"
+    },
+    {
+      "case": "work-denial",
+      "command": [
+        "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/managed-app/runner-standard",
+        "0",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "--",
+        "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/managed-app/work-denial-input.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "canonical native program: Base(WorkLimit { phase: Setup, required: 284, limit: 0 })\n"
+    }
+  ],
+  "compiler_build_sha256": "0637d468ec65385f67becdb53164e89abe1d90501af943a3a8390b52e38b390d"
+}
