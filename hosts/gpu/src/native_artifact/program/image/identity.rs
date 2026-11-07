@@ -408,7 +408,9 @@ fn selected_template(
 // IR241 scalar-home retirement remains an independently measured experiment.
 // IR242 integrates PR973/IR201 selected normalized Boolean operands and current
 // smaller read windows bounded by the same checked mathematical sum.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 242;
+// IR243 shares immutable call authorities and exact retained port certificates.
+// Refresh still validates current types/lifetimes and creates fresh port state.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 243;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

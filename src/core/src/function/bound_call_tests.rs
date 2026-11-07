@@ -83,6 +83,12 @@ fn call(lifetime: DimensionLifetime) -> BoundCall {
 fn bound_call_refresh_keeps_retained_shapes_and_independent_operation_contracts() {
     let original = call(DimensionLifetime::Turn);
     let retained = original.clone();
+    assert!(core::ptr::eq(
+        original.operation_descriptor(),
+        retained.operation_descriptor()
+    ));
+    assert!(core::ptr::eq(original.inputs(), retained.inputs()));
+    assert!(core::ptr::eq(original.outputs(), retained.outputs()));
     for extent in [0, 3, 8, 2] {
         let current = descriptor(DimensionLifetime::Turn, extent);
         let refreshed = original
@@ -97,12 +103,24 @@ fn bound_call_refresh_keeps_retained_shapes_and_independent_operation_contracts(
         assert_eq!(refreshed.implementation(), original.implementation());
         assert_eq!(refreshed.origin(), original.origin());
         assert_eq!(refreshed.target(), original.target());
+        assert!(core::ptr::eq(
+            refreshed.operation_descriptor(),
+            original.operation_descriptor()
+        ));
+        assert!(!core::ptr::eq(refreshed.inputs(), original.inputs()));
+        assert!(!core::ptr::eq(refreshed.outputs(), original.outputs()));
         assert_eq!(original, retained);
     }
     let mut altered = original.clone();
     let mut contract = altered.operation_descriptor().contract.clone();
     contract.outputs[0].change_detection = ChangeDetectionPolicy::AlwaysChanged;
     altered.resolve_operation_contract(&contract).unwrap();
+    assert!(!core::ptr::eq(
+        altered.operation_descriptor(),
+        original.operation_descriptor()
+    ));
+    assert!(core::ptr::eq(altered.inputs(), original.inputs()));
+    assert!(core::ptr::eq(altered.outputs(), original.outputs()));
     assert_ne!(
         altered.operation_descriptor(),
         original.operation_descriptor()

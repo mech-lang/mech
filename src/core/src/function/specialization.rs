@@ -4,10 +4,11 @@ use alloc::{
     format,
     rc::Rc,
     string::{String, ToString},
+    sync::Arc,
     vec::Vec,
 };
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, rc::Rc, string::String, vec::Vec};
+use std::{boxed::Box, rc::Rc, string::String, sync::Arc, vec::Vec};
 
 use crate::{
     CallMemoryPlan, CallMemoryPlanningRequest, ConversionPlan, CurrentMemoryFootprint,
@@ -668,15 +669,44 @@ pub enum BoundImplementationId {
 /// implementation. It contains no allocation or lifetime policy.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BoundCall {
+    authority: Arc<BoundCallAuthority>,
+    ports: Arc<BoundCallPorts>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct BoundCallAuthority {
     operation: ResolvedOperationDescriptor,
     origin: BoundCallOrigin,
-    inputs: Box<[ResolvedValueDescriptor]>,
-    outputs: Box<[ResolvedValueDescriptor]>,
     implementation: BoundImplementationId,
     target: ExecutionTarget,
 }
 
+#[derive(Debug, Eq, PartialEq)]
+struct BoundCallPorts {
+    inputs: Box<[ResolvedValueDescriptor]>,
+    outputs: Box<[ResolvedValueDescriptor]>,
+}
+
 impl BoundCall {
+    fn from_parts(
+        operation: ResolvedOperationDescriptor,
+        origin: BoundCallOrigin,
+        inputs: Box<[ResolvedValueDescriptor]>,
+        outputs: Box<[ResolvedValueDescriptor]>,
+        implementation: BoundImplementationId,
+        target: ExecutionTarget,
+    ) -> Self {
+        Self {
+            authority: Arc::new(BoundCallAuthority {
+                operation,
+                origin,
+                implementation,
+                target,
+            }),
+            ports: Arc::new(BoundCallPorts { inputs, outputs }),
+        }
+    }
+
     /// Refreshes only live extent witnesses. The selected operation,
     /// implementation, schemas, and program-lifetime dimensions remain
     /// immutable semantic authority.
@@ -685,7 +715,10 @@ impl BoundCall {
         inputs: Box<[ResolvedValueDescriptor]>,
         outputs: Box<[ResolvedValueDescriptor]>,
     ) -> MResult<Self> {
-        for (expected, actual) in [(&self.inputs, &inputs), (&self.outputs, &outputs)] {
+        for (expected, actual) in [
+            (&self.ports.inputs, &inputs),
+            (&self.ports.outputs, &outputs),
+        ] {
             if expected.len() != actual.len()
                 || expected
                     .iter()
@@ -699,9 +732,8 @@ impl BoundCall {
             }
         }
         Ok(Self {
-            inputs,
-            outputs,
-            ..self.clone()
+            authority: Arc::clone(&self.authority),
+            ports: Arc::new(BoundCallPorts { inputs, outputs }),
         })
     }
 
@@ -715,14 +747,14 @@ impl BoundCall {
         call.validate()?;
         validate_bound_descriptors(&call.converted_inputs, &inputs, "input")?;
         validate_bound_descriptors(&call.outputs, &outputs, "output")?;
-        Ok(Self {
-            operation: call.operation.clone(),
-            origin: BoundCallOrigin::ResolvedOverload(call.overload_id),
+        Ok(Self::from_parts(
+            call.operation.clone(),
+            BoundCallOrigin::ResolvedOverload(call.overload_id),
             inputs,
             outputs,
-            implementation: BoundImplementationId::Runtime(runtime_function),
+            BoundImplementationId::Runtime(runtime_function),
             target,
-        })
+        ))
     }
 
     pub fn syntax_directed(
@@ -732,14 +764,14 @@ impl BoundCall {
         runtime_function: RuntimeFunctionId,
         target: ExecutionTarget,
     ) -> MResult<Self> {
-        Ok(Self {
+        Ok(Self::from_parts(
             operation,
-            origin: BoundCallOrigin::SyntaxDirected,
+            BoundCallOrigin::SyntaxDirected,
             inputs,
             outputs,
-            implementation: BoundImplementationId::Runtime(runtime_function),
+            BoundImplementationId::Runtime(runtime_function),
             target,
-        })
+        ))
     }
 
     pub fn artifact_operation(
@@ -793,64 +825,67 @@ impl BoundCall {
             )
             .with_compiler_loc());
         }
-        Ok(Self {
+        Ok(Self::from_parts(
             operation,
-            origin: BoundCallOrigin::ArtifactOperation,
+            BoundCallOrigin::ArtifactOperation,
             inputs,
             outputs,
-            implementation: BoundImplementationId::Resident(resident_operation),
+            BoundImplementationId::Resident(resident_operation),
             target,
-        })
+        ))
     }
 
-    pub const fn operation(&self) -> OperationId {
-        self.operation.id
+    pub fn operation(&self) -> OperationId {
+        self.authority.operation.id
     }
 
-    pub const fn operation_descriptor(&self) -> &ResolvedOperationDescriptor {
-        &self.operation
+    pub fn operation_descriptor(&self) -> &ResolvedOperationDescriptor {
+        &self.authority.operation
     }
 
     pub fn resolve_operation_contract(
         &mut self,
         contract: &OperationContractDeclaration,
     ) -> MResult<()> {
-        self.operation.contract = contract.clone();
-        self.operation.validate()
+        // Provider resolution changes this certificate only. Other plans may
+        // retain the original operation, and their current ports stay intact.
+        let authority = Arc::make_mut(&mut self.authority);
+        authority.operation.contract = contract.clone();
+        authority.operation.validate()
     }
 
-    pub const fn origin(&self) -> &BoundCallOrigin {
-        &self.origin
+    pub fn origin(&self) -> &BoundCallOrigin {
+        &self.authority.origin
     }
 
     pub fn inputs(&self) -> &[ResolvedValueDescriptor] {
-        &self.inputs
+        &self.ports.inputs
     }
 
     pub fn outputs(&self) -> &[ResolvedValueDescriptor] {
-        &self.outputs
+        &self.ports.outputs
     }
 
-    pub const fn implementation(&self) -> &BoundImplementationId {
-        &self.implementation
+    pub fn implementation(&self) -> &BoundImplementationId {
+        &self.authority.implementation
     }
 
-    pub const fn runtime_function(&self) -> Option<RuntimeFunctionId> {
-        match &self.implementation {
+    pub fn runtime_function(&self) -> Option<RuntimeFunctionId> {
+        match &self.authority.implementation {
             BoundImplementationId::Runtime(function) => Some(*function),
             BoundImplementationId::Resident(_) => None,
         }
     }
 
-    pub const fn resident_operation(&self) -> Option<&crate::ResidentOperationKey> {
-        match &self.implementation {
+    pub fn resident_operation(&self) -> Option<&crate::ResidentOperationKey> {
+        match &self.authority.implementation {
             BoundImplementationId::Runtime(_) => None,
             BoundImplementationId::Resident(operation) => Some(operation),
         }
     }
 
-    pub const fn target(&self) -> ExecutionTarget {
-        self.target
+    pub fn target(&self) -> ExecutionTarget {
+        self.authority.target
     }
 }
 
