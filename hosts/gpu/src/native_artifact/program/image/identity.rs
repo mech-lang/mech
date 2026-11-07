@@ -405,7 +405,10 @@ fn selected_template(
 // canonical schema nodes into one buffer and reuses their bytes for table keys.
 // IR240 integrates PR973/IR200 current transferred child-argument admission facts.
 // IR239 Boolean branch lowering remains a separate unselected experiment.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 240;
+// IR241 scalar-home retirement remains an independently measured experiment.
+// IR242 integrates PR973/IR201 selected normalized Boolean operands and current
+// smaller read windows bounded by the same checked mathematical sum.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 242;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

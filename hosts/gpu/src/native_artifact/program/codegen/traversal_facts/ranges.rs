@@ -27,7 +27,7 @@ impl State {
         // recursively chase relations or infer a bound from one phi arm.
         let mut upper = match terms.terms[value] {
             Expr::Bounded(_, _, upper) => upper,
-            Expr::Compare(..) | Expr::Boolean(..) => 1,
+            Expr::Compare(..) | Expr::Boolean(..) | Expr::And(..) | Expr::Or(..) => 1,
             _ => u64::MAX,
         };
         upper = upper.min(self.capture_upper(terms, value).unwrap_or(u64::MAX));

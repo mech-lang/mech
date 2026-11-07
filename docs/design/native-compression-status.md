@@ -1,5 +1,86 @@
 # Native compression milestone
 
+**R181 retains selected compound predicates and reuses checked source windows.**
+The actual match-extension assertion was a conjunction. The shared fact engine
+previously treated it as an opaque Boolean, losing both successful conditions.
+Normalized true AND / false OR now supply their forced operands. A checked sum
+bounded by the current input length also bounds smaller current operands.
+Wrapping sums, changed words, unknown ordering and different views supply no
+permission. All eager source operations, lexical assertions, residual shape/view
+checks, ownership, source prices and current funding remain.
+
+All **20 matched medians improve**, geometric elapsed **−0.910814%**. The unchanged
+1.05 gates pass. Paired adverse blocks remain; independent rounds are not
+compounded. Current before/after ratios share the same fresh reference.
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.712139× | 3.704116× | -0.216131% |
+| reymont-prefix-16384 | 4.457244× | 4.435999× | -0.476646% |
+| random-32769 | 5.084448× | 4.941659× | -2.808356% |
+| 16384-distribution-change | 6.446782× | 6.422283× | -0.380025% |
+| repeated-32769 | 3.047536× | 3.036298× | -0.368775% |
+| 33027-periodic-window | 3.562616× | 3.526867× | -1.003465% |
+| eight-literals | 4.647733× | 4.610088× | -0.809978% |
+
+Actual child predicates rise **12 → 60**. One inspected machine gate falls
+**29 → 17 instructions / three → one comparisons / five → zero SP accesses**.
+Two captured control gates grow to 41 and 38 instructions, with more tagged
+comparisons. These are source-tagged static spans; global layout/hoisting and
+register allocation also change. Forty-eight source predicates are not forty-eight
+removed machine compares. Text shrinks **1,864 B**, stack **64 B**.
+
+The separate hardware cohort has **seven lower / thirteen higher instruction
+medians**, with seven cycle medians higher. Natural32 instructions rise 0.284239%,
+random32 0.521470%; repeated32 and periodic33 fall about 0.27% and 0.25%.
+All contrary measurements remain. Allocation requests, requested bytes,
+reallocations and incremental usable peak are unchanged on all 20 cases.
+Live-before/live-after/peak have a fixed **+16 B** offset, cause unproved.
+CPU and heap-probe RSS/physical cohorts remain separate; no memory saving is claimed.
+
+Ten focused / **649 GPU** / all **232 CI-selected names executed** pass, with the
+same seven inherited exclusions. Unchanged **236 component / eight composition /
+one real-capacity path**, 12 scalar, 15 architecture/catalog, runtime-only,
+formatting, warnings-as-errors and 132 workflow checks pass. Twenty matched
+full-native original/decoded witness rows preserve work, results, error origins,
+aliases, publication and recovery; resident results/rejections agree.
+
+Five exact-current profiles retain **17,545 complete calls**. Disk exhaustion
+affects only the final XML export and its driver receipt after all five recordings
+complete. The existing trace exports recover without rerunning compression or
+recording. Every profile case reports managed cleanup zero; the interrupted
+combined session's final graceful-Q receipt is absent. Primary, counter and generic
+sessions independently close at zero. Cleanup frees about 2.1 GB of verified
+replay duplicates and obsolete builds while preserving source/evidence, both
+measurement compilers/workers/Objects and frozen dependencies.
+
+The pinned reference binary has eighteen hashed generated-function intervals
+spanning 122,456 B and 49 static calls to sixteen generated targets. Mech's Object
+has the main entry and two small word-collection symbols, with reported generated
+text 8,659,628 B. These static boundaries differ and do not establish an execution
+ratio. They identify phase outlining as a later structural research candidate.
+
+Parent `54280db43e2d26e2554ff2651f24e929e11571c4`; measured source
+`ebedd713669e8e2a424ac35163c2eb480c368be0`; IR/work/ABI/MBC **201/107/39/14**.
+All nine changed compiler/test/CI files reconstruct from the public parent and
+patch, matching compiled source bytes. Independent map compilation repeats the
+whole Object byte-for-byte. Frozen R145 dependencies, original source/MBC,
+algorithm/tables/depth/nice/near-EOF limits, real scratch capacities, allocation
+sites, output capacity 13 clear/reuse, aliases, mimalloc and full API timing remain.
+Largest input is 33,027 B; no full-scale run is used.
+
+[Full R181 report](native-conjoined-window-facts.md) contains all 20 timing/counter
+rows, machine spans, scalar/profile controls, exact commands, resource recovery
+and skipped coverage. All 38 public archives and their consolidated receipt bundle
+match server hashes. Fresh public replay verifies 4,879 file occurrences across
+1,159 paths and reproduces REPORT.md and results.json byte-for-byte. The downloaded
+bundle independently verifies all 38 receipts. Evidence remains outside source Git.
+One optimization commit in existing draft #973; no new PR. Ordinary hosted CI is cancelled by
+instruction and review automation preserved. The wider mutable-parent/child brief
+remains partial at opaque returns and fresh captured handoffs; the 1× goal is active.
+
+## Historical R180 checkpoint
+
 **R180 proves current-argument predicates at native child entry.** Twelve source
 predicates are established after the initializer transfers the current arguments.
 Checked mathematical addition supplies order and constant lower bounds; wrapping
