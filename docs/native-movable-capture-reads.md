@@ -58,4 +58,3 @@ matrix, finite-prefix, error and retry cases remain exercised.
 
 Performance is unmeasured until the frozen candidate completes qualification and
 both continuous post-JSON and complete-process randomized cohorts.
-

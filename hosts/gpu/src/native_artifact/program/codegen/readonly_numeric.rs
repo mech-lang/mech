@@ -38,7 +38,7 @@ pub(in crate::native_artifact) struct Report {
     pub movable_capture_reads: Vec<(usize, usize)>,
     pub ordinary_capture_reads: Vec<(usize, usize)>,
     #[serde(skip)]
-    pub capture_read_candidates: Vec<super::numeric_captured_reads::Candidate>,
+    pub(super) capture_read_candidates: Vec<super::numeric_captured_reads::Candidate>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub source_guarded_read_packs: Vec<usize>,
     pub fully_lowered_read_packs: Vec<usize>,
