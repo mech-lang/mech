@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-movable-capture-reads-tests-20261107-v3/mech_gpu-tests",
+    "cfg_cleanup_program_local_homes",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 0.015072833048179746
+}

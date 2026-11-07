@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/sample",
+    "3682",
+    "8",
+    "1",
+    "-mayDie",
+    "-fullPaths",
+    "-file",
+    "/private/tmp/mech-related-capture-all-thread-profile-20261107-v1/selected-ir242/sample.txt"
+  ],
+  "pid": 3682,
+  "exit": 0,
+  "seconds": 5.225205291993916,
+  "stdout": "",
+  "stderr": "Sampling process 3682 for 8 seconds with 1 millisecond of run time between samples\nCouldn't find _sigtramp symbol in expected dylibs\nFound _sigtramp symbol after 7 tries\nSampling completed, processing symbols...\nSample analysis of process 3682 written to file /private/tmp/mech-related-capture-all-thread-profile-20261107-v1/selected-ir242/sample.txt\n"
+}

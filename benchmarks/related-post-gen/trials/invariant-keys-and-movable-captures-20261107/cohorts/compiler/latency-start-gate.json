@@ -1,0 +1,16 @@
+{
+  "quiet": true,
+  "gpu_passed": 877,
+  "inherited_failures": 2,
+  "new_failures": 0,
+  "CI_executed_passed": 382,
+  "controls_exact": 133,
+  "candidate_edges_exact": 124,
+  "source_candidate_qualified": true,
+  "seed": 990248,
+  "samples": 31,
+  "variants": 11,
+  "process_snapshot_sha256": "0ddbe4ec86518560355f5387b928e322a0f4e715b05dcef07c9b7776674f21e1",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-movable-capture-reads-cohort-20261107-v3/latency-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation application arguments are retained locally. All gate predicates are published unchanged."
+}

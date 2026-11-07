@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-movable-capture-reads-runners-20261107-v3/reuse-4/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-capture-all-thread-profile-20261107-v1/candidate-ir248/runner-profile",
+    "--output",
+    "/private/tmp/mech-related-capture-all-thread-profile-20261107-v1/candidate-ir248/native-link-audit.json"
+  ],
+  "exit": 0,
+  "seconds": 0.07189962500706315,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 53, \"normalized_text_sha256\": \"3b31e188d66c51da1e9b79a517cc4cc34dbe40575832212db7b54f4064202cc7\"}\n",
+  "stderr": ""
+}

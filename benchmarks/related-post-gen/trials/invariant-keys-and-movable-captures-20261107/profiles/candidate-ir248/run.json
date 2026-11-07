@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-11-07T08:15:40.584715+00:00",
+  "command": [
+    "/private/tmp/mech-related-capture-all-thread-profile-20261107-v1/candidate-ir248/runner-profile",
+    "/private/tmp/mech-related-capture-all-thread-profile-20261107-v1/candidate-ir248/build/source.mec",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "/private/tmp/mech-related-capture-all-thread-profile-20261107-v1/candidate-ir248/output.json",
+    "1500"
+  ],
+  "pid": 3684,
+  "exit": 0,
+  "diagnostic_wall_seconds": 5.349615041865036,
+  "iterations": 1500,
+  "every_iteration_indices_checked": true,
+  "first_last_full_json_checked": true,
+  "final_json_exact_Rust": true,
+  "input_sha256": "500530b81cb81c5b1a5e48aa30de6a89ba0a350460ad826c4c7bb023e6e46cb8",
+  "oracle_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+  "source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+  "executable_sha256": "1b9ccf3ae61f1168fa7b5de8241cb5c4959113e136739ee72d7d8580ce32aa44",
+  "sample_exit": 0,
+  "sample_file_exists": true,
+  "native_link_audit": "passed",
+  "profile_timings_excluded": true,
+  "scope": "All live threads sampled by macOS sample during repeated full evaluations. Driver cloning and verification are included; descriptor is restored once. This is not the continuous post-JSON scope or a latency/resource cohort. Sample call-tree counts are not precise CPU-time percentages."
+}

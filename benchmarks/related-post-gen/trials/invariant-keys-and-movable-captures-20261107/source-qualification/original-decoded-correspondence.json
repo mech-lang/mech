@@ -1,0 +1,18 @@
+{
+  "all13_bundle_files_byte_identical": true,
+  "files": {
+    "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+    "image-binding.bin": "583317f56163b0d9fb7eb46610f2a0d792b0581396d8bf98fd65e5f9c8272c52",
+    "frame-summary.json": "3a22e88e28d4660e98dc84d6b7a059f6d9c7fbd8b5d33ab2a871e310ea0d8891",
+    "artifact.mecb": "724ab170dd637d17ecdebe58490a16742180b1b709af41827279900a0b0048e8",
+    "source.mec": "f75a90d1271a414141b2113b86161aa323a42afc99d890b9fb12d916c8cd3f96",
+    "metadata.json": "3cc84bac8b45808337242febcdef96dd9f01461b367e4e99b40ce68f2c10d932",
+    "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+    "native-metadata-binding.bin": "ffbff24914364b3d2969c279b46d89c66ac92cb8c38f2ab65ea4b33c34ea9a10",
+    "native-metadata.bin": "9ea13a745a5852105ef9b2fb398a409f8351874d7266c4c5587bf7ba5e89d31c",
+    "linked.rs": "6649e7db2a3c426853ed2a44024f013152e620a88f387c346b6e543911a423c7",
+    "object.o": "db3ee8d2b0c744279672c7a78d26beed91ea790013e76c35e99008e529139b36",
+    "descriptor.json": "df888fbc585a0d609675fc2322cd14eaf0828c40aba179f5f457f03810b5c164",
+    "map-facts.txt": "add22cec093f81e0ad8e99bf181e9ac6322f99b17575c768fcd4834a5dc055a2"
+  }
+}

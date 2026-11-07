@@ -1,0 +1,208 @@
+{
+  "scope": "All live threads sampled by macOS sample during repeated full evaluations. Driver cloning and verification are included; descriptor is restored once. This is not the continuous post-JSON scope or a latency/resource cohort. Sample call-tree counts are not precise CPU-time percentages.",
+  "profile_timings_excluded": true,
+  "iterations": 1500,
+  "observed_thread_ids": 346,
+  "collapsed_leaf_rows_reported_at_least5": 80,
+  "top_leaf_symbols": [
+    {
+      "symbol": "__ulock_wait",
+      "image": "libsystem_kernel.dylib",
+      "leaf_snapshots": 4222
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_1282",
+      "image": "runner-profile",
+      "leaf_snapshots": 1283
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1",
+      "image": "runner-profile",
+      "leaf_snapshots": 338
+    },
+    {
+      "symbol": "_xzm_free",
+      "image": "libsystem_malloc.dylib",
+      "leaf_snapshots": 264
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_utf8_histogram",
+      "image": "runner-profile",
+      "leaf_snapshots": 260
+    },
+    {
+      "symbol": "_platform_memmove",
+      "image": "libsystem_platform.dylib",
+      "leaf_snapshots": 251
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_256",
+      "image": "runner-profile",
+      "leaf_snapshots": 246
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_801",
+      "image": "runner-profile",
+      "leaf_snapshots": 223
+    },
+    {
+      "symbol": "_dyld_start",
+      "image": "dyld",
+      "leaf_snapshots": 206
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_572",
+      "image": "runner-profile",
+      "leaf_snapshots": 156
+    },
+    {
+      "symbol": "_xzm_xzone_malloc",
+      "image": "libsystem_malloc.dylib",
+      "leaf_snapshots": 144
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_459",
+      "image": "runner-profile",
+      "leaf_snapshots": 105
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_107",
+      "image": "runner-profile",
+      "leaf_snapshots": 92
+    },
+    {
+      "symbol": "_RNvNtNtNtCsVyEinxC6gy_11mech_engine8resident6budget7workers11lock_escrow",
+      "image": "runner-profile",
+      "leaf_snapshots": 87
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_1166",
+      "image": "runner-profile",
+      "leaf_snapshots": 83
+    },
+    {
+      "symbol": "_free",
+      "image": "libsystem_malloc.dylib",
+      "leaf_snapshots": 79
+    },
+    {
+      "symbol": "_RNvNtNtNtNtNtCsgZ3hYs42noG_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+      "image": "runner-profile",
+      "leaf_snapshots": 78
+    },
+    {
+      "symbol": "_malloc_zone_malloc",
+      "image": "libsystem_malloc.dylib",
+      "leaf_snapshots": 68
+    },
+    {
+      "symbol": "<deduplicated_symbol>",
+      "image": "libsystem_malloc.dylib",
+      "leaf_snapshots": 67
+    },
+    {
+      "symbol": "_RNvXs2_NtNtCs5oShGXIJE0n_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+      "image": "runner-profile",
+      "leaf_snapshots": 49
+    },
+    {
+      "symbol": "_platform_memset",
+      "image": "libsystem_platform.dylib",
+      "leaf_snapshots": 43
+    },
+    {
+      "symbol": "_RNvXsa_NtCsgKscDXrlV49_5alloc3vecINtB5_3VecNtCsg2Tlac8ZPZa_6runner4PostENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneBH_",
+      "image": "runner-profile",
+      "leaf_snapshots": 40
+    },
+    {
+      "symbol": "DYLD-STUB$$free",
+      "image": "runner-profile",
+      "leaf_snapshots": 34
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_1099",
+      "image": "runner-profile",
+      "leaf_snapshots": 33
+    },
+    {
+      "symbol": "pthread_mutex_trylock",
+      "image": "libsystem_pthread.dylib",
+      "leaf_snapshots": 32
+    }
+  ],
+  "native_leaf_symbols": [
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_1282",
+      "image": "runner-profile",
+      "leaf_snapshots": 1283
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1",
+      "image": "runner-profile",
+      "leaf_snapshots": 338
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_utf8_histogram",
+      "image": "runner-profile",
+      "leaf_snapshots": 260
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_256",
+      "image": "runner-profile",
+      "leaf_snapshots": 246
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_801",
+      "image": "runner-profile",
+      "leaf_snapshots": 223
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_572",
+      "image": "runner-profile",
+      "leaf_snapshots": 156
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_459",
+      "image": "runner-profile",
+      "leaf_snapshots": 105
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_107",
+      "image": "runner-profile",
+      "leaf_snapshots": 92
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_1166",
+      "image": "runner-profile",
+      "leaf_snapshots": 83
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_1099",
+      "image": "runner-profile",
+      "leaf_snapshots": 33
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_1053",
+      "image": "runner-profile",
+      "leaf_snapshots": 28
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_671",
+      "image": "runner-profile",
+      "leaf_snapshots": 17
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_505",
+      "image": "runner-profile",
+      "leaf_snapshots": 6
+    }
+  ],
+  "query_leaf_snapshots": 1283,
+  "limits": [
+    "Counts are sample observations, not CPU-time percentages.",
+    "The profile includes driver cloning/verification and initial load/restore; it is not the strict continuous post-JSON scope.",
+    "Threads that start and exit between sampling points may be missed.",
+    "Sampling perturbs execution; all profile timings are excluded from performance/resource claims."
+  ]
+}

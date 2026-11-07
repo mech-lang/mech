@@ -1,0 +1,118 @@
+{
+  "status": "passed",
+  "source": "/private/tmp/mech-related-invariant-key-source-runners-20261107-v1/242-reads-4/build/source.mec",
+  "source_sha256": "f75a90d1271a414141b2113b86161aa323a42afc99d890b9fb12d916c8cd3f96",
+  "compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+  "compiler_identity": "IR242/work115/ABI41/image9",
+  "compiler_qualification_reused_only_identical_code_and_flags": {
+    "status": "passed",
+    "loader_fixtures_exact": 558,
+    "fixtures": {
+      "edges-after-4-full-catalog/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "c0532784cc6cbedcdb96ce8fc498bc6d04167421736b306db6253a22600b0dae"
+      },
+      "edges-after-4-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "f0d33637676f13fe7cdbd916effff1cddce631a52c30ab3c55e2e5caef2ddb46"
+      },
+      "edges-after-4-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "78c8c9eec5fc348c73a10309d67abb2616c0987a4a69c12a289f77a24f994d12"
+      },
+      "edges-after-8-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "276f0b4581fc04d4c6f571b9f489eaec1984ff1520a7bda416b52246349e0347"
+      },
+      "edges-after-8-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "211d575496b7133caed9bb63cbf41e2636f172da2c71a97210678f59dd72b82b"
+      },
+      "edges-compact-4-full-catalog/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "93dd0142521dd100c7e9cb69d4ce99c634d6134abed28ae8d7d042bbbe0d96be"
+      },
+      "edges-compact-4-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "ac3a15f31f73fc15f2d36def9754eb926fe047952b460e540e4dfcf2cec32f9e"
+      },
+      "edges-compact-4-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "7119bf562862cf54ea5ef23533a818aedfb38ecb5714ebe7b4b6b916a3406bd9"
+      },
+      "edges-compact-8-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "53693dd0048a62e68a4cf860e347a9c3abed9e81d81a822bb737db4568f86ea7"
+      },
+      "edges-compact-8-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "b3ecc3d409fd13f6ed1eeea4073e511464b89540b8794c54aab042ddf07e6e1a"
+      },
+      "edges-reuse-4-full-catalog/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "428f84f7f16bb8806bab3edfb8c0a2ea779575673af4534f7e13987c08402ea1"
+      },
+      "edges-reuse-4-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "9daa9eb88de68123717e72b29dda07821d39a035e862146b3b4bcc9676e9c184"
+      },
+      "edges-reuse-4-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "a727c24056ec696f0557beaff6ee16249440c72fa2105c6f13bc463e9d446ca7"
+      },
+      "after-4/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "6324e5b54b9e77846dd132085533f5af2b1f86aba58fe70662433f5fd582c72b"
+      },
+      "after-8/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "7f2403565f600adef21bd577e1ef134c827a97bee16e97006233cc15d1f62eff"
+      },
+      "compact-4/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "f4dbb9995b95298c1916695aa65f120bd2a4963687e75103cbbe1fb4397129c6"
+      },
+      "compact-8/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "766be8ae01ec07e449273117fd34c843979479c03b8c4683df7b760c4c9d2fd5"
+      },
+      "reuse-4/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "a047b2e79eec9234456998a01fc1a2c946b4d22bb6daf5dcb11848be4d62b6ac"
+      }
+    },
+    "decoded_bundle_files_exact": 65,
+    "finite_denials_exact": 48,
+    "finite_small_full_successes_exact": 12,
+    "forged_frontier_rejections": 16,
+    "gpu_passed": 863,
+    "inherited_failures": [
+      "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+      "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+    ],
+    "ci_selected_names_passed": 368,
+    "core_passed": 393,
+    "relevant_engine_passed": 289,
+    "source_layers_reused_only_with_identical_source_and_flags": true,
+    "scalar_semantic_control_rows_exact": 128,
+    "compression_all_nontiming_rows_exact": 5,
+    "selected_source_additional_finite_denials_exact": 24,
+    "total_finite_denials_exact": 72,
+    "selected_source_additional_finite_successes_exact": 6,
+    "total_finite_successes_exact": 18,
+    "selected_source_additional_forged_frontier_rejections": 16,
+    "total_forged_frontier_rejections": 32,
+    "runtime_only_selected_source_full5000_exact": true,
+    "unmodified_generated_app_passed": true,
+    "scalar_only_passed": true,
+    "genuine_old_objects_rejected": 2
+  },
+  "new_source_original_decoded_files_exact": 13,
+  "loader_edges_exact": 124,
+  "finite_denials_exact": 24,
+  "finite_small_full_successes_exact": 6,
+  "forged_frontier_rejections": 16,
+  "runtime_only_first10_full5000_exact": true,
+  "source_selection_pending_confirmation_with_new_compiler_trial": true,
+  "selected": false
+}

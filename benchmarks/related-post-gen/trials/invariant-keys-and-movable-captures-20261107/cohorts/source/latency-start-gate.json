@@ -1,0 +1,11 @@
+{
+  "quiet": true,
+  "source_edges_exact": 124,
+  "metrics_reverse_patch_exact_variants": 4,
+  "seed": 99024801,
+  "samples": 31,
+  "variants": 11,
+  "process_snapshot_sha256": "a96fc9f6b47792b481b809011d7fc98e18f74fee1a15b1ac12cbc8a3b4552920",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-invariant-key-source-cohort-20261107-v1/latency-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation application arguments are retained locally. All gate predicates are published unchanged."
+}

@@ -1,0 +1,8 @@
+{
+  "header": 1282,
+  "code_bytes": 27552,
+  "stack_bytes": 544,
+  "static_instructions": 6888,
+  "conditional_select_instructions": 37,
+  "stack_memory_instructions": 1276
+}
