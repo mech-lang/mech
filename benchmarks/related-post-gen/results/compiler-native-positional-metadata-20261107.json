@@ -1,0 +1,2024 @@
+{
+  "schema": "mech.related-post-gen.rejected-Cranelift-positional-metadata.v1",
+  "updated_utc": "2026-11-07T16:46:14.530549+00:00",
+  "source_commit": "ed66537a2a519ddc14f162dbc06a3cff7bcc5208",
+  "parent": "0784205e43177e03dd07cb8e4d2bafbbbe912ffc",
+  "branch": "codex/related-positional-metadata-20261107",
+  "identity": "IR266/work115/ABI41/image9",
+  "selected": false,
+  "goal_complete": false,
+  "default_backend_changed": false,
+  "LLVM_required_for_Cranelift": false,
+  "LLVM_tools_used_for_Cranelift_build_or_execution": false,
+  "optional_LLVM_regression_tools_explicitly_executed": true,
+  "change": "Private Rust-declared positional struct/enum consumers check the entire original field envelope, then invoke unchanged eager typed value readers. Reordered/partial/non-opted readers keep map decoding. No image-format or native-code change.",
+  "qualification": {
+    "CI": {
+      "frame_metadata_passed": true,
+      "actual_CI_names_exact": true,
+      "actual_CI_passed": 399
+    },
+    "engine": {
+      "new_tests_passed": true,
+      "all_image_tests_passed": true,
+      "new_summary": [
+        "test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 1238 filtered out; finished in 0.08s"
+      ],
+      "image_summary": [
+        "test result: ok. 73 passed; 0 failed; 0 ignored; 0 measured; 1191 filtered out; finished in 0.01s"
+      ]
+    },
+    "engine_new_positional_tests": 3,
+    "GPU_image_tests": 24,
+    "benchmark": {
+      "exact_outputs": 32,
+      "linked_audit_passed": true,
+      "runtime_only_GPU": true,
+      "LLVM_tools_used": false,
+      "typed_IR": 266,
+      "code_bytes": 886344,
+      "stack_bytes": 1536,
+      "query1282": {
+        "caller_template_bound": 112,
+        "cleanup": {
+          "after_blocks": 976,
+          "after_instructions": 6860,
+          "before_blocks": 1771,
+          "before_instructions": 82909,
+          "boolean_conditions_simplified": 25,
+          "boolean_phi_values": 19,
+          "constant_branches_removed": 0,
+          "dead_instructions_removed": 7986,
+          "dead_loads_removed": 249,
+          "dead_parameters_removed": 0,
+          "enabled": true,
+          "fixed_point": true,
+          "local_phi_parameters_removed": 326,
+          "local_phi_preheaders": 0,
+          "neutral_operations_removed": 1519,
+          "pre_codegen_data_passes": 0,
+          "rounds": 1,
+          "selected_range_branches_removed": 0,
+          "unsigned_intervals_combined": 0
+        },
+        "code_bytes": 31292,
+        "header": 1282,
+        "stack_bytes": 544,
+        "symbol": "mech_canonical_program_entry_v1_numeric_1282",
+        "unsigned_guards": 12
+      }
+    },
+    "loaders": {
+      "rows": {
+        "independent": {
+          "full5000_exact": true,
+          "edges_exact": 31
+        },
+        "json": {
+          "full5000_exact": true,
+          "edges_exact": 31
+        },
+        "full-catalog": {
+          "full5000_exact": true,
+          "edges_exact": 31
+        }
+      },
+      "full5000_plus_edges_exact": 96,
+      "finite_denials": 24,
+      "all_denials_exact_to_prior_and_zero_retention": true,
+      "LLVM_tools_used": false
+    },
+    "all133_scalar_DEFLATE_nontiming_fields_exact": true,
+    "optional_LLVM_4_native_tests_pass": true,
+    "full_GPU_suite_not_run_for_unselected_trial": true
+  },
+  "cohort": {
+    "samples": 744,
+    "all_outputs_exact": true,
+    "post_JSON_Rust_reference": {
+      "variant": "rust-ordered-ordered-mask",
+      "median_seconds": 0.001543833,
+      "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+      "eligible_variants": [
+        "rust",
+        "rust-mech-control-streaming",
+        "rust-mech-control-u32-casts",
+        "rust-mech-control-u8-ids-u32",
+        "rust-ordered-scan-only",
+        "rust-ordered-ordered",
+        "rust-ordered-mask-reuse",
+        "rust-ordered-ordered-mask",
+        "rust-ordered-ordered-mask-tables",
+        "rust-apple-m3",
+        "rust-mech-control-streaming-apple-m3",
+        "rust-mech-control-u32-casts-apple-m3",
+        "rust-mech-control-u8-ids-u32-apple-m3",
+        "rust-ordered-scan-only-apple-m3",
+        "rust-ordered-ordered-apple-m3",
+        "rust-ordered-mask-reuse-apple-m3",
+        "rust-ordered-ordered-mask-apple-m3",
+        "rust-ordered-ordered-mask-tables-apple-m3"
+      ]
+    },
+    "whole_process_Rust_reference": {
+      "variant": "rust-mech-control-u32-casts",
+      "median_seconds": 0.021112832939252257,
+      "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+    },
+    "rows": {
+      "mech-ir242-reuse-4": {
+        "median_seconds": 0.002692375,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "IR242_reuse_4",
+        "median_processing_plus_admission_seconds": 0.0028418329999999998,
+        "median_whole_process_seconds": 0.036579875042662024,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002850333,
+        "over_fastest": 1.743954818947386,
+        "over_rust": 0.30577216763747916,
+        "whole_process_over_fastest": 1.732589612578896,
+        "processing_plus_admission_over_fastest": 1.8407645127419867,
+        "processing_plus_admission_over_rust": 0.32274606489575947,
+        "post_json_over_fastest_matched_native": 1.846270289597385
+      },
+      "mech-ir264-cranelift-runtime-control": {
+        "median_seconds": 0.002674958,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "IR264_same_frontend_adapter_and_runtime_as_LLVM",
+        "median_processing_plus_admission_seconds": 0.002827583,
+        "median_whole_process_seconds": 0.03487483295612037,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002835292,
+        "over_fastest": 1.7326731583014483,
+        "over_rust": 0.3037941245180244,
+        "whole_process_over_fastest": 1.651831047802319,
+        "processing_plus_admission_over_fastest": 1.831534239778525,
+        "processing_plus_admission_over_rust": 0.32112769695339105,
+        "post_json_over_fastest_matched_native": 1.8365276555171446
+      },
+      "mech-llvm-reuse-4": {
+        "median_seconds": 0.002250125,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "LLVM_O3_apple_m3_native_image10_reuse-4",
+        "median_processing_plus_admission_seconds": 0.002401709,
+        "median_whole_process_seconds": 0.03620137507095933,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002410334,
+        "over_fastest": 1.4574924878532844,
+        "over_rust": 0.25554597658397615,
+        "whole_process_over_fastest": 1.7146621287214834,
+        "processing_plus_admission_over_fastest": 1.5556792736001885,
+        "processing_plus_admission_over_rust": 0.27276132298228983,
+        "post_json_over_fastest_matched_native": 1.561266017762284
+      },
+      "mech-ir266-reuse-4": {
+        "median_seconds": 0.002675916,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "Cranelift_checked_positional_metadata_readers",
+        "median_processing_plus_admission_seconds": 0.002826583,
+        "median_whole_process_seconds": 0.03645166684873402,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002835083,
+        "over_fastest": 1.7332936917399744,
+        "over_rust": 0.3039029242716237,
+        "whole_process_over_fastest": 1.7265170881433125,
+        "processing_plus_admission_over_fastest": 1.830886501324949,
+        "processing_plus_admission_over_rust": 0.32101412727322487,
+        "post_json_over_fastest_matched_native": 1.836392278180347
+      }
+    }
+  },
+  "resources": {
+    "mech-ir242-reuse-4-instrumented": {
+      "median_seconds": 0.002702667,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR242_reuse_4_instrumented",
+      "median_processing_plus_admission_seconds": 0.0028571250000000003,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 88569502,
+        "instructions_retired": 355424134,
+        "involuntary_context_switches": 16,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1786,
+        "peak_physical_footprint_bytes": 16023912,
+        "peak_resident_bytes": 26574848,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 20,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 14966701,
+          "instructions_per_cycle": 3.6662982710752354,
+          "instructions_retired": 54883104,
+          "lifetime_peak_physical_footprint_bytes_after": 16023912,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15909200,
+          "physical_footprint_bytes_before": 11927888,
+          "resident_bytes_after": 26476544,
+          "resident_bytes_before": 21069824,
+          "system_cpu_seconds": 0.000377875,
+          "user_cpu_seconds": 0.0036658333333333334
+        },
+        "live_requested_heap_bytes_after": 8498737,
+        "live_requested_heap_bytes_before": 7776895,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344062,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30221092,
+            "instructions_per_cycle": 4.165336811786947,
+            "instructions_retired": 125881027,
+            "lifetime_peak_physical_footprint_bytes_after": 9535824,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9535824,
+            "physical_footprint_bytes_before": 1147192,
+            "resident_bytes_after": 18628608,
+            "resident_bytes_before": 2031616,
+            "system_cpu_seconds": 0.0005882083333333334,
+            "user_cpu_seconds": 0.007410791666666667
+          },
+          "live_requested_heap_bytes_after": 6351960,
+          "live_requested_heap_bytes_before": 6345,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010198,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6431531,
+            "instructions_per_cycle": 4.8833845316146345,
+            "instructions_retired": 31429462,
+            "lifetime_peak_physical_footprint_bytes_after": 11927888,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11927888,
+            "physical_footprint_bytes_before": 9535824,
+            "resident_bytes_after": 21069824,
+            "resident_bytes_before": 18644992,
+            "system_cpu_seconds": 0.0001805416666666667,
+            "user_cpu_seconds": 0.0015335833333333334
+          },
+          "live_requested_heap_bytes_after": 7776895,
+          "live_requested_heap_bytes_before": 6351960,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890184,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.038586916169151664,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002865083,
+      "over_fastest": 1.7302140403395043,
+      "over_rust": 0.3070674434093481,
+      "whole_process_over_fastest": 1.5349194773538923,
+      "processing_plus_admission_over_fastest": 1.8290961446619234,
+      "processing_plus_admission_over_rust": 0.32461641380567186,
+      "post_json_over_fastest_matched_native": 1.8341907579949834,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "peak_resident_bytes": 4.407608695652174,
+          "voluntary_context_switches": 10.0,
+          "page_reclaims": 3.4612403100775193,
+          "involuntary_context_switches": 3.2,
+          "instructions_retired": 2.0696771036140444,
+          "wall_seconds": 3.0,
+          "cycles": 2.0835288274783266,
+          "peak_physical_footprint_bytes": 2.936822056637137
+        },
+        "post_json": {
+          "freed_allocation_bytes": 1.2846526026213523,
+          "allocation_requests": 64.79310344827586,
+          "live_requested_heap_bytes_before": 3.784220604013946,
+          "peak_additional_live_requested_heap_bytes": 0.9856665682269016,
+          "hardware": {
+            "instructions_retired": 3.0155999017567843,
+            "cycles": 2.526221187430385,
+            "instructions_per_cycle": 1.1936369928055492,
+            "physical_footprint_bytes_after": 2.872667442861559,
+            "resident_bytes_before": 6.123809523809523,
+            "resident_bytes_after": 4.367567567567567,
+            "lifetime_peak_physical_footprint_bytes_after": 2.8933805791415437,
+            "system_cpu_seconds": 3.7046568627450975,
+            "user_cpu_seconds": 2.502204146639743,
+            "physical_footprint_bytes_before": 4.089598990619343
+          },
+          "peak_live_requested_heap_bytes": 1.7322731344820061,
+          "requested_allocation_bytes": 1.173848944425293,
+          "live_requested_heap_bytes_after": 2.6511230578417524
+        }
+      },
+      "post_json_instructions_per_post": 10976.6208,
+      "post_json_cycles_per_post": 2993.3402
+    },
+    "mech-ir264-cranelift-runtime-control-instrumented": {
+      "median_seconds": 0.002724042,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR264_same_frontend_adapter_and_runtime_as_LLVM_instrumented",
+      "median_processing_plus_admission_seconds": 0.0028856249999999997,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 86159973,
+        "instructions_retired": 347798085,
+        "involuntary_context_switches": 16,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1796,
+        "peak_physical_footprint_bytes": 16089448,
+        "peak_resident_bytes": 26722304,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 7,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 14841083,
+          "instructions_per_cycle": 3.6899828553661234,
+          "instructions_retired": 54831821,
+          "lifetime_peak_physical_footprint_bytes_after": 16089448,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15974760,
+          "physical_footprint_bytes_before": 11977040,
+          "resident_bytes_after": 26640384,
+          "resident_bytes_before": 21118976,
+          "system_cpu_seconds": 0.000379625,
+          "user_cpu_seconds": 0.003626666666666667
+        },
+        "live_requested_heap_bytes_after": 8498756,
+        "live_requested_heap_bytes_before": 7776914,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344081,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30319188,
+            "instructions_per_cycle": 4.1519059811510415,
+            "instructions_retired": 125883144,
+            "lifetime_peak_physical_footprint_bytes_after": 9568616,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9568616,
+            "physical_footprint_bytes_before": 1163600,
+            "resident_bytes_after": 18661376,
+            "resident_bytes_before": 2064384,
+            "system_cpu_seconds": 0.0006015833333333334,
+            "user_cpu_seconds": 0.007476958333333334
+          },
+          "live_requested_heap_bytes_after": 6351979,
+          "live_requested_heap_bytes_before": 6364,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010217,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6404723,
+            "instructions_per_cycle": 4.9021715065405775,
+            "instructions_retired": 31431721,
+            "lifetime_peak_physical_footprint_bytes_after": 11977040,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11977040,
+            "physical_footprint_bytes_before": 9568616,
+            "resident_bytes_after": 21118976,
+            "resident_bytes_before": 18677760,
+            "system_cpu_seconds": 0.00018220833333333335,
+            "user_cpu_seconds": 0.0015267916666666667
+          },
+          "live_requested_heap_bytes_after": 7776914,
+          "live_requested_heap_bytes_before": 6351979,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890203,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.04101412487216294,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002893583,
+      "over_fastest": 1.7438980513968254,
+      "over_rust": 0.30949599513358,
+      "whole_process_over_fastest": 1.6314695591879336,
+      "processing_plus_admission_over_fastest": 1.8473414927383514,
+      "processing_plus_admission_over_rust": 0.3278544827713144,
+      "post_json_over_fastest_matched_native": 1.8524361060714116,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "peak_resident_bytes": 4.432065217391305,
+          "voluntary_context_switches": 3.5,
+          "page_reclaims": 3.4806201550387597,
+          "involuntary_context_switches": 3.2,
+          "instructions_retired": 2.0252697111595444,
+          "wall_seconds": 3.0,
+          "cycles": 2.026846526925874,
+          "peak_physical_footprint_bytes": 2.948833328934674
+        },
+        "post_json": {
+          "freed_allocation_bytes": 1.2846526026213523,
+          "allocation_requests": 64.79310344827586,
+          "live_requested_heap_bytes_before": 3.784229849373627,
+          "peak_additional_live_requested_heap_bytes": 0.9856665682269016,
+          "hardware": {
+            "instructions_retired": 3.012782112701672,
+            "cycles": 2.5050181946584553,
+            "instructions_per_cycle": 1.2013479846230628,
+            "physical_footprint_bytes_after": 2.8845053779905414,
+            "resident_bytes_before": 6.1380952380952385,
+            "resident_bytes_after": 4.394594594594595,
+            "lifetime_peak_physical_footprint_bytes_after": 2.905214180676214,
+            "system_cpu_seconds": 3.721813725490196,
+            "user_cpu_seconds": 2.475469980944797,
+            "physical_footprint_bytes_before": 4.106451258982939
+          },
+          "peak_live_requested_heap_bytes": 1.7322756009865499,
+          "requested_allocation_bytes": 1.173848944425293,
+          "live_requested_heap_bytes_after": 2.6511289847621993
+        }
+      },
+      "post_json_instructions_per_post": 10966.3642,
+      "post_json_cycles_per_post": 2968.2166
+    },
+    "mech-llvm-reuse-4-instrumented": {
+      "median_seconds": 0.002232208,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "LLVM_O3_apple_m3_native_image10_reuse-4_instrumented",
+      "median_processing_plus_admission_seconds": 0.002391249,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 83843250,
+        "instructions_retired": 330422390,
+        "involuntary_context_switches": 15,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1791,
+        "peak_physical_footprint_bytes": 16105832,
+        "peak_resident_bytes": 26656768,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 13,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 12610114,
+          "instructions_per_cycle": 3.172217396289994,
+          "instructions_retired": 39977495,
+          "lifetime_peak_physical_footprint_bytes_after": 16105832,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16007528,
+          "physical_footprint_bytes_before": 11977064,
+          "resident_bytes_after": 26574848,
+          "resident_bytes_before": 21135360,
+          "system_cpu_seconds": 0.00036783333333333335,
+          "user_cpu_seconds": 0.0030342083333333336
+        },
+        "live_requested_heap_bytes_after": 8498723,
+        "live_requested_heap_bytes_before": 7776881,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344048,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30133214,
+            "instructions_per_cycle": 4.1775178047718375,
+            "instructions_retired": 125882038,
+            "lifetime_peak_physical_footprint_bytes_after": 9585000,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9585000,
+            "physical_footprint_bytes_before": 1196368,
+            "resident_bytes_after": 18677760,
+            "resident_bytes_before": 2064384,
+            "system_cpu_seconds": 0.0005690833333333333,
+            "user_cpu_seconds": 0.007385208333333334
+          },
+          "live_requested_heap_bytes_after": 6351946,
+          "live_requested_heap_bytes_before": 6331,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010184,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6431608,
+            "instructions_per_cycle": 4.883676212853769,
+            "instructions_retired": 31440981,
+            "lifetime_peak_physical_footprint_bytes_after": 11977064,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11977064,
+            "physical_footprint_bytes_before": 9585000,
+            "resident_bytes_after": 21135360,
+            "resident_bytes_before": 18694144,
+            "system_cpu_seconds": 0.00017795833333333335,
+            "user_cpu_seconds": 0.0015184583333333335
+          },
+          "live_requested_heap_bytes_after": 7776881,
+          "live_requested_heap_bytes_before": 6351946,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890170,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.03892133315093815,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002398458,
+      "over_fastest": 1.4290319978592123,
+      "over_rust": 0.2536155596371636,
+      "whole_process_over_fastest": 1.5482219951464995,
+      "processing_plus_admission_over_fastest": 1.5308480821898514,
+      "processing_plus_admission_over_rust": 0.27168523424645363,
+      "post_json_over_fastest_matched_native": 1.5354631949717101,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "peak_resident_bytes": 4.421195652173913,
+          "voluntary_context_switches": 6.5,
+          "page_reclaims": 3.4709302325581395,
+          "involuntary_context_switches": 3.0,
+          "instructions_retired": 1.9240889677582507,
+          "wall_seconds": 3.0,
+          "cycles": 1.9723474155299212,
+          "peak_physical_footprint_bytes": 2.9518361470090584
+        },
+        "post_json": {
+          "freed_allocation_bytes": 1.2846526026213523,
+          "allocation_requests": 64.79310344827586,
+          "live_requested_heap_bytes_before": 3.7842137916436545,
+          "peak_additional_live_requested_heap_bytes": 0.9856665682269016,
+          "hardware": {
+            "instructions_retired": 2.196598246237719,
+            "cycles": 2.1284541705424944,
+            "instructions_per_cycle": 1.0327790467311209,
+            "physical_footprint_bytes_after": 2.890422178757876,
+            "resident_bytes_before": 6.142857142857143,
+            "resident_bytes_after": 4.383783783783784,
+            "lifetime_peak_physical_footprint_bytes_after": 2.9081725810598815,
+            "system_cpu_seconds": 3.606209150326797,
+            "user_cpu_seconds": 2.071073063906032,
+            "physical_footprint_bytes_before": 4.106459487629601
+          },
+          "peak_live_requested_heap_bytes": 1.7322713170576054,
+          "requested_allocation_bytes": 1.173848944425293,
+          "live_requested_heap_bytes_after": 2.6511186906372126
+        }
+      },
+      "post_json_instructions_per_post": 7995.499,
+      "post_json_cycles_per_post": 2522.0228
+    },
+    "mech-ir266-reuse-4-instrumented": {
+      "median_seconds": 0.002688875,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "Cranelift_checked_positional_metadata_readers_instrumented",
+      "median_processing_plus_admission_seconds": 0.002845084,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 88001973,
+        "instructions_retired": 345410847,
+        "involuntary_context_switches": 16,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1813,
+        "peak_physical_footprint_bytes": 16056680,
+        "peak_resident_bytes": 27017216,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 14997594,
+          "instructions_per_cycle": 3.655781520689252,
+          "instructions_retired": 54838157,
+          "lifetime_peak_physical_footprint_bytes_after": 16056680,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15941968,
+          "physical_footprint_bytes_before": 11944272,
+          "resident_bytes_after": 26886144,
+          "resident_bytes_before": 21348352,
+          "system_cpu_seconds": 0.000386375,
+          "user_cpu_seconds": 0.0036797083333333334
+        },
+        "live_requested_heap_bytes_after": 8498720,
+        "live_requested_heap_bytes_before": 7776878,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344045,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 31077517,
+            "instructions_per_cycle": 4.090207174530707,
+            "instructions_retired": 127104760,
+            "lifetime_peak_physical_footprint_bytes_after": 9552208,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9552208,
+            "physical_footprint_bytes_before": 1163600,
+            "resident_bytes_after": 18874368,
+            "resident_bytes_before": 2015232,
+            "system_cpu_seconds": 0.0006235416666666667,
+            "user_cpu_seconds": 0.007583666666666667
+          },
+          "live_requested_heap_bytes_after": 6351943,
+          "live_requested_heap_bytes_before": 6328,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010181,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6669146,
+            "instructions_per_cycle": 4.7338677125655915,
+            "instructions_retired": 31461131,
+            "lifetime_peak_physical_footprint_bytes_after": 11944272,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11944272,
+            "physical_footprint_bytes_before": 9552208,
+            "resident_bytes_after": 21348352,
+            "resident_bytes_before": 18890752,
+            "system_cpu_seconds": 0.00018762500000000002,
+            "user_cpu_seconds": 0.0015914583333333334
+          },
+          "live_requested_heap_bytes_after": 7776878,
+          "live_requested_heap_bytes_before": 6351943,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890167,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.039065124932676554,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002852791,
+      "over_fastest": 1.7213845722458165,
+      "over_rust": 0.3055004452628869,
+      "whole_process_over_fastest": 1.553941778647886,
+      "processing_plus_admission_over_fastest": 1.8213876451465452,
+      "processing_plus_admission_over_rust": 0.3232483580718015,
+      "post_json_over_fastest_matched_native": 1.8263215713790024,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "peak_resident_bytes": 4.480978260869565,
+          "voluntary_context_switches": 0.0,
+          "page_reclaims": 3.5135658914728682,
+          "involuntary_context_switches": 3.2,
+          "instructions_retired": 2.0113685396947014,
+          "wall_seconds": 3.0,
+          "cycles": 2.070178148009338,
+          "peak_physical_footprint_bytes": 2.9428276927859054
+        },
+        "post_json": {
+          "freed_allocation_bytes": 1.2846526026213523,
+          "allocation_requests": 64.79310344827586,
+          "live_requested_heap_bytes_before": 3.784212331850021,
+          "peak_additional_live_requested_heap_bytes": 0.9856665682269016,
+          "hardware": {
+            "instructions_retired": 3.0131302497344743,
+            "cycles": 2.5314355998211506,
+            "instructions_per_cycle": 1.1902130536231188,
+            "physical_footprint_bytes_after": 2.878584243628894,
+            "resident_bytes_before": 6.204761904761905,
+            "resident_bytes_after": 4.435135135135135,
+            "lifetime_peak_physical_footprint_bytes_after": 2.899297379908879,
+            "system_cpu_seconds": 3.787990196078431,
+            "user_cpu_seconds": 2.5116748670401865,
+            "physical_footprint_bytes_before": 4.095216413407209
+          },
+          "peak_live_requested_heap_bytes": 1.7322709276095196,
+          "requested_allocation_bytes": 1.173848944425293,
+          "live_requested_heap_bytes_after": 2.651117754807668
+        }
+      },
+      "post_json_instructions_per_post": 10967.6314,
+      "post_json_cycles_per_post": 2999.5188
+    }
+  },
+  "prospective_rule": {
+    "schema": "mech.related-post-gen.positional-metadata-prospective-rule.v1",
+    "declared_utc": "2026-11-07T16:24:55.249353+00:00",
+    "declared_before_randomized_cohorts": true,
+    "qualification_timings_ineligible": true,
+    "candidate": "mech-ir266-reuse-4",
+    "fixed_reference": "mech-ir242-reuse-4",
+    "matched_parent": "mech-ir264-cranelift-runtime-control",
+    "target": "wall_seconds",
+    "samples": 31,
+    "seed": 990276,
+    "resource_samples": 7,
+    "resource_seed": 9902767,
+    "superiority": "At least21/31 paired whole-process wins and upper95% two-sided bootstrap median relative-change interval below0 versus BOTH fixed IR242 and matched parent IR264.",
+    "other_boundary": "Post-JSON one-sided95% upper median paired relative-change bound <=1% versus fixed IR242. No accumulated concessions.",
+    "practical_restore_threshold": "At least10% restoration-instruction reduction or1ms restoration reduction versus matched parent, independently measured; no deferral to first evaluation.",
+    "bootstrap": {
+      "resamples": 20000,
+      "seed": 99027699
+    },
+    "confirmation": "If the first cohort passes, declare a second independently seeded confirmation before rerunning; rejected unchanged candidates are not rerun for a favorable result.",
+    "all_first_and_adverse_results_retained": true,
+    "LLVM_optional": true,
+    "goal": "Parity with fastest eligible measured Rust at BOTH boundaries; a phase improvement does not complete the goal."
+  },
+  "decision": {
+    "schema": "mech.related-post-gen.positional-metadata-performance-decision.v1",
+    "rule_sha256": "ae6d8cb569dfcc43ea771b7f0965525a7e3008f94d873ddc05055e334e882078",
+    "source_commit": "ed66537a2a519ddc14f162dbc06a3cff7bcc5208",
+    "candidate": "mech-ir266-reuse-4",
+    "paired": {
+      "mech-ir242-reuse-4": {
+        "post_json_seconds": {
+          "wins": 18,
+          "median_paired_relative_change": -0.009171589310829842,
+          "median_paired_delta_seconds": -2.6084000000000003e-05,
+          "two_sided_95_interval": [
+            -0.014841583867405528,
+            0.00458345811643035
+          ],
+          "one_sided_95_upper": 0.0008505322424561257
+        },
+        "wall_seconds": {
+          "wins": 14,
+          "median_paired_relative_change": 0.021187470409675724,
+          "median_paired_delta_seconds": 0.0007411660626530647,
+          "two_sided_95_interval": [
+            -0.019852442046731755,
+            0.030757132054635816
+          ],
+          "one_sided_95_upper": 0.02752929216785449
+        }
+      },
+      "mech-ir264-cranelift-runtime-control": {
+        "post_json_seconds": {
+          "wins": 12,
+          "median_paired_relative_change": 0.0046125147786486576,
+          "median_paired_delta_seconds": 1.3167000000000127e-05,
+          "two_sided_95_interval": [
+            -0.005049737992703807,
+            0.015303640143305763
+          ],
+          "one_sided_95_upper": 0.015303640143305763
+        },
+        "wall_seconds": {
+          "wins": 12,
+          "median_paired_relative_change": 0.02823397966011032,
+          "median_paired_delta_seconds": 0.0008509168401360512,
+          "two_sided_95_interval": [
+            -0.017369034109304238,
+            0.06979886132386226
+          ],
+          "one_sided_95_upper": 0.05698492075524153
+        }
+      }
+    },
+    "medians": {
+      "mech-ir242-reuse-4": {
+        "post_json_seconds": 0.002850333,
+        "wall_seconds": 0.036579875042662024,
+        "compile_or_restore_seconds": 0.007963875,
+        "times_fastest_processing_Rust": 1.846270289597385,
+        "times_fastest_whole_Rust": 1.732589612578896
+      },
+      "mech-ir264-cranelift-runtime-control": {
+        "post_json_seconds": 0.002835292,
+        "wall_seconds": 0.03487483295612037,
+        "compile_or_restore_seconds": 0.008005834,
+        "times_fastest_processing_Rust": 1.8365276555171446,
+        "times_fastest_whole_Rust": 1.651831047802319
+      },
+      "mech-ir266-reuse-4": {
+        "post_json_seconds": 0.002835083,
+        "wall_seconds": 0.03645166684873402,
+        "compile_or_restore_seconds": 0.008231125,
+        "times_fastest_processing_Rust": 1.836392278180347,
+        "times_fastest_whole_Rust": 1.7265170881433125
+      }
+    },
+    "resource_restore": {
+      "mech-ir264-cranelift-runtime-control": {
+        "instructions": 125883144,
+        "seconds": 0.008085167,
+        "allocations": 26837,
+        "requested_bytes": 12830999,
+        "processing_instructions": 54831821,
+        "processing_allocations": 3758
+      },
+      "mech-ir266-reuse-4": {
+        "instructions": 127104760,
+        "seconds": 0.008215416,
+        "allocations": 26837,
+        "requested_bytes": 12830999,
+        "processing_instructions": 54838157,
+        "processing_allocations": 3758
+      }
+    },
+    "practical_restore_threshold_passed": false,
+    "whole_superiority_passed": false,
+    "processing_noninferiority_passed": true,
+    "selected": false,
+    "decision": "Reject checked positional metadata readers: the predeclared restoration practical threshold and whole-process superiority requirements fail. Keep IR242 selected. Optional LLVM remains separate; do not rerun this unchanged candidate for a favorable cohort.",
+    "all_first_and_adverse_samples_retained": true,
+    "latency_full_outputs_exact": 744,
+    "resources_full_outputs_exact": 175,
+    "fastest_processing_Rust": {
+      "variant": "rust-ordered-ordered-mask",
+      "median_seconds": 0.001543833,
+      "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+      "eligible_variants": [
+        "rust",
+        "rust-mech-control-streaming",
+        "rust-mech-control-u32-casts",
+        "rust-mech-control-u8-ids-u32",
+        "rust-ordered-scan-only",
+        "rust-ordered-ordered",
+        "rust-ordered-mask-reuse",
+        "rust-ordered-ordered-mask",
+        "rust-ordered-ordered-mask-tables",
+        "rust-apple-m3",
+        "rust-mech-control-streaming-apple-m3",
+        "rust-mech-control-u32-casts-apple-m3",
+        "rust-mech-control-u8-ids-u32-apple-m3",
+        "rust-ordered-scan-only-apple-m3",
+        "rust-ordered-ordered-apple-m3",
+        "rust-ordered-mask-reuse-apple-m3",
+        "rust-ordered-ordered-mask-apple-m3",
+        "rust-ordered-ordered-mask-tables-apple-m3"
+      ]
+    },
+    "fastest_whole_Rust": {
+      "variant": "rust-mech-control-u32-casts",
+      "median_seconds": 0.021112832939252257,
+      "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+    },
+    "whole_process_improvement_not_established": true
+  },
+  "source_freeze": {
+    "commit": "ed66537a2a519ddc14f162dbc06a3cff7bcc5208",
+    "source_inventory_exact": true,
+    "predeclared_rule_sha256": "ae6d8cb569dfcc43ea771b7f0965525a7e3008f94d873ddc05055e334e882078",
+    "no_prior_cohort": true
+  },
+  "normalized_native_text_exact_parent": true,
+  "normalized_native_text_sha256": "a89fd61ff00cf98854fdc474ff3f57dbc0b2ac61412caffaca3db2f6dd66c3da",
+  "native_code_bytes": 886344,
+  "native_stack_bytes": 1536,
+  "conclusion": "Rejected:125.883M to127.105M restoration instructions (+0.97%);26,837 allocations/12,830,999B unchanged. Whole-process paired median+2.823% and12/31wins versus matched parent. No source or native processing gain. Do not rerun unchanged.",
+  "first_and_adverse_results_retained": true,
+  "first_corrections": [
+    "An initial loader budget harness compared Cranelift1536B actual stack to LLVM1568B. Corrected to executed unchanged-parent Cranelift budget runners, then24 entire denial objects exact; no relaxed field comparisons.",
+    "Initial analysis looked for a separate preparation measurement; source confirms the single measurement begins before admission and already covers continuous post-JSON. Corrected analysis uses that whole measurement. No cohort overwritten."
+  ],
+  "metadata_field_profile": {
+    "source_commit": "5f67e3f7d3023bc21d9e3d4c7e3f18b2a802ad56",
+    "summary": {
+      "schema": "mech.related-post-gen.exclusive-restoration-instructions.v1",
+      "selected_compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+      "samples": 7,
+      "full5000_outputs_exact": 7,
+      "original_native_Object_and_link_audited": true,
+      "eager_validation_unchanged": true,
+      "instruction_attribution": "Exclusive nested hardware-counter differences, not PC-sample percentages",
+      "total_exclusive_restore_instructions_mean": 130572009.85714285,
+      "enclosing_restore_instructions_mean": 134418308.2857143,
+      "unattributed_hook_setup_and_counter_gap_instructions_mean": 3846298.4285714286,
+      "restore_allocations_median": 26837,
+      "restore_requested_bytes_median": 12830999,
+      "first_evaluation_processing_allocations_median": 3758,
+      "first_evaluation_processing_requested_bytes_median": 8012356,
+      "first_evaluation_processing_instructions_median": 54723960,
+      "phases": [
+        {
+          "phase": 35,
+          "label": "plan_blocks_materialization",
+          "mean": {
+            "instructions": 19009172.714285713,
+            "cycles": 5089634,
+            "allocation_requests": 2129,
+            "requested_bytes": 2025460,
+            "seconds": 0.0014297262857142857
+          },
+          "median": {
+            "instructions": 18997659,
+            "cycles": 4842812,
+            "allocation_requests": 2129,
+            "requested_bytes": 2025460,
+            "seconds": 0.001216292
+          },
+          "share_of_exclusive_restore_instructions": 0.14558382562299074
+        },
+        {
+          "phase": 80,
+          "label": "remaining_layouts_and_validation",
+          "mean": {
+            "instructions": 18534573.714285713,
+            "cycles": 3982540.1428571427,
+            "allocation_requests": 3923,
+            "requested_bytes": 847695,
+            "seconds": 0.001207541857142857
+          },
+          "median": {
+            "instructions": 18274474,
+            "cycles": 3814305,
+            "allocation_requests": 3923,
+            "requested_bytes": 847695,
+            "seconds": 0.00095325
+          },
+          "share_of_exclusive_restore_instructions": 0.14194905734057514
+        },
+        {
+          "phase": 123,
+          "label": "outer_field_closed_tails",
+          "mean": {
+            "instructions": 17594534.42857143,
+            "cycles": 4607431,
+            "allocation_requests": 1886,
+            "requested_bytes": 711120,
+            "seconds": 0.0014823512857142856
+          },
+          "median": {
+            "instructions": 17276575,
+            "cycles": 3998009,
+            "allocation_requests": 1886,
+            "requested_bytes": 711120,
+            "seconds": 0.001041209
+          },
+          "share_of_exclusive_restore_instructions": 0.13474966378951647
+        },
+        {
+          "phase": 105,
+          "label": "outer_field_visits",
+          "mean": {
+            "instructions": 15762171.57142857,
+            "cycles": 3849536.714285714,
+            "allocation_requests": 1,
+            "requested_bytes": 235264,
+            "seconds": 0.0016177917142857143
+          },
+          "median": {
+            "instructions": 15402893,
+            "cycles": 3339471,
+            "allocation_requests": 1,
+            "requested_bytes": 235264,
+            "seconds": 0.000865583
+          },
+          "share_of_exclusive_restore_instructions": 0.12071631269729063
+        },
+        {
+          "phase": 50,
+          "label": "call_bindings_and_type_slots_materialization",
+          "mean": {
+            "instructions": 13335177.285714285,
+            "cycles": 3424756,
+            "allocation_requests": 8473,
+            "requested_bytes": 5300851,
+            "seconds": 0.0011119284285714287
+          },
+          "median": {
+            "instructions": 13328954,
+            "cycles": 3428761,
+            "allocation_requests": 8473,
+            "requested_bytes": 5300851,
+            "seconds": 0.000859417
+          },
+          "share_of_exclusive_restore_instructions": 0.10212891185717468
+        },
+        {
+          "phase": 70,
+          "label": "buffer_frame_decoding_and_composition",
+          "mean": {
+            "instructions": 9099860.857142856,
+            "cycles": 2286741.4285714286,
+            "allocation_requests": 1461,
+            "requested_bytes": 594756,
+            "seconds": 0.0007595477142857143
+          },
+          "median": {
+            "instructions": 8917729,
+            "cycles": 2178069,
+            "allocation_requests": 1461,
+            "requested_bytes": 594756,
+            "seconds": 0.000548125
+          },
+          "share_of_exclusive_restore_instructions": 0.0696922783611809
+        },
+        {
+          "phase": 104,
+          "label": "outer_field_types",
+          "mean": {
+            "instructions": 5326822.428571428,
+            "cycles": 1166536.5714285714,
+            "allocation_requests": 1,
+            "requested_bytes": 76788,
+            "seconds": 0.0005088097142857143
+          },
+          "median": {
+            "instructions": 5224381,
+            "cycles": 1028572,
+            "allocation_requests": 1,
+            "requested_bytes": 76788,
+            "seconds": 0.000266458
+          },
+          "share_of_exclusive_restore_instructions": 0.04079605142326779
+        },
+        {
+          "phase": 20,
+          "label": "schema_decoding",
+          "mean": {
+            "instructions": 4234148.857142857,
+            "cycles": 1547121.7142857143,
+            "allocation_requests": 3582,
+            "requested_bytes": 474096,
+            "seconds": 0.000495875
+          },
+          "median": {
+            "instructions": 3834921,
+            "cycles": 1228425,
+            "allocation_requests": 3582,
+            "requested_bytes": 474096,
+            "seconds": 0.000309666
+          },
+          "share_of_exclusive_restore_instructions": 0.03242769152267308
+        },
+        {
+          "phase": 116,
+          "label": "outer_field_map_owner_words",
+          "mean": {
+            "instructions": 4226594,
+            "cycles": 996245.8571428572,
+            "allocation_requests": 76,
+            "requested_bytes": 553512,
+            "seconds": 0.0003729287142857143
+          },
+          "median": {
+            "instructions": 4132672,
+            "cycles": 854942,
+            "allocation_requests": 76,
+            "requested_bytes": 553512,
+            "seconds": 0.0002245
+          },
+          "share_of_exclusive_restore_instructions": 0.032369831824020034
+        },
+        {
+          "phase": 32,
+          "label": "plan_library_templates_factory_schema_validation",
+          "mean": {
+            "instructions": 4035974.4285714286,
+            "cycles": 1322213.2857142857,
+            "allocation_requests": 2577,
+            "requested_bytes": 314578,
+            "seconds": 0.00040564914285714284
+          },
+          "median": {
+            "instructions": 3872449,
+            "cycles": 1101910,
+            "allocation_requests": 2577,
+            "requested_bytes": 314578,
+            "seconds": 0.000285834
+          },
+          "share_of_exclusive_restore_instructions": 0.030909951014671033
+        },
+        {
+          "phase": 34,
+          "label": "plan_value_types_scopes_outputs_materialization",
+          "mean": {
+            "instructions": 2948176.1428571427,
+            "cycles": 775953,
+            "allocation_requests": 462,
+            "requested_bytes": 143051,
+            "seconds": 0.00022620228571428573
+          },
+          "median": {
+            "instructions": 2932749,
+            "cycles": 682573,
+            "allocation_requests": 462,
+            "requested_bytes": 143051,
+            "seconds": 0.000177
+          },
+          "share_of_exclusive_restore_instructions": 0.02257892902225143
+        },
+        {
+          "phase": 40,
+          "label": "descriptor_type_templates_restore",
+          "mean": {
+            "instructions": 2302314.285714286,
+            "cycles": 652854.8571428572,
+            "allocation_requests": 1828,
+            "requested_bytes": 208818,
+            "seconds": 0.0002084402857142857
+          },
+          "median": {
+            "instructions": 2244258,
+            "cycles": 579603,
+            "allocation_requests": 1828,
+            "requested_bytes": 208818,
+            "seconds": 0.000145916
+          },
+          "share_of_exclusive_restore_instructions": 0.017632525441196915
+        },
+        {
+          "phase": 114,
+          "label": "outer_field_scalar_aggregates",
+          "mean": {
+            "instructions": 1474844.5714285714,
+            "cycles": 438513.5714285714,
+            "allocation_requests": 63,
+            "requested_bytes": 200128,
+            "seconds": 0.00016930957142857143
+          },
+          "median": {
+            "instructions": 1403151,
+            "cycles": 364738,
+            "allocation_requests": 63,
+            "requested_bytes": 200128,
+            "seconds": 9.4834e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.011295258249008955
+        },
+        {
+          "phase": 119,
+          "label": "outer_field_frozen_maps",
+          "mean": {
+            "instructions": 1395303.4285714286,
+            "cycles": 277201.4285714286,
+            "allocation_requests": 3,
+            "requested_bytes": 176448,
+            "seconds": 9.089885714285715e-05
+          },
+          "median": {
+            "instructions": 1376432,
+            "cycles": 232665,
+            "allocation_requests": 3,
+            "requested_bytes": 176448,
+            "seconds": 6.1709e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.010686083718080254
+        },
+        {
+          "phase": 31,
+          "label": "plan_record_header_decode",
+          "mean": {
+            "instructions": 1264484.142857143,
+            "cycles": 1435735.4285714286,
+            "allocation_requests": 8,
+            "requested_bytes": 193896,
+            "seconds": 0.000456476
+          },
+          "median": {
+            "instructions": 775131,
+            "cycles": 1181582,
+            "allocation_requests": 8,
+            "requested_bytes": 193896,
+            "seconds": 0.000306125
+          },
+          "share_of_exclusive_restore_instructions": 0.00968418992891814
+        },
+        {
+          "phase": 12,
+          "label": "outer_serde_materialization",
+          "mean": {
+            "instructions": 1207393.857142857,
+            "cycles": 363351.28571428574,
+            "allocation_requests": 3,
+            "requested_bytes": 58978,
+            "seconds": 0.00015862457142857143
+          },
+          "median": {
+            "instructions": 1126954,
+            "cycles": 285304,
+            "allocation_requests": 3,
+            "requested_bytes": 58978,
+            "seconds": 7.541799999999997e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.009246957739747217
+        },
+        {
+          "phase": 0,
+          "label": "module_provenance_entry_binding_and_returns",
+          "mean": {
+            "instructions": 1112073,
+            "cycles": 361224.4285714286,
+            "allocation_requests": 37,
+            "requested_bytes": 578,
+            "seconds": 0.00011827957142857144
+          },
+          "median": {
+            "instructions": 1065625,
+            "cycles": 325013,
+            "allocation_requests": 37,
+            "requested_bytes": 578,
+            "seconds": 8.2915e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.00851693254332766
+        },
+        {
+          "phase": 60,
+          "label": "inventory_type_and_constant_validation",
+          "mean": {
+            "instructions": 1014141.2857142857,
+            "cycles": 329705.5714285714,
+            "allocation_requests": 9,
+            "requested_bytes": 18472,
+            "seconds": 0.000122381
+          },
+          "median": {
+            "instructions": 955837,
+            "cycles": 292467,
+            "allocation_requests": 9,
+            "requested_bytes": 18472,
+            "seconds": 7.3375e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.007766911812293037
+        },
+        {
+          "phase": 122,
+          "label": "outer_field_borrowed_strings",
+          "mean": {
+            "instructions": 974963,
+            "cycles": 213556.7142857143,
+            "allocation_requests": 2,
+            "requested_bytes": 147040,
+            "seconds": 7.116657142857143e-05
+          },
+          "median": {
+            "instructions": 950993,
+            "cycles": 176665,
+            "allocation_requests": 2,
+            "requested_bytes": 147040,
+            "seconds": 4.6417e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.007466860631667495
+        },
+        {
+          "phase": 117,
+          "label": "outer_field_borrowed_record_maps",
+          "mean": {
+            "instructions": 958375.5714285715,
+            "cycles": 201261.57142857142,
+            "allocation_requests": 2,
+            "requested_bytes": 117632,
+            "seconds": 7.8107e-05
+          },
+          "median": {
+            "instructions": 934561,
+            "cycles": 165469,
+            "allocation_requests": 2,
+            "requested_bytes": 117632,
+            "seconds": 4.3208e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.0073398239980920705
+        },
+        {
+          "phase": 125,
+          "label": "outer_field_line_matrices",
+          "mean": {
+            "instructions": 758579.1428571428,
+            "cycles": 164907.2857142857,
+            "allocation_requests": 2,
+            "requested_bytes": 92928,
+            "seconds": 5.2357e-05
+          },
+          "median": {
+            "instructions": 744719,
+            "cycles": 132959,
+            "allocation_requests": 2,
+            "requested_bytes": 92928,
+            "seconds": 3.4625e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.005809661225917365
+        },
+        {
+          "phase": 103,
+          "label": "outer_field_calls",
+          "mean": {
+            "instructions": 657934.4285714285,
+            "cycles": 246170.2857142857,
+            "allocation_requests": 1,
+            "requested_bytes": 88224,
+            "seconds": 0.00012448814285714285
+          },
+          "median": {
+            "instructions": 580884,
+            "cycles": 193204,
+            "allocation_requests": 1,
+            "requested_bytes": 88224,
+            "seconds": 5.0291e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.005038862688039083
+        },
+        {
+          "phase": 120,
+          "label": "outer_field_map_admission",
+          "mean": {
+            "instructions": 602243.8571428572,
+            "cycles": 151941,
+            "allocation_requests": 40,
+            "requested_bytes": 60780,
+            "seconds": 5.017228571428571e-05
+          },
+          "median": {
+            "instructions": 584434,
+            "cycles": 128323,
+            "allocation_requests": 40,
+            "requested_bytes": 60780,
+            "seconds": 3.3583e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.004612350363617473
+        },
+        {
+          "phase": 36,
+          "label": "plan_iterations_materialization",
+          "mean": {
+            "instructions": 496977.71428571426,
+            "cycles": 153069.42857142858,
+            "allocation_requests": 20,
+            "requested_bytes": 59744,
+            "seconds": 4.320228571428572e-05
+          },
+          "median": {
+            "instructions": 490112,
+            "cycles": 145415,
+            "allocation_requests": 20,
+            "requested_bytes": 59744,
+            "seconds": 3.6042e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.003806158110221717
+        },
+        {
+          "phase": 124,
+          "label": "outer_field_selected_joins",
+          "mean": {
+            "instructions": 480770.85714285716,
+            "cycles": 101804.85714285714,
+            "allocation_requests": 1,
+            "requested_bytes": 58816,
+            "seconds": 3.1726285714285714e-05
+          },
+          "median": {
+            "instructions": 474787,
+            "cycles": 86581,
+            "allocation_requests": 1,
+            "requested_bytes": 58816,
+            "seconds": 2.2917e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.003682036124502199
+        },
+        {
+          "phase": 106,
+          "label": "outer_field_retirements",
+          "mean": {
+            "instructions": 476799.4285714286,
+            "cycles": 108631.71428571429,
+            "allocation_requests": 1,
+            "requested_bytes": 21712,
+            "seconds": 4.4738142857142854e-05
+          },
+          "median": {
+            "instructions": 453070,
+            "cycles": 81188,
+            "allocation_requests": 1,
+            "requested_bytes": 21712,
+            "seconds": 2.2291e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.0036516205049848638
+        },
+        {
+          "phase": 33,
+          "label": "plan_ports_and_constants_materialization",
+          "mean": {
+            "instructions": 336681.85714285716,
+            "cycles": 183055,
+            "allocation_requests": 222,
+            "requested_bytes": 31522,
+            "seconds": 5.7130714285714286e-05
+          },
+          "median": {
+            "instructions": 283091,
+            "cycles": 136714,
+            "allocation_requests": 222,
+            "requested_bytes": 31522,
+            "seconds": 3.5416e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.0025785147790189982
+        },
+        {
+          "phase": 30,
+          "label": "remaining_plan_restore_and_temporary_destruction",
+          "mean": {
+            "instructions": 185797.2857142857,
+            "cycles": 60656.42857142857,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 2.1887e-05
+          },
+          "median": {
+            "instructions": 173926,
+            "cycles": 45945,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.1915999999999999e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.0014229488074631318
+        },
+        {
+          "phase": 37,
+          "label": "plan_collections_materialization",
+          "mean": {
+            "instructions": 134175,
+            "cycles": 55857.857142857145,
+            "allocation_requests": 19,
+            "requested_bytes": 15520,
+            "seconds": 1.5553571428571428e-05
+          },
+          "median": {
+            "instructions": 136719,
+            "cycles": 55911,
+            "allocation_requests": 19,
+            "requested_bytes": 15520,
+            "seconds": 1.3917e-05
+          },
+          "share_of_exclusive_restore_instructions": 0.0010275938935672287
+        },
+        {
+          "phase": 121,
+          "label": "outer_field_parallel",
+          "mean": {
+            "instructions": 116082.85714285714,
+            "cycles": 37311,
+            "allocation_requests": 4,
+            "requested_bytes": 2200,
+            "seconds": 1.2690285714285713e-05
+          },
+          "median": {
+            "instructions": 110155,
+            "cycles": 30351,
+            "allocation_requests": 4,
+            "requested_bytes": 2200,
+            "seconds": 7.958e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.0008890332412732399
+        },
+        {
+          "phase": 10,
+          "label": "outer_descriptor_deserialization",
+          "mean": {
+            "instructions": 71161.71428571429,
+            "cycles": 16602.85714285714,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 5.845428571428571e-06
+          },
+          "median": {
+            "instructions": 71162,
+            "cycles": 15283,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 4.083e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.0005449997619211913
+        },
+        {
+          "phase": 111,
+          "label": "outer_field_word_collections",
+          "mean": {
+            "instructions": 41047.28571428572,
+            "cycles": 22218.428571428572,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.0750142857142857e-05
+          },
+          "median": {
+            "instructions": 29183,
+            "cycles": 13236,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 3.5e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00031436512127825116
+        },
+        {
+          "phase": 118,
+          "label": "outer_field_numeric_maps",
+          "mean": {
+            "instructions": 30174.285714285714,
+            "cycles": 15491,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 6.333428571428571e-06
+          },
+          "median": {
+            "instructions": 24241,
+            "cycles": 10859,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 2.875e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.0002310930631097661
+        },
+        {
+          "phase": 112,
+          "label": "outer_field_window_regions",
+          "mean": {
+            "instructions": 29581.714285714286,
+            "cycles": 14046.57142857143,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 6.154714285714286e-06
+          },
+          "median": {
+            "instructions": 23651,
+            "cycles": 9899,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 2.584e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00022655479009689181
+        },
+        {
+          "phase": 11,
+          "label": "binary_image_reader_initialization_validation",
+          "mean": {
+            "instructions": 29373.714285714286,
+            "cycles": 12202.857142857143,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 7.28e-06
+          },
+          "median": {
+            "instructions": 23443,
+            "cycles": 7814,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 2.083e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00022496179937684722
+        },
+        {
+          "phase": 107,
+          "label": "outer_field_constant_bytes",
+          "mean": {
+            "instructions": 25604.571428571428,
+            "cycles": 6214.142857142857,
+            "allocation_requests": 1,
+            "requested_bytes": 392,
+            "seconds": 2.1845714285714287e-06
+          },
+          "median": {
+            "instructions": 25602,
+            "cycles": 5816,
+            "allocation_requests": 1,
+            "requested_bytes": 392,
+            "seconds": 1.542e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.0001960954070982369
+        },
+        {
+          "phase": 129,
+          "label": "outer_field_identity",
+          "mean": {
+            "instructions": 19480.428571428572,
+            "cycles": 5581.142857142857,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.6844285714285715e-06
+          },
+          "median": {
+            "instructions": 19481,
+            "cycles": 5473,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.416e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00014919299008066015
+        },
+        {
+          "phase": 90,
+          "label": "descriptor_struct_assembly",
+          "mean": {
+            "instructions": 18304.14285714286,
+            "cycles": 4831.285714285715,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.369142857142857e-06
+          },
+          "median": {
+            "instructions": 18305,
+            "cycles": 4709,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.208e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.0001401842774509574
+        },
+        {
+          "phase": 113,
+          "label": "outer_field_string_map_regions",
+          "mean": {
+            "instructions": 18053.285714285714,
+            "cycles": 5802.285714285715,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.911e-06
+          },
+          "median": {
+            "instructions": 18053,
+            "cycles": 5763,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.5e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00013826306062101349
+        },
+        {
+          "phase": 108,
+          "label": "outer_field_scalar_bytes",
+          "mean": {
+            "instructions": 17897,
+            "cycles": 4034.285714285714,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.4227142857142857e-06
+          },
+          "median": {
+            "instructions": 17895,
+            "cycles": 3755,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00013706612940691406
+        },
+        {
+          "phase": 128,
+          "label": "outer_field_code",
+          "mean": {
+            "instructions": 17896.428571428572,
+            "cycles": 4059.714285714286,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.2144285714285713e-06
+          },
+          "median": {
+            "instructions": 17895,
+            "cycles": 3786,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.0001370617530587821
+        },
+        {
+          "phase": 127,
+          "label": "outer_field_stack",
+          "mean": {
+            "instructions": 17891.285714285714,
+            "cycles": 4075.4285714285716,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.2382857142857143e-06
+          },
+          "median": {
+            "instructions": 17891,
+            "cycles": 3840,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00013702236592559415
+        },
+        {
+          "phase": 109,
+          "label": "outer_field_observation_schema_bytes",
+          "mean": {
+            "instructions": 17889.85714285714,
+            "cycles": 4008.285714285714,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.4165714285714286e-06
+          },
+          "median": {
+            "instructions": 17889,
+            "cycles": 3704,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00013701142505526416
+        },
+        {
+          "phase": 110,
+          "label": "outer_field_max_library_inputs",
+          "mean": {
+            "instructions": 17888.428571428572,
+            "cycles": 4029.285714285714,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.4227142857142857e-06
+          },
+          "median": {
+            "instructions": 17887,
+            "cycles": 3766,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.0001370004841849342
+        },
+        {
+          "phase": 126,
+          "label": "outer_field_prefix",
+          "mean": {
+            "instructions": 17857.428571428572,
+            "cycles": 4168.857142857143,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.2558571428571428e-06
+          },
+          "median": {
+            "instructions": 17856,
+            "cycles": 3861,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.041e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.0001367630672987737
+        },
+        {
+          "phase": 102,
+          "label": "outer_field_schemas",
+          "mean": {
+            "instructions": 17835.85714285714,
+            "cycles": 4046.1428571428573,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.6307142857142857e-06
+          },
+          "median": {
+            "instructions": 17835,
+            "cycles": 3777,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00013659786015679106
+        },
+        {
+          "phase": 130,
+          "label": "outer_field_static_layouts",
+          "mean": {
+            "instructions": 17834.428571428572,
+            "cycles": 3957.285714285714,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.2081428571428572e-06
+          },
+          "median": {
+            "instructions": 17839,
+            "cycles": 3694,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.0001365869192864611
+        },
+        {
+          "phase": 101,
+          "label": "outer_field_plan",
+          "mean": {
+            "instructions": 17831.428571428572,
+            "cycles": 4146.428571428572,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.6667142857142856e-06
+          },
+          "median": {
+            "instructions": 17830,
+            "cycles": 3850,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00013656394345876814
+        },
+        {
+          "phase": 131,
+          "label": "outer_field_schema_templates",
+          "mean": {
+            "instructions": 17831.285714285714,
+            "cycles": 4030.1428571428573,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.2262857142857142e-06
+          },
+          "median": {
+            "instructions": 17831,
+            "cycles": 3767,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00013656284937173512
+        },
+        {
+          "phase": 115,
+          "label": "outer_field_buffer_frames",
+          "mean": {
+            "instructions": 17829.428571428572,
+            "cycles": 4073.5714285714284,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.4284285714285715e-06
+          },
+          "median": {
+            "instructions": 17828,
+            "cycles": 3816,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00013654862624030617
+        },
+        {
+          "phase": 13,
+          "label": "binary_reader_end_validation",
+          "mean": {
+            "instructions": 17809.428571428572,
+            "cycles": 4025.1428571428573,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.2262857142857142e-06
+          },
+          "median": {
+            "instructions": 17808,
+            "cycles": 3757,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.0001363954540556865
+        },
+        {
+          "phase": 38,
+          "label": "plan_struct_assembly",
+          "mean": {
+            "instructions": 17794.428571428572,
+            "cycles": 4150.428571428572,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1.1605714285714286e-06
+          },
+          "median": {
+            "instructions": 17795,
+            "cycles": 3745,
+            "allocation_requests": 0,
+            "requested_bytes": 0,
+            "seconds": 1e-06
+          },
+          "share_of_exclusive_restore_instructions": 0.00013628057491722176
+        }
+      ],
+      "performance_measured": false,
+      "limitations": [
+        "Diagnostic hooks can perturb optimization and execution; only uninstrumented cohorts can establish latency gains.",
+        "Mixed phases explicitly include both decoding and validation or materialization; no pure-subcategory cost inferred.",
+        "Source and immutable native Object are unchanged; diagnostic runtime library only inserts synchronous counter boundaries.",
+        "First evaluation is independently measured; no restoration work deferred."
+      ]
+    },
+    "labels": {
+      "101": "outer_field_plan",
+      "102": "outer_field_schemas",
+      "103": "outer_field_calls",
+      "104": "outer_field_types",
+      "105": "outer_field_visits",
+      "106": "outer_field_retirements",
+      "107": "outer_field_constant_bytes",
+      "108": "outer_field_scalar_bytes",
+      "109": "outer_field_observation_schema_bytes",
+      "110": "outer_field_max_library_inputs",
+      "111": "outer_field_word_collections",
+      "112": "outer_field_window_regions",
+      "113": "outer_field_string_map_regions",
+      "114": "outer_field_scalar_aggregates",
+      "115": "outer_field_buffer_frames",
+      "116": "outer_field_map_owner_words",
+      "117": "outer_field_borrowed_record_maps",
+      "118": "outer_field_numeric_maps",
+      "119": "outer_field_frozen_maps",
+      "120": "outer_field_map_admission",
+      "121": "outer_field_parallel",
+      "122": "outer_field_borrowed_strings",
+      "123": "outer_field_closed_tails",
+      "124": "outer_field_selected_joins",
+      "125": "outer_field_line_matrices",
+      "126": "outer_field_prefix",
+      "127": "outer_field_stack",
+      "128": "outer_field_code",
+      "129": "outer_field_identity",
+      "130": "outer_field_static_layouts",
+      "131": "outer_field_schema_templates"
+    },
+    "diagnostic_only": true,
+    "instrumented_fields": 31,
+    "unseparated_field": "utf8_reads; regex did not include digit8, so it remains in the enclosing phase",
+    "hook_instructions_and_nesting_perturbation": "Exclusive130.572M versus enclosing134.418M; not uninstrumented latency. Seven fresh outputs exact; restore allocations and first-evaluation allocations/instructions checked separately; no work deferred."
+  },
+  "selected_compiler_unchanged": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+  "same_binary_controls_are_not_compiler_gains": true,
+  "next_actions": [
+    "Recover conditional-comparison/instruction-combining and register-pressure gains in existing Cranelift.",
+    "Measure compact typed metadata representations; eliminating named-field dispatch alone did not help. Preserve eager independent validation.",
+    "Complete executed proof/refusal/consumption and successful-funding-check census.",
+    "Retain fastest eligible measured Rust separately at both boundaries and qualify unordered unique rows."
+  ]
+}
