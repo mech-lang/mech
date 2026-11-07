@@ -1,6 +1,32 @@
 # Native compression milestone
 
-## R184 — unsigned interval predicates
+## R185 — selected native ranges
+
+The compiler carries unsigned range facts from a unique selected edge through its dominated native code. Facts belong to immutable SSA words; fresh loads, joins with other predecessors and shared branch targets keep their checks. Source assertions, checked arithmetic, effects, prices, errors and publication remain. **8,721 proved branch sites** are removed (a static count). IR/work/ABI/MBC: **205/107/39/14**.
+
+All **20 original timing gates pass**: **16 faster / 4 slower medians**, geometric elapsed **-0.897836%**. Every contrary case and paired block is retained. Three zero reference medians stay unresolved. Pairs share the same fresh reference; independent rounds are not compounded.
+
+| Input | Before / Roc | After / Roc |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.678007× | 3.619007× |
+| reymont-prefix-16384 | 4.419504× | 4.337101× |
+| random-32769 | 4.872262× | 4.843413× |
+| 16384-distribution-change | 6.437103× | 6.393901× |
+| repeated-32769 | 3.090523× | 3.051817× |
+| 33027-periodic-window | 3.518398× | 3.529740× |
+| eight-literals | 4.613850× | 4.565803× |
+
+Separate counters have **14 lower / 6 higher instruction medians** and **5 higher cycle medians**. All five larger cases execute more instructions but use fewer cycles. Natural-text instructions rise **0.491944%** while cycles fall **2.882354%**. Eight-byte instructions fall **0.573894%** while cycles rise **1.819071%**. No broad instruction-count improvement is claimed. All seven measured allocation/live-heap metrics remain exactly equal in all twenty cases. Code shrinks **308,224 B**; stack falls **64 B**. No heap/RSS saving is claimed.
+
+All **660 native unit tests / 243 CI-selected names actually execute and pass**, with the same seven inherited exclusions. Four new native tests cover selected paths, word widths, loops, aliases, error order and recovery. A 16-row actual source witness proves original/decoded/native/resident agreement; the parent fails its new coverage assertion as expected and the candidate passes. The scalar-only control activates zero folds and is not optimization coverage. Unchanged **236 component / eight composition / one real-capacity path** tests, twelve scalar controls, fifteen architecture/catalog checks, runtime-only, formatting, warnings denied and 132 workflow tests pass. No allowance or expected-value increases. Five adverse scalar medians remain.
+
+Five current profiles complete **17,729 calls** with zero managed cleanup. Independent source-location compilation repeats the actual whole Object byte-for-byte. Natural text is **80.91%** inside main; **35.67%** of samples remain native without a fine tag. CPU sample shares are not retired-instruction counts or removable-host estimates. The inspected hot reduction body and gate instruction counts remain unchanged; the cause of the whole-call instruction increase is unproved.
+
+Public evidence verifies **37 immutable packets / 4,713 file occurrences / 1,106 paths**, preserving 13 paths with multiple versions. All **38** container/inner receipts and three replay outputs match. Two release assets use standing upload permission; no new release or PR.
+
+[Design, all twenty timings and complete limitations](native-selected-ranges.md). Existing draft #973 only; exact-head review is requested without waiting for hosted CI. Parity remains unproved.
+
+## Historical R184 — unsigned interval predicates
 
 The compiler combines unsigned bounds of the same immutable word into one exact interval predicate. Source assertions, checked arithmetic, effects, prices, errors and publication remain. Four real sites are simplified; all earlier numeric recipes and proof selections are unchanged. IR/work/ABI/MBC: **204/107/39/14**.
 
