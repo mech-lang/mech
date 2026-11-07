@@ -1,0 +1,188 @@
+{
+  "schema": "mech.related-post-gen.trial-evidence-manifest.v1",
+  "compiler_commit": "167fbde948a0a58c34071299b7a0c5c0efb55765",
+  "selected": false,
+  "files": {
+    "trial.json": {
+      "sha256": "c7a8b258c34773754cc362d7ae6b5a444695a04cfb0ff4db95f0b48fde009f7b",
+      "bytes": 79235,
+      "source_sha256": "c7a8b258c34773754cc362d7ae6b5a444695a04cfb0ff4db95f0b48fde009f7b",
+      "source_bytes": 79235,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/compiler-native-initialized-homes-20261107.json"
+    },
+    "latency.json.gz": {
+      "sha256": "514e88568886f27549540ba215d48caf0322fbdcc7c21c91efcc880c0d5d0a11",
+      "bytes": 22410,
+      "source_sha256": "b8c9929b52eb16d27eba6ed397668db48eaa0a1210b2f973be350854288b1c75",
+      "source_bytes": 406215,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-initialized-homes-randomized-20261107-5000-m3.json"
+    },
+    "resources.json.gz": {
+      "sha256": "7a21f8b4f96734cde929c24fe08828d6f71e934eaed09b5d926ced9ab494a79a",
+      "bytes": 42786,
+      "source_sha256": "1fe9c13d04fc7846b2ab3f74bc78df196075a24096f6cf15f0aae5eceb8bd9fb",
+      "source_bytes": 496921,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-initialized-homes-resources-20261107-5000-m3.json"
+    },
+    "sizes.json": {
+      "sha256": "041b6ab7770a30b4bd5c8861848a8e0ad0ebb5e4adcf280bedd5b4a53ee7ca97",
+      "bytes": 18847,
+      "source_sha256": "041b6ab7770a30b4bd5c8861848a8e0ad0ebb5e4adcf280bedd5b4a53ee7ca97",
+      "source_bytes": 18847,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/size-native-initialized-homes-20261107.json"
+    },
+    "native-code-comparison.json.gz": {
+      "sha256": "be3d302df310a9d87b99790283d60a74da7ed2a50f3ff65ed95553fad40dab3f",
+      "bytes": 5508,
+      "source_sha256": "a199cd71a752f2d87a35e006695a28c251f0105b548af996d4f633a5fcb979d1",
+      "source_bytes": 82677,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-runners-20261107-v1/native-code-comparison.json"
+    },
+    "compiler-build.json.gz": {
+      "sha256": "c6c232f731a0e72a09f7634e71173a14f4d8932fd7db43744fe3825e3960297d",
+      "bytes": 6839,
+      "source_sha256": "ec1a051d666a8ec7d253694e22e858af5527888d6fc0ad7adf5ae7ad7bafe477",
+      "source_bytes": 78702,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-opt-20261107-v1/build.json"
+    },
+    "source-inventory.json.gz": {
+      "sha256": "9db9ff4940e62563ef43d009af6989ec60ffe814dd1cb3ef226b0133165c9601",
+      "bytes": 116223,
+      "source_sha256": "13a2873d98fa7da628549215b094594661bf2e86f0ad4f1a78fa51542fc319cd",
+      "source_bytes": 313829,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-opt-20261107-v1/source-inventory.json"
+    },
+    "gpu-result.json": {
+      "sha256": "d1cac7a50920a55d907b93884c90c020a50adf537d2c0adc3b75de24b3d8ccfb",
+      "bytes": 637,
+      "source_sha256": "d1cac7a50920a55d907b93884c90c020a50adf537d2c0adc3b75de24b3d8ccfb",
+      "source_bytes": 637,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-tests-20261107-v1/test-run.json"
+    },
+    "gpu-stdout.log.gz": {
+      "sha256": "58174323532c34e91a61e4d988df5885355ef19868d763dd5951b439277c0a6a",
+      "bytes": 22068,
+      "source_sha256": "a8f9561ebb61e2d27d712648e0ab7e62ed490f7b7a45bcc8d9a35c2114c7bae8",
+      "source_bytes": 129095,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-tests-20261107-v1/test-run.stdout.log"
+    },
+    "gpu-stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-tests-20261107-v1/test-run.stderr.log"
+    },
+    "ci-actual-inventory.json.gz": {
+      "sha256": "f6afcd4671ad882cab21a6ae06d90cd0503435bff4bcee142b45c96fa2058055",
+      "bytes": 8844,
+      "source_sha256": "b56f69693c3772db5ccfe1cb7dd52347f8d04cc2e8677ca3676780657c59f2e5",
+      "source_bytes": 55150,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-tests-20261107-v1/ci-selected-inventory-audit.json"
+    },
+    "ci-list.log.gz": {
+      "sha256": "800ed0899f65e03c1976cf5444c126cca905bf089aad361d46a0fa532626cbf7",
+      "bytes": 8786,
+      "source_sha256": "f3bd14aed5020baa223178f8cd16c48e0eba11987955a817aa1439ff4bc8baea",
+      "source_bytes": 54688,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-tests-20261107-v1/ci-selected-list.stdout.log"
+    },
+    "ci-execute.log.gz": {
+      "sha256": "13178d6e55280b80e43b4331c81ab9887577253bc899ed8146aeec46bee9e269",
+      "bytes": 8900,
+      "source_sha256": "877b290920d1c6b7e28b3d29d3048e1dd14aa466806ab3aeb8686ff26a5c786a",
+      "source_bytes": 57052,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-tests-20261107-v1/ci-selected-execute.stdout.log"
+    },
+    "scalar-control-comparison.json.gz": {
+      "sha256": "8a00f7913bd5fa3c9853918a18321386f04e6e27c093c175589c08d0367a4bcb",
+      "bytes": 826,
+      "source_sha256": "7bb2b53dfcba3029e86f74a4c51dd2314f8237c29817bc55f0521001aa6fc5c0",
+      "source_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-regressions-20261107-v1/scalar-comparison.json"
+    },
+    "DEFLATE-control-comparison.json": {
+      "sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "bytes": 1422,
+      "source_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "source_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-regressions-20261107-v1/one-kib-comparison.json"
+    },
+    "latency-start-gate.json.gz": {
+      "sha256": "40ee23ff749625800b8c08c864b2e0b50642c5501e4ce853010bfa6c2f002625",
+      "bytes": 19623,
+      "source_sha256": "186cd2a04331d528cee979059f0f17e1123649e858ec298819a0da0a9a010fe0",
+      "source_bytes": 125977,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-cohort-20261107-v1/latency-start-gate.json"
+    },
+    "resources-start-gate.json.gz": {
+      "sha256": "3deed0730eedd2aa03ea3582704527b99c47d8e97a637b64740dccf1c0aa9419",
+      "bytes": 18706,
+      "source_sha256": "f1f759ec2bb5cfef1cf38a67e7748672e001c241e89885cb4de8e2f8c5f6c085",
+      "source_bytes": 124193,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-cohort-20261107-v1/resources-start-gate.json"
+    },
+    "after-4-native-link-audit.json.gz": {
+      "sha256": "fe4fd8921db783d6e7f5bea5531686ec0038769311101966a5d6d58079ff6f58",
+      "bytes": 2081,
+      "source_sha256": "da7e79abc9520c753e750d73e16b06756eb525b58ea80870ec4782d1f6dcda0d",
+      "source_bytes": 13195,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-runners-20261107-v1/after-4/native-link-audit.json"
+    },
+    "after-4-host-build-run.json.gz": {
+      "sha256": "5fee249e828e8b593feb6605aafec375aecaf451e40777f7a9bcafb188c53440",
+      "bytes": 787,
+      "source_sha256": "419e37a0581cb0e04aed26275d8448412b8a0a549b2843c08ddf8f4e3bd79d07",
+      "source_bytes": 2734,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-runners-20261107-v1/after-4/host-build-run.json"
+    },
+    "after-4-edge-run.json.gz": {
+      "sha256": "01a2e19d5de849dc6655601581ecf795cb55ebda2fae727bb4a573053ae4e9e3",
+      "bytes": 699,
+      "source_sha256": "beba1d427b8b8f90d1bdecaf88f4c7395238415ac4baf75d4527fbb1c4d60529",
+      "source_bytes": 2879,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-runners-20261107-v1/after-4/edge-run.json"
+    },
+    "after-4-edge-fixtures.json.gz": {
+      "sha256": "61f31da547b883a8042eef4eb8fdfca814430e37a11d0fe0c7460092afa110fd",
+      "bytes": 5426,
+      "source_sha256": "f48d5dde51d341982870882a1db9782649fb63d0acaab9504e7290496e4e6479",
+      "source_bytes": 63994,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-runners-20261107-v1/after-4/edges/edge-fixtures.json"
+    },
+    "reuse-4-native-link-audit.json.gz": {
+      "sha256": "cccf8d6bdf3a003bd61c263743fc66db60104ddbe3df0396a9577e1cfcc58d2b",
+      "bytes": 2064,
+      "source_sha256": "66fc7701e43f2f17da66f9e3e8236ffb25b49fa9d8363627b6c78a3dbbd32121",
+      "source_bytes": 12871,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-runners-20261107-v1/reuse-4/native-link-audit.json"
+    },
+    "reuse-4-host-build-run.json.gz": {
+      "sha256": "2bcc35fd18187b7830b4ea944c82dca8ae27b0b634efd5cd63e2943b72ef35b8",
+      "bytes": 785,
+      "source_sha256": "552f550160b5d0476eb01bf78ba619f6d697d6eceb2beec6cd348fe5b5402a5e",
+      "source_bytes": 2733,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-runners-20261107-v1/reuse-4/host-build-run.json"
+    },
+    "reuse-4-edge-run.json.gz": {
+      "sha256": "b89df39020601160e971d95a4f58344f7b300118646d770ec4145baeaa7a855d",
+      "bytes": 699,
+      "source_sha256": "7eaf5d342d3901171ba720748fd10341dbe7c477a41a3fbafe008068e2ce1fa9",
+      "source_bytes": 2880,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-runners-20261107-v1/reuse-4/edge-run.json"
+    },
+    "reuse-4-edge-fixtures.json.gz": {
+      "sha256": "467e4e11235e68969e40088b4da7c4948212938d4d9097469be06cc0e6cc3f6c",
+      "bytes": 5418,
+      "source_sha256": "fa855509ce6df193ede9b3f66bf3aa0f33f26165a120e6a327b944cea7f7562f",
+      "source_bytes": 64000,
+      "retained_source": "/private/tmp/mech-related-initialized-homes-integration-runners-20261107-v1/reuse-4/edges/edge-fixtures.json"
+    },
+    "README.md": {
+      "sha256": "ee6f444ae479cb4401634ed9b4c151692fd211703a705d717a3e70d71d10f2ef",
+      "bytes": 2252,
+      "source_sha256": "ee6f444ae479cb4401634ed9b4c151692fd211703a705d717a3e70d71d10f2ef",
+      "source_bytes": 2252
+    }
+  }
+}

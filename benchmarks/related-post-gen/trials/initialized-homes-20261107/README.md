@@ -1,0 +1,11 @@
+# Initialized source-home load trial: IR247 (unselected)
+
+Compiler commit 167fbde948a0a58c34071299b7a0c5c0efb55765 integrates PR #973 through 3471b729c880c24cce9d05b3821ffe6b4633adfc. The selected compiler remains IR242, 4cc266ae0d05c69432a4c15ffe99d5e586685647. This packet adds evidence only; it does not change compiler code.
+
+IR247 removes 2,558 unused native IR loads and reduces selected-source native code from 874,160 to 861,408 B. It does not pass the joint latency gate: 6/31 post-JSON wins and 24/31 full-process wins against selected IR242; at least 21 in both are required. Dynamic processing instructions fall only 0.17%. Full adoption qualification was not run; no adoption is claimed.
+
+The 31-round randomized latency cohort contains 248 exact full-JSON outputs, seed 990247. The separate 7-round resource cohort contains 63 exact outputs, seed 9902477. All first and adverse samples are retained. Processing includes the continuous post-JSON admission/setup/worker/run/join/materialization interval; whole-process timing includes restore, JSON and teardown. Preinitialized processing timers are ineligible as matched processing references. Resource timings are excluded from latency claims.
+
+All 12 compiler build stages pass. The GPU suite records 873 passes and the same 2 inherited catalog failures. All 378 CI-selected test names were listed and actually executed. Both original and selected-source runners pass 31 edges each, and native-link audits pass. All 128 scalar and 5 DEFLATE control rows preserve every non-timing field against IR240. Core and Engine sources match the selected compiler; this is not a replacement for the full loader/runtime/feature adoption matrix.
+
+trial.json summarizes the decision and source identities. latency.json.gz and resources.json.gz retain raw samples, invocation commands, stdout, equality flags, full execution ordering and references. The remaining files preserve size, build, inventory, link, edge and control evidence. Paths in receipts identify retained local binaries and inputs; raw binaries remain local. manifest.json pins each published file and its decompressed source bytes. This rejected trial is separate from PR #990's selected implementation and original selection cohort.

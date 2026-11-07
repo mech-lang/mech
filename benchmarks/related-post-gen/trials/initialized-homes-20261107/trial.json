@@ -1,0 +1,2513 @@
+{
+  "schema": "mech.related-post-gen.native-initialized-home-trial.v1",
+  "updated_utc": "2026-11-07T07:09:42.360164+00:00",
+  "selected_changed": false,
+  "selected_compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+  "selected_identity": "IR242/work115/ABI41/image9",
+  "selected_source_variant": "ordered-combinadic-mask-reuse",
+  "selected_workers": 4,
+  "candidate_compiler": "167fbde948a0a58c34071299b7a0c5c0efb55765",
+  "candidate_identity": "IR247/work115/ABI41/image9",
+  "candidate_branch": "codex/related-initialized-homes-integration-20261107",
+  "candidate_parent": "IR246",
+  "integrated_PR973": "3471b729c880c24cce9d05b3821ffe6b4633adfc",
+  "numeric_alias_experiment_IR245_included": false,
+  "candidate_selected": false,
+  "goal_complete": false,
+  "compiler_change": "Mark initialized source program-local homes nontrapping, preserving richer current scalar-import/window metadata. Demand liveness can retire unused local-word reads. Bounds checks, finite-accounting effects, boundary writes and ordering remain checked.",
+  "source": "/private/tmp/mech-related-initialized-homes-integration-compiler-20261107",
+  "build": "/private/tmp/mech-related-initialized-homes-integration-opt-20261107-v1/build.json",
+  "qualification": {
+    "core_and_engine_source_exact_selected": true,
+    "all_12_compiler_stages_pass": true,
+    "gpu": {
+      "command": [
+        "/private/tmp/mech-related-initialized-homes-integration-tests-20261107-v1/mech_gpu-tests",
+        "--test-threads=1"
+      ],
+      "exit": 101,
+      "seconds": 226.81681520794518,
+      "summary": [
+        "test result: FAILED. 873 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 226.80s"
+      ],
+      "expected_failures_exact": true,
+      "failed_tests": [
+        "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+        "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+      ],
+      "new_failures": []
+    },
+    "actual_CI": {
+      "expected": 378,
+      "listed": 378,
+      "executed_passed": 378,
+      "all_names_match": true,
+      "receipt": "/private/tmp/mech-related-initialized-homes-integration-tests-20261107-v1/ci-selected-inventory-audit.json"
+    },
+    "edge_fixtures_exact": 62,
+    "controls": {
+      "scalar": {
+        "rows": 128,
+        "all_nontiming_fields_equal_IR240": true,
+        "all_semantic_nontiming_fields_equal_IR240": true,
+        "semantic_differences": [],
+        "all_field_differences": [],
+        "physical_allocator_measurements": [
+          {
+            "row": 0,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 1,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 2,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 3,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 4,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 5,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 6,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 7,
+            "metrics": {}
+          },
+          {
+            "row": 8,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 9,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 10,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 11,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 12,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 13,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 14,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 15,
+            "metrics": {}
+          },
+          {
+            "row": 16,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 17,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 18,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 19,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 20,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 21,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 22,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 23,
+            "metrics": {}
+          },
+          {
+            "row": 24,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 25,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 26,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 27,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 28,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 29,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 30,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 31,
+            "metrics": {}
+          },
+          {
+            "row": 32,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 33,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 34,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 35,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 36,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 37,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 38,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 39,
+            "metrics": {}
+          },
+          {
+            "row": 40,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 41,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 42,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 43,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 44,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 45,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 46,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 47,
+            "metrics": {}
+          },
+          {
+            "row": 48,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 49,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 50,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 51,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 52,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 53,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 54,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 55,
+            "metrics": {}
+          },
+          {
+            "row": 56,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 57,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 58,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 59,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 60,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 61,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 62,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 63,
+            "metrics": {}
+          },
+          {
+            "row": 64,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 65,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 66,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 67,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 68,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 69,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 70,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 71,
+            "metrics": {}
+          },
+          {
+            "row": 72,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 73,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 74,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 75,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 76,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 77,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 78,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 79,
+            "metrics": {}
+          },
+          {
+            "row": 80,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 81,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 82,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 83,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 84,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 85,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 86,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 87,
+            "metrics": {}
+          },
+          {
+            "row": 88,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 89,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 90,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 91,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 92,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 93,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 94,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 95,
+            "metrics": {}
+          },
+          {
+            "row": 96,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 97,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 98,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 99,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 100,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 101,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 102,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 103,
+            "metrics": {}
+          },
+          {
+            "row": 104,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 105,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 106,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 107,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 108,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 109,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 110,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 111,
+            "metrics": {}
+          },
+          {
+            "row": 112,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 113,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 114,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 115,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 116,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 117,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 118,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 119,
+            "metrics": {}
+          },
+          {
+            "row": 120,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 121,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 122,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 123,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 124,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 125,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 126,
+            "metrics": {
+              "requested_bytes_per_100": {
+                "before": 14878300,
+                "after": 14878300,
+                "delta": 0
+              },
+              "allocation_requests_per_100": {
+                "before": 46600,
+                "after": 46600,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 127,
+            "metrics": {}
+          }
+        ],
+        "physical_field_names": [
+          "allocation_requests",
+          "allocation_requests_per_100",
+          "requested_bytes",
+          "requested_bytes_per_100"
+        ],
+        "allocation_requests_never_regress": true,
+        "requested_bytes_never_regress": true
+      },
+      "one-kib": {
+        "rows": 5,
+        "all_nontiming_fields_equal_IR240": true,
+        "all_semantic_nontiming_fields_equal_IR240": true,
+        "semantic_differences": [],
+        "all_field_differences": [],
+        "physical_allocator_measurements": [
+          {
+            "row": 0,
+            "metrics": {}
+          },
+          {
+            "row": 1,
+            "metrics": {
+              "requested_bytes": {
+                "before": 23989468,
+                "after": 23989468,
+                "delta": 0
+              },
+              "allocation_requests": {
+                "before": 3569,
+                "after": 3569,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 2,
+            "metrics": {
+              "requested_bytes": {
+                "before": 23977116,
+                "after": 23977116,
+                "delta": 0
+              },
+              "allocation_requests": {
+                "before": 3376,
+                "after": 3376,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 3,
+            "metrics": {
+              "requested_bytes": {
+                "before": 23977116,
+                "after": 23977116,
+                "delta": 0
+              },
+              "allocation_requests": {
+                "before": 3376,
+                "after": 3376,
+                "delta": 0
+              }
+            }
+          },
+          {
+            "row": 4,
+            "metrics": {}
+          }
+        ],
+        "physical_field_names": [
+          "allocation_requests",
+          "allocation_requests_per_100",
+          "requested_bytes",
+          "requested_bytes_per_100"
+        ],
+        "allocation_requests_never_regress": true,
+        "requested_bytes_never_regress": true
+      }
+    },
+    "full_adoption_qualification_run": false,
+    "full_adoption_reason": "Latency gate fails; no adoption or loader-feature qualification claimed."
+  },
+  "native_code": {
+    "after-4": {
+      "source_artifact_catalog_frames_exact": true,
+      "fixtures": 31,
+      "before_code_bytes": 905904,
+      "after_code_bytes": 892472,
+      "before_stack_bytes": 1520,
+      "after_stack_bytes": 1536,
+      "native_link_audit": "passed",
+      "dead_native_values": {
+        "dead_parameters_removed": 0,
+        "dead_instructions_removed": 46052,
+        "dead_loads_removed": 2756
+      },
+      "files": {
+        "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+        "image-binding.bin": "17a14039db3855c813d7327350cf90a921c4adcabbe7ee136a5283b74072338e",
+        "frame-summary.json": "aab2e3f78a45f66bf5b8442360f780a13c2dc96ad486e71c66447698a93083a9",
+        "artifact.mecb": "8c1cf10b07a51c8dc04aaf90d1d0b862615c7bf36fcf7ec83298bfba0d87fb1a",
+        "source.mec": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+        "metadata.json": "596b31ec5596cb2c15e5986780e0c0c7bcfb1413e861d25fed9b8f5ca11bdd76",
+        "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+        "native-metadata-binding.bin": "46dfd72b26a099733e71b81d8ec5f23c284640ad5451d83518ca8d9d8e0351ae",
+        "native-metadata.bin": "d7c4ba81c2f431597c7750feea8a1ff0b42670c52893a02bda7773d983f65582",
+        "linked.rs": "a89a5f1c0f0bf9bc292a941d106b99b0a81bf31d1fd13a763df031ebc8d1b01d",
+        "object.o": "1701d06d8b1e29e051901872054a608f21202c4cd0f1f2fb2c3047f087f6cb5e",
+        "descriptor.json": "56f13a1082a807f1ff9f8b1d22a29f6def1f20c4bcc5dc57e465ca0294254904",
+        "map-facts.txt": "d5be89e6e3005de483d8cd80055e4f6f1042d84c36696cb08ae9ecd6038868dc"
+      }
+    },
+    "reuse-4": {
+      "source_artifact_catalog_frames_exact": true,
+      "fixtures": 31,
+      "before_code_bytes": 874160,
+      "after_code_bytes": 861408,
+      "before_stack_bytes": 1536,
+      "after_stack_bytes": 1552,
+      "native_link_audit": "passed",
+      "dead_native_values": {
+        "dead_parameters_removed": 0,
+        "dead_instructions_removed": 42734,
+        "dead_loads_removed": 2558
+      },
+      "files": {
+        "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+        "image-binding.bin": "9498e267717b313abfa2124072c51343e90e4b2c0cb72b4a1779b63b26ae653e",
+        "frame-summary.json": "f1472782f21c422fa4f593ee3daa84342a6df9e9dbfa01f4b7fdd7aeecb4e6b2",
+        "artifact.mecb": "49612ff092b1b4c8b7ec9ae91a18d812803f4a6dbde804406835bc81780a19b0",
+        "source.mec": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+        "metadata.json": "740d0cc378a46ee6748d6a5c0f6d5be6198a5f0569c807d0d23815522e94d0e3",
+        "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+        "native-metadata-binding.bin": "b9c80535add78475d74a090e5dda4b30453488b071c38b9a645142797fd3b394",
+        "native-metadata.bin": "c6d20534971ccec855f7c4efa92195cb3ac7a9753e93f912961a80704e205de2",
+        "linked.rs": "47c9eca7000a16b15e282fde84deab34304fe3612ac41a38e8673296e04d8edf",
+        "object.o": "c648732bee8ec6a7c4dbedc0fb45272f470e15bfd9bea79d9cca77f84d720c68",
+        "descriptor.json": "affa5a4896e4928030cb278e4532b12d2b636180ac48a85a05aa4608ec1ed07a",
+        "map-facts.txt": "e40dbb83004557a250b45b00bd4aefb748612bf0ceb3b1204b51a6efa573ee64"
+      }
+    }
+  },
+  "native_code_details": "/private/tmp/mech-related-initialized-homes-integration-runners-20261107-v1/native-code-comparison.json",
+  "latency_report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-initialized-homes-randomized-20261107-5000-m3.json",
+  "resource_report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-initialized-homes-resources-20261107-5000-m3.json",
+  "size_report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/size-native-initialized-homes-20261107.json",
+  "latency_seed": 990247,
+  "resource_seed": 9902477,
+  "exact_latency_outputs": 248,
+  "exact_resource_outputs": 63,
+  "all_first_and_adverse_samples_retained": true,
+  "matched_reference": {
+    "variant": "rust-mech-control-u32-casts",
+    "median_seconds": 0.0015973340000000002,
+    "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+    "eligible_variants": [
+      "rust",
+      "rust-mech-control-streaming",
+      "rust-mech-control-u32-casts",
+      "rust-mech-control-u8-ids-u32"
+    ]
+  },
+  "whole_process_reference": {
+    "variant": "rust-mech-control-u32-casts",
+    "median_seconds": 0.022730665979906917,
+    "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+  },
+  "latency": {
+    "mech-ir242-reuse-4": {
+      "median_seconds": 0.002682417,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "IR242_reuse_4",
+      "median_processing_plus_admission_seconds": 0.0028322919999999997,
+      "median_whole_process_seconds": 0.036053125048056245,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002841166,
+      "over_fastest": 1.6793087732434167,
+      "over_rust": 0.30774307837727355,
+      "whole_process_over_fastest": 1.5861006923389704,
+      "processing_plus_admission_over_fastest": 1.7731369895087685,
+      "processing_plus_admission_over_rust": 0.3249376435294456,
+      "post_json_over_fastest_matched_native": 1.7786924963720798
+    },
+    "mech-ir244-reuse-4": {
+      "median_seconds": 0.002675833,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "IR244_reuse_4",
+      "median_processing_plus_admission_seconds": 0.00282675,
+      "median_whole_process_seconds": 0.034762667026370764,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002835167,
+      "over_fastest": 1.675186905180757,
+      "over_rust": 0.3069877221339915,
+      "whole_process_over_fastest": 1.5293290155730457,
+      "processing_plus_admission_over_fastest": 1.769667458402563,
+      "processing_plus_admission_over_rust": 0.32430183181919814,
+      "post_json_over_fastest_matched_native": 1.7749368635488882
+    },
+    "mech-ir247-reuse-4": {
+      "median_seconds": 0.00273175,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "IR247_initialized_program_local_homes_reuse_4",
+      "median_processing_plus_admission_seconds": 0.0028808329999999997,
+      "median_whole_process_seconds": 0.03502858313731849,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002889208,
+      "over_fastest": 1.7101933596855758,
+      "over_rust": 0.3134028580780382,
+      "whole_process_over_fastest": 1.54102757782295,
+      "processing_plus_admission_over_fastest": 1.8035257497805715,
+      "processing_plus_admission_over_rust": 0.3305065602070208,
+      "post_json_over_fastest_matched_native": 1.8087688611148323
+    }
+  },
+  "resources": {
+    "mech-ir242-reuse-4": {
+      "median_seconds": 0.002572042,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR242_reuse_4_instrumented",
+      "median_processing_plus_admission_seconds": 0.002725542,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 77371156,
+        "instructions_retired": 312867013,
+        "involuntary_context_switches": 16,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1786,
+        "peak_physical_footprint_bytes": 16007528,
+        "peak_resident_bytes": 26558464,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 14858518,
+          "instructions_per_cycle": 3.691583440555781,
+          "instructions_retired": 54851459,
+          "lifetime_peak_physical_footprint_bytes_after": 16007528,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15909224,
+          "physical_footprint_bytes_before": 11944296,
+          "resident_bytes_after": 26460160,
+          "resident_bytes_before": 21086208,
+          "system_cpu_seconds": 0.000364,
+          "user_cpu_seconds": 0.0035696666666666667
+        },
+        "live_requested_heap_bytes_after": 8498735,
+        "live_requested_heap_bytes_before": 7776893,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344060,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30113146,
+            "instructions_per_cycle": 4.178810443784253,
+            "instructions_retired": 125880093,
+            "lifetime_peak_physical_footprint_bytes_after": 9535848,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9535848,
+            "physical_footprint_bytes_before": 1163600,
+            "resident_bytes_after": 18628608,
+            "resident_bytes_before": 2031616,
+            "system_cpu_seconds": 0.0005894583333333333,
+            "user_cpu_seconds": 0.007446666666666667
+          },
+          "live_requested_heap_bytes_after": 6351958,
+          "live_requested_heap_bytes_before": 6343,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010196,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6488349,
+            "instructions_per_cycle": 4.847461649987231,
+            "instructions_retired": 31455701,
+            "lifetime_peak_physical_footprint_bytes_after": 11944296,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11944296,
+            "physical_footprint_bytes_before": 9535848,
+            "resident_bytes_after": 21086208,
+            "resident_bytes_before": 18644992,
+            "system_cpu_seconds": 0.00018904166666666668,
+            "user_cpu_seconds": 0.0014799166666666667
+          },
+          "live_requested_heap_bytes_after": 7776893,
+          "live_requested_heap_bytes_before": 6351958,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890182,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.04549154103733599,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002733209,
+      "over_fastest": 1.5514865556113193,
+      "over_rust": 0.29590911182696733,
+      "whole_process_over_fastest": 1.4798247901553367,
+      "processing_plus_admission_over_fastest": 1.644079595027603,
+      "processing_plus_admission_over_rust": 0.3135690289921767,
+      "post_json_over_fastest_matched_native": 1.648704421302552,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "wall_seconds": 3.0,
+          "page_reclaims": 3.4612403100775193,
+          "instructions_retired": 2.2219528997024947,
+          "cycles": 2.2210210458478836,
+          "involuntary_context_switches": 3.2,
+          "peak_physical_footprint_bytes": 2.933819238562753,
+          "peak_resident_bytes": 4.404891304347826
+        },
+        "post_json": {
+          "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+          "live_requested_heap_bytes_before": 3.78421963081819,
+          "peak_live_requested_heap_bytes": 1.7413148982364959,
+          "hardware": {
+            "resident_bytes_after": 4.412568306010929,
+            "instructions_per_cycle": 1.2114287207126908,
+            "system_cpu_seconds": 3.3368983957219247,
+            "physical_footprint_bytes_after": 2.9070729190116857,
+            "resident_bytes_before": 6.128571428571429,
+            "user_cpu_seconds": 2.2870261612386544,
+            "instructions_retired": 2.8522886576623407,
+            "cycles": 2.3544243824803215,
+            "lifetime_peak_physical_footprint_bytes_after": 2.925035887930253,
+            "physical_footprint_bytes_before": 4.0952246420538705
+          },
+          "live_requested_heap_bytes_after": 2.65112243395539,
+          "requested_allocation_bytes": 1.173848944425293,
+          "allocation_requests": 64.79310344827586,
+          "freed_allocation_bytes": 1.2846526026213523
+        }
+      },
+      "post_json_instructions_per_post": 10970.2918,
+      "post_json_cycles_per_post": 2971.7036
+    },
+    "mech-ir244-reuse-4": {
+      "median_seconds": 0.002587166,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR244_reuse_4_instrumented",
+      "median_processing_plus_admission_seconds": 0.002741083,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 79686657,
+        "instructions_retired": 312573273,
+        "involuntary_context_switches": 16,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1771,
+        "peak_physical_footprint_bytes": 15794536,
+        "peak_resident_bytes": 26329088,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 14924187,
+          "instructions_per_cycle": 3.6734769538870022,
+          "instructions_retired": 54823657,
+          "lifetime_peak_physical_footprint_bytes_after": 15794536,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15679824,
+          "physical_footprint_bytes_before": 11747664,
+          "resident_bytes_after": 26214400,
+          "resident_bytes_before": 20856832,
+          "system_cpu_seconds": 0.0003700416666666667,
+          "user_cpu_seconds": 0.003517916666666667
+        },
+        "live_requested_heap_bytes_after": 8498734,
+        "live_requested_heap_bytes_before": 7776892,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344059,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30411796,
+            "instructions_per_cycle": 4.134440498022544,
+            "instructions_retired": 125735761,
+            "lifetime_peak_physical_footprint_bytes_after": 9306448,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9306448,
+            "physical_footprint_bytes_before": 1163600,
+            "resident_bytes_after": 18366464,
+            "resident_bytes_before": 2048000,
+            "system_cpu_seconds": 0.0006074166666666667,
+            "user_cpu_seconds": 0.00742575
+          },
+          "live_requested_heap_bytes_after": 6351957,
+          "live_requested_heap_bytes_before": 6342,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010195,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6461768,
+            "instructions_per_cycle": 4.852870287559308,
+            "instructions_retired": 31365218,
+            "lifetime_peak_physical_footprint_bytes_after": 11747664,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11747664,
+            "physical_footprint_bytes_before": 9306448,
+            "resident_bytes_after": 20856832,
+            "resident_bytes_before": 18382848,
+            "system_cpu_seconds": 0.00019670833333333335,
+            "user_cpu_seconds": 0.001476375
+          },
+          "live_requested_heap_bytes_after": 7776892,
+          "live_requested_heap_bytes_before": 6351957,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890181,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.04471724992617965,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.00274875,
+      "over_fastest": 1.5606095336447516,
+      "over_rust": 0.29764910262310174,
+      "whole_process_over_fastest": 1.4546373562949255,
+      "processing_plus_admission_over_fastest": 1.6534541124580164,
+      "processing_plus_admission_over_rust": 0.3153569949378739,
+      "post_json_over_fastest_matched_native": 1.6580789387329653,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "wall_seconds": 3.0,
+          "page_reclaims": 3.432170542635659,
+          "instructions_retired": 2.2198667850990397,
+          "cycles": 2.28748995646726,
+          "involuntary_context_switches": 3.2,
+          "peak_physical_footprint_bytes": 2.8947826035957576,
+          "peak_resident_bytes": 4.366847826086956
+        },
+        "post_json": {
+          "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+          "live_requested_heap_bytes_before": 3.784219144220312,
+          "peak_live_requested_heap_bytes": 1.7413147677428606,
+          "hardware": {
+            "resident_bytes_after": 4.371584699453552,
+            "instructions_per_cycle": 1.2054869024292991,
+            "system_cpu_seconds": 3.392284186401833,
+            "physical_footprint_bytes_after": 2.8651549393779034,
+            "resident_bytes_before": 6.061904761904762,
+            "user_cpu_seconds": 2.2538707955152164,
+            "instructions_retired": 2.850842947179775,
+            "cycles": 2.364830043043044,
+            "lifetime_peak_physical_footprint_bytes_after": 2.886116121940024,
+            "physical_footprint_bytes_before": 4.0278073399528225
+          },
+          "live_requested_heap_bytes_after": 2.6511221220122083,
+          "requested_allocation_bytes": 1.173848944425293,
+          "allocation_requests": 64.79310344827586,
+          "freed_allocation_bytes": 1.2846526026213523
+        }
+      },
+      "post_json_instructions_per_post": 10964.7314,
+      "post_json_cycles_per_post": 2984.8374
+    },
+    "mech-ir247-reuse-4": {
+      "median_seconds": 0.002609458,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR247_initialized_program_local_homes_reuse_4_instrumented",
+      "median_processing_plus_admission_seconds": 0.0027666659999999997,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 78093335,
+        "instructions_retired": 311805344,
+        "involuntary_context_switches": 15,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1761,
+        "peak_physical_footprint_bytes": 15614312,
+        "peak_resident_bytes": 26230784,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3758,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7290514,
+        "hardware": {
+          "cycles": 15099237,
+          "instructions_per_cycle": 3.6291781498628044,
+          "instructions_retired": 54758136,
+          "lifetime_peak_physical_footprint_bytes_after": 15614312,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15466856,
+          "physical_footprint_bytes_before": 11534672,
+          "resident_bytes_after": 26099712,
+          "resident_bytes_before": 20709376,
+          "system_cpu_seconds": 0.0003552916666666667,
+          "user_cpu_seconds": 0.003589416666666667
+        },
+        "live_requested_heap_bytes_after": 8498736,
+        "live_requested_heap_bytes_before": 7776894,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344061,
+        "requested_allocation_bytes": 8012356
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 26837,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6485384,
+          "hardware": {
+            "cycles": 30325406,
+            "instructions_per_cycle": 4.150517753991489,
+            "instructions_retired": 125695797,
+            "lifetime_peak_physical_footprint_bytes_after": 9273680,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9273680,
+            "physical_footprint_bytes_before": 1147192,
+            "resident_bytes_after": 18366464,
+            "resident_bytes_before": 2015232,
+            "system_cpu_seconds": 0.0005847083333333333,
+            "user_cpu_seconds": 0.00733925
+          },
+          "live_requested_heap_bytes_after": 6351959,
+          "live_requested_heap_bytes_before": 6344,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010197,
+          "requested_allocation_bytes": 12830999
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6304868,
+            "instructions_per_cycle": 4.8681712289614945,
+            "instructions_retired": 30715520,
+            "lifetime_peak_physical_footprint_bytes_after": 11534672,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 11534672,
+            "physical_footprint_bytes_before": 9273680,
+            "resident_bytes_after": 20709376,
+            "resident_bytes_before": 18382848,
+            "system_cpu_seconds": 0.00018316666666666668,
+            "user_cpu_seconds": 0.0014392083333333334
+          },
+          "live_requested_heap_bytes_after": 7776894,
+          "live_requested_heap_bytes_before": 6351959,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890183,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.04302583308890462,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002773833,
+      "over_fastest": 1.574056335173532,
+      "over_rust": 0.3002137597791072,
+      "whole_process_over_fastest": 1.3996161257713993,
+      "processing_plus_admission_over_fastest": 1.6688860846234026,
+      "processing_plus_admission_over_rust": 0.31830027611596867,
+      "post_json_over_fastest_matched_native": 1.6732093049067676,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "wall_seconds": 2.0,
+          "page_reclaims": 3.4127906976744184,
+          "instructions_retired": 2.214413023604805,
+          "cycles": 2.2417519595474205,
+          "involuntary_context_switches": 3.0,
+          "peak_physical_footprint_bytes": 2.8617516047775307,
+          "peak_resident_bytes": 4.350543478260869
+        },
+        "post_json": {
+          "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+          "live_requested_heap_bytes_before": 3.784220117416068,
+          "peak_live_requested_heap_bytes": 1.741315028730131,
+          "hardware": {
+            "resident_bytes_after": 4.352459016393443,
+            "instructions_per_cycle": 1.19094982251433,
+            "system_cpu_seconds": 3.2570664629488157,
+            "physical_footprint_bytes_after": 2.8262395588781333,
+            "resident_bytes_before": 6.019047619047619,
+            "user_cpu_seconds": 2.299679658302189,
+            "instructions_retired": 2.8474358399023063,
+            "cycles": 2.3925678018257956,
+            "lifetime_peak_physical_footprint_bytes_after": 2.853184012255984,
+            "physical_footprint_bytes_before": 3.954780843710571
+          },
+          "live_requested_heap_bytes_after": 2.651122745898571,
+          "requested_allocation_bytes": 1.173848944425293,
+          "allocation_requests": 64.79310344827586,
+          "freed_allocation_bytes": 1.2846526026213523
+        }
+      },
+      "post_json_instructions_per_post": 10951.6272,
+      "post_json_cycles_per_post": 3019.8474
+    }
+  },
+  "paired_comparison": {
+    "mech-ir242-reuse-4": {
+      "post_json_seconds": {
+        "wins": 6,
+        "losses": 25,
+        "ties": 0,
+        "median_paired_delta_seconds": 3.6790999999999994e-05
+      },
+      "wall_seconds": {
+        "wins": 24,
+        "losses": 7,
+        "ties": 0,
+        "median_paired_delta_seconds": -0.0014436249621212482
+      }
+    },
+    "mech-ir244-reuse-4": {
+      "post_json_seconds": {
+        "wins": 4,
+        "losses": 27,
+        "ties": 0,
+        "median_paired_delta_seconds": 4.012400000000032e-05
+      },
+      "wall_seconds": {
+        "wins": 14,
+        "losses": 17,
+        "ties": 0,
+        "median_paired_delta_seconds": 0.0003352498169988394
+      }
+    }
+  },
+  "promotion_gate": {
+    "required_wins_each_scope": 21,
+    "total_pairs": 31,
+    "post_json_wins": 6,
+    "whole_process_wins": 24,
+    "passes": false,
+    "full_adoption_qualification_required": true
+  },
+  "limits": [
+    "Historical24-hour comparison uses separate recorded cohorts; latest selected remeasurement does not replace the original selection experiment.",
+    "Resource timing never supplies latency evidence. Resource run began only after latency completed.",
+    "Native IR removed-load counts do not imply equal machine-load or retired-instruction reductions.",
+    "No new all-thread CPU profile was run for this rejected trial. The prior jittered main-thread profile remains diagnostic only."
+  ],
+  "next_steps": [
+    "Guarded loop-invariant scalar reads with correct invalidation across numeric preparation boundaries.",
+    "Native borrowed immutable descriptor metadata to reduce125.9M restore instructions and26,837 restore allocations.",
+    "Consider a maintained optimizing backend after full identity, admission, stack and finite/error qualification; old patched LLVM diagnostic remains unqualified."
+  ],
+  "branch_pushed": true,
+  "published_source_commit": "167fbde948a0a58c34071299b7a0c5c0efb55765"
+}
