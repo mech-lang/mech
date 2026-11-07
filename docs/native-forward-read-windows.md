@@ -1,6 +1,6 @@
 # Activation-current forward read windows
 
-IR260 extends the existing immutable child-window versioning beyond its original
+IR261 extends the existing immutable child-window versioning beyond its original
 paired forward/reverse restriction. Paired selection retains priority. A forward
 group must contain only non-writable, non-appending views, share the same current
 induction/count coordinates, pass the existing recurrence/scope proof, and prove
@@ -38,3 +38,10 @@ scope needed by window analysis. IR260 carries the same strictly zero-permission
 owner through that adapter and its original must-current source/exit proof. A
 real immutable content witness is still required; any unwitnessed content effect
 still rejects. No unread owner acquires a pointer, length or write permission.
+
+An exact-current diagnostic shows the remaining one-view window is discovered
+and proves one predicate/four additional source successors. The original
+two-predicate profitability floor still rejects it. IR261 uses a one-predicate
+floor for the forward family while preserving the paired floor, two-successor
+minimum and requirement for a newly proved source branch/read check. All safety
+proofs and the original positive, changing-bound and finite tests remain.

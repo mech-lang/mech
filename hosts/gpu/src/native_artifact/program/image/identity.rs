@@ -437,7 +437,9 @@ fn selected_template(
 // forwarding proof when a real immutable content read justifies numeric entry.
 // IR260 carries the same zero-permission opaque forwarding through the flat
 // phase adapter, so a current read window retains the complete child scope.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 260;
+// IR261 applies a one-predicate profitability floor to a forward window while
+// retaining the paired floor and requiring an additional source check proof.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 261;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
