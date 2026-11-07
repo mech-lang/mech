@@ -34,6 +34,8 @@ pub(super) fn control(
                         .physical
                         .checked_mul(2)
                         .ok_or_else(|| backend("numeric tree retirement offset overflows"))?;
+                    #[cfg(mech_native_opportunity_census)]
+                    super::check_census::record(b,"retired-scalar-pair",tree.nodes[0].tail.header() as usize,site,false,None);
                     b.ins().store(MemFlags::new(), zero, bank, offset(at)?);
                     b.ins().store(
                         MemFlags::new(),

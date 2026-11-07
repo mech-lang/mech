@@ -201,6 +201,8 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
         let function = module
             .declare_function(&symbol, Linkage::Local, &signature)
             .map_err(backend)?;
+        #[cfg(mech_native_opportunity_census)]
+        crate::native_artifact::program::codegen::check_census::observe_optimized_branches(&mut context,module.isa(),header)?;
         module
             .define_function(function, &mut context)
             .map_err(backend)?;

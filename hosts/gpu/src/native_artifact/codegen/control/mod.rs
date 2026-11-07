@@ -1906,6 +1906,8 @@ impl<'plan> CfgDefinition<'plan> {
                 context.compute_domtree();
             }
         }
+        #[cfg(mech_native_opportunity_census)]
+        crate::native_artifact::program::codegen::check_census::observe_optimized_branches(&mut context,module.isa(),usize::MAX)?;
         module
             .define_function(function, &mut context)
             .map_err(backend)?;
