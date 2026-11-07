@@ -66,6 +66,26 @@ impl<'a> BuildOwnedImageRecord<'a> {
             },
         }
     }
+    /// Borrow a checked contiguous unsigned-byte array when the native writer
+    /// packed it. Other supported image forms retain the same typed byte reads.
+    /// This view grants no schema, execution or provenance authority.
+    pub fn unsigned_byte_payload(self) -> Result<std::borrow::Cow<'a, [u8]>, Error> {
+        if let Self::Native(bytes) = self {
+            let node = Node { bytes, depth: 0, canonical: false };
+            let (tag, payload) = node.parts()?;
+            if tag == BYTE_ARRAY {
+                let count = payload.get(..4).ok_or_else(|| error("truncated packed metadata array"))?;
+                let count = u32::from_le_bytes(count.try_into().unwrap()) as usize;
+                let bytes = &payload[4..];
+                if count != bytes.len() {
+                    return Err(error("packed metadata array count differs from its bytes"));
+                }
+                return Ok(std::borrow::Cow::Borrowed(bytes));
+            }
+        }
+        self.decode::<Vec<u8>>().map(std::borrow::Cow::Owned)
+    }
+
     pub fn decode<T: Deserialize<'a>>(self) -> Result<T, Error> {
         let mut reader = self.reader();
         let value = T::deserialize(&mut reader)?;

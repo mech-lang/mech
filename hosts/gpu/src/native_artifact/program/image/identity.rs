@@ -445,7 +445,9 @@ fn selected_template(
 // the zero-offset interval. Forward selection requires a new read or branch fact.
 // IR264 proves copied interval bounds unchanged at every ordinary backedge,
 // independently of the proposed window, instead of rejecting all carrier writes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 264;
+// IR269 versions compact final visit prices; all control fields derive from
+// the restored plan before returning the unchanged runtime visit array.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 269;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

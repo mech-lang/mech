@@ -151,7 +151,10 @@ struct Descriptor<'a, Frame> {
     #[serde(borrow)]
     calls: Box<[Option<BuildOwnedImageRecord<'a>>]>,
     types: Box<[Slot]>,
-    visits: Box<[Visit]>,
+    #[serde(default, deserialize_with = "present_visits")]
+    visits: Option<Box<[Visit]>>,
+    #[serde(borrow, default, deserialize_with = "present_raw")]
+    visit_work: Option<BuildOwnedImageRecord<'a>>,
     retirements: native::program::prepare::retirement::RetirementTables,
     constant_bytes: Box<[u64]>,
     scalar_bytes: u64,
@@ -198,6 +201,10 @@ struct Image<'a, Frame> {
     version: u32,
     #[serde(borrow)]
     descriptor: Descriptor<'a, Frame>,
+}
+
+fn present_visits<'de, D: Deserializer<'de>>(reader: D) -> Result<Option<Box<[Visit]>>, D::Error> {
+    Box::<[Visit]>::deserialize(reader).map(Some)
 }
 
 fn present_machine_backend<'de, D: Deserializer<'de>>(
@@ -253,15 +260,20 @@ fn decode_inner<
     let image: Image<'a, Frame> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
-        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10))
-        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10))
+        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12))
+        || (!OBJECT_BOUND && !matches!(image.version, 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12))
     {
         return Err("unsupported native descriptor image format".into());
     }
     let table_rows = image.version >= 3;
     let mut w = image.descriptor;
-    if (image.version == 10) != w.machine_backend.is_some() {
+    if matches!(image.version, 10 | 12) != w.machine_backend.is_some() {
         return Err("native image version differs from its machine backend".into());
+    }
+    if (image.version >= 11) != w.visit_work.is_some()
+        || (image.version < 11) != w.visits.is_some()
+    {
+        return Err("native image version differs from its visit representation".into());
     }
     if let Some(backend) = &w.machine_backend {
         backend.validate()?;
@@ -379,7 +391,7 @@ fn decode_inner<
         .collect::<Box<[_]>>();
     if w.stack == 0
         || w.code == 0
-        || w.visits.len() != plan.blocks().len()
+        || w.visits.as_ref().is_some_and(|visits| visits.len() != plan.blocks().len())
         || calls.len() != plan.blocks().len()
         || types.len() != plan.values().len() + plan.transport_output_count()
         || w.constant_bytes.len() != plan.constants().len()
@@ -505,12 +517,27 @@ fn decode_inner<
             derived
         }
     };
-    let visits: Box<[native::iteration_abi::NativeIterationVisit]> = w
-        .visits
-        .into_vec()
-        .into_iter()
-        .map(Into::into)
-        .collect::<Box<[_]>>();
+    // Keep the zero-completion base prices intact for funding validation below.
+    // Final charges (including completion) overlay a separate eagerly built box.
+    let base_visits = native::iteration_abi::control_visits(
+        plan.blocks(), plan.iterations().iter().map(Into::into), 0,
+    ).map_err(str::to_owned)?;
+    let visits: Box<[native::iteration_abi::NativeIterationVisit]> = match w.visit_work {
+        Some(record) => {
+            let bytes = record.unsigned_byte_payload().map_err(|e| e.to_string())?;
+            let length = base_visits.len().checked_mul(8)
+                .ok_or("visit work byte length overflows")?;
+            if bytes.len() != length {
+                return Err("visit work byte count differs from its plan".into());
+            }
+            let mut visits = base_visits.clone().into_boxed_slice();
+            for (visit, word) in visits.iter_mut().zip(bytes.chunks_exact(8)) {
+                visit.work = u64::from_le_bytes(word.try_into().unwrap());
+            }
+            visits
+        }
+        None => w.visits.unwrap().into_vec().into_iter().map(Into::into).collect(),
+    };
     let mut static_layouts = w
         .static_layouts
         .take()
@@ -543,12 +570,7 @@ fn decode_inner<
             derived
         }
     };
-    let base_visits = native::iteration_abi::control_visits(
-        plan.blocks(),
-        plan.iterations().iter().map(Into::into),
-        0,
-    )
-    .map_err(str::to_owned)?;
+
     for region in &utf8_reads.regions {
         let site = region.header as usize;
         let required = base_visits

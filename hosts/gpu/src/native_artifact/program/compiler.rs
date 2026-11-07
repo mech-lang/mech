@@ -284,9 +284,9 @@ impl NativeProgramObject {
         metadata["native_metadata_format"] = serde_json::json!("mech.typed-build-image.v3");
         metadata["native_descriptor_version"] =
             serde_json::json!(if self.descriptor.machine_backend.is_some() {
-                10
+                12
             } else {
-                9
+                11
             });
         if let Some(backend) = &self.descriptor.machine_backend {
             metadata["machine_backend"] = serde_json::json!(backend);
