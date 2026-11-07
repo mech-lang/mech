@@ -125,6 +125,7 @@ pub use crate::native_artifact::program::application::{
 #[cfg(feature = "canonical-native-program")]
 pub use crate::native_artifact::program::compiler::{
     JitProgramArtifact, NativeProgramObject, emit_program_object, emit_program_object_with_limits,
+    emit_program_llvm_ir, emit_program_llvm_ir_with_limits,
 };
 #[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::program::image::NativeProgramDescriptor;

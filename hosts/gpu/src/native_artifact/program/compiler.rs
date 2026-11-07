@@ -399,6 +399,37 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     )
 }
 
+/// Compile the ordinary source-proved native definition graph to inspectable
+/// LLVM IR. This is compiler output only, not a NativeProgramObject: LLVM
+/// machine admission and backend-bound image construction are separate steps.
+pub fn emit_program_llvm_ir(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+) -> Result<String, NativeCompileError> {
+    emit_program_llvm_ir_with_limits(artifact, catalog, NativeCompileLimits::default())
+}
+
+pub fn emit_program_llvm_ir_with_limits(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    limits: NativeCompileLimits,
+) -> Result<String, NativeCompileError> {
+    host_supported()?;
+    let plan = lower_native_program_artifact_with_definition_table_limit(
+        artifact, catalog, limits.max_definition_table_bytes,
+    ).map_err(backend)?;
+    let mut module = super::llvm_backend::RecordingModule::new(
+        codegen_backend::object("mech_canonical_program_llvm_ssa", PROGRAM_CODEGEN_FLAGS)?,
+    );
+    preflight(&plan, &module, limits)?;
+    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+    crate::native_artifact::codegen::control::define_cfg(
+        CodePlan::Program(&prepared), ENTRY, VERSION, &mut module, limits,
+        &crate::native_artifact::codegen::options::OptimizationOptions::default(),
+    )?;
+    module.llvm_ir().map_err(backend)
+}
+
 // Code and stack admission must be derived by the selected machine emitter
 // before this same-Object identity, image and compiled-module binding is made.
 // Keeping finalization separate prevents a second backend from substituting

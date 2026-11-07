@@ -9,6 +9,8 @@ pub(in crate::native_artifact) mod protocol;
 pub(in crate::native_artifact) mod application;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod compiler;
+#[cfg(feature = "canonical-native-program")]
+mod llvm_backend;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod image;
 #[cfg(feature = "canonical-native-program-runtime")]
