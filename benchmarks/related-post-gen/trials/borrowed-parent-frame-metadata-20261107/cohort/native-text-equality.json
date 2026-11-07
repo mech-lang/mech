@@ -1,0 +1,14 @@
+[
+  {
+    "variant": "after-4",
+    "native_text_bytes": 876136,
+    "native_text_sha256": "618fcf7dbc731d54798499dc65c297ce06f6827fca9f87d4a34559b2089c7e88",
+    "IR252_IR253_native_text_exact": true
+  },
+  {
+    "variant": "reuse-4",
+    "native_text_bytes": 845744,
+    "native_text_sha256": "ee48f476919bc4d8f3e3f4dcf75eae76f4d79a41589c4d1651e6c159b62145ef",
+    "IR252_IR253_native_text_exact": true
+  }
+]

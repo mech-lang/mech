@@ -1,0 +1,636 @@
+{
+  "schema": "mech.related-post-gen.borrowed-parent-frame-metadata.v1",
+  "updated_utc": "2026-11-07T10:11:35.225529+00:00",
+  "selected_compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+  "selected_identity": "IR242/work115/ABI41/image9",
+  "selected_workers": 4,
+  "selected_changed": false,
+  "candidate_compiler": "d79d97570749426d67c10c935c3109137492cc67",
+  "candidate_identity": "IR253/work115/ABI41/image9",
+  "candidate_branch": "codex/related-borrowed-parent-frame-metadata-20261107",
+  "candidate_selected": false,
+  "integrated_PR973": "7f71c3796bac86eb963f6fe28eda7504022089e1",
+  "latency_report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-borrowed-parent-frame-metadata-randomized-20261107-5000-m3.json",
+  "resource_report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-borrowed-parent-frame-metadata-resources-20261107-5000-m3.json",
+  "size_report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/size-native-borrowed-parent-frame-metadata-20261107.json",
+  "latency_seed": 990253,
+  "resource_seed": 9902537,
+  "exact_latency_outputs": 248,
+  "exact_resource_outputs": 63,
+  "all_first_and_adverse_samples_retained": true,
+  "resource_and_profile_timings_excluded": true,
+  "matched_reference": {
+    "variant": "rust-mech-control-u8-ids-u32",
+    "median_seconds": 0.0016015,
+    "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+    "eligible_variants": [
+      "rust",
+      "rust-mech-control-streaming",
+      "rust-mech-control-u32-casts",
+      "rust-mech-control-u8-ids-u32"
+    ]
+  },
+  "whole_reference": {
+    "variant": "rust-mech-control-u32-casts",
+    "median_seconds": 0.022942875046283007,
+    "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+  },
+  "trials": {
+    "mech-ir242-reuse-4": {
+      "timing": {
+        "median_seconds": 0.0026895,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "IR242_reuse_4",
+        "median_processing_plus_admission_seconds": 0.002839125,
+        "median_whole_process_seconds": 0.03489158279262483,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002848,
+        "over_fastest": 1.6793630970964721,
+        "over_rust": 0.3067039706275782,
+        "whole_process_over_fastest": 1.5208025464218202,
+        "processing_plus_admission_over_fastest": 1.7727911333125195,
+        "processing_plus_admission_over_rust": 0.323766837928248,
+        "post_json_over_fastest_matched_native": 1.7783328129878238
+      },
+      "resources": {
+        "median_seconds": 0.002712833,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "IR242_reuse_4_instrumented",
+        "median_processing_plus_admission_seconds": 0.002869458,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 78040252,
+          "instructions_retired": 312836932,
+          "involuntary_context_switches": 14,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1785,
+          "peak_physical_footprint_bytes": 16007552,
+          "peak_resident_bytes": 26558464,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.03
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3758,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7290514,
+          "hardware": {
+            "cycles": 14924794,
+            "instructions_per_cycle": 3.6738704735221135,
+            "instructions_retired": 54839203,
+            "lifetime_peak_physical_footprint_bytes_after": 16007552,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15909224,
+            "physical_footprint_bytes_before": 11927888,
+            "resident_bytes_after": 26460160,
+            "resident_bytes_before": 21069824,
+            "system_cpu_seconds": 0.00035970833333333335,
+            "user_cpu_seconds": 0.00367225
+          },
+          "live_requested_heap_bytes_after": 8498748,
+          "live_requested_heap_bytes_before": 7776906,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "peak_live_requested_heap_bytes": 13344073,
+          "requested_allocation_bytes": 8012356
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 26837,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 6485384,
+            "hardware": {
+              "cycles": 30414443,
+              "instructions_per_cycle": 4.13771813637585,
+              "instructions_retired": 125890130,
+              "lifetime_peak_physical_footprint_bytes_after": 9535824,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 9535824,
+              "physical_footprint_bytes_before": 1147192,
+              "resident_bytes_after": 18644992,
+              "resident_bytes_before": 2031616,
+              "system_cpu_seconds": 0.0006135416666666667,
+              "user_cpu_seconds": 0.007553208333333334
+            },
+            "live_requested_heap_bytes_after": 6351971,
+            "live_requested_heap_bytes_before": 6356,
+            "peak_additional_live_requested_heap_bytes": 7003853,
+            "peak_live_requested_heap_bytes": 7010209,
+            "requested_allocation_bytes": 12830999
+          },
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6461266,
+              "instructions_per_cycle": 4.865316834419265,
+              "instructions_retired": 31420837,
+              "lifetime_peak_physical_footprint_bytes_after": 11927888,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 11927888,
+              "physical_footprint_bytes_before": 9535824,
+              "resident_bytes_after": 21069824,
+              "resident_bytes_before": 18661376,
+              "system_cpu_seconds": 0.00018737500000000001,
+              "user_cpu_seconds": 0.0015245
+            },
+            "live_requested_heap_bytes_after": 7776906,
+            "live_requested_heap_bytes_before": 6351971,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 8890195,
+            "requested_allocation_bytes": 3290192
+          }
+        },
+        "median_whole_process_seconds": 0.043432333040982485,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002877333,
+        "over_fastest": 1.6298185641333731,
+        "over_rust": 0.3053115207666818,
+        "whole_process_over_fastest": 1.383646984693062,
+        "processing_plus_admission_over_fastest": 1.723915890657855,
+        "processing_plus_admission_over_rust": 0.32293863490901253,
+        "post_json_over_fastest_matched_native": 1.7286470411534995,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "cycles": 2.2279510921207413,
+            "instructions_retired": 2.224924807415237,
+            "wall_seconds": 3.0,
+            "involuntary_context_switches": 2.8,
+            "peak_physical_footprint_bytes": 2.933823637222041,
+            "peak_resident_bytes": 4.404891304347826,
+            "page_reclaims": 3.4593023255813953
+          },
+          "post_json": {
+            "hardware": {
+              "resident_bytes_after": 4.412568306010929,
+              "user_cpu_seconds": 2.32390243902439,
+              "cycles": 2.3612520235062124,
+              "physical_footprint_bytes_before": 4.089598990619343,
+              "physical_footprint_bytes_after": 2.9070729190116857,
+              "system_cpu_seconds": 3.4726468222043443,
+              "instructions_retired": 2.8530126696101403,
+              "instructions_per_cycle": 1.207692165870435,
+              "resident_bytes_before": 6.123809523809523,
+              "lifetime_peak_physical_footprint_bytes_after": 2.925040273420712
+            },
+            "allocation_requests": 64.79310344827586,
+            "freed_allocation_bytes": 1.2846526026213523,
+            "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+            "live_requested_heap_bytes_after": 2.651126489216748,
+            "peak_live_requested_heap_bytes": 1.741316594653754,
+            "live_requested_heap_bytes_before": 3.7842259565906033,
+            "requested_allocation_bytes": 1.173848944425293
+          }
+        },
+        "post_json_instructions_per_post": 10967.8406,
+        "post_json_cycles_per_post": 2984.9588
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 0,
+          "median_paired_delta_seconds": 0.0
+        },
+        "wall_seconds": {
+          "wins": 0,
+          "median_paired_delta_seconds": 0.0
+        }
+      },
+      "passes_joint_gate": false
+    },
+    "mech-ir252-reuse-4": {
+      "timing": {
+        "median_seconds": 0.002689042,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "ir252-reuse-4",
+        "median_processing_plus_admission_seconds": 0.002839291,
+        "median_whole_process_seconds": 0.03489462495781481,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002847667,
+        "over_fastest": 1.6790771152044957,
+        "over_rust": 0.30665174143310064,
+        "whole_process_over_fastest": 1.5209351438048353,
+        "processing_plus_admission_over_fastest": 1.7728947861379956,
+        "processing_plus_admission_over_rust": 0.3237857681603075,
+        "post_json_over_fastest_matched_native": 1.7781248829222602
+      },
+      "resources": {
+        "median_seconds": 0.002739333,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "ir252-reuse-4_instrumented",
+        "median_processing_plus_admission_seconds": 0.0028970000000000003,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 78978232,
+          "instructions_retired": 313265995,
+          "involuntary_context_switches": 14,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1791,
+          "peak_physical_footprint_bytes": 16023912,
+          "peak_resident_bytes": 26689536,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.03
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3758,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7290514,
+          "hardware": {
+            "cycles": 15132242,
+            "instructions_per_cycle": 3.6539402422985305,
+            "instructions_retired": 55266559,
+            "lifetime_peak_physical_footprint_bytes_after": 16023912,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15909200,
+            "physical_footprint_bytes_before": 11927912,
+            "resident_bytes_after": 26591232,
+            "resident_bytes_before": 21168128,
+            "system_cpu_seconds": 0.00037595833333333334,
+            "user_cpu_seconds": 0.003702541666666667
+          },
+          "live_requested_heap_bytes_after": 8498746,
+          "live_requested_heap_bytes_before": 7776904,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "peak_live_requested_heap_bytes": 13344071,
+          "requested_allocation_bytes": 8012356
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 26837,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 6485384,
+            "hardware": {
+              "cycles": 30458005,
+              "instructions_per_cycle": 4.126400530829252,
+              "instructions_retired": 125685569,
+              "lifetime_peak_physical_footprint_bytes_after": 9535824,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 9535824,
+              "physical_footprint_bytes_before": 1179984,
+              "resident_bytes_after": 18694144,
+              "resident_bytes_before": 2064384,
+              "system_cpu_seconds": 0.0005896666666666667,
+              "user_cpu_seconds": 0.007493041666666667
+            },
+            "live_requested_heap_bytes_after": 6351969,
+            "live_requested_heap_bytes_before": 6354,
+            "peak_additional_live_requested_heap_bytes": 7003853,
+            "peak_live_requested_heap_bytes": 7010207,
+            "requested_allocation_bytes": 12830999
+          },
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6488382,
+              "instructions_per_cycle": 4.846910986436988,
+              "instructions_retired": 31449139,
+              "lifetime_peak_physical_footprint_bytes_after": 11927912,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 11927912,
+              "physical_footprint_bytes_before": 9535824,
+              "resident_bytes_after": 21168128,
+              "resident_bytes_before": 18710528,
+              "system_cpu_seconds": 0.00019104166666666667,
+              "user_cpu_seconds": 0.0015271666666666667
+            },
+            "live_requested_heap_bytes_after": 7776904,
+            "live_requested_heap_bytes_before": 6351969,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 8890193,
+            "requested_allocation_bytes": 3290192
+          }
+        },
+        "median_whole_process_seconds": 0.046293958090245724,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002903959,
+        "over_fastest": 1.645739261039351,
+        "over_rust": 0.30829392156330915,
+        "whole_process_over_fastest": 1.4748112992372306,
+        "processing_plus_admission_over_fastest": 1.7404626013817963,
+        "processing_plus_admission_over_rust": 0.32603830595583183,
+        "post_json_over_fastest_matched_native": 1.7446434364674073,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "cycles": 2.2547292420091782,
+            "instructions_retired": 2.227976342624143,
+            "wall_seconds": 3.0,
+            "involuntary_context_switches": 2.8,
+            "peak_physical_footprint_bytes": 2.936822056637137,
+            "peak_resident_bytes": 4.426630434782608,
+            "page_reclaims": 3.4709302325581395
+          },
+          "post_json": {
+            "hardware": {
+              "resident_bytes_after": 4.434426229508197,
+              "user_cpu_seconds": 2.3430718523401453,
+              "cycles": 2.394072376656301,
+              "physical_footprint_bytes_before": 4.0896072192660045,
+              "physical_footprint_bytes_after": 2.9070685335212274,
+              "system_cpu_seconds": 3.6295253419147224,
+              "instructions_retired": 2.875245889929442,
+              "instructions_per_cycle": 1.2011406055238796,
+              "resident_bytes_before": 6.152380952380953,
+              "lifetime_peak_physical_footprint_bytes_after": 2.9280297160833477
+            },
+            "allocation_requests": 64.79310344827586,
+            "freed_allocation_bytes": 1.2846526026213523,
+            "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+            "live_requested_heap_bytes_after": 2.651125865330385,
+            "peak_live_requested_heap_bytes": 1.7413163336664836,
+            "live_requested_heap_bytes_before": 3.7842249833948474,
+            "requested_allocation_bytes": 1.173848944425293
+          }
+        },
+        "post_json_instructions_per_post": 11053.3118,
+        "post_json_cycles_per_post": 3026.4484
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 13,
+          "median_paired_delta_seconds": 4.791999999999991e-06
+        },
+        "wall_seconds": {
+          "wins": 21,
+          "median_paired_delta_seconds": -0.00034370808862149715
+        }
+      },
+      "passes_joint_gate": false
+    },
+    "mech-ir253-reuse-4": {
+      "timing": {
+        "median_seconds": 0.00271475,
+        "samples": 31,
+        "all_exact_rust": true,
+        "category": "IR253_borrowed_parent_frame_metadata",
+        "median_processing_plus_admission_seconds": 0.002866708,
+        "median_whole_process_seconds": 0.03723816596902907,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.00287475,
+        "over_fastest": 1.6951295660318453,
+        "over_rust": 0.3095834185763964,
+        "whole_process_over_fastest": 1.6230819325785437,
+        "processing_plus_admission_over_fastest": 1.7900143615360598,
+        "processing_plus_admission_over_rust": 0.3269123354637827,
+        "post_json_over_fastest_matched_native": 1.7950359038401498
+      },
+      "resources": {
+        "median_seconds": 0.002748042,
+        "samples": 7,
+        "all_exact_rust": true,
+        "category": "IR253_borrowed_parent_frame_metadata_instrumented",
+        "median_processing_plus_admission_seconds": 0.002908334,
+        "process_resources_median": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 78752339,
+          "instructions_retired": 312406931,
+          "involuntary_context_switches": 15,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1790,
+          "peak_physical_footprint_bytes": 15941992,
+          "peak_resident_bytes": 26624000,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.03
+        },
+        "measurement_boundary": "post_json_including_setup",
+        "post_json_measurement_median": {
+          "allocation_requests": 3824,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 7290514,
+          "hardware": {
+            "cycles": 15297705,
+            "instructions_per_cycle": 3.612142409596734,
+            "instructions_retired": 55296689,
+            "lifetime_peak_physical_footprint_bytes_after": 15941992,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15860072,
+            "physical_footprint_bytes_before": 11911504,
+            "resident_bytes_after": 26509312,
+            "resident_bytes_before": 21069824,
+            "system_cpu_seconds": 0.00040170833333333334,
+            "user_cpu_seconds": 0.003752041666666667
+          },
+          "live_requested_heap_bytes_after": 8430966,
+          "live_requested_heap_bytes_before": 7707012,
+          "peak_additional_live_requested_heap_bytes": 5569279,
+          "peak_live_requested_heap_bytes": 13276291,
+          "requested_allocation_bytes": 8014468
+        },
+        "stage_measurements_median": {
+          "restore": {
+            "allocation_requests": 25142,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 6485384,
+            "hardware": {
+              "cycles": 30438137,
+              "instructions_per_cycle": 4.122942806913577,
+              "instructions_retired": 125494698,
+              "lifetime_peak_physical_footprint_bytes_after": 9486672,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 9486672,
+              "physical_footprint_bytes_before": 1147216,
+              "resident_bytes_after": 18595840,
+              "resident_bytes_before": 2015232,
+              "system_cpu_seconds": 0.0006254166666666667,
+              "user_cpu_seconds": 0.007541166666666667
+            },
+            "live_requested_heap_bytes_after": 6282077,
+            "live_requested_heap_bytes_before": 6358,
+            "peak_additional_live_requested_heap_bytes": 6933957,
+            "peak_live_requested_heap_bytes": 6940315,
+            "requested_allocation_bytes": 12761103
+          },
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6492546,
+              "instructions_per_cycle": 4.831728569963155,
+              "instructions_retired": 31373882,
+              "lifetime_peak_physical_footprint_bytes_after": 11911504,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 11911504,
+              "physical_footprint_bytes_before": 9486672,
+              "resident_bytes_after": 21069824,
+              "resident_bytes_before": 18595840,
+              "system_cpu_seconds": 0.00019233333333333334,
+              "user_cpu_seconds": 0.001529125
+            },
+            "live_requested_heap_bytes_after": 7707012,
+            "live_requested_heap_bytes_before": 6282077,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 8820301,
+            "requested_allocation_bytes": 3290192
+          }
+        },
+        "median_whole_process_seconds": 0.045968374935910106,
+        "calculation_boundary": "post_json_including_setup",
+        "median_post_json_seconds": 0.002915125,
+        "over_fastest": 1.6509714629017722,
+        "over_rust": 0.3092740622628498,
+        "whole_process_over_fastest": 1.4644390231419482,
+        "processing_plus_admission_over_fastest": 1.747271853409432,
+        "processing_plus_admission_over_rust": 0.32731387314937804,
+        "post_json_over_fastest_matched_native": 1.7513517572844697,
+        "resource_ratios_to_fastest_rust": {
+          "whole_process": {
+            "cycles": 2.248280280823707,
+            "instructions_retired": 2.221866601064737,
+            "wall_seconds": 3.0,
+            "involuntary_context_switches": 3.0,
+            "peak_physical_footprint_bytes": 2.9218079662652157,
+            "peak_resident_bytes": 4.415760869565218,
+            "page_reclaims": 3.4689922480620154
+          },
+          "post_json": {
+            "hardware": {
+              "resident_bytes_after": 4.420765027322404,
+              "user_cpu_seconds": 2.3743968358602507,
+              "cycles": 2.4202502819302634,
+              "physical_footprint_bytes_before": 4.0839815678314775,
+              "physical_footprint_bytes_after": 2.898091434552402,
+              "system_cpu_seconds": 3.8781174577634756,
+              "instructions_retired": 2.8768134049010827,
+              "instructions_per_cycle": 1.18740062327134,
+              "resident_bytes_before": 6.123809523809523,
+              "lifetime_peak_physical_footprint_bytes_after": 2.913060575317875
+            },
+            "allocation_requests": 65.93103448275862,
+            "freed_allocation_bytes": 1.2846526026213523,
+            "peak_additional_live_requested_heap_bytes": 0.9930734413147784,
+            "live_requested_heap_bytes_after": 2.6299823564936586,
+            "peak_live_requested_heap_bytes": 1.7324714750700392,
+            "live_requested_heap_bytes_before": 3.7502156845093997,
+            "requested_allocation_bytes": 1.174158362650173
+          }
+        },
+        "post_json_instructions_per_post": 11059.3378,
+        "post_json_cycles_per_post": 3059.541
+      },
+      "paired_vs_selected": {
+        "post_json_seconds": {
+          "wins": 10,
+          "median_paired_delta_seconds": 1.2165999999999653e-05
+        },
+        "wall_seconds": {
+          "wins": 2,
+          "median_paired_delta_seconds": 0.002552041783928871
+        }
+      },
+      "passes_joint_gate": false
+    }
+  },
+  "qualification": {
+    "gpu": {
+      "command": [
+        "/private/tmp/mech-related-borrowed-parent-frame-metadata-tests-20261107-v2/mech_gpu-tests",
+        "--test-threads=1"
+      ],
+      "exit": 101,
+      "seconds": 227.58235404104926,
+      "summary": [
+        "test result: FAILED. 886 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 227.56s"
+      ],
+      "expected_failures_exact": true,
+      "failed_tests": [
+        "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+        "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+      ],
+      "new_failures": []
+    },
+    "actual_CI": {
+      "expected": 391,
+      "listed": 391,
+      "executed": 391,
+      "names_exact": true
+    },
+    "controls_all_nontiming_fields_exact": 133,
+    "Rust_edge_outputs_exact": 62,
+    "full_adoption_qualification_run": false
+  },
+  "native_text_equality": [
+    {
+      "variant": "after-4",
+      "native_text_bytes": 876136,
+      "native_text_sha256": "618fcf7dbc731d54798499dc65c297ce06f6827fca9f87d4a34559b2089c7e88",
+      "IR252_IR253_native_text_exact": true
+    },
+    {
+      "variant": "reuse-4",
+      "native_text_bytes": 845744,
+      "native_text_sha256": "ee48f476919bc4d8f3e3f4dcf75eae76f4d79a41589c4d1651e6c159b62145ef",
+      "IR252_IR253_native_text_exact": true
+    }
+  ],
+  "post_JSON_allocation_profile": {
+    "path": "/private/tmp/mech-related-parent-frame-post-json-allocation-profile-20261107-v1",
+    "requests_before": 3758,
+    "requests_after": 3824,
+    "bytes_before": 8012356,
+    "bytes_after": 8014468,
+    "counts_match_resource_cohort": true,
+    "zero_loss_truncation_invalid_or_unattributed": true,
+    "extra_begin_numeric_segment_requests": 66,
+    "extra_begin_numeric_segment_bytes": 2112,
+    "mechanism": "The element-limit predicate uses frame.fields.len(), materializing the compiler-only field/path vectors lazily. This is actual post-JSON work, not an allocation-counting artifact.",
+    "scope": "Allocation ancestry only; inclusive counts overlap and are not CPU-time percentages. Both native Objects are audited unchanged and complete Rust output is exact."
+  },
+  "startup_allocation_requests_before": 26837,
+  "startup_allocation_requests_after": 25142,
+  "initial_development_failure_retained": "/private/tmp/mech-related-borrowed-parent-frame-metadata-tests-20261107-v1/focus-borrowed_parent_frame_metadata.json",
+  "initial_test_correction": "Legacy V2 serialization omits static layouts. The corrected positive test requires those frames remain borrowed through V2 and materialize only through exact V9 table serialization.",
+  "followup": {
+    "identity": "IR255/work115/ABI41/image9",
+    "source": "/private/tmp/mech-related-parent-frame-runtime-counts-compiler-20261107",
+    "change": "Cache the exact structurally validated field count in runtime metadata and use it in the unchanged finite element-limit predicate.",
+    "selected": false,
+    "performance_measured": false
+  },
+  "decision": "Reject IR253 as a performance candidate. It saves1695 restore allocations but adds66 processing allocations and wins only10/31 processing and2/31 whole-process pairs against selectedIR242. Fix the runtime metadata consumer rather than shifting compiler reconstruction out of the startup timer.",
+  "goal_complete": false
+}

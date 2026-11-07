@@ -1,0 +1,11 @@
+{
+  "quiet": true,
+  "latency_complete_exact": 248,
+  "seed": 9902537,
+  "samples": 7,
+  "variants": 9,
+  "resource_timings_excluded": true,
+  "process_snapshot_sha256": "1e85413ef1974cb65531fc68446691a19262db01de08a0275647d4b565d35679",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-borrowed-parent-frame-metadata-cohort-20261107-v2/resources-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation application arguments remain local; every gate predicate is unchanged."
+}
