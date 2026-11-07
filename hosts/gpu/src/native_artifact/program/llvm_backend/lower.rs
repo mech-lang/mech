@@ -783,6 +783,17 @@ impl<'a> Function<'a> {
                     self.value(args[0])
                 ));
             }
+            O::Iconcat => {
+                let half = self.value_type(args[0]);
+                if half.is_vector() || rt.is_vector() || half.bits() * 2 != rt.bits()
+                    || half != self.value_type(args[1]) {
+                    return Err("unsupported LLVM integer concat shape".into());
+                }
+                let low = self.temporary(format!("zext {} to {t}", self.typed(args[0])?));
+                let high = self.temporary(format!("zext {} to {t}", self.typed(args[1])?));
+                let high = self.temporary(format!("shl {t} {high}, {}", half.bits()));
+                self.line(format!("{dest} = or {t} {low}, {high}"));
+            }
             O::Isplit => {
                 let src = self.value_type(args[0]);
                 if results.len() != 2

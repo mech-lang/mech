@@ -196,6 +196,9 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             &mut context,
             &mut cleanup,
         );
+        if controls.enabled(OptimizationPass::PairedScalarSelects) {
+            report.paired_scalar_selects += crate::native_artifact::codegen::common::scalar_selects::pair_selects(&mut context.func);
+        }
         let header = region.tail.header() as usize;
         let symbol = format!("{entry_symbol}_numeric_{header}");
         let function = module

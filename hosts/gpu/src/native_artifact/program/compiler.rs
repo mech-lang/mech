@@ -271,6 +271,7 @@ impl NativeProgramObject {
         }
         metadata["compiled_numeric_functions"] = serde_json::json!(&self.codegen.numeric_functions);
         metadata["compiled_scalar_selects"] = serde_json::json!(self.codegen.scalar_selects);
+        metadata["compiled_paired_scalar_selects"] = serde_json::json!(self.codegen.paired_scalar_selects);
         metadata["compiled_unsigned_guards"] = serde_json::json!(self.codegen.unsigned_guards);
         metadata["compiled_borrowed_record_maps"] =
             serde_json::json!(&self.descriptor.metadata().borrowed_record_maps.regions);

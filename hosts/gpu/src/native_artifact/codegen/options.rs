@@ -49,6 +49,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     BooleanBranches,
     BitCounts,
     ScalarSelects,
+    PairedScalarSelects,
     UnsignedGuardFacts,
     GuardedNumericLoads,
     /// Stronger immutable-cell facts require the guarded-load optimization.
@@ -80,6 +81,7 @@ pub(in crate::native_artifact) struct EmissionCounters {
     pub lookup_facts: (usize, usize),
     pub cfg_cleanup: (usize, usize),
     pub scalar_selects: usize,
+    pub paired_scalar_selects: usize,
     pub unsigned_guards: usize,
     pub loop_outlining: usize,
     pub loop_invariants: (usize, usize, usize),

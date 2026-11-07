@@ -226,12 +226,117 @@ pub(in crate::native_artifact) fn optimize(function: &mut Function) -> usize {
     changed
 }
 
+// AArch64's I128 select consumes one flags producer for both I64 halves.
+// Pair only adjacent independent choices: all operands already dominate the
+// first select, no memory/error/work instruction moves, and nonzero truth is
+// exactly the original select's truth (including raw noncanonical words).
+pub(in crate::native_artifact) fn pair_selects(function: &mut Function) -> usize {
+    use cranelift_codegen::ir::types;
+    let mut changed = 0;
+    for block in function.layout.blocks().collect::<Vec<_>>() {
+        let instructions = function.layout.block_insts(block).collect::<Vec<_>>();
+        let mut at = 0;
+        while at + 1 < instructions.len() {
+            let first = instructions[at];
+            let second = instructions[at + 1];
+            at += 1;
+            let InstructionData::Ternary { opcode: O::Select, args: a } = function.dfg.insts[first] else { continue };
+            let InstructionData::Ternary { opcode: O::Select, args: b } = function.dfg.insts[second] else { continue };
+            let x = function.dfg.first_result(first);
+            let y = function.dfg.first_result(second);
+            let a = a.map(|v| function.dfg.resolve_aliases(v));
+            let b = b.map(|v| function.dfg.resolve_aliases(v));
+            if a[0] != b[0] || function.dfg.value_type(x) != types::I64
+                || function.dfg.value_type(y) != types::I64 || b.contains(&x)
+            { continue; }
+            let (lo, hi) = {
+                let mut cursor = FuncCursor::new(function).at_inst(first);
+                let yes = cursor.ins().iconcat(a[1], b[1]);
+                let no = cursor.ins().iconcat(a[2], b[2]);
+                let selected = cursor.ins().select(a[0], yes, no);
+                cursor.ins().isplit(selected)
+            };
+            function.dfg.clear_results(first);
+            function.dfg.clear_results(second);
+            function.dfg.change_to_alias(x, lo);
+            function.dfg.change_to_alias(y, hi);
+            function.layout.remove_inst(first);
+            function.layout.remove_inst(second);
+            changed += 1;
+            at += 1;
+        }
+    }
+    changed
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use cranelift_codegen::ir::{AbiParam, MemFlags, types};
     use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
     use cranelift_module::{Linkage, Module, default_libcall_names};
+
+    #[test]
+    fn paired_selects_preserve_full_width_lanes_and_raw_truth() {
+        let mut module = cranelift_jit::JITModule::new(
+            cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names()).unwrap(),
+        );
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(types::I64); 6];
+        let id = module.declare_function("paired_choices", Linkage::Local, &context.func.signature).unwrap();
+        let mut fc = FunctionBuilderContext::new();
+        {
+            let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+            let entry = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.switch_to_block(entry);
+            let a = b.block_params(entry).to_vec();
+            let x = b.ins().select(a[0], a[1], a[2]);
+            let y = b.ins().select(a[0], a[3], a[4]);
+            b.ins().store(MemFlags::new(), x, a[5], 0);
+            b.ins().store(MemFlags::new(), y, a[5], 8);
+            b.ins().return_(&[]);
+            b.seal_all_blocks(); b.finalize();
+        }
+        assert_eq!(pair_selects(&mut context.func), 1);
+        assert_eq!(pair_selects(&mut context.func), 0);
+        context.compute_cfg(); context.compute_domtree(); context.verify(module.isa()).unwrap();
+        module.define_function(id, &mut context).unwrap(); module.finalize_definitions().unwrap();
+        // SAFETY: the live JIT function has these six word parameters, no
+        // return value, and writes only the supplied two-word output bank.
+        let entry: unsafe extern "C" fn(u64,u64,u64,u64,u64,*mut u64) = unsafe {core::mem::transmute(module.get_finalized_function(id))};
+        let values = [0,1,2,(1u64<<53)+1,1u64<<63,u64::MAX];
+        for condition in [0,1,2,1u64<<63,u64::MAX] {
+            for a in values { for b in values {
+                let mut output = [13u64,17,19,23];
+                unsafe { entry(condition,a,b,b.wrapping_add(7),a.wrapping_add(11),output.as_mut_ptr().add(1)) };
+                assert_eq!(output, if condition == 0 {[13,b,a.wrapping_add(11),23]} else {[13,a,b.wrapping_add(7),23]});
+            }}
+        }
+    }
+
+    #[test]
+    fn paired_selects_decline_dependencies_distinct_conditions_and_effect_gaps() {
+        for variant in 0..4 {
+            let mut function = Function::new();
+            function.signature.params = vec![AbiParam::new(types::I64); 4];
+            function.signature.returns = vec![AbiParam::new(types::I64)];
+            let mut fc = FunctionBuilderContext::new();
+            {
+                let mut b = FunctionBuilder::new(&mut function, &mut fc);
+                let entry=b.create_block(); b.append_block_params_for_function_params(entry); b.switch_to_block(entry);
+                let a=b.block_params(entry).to_vec();
+                let x=b.ins().select(a[0],a[1],a[2]);
+                if variant==2 {b.ins().store(MemFlags::new(),a[1],a[3],0);}
+                let y = if variant==3 {
+                    let c=b.ins().ireduce(types::I32,a[1]); let d=b.ins().ireduce(types::I32,a[2]);
+                    let v=b.ins().select(a[0],c,d); b.ins().uextend(types::I64,v)
+                } else { b.ins().select(if variant==1{a[3]}else{a[0]},if variant==0{x}else{a[2]},a[1]) };
+                b.ins().return_(&[y]); b.seal_all_blocks(); b.finalize();
+            }
+            assert_eq!(pair_selects(&mut function),0,"variant {variant}");
+        }
+    }
 
     #[test]
     fn scalar_select_empty_chains_keep_full_width_values_and_nonzero_truth() {

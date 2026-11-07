@@ -1906,6 +1906,10 @@ impl<'plan> CfgDefinition<'plan> {
                 context.compute_domtree();
             }
         }
+        #[cfg(feature = "canonical-native-program")]
+        if controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::PairedScalarSelects) {
+            report.paired_scalar_selects += crate::native_artifact::codegen::common::scalar_selects::pair_selects(&mut context.func);
+        }
         module
             .define_function(function, &mut context)
             .map_err(backend)?;

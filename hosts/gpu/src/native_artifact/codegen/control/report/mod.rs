@@ -14,6 +14,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub lookup_facts: LookupFacts,
     pub cfg_cleanup: Option<CfgCleanup>,
     pub scalar_selects: usize,
+    pub paired_scalar_selects: usize,
     pub unsigned_guards: usize,
     pub utf8_histogram: Option<Utf8Histogram>,
     pub outlined_loops: Vec<OutlinedLoop>,
@@ -582,6 +583,7 @@ impl CodegenReport {
         );
         let mut counts = EmissionCounters::default();
         counts.scalar_selects = self.scalar_selects;
+        counts.paired_scalar_selects = self.paired_scalar_selects;
         counts.unsigned_guards = self.unsigned_guards;
         counts.edge_facts = (
             self.source_edge_facts

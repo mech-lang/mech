@@ -52,6 +52,11 @@ fn scalar_select_source_keeps_reports_errors_aliases_and_retry() {
 }
 
 #[test]
+fn paired_select_source_keeps_reports_errors_aliases_and_retry() {
+    source_keeps_reports_errors_aliases_and_retry(OptimizationPass::PairedScalarSelects);
+}
+
+#[test]
 fn unsigned_guard_source_keeps_reports_errors_aliases_and_retry() {
     source_keeps_reports_errors_aliases_and_retry(OptimizationPass::UnsignedGuardFacts);
 }
@@ -65,7 +70,9 @@ fn source_keeps_reports_errors_aliases_and_retry(pass: OptimizationPass) {
         seed ^= seed << 17;
         words.push(seed);
     }
-    for artifact in artifacts(SOURCE) {
+    let paired = paired_source();
+    let source = if pass == OptimizationPass::PairedScalarSelects { paired.as_str() } else { SOURCE };
+    for artifact in artifacts(source) {
         let mode = NativeProgramLimitMode::NoLimits;
         let catalog = mech_stdlib::source_catalog();
         let native =
@@ -75,6 +82,7 @@ fn source_keeps_reports_errors_aliases_and_retry(pass: OptimizationPass) {
         assert!(
             match pass {
                 OptimizationPass::ScalarSelects => native.test_emissions().scalar_selects,
+                OptimizationPass::PairedScalarSelects => native.test_emissions().paired_scalar_selects,
                 OptimizationPass::UnsignedGuardFacts => native.test_emissions().unsigned_guards,
                 _ => unreachable!(),
             } > 0,
@@ -83,6 +91,7 @@ fn source_keeps_reports_errors_aliases_and_retry(pass: OptimizationPass) {
         assert_eq!(
             match pass {
                 OptimizationPass::ScalarSelects => ordinary.test_emissions().scalar_selects,
+                OptimizationPass::PairedScalarSelects => ordinary.test_emissions().paired_scalar_selects,
                 OptimizationPass::UnsignedGuardFacts => ordinary.test_emissions().unsigned_guards,
                 _ => unreachable!(),
             },
@@ -171,6 +180,23 @@ fn source_keeps_reports_errors_aliases_and_retry(pass: OptimizationPass) {
 #[test]
 fn scalar_select_source_keeps_finite_boundaries_and_atomic_publication() {
     resources::finite_boundaries(SOURCE, |artifact, memory| {
+        arguments(artifact, memory, &[0, u64::MAX, 1 << 63, 42], 42, 4)
+    });
+}
+
+
+fn paired_source() -> String {
+    // One source choice returns both lanes. Separate source choices have
+    // separate control points and correctly decline this adjacency rule.
+    SOURCE.replace(
+        "  low := ((a < b)? | true => a | false => b)\n  high := ((a < b)? | true => b | false => a)",
+        "  pair := ((a < b)? | true => (a,b) | false => (b,a))\n  low := pair.1\n  high := pair.2",
+    )
+}
+
+#[test]
+fn paired_select_source_keeps_finite_boundaries_and_atomic_publication() {
+    resources::finite_boundaries(&paired_source(), |artifact, memory| {
         arguments(artifact, memory, &[0, u64::MAX, 1 << 63, 42], 42, 4)
     });
 }
