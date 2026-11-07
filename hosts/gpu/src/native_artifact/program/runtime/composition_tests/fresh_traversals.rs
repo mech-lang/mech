@@ -24,6 +24,14 @@ fn fresh_traversal_metadata_omits_historical_temporary_inputs() {
             fresh > 0 && fresh < largest["register_words"].as_u64().unwrap(),
             "a nested current-buffer computation must define non-input temporary SSA lanes freshly at its lexical root header: {largest}"
         );
+        assert!(
+            report["compiled_cfg_cleanup"]["dead_loads_removed"]
+                .as_u64()
+                .unwrap_or(0)
+                > 0,
+            "unused private input loads must disappear before lowering: {}",
+            report["compiled_cfg_cleanup"]
+        );
     }
 }
 

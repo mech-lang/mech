@@ -350,7 +350,9 @@ fn selected_template(
 // predicates. Residual view checks, ownership and funding remain independent.
 // IR201 retains normalized conjunction/disjunction structure and consumes only
 // selected operand facts for current smaller windows of a checked sum.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 201;
+// IR202 retires only native SSA values and interior arguments with no path to
+// control or effects, preserving trapping loads and the declared entry ABI.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 202;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

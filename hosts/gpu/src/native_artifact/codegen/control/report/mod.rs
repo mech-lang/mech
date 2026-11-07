@@ -155,6 +155,9 @@ pub(in crate::native_artifact) struct CfgCleanup {
     pub pre_codegen_data_passes: usize,
     pub local_phi_parameters_removed: usize,
     pub local_phi_preheaders: usize,
+    pub dead_parameters_removed: usize,
+    pub dead_instructions_removed: usize,
+    pub dead_loads_removed: usize,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct OutlinedLoop {

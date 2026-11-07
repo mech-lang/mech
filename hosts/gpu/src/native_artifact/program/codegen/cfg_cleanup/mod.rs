@@ -1,6 +1,7 @@
 //! Fold native branches proved by immutable integer SSA definitions, then retire
 //! unreachable blocks and their phi inputs before register allocation. Source
 //! work debits and runtime predicates without a word proof remain unchanged.
+mod dead_values;
 mod local_phis;
 mod preheaders;
 mod word_ranges;
@@ -68,6 +69,9 @@ pub(in crate::native_artifact) fn optimize(
         pre_codegen_data_passes: 0,
         local_phi_parameters_removed: 0,
         local_phi_preheaders: 0,
+        dead_parameters_removed: 0,
+        dead_instructions_removed: 0,
+        dead_loads_removed: 0,
     };
     if !enabled {
         return Ok(report);
@@ -101,6 +105,10 @@ pub(in crate::native_artifact) fn optimize(
     }
     report.local_phi_parameters_removed =
         local_phis::simplify(&mut context.func, &context.cfg, &context.domtree);
+    let dead = dead_values::eliminate(&mut context.func);
+    report.dead_parameters_removed = dead.parameters;
+    report.dead_instructions_removed = dead.instructions;
+    report.dead_loads_removed = dead.loads;
     let (blocks, instructions) = counts(&context.func);
     report.after_blocks = blocks;
     report.after_instructions = instructions;

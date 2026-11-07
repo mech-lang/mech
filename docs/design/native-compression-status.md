@@ -1,5 +1,72 @@
 # Native compression milestone
 
+**R182 removes unused native IR values before lowering.** Demand starts at
+observable effects and control and follows each current block argument. Calls,
+stores, trapping reads/arithmetic, conditions, CFG edges, infinite loops and the
+entry ABI remain. Exceptions retain the conservative path. Source operations,
+funding, ownership and publication contracts are unchanged.
+
+The real compressor loses **10,647 unused IR instructions / 8,878 IR loads**,
+with **zero actual block parameters removed**. Text shrinks **70,700 B** and entry
+stack **320 B**. All previous numeric recipes, window selections and proofs remain.
+IR/work/ABI/MBC are **202/107/39/14**.
+
+All twenty matched cases complete: **16 faster / four slower**, geometric elapsed
+**−0.527064%**, with every original 1.05 gate retained and passing.
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.719808× | 3.676693× | -1.159068% |
+| reymont-prefix-16384 | 4.452282× | 4.414359× | -0.851745% |
+| random-32769 | 4.878450× | 4.846793× | -0.648915% |
+| 16384-distribution-change | 6.413499× | 6.410778× | -0.042428% |
+| repeated-32769 | 3.049449× | 3.048212× | -0.040569% |
+| 33027-periodic-window | 3.769513× | 3.737136× | -0.858925% |
+| eight-literals | 4.619655× | 4.629116× | +0.204799% |
+
+The independent hardware cohort has **all twenty instruction medians higher**
+(+0.002923% to +0.735456%) and ten cycle medians higher. All twelve scalar-control
+medians also rise (0.0768–0.7804%), remaining within the original gate. These
+contrary measurements are retained. Smaller static code does not establish fewer
+executed instructions. Tagged tally/control spans can grow and spill more.
+
+Allocation requests, requested bytes, reallocations and incremental usable peak
+are unchanged across all twenty cases. The fixed −16 B live-heap offset has an
+unproved cause. Separate CPU/heap RSS and physical cohorts establish no memory
+saving. Five exact-current profiles complete **17,413 calls** with per-case and
+final session cleanup zero; natural32 remains about 80% in the native main entry.
+
+**Six focused / 653 GPU / all 236 CI-selected tests executed** pass, with the same
+seven inherited exclusions. Unchanged **236 component / eight composition / one
+real-capacity path**, twelve scalar, fifteen architecture/catalog, runtime-only,
+formatting, warnings-as-errors and 132 workflow checks pass. Twenty original/decoded
+full-native witness rows retain work/results/errors/aliases/publication/retry.
+The actual parent fails unused-load coverage; the candidate passes.
+
+Parent `65034db9ca9da4133355108e85784703cde7592b`; measured source
+`7f26d28e1dfa5b219c86f68736f3d7543a69b514`. All seven compiler/test/CI
+files reconstruct and match qualification. Independent map compilation repeats
+the whole Object byte-for-byte. Original source/MBC/algorithm/tables/search/EOF,
+real scratch capacities, allocation sites, output capacity13 clear/reuse, aliases,
+mimalloc and full API timing remain. Largest input is 33,027 B.
+
+[Full R182 report](native-demand-liveness.md) contains all20 timing/counter rows,
+contrary blocks, current profiles, machine spans, exact receipts, repaired wrapper
+failures and skipped coverage. Evidence is kept outside source Git and each sealed
+packet is hash-verified before numerical replay. One commit in existing draft #973;
+no new PR. Hosted ordinary CI is cancelled by instruction; exact-head review is
+requested. The broader parent/child brief remains partial at opaque returns and
+fresh captured handoffs. The 1× goal remains active.
+
+The approved public container and independently retrieved receipt bundle match
+server hashes. Fresh public replay verifies **38 inner packets / 5,458 file
+occurrences / 1,211 paths**, preserving thirteen paths with multiple versions.
+REPORT.md, results.json and packet-replay.json reproduce byte-for-byte. All39
+container/inner receipts agree with the index. Only two new release assets are
+used; no new release is created.
+
+## Historical R181 checkpoint
+
 **R181 retains selected compound predicates and reuses checked source windows.**
 The actual match-extension assertion was a conjunction. The shared fact engine
 previously treated it as an opaque Boolean, losing both successful conditions.
