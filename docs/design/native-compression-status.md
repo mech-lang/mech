@@ -1,5 +1,13 @@
 # Native compression milestone
 
+## R193 — compact native phase; production unchanged
+
+Experiment B's first phase is complete. The shared Plan/scalar/array emitter generates all four real nested path phases with compact typed state: 1,632 bytes of code, 160 bytes of stack, no calls. Larger-case phase kernels are **1.30–1.46× faster than the existing phase**, with 33.72–51.91% fewer instructions in a separate cohort. All eight primary blocks improve. These diagnostic entries omit exact ordinary accounting and recovery; **no whole-compressor acceleration or new reference ratio is claimed**.
+
+13,116 measured phase calls, five focused real-buffer cases and 18 original/decoded error/Boolean/retry controls pass. Ten separate profiles retain 5,174,020 verified calls. Fifteen complete ordinary compression calls pass exact output, independent inflation, aliases, capacity and cleanup. Their callback census finds 3,248–9,741 root calls per compression, while all 5,181 static library sites reduce to 15 operation families.
+
+Production remains R191/IR211: independent ordinary generation repeats all five image files byte-for-byte. The next step extends typed native storage and real construction/allocation across the entire closed Plan, followed by measured contract restoration. The full brief and parity remain incomplete. [Diagnostic design, timings and evidence](native-compact-computation-baseline.md).
+
 ## R192 — minimal typed adapter baseline; production unchanged
 
 Experiment A is complete: all four actual linked phase bodies remain byte-identical to R191. Five real typed-buffer witnesses pass680exact-node/scalar phase calls;15full-compressor capture calls preserve bytes, inflation, aliases, capacity and cleanup0. The real1,500,513-word cache and305,257-entry node reservation remain. This diagnostic supplies actual exit adaptation and settlement, with explicit unsupported failures, while ordinary canonical admission/publication and precise recovery contracts remain unqualified.

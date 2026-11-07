@@ -40241,6 +40241,67 @@
         "verified_archives": 1,
         "verified_file_occurrences": 281
       }
+    },
+    "193": {
+      "base": "25bbeed77218c614ffa0fac6f196cf7037c46dcf",
+      "production": "ee1479f505976b729e961e96d9624d63b1c8ec9b",
+      "compiler_source": "cadaabefcf7dfb64b1b32a724e53c300f7c1fca1",
+      "versions": {
+        "ir": 211,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "retained": false,
+      "diagnostic_retained": true,
+      "production_changed": false,
+      "decision": "Retain the compact shared-emitter diagnostic and matched headroom evidence. Experiment B stage1 succeeds; production remains R191. Extend the typed model across complete compressor before claiming full-program acceleration, then restore named contracts.",
+      "release_tag": "evidence-native-compression-experiments-6",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-6",
+      "archive_publication": "published; fresh public download verifies all512files and byte-identical numerical outputs",
+      "events": [
+        {
+          "event": "compact-native-computation-diagnostic",
+          "source_revision": "25bbeed77218c614ffa0fac6f196cf7037c46dcf",
+          "asset": "r193-compact-native-computation-4c6fdcbcb03b.tar.gz",
+          "sha256": "4c6fdcbcb03b2a8868fc0c7a69f3a7625d5a68484abe48c72ebfdb1f5689f5ba",
+          "manifest_sha256": "917aea1667d09883e147a674df6cf9e3c2c6d66cde0690d813ff00799fae1cbf",
+          "bytes": 30907792,
+          "files": 512,
+          "publication": "published and independently downloaded/replayed",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r193-compact-native-computation-4c6fdcbcb03b.tar.gz"
+        }
+      ],
+      "analysis": {
+        "script": "checkpoint.py",
+        "description": "Verify matched raw observations, all linked/source pins, prototype patch, original/decoded controls, profile receipts and complete-call callback census; no compiler/native execution.",
+        "expected_outputs": {
+          "REPORT.md": "f8899fb4f4ef241f27bec2134d67467ef35dfad2abf07b9de55ebdb74c130c60",
+          "results.json": "b040187e5d4b1ff33031fce439aae70ef2126a680b857be1096c375f3685858a"
+        }
+      },
+      "scope": "Phase-only explicitly unqualified diagnostic. Same source/Plan/emitter/backend; no whole-compressor or complete reference performance claim.",
+      "qualification": {
+        "phase_calls": 13116,
+        "real_buffer_cases": 5,
+        "original_decoded_controls": 18,
+        "whole_inventory_calls": 15,
+        "profile_calls": 5174020,
+        "normal_image_files_identical": 5
+      },
+      "next": "Compact typed storage/real construction and allocation across the entire closed Plan; then restore named contracts and qualify ordinary entry. Source fixed.",
+      "public_verification": {
+        "byte_identical_outputs": [
+          "REPORT.md",
+          "results.json"
+        ],
+        "paths_with_multiple_preserved_versions": 0,
+        "round": 193,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 512,
+        "verified_archives": 1,
+        "verified_file_occurrences": 512
+      }
     }
   },
   "repository": "mech-lang/mech",
