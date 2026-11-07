@@ -1,0 +1,26 @@
+{
+  "selected-ir242/output.json.samples.bin": {
+    "sha256": "2658eec36f53f8ded9d81c0ef897da6f091147b9d2a8eddbf74d0f2585c58043",
+    "bytes": 407704,
+    "retained_locally": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/output.json.samples.bin",
+    "reason": "Raw register/address observations remain local; phase/run-state validation and analyzed exact-native PC offsets are published."
+  },
+  "selected-ir242/output.json.samples.bin.symbols.tsv": {
+    "sha256": "5f66eede750b04723c1316a89e7f51bc9269be8d24710c3efb66388624a87852",
+    "bytes": 635958,
+    "retained_locally": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/output.json.samples.bin.symbols.tsv",
+    "reason": "Raw register/address observations remain local; phase/run-state validation and analyzed exact-native PC offsets are published."
+  },
+  "candidate-ir264/output.json.samples.bin": {
+    "sha256": "8b38547e55dea4ba30fc83f0bb72dd0c2798469e6a38ab30ff980a53c6813c81",
+    "bytes": 355168,
+    "retained_locally": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/candidate-ir264/output.json.samples.bin",
+    "reason": "Raw register/address observations remain local; phase/run-state validation and analyzed exact-native PC offsets are published."
+  },
+  "candidate-ir264/output.json.samples.bin.symbols.tsv": {
+    "sha256": "e92034fa51d6514b4cd9489a1bfacddbc9421bba204a4413b725d3fa51565dc5",
+    "bytes": 557738,
+    "retained_locally": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/candidate-ir264/output.json.samples.bin.symbols.tsv",
+    "reason": "Raw register/address observations remain local; phase/run-state validation and analyzed exact-native PC offsets are published."
+  }
+}

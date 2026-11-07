@@ -1,0 +1,11 @@
+{
+  "quiet": true,
+  "latency_complete_exact": 341,
+  "seed": 9902707,
+  "samples": 7,
+  "variants": 12,
+  "resource_timings_excluded": true,
+  "process_snapshot_sha256": "3b78e896146bc9cd6da23e3624a2f4d1f96a096428f693f4bba30015874cf534",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/resources-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation arguments remain local; original quiet predicates unchanged."
+}

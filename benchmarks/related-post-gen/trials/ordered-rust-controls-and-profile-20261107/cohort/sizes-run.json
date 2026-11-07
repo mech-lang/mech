@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/collect-size-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/latency-config.json",
+    "--reference",
+    "rust-ordered-scan-only",
+    "--output",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/size-ordered-rust-controls-20261107.json"
+  ],
+  "exit": 0,
+  "seconds": 0.37412683316506445
+}

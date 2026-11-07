@@ -1,0 +1,2164 @@
+{
+  "schema": "mech.related-post-gen.trial-evidence-manifest.v3",
+  "source_commit": "5bb64a80ba91ed52364d54ad7e8cd040b0f9830e",
+  "LLVM_program_qualified": false,
+  "selected": false,
+  "files": {
+    "trial.json": {
+      "sha256": "e6540b3713d3a30e5a25059aac1831d31a00031399a3c593fa674b9571a51469",
+      "bytes": 323720,
+      "decoded_sha256": "e6540b3713d3a30e5a25059aac1831d31a00031399a3c593fa674b9571a51469",
+      "decoded_bytes": 323720,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/compiler-ordered-rust-controls-and-current-profile-20261107.json"
+    },
+    "latency.json.gz": {
+      "sha256": "1b35ee2e9c435792f836816e8e22597ba5be75119cdecbb5a5265e73503769b7",
+      "bytes": 23967,
+      "decoded_sha256": "fd361245c94747321e3a5cf6feb69eb98bcef832ebf84b43f3780a0dceecf7b8",
+      "decoded_bytes": 385160,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-ordered-rust-controls-randomized-20261107-5000-m3.json"
+    },
+    "resources.json.gz": {
+      "sha256": "dcf9141d256b2c7c7a45623012cf7c74bb2b3bd334059559565c5f60974bdb0e",
+      "bytes": 48585,
+      "decoded_sha256": "357576c288d2dc4e57594d3dec8e8a72e371467df4fb43da1d635bbd350635c1",
+      "decoded_bytes": 574500,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-ordered-rust-controls-resources-20261107-5000-m3.json"
+    },
+    "sizes.json.gz": {
+      "sha256": "03c694822350d43c8468898b2459c2a8f29a478c6d680b28eb7dd0508553bed8",
+      "bytes": 3594,
+      "decoded_sha256": "fe2fd65a87682efdb11502cd9bd134741eb2814922e28c7a027df845944a764a",
+      "decoded_bytes": 22471,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/size-ordered-rust-controls-20261107.json"
+    },
+    "rust-controls/prepare-build.py.gz": {
+      "sha256": "a241abde22f1bd7ce7ed964e7f50054eb1627c87f812d5f7e470696c36a32d4a",
+      "bytes": 3283,
+      "decoded_sha256": "06b57a9e3ff1d20c2fa4cb42900942af4d59e5220ec29e5bc805cd88e8715290",
+      "decoded_bytes": 8400,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/prepare-build.py"
+    },
+    "rust-controls/qualify.py.gz": {
+      "sha256": "ddc64f008b8bb79259f8dbf62d9177c8ddd4e63407a98cde8088aa0f733c1f43",
+      "bytes": 1229,
+      "decoded_sha256": "4b572665aa7a371f96ede33e7be3fc9c64b68dffb718ca2427c3a63cc67447f9",
+      "decoded_bytes": 2654,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualify.py"
+    },
+    "rust-controls/builds.json.gz": {
+      "sha256": "a39319d1fd03954c97e03e3fd53af84a0c8969c6371fc8d833c5da7a6bc61cf1",
+      "bytes": 896,
+      "decoded_sha256": "2d6160e399f9546f63d7b2e0d197adc339f88f3ac51d1c67e3ab549ce1fbc989",
+      "decoded_bytes": 4439,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/builds.json"
+    },
+    "rust-controls/qualification.json.gz": {
+      "sha256": "b49ad5c1d0a47b42a1c13bd44f44817e4dcb1575344cba762a454bf874339baa",
+      "bytes": 11069,
+      "decoded_sha256": "878b8490cc738240b20e5323c87a4dda9fb2bf0e12819353fd872318f7884f6e",
+      "decoded_bytes": 177539,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification.json"
+    },
+    "rust-controls/qualification-summary.json.gz": {
+      "sha256": "75d04f2e2111d2ae69e64a5fcdf65080804eac416f2434a3cb9b95bfcf6bfd71",
+      "bytes": 155,
+      "decoded_sha256": "ab3b3770e38bd81d3c62c3aee4c2d4abfe67f9b5be230eb9fd897de0db7933dd",
+      "decoded_bytes": 202,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification-summary.json"
+    },
+    "rust-controls/qualification-first-attempt.json.gz": {
+      "sha256": "7bec5a60fa4d9c285c1998625f9c57dc2a9885057325153c29852213b90e9376",
+      "bytes": 239,
+      "decoded_sha256": "b75f5aae9a6d2fe6b30acad5929d820f78ea377bb51f665201ce7fe73eebdef2",
+      "decoded_bytes": 328,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification-first-attempt.json"
+    },
+    "rust-controls/scan-only/src/main.rs.gz": {
+      "sha256": "38a8827746531fa9b5af9380adf9b6e7751ddbd1d694cd0907998e54dc830e3c",
+      "bytes": 4969,
+      "decoded_sha256": "2f510981b1ba74c9dc660f9df78b37c18b47c86e49923fe69bbf3e4212aeb655",
+      "decoded_bytes": 18192,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/scan-only/src/main.rs"
+    },
+    "rust-controls/scan-only/Cargo.toml.gz": {
+      "sha256": "4d65b4e0a15202124959a53fdb5fa56c47b4d8422b97b725b1430be80791907b",
+      "bytes": 216,
+      "decoded_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+      "decoded_bytes": 299,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/scan-only/Cargo.toml"
+    },
+    "rust-controls/scan-only/Cargo.lock.gz": {
+      "sha256": "833d04d8f6ecf1b0962342a12a64a42f1c9bd843acac03eb92a2a7d17bfdd5d4",
+      "bytes": 1232,
+      "decoded_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+      "decoded_bytes": 3986,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/scan-only/Cargo.lock"
+    },
+    "rust-controls/scan-only/build.json.gz": {
+      "sha256": "f7d93610000f88349b6a7814c1742acb1fec48db429d371562e2ca9719e53804",
+      "bytes": 488,
+      "decoded_sha256": "95b4ffb183a50e83f238d6e9db6d7dd18f10ab6a7e00da322d0c8188bf46717d",
+      "decoded_bytes": 998,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/scan-only/build.json"
+    },
+    "rust-controls/scan-only/test.json.gz": {
+      "sha256": "3aedd180fa93d8ff3629cf41bb9df9a543e512fab1f19013c73bbc83b9279901",
+      "bytes": 724,
+      "decoded_sha256": "24a913719f8d2fea3bc54c304b3525f522c2c06089c95804c8c631e9b923132b",
+      "decoded_bytes": 1541,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/scan-only/test.json"
+    },
+    "rust-controls/ordered/src/main.rs.gz": {
+      "sha256": "317cdb3cc69a19947c24a8652b5c1d5675697dbcbfdd6a4319a5d28e7c119ed8",
+      "bytes": 4971,
+      "decoded_sha256": "5ae15ea8da2e12603637da3e6a2f587376a64a107508b5a57068ac5ef3a5079a",
+      "decoded_bytes": 18191,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered/src/main.rs"
+    },
+    "rust-controls/ordered/Cargo.toml.gz": {
+      "sha256": "4d65b4e0a15202124959a53fdb5fa56c47b4d8422b97b725b1430be80791907b",
+      "bytes": 216,
+      "decoded_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+      "decoded_bytes": 299,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered/Cargo.toml"
+    },
+    "rust-controls/ordered/Cargo.lock.gz": {
+      "sha256": "833d04d8f6ecf1b0962342a12a64a42f1c9bd843acac03eb92a2a7d17bfdd5d4",
+      "bytes": 1232,
+      "decoded_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+      "decoded_bytes": 3986,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered/Cargo.lock"
+    },
+    "rust-controls/ordered/build.json.gz": {
+      "sha256": "063dd9c3b713fb6361fcb2d9b7a4466737e089ae17139f5e9423484fbf810175",
+      "bytes": 309,
+      "decoded_sha256": "b40c9f58f41b6708f959506095f97c25a9bf9aec396bfce263728107daeb27cb",
+      "decoded_bytes": 497,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered/build.json"
+    },
+    "rust-controls/ordered/test.json.gz": {
+      "sha256": "4669abe6a8e8f0e383cb4e430b6b6af6cfee2858e164e3c2e22bd5cb36aab2d3",
+      "bytes": 614,
+      "decoded_sha256": "187b38a947c42f07364faa8cec5ab2befee45c1fccf20da57e14db73ccbb6acf",
+      "decoded_bytes": 1233,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered/test.json"
+    },
+    "rust-controls/mask-reuse/src/main.rs.gz": {
+      "sha256": "b772a94ad4a741183dc33da44166a9c056eeba0d8b86f645fd0b321f24d151b5",
+      "bytes": 4971,
+      "decoded_sha256": "c5009821b3974b898b169163bd4d25b61c00e7502767887b51924d1743f25982",
+      "decoded_bytes": 18191,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/mask-reuse/src/main.rs"
+    },
+    "rust-controls/mask-reuse/Cargo.toml.gz": {
+      "sha256": "4d65b4e0a15202124959a53fdb5fa56c47b4d8422b97b725b1430be80791907b",
+      "bytes": 216,
+      "decoded_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+      "decoded_bytes": 299,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/mask-reuse/Cargo.toml"
+    },
+    "rust-controls/mask-reuse/Cargo.lock.gz": {
+      "sha256": "833d04d8f6ecf1b0962342a12a64a42f1c9bd843acac03eb92a2a7d17bfdd5d4",
+      "bytes": 1232,
+      "decoded_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+      "decoded_bytes": 3986,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/mask-reuse/Cargo.lock"
+    },
+    "rust-controls/mask-reuse/build.json.gz": {
+      "sha256": "8f96c31c5e86aa008998943c298b778d8b39f4db4dad642dc4a5c85855ced911",
+      "bytes": 312,
+      "decoded_sha256": "c021e3d62d6339798ccf61b6b3247f0489a0f3e1c216a05367f87dd0065ebd41",
+      "decoded_bytes": 503,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/mask-reuse/build.json"
+    },
+    "rust-controls/mask-reuse/test.json.gz": {
+      "sha256": "0c266d27359937304f6a8b8c7cd16916aabf65b2649b0690f02dd177c43611ab",
+      "bytes": 615,
+      "decoded_sha256": "9c53a0da89b1a497948159acc53046f30a809af6d40cc6e1ba8edde498609b06",
+      "decoded_bytes": 1239,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/mask-reuse/test.json"
+    },
+    "rust-controls/ordered-mask/src/main.rs.gz": {
+      "sha256": "dafeb9339e98e1fbd88519f6336cf2073862a7eeea34fc868c6e19df3c3fd7fe",
+      "bytes": 4971,
+      "decoded_sha256": "72ef6279aa23da81fa0ae5ed1f0a874af976b84003567cced0ad346d0a767af9",
+      "decoded_bytes": 18190,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered-mask/src/main.rs"
+    },
+    "rust-controls/ordered-mask/Cargo.toml.gz": {
+      "sha256": "4d65b4e0a15202124959a53fdb5fa56c47b4d8422b97b725b1430be80791907b",
+      "bytes": 216,
+      "decoded_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+      "decoded_bytes": 299,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered-mask/Cargo.toml"
+    },
+    "rust-controls/ordered-mask/Cargo.lock.gz": {
+      "sha256": "833d04d8f6ecf1b0962342a12a64a42f1c9bd843acac03eb92a2a7d17bfdd5d4",
+      "bytes": 1232,
+      "decoded_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+      "decoded_bytes": 3986,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered-mask/Cargo.lock"
+    },
+    "rust-controls/ordered-mask/build.json.gz": {
+      "sha256": "897b1e0c10a47a26d9eff20cde5242c2fef85e4ce96b368522c566c7c0578718",
+      "bytes": 314,
+      "decoded_sha256": "d392f88bebb509da14805d8805bbdf99bba2ea3622ce59e39ac3cf202b97639a",
+      "decoded_bytes": 506,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered-mask/build.json"
+    },
+    "rust-controls/ordered-mask/test.json.gz": {
+      "sha256": "44866502542fbd855b7747f74e18e87cd5ab61bde1ffef9e051b9e91254e3bb4",
+      "bytes": 616,
+      "decoded_sha256": "b1a9bdac26ccd60fabc6cfcd99a3cd6f0631be96cf09ba55b235f2bd13e2ea9b",
+      "decoded_bytes": 1243,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered-mask/test.json"
+    },
+    "rust-controls/ordered-mask-tables/src/main.rs.gz": {
+      "sha256": "a9e1df2bdcec374bbaaf9bd15f1fc15c6777c02691df602e816153f5b12b40fb",
+      "bytes": 4969,
+      "decoded_sha256": "bd9edad2a43ffe6dc8fc461e35d872f45449114d565232999c98d6e2ccdd20b5",
+      "decoded_bytes": 18189,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered-mask-tables/src/main.rs"
+    },
+    "rust-controls/ordered-mask-tables/Cargo.toml.gz": {
+      "sha256": "4d65b4e0a15202124959a53fdb5fa56c47b4d8422b97b725b1430be80791907b",
+      "bytes": 216,
+      "decoded_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+      "decoded_bytes": 299,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered-mask-tables/Cargo.toml"
+    },
+    "rust-controls/ordered-mask-tables/Cargo.lock.gz": {
+      "sha256": "833d04d8f6ecf1b0962342a12a64a42f1c9bd843acac03eb92a2a7d17bfdd5d4",
+      "bytes": 1232,
+      "decoded_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+      "decoded_bytes": 3986,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered-mask-tables/Cargo.lock"
+    },
+    "rust-controls/ordered-mask-tables/build.json.gz": {
+      "sha256": "8c65d47cc5a966922d7abf45d90e328f96ad15d02c19fe726eaa82cd26de77f8",
+      "bytes": 316,
+      "decoded_sha256": "1845dd7d7c6ea9350e955c26c8b8c066b814026b4e6f9d00fdbe2259d5291537",
+      "decoded_bytes": 520,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered-mask-tables/build.json"
+    },
+    "rust-controls/ordered-mask-tables/test.json.gz": {
+      "sha256": "ff53e54e7d56822ff274253871bdcf03432e065b6f22295e7998c245ee820160",
+      "bytes": 621,
+      "decoded_sha256": "4a54149bf6c228ebdae92163a0a686c85d7113e28d0eafc11e393c7d4eaf6b93",
+      "decoded_bytes": 1257,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered-mask-tables/test.json"
+    },
+    "rust-controls/qualification/ordered/wrapped-u8/run.json.gz": {
+      "sha256": "282c24689a6e4d68ef452ba52491eb599e8ebbaed1a16b407bf341fd50fbff19",
+      "bytes": 497,
+      "decoded_sha256": "86e051e3adedfe96c3332573713b8ab634fdfbe03f0eb0dbe8a6459c9badea50",
+      "decoded_bytes": 817,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/wrapped-u8/run.json"
+    },
+    "rust-controls/qualification/ordered/unicode-ties/run.json.gz": {
+      "sha256": "60253a6fbb1acf4610ff0f4cc340a8d04df1fd1857749a6140ee9b3ba78f4862",
+      "bytes": 519,
+      "decoded_sha256": "43f0bc1152f82afe35f24ef050c94e3f43a9c7caa84b281c415fdcbb67b68253",
+      "decoded_bytes": 864,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/unicode-ties/run.json"
+    },
+    "rust-controls/qualification/ordered/empty-tags/run.json.gz": {
+      "sha256": "3f5456b7070bc4e0d0be42685986cf533eccada7dc69eb9b788e5d817c523a78",
+      "bytes": 522,
+      "decoded_sha256": "b28869ef1c232e6e9ed7caabee2f5cdd71c4a448f7d086391cc30b8616918dac",
+      "decoded_bytes": 862,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/empty-tags/run.json"
+    },
+    "rust-controls/qualification/ordered/full5000/run.json.gz": {
+      "sha256": "0ee09ba447b8c86f4765d59b468f5a0a2c63880e41f0dae736b7c967955116f9",
+      "bytes": 580,
+      "decoded_sha256": "5f1dfc8fe7dda61d56d40f6f8dd3a9b11c52ace70a9e6e6a29856c30b5afc0c9",
+      "decoded_bytes": 1033,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/full5000/run.json"
+    },
+    "rust-controls/qualification/ordered/coverage-mixed-disjoint/run.json.gz": {
+      "sha256": "885dbbd84276585e299ce4c8238b9e8d61ed3eb411b1b0578ed37dac489d7325",
+      "bytes": 527,
+      "decoded_sha256": "c8c00e16a52615ed2ed4926dd9ea0ce6eb46ad446507d52296a3f96609c945e3",
+      "decoded_bytes": 889,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/coverage-mixed-disjoint/run.json"
+    },
+    "rust-controls/qualification/ordered/coverage-permuted-ties/run.json.gz": {
+      "sha256": "84fc9a07844d0c469cbfc026ea0cedff0173e84e78db44f2831d9f9e01310e2b",
+      "bytes": 519,
+      "decoded_sha256": "1915551f00c780bc877e782b3026137d89462387f51fd08c9da04e8535ce07f1",
+      "decoded_bytes": 886,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/coverage-permuted-ties/run.json"
+    },
+    "rust-controls/qualification/ordered/long-utf8-key-prefix/run.json.gz": {
+      "sha256": "c059417456d32a43dee050a5966d67a37ecaadc05f4f8b1d58a52432fbd89a85",
+      "bytes": 585,
+      "decoded_sha256": "38576896e7711c42910cd421dd0f4e0d67bdade4773f1eca390b2bb9feab9bfb",
+      "decoded_bytes": 1041,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/long-utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/ordered/duplicate-utf8/run.json.gz": {
+      "sha256": "ec98b26a17822726ce5c9fd80aac07ccaebe0df0b05da67a2aced7124e8c337e",
+      "bytes": 497,
+      "decoded_sha256": "868e5e278f3ac71a5cecd45ad56e9fd95ad6dc9a08808105542e3cc903ce8aab",
+      "decoded_bytes": 825,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/duplicate-utf8/run.json"
+    },
+    "rust-controls/qualification/ordered/coverage-six-with-two-tag-extra/run.json.gz": {
+      "sha256": "1895b8a5bb23f118295c517829d8640f5501ee66dc48afb9d0d939fdb8be9f5a",
+      "bytes": 534,
+      "decoded_sha256": "54e4452cf57aaf15d72e6ef35c3725aa7fb1b0666231cfe08cd68b9cbd16cf18",
+      "decoded_bytes": 906,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/coverage-six-with-two-tag-extra/run.json"
+    },
+    "rust-controls/qualification/ordered/random-5/run.json.gz": {
+      "sha256": "ac638d8f760b8bee1bcbdb6c2323480c9f61efbac824c9106507ae0d7326c519",
+      "bytes": 519,
+      "decoded_sha256": "ac4e6e494d3ce474765ddbc828d937ba98ed8a091aca14f3a389c93882754bf2",
+      "decoded_bytes": 860,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/random-5/run.json"
+    },
+    "rust-controls/qualification/ordered/random-2/run.json.gz": {
+      "sha256": "717a060de39387a587a228f078adce44ccb68e0ccaaa7c6df3ea1ef87dbd9192",
+      "bytes": 516,
+      "decoded_sha256": "0ec57fb373363f072679864e78f6cd23a6972374e32f600b6f717fc39b90bb99",
+      "decoded_bytes": 863,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/random-2/run.json"
+    },
+    "rust-controls/qualification/ordered/wrap255/run.json.gz": {
+      "sha256": "564a4036088827551aeb37bc021ba8300d050b3e09672eef2fdd27a0cab95f5c",
+      "bytes": 491,
+      "decoded_sha256": "3755c1ffee326b7f7be88cae128828a7c722d55ecb36a7f48b40b5a500a38473",
+      "decoded_bytes": 808,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/wrap255/run.json"
+    },
+    "rust-controls/qualification/ordered/random-3/run.json.gz": {
+      "sha256": "ae17d76f3017992e96070207c1ee7f5327afb603057b5ffe0e7f4667bbb50b36",
+      "bytes": 518,
+      "decoded_sha256": "d30826f988c449d6b40afea4bc5b0cf864247fdb8e25b260ec76e3cd858383f5",
+      "decoded_bytes": 858,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/random-3/run.json"
+    },
+    "rust-controls/qualification/ordered/random-4/run.json.gz": {
+      "sha256": "48d5ffead6a41c775bc343f9e557b6346fe653472d12acab9f980c51e6ea38ef",
+      "bytes": 518,
+      "decoded_sha256": "5f5d65a8b2c8e717919412718c68588f3291b561fe21d7ed8dae8aad21dd9995",
+      "decoded_bytes": 858,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/random-4/run.json"
+    },
+    "rust-controls/qualification/ordered/mixed-full-sparse/run.json.gz": {
+      "sha256": "ec50dd5ab9764ebb44fd5fc614d014de00181c1f03ccfd51716a77b90d3d815a",
+      "bytes": 525,
+      "decoded_sha256": "222a55be31884871359c2de1e59c0db281f343fdac7688e308ea4733eb508d0e",
+      "decoded_bytes": 876,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/mixed-full-sparse/run.json"
+    },
+    "rust-controls/qualification/ordered/long-nine-tags/run.json.gz": {
+      "sha256": "86917dbe7ea22624e6fe3081e856abc866d32973664f8459c3aea623a982c22e",
+      "bytes": 498,
+      "decoded_sha256": "7f564f2b147ef716c6d4c260f510813707b96a91a2a70f6edcf7573e1ef37303",
+      "decoded_bytes": 825,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/long-nine-tags/run.json"
+    },
+    "rust-controls/qualification/ordered/coverage-all-six/run.json.gz": {
+      "sha256": "41a3deeae4e7c01dc7ba0cd778a69e43a1a26f711e16865f3d48d16153017b68",
+      "bytes": 523,
+      "decoded_sha256": "76065635c2598fdd34ac109d05b685976207b5fdac6f49f75ffe7ade4167aa73",
+      "decoded_bytes": 873,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/coverage-all-six/run.json"
+    },
+    "rust-controls/qualification/ordered/all-empty/run.json.gz": {
+      "sha256": "dd5499480fb857caf184dfcf9652d4766d46d9dbff3804ee49b070cce8fc3fd5",
+      "bytes": 493,
+      "decoded_sha256": "efa892ca47d963b50b7cb3f476ec23d6bf9cc474b3f20138c102b4e70009134a",
+      "decoded_bytes": 811,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/all-empty/run.json"
+    },
+    "rust-controls/qualification/ordered/first-10/run.json.gz": {
+      "sha256": "7d5880ac2270601c827e98f692535ee61cd70739b41d7949de1acbd052348340",
+      "bytes": 518,
+      "decoded_sha256": "e679894d2034f9e6b85110a9e6bd041344053ef7e19840f4da161a353ab3a458",
+      "decoded_bytes": 863,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/first-10/run.json"
+    },
+    "rust-controls/qualification/ordered/one-post/run.json.gz": {
+      "sha256": "88ec1a5ad3782652e52e632f892739a397358f803618d9190d826642fde1685c",
+      "bytes": 492,
+      "decoded_sha256": "f9ac336f050d8b1cc81ac6e527f93d313735a2a60a7f0385fd76518712a26068",
+      "decoded_bytes": 812,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/one-post/run.json"
+    },
+    "rust-controls/qualification/ordered/large-vocabulary/run.json.gz": {
+      "sha256": "f323852238c76e601e77a96fc60fcfcf2950a6ab28a0b42c8d92caa080596cac",
+      "bytes": 501,
+      "decoded_sha256": "09ab3c1fe4d894a34d28b773540f56192e9ef44555be68cb243179da6d3210e2",
+      "decoded_bytes": 831,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/large-vocabulary/run.json"
+    },
+    "rust-controls/qualification/ordered/eight-tag-boundary/run.json.gz": {
+      "sha256": "a658f7a70da89c11decfc348b852f7b92941add75a07f022d3e0dd32b76d68d1",
+      "bytes": 591,
+      "decoded_sha256": "8d10a64acb8b4d90adb369dbfc3efcbfe5502046dd8a6d84f7f48126aa7a48a9",
+      "decoded_bytes": 1044,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/eight-tag-boundary/run.json"
+    },
+    "rust-controls/qualification/ordered/wrap256/run.json.gz": {
+      "sha256": "53df28fc04f210b4652810b237aa1c877222f2bf63e319de3f71a78a96f0fad6",
+      "bytes": 494,
+      "decoded_sha256": "c4ab99a16a68d757b44e1e687c3e19bc420874f15c5ab6602a739c38f3de1559",
+      "decoded_bytes": 810,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/wrap256/run.json"
+    },
+    "rust-controls/qualification/ordered/first-100/run.json.gz": {
+      "sha256": "f1e8b89044c559455d41b1d54234dfefc7d348ea3104ce5dc05811471e0d1bb3",
+      "bytes": 515,
+      "decoded_sha256": "4c8f1f3ddc122ede85098eb750a480ec2f061d8406799f9e6771ea55bd9a8282",
+      "decoded_bytes": 867,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/first-100/run.json"
+    },
+    "rust-controls/qualification/ordered/coverage-five-with-two-tag-fifth/run.json.gz": {
+      "sha256": "1f6695b19e7b280331154f356b55a1812c120af2de377b80a9a809462e62f1e5",
+      "bytes": 534,
+      "decoded_sha256": "c4759cf115423c600da1f03ef2989438305a2e2cf92193f411e14eab3968e195",
+      "decoded_bytes": 908,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/coverage-five-with-two-tag-fifth/run.json"
+    },
+    "rust-controls/qualification/ordered/random-1/run.json.gz": {
+      "sha256": "6c7dc19986a48ba31c301cff657e0a0ec00dd8d1e4ce923b1d76bb0da0bfbb83",
+      "bytes": 517,
+      "decoded_sha256": "ce73fd8705ef244e01de5d7cf809ab885c893ae78ddd58698659f9ec5ff6e8c5",
+      "decoded_bytes": 858,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/random-1/run.json"
+    },
+    "rust-controls/qualification/ordered/random-6/run.json.gz": {
+      "sha256": "0193cd9de0051b2cb35c8f2841e7337a7c41b2d5f19a09d4b6310ce4bd6174c7",
+      "bytes": 516,
+      "decoded_sha256": "512b78b593bb888a65fa974218517f8ebd90c5c1f4920bbc364f7c34cc8e60fe",
+      "decoded_bytes": 862,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/random-6/run.json"
+    },
+    "rust-controls/qualification/ordered/utf8-key-prefix/run.json.gz": {
+      "sha256": "63039404977a0bd0b68811ce307521684c566b7cdb2914876130fc00ec8ac4a5",
+      "bytes": 583,
+      "decoded_sha256": "a5e6d4dad16de90ca41d2a0e298e22befd635cb28d6ce982d0cb69e93424ac8a",
+      "decoded_bytes": 1033,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/ordered/wrap257/run.json.gz": {
+      "sha256": "87b5f0d23fd6c5d74921931508f8319197e4112f8b28684bbe99e664a4828aa4",
+      "bytes": 493,
+      "decoded_sha256": "5540edc0df3877ae620d9c671156fee835fe866382c817bc31316e26e111b6df",
+      "decoded_bytes": 809,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/wrap257/run.json"
+    },
+    "rust-controls/qualification/ordered/random-7/run.json.gz": {
+      "sha256": "7481c98db251bbbfb40fa521eac136f726b9b14a51fb4435fc9ac384fc4cc523",
+      "bytes": 522,
+      "decoded_sha256": "fdb14f4f6b0935ca5f87df592ae8b5243012310bfd67a93e32b890257bb57808",
+      "decoded_bytes": 863,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/random-7/run.json"
+    },
+    "rust-controls/qualification/ordered/first-500/run.json.gz": {
+      "sha256": "a47aae3104319eecb98608df39c06d9627644fdd176b76a3504b01b2cbb36bd6",
+      "bytes": 520,
+      "decoded_sha256": "91d71fd9f2813500eff38a791bb47290712d507241d2cfd0d9912fa7ad359cb3",
+      "decoded_bytes": 869,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/first-500/run.json"
+    },
+    "rust-controls/qualification/ordered/random-0/run.json.gz": {
+      "sha256": "f2ef23a2ec9a7e78416730b0e9a3d5d82a23a6bd8df633e277be25070baa7f43",
+      "bytes": 517,
+      "decoded_sha256": "9bd7036fb94f2d46f8695dfed17f166750e8dda437a388572230cc88b9900ce8",
+      "decoded_bytes": 860,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered/random-0/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/wrapped-u8/run.json.gz": {
+      "sha256": "55fe069ba91be5700bc44b5da761aa76388eb15787283a745c922117d43a4ea9",
+      "bytes": 503,
+      "decoded_sha256": "2a259d6f2b88efbaccf10457d40ebec5e3dbc64e748fd2f808d83bdf228c702f",
+      "decoded_bytes": 826,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/wrapped-u8/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/unicode-ties/run.json.gz": {
+      "sha256": "ac8045281a8ebb323a7a82523963d225103aff6c6962fe47e138811e2d5f6f9f",
+      "bytes": 527,
+      "decoded_sha256": "f269e2a37a2cde8a6b2792f434f28c6ca8e0afcda950f01545b6b6c06138f29d",
+      "decoded_bytes": 875,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/unicode-ties/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/empty-tags/run.json.gz": {
+      "sha256": "b1c358aef3779c03a55aa3b55efb76594a7cb8b60c611c2b58177c79ad167a5b",
+      "bytes": 527,
+      "decoded_sha256": "fde03701eed23d42103c8968b0bf4bdcd41e087b5d4938a34d42868cf139bdc2",
+      "decoded_bytes": 872,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/empty-tags/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/full5000/run.json.gz": {
+      "sha256": "8365de479a88f6d726c61e28b98c11db5e1a91d248f5438f27045c7429d73343",
+      "bytes": 583,
+      "decoded_sha256": "68843c21b6c7c9cbb82e220874e86b584513f720255a4cd592d45cd50c52aa68",
+      "decoded_bytes": 1041,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/full5000/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/coverage-mixed-disjoint/run.json.gz": {
+      "sha256": "59ed8ec10bc9f21955900fc07fabf081419a134713a00e0f037dd6aaadbe96e3",
+      "bytes": 528,
+      "decoded_sha256": "cde727c98de0f99fc8b9feca180c7fb8972502056221f4d589ccef5def75caa3",
+      "decoded_bytes": 893,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/coverage-mixed-disjoint/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/coverage-permuted-ties/run.json.gz": {
+      "sha256": "2da0bde3a7bd2af868957df6190faf6bf7146ab8c1f9a0d7cf14483c33addeb1",
+      "bytes": 526,
+      "decoded_sha256": "48cd5436a921294ba3160ad62c556c84d170c48b38381b2806186504ecd96f99",
+      "decoded_bytes": 895,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/coverage-permuted-ties/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/long-utf8-key-prefix/run.json.gz": {
+      "sha256": "980735094e9fcd8013ffae16a7c67965205089dbf76aae9ee0be62a100993cb5",
+      "bytes": 590,
+      "decoded_sha256": "ec8c1da5220e6a34159ad9b1e3a52b38044b2bcd266ad87e787b052b3684c6bd",
+      "decoded_bytes": 1048,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/long-utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/duplicate-utf8/run.json.gz": {
+      "sha256": "a80034461ebbf25e33fe7c87864c5f19fd2852c579c608c314274d5384fdccd3",
+      "bytes": 505,
+      "decoded_sha256": "75fbc3a92e5d599f7a28c45c658354835719424f9c84df3ff899c45a4ccf063c",
+      "decoded_bytes": 834,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/duplicate-utf8/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/coverage-six-with-two-tag-extra/run.json.gz": {
+      "sha256": "0cf1c4d550971ebadfcf21f307e88141b732ec6dce9f587a5807fcfea4f76f9e",
+      "bytes": 538,
+      "decoded_sha256": "28bd8d0391796775f1438cbce3a70443c8cd50b8a1ddca96475321c89ff50228",
+      "decoded_bytes": 912,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/coverage-six-with-two-tag-extra/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/random-5/run.json.gz": {
+      "sha256": "b4d6cf02463324d02e213ce87238bb416412c6e6af5bad90853757bea2a50b62",
+      "bytes": 523,
+      "decoded_sha256": "a8cc253105ade4cec9379cc673e324ac50783dbb962eb3408195113890f06ec9",
+      "decoded_bytes": 871,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/random-5/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/random-2/run.json.gz": {
+      "sha256": "49351f8d748b60016ef4410dd918e497c81662d73133ef2bf9df6870ce14ae01",
+      "bytes": 523,
+      "decoded_sha256": "6744e36a904b4e1c0ec93916cd5c2aa24a22e677f1108e48c834f80a5616808a",
+      "decoded_bytes": 873,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/random-2/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/wrap255/run.json.gz": {
+      "sha256": "00ea2019ab0ce9ab834b2636bd0b45c639c1db2068a0650e2a4a0a7f290c4e87",
+      "bytes": 500,
+      "decoded_sha256": "d075643fad33f96a1584a7d3d7cebb5005b09453dee22858a0f6bd81f6f58937",
+      "decoded_bytes": 819,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/wrap255/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/random-3/run.json.gz": {
+      "sha256": "56cf4c6286db30f3927e9777f46cfbcf77100c8d8589aae4c1ca80252202d60e",
+      "bytes": 525,
+      "decoded_sha256": "3b364309b64584792e47f82a6e69871ecf23694700d98911ab115b0b63711b3c",
+      "decoded_bytes": 870,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/random-3/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/random-4/run.json.gz": {
+      "sha256": "c059bc7497b56d9913ffd4db82933ae4c4cc02e9a9337e2f3384a0cd27790c75",
+      "bytes": 519,
+      "decoded_sha256": "f64f648657906baf02a16fbcf4d070149115c95661438802ebe7bf339ecf1abb",
+      "decoded_bytes": 863,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/random-4/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/mixed-full-sparse/run.json.gz": {
+      "sha256": "a2fae7db9f29981ffd7c45413d5e96999eed7a18421115db0cf13f9464d265a1",
+      "bytes": 528,
+      "decoded_sha256": "6bc1d1047f48b9d3b63cd7fe930236bae598f9288b8b60e654eb370e2af002a0",
+      "decoded_bytes": 887,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/mixed-full-sparse/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/long-nine-tags/run.json.gz": {
+      "sha256": "e607a198c9558ca5da566e2ec9f0ade03488ccfd99aa9624e399d6a188780994",
+      "bytes": 505,
+      "decoded_sha256": "bb783774892add67671bc2c511a3bf8cba183bef682fecf30e65853e4d03acbb",
+      "decoded_bytes": 831,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/long-nine-tags/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/coverage-all-six/run.json.gz": {
+      "sha256": "3a2c3dde341eee73b49e9870f24c46de3be7850b72d4c26387c5fc0a813e486c",
+      "bytes": 531,
+      "decoded_sha256": "be812f67c32b2e4dd235720d1add783a2db77f2e508a9c82ffc4c917e471ecde",
+      "decoded_bytes": 884,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/coverage-all-six/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/all-empty/run.json.gz": {
+      "sha256": "1fc67f867a6e45ca7d6c93e419edb98ab6681afbaee73692a6df5003fff530e7",
+      "bytes": 500,
+      "decoded_sha256": "092b720120dfa939c81cc2ee059542b97be846de5acb78c6f550f0bbf9d61cf6",
+      "decoded_bytes": 822,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/all-empty/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/first-10/run.json.gz": {
+      "sha256": "676eb02e110e78fbc58892e7d1de293244d189ed8513b41ce45c6d10425c4801",
+      "bytes": 523,
+      "decoded_sha256": "6f67c03941cce6d06a9165ab1a9e7f7a2ca90d1ca2397bb6afb660c56c075642",
+      "decoded_bytes": 871,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/first-10/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/one-post/run.json.gz": {
+      "sha256": "04df83f1eaceb6b019f91c62474f52faebca2137a960320b9270676bee01689d",
+      "bytes": 499,
+      "decoded_sha256": "8ce16ca3953d10bbf2dfa4bd7c57a4ed6e2217659e83b2346d0d6740bc20366d",
+      "decoded_bytes": 821,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/one-post/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/large-vocabulary/run.json.gz": {
+      "sha256": "f80f694a83debf21e5cd2fdca304dee3d7cb90b3bb81632931303251a08f3def",
+      "bytes": 507,
+      "decoded_sha256": "e68febe1c9ac8e2acc930ce121f630add98aded412693d2b0d8b99ccdf97eb93",
+      "decoded_bytes": 840,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/large-vocabulary/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/eight-tag-boundary/run.json.gz": {
+      "sha256": "0db4e4b24077e72d749bbd2100e3d4bfad5a37e18308233ac859f125d71ef648",
+      "bytes": 593,
+      "decoded_sha256": "a9783d00af5c591640ea9183790acb97b981e5873a8af0ae453b9d890f983395",
+      "decoded_bytes": 1055,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/eight-tag-boundary/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/wrap256/run.json.gz": {
+      "sha256": "954eea506848968762a1ea610fd50d2ec9e49c1564f049df7bb9d8f22932d673",
+      "bytes": 500,
+      "decoded_sha256": "adfa0de48230a88d63b1c11cae833ba18158026f1cb36c60adaeaa7bf30a36f4",
+      "decoded_bytes": 818,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/wrap256/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/first-100/run.json.gz": {
+      "sha256": "78573157ad2df14c0aa4e643f247b31f2f113a60a2a46c168b3015377bda98f8",
+      "bytes": 523,
+      "decoded_sha256": "61565f536fe2c64c2325e73b26cc41736527aaea568aaf94fc0a97e7c2e9db59",
+      "decoded_bytes": 875,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/first-100/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/coverage-five-with-two-tag-fifth/run.json.gz": {
+      "sha256": "27792f2fc9280cc3a78d455412dfe48cdb7e9bd33c3a1051210198494de202c9",
+      "bytes": 539,
+      "decoded_sha256": "71d081c00b898bb4bc4f2e5912685a0346f5da9c41281ef96d3a3c9309be967d",
+      "decoded_bytes": 916,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/coverage-five-with-two-tag-fifth/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/random-1/run.json.gz": {
+      "sha256": "c6777675578892f10f54505dd4c1be4a7c58b132a9541e5f76bde9b05a32cb61",
+      "bytes": 527,
+      "decoded_sha256": "837de5a58ea82528938b08d449855d329110d1239e4f9df34f01178365b437e9",
+      "decoded_bytes": 872,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/random-1/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/random-6/run.json.gz": {
+      "sha256": "c831a5542d38f1e447c2bbc9a2d623ab958faf54cbb25b0a07b9b26b6f187d1e",
+      "bytes": 525,
+      "decoded_sha256": "35c11b1762a8cf37b7a44087e0a0c4243361028d813bd49846d99c1b4a05f250",
+      "decoded_bytes": 871,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/random-6/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/utf8-key-prefix/run.json.gz": {
+      "sha256": "002ccef5cf6c9e9085dcc117210987ebc03ebe709da74ef1cb6f972244f0d6c0",
+      "bytes": 587,
+      "decoded_sha256": "50b8e29910a22c5fe3129393522cc93fbfc4267ed908b07f728b93e746e3cb90",
+      "decoded_bytes": 1042,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/wrap257/run.json.gz": {
+      "sha256": "dcd0f2a4d935c8d3c13a3b3573aacfbf6108a08398a3de3ac49b8f81319cb668",
+      "bytes": 503,
+      "decoded_sha256": "05486382046c95168989375a429bba4504db7d76ac4e634746942719ef51062e",
+      "decoded_bytes": 821,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/wrap257/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/random-7/run.json.gz": {
+      "sha256": "4ab8e4589af1f51ec7d7b50740206635dc627f3a31c31cc46fe52da2041931fa",
+      "bytes": 524,
+      "decoded_sha256": "073017e3af3d082aadbd03131d36cca8bb3b933ce97bc57f97e467f68bf22075",
+      "decoded_bytes": 870,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/random-7/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/first-500/run.json.gz": {
+      "sha256": "a5c2bafde353df5f28eb8ac4e5082a6b08406625366c7db4ced169ac701cc898",
+      "bytes": 525,
+      "decoded_sha256": "e9a95221df87e3d517e34d76c31ec437fd1c9235e898c6fd50298c4d36ca4935",
+      "decoded_bytes": 876,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/first-500/run.json"
+    },
+    "rust-controls/qualification/mask-reuse/random-0/run.json.gz": {
+      "sha256": "95dad9e5552b990c4e62c92de440099b7fbeefe6bd72ed4775fda2b38f5849ed",
+      "bytes": 522,
+      "decoded_sha256": "a1216d445cd7c8e1b781ddd68d67c2f17ccbf6db1944efd15adf94c0e8c0022f",
+      "decoded_bytes": 868,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/mask-reuse/random-0/run.json"
+    },
+    "rust-controls/qualification/scan-only/wrapped-u8/run.json.gz": {
+      "sha256": "3ff7b625d64a33aabd56565c2b97c4df777bf6640f6b0637a03694c4269fc16f",
+      "bytes": 503,
+      "decoded_sha256": "a14bc2794e17b9cf88e550863682471d2e916a0f6cd6635944aeca20fa43d8d4",
+      "decoded_bytes": 823,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/wrapped-u8/run.json"
+    },
+    "rust-controls/qualification/scan-only/unicode-ties/run.json.gz": {
+      "sha256": "ef80d8153003f3dffaefde1935f07e26a8a3141e8395ec893f3b87179a0a62c5",
+      "bytes": 528,
+      "decoded_sha256": "fe92940a9b9999e5aff563ad926597bb95f81d6cac6612c74f41eb8b68a5dbe2",
+      "decoded_bytes": 874,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/unicode-ties/run.json"
+    },
+    "rust-controls/qualification/scan-only/empty-tags/run.json.gz": {
+      "sha256": "fae45206abe34034d681965821f75748d272bfb8947b720bec04b9724f46baba",
+      "bytes": 526,
+      "decoded_sha256": "ce0b624695a61531f7b6813aee8c2f47e37454500082cc4ed9d5596707339595",
+      "decoded_bytes": 869,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/empty-tags/run.json"
+    },
+    "rust-controls/qualification/scan-only/full5000/run.json.gz": {
+      "sha256": "2d0dd3a0b22aef4ed8e9f5e52471ed33d5fc9f179a856f00c6189ea0f0bc6625",
+      "bytes": 583,
+      "decoded_sha256": "01a1f74b9e15d1dace453742aeb5c00c2409680b513fd73d039b82b03eacf1da",
+      "decoded_bytes": 1037,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/full5000/run.json"
+    },
+    "rust-controls/qualification/scan-only/coverage-mixed-disjoint/run.json.gz": {
+      "sha256": "097cf4fe928858b5045417c4a4b3b57008dff00753b93b1dec4c26e97aa6b9cf",
+      "bytes": 527,
+      "decoded_sha256": "7a63b62bd17b77b35747dda0b15a9b1235eec9df7f86838190329d4cbc17eaf2",
+      "decoded_bytes": 888,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/coverage-mixed-disjoint/run.json"
+    },
+    "rust-controls/qualification/scan-only/coverage-permuted-ties/run.json.gz": {
+      "sha256": "55f5804f6033f4191544173cfe2157a6e69cc65f0b019de96f470ce69b0b31c7",
+      "bytes": 528,
+      "decoded_sha256": "6720e86e4dc253422d9bb6a1fc86952a06744077434ed025490ee95d034af33f",
+      "decoded_bytes": 893,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/coverage-permuted-ties/run.json"
+    },
+    "rust-controls/qualification/scan-only/long-utf8-key-prefix/run.json.gz": {
+      "sha256": "28e980442dba83de6f04094f53973640d043d0ca08b889216e62588b069c8c95",
+      "bytes": 589,
+      "decoded_sha256": "1b493adcf766bb246cffa324aff58d6f5722c811a2ff5271981fe4aedfef1f74",
+      "decoded_bytes": 1043,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/long-utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/scan-only/duplicate-utf8/run.json.gz": {
+      "sha256": "e1d7ce2805d5c7f6f26db6b104867fb55797e346a9ee5369a011723951e10399",
+      "bytes": 502,
+      "decoded_sha256": "52383488f81e86b25dcce869ac2ef5e2a08b501e09381ecd1d5ab3b4d44635df",
+      "decoded_bytes": 829,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/duplicate-utf8/run.json"
+    },
+    "rust-controls/qualification/scan-only/coverage-six-with-two-tag-extra/run.json.gz": {
+      "sha256": "d5c1b1a235db4866a41215fa9b37044fd5621f87748deb3ff4151f52a6216e2a",
+      "bytes": 539,
+      "decoded_sha256": "3f0c1517a01c01de7c23053274e0b697b60c6be7f2c4a4d2f1f36270e2119ba2",
+      "decoded_bytes": 910,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/coverage-six-with-two-tag-extra/run.json"
+    },
+    "rust-controls/qualification/scan-only/random-5/run.json.gz": {
+      "sha256": "fa838b7931be244b826b56ad128f5c7efb5b6afb41aae2f3f07a15ea5fdbd6f7",
+      "bytes": 523,
+      "decoded_sha256": "23988622fbdb1fba127281d51a2029eaae74fbac3702465d8bd2113ee7db608e",
+      "decoded_bytes": 869,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/random-5/run.json"
+    },
+    "rust-controls/qualification/scan-only/random-2/run.json.gz": {
+      "sha256": "33d22a27d5241331cf118c890fc4cb64651508143a292a9c32459504d0153245",
+      "bytes": 521,
+      "decoded_sha256": "9f9f9fe92c99432148cf691ac4c9f56d35e9b1e802b333d5f1fd97bf65f7690a",
+      "decoded_bytes": 870,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/random-2/run.json"
+    },
+    "rust-controls/qualification/scan-only/wrap255/run.json.gz": {
+      "sha256": "50b4c9237d8646dacc46e8ee3198ed893155b004a2075b0c59122b4889e687f9",
+      "bytes": 500,
+      "decoded_sha256": "3893f53b274446f6e79bbc609eb579d3fb84fc671cd88b7db269c0c4211fa21e",
+      "decoded_bytes": 816,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/wrap255/run.json"
+    },
+    "rust-controls/qualification/scan-only/random-3/run.json.gz": {
+      "sha256": "49670e5a5bd7809c2132eac181b82d6feed198f5bec8fb8bbd2da5e4b5fe4c41",
+      "bytes": 524,
+      "decoded_sha256": "98a043dd08ddd4df128852b4d0a2524ce057d17e75ee0e5131463b18068c44f8",
+      "decoded_bytes": 869,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/random-3/run.json"
+    },
+    "rust-controls/qualification/scan-only/random-4/run.json.gz": {
+      "sha256": "9a3e0e0874ee6d287987720dfbdac8b2fdce8669e65534296a7820676a0af80a",
+      "bytes": 525,
+      "decoded_sha256": "8f13c6a1e6341ebc29237b67ddd9c5627612c8af1aa279589941527a715df544",
+      "decoded_bytes": 869,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/random-4/run.json"
+    },
+    "rust-controls/qualification/scan-only/mixed-full-sparse/run.json.gz": {
+      "sha256": "8f10bf6600d20b589d33e930989796eacc0449f3e721fe822301c38ec3041d60",
+      "bytes": 526,
+      "decoded_sha256": "d832237d069d38dd97d16e52ad286e43b458df9fa364114070b7d6842342c876",
+      "decoded_bytes": 880,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/mixed-full-sparse/run.json"
+    },
+    "rust-controls/qualification/scan-only/long-nine-tags/run.json.gz": {
+      "sha256": "d3ec9832010346eea70886851f37f33ee1f4c843c0133402cc6beab73abda689",
+      "bytes": 505,
+      "decoded_sha256": "a2316c263d290b1932e8f69d35ac66c6fbe21eefee319e96ffc7c5e41d8fdf4c",
+      "decoded_bytes": 831,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/long-nine-tags/run.json"
+    },
+    "rust-controls/qualification/scan-only/coverage-all-six/run.json.gz": {
+      "sha256": "808dea2f6759d4ca08d18a1f0657e9024289915c789ab8fd117f0c79006826e7",
+      "bytes": 528,
+      "decoded_sha256": "5fe54a489d6f2526a3e2c4cd41d421a46f8b149b0cecdc2977fae10a743e3c51",
+      "decoded_bytes": 878,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/coverage-all-six/run.json"
+    },
+    "rust-controls/qualification/scan-only/all-empty/run.json.gz": {
+      "sha256": "781d45bb8c0af7f64fa64d9a753563419312bd3ec1b80358156fb164d36a4fa8",
+      "bytes": 499,
+      "decoded_sha256": "5994c4a25fe5e7912357683b83b430a5f76e94131e60c5a51bb82b0710e01fd5",
+      "decoded_bytes": 819,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/all-empty/run.json"
+    },
+    "rust-controls/qualification/scan-only/first-10/run.json.gz": {
+      "sha256": "3b2fc729d9ee7a018acbb906a57c7d509ca3e09ff41264890f8b4e46b4cc2954",
+      "bytes": 521,
+      "decoded_sha256": "c1cb519c9fc6192e03595a7046e1f2ce14a083e677784e026da61ce55108ce19",
+      "decoded_bytes": 867,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/first-10/run.json"
+    },
+    "rust-controls/qualification/scan-only/one-post/run.json.gz": {
+      "sha256": "7fca376ec1ab88734030ca750cd3587e0e2b4049dee0a68b2e0575cf0ecaa5b4",
+      "bytes": 498,
+      "decoded_sha256": "385b815207108982346574b6127c828a50f46f3dccfbe3ae5158754d8cb39f8f",
+      "decoded_bytes": 818,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/one-post/run.json"
+    },
+    "rust-controls/qualification/scan-only/large-vocabulary/run.json.gz": {
+      "sha256": "b501172df2753424821eeec2469ff50f3f173b38e38c329937b2fba6ec546ca6",
+      "bytes": 504,
+      "decoded_sha256": "508a93a0f3fd8561ea95eae0e9c8912b2a501e5355ef4bede3d111ad0516096b",
+      "decoded_bytes": 834,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/large-vocabulary/run.json"
+    },
+    "rust-controls/qualification/scan-only/eight-tag-boundary/run.json.gz": {
+      "sha256": "0bc13b9b547a5b29674801be48f890394a6c58ebdb876a9674d4ff51a58ffab5",
+      "bytes": 593,
+      "decoded_sha256": "e8f6cab46d9ec0a6524c4a1c37d68bca880772b5c3606a080c00d851b297d391",
+      "decoded_bytes": 1049,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/eight-tag-boundary/run.json"
+    },
+    "rust-controls/qualification/scan-only/wrap256/run.json.gz": {
+      "sha256": "663c6dea5fc698846ef195b16a2bd07327e9e03c7c231e9d578b3d7adb35c304",
+      "bytes": 500,
+      "decoded_sha256": "3dddd9a298b1b7b11b0c8103d563154d476477d27060612a2bd545af3f87b670",
+      "decoded_bytes": 817,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/wrap256/run.json"
+    },
+    "rust-controls/qualification/scan-only/first-100/run.json.gz": {
+      "sha256": "3fb2acf8ae33db84a60146960f83e8856c266ac9e506487c76156e36c7ef12bb",
+      "bytes": 523,
+      "decoded_sha256": "fe5fb089afc9863ace2fecd04fc9cd453b836ff2b1fa99fe10c5e2befe21e57c",
+      "decoded_bytes": 874,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/first-100/run.json"
+    },
+    "rust-controls/qualification/scan-only/coverage-five-with-two-tag-fifth/run.json.gz": {
+      "sha256": "cf8c4af63cb5b3006759ac68bbe616f43330cc69e5672b055327b32703b44129",
+      "bytes": 538,
+      "decoded_sha256": "6bcfac359f4fa16fb031906389c9b75ce87c58856a31b2b75c0b6f80a9e3a346",
+      "decoded_bytes": 913,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/coverage-five-with-two-tag-fifth/run.json"
+    },
+    "rust-controls/qualification/scan-only/random-1/run.json.gz": {
+      "sha256": "00c2655f518d332589b70e9926bdfb7c40e6c062907ded56a793b47235acfac5",
+      "bytes": 525,
+      "decoded_sha256": "0385af20ade93f373936005ec71e52247d7acddd4d08bb63fd805a8e03cb7dcf",
+      "decoded_bytes": 869,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/random-1/run.json"
+    },
+    "rust-controls/qualification/scan-only/random-6/run.json.gz": {
+      "sha256": "3f719ff3ff9b06612a427c72fa46dc52c89f3b8e54b98aed204903a7eba724cf",
+      "bytes": 522,
+      "decoded_sha256": "77e8ed1e4284b4c50e572c6ebf14639898b7d2da8feb5ef6755c8185a4564e09",
+      "decoded_bytes": 868,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/random-6/run.json"
+    },
+    "rust-controls/qualification/scan-only/utf8-key-prefix/run.json.gz": {
+      "sha256": "c9c94e7967252a4c445e52714a7687f41b9dc48821119fb6a1e6a8b0d064961c",
+      "bytes": 590,
+      "decoded_sha256": "ac76983ee1a78d4b6154bb9e24ac5d4d61abbf3b0a9c31d3535cd100f2b3690e",
+      "decoded_bytes": 1039,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/scan-only/wrap257/run.json.gz": {
+      "sha256": "4811ea228d8a515d280260d18446eab6b2f4da99a5b907ecb3471c5903de1609",
+      "bytes": 502,
+      "decoded_sha256": "e3b3edb118738290ede1df0ec5e68515c0ebb5bf2e52e28d2fd321f5d0e332f8",
+      "decoded_bytes": 818,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/wrap257/run.json"
+    },
+    "rust-controls/qualification/scan-only/random-7/run.json.gz": {
+      "sha256": "4eb3a8f9330a0bc7115683814c187f3ef549c84961ddf5c32d335f4d5699734e",
+      "bytes": 523,
+      "decoded_sha256": "49a3d790a597a0a54b966c8bb8a3bce36c10211f2033bcc8d9deb3ede82ecc07",
+      "decoded_bytes": 867,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/random-7/run.json"
+    },
+    "rust-controls/qualification/scan-only/first-500/run.json.gz": {
+      "sha256": "0eb9c48932f59e4849f3fa4ae7f13ffecddeef27574fec2def9859848ef9cb87",
+      "bytes": 519,
+      "decoded_sha256": "ee83fd360c7ed2a7e67a4a484b7291118bf97b089c9b787c405e04e689c76ff9",
+      "decoded_bytes": 866,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/first-500/run.json"
+    },
+    "rust-controls/qualification/scan-only/random-0/run.json.gz": {
+      "sha256": "0abaeadf5441c25904e50449d5de11f9cfd2f991feece3f634cf4edf0d316bb8",
+      "bytes": 522,
+      "decoded_sha256": "4a0dd9ce586ec5bf8b11e40822afa047b4369d16961e3e168208eb0084ce165d",
+      "decoded_bytes": 872,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/scan-only/random-0/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/wrapped-u8/run.json.gz": {
+      "sha256": "0c1cfd097dc963749f6834f6e289667f5001f17a55b21a7af4973f958799ab5c",
+      "bytes": 523,
+      "decoded_sha256": "7a47d158a1ab62cc091cfef0df66457d02d8c10307e3579b1262109bae184ba3",
+      "decoded_bytes": 840,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/wrapped-u8/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/unicode-ties/run.json.gz": {
+      "sha256": "db2ac871860d08383d1e74d79085efef807fa2d2ca2404137e1c48e1b421e69d",
+      "bytes": 550,
+      "decoded_sha256": "73c662cd67c953747c419ebf5ae0d2097e4a93f9cbf91b6a530bc97aae9a8743",
+      "decoded_bytes": 893,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/unicode-ties/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/empty-tags/run.json.gz": {
+      "sha256": "9a913fcdbf78f12308e088a98cfeaa31950bdd8c6fcc7c75906e2fa99a1bf3b6",
+      "bytes": 550,
+      "decoded_sha256": "6fddcf597f79523ea6fbf2ef9e8a4ba589bb6347c2fec002c56c51b6282f1e09",
+      "decoded_bytes": 889,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/empty-tags/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/full5000/run.json.gz": {
+      "sha256": "c4b412f6be737f2fecf397408a634dc35700d25abc90470e89b5df9dc65ec878",
+      "bytes": 607,
+      "decoded_sha256": "6b69ed8b5eae6329fdca0c5d533a411318e1b90f79ee926d8e39f1fc28f5083f",
+      "decoded_bytes": 1056,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/full5000/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/coverage-mixed-disjoint/run.json.gz": {
+      "sha256": "35f798d221a50c169bbf864ef15fe14ae94b8bb61bd35f6ccb517de103f2322b",
+      "bytes": 556,
+      "decoded_sha256": "a25a1025b2b5d153948dc0f5a7eb10a1b249f6b3c2ec8fbba35914d67be6916a",
+      "decoded_bytes": 916,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/coverage-mixed-disjoint/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/coverage-permuted-ties/run.json.gz": {
+      "sha256": "75918093f8d6be3d4f4217a723aa03eeba1f7ca886645925351b08d53ec19211",
+      "bytes": 553,
+      "decoded_sha256": "707d943845a0cd05606acf713828acc1aa1b3f94ab353c956f0687e76ef6492c",
+      "decoded_bytes": 914,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/coverage-permuted-ties/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/long-utf8-key-prefix/run.json.gz": {
+      "sha256": "63a817c026687c767548bae775086bd1bd8a0229cf99dcd3aaae30c5f8dd4bd3",
+      "bytes": 617,
+      "decoded_sha256": "795147b3e2168856b3a7f3e48bf9f5374482fd45189bc9f83830d9f5e8199729",
+      "decoded_bytes": 1067,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/long-utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/duplicate-utf8/run.json.gz": {
+      "sha256": "010abfcfe8509dddfb1331f88b88dfe9d66dce9c0caf7436093c281dbb262ae3",
+      "bytes": 526,
+      "decoded_sha256": "b40e5b2c6bffdf4ffa501bc773a79c876aa11a5dd964f74f92c0ff797c6a3c72",
+      "decoded_bytes": 851,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/duplicate-utf8/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/coverage-six-with-two-tag-extra/run.json.gz": {
+      "sha256": "89ac750032f5263c6ae0476de763c12473764bba35aacfd59f09232c4c995dfb",
+      "bytes": 562,
+      "decoded_sha256": "e7a7d1454b816f3d14801bf6dd4efc2651a5aea26c04e8c24df121bcdc095124",
+      "decoded_bytes": 932,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/coverage-six-with-two-tag-extra/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/random-5/run.json.gz": {
+      "sha256": "ba641dbfda3cc49218a1b0a435e9049be04aa581dac2428221589b71313157a5",
+      "bytes": 542,
+      "decoded_sha256": "cd2e40f37564da13015df219a561c19ab85ed2742e7a6f1923bde1af33cd8e56",
+      "decoded_bytes": 881,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/random-5/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/random-2/run.json.gz": {
+      "sha256": "2eb7ad31e498695ea9312cdd75f3d2edcb6a0c6e35ff2d4986fa9cff9f63adc1",
+      "bytes": 545,
+      "decoded_sha256": "8c09c60202cd0ef18f3e21fde0a07b0011e532f540a632fafe4352d30f71f3e9",
+      "decoded_bytes": 887,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/random-2/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/wrap255/run.json.gz": {
+      "sha256": "5be14913c3c8f7f6f3f0d7a9d4a75fb8872e6d60d6edf23da1d471213d6ac96c",
+      "bytes": 523,
+      "decoded_sha256": "04c5e6cb1ae15f5b5afc617e8123294aabf323ad4fe84183b2c046e3cb3f8c9a",
+      "decoded_bytes": 837,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/wrap255/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/random-3/run.json.gz": {
+      "sha256": "00076fcdc79b2782d3f2ff8e69c1c013ea703e5aab9f2037657c244209cc70dc",
+      "bytes": 546,
+      "decoded_sha256": "9507ed5284a64efcee374162b3816f4146089ed7b61a43eaab5a8a9abae8f38a",
+      "decoded_bytes": 891,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/random-3/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/random-4/run.json.gz": {
+      "sha256": "8db9621386cf29d69196057def92c07aad28ac6a9eab5ef5a3e2c235d0dd9238",
+      "bytes": 542,
+      "decoded_sha256": "2e53be3162af20d26fb58dabb3ad5334ef3ba88bcc4c1a8490ae1330cb0a32ee",
+      "decoded_bytes": 884,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/random-4/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/mixed-full-sparse/run.json.gz": {
+      "sha256": "8c35f9ded4c8e484f8e260562e7ea4e638610417089f28b56a2f7b373a918b70",
+      "bytes": 550,
+      "decoded_sha256": "788b17dbacae01f75c475dd031feeebd9907d70396181043349bd4a39f412b45",
+      "decoded_bytes": 901,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/mixed-full-sparse/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/long-nine-tags/run.json.gz": {
+      "sha256": "15309e279b2c80044af9705e411b16cdcce5bfb21887d2efb9e82bdcf22bdda2",
+      "bytes": 528,
+      "decoded_sha256": "f823fd43469107a121b8b1bcac80341ef1f88689c8479c8c5d148cdabeb34ee6",
+      "decoded_bytes": 851,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/long-nine-tags/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/coverage-all-six/run.json.gz": {
+      "sha256": "521095d62ec5bb88616b573bc707b81c4e269ceb846677d2a6b9d6a1eb4d7d20",
+      "bytes": 553,
+      "decoded_sha256": "ea17fdded9f194363bce83ce8ada76ae2576b3a8bbe34c4a5cdedbcd926cfa12",
+      "decoded_bytes": 902,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/coverage-all-six/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/all-empty/run.json.gz": {
+      "sha256": "4972977ac4c9cc458b281d44ec2ccf422c0f90206500f1276a85247c196f0bf7",
+      "bytes": 519,
+      "decoded_sha256": "095266776684253ddeaa84e7241b59023bfcfc08d34fbfeaa94228782a9acdb9",
+      "decoded_bytes": 834,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/all-empty/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/first-10/run.json.gz": {
+      "sha256": "8ea39c1fb0f689a0d397caec76a8c072f824bc838554b233d74c73dc4d144c72",
+      "bytes": 546,
+      "decoded_sha256": "a0a4713f19df6b2485749b849c16f8b62c338e2d5169a95ee08852719b5ab27b",
+      "decoded_bytes": 891,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/first-10/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/one-post/run.json.gz": {
+      "sha256": "43fbc135dcdce0db9f65c3a25fb374219157388ad57cf35c89d07beabb4c440f",
+      "bytes": 519,
+      "decoded_sha256": "c7d373af7b83db80b80323a2d988ec8f4a3cd0b3c743e9267a638cd1da60c6bc",
+      "decoded_bytes": 836,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/one-post/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/large-vocabulary/run.json.gz": {
+      "sha256": "dafafec882513f8d060f4376ebba85a38ce2d42495756d3d411419440208d4d1",
+      "bytes": 529,
+      "decoded_sha256": "d7175946446419c6090d6d5e1eeb4ccca42b522d15e0742b9e028b91831203b1",
+      "decoded_bytes": 855,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/large-vocabulary/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/eight-tag-boundary/run.json.gz": {
+      "sha256": "63b389d957dd7eca7226007b13ed8736eba31e2949ac0eefbfaf997fdd28915d",
+      "bytes": 616,
+      "decoded_sha256": "e7aac6e5d8e2571327b685543b9658c5b7eab2f4aeafc7327214ffb9ff3a7ec4",
+      "decoded_bytes": 1067,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/eight-tag-boundary/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/wrap256/run.json.gz": {
+      "sha256": "167d29a4a916da84f2375acaa39f58e9acf66fcbf202b8d0acda96606d51d523",
+      "bytes": 525,
+      "decoded_sha256": "c097eca0fbfb4a14cf4aec7f66923a19e894e8d8749a7436f7cb7b55bd5b324d",
+      "decoded_bytes": 837,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/wrap256/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/first-100/run.json.gz": {
+      "sha256": "133de911d7ef1d5cb07aa623797e21b006a5abcb9e8b82fcfd5cdba80f95128d",
+      "bytes": 546,
+      "decoded_sha256": "de5698db2baecaa0e3a22b94c1a0c52b27b5e149465438902333e477dcd7a195",
+      "decoded_bytes": 895,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/first-100/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/coverage-five-with-two-tag-fifth/run.json.gz": {
+      "sha256": "19cad2aecf65c0036f296b736c147befd68bc4faf1d0b7f0dc168a6f79eecddd",
+      "bytes": 559,
+      "decoded_sha256": "a12832d951d1e012dccd378bc08ceb160b84835f73121d1ceb6d59faf34d4053",
+      "decoded_bytes": 930,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/coverage-five-with-two-tag-fifth/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/random-1/run.json.gz": {
+      "sha256": "85dc476c9bce4bc3acc11a306a32b3387bd6c633c96aea8b5974ab5a71d47f23",
+      "bytes": 546,
+      "decoded_sha256": "5eb4f1d98de546460545b8c5a758c76cc8562e513705e229f1f34d3be6510cbd",
+      "decoded_bytes": 885,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/random-1/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/random-6/run.json.gz": {
+      "sha256": "b2f01cd3838bb7b07c2978bebd3c99e24adc31dde9844bd8bc8f173905f2cff2",
+      "bytes": 545,
+      "decoded_sha256": "341db340127b4671dfeca4aab6d31e75ab002c5a765fb966cf1c9e297238fafc",
+      "decoded_bytes": 891,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/random-6/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/utf8-key-prefix/run.json.gz": {
+      "sha256": "0f8efc8295f675639ee42b453809b1326e6d435d8546f5b82fe0c62ea4dbe8cb",
+      "bytes": 612,
+      "decoded_sha256": "21f4a547f0bc93d5a8700ce659fbb0b90c0de9434fa83cf314c33d1583abeddb",
+      "decoded_bytes": 1058,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/wrap257/run.json.gz": {
+      "sha256": "d958ba39dd17ccca403c81fd5d4f3701837c665cc138f7b3857adc0074bf5b70",
+      "bytes": 523,
+      "decoded_sha256": "12622f7769d6cdcadc999386c19ca0ab5edffdeb05c3ac9f524a7e3e3cf65e9a",
+      "decoded_bytes": 836,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/wrap257/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/random-7/run.json.gz": {
+      "sha256": "01aaef057aeb37860eff0b54a6cd865cdd8daa5a184fa829f18e66e6a54ece4c",
+      "bytes": 546,
+      "decoded_sha256": "cd3261e16d9808c3e6ac55519e35bc4925e832f0028bd29f887838ab862c4811",
+      "decoded_bytes": 885,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/random-7/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/first-500/run.json.gz": {
+      "sha256": "68b601ca2cc5e89f3d9ad0a531e0abf89f6dea97a7f7747c76e60bea1a4a6d73",
+      "bytes": 547,
+      "decoded_sha256": "601c1b25cfd177e4997620d61590d608a18f6271fbae28461f2a2502cccd8b68",
+      "decoded_bytes": 894,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/first-500/run.json"
+    },
+    "rust-controls/qualification/before-u8-u32/random-0/run.json.gz": {
+      "sha256": "8c516b2ec8b97d735de0a723e18a8723f0120ebc37e271e4b8d9b81eb23ba810",
+      "bytes": 546,
+      "decoded_sha256": "3ca75196777792fc9813fa5a78d476ce5924f1a2c5eb1fd9249e4dd37cf3b0f6",
+      "decoded_bytes": 886,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/before-u8-u32/random-0/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/wrapped-u8/run.json.gz": {
+      "sha256": "b45980092c29f05ae278cdd7ed4e2981ac839f0b6fac5305521c114c31950de3",
+      "bytes": 506,
+      "decoded_sha256": "9a42d7a84a10b37f861794a3fba343dac63c2debeb2a304a4f99e1faea05b985",
+      "decoded_bytes": 852,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/wrapped-u8/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/unicode-ties/run.json.gz": {
+      "sha256": "4aff898a09533d673351b5e0e9627a26a8645a35a242ecf8a3e4d630d62c4022",
+      "bytes": 530,
+      "decoded_sha256": "035b2d89a47d3d3bf432ce1e42908b151555f050bb49bc9302c98e92d8c6aca9",
+      "decoded_bytes": 903,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/unicode-ties/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/empty-tags/run.json.gz": {
+      "sha256": "7292deb40d617ec2c8b5cca6f17b55d2e1d6428db42f5572784b86189d9ca60b",
+      "bytes": 531,
+      "decoded_sha256": "8ab832fe240600c3b86c61a7e2eb4abba044baa7f5abf98f0b6d38b17b175040",
+      "decoded_bytes": 900,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/empty-tags/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/full5000/run.json.gz": {
+      "sha256": "a9dba9b23cca36641d2d6473cc43fa0af2067a06fdfa8ab744792d1778a41d1e",
+      "bytes": 590,
+      "decoded_sha256": "1d4a528e655a22e54fc2f532a25bc83e5f54d438190cbf96da765572ef5a725a",
+      "decoded_bytes": 1069,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/full5000/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/coverage-mixed-disjoint/run.json.gz": {
+      "sha256": "7d088eb36ea167dfd60b1f6dfc56a9873dccbf47b2bbb9152a8cc20d5449dc0c",
+      "bytes": 535,
+      "decoded_sha256": "bccfbb06266ab9d5bddfda73759462f68a0cb502dbe939130e008d11d72ef949",
+      "decoded_bytes": 926,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/coverage-mixed-disjoint/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/coverage-permuted-ties/run.json.gz": {
+      "sha256": "a26e88118e665850ecdd55bbccbae996399646e852bb05eb9bc02cf5a27eed79",
+      "bytes": 530,
+      "decoded_sha256": "e4eb1b31de4e767bd891297b5126e5d0abb3d4878849523d36c2b031211dfced",
+      "decoded_bytes": 921,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/coverage-permuted-ties/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/long-utf8-key-prefix/run.json.gz": {
+      "sha256": "031d878b99556071fd74514727bf01bfaa8b736d67763b2db9a6d82413ab4af9",
+      "bytes": 594,
+      "decoded_sha256": "fd86c7272c2103ce058da432df6a1823600b998a8cec94ec253bd9c8bf1b27e0",
+      "decoded_bytes": 1078,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/long-utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/duplicate-utf8/run.json.gz": {
+      "sha256": "ece942e02452a1462f7c41a820d33474cf27156f9d9a5cacdb5d2150e449d04c",
+      "bytes": 509,
+      "decoded_sha256": "7cba3f72b42b3813227aa565617d52fee30ccc2a5d76b3962fbdeb4d77872d62",
+      "decoded_bytes": 861,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/duplicate-utf8/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/coverage-six-with-two-tag-extra/run.json.gz": {
+      "sha256": "1de6222bed8e4228ba3978165e887caa6819c068fcf5acc4a93284fdfd4ebe8d",
+      "bytes": 544,
+      "decoded_sha256": "5e162adc1e996a21ff48898cef04335dabe08b82f2c644aeef25c5aef5f81a9a",
+      "decoded_bytes": 941,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/coverage-six-with-two-tag-extra/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/random-5/run.json.gz": {
+      "sha256": "b285d5966065c12e9ddcfeafed81ff4fdf2b70c3705e800155ffe3eaa585ff75",
+      "bytes": 528,
+      "decoded_sha256": "a6fd3bf3865b2796916d829afdaa98ae066127872f0d136c7c41380b1208754d",
+      "decoded_bytes": 896,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/random-5/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/random-2/run.json.gz": {
+      "sha256": "a7791b5aa5276e79935b920324695d549416066b1fa4366076dd56210c850e80",
+      "bytes": 528,
+      "decoded_sha256": "ff1888ad91bd3f8c799a51fdd9c268ad532c4620f64c42725eb31fe9b592a5dd",
+      "decoded_bytes": 896,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/random-2/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/wrap255/run.json.gz": {
+      "sha256": "c83dbabdd87e6df2e0d6aa36292844bbba048ec2d3c818d79fb955040d1d77f5",
+      "bytes": 505,
+      "decoded_sha256": "0dcac440600bcb50a304a6e6bd29f25cd9b5a5e9410428ebd09d016c1e1308f5",
+      "decoded_bytes": 847,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/wrap255/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/random-3/run.json.gz": {
+      "sha256": "ccd7413ed076a5760f0c77556ab9f8c2bc77e050e2d6719cae8ad8d9a82caf81",
+      "bytes": 530,
+      "decoded_sha256": "7981bdf0d6b64bb3043795b5387c67a070109e599a1b575a79df8296ebf2feff",
+      "decoded_bytes": 899,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/random-3/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/random-4/run.json.gz": {
+      "sha256": "64707137f6e45522932f1d656e362756d64600dbbb1ae79186eca94575cf66de",
+      "bytes": 529,
+      "decoded_sha256": "ef95230cdebdfa53ffa34abe92313e9af4d67c3e67deb6287aaaf706b0703eea",
+      "decoded_bytes": 896,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/random-4/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/mixed-full-sparse/run.json.gz": {
+      "sha256": "1a94d23a73eda217e02980ad06253925f4b608c9a38908414e1206031e6222fb",
+      "bytes": 534,
+      "decoded_sha256": "6babef2ce4d02206336cc74f0cac11ee5ed8e5a86627ea58678187132c2b99e9",
+      "decoded_bytes": 914,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/mixed-full-sparse/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/long-nine-tags/run.json.gz": {
+      "sha256": "92d1d8500261626d8ff2f0fbd7b91c4e4b7443c74f4627bc62ee3d1793ac587d",
+      "bytes": 505,
+      "decoded_sha256": "51dcda7eba28925a53cdd414e61dffd9d534bcccacc93ea0c10909e407b74f23",
+      "decoded_bytes": 857,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/long-nine-tags/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/coverage-all-six/run.json.gz": {
+      "sha256": "7a05cd1393760ae9758d6c69387d8646a3f49df8abe3431f0af6bc282baacfb6",
+      "bytes": 533,
+      "decoded_sha256": "9b0b0df0f4f45ba23949f1d9fde107996bf3b6b5256ba183c3dfd14c65796e00",
+      "decoded_bytes": 910,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/coverage-all-six/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/all-empty/run.json.gz": {
+      "sha256": "62782f9ca6d9c8783669dc6941c3db0995c32908095ca607080236a12f751132",
+      "bytes": 503,
+      "decoded_sha256": "e626a6f1a33e4d844c1cad8befdaabc9028f46ebcb6a3ddb083b44dd24519809",
+      "decoded_bytes": 848,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/all-empty/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/first-10/run.json.gz": {
+      "sha256": "f375088ebc5e764e9217a54b6e0062c1917ad5c7d55b7e5ea67808d699e922c9",
+      "bytes": 528,
+      "decoded_sha256": "bd3d05d3aada253b743d06c077ee16f804661231b4473213973f3f2f6580903a",
+      "decoded_bytes": 899,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/first-10/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/one-post/run.json.gz": {
+      "sha256": "ec6268c5ebc370be3054ad369d2fcea67f3dec86a52bd70582102bc5f25a198a",
+      "bytes": 501,
+      "decoded_sha256": "3623282bf3cb176b5837a1f73caa8af52e707f07e7db671cd3ca2acc25b21ff7",
+      "decoded_bytes": 846,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/one-post/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/large-vocabulary/run.json.gz": {
+      "sha256": "d59cb51d58b05836b244ad4aada815dc6135165a06b9b55d9aae767132c90a1d",
+      "bytes": 512,
+      "decoded_sha256": "760f4e4cabb43b1349ce2ba1132fb03b0cc6a53d3d01983823438835378ae144",
+      "decoded_bytes": 868,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/large-vocabulary/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/eight-tag-boundary/run.json.gz": {
+      "sha256": "3a8654e049cd6fcbb6c0ff275c7d88ed7572fdd671dc4bb4d97196c52d7d143d",
+      "bytes": 597,
+      "decoded_sha256": "628c8fc9cd0a2ad84d8fa502a29cd4428b6364a15c0f749686ce72a2970533a1",
+      "decoded_bytes": 1078,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/eight-tag-boundary/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/wrap256/run.json.gz": {
+      "sha256": "5b86515beabb7c172bf16d47547981fcb7239dd08baa7413bd2e480b2c7b592e",
+      "bytes": 505,
+      "decoded_sha256": "bf800aa38ca2273bf96b99bff37eb4b3cd30ce9d1cf6cfdc311260ddd1f14f0b",
+      "decoded_bytes": 847,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/wrap256/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/first-100/run.json.gz": {
+      "sha256": "f4182adcaa90867bae15a177d26c95b2facbf98537ac3fd2a61472288deaa07d",
+      "bytes": 526,
+      "decoded_sha256": "c014c517b47713f67ad6903855a70c8b7adb14d50383d7d321a78342b5445676",
+      "decoded_bytes": 904,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/first-100/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/coverage-five-with-two-tag-fifth/run.json.gz": {
+      "sha256": "f39dfd75fed1c344848f220efb47c2546bd18abbc9c1447188957c8ec840b666",
+      "bytes": 542,
+      "decoded_sha256": "19735abe072ec5a269f48daea3805013202bd374eb9b5cbd9c1c483222803a8c",
+      "decoded_bytes": 943,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/coverage-five-with-two-tag-fifth/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/random-1/run.json.gz": {
+      "sha256": "3f29b26ac2d255d617539daace8ae98afde1a7d5d9b853850cf1affb370cddb9",
+      "bytes": 530,
+      "decoded_sha256": "c8c6f6b9691ebc857ebcae0c274243b97145affe079404ed3db2e059b1669a6b",
+      "decoded_bytes": 896,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/random-1/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/random-6/run.json.gz": {
+      "sha256": "597b9adad58a6ec905a2df1544c57a7906ed77880a1849c4e540af38c590940c",
+      "bytes": 525,
+      "decoded_sha256": "4898f85431fdfa5206a1904f6fc1693080408f601a8600fb354eaf3319e61521",
+      "decoded_bytes": 892,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/random-6/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/utf8-key-prefix/run.json.gz": {
+      "sha256": "1620d43c72e40c1c96482493465c2f326322f0e3160649e32031a2bb2ac74ec9",
+      "bytes": 594,
+      "decoded_sha256": "222d854ddedeadb10a54ff21e79883f3dcda18d93d8c393515fd637a00ef63c6",
+      "decoded_bytes": 1068,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/wrap257/run.json.gz": {
+      "sha256": "b3795707a8ee9c19a4611ae34347ff995833911eae2e02b3d62768153bde663b",
+      "bytes": 507,
+      "decoded_sha256": "2cc9c24722ce6ce2974f6c808f609c15bece6d1c2e6857f8b3ee29742a0d6926",
+      "decoded_bytes": 850,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/wrap257/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/random-7/run.json.gz": {
+      "sha256": "f59d27182b5ec43743d758f7bfef6cc1cadbe43a86110c0c13386fc89bacbb55",
+      "bytes": 527,
+      "decoded_sha256": "482fba506919c4ad467ecdf44f85d5001c1aa295b20e5ffa9eb5a8ff09ff95a9",
+      "decoded_bytes": 894,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/random-7/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/first-500/run.json.gz": {
+      "sha256": "7b67cf81b4e4cfa260b954c803c854fe0a53ca00ee74b43487924bfb0ebc4bb3",
+      "bytes": 526,
+      "decoded_sha256": "8646a0fd28637fb6fb2b1f9bd36302c06fc16d2c35eae6df04438238db52498a",
+      "decoded_bytes": 900,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/first-500/run.json"
+    },
+    "rust-controls/qualification/ordered-mask-tables/random-0/run.json.gz": {
+      "sha256": "b602758bf84602fc46e50b51a293d02a365d3f1253c38ccb2a81721a95719a55",
+      "bytes": 526,
+      "decoded_sha256": "fbb7886b11f552bedc46bedf8adbe55ec67e429db874e246e30a2ebd0c4366b7",
+      "decoded_bytes": 894,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask-tables/random-0/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/wrapped-u8/run.json.gz": {
+      "sha256": "572cd4b977c20c5708eb69882ff088c3bdd0fd7262696fc0e1d72cab3e111488",
+      "bytes": 499,
+      "decoded_sha256": "0eb3fab0a5e50bdc518e6b386e5a80ac02c53910461816c52784ccd1b7249ed7",
+      "decoded_bytes": 831,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/wrapped-u8/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/unicode-ties/run.json.gz": {
+      "sha256": "e1e1102eb5f0f007b850d5decf5e9a113e2ba65042fe98d5ae52d443acb469e4",
+      "bytes": 523,
+      "decoded_sha256": "f1666a2e573abda243082a337073b7fd90b6df3c7429b6b06cde2b6fd0d9759d",
+      "decoded_bytes": 881,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/unicode-ties/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/empty-tags/run.json.gz": {
+      "sha256": "85bed0669a046088dee29cc6bcdf15c54a7dda4922b0a2ca7238659d84a62d91",
+      "bytes": 526,
+      "decoded_sha256": "77908847f094b2d19d9c264dfc7ba906741176574714aa01785e5caa6b622e99",
+      "decoded_bytes": 878,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/empty-tags/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/full5000/run.json.gz": {
+      "sha256": "3c22f8d3d82f91d004f5d7cc4cc0630381e48733daf2e5fb004d8c3649fab5eb",
+      "bytes": 582,
+      "decoded_sha256": "7595fcd2ee5135afc20f33c9d3eae75f782cb3da0d59763a170ffdf1d9c7dd4e",
+      "decoded_bytes": 1048,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/full5000/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/coverage-mixed-disjoint/run.json.gz": {
+      "sha256": "6b1623dd524ececb02fa3f1515db1bf96aa7c17d188a50f6c330c825328ddbe5",
+      "bytes": 530,
+      "decoded_sha256": "dc3a3e0fda511e075b7e6e4eee8fb8054ed8f9ee325da1fb65d1436afc835930",
+      "decoded_bytes": 905,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/coverage-mixed-disjoint/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/coverage-permuted-ties/run.json.gz": {
+      "sha256": "f308de83fe59b28d84a7495d263b4438db331e6ff156c030d7fe78e4019944df",
+      "bytes": 527,
+      "decoded_sha256": "4e858af125185227d33be145d0a7bba35332765a38a9650816d09f4b7106bd9e",
+      "decoded_bytes": 902,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/coverage-permuted-ties/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/long-utf8-key-prefix/run.json.gz": {
+      "sha256": "5d31d617c8b2489b79cc3aa8bf211d24df33ca65ae7d69e1bfbeb4b948d35154",
+      "bytes": 590,
+      "decoded_sha256": "286060e2d38dc03e6dd66b7bd8bb063d6d28ccf73ec9bc967a2b6217d3b464cf",
+      "decoded_bytes": 1056,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/long-utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/duplicate-utf8/run.json.gz": {
+      "sha256": "748c331620ddfdb1e3e06e690233fd68cd01edb0883f7d99235cbf5671e17616",
+      "bytes": 503,
+      "decoded_sha256": "b0970eb628dfab3f8dddadba568280f7b88b6b146a7d0cafeeaf28d6433b0729",
+      "decoded_bytes": 840,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/duplicate-utf8/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/coverage-six-with-two-tag-extra/run.json.gz": {
+      "sha256": "4c4820be62f93488cd37188744225f48937aeb29282ef9053268cfc217140615",
+      "bytes": 537,
+      "decoded_sha256": "cc28018ebae3ef3534b98e0d3eeb041a0868e4537cbc631a4e8f9e3c1f0a03ba",
+      "decoded_bytes": 921,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/coverage-six-with-two-tag-extra/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/random-5/run.json.gz": {
+      "sha256": "b784e432c8eba44fa3ee71d5b8a93efcff65b966392352674e9396192d4178c5",
+      "bytes": 519,
+      "decoded_sha256": "f40eeb0349b6fef4bcbb794e21ee87aa5fcdcce14e32be74d17d4026d0c16429",
+      "decoded_bytes": 870,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/random-5/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/random-2/run.json.gz": {
+      "sha256": "56bbd9f69c0577909fac771125d423604273f7c3face965ae5b66c5169a05efb",
+      "bytes": 521,
+      "decoded_sha256": "4605cc07b581de30cc3ff35e3deef0f8c2531db0370b37514123416e272a275e",
+      "decoded_bytes": 874,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/random-2/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/wrap255/run.json.gz": {
+      "sha256": "ec5312f037e5a64534cfbb30c205d9f615f3a9eff2b8c299a944ddb190ab3b87",
+      "bytes": 498,
+      "decoded_sha256": "efa3d7676fd4099f203c9a8e3857e058296060ccae065b9ee2061d763c8bcce1",
+      "decoded_bytes": 825,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/wrap255/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/random-3/run.json.gz": {
+      "sha256": "17e6dcce5a5f8675fd887cbf1de22a543517a913eaaa75e1780ca8f5404a2614",
+      "bytes": 519,
+      "decoded_sha256": "9c9358e3861319f2977797c862a9582a505a3620fdbc5b10e531c445d4a9196b",
+      "decoded_bytes": 873,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/random-3/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/random-4/run.json.gz": {
+      "sha256": "f4ce87e355d3eab7742baa1cf8b43e37ef71fd47c56f7e9ca4162d18915d0a58",
+      "bytes": 521,
+      "decoded_sha256": "71df2ce8501e13a86c53b76ab29115c76378fe36a6fd1e636e580e681d3c8405",
+      "decoded_bytes": 874,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/random-4/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/mixed-full-sparse/run.json.gz": {
+      "sha256": "f91c9058936d2d08b5f8c58e185d38f34bae07fd7fcfb9a8ddce27a27ea99ef6",
+      "bytes": 525,
+      "decoded_sha256": "cb2a84e97e3a1cb3639f3ba931947e061aeb3873a4b12be3398298174e737528",
+      "decoded_bytes": 890,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/mixed-full-sparse/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/long-nine-tags/run.json.gz": {
+      "sha256": "02fd2716152595a1a9f9a0492efb49016646e490bd685fe977165238ca7829f0",
+      "bytes": 500,
+      "decoded_sha256": "e0e469bcece77f7363a3a22901cc00cf8a76fe8bb228069afc35ef3a64f28a4e",
+      "decoded_bytes": 836,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/long-nine-tags/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/coverage-all-six/run.json.gz": {
+      "sha256": "b50a18a935b2d098689d649a32b8e56d6969a3d2fb7c07ead2b26c7fed7f4607",
+      "bytes": 530,
+      "decoded_sha256": "bef620d6b7d63a234b95a5560742a6036390bf089b23d4108f242ab881d14468",
+      "decoded_bytes": 891,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/coverage-all-six/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/all-empty/run.json.gz": {
+      "sha256": "bbed316d3c2e6bfc46950e8226c88329cbfdb3ef1a7f3a0450cc62f6dc6d13cf",
+      "bytes": 498,
+      "decoded_sha256": "5071ed5b9ef4430db815a5e24a54e4567f21ca0585e9802f6ab05a0ef0b204c2",
+      "decoded_bytes": 829,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/all-empty/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/first-10/run.json.gz": {
+      "sha256": "410c2234cd7bd1217a6ac237040df35af7b280a6f084c8419a10adaee99b562c",
+      "bytes": 521,
+      "decoded_sha256": "f106b98e716474e37103f84c9d079fa90ceca4e3b10fe72fda48574ed43d516e",
+      "decoded_bytes": 878,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/first-10/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/one-post/run.json.gz": {
+      "sha256": "398f3fde6fb4bd00cd019f87d3f78c4fbab433fa06a837865c419dffd0bf918e",
+      "bytes": 495,
+      "decoded_sha256": "c24b140481780c06d99f05acc88b51c5c6981aaf943a61a180cd63a2d194a731",
+      "decoded_bytes": 826,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/one-post/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/large-vocabulary/run.json.gz": {
+      "sha256": "8c1c81f5a4eef254cd85865c5df6a6ff466faff3330df69a9f6c4825ab3ae88c",
+      "bytes": 506,
+      "decoded_sha256": "7a2e113c2ad1b6731ac1eea4d92ee1fd4d6414b26b24a59bdcd4c782eff060f6",
+      "decoded_bytes": 847,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/large-vocabulary/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/eight-tag-boundary/run.json.gz": {
+      "sha256": "be3dea20c5fae99167a96b3fdc4441aff7e4f59690274afd1e7b7cd7d23ab381",
+      "bytes": 589,
+      "decoded_sha256": "2f6f8caf85268db0c27eb8dcb4466c1a59ac06133d44a47327c8024e7413e86a",
+      "decoded_bytes": 1058,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/eight-tag-boundary/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/wrap256/run.json.gz": {
+      "sha256": "8152d4c8c5e091b10ebaf37e7926613e1233373645210eb7564a733217ab2cfc",
+      "bytes": 498,
+      "decoded_sha256": "f636f1ccdd9a6b3ee0d5a4b170b3436977ef06a882689064072bb663e11c6bed",
+      "decoded_bytes": 826,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/wrap256/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/first-100/run.json.gz": {
+      "sha256": "2faf61dfbc91197702d8ad8674dba5399d980d33bca505e20d9fc169524a663c",
+      "bytes": 521,
+      "decoded_sha256": "72d1f30547907b7d36b2dc261648af9f492f63bd34ce8169fa1e1d4d92582b1f",
+      "decoded_bytes": 884,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/first-100/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/coverage-five-with-two-tag-fifth/run.json.gz": {
+      "sha256": "76265bd3d6a3a8eced199623c8c3052239ad015788b3f6564d48070fee346009",
+      "bytes": 537,
+      "decoded_sha256": "fc04c653f63efb42af8ab29d9bc4e87db6f02bfb1358b8141d0d0c4edc550df3",
+      "decoded_bytes": 922,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/coverage-five-with-two-tag-fifth/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/random-1/run.json.gz": {
+      "sha256": "aba602860cf3ea61def88131a2ba54e4c941b5d7d19b61a7efa81c00eb60b090",
+      "bytes": 523,
+      "decoded_sha256": "f79c8594531458ed7e3314c53be1dfcc8ce7c5aa6201ff45777c554d4290eace",
+      "decoded_bytes": 875,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/random-1/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/random-6/run.json.gz": {
+      "sha256": "9dd0c3fd94de07e65401588932c967a36f3a15813bdba0313dc35c04c7040c22",
+      "bytes": 522,
+      "decoded_sha256": "c01de480e96cff63a1221d933067ce8c5b9c63e2315ec55c21be04ae73203d1f",
+      "decoded_bytes": 877,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/random-6/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/utf8-key-prefix/run.json.gz": {
+      "sha256": "24436851dcb5b30b186517e02f73ef09933de790d2ac96811ee1d47fdde628e3",
+      "bytes": 581,
+      "decoded_sha256": "602f0d8c98f17ae3df9fcc2cf595f969a2ab8cdf713a04017b9371aa7ed4aff4",
+      "decoded_bytes": 1048,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/utf8-key-prefix/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/wrap257/run.json.gz": {
+      "sha256": "0f877ca3600cadf07e0aa4d6b2c064083a14cfbaab3196161a3cdbde2f4a5a4c",
+      "bytes": 498,
+      "decoded_sha256": "650a608bc2f2cb454ae5007795b403c8ab20d7ce19ba65e621a904875c0223c4",
+      "decoded_bytes": 823,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/wrap257/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/random-7/run.json.gz": {
+      "sha256": "5fe0b234c2f90314230a7a32423085a8f970fc2f7e8553ca7d21e1507c7cdffc",
+      "bytes": 521,
+      "decoded_sha256": "3c4fac29cdffdbde3cb46ad9cd791d32c28758c1f6408dd4935751c5661746ce",
+      "decoded_bytes": 874,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/random-7/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/first-500/run.json.gz": {
+      "sha256": "5306ee3af0dd4f54b4c00584514a1c5b62b32eacdd68763884c3fc3af4378d77",
+      "bytes": 525,
+      "decoded_sha256": "a45fec3e09e39686a40d9fb21306bd1a33792ab6e4a22325f4c346fb078717b2",
+      "decoded_bytes": 884,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/first-500/run.json"
+    },
+    "rust-controls/qualification/ordered-mask/random-0/run.json.gz": {
+      "sha256": "14cd9470923d2721cd1ab9ad7236404ee4d776452f46f9b4dbd75e203dc696b3",
+      "bytes": 521,
+      "decoded_sha256": "b0addd7c05d2120ae74fd5e8078b263d268c014e1e9c34cd7620696cb4d70e30",
+      "decoded_bytes": 875,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/qualification/ordered-mask/random-0/run.json"
+    },
+    "profile/build.py.gz": {
+      "sha256": "7113a4ca95a8f55a8771dc13fb2c6fc1315702fb6b99c650f2bafcb747c2c4c9",
+      "bytes": 1947,
+      "decoded_sha256": "2cdb4efb1ddc0abc9e6e7630977a6e7f148ac822a67a15f6cc4bfe91728be3a7",
+      "decoded_bytes": 4808,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/build.py"
+    },
+    "profile/summary.json.gz": {
+      "sha256": "e72903b4405479782e501d2c396a55d82761d0be48ce94114209575067fe9376",
+      "bytes": 14260,
+      "decoded_sha256": "d52f5496410c60194f6845b298c5efd96ceeeebe67850c42cf49e82798547346",
+      "decoded_bytes": 242492,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/summary.json"
+    },
+    "profile/capture-summary.json.gz": {
+      "sha256": "53fb7baa7844107d5b1d8779add71fe68b012d42cbc54087bc749958676ad999",
+      "bytes": 811,
+      "decoded_sha256": "065eef3ed73b4230ac20827bc3e1c73c57fa7afd71f8f3a910dfdd3debc61b20",
+      "decoded_bytes": 3061,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/capture-summary.json"
+    },
+    "profile/sampler-build.json.gz": {
+      "sha256": "c4a9246559e48ec51bcce0ff3f790464ef0268fc8daffaa632d6c54350f27f82",
+      "bytes": 220,
+      "decoded_sha256": "c120d0fbb98a4dceaf0025b3306836ba023d8e507958040a79943ccadd189952",
+      "decoded_bytes": 404,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/sampler-build.json"
+    },
+    "profile/capture.py.gz": {
+      "sha256": "514580536c05f35f6709ab9847a6f2dbdb4d6c53561641404753ec050f125c64",
+      "bytes": 1299,
+      "decoded_sha256": "36d669a2d2a5d8010e913556f0ef0123b042d616bea00a1af20ced8354d142db",
+      "decoded_bytes": 2688,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/capture.py"
+    },
+    "profile/sampler.c.gz": {
+      "sha256": "6a11f3dd9dd95af154d836f739ba86af8d6c27d931cdde295722b7617be905f5",
+      "bytes": 2559,
+      "decoded_sha256": "6acafa10ef9ebb51418547650df69b5474f16ee8274d54e42123765bb179477f",
+      "decoded_bytes": 8038,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/sampler.c"
+    },
+    "profile/builds.json.gz": {
+      "sha256": "b8e7ed530af41127f6bfebf9e99c0a87908220515ecfe9882e8a49b275f7fce0",
+      "bytes": 570,
+      "decoded_sha256": "dcaeebb880bfedc3e3207b6254937f070ca32b5723d230f9aa8c6a122e7d68e8",
+      "decoded_bytes": 1460,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/builds.json"
+    },
+    "profile/analyze.py.gz": {
+      "sha256": "41f2c22fe505ec01fc113feee841a1ee2df63dcf3f4b6bfc036692fa5316db17",
+      "bytes": 1992,
+      "decoded_sha256": "93c8e3ad9db6fc6b27aaf5348312b8f2e6bc99d73681caba1e72b414699f79bd",
+      "decoded_bytes": 4402,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/analyze.py"
+    },
+    "profile/selected-ir242/runner.rs.gz": {
+      "sha256": "a7245c92547c71fc9964e08e6ee55fca686768ff080cd60956a9f874d97d1a6c",
+      "bytes": 3693,
+      "decoded_sha256": "1af0b9967a62a25999a8f9717d3eec2e350349e208d255741aca06a7b0535777",
+      "decoded_bytes": 10539,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/runner.rs"
+    },
+    "profile/selected-ir242/build.json.gz": {
+      "sha256": "88a003d0643415f0b5f55ecb507e2848d0e683e8c160d3b041486ab3387a2b03",
+      "bytes": 1533,
+      "decoded_sha256": "5fca3fd0f15c1ec6a638bb74f081c8b0005980f346b54c0def625ae3669b865d",
+      "decoded_bytes": 10256,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/build.json"
+    },
+    "profile/selected-ir242/native-link-audit.json.gz": {
+      "sha256": "96189875acf8aafa5b3e0195bbc5483eb09a2a9db662ed1f5cfb2da3d0b3b024",
+      "bytes": 2087,
+      "decoded_sha256": "ca53580df9ef51ca9dde0df84e1ef93a0cbf4db7aab752065af5f19038eee527",
+      "decoded_bytes": 12880,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/native-link-audit.json"
+    },
+    "profile/selected-ir242/audit-run.json.gz": {
+      "sha256": "c0dacf80c2b78d9d346b2b32efb7a606baae5136a2bb8f3f42444bf660533e68",
+      "bytes": 404,
+      "decoded_sha256": "b0fc1739d85d7853240861c53e7d9fa88fa2279bf722c7d119b4fa29b3e5215a",
+      "decoded_bytes": 796,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/audit-run.json"
+    },
+    "profile/selected-ir242/run.json.gz": {
+      "sha256": "548773634b41b33913d95b54db0ec3ca390c2975ee6d97840337f99759363020",
+      "bytes": 650,
+      "decoded_sha256": "6e0461357835d695950d9627b99fefcdd50d7e69be8ab89dc1bf15d8290f0981",
+      "decoded_bytes": 1429,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/run.json"
+    },
+    "profile/selected-ir242/summary.json.gz": {
+      "sha256": "613848a2e214ba736f2b2df0dc73c80d1f858feecc62cb86bb8416e54f353ba3",
+      "bytes": 7855,
+      "decoded_sha256": "3e18e4998866b43eb1ca1703505e6b7e2d7da5173ad07dc6e912ff606c02777c",
+      "decoded_bytes": 111977,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/summary.json"
+    },
+    "profile/selected-ir242/output.json.sampler.json.gz": {
+      "sha256": "60777e2f5f5e63c4876e80e64bc33ebaad700ba6cc7193071fd09308799038ee",
+      "bytes": 229,
+      "decoded_sha256": "69fc8d56767077c68dce4e1e890401cbb193e102c51b76a9c7399892d8286519",
+      "decoded_bytes": 350,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/output.json.sampler.json"
+    },
+    "profile/selected-ir242/numeric-1282.asm.gz": {
+      "sha256": "22d31f4e9d8a6792822eea0fd5d34397e99c8364bf98e846825e7ce212eabbeb",
+      "bytes": 53077,
+      "decoded_sha256": "d376aec312033b719cd2573d6d933a540df5609bf7e4567c3baa94ec5ee00198",
+      "decoded_bytes": 347031,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/numeric-1282.asm"
+    },
+    "profile/selected-ir242/numeric-572.asm.gz": {
+      "sha256": "40dd98cef8d9ce1effe61eab8cb938a4a4b4575a796df5666cc6ae889b57db8d",
+      "bytes": 10250,
+      "decoded_sha256": "48be2a3e2c47a6e940713f122a763030588069802428f8b17cb66b7ab9ae30de",
+      "decoded_bytes": 67804,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/numeric-572.asm"
+    },
+    "profile/selected-ir242/numeric-801.asm.gz": {
+      "sha256": "977b4bfff250d23f677edd47997cc13132623db4cd4b4f135cdf5d9fa8dcfe43",
+      "bytes": 31945,
+      "decoded_sha256": "534119c2a70fd39ea0bad233e631ebb77bf7901d9d76eae0550dd56cc4bc8666",
+      "decoded_bytes": 230272,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/numeric-801.asm"
+    },
+    "profile/selected-ir242/numeric-256.asm.gz": {
+      "sha256": "af01e3626f1365988d198926589652a410990f7198b716155b88fe13ba5e1dec",
+      "bytes": 21117,
+      "decoded_sha256": "b3fa7fa1dfcca28adbf2fac3242daa251196c31de9184ffb0ccf69fd49664b72",
+      "decoded_bytes": 143381,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/selected-ir242/numeric-256.asm"
+    },
+    "profile/candidate-ir264/runner.rs.gz": {
+      "sha256": "a7245c92547c71fc9964e08e6ee55fca686768ff080cd60956a9f874d97d1a6c",
+      "bytes": 3693,
+      "decoded_sha256": "1af0b9967a62a25999a8f9717d3eec2e350349e208d255741aca06a7b0535777",
+      "decoded_bytes": 10539,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/candidate-ir264/runner.rs"
+    },
+    "profile/candidate-ir264/build.json.gz": {
+      "sha256": "4e0f9be43f56624b602e0f78b471101a8608365bd0a9d3c1c27df68fca12ebfe",
+      "bytes": 1682,
+      "decoded_sha256": "b008f6aac902755809ad5d765cf37ef2e066448ce102cd0cbb483c7bc156b832",
+      "decoded_bytes": 11941,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/candidate-ir264/build.json"
+    },
+    "profile/candidate-ir264/native-link-audit.json.gz": {
+      "sha256": "580652238d3af2bc305e48f1f5a3c3811f8dc12bcbe70f14802bc51a01540c4c",
+      "bytes": 2105,
+      "decoded_sha256": "545d44d93b81ece40125934e6c77aeeaea9253a4d6fe25894c947501dfcc957e",
+      "decoded_bytes": 12873,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/candidate-ir264/native-link-audit.json"
+    },
+    "profile/candidate-ir264/audit-run.json.gz": {
+      "sha256": "dfd7bb8bab4bf29c714fd5e9760b335b7ffc2870b4048f4b078c9931b4b9f203",
+      "bytes": 404,
+      "decoded_sha256": "f30bb13d742b3c35b71ba07d472b6b072699f5bd72ab968f51cf0ffdc2a85164",
+      "decoded_bytes": 799,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/candidate-ir264/audit-run.json"
+    },
+    "profile/candidate-ir264/run.json.gz": {
+      "sha256": "7874041c886c0b3cdffbf094530f0a3299df730834e2496c27515171d3f3353d",
+      "bytes": 647,
+      "decoded_sha256": "f505ee220808d356d5ab486c4707c7af06f076500fc401986d67e7e872cdea3f",
+      "decoded_bytes": 1430,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/candidate-ir264/run.json"
+    },
+    "profile/candidate-ir264/summary.json.gz": {
+      "sha256": "138352313957532edb3a1c69838a88433c8b5942896b27e5767fc1e99d25c3ab",
+      "bytes": 6652,
+      "decoded_sha256": "60e7ded64ee74507dcfd4ea5c310cf4693b6655f236fe930a37fb25a038253d4",
+      "decoded_bytes": 90240,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/candidate-ir264/summary.json"
+    },
+    "profile/candidate-ir264/output.json.sampler.json.gz": {
+      "sha256": "7eaa7933bc1643b882bdda8991cc5fe64031707c0bc279bcfc7c02e4c9b8c907",
+      "bytes": 228,
+      "decoded_sha256": "aef0da6558f218df756b666b1df9d3edba259af70f1f4a3b00886d39b8f6a455",
+      "decoded_bytes": 349,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/candidate-ir264/output.json.sampler.json"
+    },
+    "metrics/metrics-config.json.gz": {
+      "sha256": "d38d904329cd5435d5ab625f918810c1023759360ec9a1757fc956ba2abcf77e",
+      "bytes": 1542,
+      "decoded_sha256": "2d41e93d25d8eb78e1c28d16d75713d05fe522196c2085e244adcd91eaa80bbc",
+      "decoded_bytes": 7769,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/metrics-config.json"
+    },
+    "metrics/source-pins.json.gz": {
+      "sha256": "27d4709fdfe5e686fdde06a6386a9296b05647332af54f819e944504658ae2d6",
+      "bytes": 1132,
+      "decoded_sha256": "25379a2ff8c4ead841bc9ca404afa05b2c97ec15b908bf2982236d4a2aa876d5",
+      "decoded_bytes": 3684,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/source-pins.json"
+    },
+    "metrics/rust-ordered-ordered/src/main.rs.gz": {
+      "sha256": "bfe56d9500a702e8a0022cb1a1fe77fd58f0778a5e82ef1f56b7de2569c8a4aa",
+      "bytes": 5199,
+      "decoded_sha256": "6650123305db84718ed99ca8d22cfa69bc0c4dd765823e0a4cf9f76dacd97b2c",
+      "decoded_bytes": 18786,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered/src/main.rs"
+    },
+    "metrics/rust-ordered-ordered/build.json.gz": {
+      "sha256": "f6a894fb73772b6008da57dbbd0e0e4f39139800442d381e4b164d6bcb615d90",
+      "bytes": 321,
+      "decoded_sha256": "90f85e1cf19e7d64ac5597822140ecf8f0dc322db3efda638c467034eb656aba",
+      "decoded_bytes": 539,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered/build.json"
+    },
+    "metrics/rust-ordered-ordered/Cargo.toml.gz": {
+      "sha256": "4d65b4e0a15202124959a53fdb5fa56c47b4d8422b97b725b1430be80791907b",
+      "bytes": 216,
+      "decoded_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+      "decoded_bytes": 299,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered/Cargo.toml"
+    },
+    "metrics/rust-ordered-ordered/Cargo.lock.gz": {
+      "sha256": "833d04d8f6ecf1b0962342a12a64a42f1c9bd843acac03eb92a2a7d17bfdd5d4",
+      "bytes": 1232,
+      "decoded_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+      "decoded_bytes": 3986,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered/Cargo.lock"
+    },
+    "metrics/rust-ordered-scan-only/src/main.rs.gz": {
+      "sha256": "024074903f73601e220fcaffb7be17ce8abf2b6abb852530d9bb2fc73228ad9e",
+      "bytes": 5196,
+      "decoded_sha256": "bf25971f8f77d4a8bcd3a4fb14de76d3cd949ffcc1ba4a95d2a009255a65f940",
+      "decoded_bytes": 18787,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-scan-only/src/main.rs"
+    },
+    "metrics/rust-ordered-scan-only/build.json.gz": {
+      "sha256": "dfb0d6d4ab86ce9367743e19c74b723d26bcf617ff4ba4e2275323693eb8f1ec",
+      "bytes": 494,
+      "decoded_sha256": "0399479b544d050efee59e4bbe86c3292ffe01763b841a9132b365767881d9f6",
+      "decoded_bytes": 1040,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-scan-only/build.json"
+    },
+    "metrics/rust-ordered-scan-only/Cargo.toml.gz": {
+      "sha256": "4d65b4e0a15202124959a53fdb5fa56c47b4d8422b97b725b1430be80791907b",
+      "bytes": 216,
+      "decoded_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+      "decoded_bytes": 299,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-scan-only/Cargo.toml"
+    },
+    "metrics/rust-ordered-scan-only/Cargo.lock.gz": {
+      "sha256": "833d04d8f6ecf1b0962342a12a64a42f1c9bd843acac03eb92a2a7d17bfdd5d4",
+      "bytes": 1232,
+      "decoded_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+      "decoded_bytes": 3986,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-scan-only/Cargo.lock"
+    },
+    "metrics/rust-ordered-ordered-mask-tables/src/main.rs.gz": {
+      "sha256": "d777c4c15c6419b32b9c8d87243f0c3bc5dc89b443085cd1f43e17cf2f1fd9dc",
+      "bytes": 5196,
+      "decoded_sha256": "0881548daa6ab40a70f693da73f15fa9d9637f926f84ec4c33434569711da861",
+      "decoded_bytes": 18784,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered-mask-tables/src/main.rs"
+    },
+    "metrics/rust-ordered-ordered-mask-tables/build.json.gz": {
+      "sha256": "44880060050640f496dc280d0cf5dcba71bee9e5f19e38a7dcb1594b6140cede",
+      "bytes": 327,
+      "decoded_sha256": "fc26622fc177dbbfa02bdecda531377dfa9328636dd7dd1df7d4a2a67b4ae2c0",
+      "decoded_bytes": 562,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered-mask-tables/build.json"
+    },
+    "metrics/rust-ordered-ordered-mask-tables/Cargo.toml.gz": {
+      "sha256": "4d65b4e0a15202124959a53fdb5fa56c47b4d8422b97b725b1430be80791907b",
+      "bytes": 216,
+      "decoded_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+      "decoded_bytes": 299,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered-mask-tables/Cargo.toml"
+    },
+    "metrics/rust-ordered-ordered-mask-tables/Cargo.lock.gz": {
+      "sha256": "833d04d8f6ecf1b0962342a12a64a42f1c9bd843acac03eb92a2a7d17bfdd5d4",
+      "bytes": 1232,
+      "decoded_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+      "decoded_bytes": 3986,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered-mask-tables/Cargo.lock"
+    },
+    "metrics/rust-ordered-mask-reuse/src/main.rs.gz": {
+      "sha256": "28b17f9688a308a8b863470cf72342277cfd4a2697f85aa8441e0f64771f1e70",
+      "bytes": 5199,
+      "decoded_sha256": "7b93f287491749ca31d5d67c1fc26ffc3077c95177d4fcb78b255a4613fc50e0",
+      "decoded_bytes": 18786,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-mask-reuse/src/main.rs"
+    },
+    "metrics/rust-ordered-mask-reuse/build.json.gz": {
+      "sha256": "9fee72b96270ed39d5bc1f3535b56eacdc2aa7b946bd0638feef21d23b2cbfda",
+      "bytes": 324,
+      "decoded_sha256": "285504271b6243ad8f75a6dd4fe0e0506f563f36176f29b8e36988a9d49595f2",
+      "decoded_bytes": 544,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-mask-reuse/build.json"
+    },
+    "metrics/rust-ordered-mask-reuse/Cargo.toml.gz": {
+      "sha256": "4d65b4e0a15202124959a53fdb5fa56c47b4d8422b97b725b1430be80791907b",
+      "bytes": 216,
+      "decoded_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+      "decoded_bytes": 299,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-mask-reuse/Cargo.toml"
+    },
+    "metrics/rust-ordered-mask-reuse/Cargo.lock.gz": {
+      "sha256": "833d04d8f6ecf1b0962342a12a64a42f1c9bd843acac03eb92a2a7d17bfdd5d4",
+      "bytes": 1232,
+      "decoded_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+      "decoded_bytes": 3986,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-mask-reuse/Cargo.lock"
+    },
+    "metrics/rust-ordered-ordered-mask/src/main.rs.gz": {
+      "sha256": "001d55aa2dc40637c2522df49dad9ddc34284cf3463076588c02f12d74e85f25",
+      "bytes": 5199,
+      "decoded_sha256": "9412b2596a8c8f652851d66b6be94440fec342f77da6e767aa792c15747db2db",
+      "decoded_bytes": 18785,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered-mask/src/main.rs"
+    },
+    "metrics/rust-ordered-ordered-mask/build.json.gz": {
+      "sha256": "0d150909cd8385b1315107bd7dec67eab8534a9e5d0aefa7a00670bb008b23a6",
+      "bytes": 323,
+      "decoded_sha256": "ae1bd7461d887e1899d5d41a508a44d7c1dc94595709829f863c978456dbaa86",
+      "decoded_bytes": 549,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered-mask/build.json"
+    },
+    "metrics/rust-ordered-ordered-mask/Cargo.toml.gz": {
+      "sha256": "4d65b4e0a15202124959a53fdb5fa56c47b4d8422b97b725b1430be80791907b",
+      "bytes": 216,
+      "decoded_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+      "decoded_bytes": 299,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered-mask/Cargo.toml"
+    },
+    "metrics/rust-ordered-ordered-mask/Cargo.lock.gz": {
+      "sha256": "833d04d8f6ecf1b0962342a12a64a42f1c9bd843acac03eb92a2a7d17bfdd5d4",
+      "bytes": 1232,
+      "decoded_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+      "decoded_bytes": 3986,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-metrics-20261107-v1/rust-ordered-ordered-mask/Cargo.lock"
+    },
+    "backend/compiler/source-inventory.json.gz": {
+      "sha256": "f93023ed553e09dde046170104dffd3f1510b2179eccd9489cb5f27eb658237b",
+      "bytes": 116529,
+      "decoded_sha256": "85b14183c3c8463cd275038e4e1b7215692261e12e3b5677e56eb8e8b3de2121",
+      "decoded_bytes": 314802,
+      "retained_source": "/private/tmp/mech-related-llvm-object-backend-opt-20261107-v1/source-inventory.json"
+    },
+    "backend/compiler/mech_gpu.build.json.gz": {
+      "sha256": "a4b87c58b5b31f1dee7d397a94093a08f48c98f065ef1c4f21244ac85e0e8e97",
+      "bytes": 1875,
+      "decoded_sha256": "2f2acbd423bf5c0f308455e20305e0b7a1fec22b7af72364c42dec472f6dee0e",
+      "decoded_bytes": 12481,
+      "retained_source": "/private/tmp/mech-related-llvm-object-backend-opt-20261107-v1/mech_gpu.build.json"
+    },
+    "backend/compiler/compiler.build.json.gz": {
+      "sha256": "ce97f60b40bf31e59a68b1d089f19a3d156a8d64e18ae04e4852ea2616ce1c68",
+      "bytes": 2213,
+      "decoded_sha256": "f9ff96a43475c97f6a11ff8f7d4c6fd9a53c1b9210eb4903255fce2946ab83ff",
+      "decoded_bytes": 13339,
+      "retained_source": "/private/tmp/mech-related-llvm-object-backend-opt-20261107-v1/compiler.build.json"
+    },
+    "backend/compiler/build.json.gz": {
+      "sha256": "05f8da139012c36aeda183b5f8e7d5abd1e5b105683da1fb0ccdbf91aeae04dd",
+      "bytes": 6959,
+      "decoded_sha256": "2b97381d2f729863aaa50fe28241dd05c851022055701772a5e0e468ea184d35",
+      "decoded_bytes": 80273,
+      "retained_source": "/private/tmp/mech-related-llvm-object-backend-opt-20261107-v1/build.json"
+    },
+    "backend/equivalence/compiler-build.json.gz": {
+      "sha256": "e21d71fc6505cdc95306de002601910cd3e5a436f8b65c7fb313f901054b0093",
+      "bytes": 274,
+      "decoded_sha256": "9fad22cae4edfe6e76c2bc807bd4dd7328655d9a91da21d5216b82ad7a27252e",
+      "decoded_bytes": 537,
+      "retained_source": "/private/tmp/mech-related-llvm-object-backend-runners-20261107-v1/compiler-build.json"
+    },
+    "backend/equivalence/check-finalizer-equivalence.py.gz": {
+      "sha256": "0d68b9a6e2fabed4ebd5c234f7766eebd60992f590fcb77fe9fb53552b455bc3",
+      "bytes": 829,
+      "decoded_sha256": "016dd184b226ca88242f77cdc391937f9ca36ac8dab79d664c356b215d8fcea0",
+      "decoded_bytes": 1585,
+      "retained_source": "/private/tmp/mech-related-llvm-object-backend-runners-20261107-v1/check-finalizer-equivalence.py"
+    },
+    "backend/equivalence/equivalence.json.gz": {
+      "sha256": "88f01b88aa9fb4b0464ece5e34add51498052651753a038b7194a445d6fd162f",
+      "bytes": 1249,
+      "decoded_sha256": "c9c0bbba8efd563eee375526787c183f07f1f78aabc4f2fdcabf648d729b3208",
+      "decoded_bytes": 2701,
+      "retained_source": "/private/tmp/mech-related-llvm-object-backend-runners-20261107-v1/equivalence.json"
+    },
+    "backend/equivalence/reuse-4/compile.json.gz": {
+      "sha256": "1f24415aeb55352543de898a594f1eb7cb779efe52491c5d43717453206132d6",
+      "bytes": 269,
+      "decoded_sha256": "02647fe3a0c232e9bda62f05f17b73327eb2e77a411a3abaa87d7d2160a0fc8e",
+      "decoded_bytes": 457,
+      "retained_source": "/private/tmp/mech-related-llvm-object-backend-runners-20261107-v1/reuse-4/compile.json"
+    },
+    "backend/equivalence/after-4/compile.json.gz": {
+      "sha256": "9f5cde9686ed6c53b8bf36d8ba23f6f74dd37379adbf45e950e0fd29c9bde085",
+      "bytes": 269,
+      "decoded_sha256": "75f43e15b34902c722f7b5a9bfb1a45d0e627e6cc936e1dac3ef91c34205fa71",
+      "decoded_bytes": 457,
+      "retained_source": "/private/tmp/mech-related-llvm-object-backend-runners-20261107-v1/after-4/compile.json"
+    },
+    "backend/LLVM-probe/probe.ll.gz": {
+      "sha256": "837765d8bad186fc308a4ce8a8ab9dc10e006c03e9796ea087d83856e009e1c6",
+      "bytes": 284,
+      "decoded_sha256": "29182e2a2a168ebd8d70ae3f436a2c6ab64866b1a1b525914ca46128ba01c830",
+      "decoded_bytes": 502,
+      "retained_source": "/private/tmp/mech-related-llvm-native-backend-exploration-20261107-v1/probe.ll"
+    },
+    "backend/LLVM-probe/probe-run.json.gz": {
+      "sha256": "c5085b973f2f82fa1435851a92d136bdf8b29ae56d1e854c06697068e1a9a49b",
+      "bytes": 297,
+      "decoded_sha256": "48aef56755b0de7ecbb01345f5bffe1d600220adef52f11a5e8b0d74f9024e88",
+      "decoded_bytes": 580,
+      "retained_source": "/private/tmp/mech-related-llvm-native-backend-exploration-20261107-v1/probe-run.json"
+    },
+    "backend/LLVM-probe/probe.o.gz": {
+      "sha256": "14b0d213cb5b639837e06e232388dfa62e215bb20518693d9be83cee7866d5fe",
+      "bytes": 254,
+      "decoded_sha256": "d397b695d35eb59d8edb29b62220adf9dccb7ef81f770cb39beeb89e9e86bcfc",
+      "decoded_bytes": 512,
+      "retained_source": "/private/tmp/mech-related-llvm-native-backend-exploration-20261107-v1/probe.o"
+    },
+    "backend/LLVM-probe/remarks.yaml.gz": {
+      "sha256": "3ce4260b660c02ba249d5fa9238b9a25be96b9ca9ef44502950799b32e56ceab",
+      "bytes": 533,
+      "decoded_sha256": "36cfd69ee03612677f448277e1d8a5e551e0ba9ce91d026ec63912db87bb36a3",
+      "decoded_bytes": 4080,
+      "retained_source": "/private/tmp/mech-related-llvm-native-backend-exploration-20261107-v1/remarks.yaml"
+    },
+    "backend/LLVM-probe/definitions.json.gz": {
+      "sha256": "98e10f37b561c9020c234f58c3aa59a0a587fcf3262a490290b956a17d507154",
+      "bytes": 52,
+      "decoded_sha256": "834250baea3f25b512dd21c7d1f7c245f64bc8ca249f86c83db7d781c28510a0",
+      "decoded_bytes": 35,
+      "retained_source": "/private/tmp/mech-related-llvm-native-backend-exploration-20261107-v1/definitions.json"
+    },
+    "backend/LLVM-probe/machine-facts.json.gz": {
+      "sha256": "35b772401d4a7128c7dd605810b3944c5059259880d6d75d1efd2e352766c196",
+      "bytes": 482,
+      "decoded_sha256": "45f1b0cb114372044eeea8cc7c29f154b9533ba37153e18c395d5dad2dc8728e",
+      "decoded_bytes": 975,
+      "retained_source": "/private/tmp/mech-related-llvm-native-backend-exploration-20261107-v1/machine-facts.json"
+    },
+    "backend/LLVM-probe/facts-run.json.gz": {
+      "sha256": "0c7a1a1e10e4880fe66b660dd83a31901898c194f1b5cc5729486ad9f6e5b999",
+      "bytes": 149,
+      "decoded_sha256": "edb081f66576a318c3a8a6754fabebee22c23fc7943650f095df180837ad5244",
+      "decoded_bytes": 176,
+      "retained_source": "/private/tmp/mech-related-llvm-native-backend-exploration-20261107-v1/facts-run.json"
+    },
+    "backend/LLVM-probe/refusals.json.gz": {
+      "sha256": "7c5b9b69d16b0eaa95347a739b287e63f62702b7c069157420c5d75a1f7c4e78",
+      "bytes": 226,
+      "decoded_sha256": "87f6fd625de3ffc3ece421a7627d269b3dc7f01ba561ed0071b102f5f4a93d33",
+      "decoded_bytes": 545,
+      "retained_source": "/private/tmp/mech-related-llvm-native-backend-exploration-20261107-v1/refusals.json"
+    },
+    "backend/LLVM-probe/maintained-tests.json.gz": {
+      "sha256": "6f4b1c572fc35fc0c9ea3cf37e9173c17d216bf2d808d8242b21db93c0576436",
+      "bytes": 394,
+      "decoded_sha256": "3834335359eb497040b6c177bc43c391fb29241ce04ccf90c17fcac9864f41a0",
+      "decoded_bytes": 633,
+      "retained_source": "/private/tmp/mech-related-llvm-native-backend-exploration-20261107-v1/maintained-tests.json"
+    },
+    "recipes/report.py": {
+      "sha256": "71f41dfb385e3c73bd0573997a184ad5651f35a2b4a72760538795d1eab78121",
+      "bytes": 6770,
+      "decoded_sha256": "71f41dfb385e3c73bd0573997a184ad5651f35a2b4a72760538795d1eab78121",
+      "decoded_bytes": 6770,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-and-profile-report-20261107.py"
+    },
+    "recipes/publish.py": {
+      "sha256": "62622ca4d0c1d3313de6150918ff790f75adb1c41f70f8470f1c52ed3c84f5ae",
+      "bytes": 12915,
+      "decoded_sha256": "62622ca4d0c1d3313de6150918ff790f75adb1c41f70f8470f1c52ed3c84f5ae",
+      "decoded_bytes": 12915,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-and-profile-publish-20261107.py"
+    },
+    "cohort/resources-run.json": {
+      "sha256": "aaea406bd7a48372f3c0301f4970c926f7fb320f92dc8a702ff6511734cad750",
+      "bytes": 756,
+      "decoded_sha256": "aaea406bd7a48372f3c0301f4970c926f7fb320f92dc8a702ff6511734cad750",
+      "decoded_bytes": 756,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/resources-run.json"
+    },
+    "cohort/latency-start-gate.json": {
+      "sha256": "bf132f2967163f2ee9010219645f7d738329bd841487f29ceb42eb5159613b1f",
+      "bytes": 848,
+      "decoded_sha256": "bf132f2967163f2ee9010219645f7d738329bd841487f29ceb42eb5159613b1f",
+      "decoded_bytes": 848,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/latency-start-gate.json",
+      "unredacted_source_sha256": "d9ddbd5c52aead638a63742b184dede33ab6d17a4cb16c39ce438f064961a082"
+    },
+    "cohort/run-cohorts.py": {
+      "sha256": "c82d01f90f477f06fd18bac92f6eef20030034aaaab546858afad7064a9736fa",
+      "bytes": 4819,
+      "decoded_sha256": "c82d01f90f477f06fd18bac92f6eef20030034aaaab546858afad7064a9736fa",
+      "decoded_bytes": 4819,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/run-cohorts.py"
+    },
+    "cohort/latency-config.json": {
+      "sha256": "a4aaa08d2080cd178654b890308a7298c67db8d6f7c5e14bba554c566e1052f9",
+      "bytes": 19232,
+      "decoded_sha256": "a4aaa08d2080cd178654b890308a7298c67db8d6f7c5e14bba554c566e1052f9",
+      "decoded_bytes": 19232,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/latency-config.json"
+    },
+    "cohort/resources-config-base.json": {
+      "sha256": "603e9c72cab794d1fe21a9ad98c6c14a502be935ed241d45082ee25fd3a8942e",
+      "bytes": 10958,
+      "decoded_sha256": "603e9c72cab794d1fe21a9ad98c6c14a502be935ed241d45082ee25fd3a8942e",
+      "decoded_bytes": 10958,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/resources-config-base.json"
+    },
+    "cohort/sizes-run.json": {
+      "sha256": "38ffd6d52f21e11d3eb1659d1f5c26bcccce05d6f3c81dbf800727abe089d5f1",
+      "bytes": 460,
+      "decoded_sha256": "38ffd6d52f21e11d3eb1659d1f5c26bcccce05d6f3c81dbf800727abe089d5f1",
+      "decoded_bytes": 460,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/sizes-run.json"
+    },
+    "cohort/latency-run.json": {
+      "sha256": "92c516f3cdc3d6036cae5ad26a7532f1a2bd30079dcb9c4d1fbf40c881e175be",
+      "bytes": 735,
+      "decoded_sha256": "92c516f3cdc3d6036cae5ad26a7532f1a2bd30079dcb9c4d1fbf40c881e175be",
+      "decoded_bytes": 735,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/latency-run.json"
+    },
+    "cohort/resources-config.json": {
+      "sha256": "12b67d9e6d9d9cf7c57c248c53fd8b54ccf94748b3ec3c0e1606a2cdb2f638ce",
+      "bytes": 16347,
+      "decoded_sha256": "12b67d9e6d9d9cf7c57c248c53fd8b54ccf94748b3ec3c0e1606a2cdb2f638ce",
+      "decoded_bytes": 16347,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/resources-config.json"
+    },
+    "cohort/resources-start-gate.json": {
+      "sha256": "283e370203e2d80d2f17060d8574b13d42e59f04f38492f2dfdfd3812a568921",
+      "bytes": 492,
+      "decoded_sha256": "283e370203e2d80d2f17060d8574b13d42e59f04f38492f2dfdfd3812a568921",
+      "decoded_bytes": 492,
+      "retained_source": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/resources-start-gate.json",
+      "unredacted_source_sha256": "fba61f6652fd684c69886e38cace94e11f6cccf9353cad4ed4c2678d02637ac6"
+    },
+    "profile/quiet-start-gate.json": {
+      "sha256": "5f5603a380f6bb9d9513bcf18570cac2b7ffaf40624992bcbb6446cc434a8b80",
+      "bytes": 589,
+      "decoded_sha256": "5f5603a380f6bb9d9513bcf18570cac2b7ffaf40624992bcbb6446cc434a8b80",
+      "decoded_bytes": 589,
+      "retained_source": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/quiet-start-gate.json",
+      "unredacted_source_sha256": "74031d6a542d34f7eedc4ba2d419715dfa37838289b3259bfaa8a7934f7e99f2"
+    },
+    "profile/local-register-records.json": {
+      "sha256": "1dfe2c60259f989872f09d25d21f30a1dd836f0964daae6a94523e94c52d1f02",
+      "bytes": 1807,
+      "decoded_sha256": "1dfe2c60259f989872f09d25d21f30a1dd836f0964daae6a94523e94c52d1f02",
+      "decoded_bytes": 1807
+    },
+    "README.md": {
+      "sha256": "1ef520b5a433bb8677633ddb8cde6992d10af25f0c3bdb8e6482636289f0a26c",
+      "bytes": 4304,
+      "decoded_sha256": "1ef520b5a433bb8677633ddb8cde6992d10af25f0c3bdb8e6482636289f0a26c",
+      "decoded_bytes": 4304
+    },
+    "verify.py": {
+      "sha256": "8857d8939e98d51e1c99c399ef676217116f450ed715e0300a7cf8ca7f4c9f3b",
+      "bytes": 2237,
+      "decoded_sha256": "8857d8939e98d51e1c99c399ef676217116f450ed715e0300a7cf8ca7f4c9f3b",
+      "decoded_bytes": 2237
+    }
+  }
+}

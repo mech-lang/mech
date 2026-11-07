@@ -1,0 +1,19 @@
+{
+  "quiet": true,
+  "qualification": {
+    "new_Rust_variants": 5,
+    "source_unit_tests": 20,
+    "exact_differential_outputs": 192,
+    "unchanged_old_reference_checked": true,
+    "all_setup_inside_post_JSON": true,
+    "Mech_compiler_unchanged": "IR242/four native workers; prior full qualification retained"
+  },
+  "seed": 990270,
+  "samples": 31,
+  "variants": 11,
+  "primary_boundary": "continuous post-JSON including setup and workers",
+  "secondary_boundary": "fresh launch through exit",
+  "process_snapshot_sha256": "2c6bf7f37e51efd425430842c95f4e32604430046c443611a3e32dce4c13c944",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-ordered-rust-controls-cohort-20261107-v1/latency-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation arguments remain local; original quiet predicates unchanged."
+}

@@ -1,0 +1,8 @@
+{
+  "quiet": true,
+  "profile_timings_excluded": true,
+  "scope": "Exact continuous post-JSON phase; task threads except sampler, with run-state metadata. Program/JSON template restored once; clone/verification/teardown gate closed.",
+  "process_snapshot_sha256": "8abd0fffad8d823080e0e2f9d2041c5baa1a6d1c1ee34a8bfe3bc3a4811de0aa",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-current-post-json-all-thread-profile-20261107-v1/quiet-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation arguments remain local; original quiet predicates unchanged."
+}
