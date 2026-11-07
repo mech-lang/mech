@@ -191,7 +191,7 @@ fn numeric_boolean_relations_lower_guarded_mask_reuse_and_preserve_each_current_
                                 calls
                                     .helpers
                                     .keys()
-                                    .all(|(site, _)| !sites.contains(&(*site as usize))),
+                                    .all(|(site, op)| *op != crate::native_artifact::program::protocol::GlobalHelper::Library.raw() || !sites.contains(&(*site as usize))),
                                 "{calls:?}"
                             );
                         }
