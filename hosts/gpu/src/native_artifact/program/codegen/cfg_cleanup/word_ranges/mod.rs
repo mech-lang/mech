@@ -1,5 +1,5 @@
 //! Bounds of immutable scalar CLIF words, without source-type assumptions.
-use crate::native_artifact::program::prepare::word_collections::bounds::Range;
+pub(super) use crate::native_artifact::program::prepare::word_collections::bounds::Range;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{Function, InstructionData as Data, Opcode as Op, Value, ValueDef};
 use std::collections::BTreeMap;
@@ -56,12 +56,22 @@ fn compare(cc: IntCC, a: Range, b: Range) -> Option<bool> {
 pub(super) struct Facts<'a> {
     function: &'a Function,
     cache: BTreeMap<Value, Range>,
+    assumptions: Option<&'a BTreeMap<Value, Range>>,
 }
 impl<'a> Facts<'a> {
     pub fn new(function: &'a Function) -> Self {
         Self {
             function,
             cache: BTreeMap::new(),
+            assumptions: None,
+        }
+    }
+
+    pub fn selected(function: &'a Function, assumptions: &'a BTreeMap<Value, Range>) -> Self {
+        Self {
+            function,
+            cache: BTreeMap::new(),
+            assumptions: Some(assumptions),
         }
     }
 
@@ -93,6 +103,17 @@ impl<'a> Facts<'a> {
         } else {
             unknown
         };
+        let found = self
+            .assumptions
+            .and_then(|known| known.get(&value))
+            .map_or(found, |known| {
+                let intersection = Range(found.0.max(known.0), found.1.min(known.1));
+                if intersection.0 <= intersection.1 {
+                    intersection
+                } else {
+                    found
+                }
+            });
         self.cache.insert(value, found);
         Some(found)
     }

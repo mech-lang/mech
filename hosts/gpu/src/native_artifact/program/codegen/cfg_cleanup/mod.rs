@@ -3,6 +3,7 @@
 //! Trapping loads, source failures and work debits retain their ordering.
 mod dead_values;
 mod local_phis;
+mod selected_ranges;
 mod unsigned_intervals;
 mod preheaders;
 mod word_ranges;
@@ -304,6 +305,7 @@ fn optimize_ordered(
         neutral_operations_removed: 0,
         boolean_conditions_simplified: 0,
         unsigned_intervals_combined: 0,
+        selected_range_branches_removed: 0,
         before_blocks,
         before_instructions,
         after_blocks: before_blocks,
@@ -360,6 +362,14 @@ fn optimize_ordered(
     report.local_phi_parameters_removed =
         local_phis::simplify(&mut context.func, &context.cfg, &context.domtree);
     report.unsigned_intervals_combined = unsigned_intervals::combine(&mut context.func);
+    report.selected_range_branches_removed =
+        selected_ranges::fold(&mut context.func, &context.cfg, &context.domtree);
+    if report.selected_range_branches_removed != 0 {
+        context.compute_cfg();
+        context.compute_domtree();
+        context.eliminate_unreachable_code(isa).map_err(backend)?;
+        context.remove_constant_phis(isa).map_err(backend)?;
+    }
     if controls.enabled(OptimizationPass::DemandLiveness) {
         let dead = dead_values::eliminate(&mut context.func);
         report.dead_parameters_removed = dead.parameters;

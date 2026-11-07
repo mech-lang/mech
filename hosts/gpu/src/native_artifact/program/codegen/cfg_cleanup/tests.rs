@@ -4,6 +4,390 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
 #[test]
+fn cfg_cleanup_selected_ranges_do_not_assume_a_side_when_both_edges_share_a_target() {
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut context = module.make_context();
+    context.func.signature.params = vec![AbiParam::new(types::I64)];
+    context.func.signature.returns = vec![AbiParam::new(types::I64)];
+    let id = module
+        .declare_function(
+            "same_selected_destination",
+            Linkage::Local,
+            &context.func.signature,
+        )
+        .unwrap();
+    let mut fc = FunctionBuilderContext::new();
+    {
+        let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+        let entry = b.create_block();
+        let shared = b.create_block();
+        let yes = b.create_block();
+        let no = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let current = b.block_params(entry)[0];
+        b.ins().brif(current, shared, &[], shared, &[]);
+        b.switch_to_block(shared);
+        b.ins().brif(current, yes, &[], no, &[]);
+        for (block, value) in [(yes, 11), (no, 22)] {
+            b.switch_to_block(block);
+            let value = b.ins().iconst(types::I64, value);
+            b.ins().return_(&[value]);
+        }
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    let controls = CompilationControls::new(
+        crate::native_artifact::codegen::options::OptimizationOptions::default(),
+    );
+    let report = optimize(&controls, &mut context, module.isa()).unwrap();
+    assert_eq!(report.selected_range_branches_removed, 0);
+    context.verify(module.isa()).unwrap();
+    module.define_function(id, &mut context).unwrap();
+    module.finalize_definitions().unwrap();
+    // SAFETY: the retained executable has the exact one-word ABI; the owner
+    // remains live for every synchronous original and repeated call.
+    let entry: unsafe extern "C" fn(u64) -> u64 =
+        unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+    for value in [1, 0, 2, u64::MAX, 0, 3] {
+        assert_eq!(unsafe { entry(value) }, if value == 0 { 22 } else { 11 });
+    }
+}
+
+#[test]
+fn cfg_cleanup_selected_ranges_keep_joins_unselected_arms_widths_and_publication() {
+    use crate::native_artifact::codegen::options::OptimizationOptions;
+    use cranelift_codegen::ir::condcodes::IntCC;
+    for ty in [types::I8, types::I16, types::I32, types::I64] {
+        for joined in [false, true] {
+            for enabled in [false, true] {
+                let mut module = cranelift_jit::JITModule::new(
+                    cranelift_jit::JITBuilder::with_flags(
+                        &[("opt_level", "speed")],
+                        default_libcall_names(),
+                    )
+                    .unwrap(),
+                );
+                let mut context = module.make_context();
+                context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+                context.func.signature.returns = vec![AbiParam::new(types::I64)];
+                let id = module
+                    .declare_function("selected_interval", Linkage::Local, &context.func.signature)
+                    .unwrap();
+                let mut fc = FunctionBuilderContext::new();
+                let maximum = u64::MAX >> (64 - ty.bits());
+                let upper = maximum.min(258);
+                {
+                    let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+                    let entry = b.create_block();
+                    let checked = b.create_block();
+                    let skipped = b.create_block();
+                    let arithmetic = b.create_block();
+                    let assertion = b.create_block();
+                    let overflow = b.create_block();
+                    let publish = b.create_block();
+                    b.append_block_param(publish, types::I64);
+                    b.append_block_params_for_function_params(entry);
+                    b.switch_to_block(entry);
+                    let args = b.block_params(entry).to_vec();
+                    let word = if ty == types::I64 {
+                        args[1]
+                    } else {
+                        b.ins().ireduce(ty, args[1])
+                    };
+                    b.ins().brif(args[2], checked, &[], skipped, &[]);
+                    b.switch_to_block(checked);
+                    let lower = b.ins().icmp_imm(IntCC::UnsignedGreaterThanOrEqual, word, 3);
+                    let upper =
+                        b.ins()
+                            .icmp_imm(IntCC::UnsignedLessThanOrEqual, word, upper as i64);
+                    let valid = b.ins().band(lower, upper);
+                    b.ins().brif(valid, arithmetic, &[], assertion, &[]);
+                    b.switch_to_block(skipped);
+                    if joined {
+                        b.ins().jump(arithmetic, &[]);
+                    } else {
+                        let value = b.ins().iconst(types::I64, 42);
+                        b.ins().jump(publish, &[value.into()]);
+                    }
+                    b.switch_to_block(arithmetic);
+                    let valid = b.ins().icmp_imm(IntCC::UnsignedGreaterThanOrEqual, word, 2);
+                    let success = b.create_block();
+                    b.ins().brif(valid, success, &[], overflow, &[]);
+                    b.switch_to_block(success);
+                    let result = b.ins().iadd_imm(word, -2);
+                    let result = if ty == types::I64 {
+                        result
+                    } else {
+                        b.ins().uextend(types::I64, result)
+                    };
+                    b.ins().jump(publish, &[result.into()]);
+                    for (block, status) in [(assertion, 9), (overflow, 1)] {
+                        b.switch_to_block(block);
+                        let status = b.ins().iconst(types::I64, status);
+                        b.ins().return_(&[status]);
+                    }
+                    b.switch_to_block(publish);
+                    let result = b.block_params(publish)[0];
+                    b.ins().store(MemFlags::new(), result, args[0], 0);
+                    let zero = b.ins().iconst(types::I64, 0);
+                    b.ins().return_(&[zero]);
+                    b.seal_all_blocks();
+                    b.finalize();
+                }
+                let options = if enabled {
+                    OptimizationOptions::default()
+                } else {
+                    OptimizationOptions::without(OptimizationPass::CfgCleanup)
+                };
+                let report = optimize(
+                    &CompilationControls::new(options),
+                    &mut context,
+                    module.isa(),
+                )
+                .unwrap();
+                assert_eq!(
+                    report.selected_range_branches_removed > 0,
+                    enabled && !joined
+                );
+                context.verify(module.isa()).unwrap();
+                module.define_function(id, &mut context).unwrap();
+                module.finalize_definitions().unwrap();
+                // SAFETY: the retained JIT owner has this exact bank/word/flag
+                // ABI, and the initialized publication cell lives through each call.
+                let entry: unsafe extern "C" fn(*mut u64, u64, u64) -> u64 =
+                    unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+                let mut published = 12345;
+                let mut inputs = (0..=512).collect::<Vec<u64>>();
+                inputs.extend([u64::MAX, i64::MAX as u64, i64::MIN as u64, 4]);
+                for flag in [1, 0, 2, u64::MAX] {
+                    for &input in &inputs {
+                        let word = input & maximum;
+                        let prior = published;
+                        let (status, expected) = if flag == 0 && !joined {
+                            (0, 42)
+                        } else if flag != 0 && !(3..=upper).contains(&word) {
+                            (9, prior)
+                        } else if word < 2 {
+                            (1, prior)
+                        } else {
+                            (0, word - 2)
+                        };
+                        assert_eq!(
+                            unsafe { entry(&mut published, input, flag) },
+                            status,
+                            "{ty} joined={joined} enabled={enabled} n={input} flag={flag}"
+                        );
+                        assert_eq!(published, expected);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn cfg_cleanup_selected_ranges_recheck_each_changed_loop_argument_and_recover() {
+    use cranelift_codegen::ir::condcodes::IntCC;
+    for enabled in [false, true] {
+        let mut module = cranelift_jit::JITModule::new(
+            cranelift_jit::JITBuilder::with_flags(
+                &[("opt_level", "speed")],
+                default_libcall_names(),
+            )
+            .unwrap(),
+        );
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+        context.func.signature.returns = vec![AbiParam::new(types::I64)];
+        let id = module
+            .declare_function(
+                "fresh_selected_loop",
+                Linkage::Local,
+                &context.func.signature,
+            )
+            .unwrap();
+        let mut fc = FunctionBuilderContext::new();
+        {
+            let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+            let entry = b.create_block();
+            let header = b.create_block();
+            let check = b.create_block();
+            let arithmetic = b.create_block();
+            let body = b.create_block();
+            let reject = b.create_block();
+            let overflow = b.create_block();
+            let done = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.append_block_param(header, types::I64);
+            b.append_block_param(header, types::I64);
+            b.switch_to_block(entry);
+            let args = b.block_params(entry).to_vec();
+            b.ins().jump(header, &[args[1].into(), args[2].into()]);
+            b.switch_to_block(header);
+            let current = b.block_params(header).to_vec();
+            let more = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, current[1], 0);
+            b.ins().brif(more, check, &[], done, &[]);
+            b.switch_to_block(check);
+            let lower = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, current[0], 3);
+            let upper = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, current[0], 258);
+            let valid = b.ins().band(lower, upper);
+            b.ins().brif(valid, arithmetic, &[], reject, &[]);
+            b.switch_to_block(arithmetic);
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, current[0], 2);
+            b.ins().brif(valid, body, &[], overflow, &[]);
+            b.switch_to_block(body);
+            let next = b.ins().iadd_imm(current[0], -2);
+            let remaining = b.ins().iadd_imm(current[1], -1);
+            b.ins().jump(header, &[next.into(), remaining.into()]);
+            for (block, status) in [(reject, 9), (overflow, 1)] {
+                b.switch_to_block(block);
+                let status = b.ins().iconst(types::I64, status);
+                b.ins().return_(&[status]);
+            }
+            b.switch_to_block(done);
+            b.ins().store(MemFlags::new(), current[0], args[0], 0);
+            let zero = b.ins().iconst(types::I64, 0);
+            b.ins().return_(&[zero]);
+            b.seal_all_blocks();
+            b.finalize();
+        }
+        let options = if enabled {
+            crate::native_artifact::codegen::options::OptimizationOptions::default()
+        } else {
+            crate::native_artifact::codegen::options::OptimizationOptions::without(
+                OptimizationPass::CfgCleanup,
+            )
+        };
+        let report = optimize(
+            &CompilationControls::new(options),
+            &mut context,
+            module.isa(),
+        )
+        .unwrap();
+        assert_eq!(report.selected_range_branches_removed > 0, enabled);
+        context.verify(module.isa()).unwrap();
+        module.define_function(id, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        // SAFETY: owned generated code exactly matches this publication/word/count
+        // ABI; every call retains the initialized output and the executable.
+        let entry: unsafe extern "C" fn(*mut u64, u64, u64) -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+        let mut output = 55;
+        for (n, count, expected) in [
+            (6, 2, Some(2)),
+            (3, 2, None),
+            (0, 0, Some(0)),
+            (258, 3, Some(252)),
+            (u64::MAX, 1, None),
+            (3, 1, Some(1)),
+            (1, 1, None),
+            (7, 2, Some(3)),
+        ] {
+            let previous = output;
+            assert_eq!(
+                unsafe { entry(&mut output, n, count) },
+                if expected.is_some() { 0 } else { 9 }
+            );
+            assert_eq!(output, expected.unwrap_or(previous));
+        }
+    }
+}
+
+#[test]
+fn cfg_cleanup_selected_ranges_keep_fresh_loads_distinct_after_an_alias_write() {
+    use cranelift_codegen::ir::condcodes::IntCC;
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut context = module.make_context();
+    context.func.signature.params = vec![AbiParam::new(types::I64)];
+    context.func.signature.returns = vec![AbiParam::new(types::I64)];
+    let id = module
+        .declare_function("fresh_alias_word", Linkage::Local, &context.func.signature)
+        .unwrap();
+    let mut fc = FunctionBuilderContext::new();
+    {
+        let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+        let entry = b.create_block();
+        let selected = b.create_block();
+        let reject = b.create_block();
+        let overflow = b.create_block();
+        let publish = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let bank = b.block_params(entry)[0];
+        let old = b.ins().load(types::I64, MemFlags::new(), bank, 0);
+        let lower = b.ins().icmp_imm(IntCC::UnsignedGreaterThanOrEqual, old, 3);
+        let upper = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, old, 258);
+        let valid = b.ins().band(lower, upper);
+        b.ins().brif(valid, selected, &[], reject, &[]);
+        b.switch_to_block(selected);
+        let zero = b.ins().iconst(types::I64, 0);
+        b.ins().store(MemFlags::new(), zero, bank, 0);
+        let fresh = b.ins().load(types::I64, MemFlags::new(), bank, 0);
+        let valid = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, fresh, 2);
+        b.ins().brif(valid, publish, &[], overflow, &[]);
+        b.switch_to_block(publish);
+        let result = b.ins().iadd_imm(fresh, -2);
+        b.ins().store(MemFlags::new(), result, bank, 8);
+        b.ins().return_(&[zero]);
+        for (block, status) in [(reject, 9), (overflow, 1)] {
+            b.switch_to_block(block);
+            let status = b.ins().iconst(types::I64, status);
+            b.ins().return_(&[status]);
+        }
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    let options = crate::native_artifact::codegen::options::OptimizationOptions::default();
+    let report = optimize(
+        &CompilationControls::new(options),
+        &mut context,
+        module.isa(),
+    )
+    .unwrap();
+    assert_eq!(report.selected_range_branches_removed, 0);
+    context.verify(module.isa()).unwrap();
+    module.define_function(id, &mut context).unwrap();
+    module.finalize_definitions().unwrap();
+    // SAFETY: the owned JIT entry accepts this initialized two-word bank and
+    // cannot outlive its module; publication is observed after each call.
+    let entry: unsafe extern "C" fn(*mut u64) -> u64 =
+        unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+    for initial in [3, 258, 4, 259, 0, 7] {
+        let mut bank = [initial, 99];
+        assert_eq!(
+            unsafe { entry(bank.as_mut_ptr()) },
+            if (3..=258).contains(&initial) { 1 } else { 9 }
+        );
+        assert_eq!(
+            bank,
+            [
+                if (3..=258).contains(&initial) {
+                    0
+                } else {
+                    initial
+                },
+                99
+            ]
+        );
+    }
+}
+
+#[test]
 fn cfg_cleanup_unsigned_intervals_execute_boundaries_at_all_word_widths_and_keep_effects() {
     use crate::native_artifact::codegen::options::OptimizationOptions;
     use cranelift_codegen::ir::condcodes::IntCC;
