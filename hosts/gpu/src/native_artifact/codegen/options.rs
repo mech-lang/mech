@@ -51,6 +51,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     ScalarSelects,
     UnsignedGuardFacts,
     GuardedNumericLoads,
+    /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
     DisjointState,
     NontrappingHomes,

@@ -452,12 +452,14 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     };
     let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
-    let movable_captures =
-        if outlined_body && controls.enabled(OptimizationPass::MovableCaptureReads) {
-            super::numeric_captured_reads::stable_arrays(code, region, proof)
-        } else {
-            BTreeSet::new()
-        };
+    let movable_captures = if outlined_body
+        && controls.enabled(OptimizationPass::GuardedNumericLoads)
+        && controls.enabled(OptimizationPass::MovableCaptureReads)
+    {
+        super::numeric_captured_reads::stable_arrays(code, region, proof)
+    } else {
+        BTreeSet::new()
+    };
     let boolean_successors =
         super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     let versions = super::numeric_loop_windows::derive(

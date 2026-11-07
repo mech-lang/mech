@@ -21,6 +21,9 @@ zero. Even a raw zero or maximum unsigned selector therefore produces a valid
 physical address. This permits readonly, nonfaulting and movable native loads;
 it grants no disjoint memory class or extra alignment.
 
+This refinement requires the guarded-load optimization. Its ablation retains
+trapping physical load effects throughout numeric reads, including captures.
+
 The original source bounds branch, rejecting library operation, arithmetic
 checks, finite work debits, output publication and retry paths remain. An
 out-of-range source selector still fails at the same source operation. Inlined
