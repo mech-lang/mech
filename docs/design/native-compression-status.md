@@ -1,5 +1,15 @@
 # Native compression milestone
 
+## R197: immutable geometry survives enum-state loops
+
+The compiler now fully lowers12 word-pack occurrences in the three real424-block state machines, without requiring an affine trip proof. Source window checks, finite debits, checked arithmetic, publication, cleanup and retry remain. Native IR/work/ABI/bytecode213/107/39/14.
+
+The existing source keeps byte-identical native text and all20 timing gates pass; fresh current ratios include natural32 **3.343891× Roc**, repeated32 **3.148675×**, periodic33 **3.654774×**, and eight literals **4.466182×**. Its geometric elapsed control increases0.533317%; no speedup is claimed.
+
+The same state-source compiler comparison passes20/20 gates: repeated **12.020990×→9.338768× Roc**, periodic **22.944172×→20.005454×**, with30.38% and18.39% fewer instructions. Natural text executes5.28% more instructions and takes4.84% more time. The state source still fails seven adoption gates and stays experimental; the faster existing source is retained. Allocation requests and incremental usable heap are unchanged. State code shrinks19,856 bytes; stack is unchanged.
+
+673 native tests /256 executed CI selections /236 components /eight compositions /one real-capacity control /1724 native match controls and15 architecture checks pass, with the same seven inherited exclusions. [Design, all20 current rows, profile numbers, limitations and immutable evidence](native-state-read-windows.md). #973 remains draft; no new PR.
+
 ## R196: native enum-state support, existing source retained
 
 States without payloads now use the existing native scalar representation, and exact child-fuel exits preserve current enum words. **670 native tests /253 actually executed CI selections /236 components /eight compositions /one real-capacity control pass**, with the same seven inherited exclusions. All1724 native match controls and candidate resident checks pass. IR/work/ABI/bytecode212/107/39/14.
