@@ -243,6 +243,7 @@ impl NativeProgramObject {
             "compiled_loop_invariants": &self.codegen.loop_invariants,
             "linked": false, "executed": false, "timing_samples": 0,
         });
+        metadata["compiled_numeric_outlines"] = serde_json::json!(&self.codegen.numeric_outlines);
         metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
             self.descriptor
                 .metadata()

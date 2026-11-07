@@ -14,6 +14,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub lookup_facts: LookupFacts,
     pub cfg_cleanup: Option<CfgCleanup>,
     pub outlined_loops: Vec<OutlinedLoop>,
+    pub numeric_outlines: Vec<crate::native_artifact::program::codegen::numeric_outlined::Report>,
     pub loop_invariants: Vec<InvariantLoop>,
     pub bound_call_shim: Option<BoundCallShim>,
     pub preserving_call_regions: Vec<PreservingCallRegion>,
@@ -635,7 +636,7 @@ impl CodegenReport {
         if let Some(cfg) = &self.cfg_cleanup {
             counts.cfg_cleanup = (usize::from(cfg.enabled), cfg.constant_branches_removed);
         }
-        counts.loop_outlining = self.outlined_loops.len();
+        counts.loop_outlining = self.outlined_loops.len() + self.numeric_outlines.len();
         counts.loop_invariants = (
             self.loop_invariants.len(),
             self.loop_invariants

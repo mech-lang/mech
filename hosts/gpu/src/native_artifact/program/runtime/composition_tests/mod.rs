@@ -34,6 +34,7 @@ mod named_managed_projections;
 mod nested_phase;
 mod nested_phase_growing;
 mod nested_phase_handoff;
+mod numeric_outlining;
 pub(super) mod observe;
 mod ordered_reduction;
 mod ordered_reduction_exhaustion;

@@ -1,5 +1,15 @@
 # Native compression milestone
 
+## R191 — complete numeric phases outlined
+
+**Production is R191/IR211.** Complete nested numeric phases execute through the same shared body in private native functions. Natural32 improves **3.630507×→3.346257×** reference (−7.829484%); natural16 **4.340731×→4.031470×** (−7.124627%), both in all8 blocks. The full20-case geometric elapsed gain is1.087154%; all original1.05gates pass. Seven compressor medians and all12scalar medians are adverse; scalar changes0.285–1.298% remain within unchanged gates.
+
+Natural32 instructions fall3.142543% and cycles7.833668% in separate cohorts. Heap metrics remain exactly equal; code−1,028B and cumulative stack+192B. Four complete three-loop phases are outlined. **668native tests / all251actually executed CI selections / five focused controls pass**, as do unchanged236/eight/one qualification,15architecture/catalog and132workflow checks. Same seven inherited exclusions; warnings denied remains.
+
+Five fresh exact-worker profiles complete17,813correct calls; independent source mapping repeats all five image files. A bounded census shows only267–276of22,461logical owner slots populated at peak. Setup/drop alone takes roughly0.13–0.15ms and cannot explain the large-input gap.
+
+The next fixed-source architecture experiment separates adapter costs from compact native computation. Phase-only results will not stand in for whole-compressor parity. [All20results, design and measured tradeoffs](native-numeric-phase-outlining.md). Existing draft973 only; hosted ordinary CI is cancelled without waiting.
+
 ## R190 — duplicate join arguments rejected after full measurement
 
 **Production remains R186/IR206.** The candidate removes 142 exact duplicate private join arguments and shrinks generated text by 2,456 bytes, but reported stack grows 144 bytes. All 20 original gates pass with exact output, inflation, work, aliases, capacity and cleanup agreement. The measured tradeoff is unfavorable: 19 elapsed medians worsen, one improves, and geometric elapsed rises 0.783878%. Separate counters have 14 higher instruction medians and 13 higher cycle medians; all 12 scalar medians are adverse. Heap requests, bytes, reallocations and usable peaks remain equal.
