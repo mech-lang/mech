@@ -106,6 +106,23 @@ fn function_invariant_precedes_the_later_division_and_recovers() {
 }
 
 #[test]
+fn unsigned_interval_assertion_keeps_boundaries_error_order_and_recovery() {
+    let source = "checked(n<u64>) => (out<u64>) :=\n  interval! := (n <= 258u64) && (n >= 3u64)\n  out := n - 3u64.\nchecked(input<u64>)\n";
+    check_cases(
+        source,
+        &[
+            (vec![("input", Data::U64(3))], Some(Data::U64(0))),
+            (vec![("input", Data::U64(0))], None),
+            (vec![("input", Data::U64(2))], None),
+            (vec![("input", Data::U64(258))], Some(Data::U64(255))),
+            (vec![("input", Data::U64(259))], None),
+            (vec![("input", Data::U64(u64::MAX))], None),
+            (vec![("input", Data::U64(4))], Some(Data::U64(1))),
+        ],
+    );
+}
+
+#[test]
 fn function_invariant_precedes_later_closed_arithmetic() {
     let source = "checked(n<u64>) => (out<u64>) :=\n  positive! := n > 0u64\n  out := 1u64 / 0u64.\nchecked(input<u64>)\n";
     check_cases(source, &[(vec![("input", Data::U64(0))], None)]);
