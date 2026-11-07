@@ -7,6 +7,7 @@ mod admission_overlap;
 mod boolean_edges;
 mod bounds_retry;
 mod bulk_bytes;
+mod captured_read_addresses;
 mod captured_window_handoffs;
 mod captured_windows;
 mod child_cleanup;

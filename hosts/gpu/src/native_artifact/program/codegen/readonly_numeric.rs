@@ -36,6 +36,7 @@ pub(in crate::native_artifact) struct Report {
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub source_guarded_read_packs: Vec<usize>,
     pub fully_lowered_read_packs: Vec<usize>,
+    pub hoisted_pack_addresses: Vec<(usize, usize, usize, usize)>,
     pub proven_projection_guards: Vec<(usize, u32, usize, u32)>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
     pub proven_scalar_read_guards: Vec<(usize, usize, u32)>,
@@ -233,6 +234,7 @@ pub(in crate::native_artifact) fn emit_entry(
         read_pack_sites: Vec::new(),
         source_guarded_read_packs: Vec::new(),
         fully_lowered_read_packs: Vec::new(),
+        hoisted_pack_addresses: Vec::new(),
         proven_boolean_successors: boolean_successors
             .iter()
             .map(|(&site, &next)| (site, next))
@@ -475,6 +477,13 @@ pub(in crate::native_artifact) fn emit_entry(
             words.write(b, shadow + debit.counter, count);
         }
         if let Some(pack) = read_packs.iter().find(|pack| pack.first == site) {
+            let address = version
+                .and_then(|v| v.addresses.iter().find(|address| address.site == site))
+                .filter(|_| complete_pack(pack))
+                .map(|address| {
+                    report.hoisted_pack_addresses.push(address.report());
+                    address.emit(b, &words)
+                });
             let complete = super::numeric_read_packs::emit(
                 b,
                 &words,
@@ -482,6 +491,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 proof,
                 pack,
                 complete_pack(pack),
+                address,
                 target(pack.next),
             );
             if pack.source_window {

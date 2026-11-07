@@ -67,6 +67,7 @@ pub(super) fn derive(
                 windows: Vec::new(),
                 captures: Vec::new(),
                 geometry: geometry.into_iter().collect(),
+                addresses: Vec::new(),
                 facts,
                 prepaid: None,
                 reduction: None,

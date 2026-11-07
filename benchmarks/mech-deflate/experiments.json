@@ -40548,6 +40548,107 @@
           }
         }
       ]
+    },
+    "198": {
+      "base": "681cf6b5e35cd905c17ef651195d3810fbf1f8c3",
+      "decision": "Retain the bounded address-staging optimization for the two larger hot-loop gains and lower stack; preserve all adverse timings and sixteen higher instruction medians. The source remains the fastest retained recursive implementation.",
+      "versions": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "source_files": [
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_capture_windows.rs",
+          "sha256": "b003ceb731ffd380e3f59f6c671d4fb66d4056b45c9b9cbbb1d5657780b21825",
+          "git_blob": "7acd8c5357344d2d058d3a10d8f51965a8d906cb"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_geometry_windows.rs",
+          "sha256": "00617eb58efce3a9d0fcfbf06313c83121785e29b9af5f3bf2876be341db576b",
+          "git_blob": "adc5e7410319a6f020a90d0e4f0baa661b6fce72"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs",
+          "sha256": "14bb727db1da072d18d166cfac82a093c6921f2be98c7041b36d96dedfa26bc7",
+          "git_blob": "b10856522256bd9beeee95712364e4c9036f07d6"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+          "sha256": "1e981673576e73d093b70611cdc98071d478ef5f5dc2c9c84ea1c1d48cc2a7f9",
+          "git_blob": "349458774b611ebf02384ab345b6be2c3c191cbe"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+          "sha256": "666c60698308dcbe1d6c498f71e6daddb8b6161e25f35ce8bccdd0cb68753113",
+          "git_blob": "921d324d0be1441330ca4a545bbb96c33237e8df"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/image/identity.rs",
+          "sha256": "cf265da439a94e6b8756f12b55e75f514f13a6e7ba62c30b0d4548bb2fec17ec",
+          "git_blob": "a82f01518bbb66d45050bd07c55f098c3c3d1b17"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+          "sha256": "186b34cb58c6eaaabec029d18a5ff7a51241f0cf086e44c80285f8fcf4860abe",
+          "git_blob": "3f4f23bdc16224f2c860a5238290589eb48912be"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_read_addresses.rs",
+          "sha256": "c5ec66de797309ba50cda36d8d3b8548f74a6d2dfdb466ce032566633871a92f",
+          "git_blob": "d6f1a57278a03c4348600eadc933303bcf7099ec"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/captured_read_addresses.rs",
+          "sha256": "f5423a9d3503fe11fa0503a1fcf794f6bc3ec5d754dcf52827cd926602ae9ce3",
+          "git_blob": "f17f390aac1e9395feeb0f10dbd85f29f3a373ae"
+        }
+      ],
+      "events": [
+        {
+          "event": "qualified-captured-native-read-addresses",
+          "asset": "r198-captured-read-addresses-fd6abc7a619a.tar.gz",
+          "sha256": "fd6abc7a619a8ded3dfe9b0f62f018e54872b88ca67742ca45b003a1ddf281ef",
+          "bytes": 2609780,
+          "files": 444,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "source_unchanged": true,
+          "source_adopted": false,
+          "primary_observations": 3968,
+          "total_complete_calls": 4048,
+          "gates_1_05_pass": 20,
+          "elapsed_medians_lower": 9,
+          "elapsed_medians_higher": 11,
+          "geometric_elapsed_change_percent": -0.1836794309053702,
+          "higher_instruction_medians": 16,
+          "higher_cycle_medians": 3,
+          "equal_heap_cases": 20,
+          "native_tests": 675,
+          "new_tests": 2,
+          "scheduled_tests_executed": 258,
+          "native_match_controls": 1724,
+          "code_bytes_before": 8152248,
+          "code_bytes_after": 8152436,
+          "stack_bytes_before": 16672,
+          "stack_bytes_after": 16480,
+          "hot_matching_step_instructions": [
+            19,
+            15
+          ],
+          "hot_matching_step_stack_loads": [
+            3,
+            0
+          ],
+          "public_verification": {
+            "file_occurrences": 444,
+            "server_digests_match": true,
+            "numerical_replay_byte_identical": true
+          },
+          "superseded_profile_packet": "r198-captured-read-addresses-5a7c1b573c97.tar.gz",
+          "superseded_reason": "Include emitted word-collection helpers in native profile totals; no raw measurements repeated or changed."
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
