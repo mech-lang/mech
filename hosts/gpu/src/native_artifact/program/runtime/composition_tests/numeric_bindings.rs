@@ -578,3 +578,59 @@ fn child_numeric_binding_images_reject_old_prototypes_and_forged_physical_recipe
         }
     }
 }
+
+#[test]
+fn wide_retirement_stores_preserve_cold_scalar_homes_aliases_errors_and_retry() {
+    use crate::native_artifact::codegen::options::OptimizationPass;
+    for artifact in artifacts(SOURCE) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let catalog = mech_stdlib::source_catalog();
+        let native =
+            JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+                .unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::WideRetirementStores,
+        )
+        .unwrap();
+        assert!(native.test_emissions().wide_retirement_pairs > 0);
+        assert_eq!(ordinary.test_emissions().wide_retirement_pairs, 0);
+        for restored in [false, true] {
+            let memory = mode.memory_budget();
+            let mut output = [
+                vec![None; artifact.outputs().len()],
+                vec![None; artifact.outputs().len()],
+            ];
+            for (bytes, rounds, seed) in [
+                (vec![3, 5, 7], 2, 11),
+                (vec![], 1, 0),
+                (vec![1, 2], 1, u64::MAX),
+                (vec![255], 1, 0),
+                (vec![2, 3], 1, 4),
+            ] {
+                let args = arguments(&artifact, &memory, &bytes, rounds, seed);
+                let aliases = args.clone();
+                let before = contents(&args);
+                let mut results = Vec::new();
+                for (jit, slot) in [&native, &ordinary].into_iter().zip(&mut output) {
+                    let result = if restored {
+                        observe::run_restored(jit, &args, slot, mode.execution(), &memory).0
+                    } else {
+                        jit.evaluate_into(&args, slot, mode.execution(), &memory)
+                    };
+                    results.push(format!("{result:?}"));
+                }
+                assert_eq!(results[0], results[1]);
+                assert_eq!(drafts(&output[0]), drafts(&output[1]));
+                assert_eq!(contents(&args), before);
+                assert_eq!(contents(&aliases), before);
+            }
+            drop(output);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}

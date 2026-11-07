@@ -582,6 +582,8 @@ impl CodegenReport {
         );
         let mut counts = EmissionCounters::default();
         counts.scalar_selects = self.scalar_selects;
+        counts.wide_retirement_pairs = self.numeric_write_loops.iter()
+            .chain(&self.readonly_numeric_loops).map(|r| r.wide_retirement_pairs).sum();
         counts.unsigned_guards = self.unsigned_guards;
         counts.edge_facts = (
             self.source_edge_facts

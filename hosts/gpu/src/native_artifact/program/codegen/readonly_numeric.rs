@@ -71,6 +71,7 @@ pub(in crate::native_artifact) struct Report {
     pub source_home_words: usize,
     pub terminal_scalar_words_omitted: usize,
     pub runtime_scalar_path_walks: usize,
+    pub wide_retirement_pairs: usize,
     pub tree_nodes: Vec<usize>,
     pub projected_child_debit_nodes: usize,
     pub fuel_derived_child_debit_nodes: usize,
@@ -531,6 +532,7 @@ pub(in crate::native_artifact) fn emit_entry(
         source_home_words: source_homes.len(),
         terminal_scalar_words_omitted: 0,
         runtime_scalar_path_walks: 0,
+        wide_retirement_pairs: 0,
         tree_nodes: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
             tree.nodes
                 .iter()
@@ -1228,7 +1230,10 @@ pub(in crate::native_artifact) fn emit_entry(
             },
         }
         if let Some(tree) = &region.numeric_tree {
-            super::numeric_tree::control(b, &words, shadow, tree, site)?;
+            report.wide_retirement_pairs += super::numeric_tree::control(
+                b, &words, shadow, tree, site,
+                controls.enabled(OptimizationPass::WideRetirementStores),
+            )?;
         }
         if let Some(window) = versions.iter().find(|v| v.initialize == site) {
             // Initialize just copied this child's current source arguments.
