@@ -1,0 +1,657 @@
+{
+  "groups": {
+    "append-capacity": [
+      448061,
+      448052,
+      9
+    ],
+    "child-funding": [
+      0,
+      0,
+      0
+    ],
+    "child-window-selection": [
+      62742,
+      62742,
+      0
+    ],
+    "funded-body": [
+      555148,
+      555139,
+      9
+    ],
+    "funding-comparison": [
+      555148,
+      555148,
+      0
+    ],
+    "funding-compute": [
+      555148,
+      555148,
+      0
+    ],
+    "funding-envelope": [
+      555148,
+      555148,
+      0
+    ],
+    "numeric-entry": [
+      28,
+      28,
+      0
+    ],
+    "private-owner": [
+      265266,
+      265249,
+      17
+    ],
+    "read-bounds": [
+      506752,
+      506752,
+      0
+    ],
+    "read-proof-consumed": [
+      245980,
+      245980,
+      0
+    ],
+    "write-bounds": [
+      151140,
+      151140,
+      0
+    ]
+  },
+  "main_query": {
+    "append-capacity": [
+      105019,
+      105015,
+      4
+    ],
+    "funded-body": [
+      166843,
+      166839,
+      4
+    ],
+    "funding-comparison": [
+      166843,
+      166843,
+      0
+    ],
+    "funding-compute": [
+      166843,
+      166843,
+      0
+    ],
+    "funding-envelope": [
+      166843,
+      166843,
+      0
+    ],
+    "numeric-entry": [
+      8,
+      8,
+      0
+    ],
+    "private-owner": [
+      25000,
+      24996,
+      4
+    ],
+    "read-bounds": [
+      164594,
+      164594,
+      0
+    ],
+    "read-proof-consumed": [
+      93825,
+      93825,
+      0
+    ]
+  },
+  "top45": [
+    {
+      "attempts": 115684,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "append-capacity",
+        "owner": 256,
+        "site": 329,
+        "version": false
+      },
+      "successes": 115684
+    },
+    {
+      "attempts": 67425,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "append-capacity",
+        "owner": 1282,
+        "site": 1553,
+        "version": true
+      },
+      "successes": 67425
+    },
+    {
+      "attempts": 67425,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funded-body",
+        "owner": 1282,
+        "site": 1553,
+        "version": true
+      },
+      "successes": 67425
+    },
+    {
+      "attempts": 67425,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-comparison",
+        "owner": 1282,
+        "site": 1553,
+        "version": true
+      },
+      "successes": 67425
+    },
+    {
+      "attempts": 67425,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-compute",
+        "owner": 1282,
+        "site": 1553,
+        "version": true
+      },
+      "successes": 67425
+    },
+    {
+      "attempts": 67425,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-envelope",
+        "owner": 1282,
+        "site": 1553,
+        "version": true
+      },
+      "successes": 67425
+    },
+    {
+      "attempts": 67305,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "read-proof-consumed",
+        "owner": 1282,
+        "site": 1569,
+        "version": true
+      },
+      "successes": 67305
+    },
+    {
+      "attempts": 57842,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funded-body",
+        "owner": 256,
+        "site": 329,
+        "version": false
+      },
+      "successes": 57842
+    },
+    {
+      "attempts": 57842,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-comparison",
+        "owner": 256,
+        "site": 329,
+        "version": false
+      },
+      "successes": 57842
+    },
+    {
+      "attempts": 57842,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-compute",
+        "owner": 256,
+        "site": 329,
+        "version": false
+      },
+      "successes": 57842
+    },
+    {
+      "attempts": 57842,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-envelope",
+        "owner": 256,
+        "site": 329,
+        "version": false
+      },
+      "successes": 57842
+    },
+    {
+      "attempts": 55532,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "append-capacity",
+        "owner": 801,
+        "site": 901,
+        "version": false
+      },
+      "successes": 55532
+    },
+    {
+      "attempts": 41672,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funded-body",
+        "owner": 1282,
+        "site": 1341,
+        "version": true
+      },
+      "successes": 41672
+    },
+    {
+      "attempts": 41672,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-comparison",
+        "owner": 1282,
+        "site": 1341,
+        "version": true
+      },
+      "successes": 41672
+    },
+    {
+      "attempts": 41672,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-compute",
+        "owner": 1282,
+        "site": 1341,
+        "version": true
+      },
+      "successes": 41672
+    },
+    {
+      "attempts": 41672,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-envelope",
+        "owner": 1282,
+        "site": 1341,
+        "version": true
+      },
+      "successes": 41672
+    },
+    {
+      "attempts": 40228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funded-body",
+        "owner": 572,
+        "site": 599,
+        "version": true
+      },
+      "successes": 40228
+    },
+    {
+      "attempts": 40228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-comparison",
+        "owner": 572,
+        "site": 599,
+        "version": true
+      },
+      "successes": 40228
+    },
+    {
+      "attempts": 40228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-compute",
+        "owner": 572,
+        "site": 599,
+        "version": true
+      },
+      "successes": 40228
+    },
+    {
+      "attempts": 40228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-envelope",
+        "owner": 572,
+        "site": 599,
+        "version": true
+      },
+      "successes": 40228
+    },
+    {
+      "attempts": 35229,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funded-body",
+        "owner": 459,
+        "site": 459,
+        "version": false
+      },
+      "successes": 35229
+    },
+    {
+      "attempts": 35229,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-comparison",
+        "owner": 459,
+        "site": 459,
+        "version": false
+      },
+      "successes": 35229
+    },
+    {
+      "attempts": 35229,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-compute",
+        "owner": 459,
+        "site": 459,
+        "version": false
+      },
+      "successes": 35229
+    },
+    {
+      "attempts": 35229,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-envelope",
+        "owner": 459,
+        "site": 459,
+        "version": false
+      },
+      "successes": 35229
+    },
+    {
+      "attempts": 35228,
+      "failures": 1,
+      "key": {
+        "compilation": 0,
+        "kind": "private-owner",
+        "owner": 256,
+        "site": 361,
+        "version": false
+      },
+      "successes": 35227
+    },
+    {
+      "attempts": 35228,
+      "failures": 1,
+      "key": {
+        "compilation": 0,
+        "kind": "private-owner",
+        "owner": 459,
+        "site": 479,
+        "version": false
+      },
+      "successes": 35227
+    },
+    {
+      "attempts": 35228,
+      "failures": 1,
+      "key": {
+        "compilation": 0,
+        "kind": "private-owner",
+        "owner": 572,
+        "site": 623,
+        "version": true
+      },
+      "successes": 35227
+    },
+    {
+      "attempts": 35228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "read-bounds",
+        "owner": 256,
+        "site": 346,
+        "version": false
+      },
+      "successes": 35228
+    },
+    {
+      "attempts": 35228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "read-bounds",
+        "owner": 256,
+        "site": 348,
+        "version": false
+      },
+      "successes": 35228
+    },
+    {
+      "attempts": 35228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "read-bounds",
+        "owner": 256,
+        "site": 350,
+        "version": false
+      },
+      "successes": 35228
+    },
+    {
+      "attempts": 35228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "read-bounds",
+        "owner": 459,
+        "site": 477,
+        "version": false
+      },
+      "successes": 35228
+    },
+    {
+      "attempts": 35228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "read-bounds",
+        "owner": 572,
+        "site": 618,
+        "version": true
+      },
+      "successes": 35228
+    },
+    {
+      "attempts": 35228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "read-proof-consumed",
+        "owner": 459,
+        "site": 474,
+        "version": false
+      },
+      "successes": 35228
+    },
+    {
+      "attempts": 35228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "read-proof-consumed",
+        "owner": 572,
+        "site": 616,
+        "version": true
+      },
+      "successes": 35228
+    },
+    {
+      "attempts": 35228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "write-bounds",
+        "owner": 459,
+        "site": 479,
+        "version": false
+      },
+      "successes": 35228
+    },
+    {
+      "attempts": 35228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "write-bounds",
+        "owner": 572,
+        "site": 620,
+        "version": true
+      },
+      "successes": 35228
+    },
+    {
+      "attempts": 35228,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "write-bounds",
+        "owner": 572,
+        "site": 623,
+        "version": true
+      },
+      "successes": 35228
+    },
+    {
+      "attempts": 35224,
+      "failures": 1,
+      "key": {
+        "compilation": 0,
+        "kind": "private-owner",
+        "owner": 572,
+        "site": 620,
+        "version": true
+      },
+      "successes": 35223
+    },
+    {
+      "attempts": 35152,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "append-capacity",
+        "owner": 256,
+        "site": 304,
+        "version": false
+      },
+      "successes": 35152
+    },
+    {
+      "attempts": 35152,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funded-body",
+        "owner": 256,
+        "site": 304,
+        "version": false
+      },
+      "successes": 35152
+    },
+    {
+      "attempts": 35152,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-comparison",
+        "owner": 256,
+        "site": 304,
+        "version": false
+      },
+      "successes": 35152
+    },
+    {
+      "attempts": 35152,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-compute",
+        "owner": 256,
+        "site": 304,
+        "version": false
+      },
+      "successes": 35152
+    },
+    {
+      "attempts": 35152,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funding-envelope",
+        "owner": 256,
+        "site": 304,
+        "version": false
+      },
+      "successes": 35152
+    },
+    {
+      "attempts": 32590,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "append-capacity",
+        "owner": 1282,
+        "site": 1522,
+        "version": false
+      },
+      "successes": 32590
+    },
+    {
+      "attempts": 32590,
+      "failures": 0,
+      "key": {
+        "compilation": 0,
+        "kind": "funded-body",
+        "owner": 1282,
+        "site": 1522,
+        "version": false
+      },
+      "successes": 32590
+    }
+  ],
+  "active_rows": 209,
+  "compiled_rows": 942,
+  "full5000_output_exact": true,
+  "diagnostic_timing_claim": false
+}

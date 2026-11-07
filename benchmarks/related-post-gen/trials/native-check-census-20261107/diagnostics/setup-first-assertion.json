@@ -1,0 +1,6 @@
+{
+  "expected_private_owner_branches": 2,
+  "actual_private_owner_branches": 3,
+  "reason": "AppendLeBytes also has the private-owner gate; assertion stopped before modifying readonly_numeric.rs or building.",
+  "corrected_instrument_all_three": true
+}

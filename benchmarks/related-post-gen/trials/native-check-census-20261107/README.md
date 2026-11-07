@@ -1,0 +1,3 @@
+# Executed native check census
+
+Diagnostic custom build; selected IR242 and default Cranelift dependency remain unchanged. Native atomic counters execute only in explicitly instrumented JIT compilation. Normal Object emission is byte-exact for all13 bundle files. Counters retain process-lifetime storage and use per-compilation keys. No diagnostic timings are benchmark results. Funding components and the combined gate overlap. Total reported work varies in both unchanged-parent and diagnostic fresh processes; exact values are retained and this is not a finite-budget equivalence proof. Run python3 verify.py for hashes, repeated actual counts and qualification receipts. Recipes record local paths and require relocation for another machine.

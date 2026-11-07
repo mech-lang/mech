@@ -1,0 +1,18 @@
+{
+  "values": {
+    "full5000-run": 47532424830,
+    "repeat5000-run": 47532424238,
+    "parent5000-run": 47532423918,
+    "parent-repeat5000-run": 47532423430
+  },
+  "parallel_numeric_work": {
+    "full5000-run": 24693182666,
+    "repeat5000-run": 24693182666,
+    "parent5000-run": 24693182666,
+    "parent-repeat5000-run": 24693182666
+  },
+  "attribution_pending": true,
+  "finite_budget_equivalence_claim": false,
+  "all_other_nontiming_fields_exact": true,
+  "first_strict_assertion_failure_retained": true
+}

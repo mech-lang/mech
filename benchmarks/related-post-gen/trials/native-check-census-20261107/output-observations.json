@@ -1,0 +1,22 @@
+{
+  "output.json": {
+    "bytes": 3328279,
+    "sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+    "exact_Rust_JSON": true
+  },
+  "output-repeat.json": {
+    "bytes": 3328279,
+    "sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+    "exact_Rust_JSON": true
+  },
+  "parent-output.json": {
+    "bytes": 3328279,
+    "sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+    "exact_Rust_JSON": true
+  },
+  "parent-repeat-output.json": {
+    "bytes": 3328279,
+    "sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+    "exact_Rust_JSON": true
+  }
+}

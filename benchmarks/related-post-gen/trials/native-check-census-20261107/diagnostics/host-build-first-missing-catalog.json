@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-native-check-census-opt-20261107-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-native-check-census-20261107-v1/runner.rs",
+    "--out",
+    "/private/tmp/mech-related-native-check-census-20261107-v1/runner-jit"
+  ],
+  "exit": 1,
+  "seconds": 0.7739194580353796,
+  "stdout": "error[E0425]: cannot find function `linked_catalog` in this scope\n  --> /private/tmp/mech-related-native-check-census-20261107-v1/runner.rs:96:19\n   |\n96 |     let catalog = linked_catalog().unwrap();\n   |                   ^^^^^^^^^^^^^^ not found in this scope\n\nerror: aborting due to 1 previous error\n\nFor more information about this error, try `rustc --explain E0425`.\n{\"seconds\": 0.25583095801994205, \"exit\": 1}\n",
+  "stderr": ""
+}

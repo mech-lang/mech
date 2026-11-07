@@ -1,0 +1,20 @@
+{
+  "all_bundle_files_exact": true,
+  "files": {
+    "artifact.mecb": "49612ff092b1b4c8b7ec9ae91a18d812803f4a6dbde804406835bc81780a19b0",
+    "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+    "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+    "descriptor.json": "4b2677095a347ecb4ca96b47b6a87236dd3c1e1f656c053638cf067d137aeac8",
+    "frame-summary.json": "f1472782f21c422fa4f593ee3daa84342a6df9e9dbfa01f4b7fdd7aeecb4e6b2",
+    "image-binding.bin": "d68a81e2955ecb251443b831d98f543bd94437e984c6eee760dcdff5d93fc931",
+    "linked.rs": "cd49b6c26c4d17dee72fec3df31cb511ea06659c1cb01dec97650e747031c879",
+    "map-facts.txt": "e40dbb83004557a250b45b00bd4aefb748612bf0ceb3b1204b51a6efa573ee64",
+    "metadata.json": "7474a1cdf74e143f071c766d6127f54e66f01cd7cc0b48ad182471aa3a0a8dd3",
+    "native-metadata-binding.bin": "bc013d09ef8a797e0c859deef953f6f24f87f93ebe633865fcd294fb1428df4c",
+    "native-metadata.bin": "b67f124e2900121dfb8ee86ae9967d1bc772d06212019ee5a78c73f492a8593d",
+    "object.o": "5bc1112023dfebdabd576535692bdcfa093b7de4e98e40fc69130596ba367add",
+    "source.mec": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99"
+  },
+  "Object_unchanged": true,
+  "LLVM_tools_used": false
+}

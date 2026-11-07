@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-llvm-native-image-opt-20261107-v4/build.json",
+    "--source",
+    "/private/tmp/mech-related-native-check-census-20261107-v1/parent-runner.rs",
+    "--out",
+    "/private/tmp/mech-related-native-check-census-20261107-v1/parent-runner-jit"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 2.1783673339523375,
+  "stdout": "{\"seconds\": 1.6493965000845492, \"exit\": 0}\n",
+  "stderr": "",
+  "diagnostic_timings_excluded": true
+}
