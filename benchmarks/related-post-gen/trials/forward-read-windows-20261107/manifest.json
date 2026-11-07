@@ -1,0 +1,2569 @@
+{
+  "schema": "mech.related-post-gen.trial-evidence-manifest.v2",
+  "compiler_commit": "f018ed15430d173d3f931f1f59ac0f6ed83eca11",
+  "selected": false,
+  "files": {
+    "trial.json": {
+      "sha256": "3025ba31e44f6582d9bf7f7a10e1e9397cd636119efa50fc09ec929fb5f4c526",
+      "bytes": 97521,
+      "decoded_sha256": "3025ba31e44f6582d9bf7f7a10e1e9397cd636119efa50fc09ec929fb5f4c526",
+      "decoded_bytes": 97521,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/compiler-native-forward-read-windows-20261107.json"
+    },
+    "latency.json.gz": {
+      "sha256": "e42991cde78c813f93fc021b1f9e90648e88126402dcb5c0aef33a92f31b81c1",
+      "bytes": 22447,
+      "decoded_sha256": "d02f99fffad0cc8cbb30cda45964f84aa707643061407c51b4bb25e3849cd963",
+      "decoded_bytes": 405861,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-forward-read-windows-randomized-20261107-5000-m3.json"
+    },
+    "resources.json.gz": {
+      "sha256": "42a12a53482218e7a78a934dde36a100850b008808acd73d32d5cd55f9449528",
+      "bytes": 42941,
+      "decoded_sha256": "9ed9fb10f0b468da2851ef77d71c2b9dfadc5ee3952e48c33f62d215b0d80e19",
+      "decoded_bytes": 497522,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-native-forward-read-windows-resources-20261107-5000-m3.json"
+    },
+    "sizes.json.gz": {
+      "sha256": "c2c85dfecea6ce4f0b86141b2b279f0a11e6766e530ca87169638c578ccbfd6c",
+      "bytes": 3597,
+      "decoded_sha256": "141111aa4f43071921d241d96808ab1dfa9f43a1a2bd77bac422ae1f0233e07f",
+      "decoded_bytes": 18819,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/size-native-forward-read-windows-20261107.json"
+    },
+    "24-hour-progress.json": {
+      "sha256": "93d69196ec818b143e600b6e549c399b2b816d9abdd991e9dc7e3059c0706bf4",
+      "bytes": 17202,
+      "decoded_sha256": "93d69196ec818b143e600b6e549c399b2b816d9abdd991e9dc7e3059c0706bf4",
+      "decoded_bytes": 17202,
+      "retained_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/compiler-native-24-hour-progress-20261107T114151Z.json"
+    },
+    "v1/opt/source-inventory.json.gz": {
+      "sha256": "a8530fbb922679218341d878fa5d3c6a547d275c85f537667b52d637b0a68526",
+      "bytes": 116528,
+      "decoded_sha256": "f25641d24a2026662321a8b4a989985627a40edacc907d4583d1f618acbb2e80",
+      "decoded_bytes": 314803,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v1/source-inventory.json"
+    },
+    "v1/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v1/mech_gpu.stdout.log"
+    },
+    "v1/opt/mech_gpu.build.json.gz": {
+      "sha256": "60f00cfd5e6631889a7e5efd398e1f02f45fabf85f061912c91e7222cf7cdf1c",
+      "bytes": 1835,
+      "decoded_sha256": "89a335e854873e3ca20987b898b68fb33e5aa16581b94e4e4990c2cbd101f6aa",
+      "decoded_bytes": 11757,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v1/mech_gpu.build.json"
+    },
+    "v1/opt/compiler-facts.rs.gz": {
+      "sha256": "995814ed83e9c5355589254ec17fbc42b72254fcd91760b1e906e6f2251d9936",
+      "bytes": 2008,
+      "decoded_sha256": "8ca13d1b4abf8b9eadd200de854c35c4de541f7756baab65da72a1fb985eb620",
+      "decoded_bytes": 6179,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v1/compiler-facts.rs"
+    },
+    "v1/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v1/mech_gpu.stderr.log"
+    },
+    "v1/opt/compiler.build.json.gz": {
+      "sha256": "6c41e9e71ffa27bb185b016d6a4b2e22c31fd9c79a52db53b3f79a1daea34aa2",
+      "bytes": 2169,
+      "decoded_sha256": "c0a1dd417da2028bb236399cd35064199d044e913b2b7144c7161591a4c48ab0",
+      "decoded_bytes": 12619,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v1/compiler.build.json"
+    },
+    "v1/opt/build.json.gz": {
+      "sha256": "803f97d7304d2a8dc56023dd0aca9de3c18165359be8def5e1d48ba25019cf71",
+      "bytes": 6914,
+      "decoded_sha256": "8163169634e922200ad611cff00fb79975f9850c6d7bce5202bf4a66f39027f5",
+      "decoded_bytes": 79490,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v1/build.json"
+    },
+    "v1/opt/compiler-build-run.json.gz": {
+      "sha256": "2c70ade5b91825e886f0a4ec8c390cdd389b865ad041eabf2813813988bfbae3",
+      "bytes": 274,
+      "decoded_sha256": "75d99d1c8d742237accb3144403590de2edd9aa6d0437365afb3209c35e6fa44",
+      "decoded_bytes": 541,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v1/compiler-build-run.json"
+    },
+    "v1/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v1/mech_gpu-build.stderr.log"
+    },
+    "v1/tests/focus-numeric_forward_windows.stderr.log.gz": {
+      "sha256": "d9dbc392071a8e09b3d03f2904fc4df3f6be6c157293d6f2529dd2426b7bb890",
+      "bytes": 320,
+      "decoded_sha256": "c0ebcdd711bfe722e85ac9acda358d740bdd1d180594dfd2941bead47353095f",
+      "decoded_bytes": 473,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v1/focus-numeric_forward_windows.stderr.log"
+    },
+    "v1/tests/build-and-test.py.gz": {
+      "sha256": "8d2b7a858625b1e968adcbac55e7fcc76cb6dcd713dcdebc6e0986f4d27783e4",
+      "bytes": 1772,
+      "decoded_sha256": "51e451d778ced070ea0f9f99d09f5a2dfe33dd237c3679dbc350ff55053ce454",
+      "decoded_bytes": 4186,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v1/build-and-test.py"
+    },
+    "v1/tests/mech_gpu-build.json.gz": {
+      "sha256": "2568069e552f53da4f23d211eb181068ee03a22ee954c8656fff245601b037ca",
+      "bytes": 1531,
+      "decoded_sha256": "8b83df2e9ac33e08c375182ebc8d891603328c06b8f25d28fffc75b9f5e6a242",
+      "decoded_bytes": 11134,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v1/mech_gpu-build.json"
+    },
+    "v1/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v1/mech_gpu-build.stdout.log"
+    },
+    "v1/tests/focus-numeric_forward_windows.stdout.log.gz": {
+      "sha256": "c84df1faa279cc06a108c9bd901e495b1d2a2cbe30568be2c134b172aeaa6e77",
+      "bytes": 527,
+      "decoded_sha256": "170d16f1c423bd8c192713eda9bb6e7915c2de6689be884d64c8a449f25c87d5",
+      "decoded_bytes": 3927,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v1/focus-numeric_forward_windows.stdout.log"
+    },
+    "v1/tests/focus-numeric_forward_windows.json.gz": {
+      "sha256": "0bc5c28e6bc31b6f8b3572669980191cee54d4f5d64905478161847f326413cd",
+      "bytes": 182,
+      "decoded_sha256": "c5abc159163bb64d3f8a0da2a9dc1034709849416f991b6c9ad76d08dc3505ce",
+      "decoded_bytes": 231,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v1/focus-numeric_forward_windows.json"
+    },
+    "v1/regressions/run.py.gz": {
+      "sha256": "af7722253de6750008e73e8c0a8c9ecb4f6966743e16dd9a399c27226202971c",
+      "bytes": 1425,
+      "decoded_sha256": "e1e9d1b8635c8e9b123c20e8478b407561d376166b45b76b1eff655d831d15ed",
+      "decoded_bytes": 3558,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v1/run.py"
+    },
+    "v1/regressions/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v1/one-kib-comparison.json"
+    },
+    "v1/regressions/one-kib-run.json.gz": {
+      "sha256": "65ae4a10005e6056ec281ff46b45f6a95209f021f6f7af6f5f84f68a4a4b080a",
+      "bytes": 715,
+      "decoded_sha256": "47134611c149b1980f2fafb5348b17bb11ae8569748cf3b467b0f7edd57fe2e7",
+      "decoded_bytes": 3240,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v1/one-kib-run.json"
+    },
+    "v1/regressions/scalar-run.json.gz": {
+      "sha256": "1c38ff48dc0385ac8050e04b425131a46c827d775d3fdc83e6c592e141da1b02",
+      "bytes": 1676,
+      "decoded_sha256": "c87748435108c936980a165dbaacf23d0b3c14c3927a01ba06ef3da7c4dbb9e4",
+      "decoded_bytes": 39463,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v1/scalar-run.json"
+    },
+    "v1/regressions/one-kib.build.json.gz": {
+      "sha256": "528240a562dfdcabb761ddc629059190ee32412dadcee99d7fad216a742a8cfe",
+      "bytes": 1217,
+      "decoded_sha256": "e215b7eae3ccd572b5847d25393a44261e14af4daa633f49a7de4d38e76efa09",
+      "decoded_bytes": 4565,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v1/one-kib.build.json"
+    },
+    "v1/regressions/scalar.build.json.gz": {
+      "sha256": "1aad7c0ff5d75c669f1e605e3c300222e625a6685a10c459352541e5e28301a2",
+      "bytes": 814,
+      "decoded_sha256": "050fda744d404135e9ecd4b66565aa65de44c6195409d7e7254e0a6bb39de868",
+      "decoded_bytes": 2365,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v1/scalar.build.json"
+    },
+    "v1/regressions/scalar-comparison.json.gz": {
+      "sha256": "8a00f7913bd5fa3c9853918a18321386f04e6e27c093c175589c08d0367a4bcb",
+      "bytes": 826,
+      "decoded_sha256": "7bb2b53dfcba3029e86f74a4c51dd2314f8237c29817bc55f0521001aa6fc5c0",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v1/scalar-comparison.json"
+    },
+    "v1/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/after-4/runner.rs"
+    },
+    "v1/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "10b73d95b85af9ac7b800ec698ee9fd8ded2940a54342bf36ffe8dad3ac06f92",
+      "bytes": 2083,
+      "decoded_sha256": "3eec2a41acb11b889002881b2e610c610b626e80cbce7d3b8faf948284417696",
+      "decoded_bytes": 13177,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/after-4/native-link-audit.json"
+    },
+    "v1/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "3d7253437cf779fbe856f0f807d5fec7cd7859a1fdfc1a6cebd65bbd3100aa56",
+      "bytes": 3385,
+      "decoded_sha256": "69cc2ab19ee27c982ce7ad99419868abcfce1003e8e1b85d6477009ccd3e2d59",
+      "decoded_bytes": 17505,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/after-4/runner-aot.build.json"
+    },
+    "v1/runners/after-4/edge-run.json.gz": {
+      "sha256": "dcc2a9642c9f24ccf10c1f27866e5a568a13d47ca6c307082d47e83c487c0514",
+      "bytes": 692,
+      "decoded_sha256": "6fbbc805523a6be0d3662095a10f1efcf333fe909faa550a230228787d92510c",
+      "decoded_bytes": 2853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/after-4/edge-run.json"
+    },
+    "v1/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "c9f19517eedf38f7299219bf1c9b8e65ddd34f22e04125710f701b288109afff",
+      "bytes": 5475,
+      "decoded_sha256": "fae8ac9d9044846cfeb44e463c22c62c1239e488dd1f292d183095125dd11740",
+      "decoded_bytes": 62521,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/after-4/edges/edge-fixtures.json"
+    },
+    "v1/runners/after-4/build/metadata.json.gz": {
+      "sha256": "3931b172e84a865d6807d6ed2682cb20f50e9e7bad997b93e2211923f47f60ce",
+      "bytes": 140104,
+      "decoded_sha256": "cecbc592dad6f38ff4efe77f6e26d0f37aae46326c0ae857f50a7d9298efe16e",
+      "decoded_bytes": 2735883,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/after-4/build/metadata.json"
+    },
+    "v1/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/after-4/build/source.mec"
+    },
+    "v1/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/reuse-4/runner.rs"
+    },
+    "v1/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "30535755052bf5ff68b06dfcb0495608ef722f4d535d9e9bd3ff9266832b79b6",
+      "bytes": 2058,
+      "decoded_sha256": "c1f79293cb94284949765137c48836cda2dc4c1749305674f60d8cc360653a3d",
+      "decoded_bytes": 12853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/reuse-4/native-link-audit.json"
+    },
+    "v1/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "be42d4c5f18875f2e1ded9f7ea835b79a0cd5d9f04029569cc23792c18400d68",
+      "bytes": 3382,
+      "decoded_sha256": "623dbffa9778f8e6214182c66b8bab47089e8e6fba3a14657ffb27c7a80a923d",
+      "decoded_bytes": 17504,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/reuse-4/runner-aot.build.json"
+    },
+    "v1/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "10cbc8cd14ee7df06815ffa1cc9510bbaf4801f44962af851eae5f668dd6c922",
+      "bytes": 693,
+      "decoded_sha256": "0030204f2fd154680493f1cee9fef0499a56edc4398b3997dfcebdb7640b4ee7",
+      "decoded_bytes": 2853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/reuse-4/edge-run.json"
+    },
+    "v1/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "5eb897f6f3b3a36d7bdf09dd36849c479388405452954b8d98e2c42c9d7b4b60",
+      "bytes": 5414,
+      "decoded_sha256": "ba1dcea5e87eb4e5d3727399d92f18c4cf4b0153fe96a2702f86789526f19039",
+      "decoded_bytes": 62478,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/reuse-4/edges/edge-fixtures.json"
+    },
+    "v1/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "3b6f53f5fe47b0dc93875545fc61e822d5e0a7894c068c008f28281fe2a05a22",
+      "bytes": 138150,
+      "decoded_sha256": "b38e272e6bdeae0b683193d4a39c63e6bdbc403262d6b6d8d2fdaff16ed5eab4",
+      "decoded_bytes": 2700911,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/reuse-4/build/metadata.json"
+    },
+    "v1/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/reuse-4/build/source.mec"
+    },
+    "v1/runners/build-initial-runners.py.gz": {
+      "sha256": "4983b0cf82368d50b8a8dcd6a878aa8b2e0db02c367c8c44bd99aa23e5a9dd18",
+      "bytes": 1375,
+      "decoded_sha256": "a7c7e2f6b676906aa8da049445b311f6bcce3aad520e32373a19c4f268a85a8b",
+      "decoded_bytes": 3323,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/build-initial-runners.py"
+    },
+    "v1/runners/native-code-comparison.json.gz": {
+      "sha256": "3b7c315ac4ed2156e77291ddf967329793190ee04fbc14de5c7c7bbb915e3416",
+      "bytes": 2893,
+      "decoded_sha256": "474c782a4ff679a7399c9947a37ea16730db2bf2c48f62530c29f6ab20b510f9",
+      "decoded_bytes": 26602,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/native-code-comparison.json"
+    },
+    "v1/runners/native-text-equality.json.gz": {
+      "sha256": "c7f120bfd142ecaedef5a02a6b752d4e30e48b1b77dd3bca25e0e21da1a7341c",
+      "bytes": 221,
+      "decoded_sha256": "9af8cd36e69e117cf37fe4694e3fb3d2009ed1169e216fc809aa7303f9cc3711",
+      "decoded_bytes": 363,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v1/native-text-equality.json"
+    },
+    "v2/opt/source-inventory.json.gz": {
+      "sha256": "728b52c9d713031a30ac9933cd680d1671dbb0e46fb2f96784478924ad02e49d",
+      "bytes": 116531,
+      "decoded_sha256": "df65c9f00ceff3a4d0f81a92cb971846aeb3798e884c0adb18fca7d2abffc5ab",
+      "decoded_bytes": 314803,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v2/source-inventory.json"
+    },
+    "v2/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v2/mech_gpu.stdout.log"
+    },
+    "v2/opt/mech_gpu.build.json.gz": {
+      "sha256": "48ce05742bebf5dd2308a439abacd2af180a38572b8e491f2585c5737cd1f27d",
+      "bytes": 1839,
+      "decoded_sha256": "afe79e6233c0313b73ed7ec091b854de0193be53fec3823d1b1143407e93a693",
+      "decoded_bytes": 11848,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v2/mech_gpu.build.json"
+    },
+    "v2/opt/compiler-facts.rs.gz": {
+      "sha256": "995814ed83e9c5355589254ec17fbc42b72254fcd91760b1e906e6f2251d9936",
+      "bytes": 2008,
+      "decoded_sha256": "8ca13d1b4abf8b9eadd200de854c35c4de541f7756baab65da72a1fb985eb620",
+      "decoded_bytes": 6179,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v2/compiler-facts.rs"
+    },
+    "v2/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v2/mech_gpu.stderr.log"
+    },
+    "v2/opt/compiler.build.json.gz": {
+      "sha256": "bcbc6528083a0e1f492fe071f50b3ccd1df1ae3d7cfe4d85f863941b2006bd4a",
+      "bytes": 2170,
+      "decoded_sha256": "a2802587d4e787d39ee68b74548f0c9e0ee96117b0a4e12a3bc062823ce8cd25",
+      "decoded_bytes": 12709,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v2/compiler.build.json"
+    },
+    "v2/opt/build.json.gz": {
+      "sha256": "cb0f0d1ddf86cd6c1f0d307855fb5c802988bdfee3740f797c0de855c2b8ae62",
+      "bytes": 6909,
+      "decoded_sha256": "2c518614733aeda2567d7dcba1708ab5f8a51b845af7a3dd1597351d3e13c2e8",
+      "decoded_bytes": 79585,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v2/build.json"
+    },
+    "v2/opt/compiler-build-run.json.gz": {
+      "sha256": "f1865f4b5b2be8722119f7a9061bf9c35307e387ebb4eedc91b32a50bd1d9b2f",
+      "bytes": 275,
+      "decoded_sha256": "af9be0be50445399a227c918cdf21d340bc11f45d0076df6da45c15b0f927d21",
+      "decoded_bytes": 541,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v2/compiler-build-run.json"
+    },
+    "v2/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v2/mech_gpu-build.stderr.log"
+    },
+    "v2/tests/focus-numeric_forward_windows.stderr.log.gz": {
+      "sha256": "e15e19a25f5eb33190e7be453febc34a091ce74d08ad1de4cdac35167b392215",
+      "bytes": 320,
+      "decoded_sha256": "d3ba8e0956837e734b286f8c6475240cdfdf2d1f431f8e2cc50797c76539819c",
+      "decoded_bytes": 473,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v2/focus-numeric_forward_windows.stderr.log"
+    },
+    "v2/tests/build-and-test.py.gz": {
+      "sha256": "58ef7bdbdf6e1106441291c5473ca9df600901c28bc3f0e8d0e3a7304cbe01c1",
+      "bytes": 1771,
+      "decoded_sha256": "bf3bf7fccaacb60e689b17f201b8f3bc022bba3c53975cfca068c2d7f0ceee9e",
+      "decoded_bytes": 4186,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v2/build-and-test.py"
+    },
+    "v2/tests/mech_gpu-build.json.gz": {
+      "sha256": "c487871350854f81f6190225d44316b5a230d9b18dc9a8bda971554b479d5025",
+      "bytes": 1536,
+      "decoded_sha256": "a9ffa7c8a9d5273cdabebac8e011023b8048bee00c6c8161ae9ad5c771b0f7a8",
+      "decoded_bytes": 11225,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v2/mech_gpu-build.json"
+    },
+    "v2/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v2/mech_gpu-build.stdout.log"
+    },
+    "v2/tests/focus-numeric_forward_windows.stdout.log.gz": {
+      "sha256": "4ec8430e95229afab46cb0808093305d6a4bfbf638b558154abd98de85d64be1",
+      "bytes": 505,
+      "decoded_sha256": "c7159e08ac337c3555e68990e8f4de6e0f857b436725ef6b20a8d56afe8741e8",
+      "decoded_bytes": 3925,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v2/focus-numeric_forward_windows.stdout.log"
+    },
+    "v2/tests/focus-numeric_forward_windows.json.gz": {
+      "sha256": "abae3ef428ad9fcecb6f79fd830a9aa5e31f535d3620deb2a1b34544aa95008a",
+      "bytes": 180,
+      "decoded_sha256": "aefce725f70c358b3031a944e357f850d04bdffa3c0d5b790d2655c2c07a7a3d",
+      "decoded_bytes": 230,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v2/focus-numeric_forward_windows.json"
+    },
+    "v2/regressions/run.py.gz": {
+      "sha256": "d5365d394a935537a8b3ff080f56525827e5ac5bd69d471e3129e8c07b663d56",
+      "bytes": 1426,
+      "decoded_sha256": "0921346f9e4f415e08a93c7da62e0ce98676420de1431ccc82b438149c8e95e9",
+      "decoded_bytes": 3558,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v2/run.py"
+    },
+    "v2/regressions/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v2/one-kib-comparison.json"
+    },
+    "v2/regressions/one-kib-run.json.gz": {
+      "sha256": "073e468d626f2bcc7c37e41271e63993b77fd7a9b2da33505ee9aa091a7cf653",
+      "bytes": 717,
+      "decoded_sha256": "4583546815df7b5b590411101a009431f291f9aec2df0a0af33e2094dde8664c",
+      "decoded_bytes": 3243,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v2/one-kib-run.json"
+    },
+    "v2/regressions/scalar-run.json.gz": {
+      "sha256": "218af78099e0678fee55b03481fcf9898960b4cefb82db795a8c53f28c6f840b",
+      "bytes": 1655,
+      "decoded_sha256": "5fe0ed18fd379108b633407332893fbb2bcd8238ba7f32a3ea880443409a49b8",
+      "decoded_bytes": 39408,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v2/scalar-run.json"
+    },
+    "v2/regressions/one-kib.build.json.gz": {
+      "sha256": "9eae29fb801d8277b548e4fd47206f3ecbb425977d17f45949445dd5c0e24fa3",
+      "bytes": 1216,
+      "decoded_sha256": "927382f6f1130e90937323b0f5bb5bf9189dd737adab4462ed0b511926026fd4",
+      "decoded_bytes": 4564,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v2/one-kib.build.json"
+    },
+    "v2/regressions/scalar.build.json.gz": {
+      "sha256": "e21404a0c2e6d446c6e8e56b0156e288662d3dba20237605da3d821370a78b02",
+      "bytes": 815,
+      "decoded_sha256": "9c6d5a62bf3cff3335ad3d5c605c4db048a46e7a4a0d63e8a4489f82ee95cdcd",
+      "decoded_bytes": 2366,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v2/scalar.build.json"
+    },
+    "v2/regressions/scalar-comparison.json.gz": {
+      "sha256": "8a00f7913bd5fa3c9853918a18321386f04e6e27c093c175589c08d0367a4bcb",
+      "bytes": 826,
+      "decoded_sha256": "7bb2b53dfcba3029e86f74a4c51dd2314f8237c29817bc55f0521001aa6fc5c0",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v2/scalar-comparison.json"
+    },
+    "v2/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/after-4/runner.rs"
+    },
+    "v2/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "930ac1eea7cf895bbdab1fc5df114059dc455196afd97a3c78ae22ee52a54299",
+      "bytes": 2075,
+      "decoded_sha256": "68c2c953dfcfe94b9ae79855394b9fa7428973dc187da98645b4315e1842441b",
+      "decoded_bytes": 13177,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/after-4/native-link-audit.json"
+    },
+    "v2/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "498e7d0b46b9820a2fc46accc6ee0db138eccc7411ff00f836fd10a96f822984",
+      "bytes": 3387,
+      "decoded_sha256": "89267ffa05cefced528e13a029cb2577f3acebabe6daaef091df44978ea7aff2",
+      "decoded_bytes": 17595,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/after-4/runner-aot.build.json"
+    },
+    "v2/runners/after-4/edge-run.json.gz": {
+      "sha256": "cd9442a95001b046602a502561463452453a1d97d88b1038b7262d73ad23d68d",
+      "bytes": 690,
+      "decoded_sha256": "d5da1d6eb061cdfde5e91152d1e2b7ab7b13e6eddbb175f7ce5f882e6891f43f",
+      "decoded_bytes": 2851,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/after-4/edge-run.json"
+    },
+    "v2/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "07781e2b8487b591f630793fe3a7e935b4b698bcddc4ab14f0e7847519521088",
+      "bytes": 5453,
+      "decoded_sha256": "6fc71de2078e916bee818ef4b09a27c0b4a64779d4291bd547a1e3bcd4b74711",
+      "decoded_bytes": 62498,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/after-4/edges/edge-fixtures.json"
+    },
+    "v2/runners/after-4/build/metadata.json.gz": {
+      "sha256": "1a45d6b360ea55a423968da131cd16f5877949ba816c301217f80d0cddfb9adf",
+      "bytes": 140099,
+      "decoded_sha256": "99ef124021684c487bc9b4d6fc9cbb22cdbf9fb75a9a7c65010f5094704c84b6",
+      "decoded_bytes": 2735883,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/after-4/build/metadata.json"
+    },
+    "v2/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/after-4/build/source.mec"
+    },
+    "v2/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/reuse-4/runner.rs"
+    },
+    "v2/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "d1c87d9da770232bc8392e4f0f34ba14e09fe043c1dad7d68e7c7f591fe06239",
+      "bytes": 2059,
+      "decoded_sha256": "bb35919b366acc64ece49c120eb4211b1e17380de1e159b3020416ae85ead3f9",
+      "decoded_bytes": 12853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/reuse-4/native-link-audit.json"
+    },
+    "v2/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "c880740893f4615f6fc266e18ae19531f8091eaff710b69e300224970984a879",
+      "bytes": 3385,
+      "decoded_sha256": "90b76c46eb0e7dcaa0de4251a7783cad12a30a5b9cfa2a29381c788d60ce2165",
+      "decoded_bytes": 17596,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/reuse-4/runner-aot.build.json"
+    },
+    "v2/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "e16cd92e846c50eb44054da1b54f031c50adb913ebb8d675c01caae9df3ec844",
+      "bytes": 693,
+      "decoded_sha256": "c048df68193339f9408d9c79cebf7bd20139d161fac9e135a13aba8abbb54c30",
+      "decoded_bytes": 2853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/reuse-4/edge-run.json"
+    },
+    "v2/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "88a79e046d7e397ee8bba4dd6fc7bced458b71e5500a798291abe5f2195048ea",
+      "bytes": 5408,
+      "decoded_sha256": "147c04c74a0f2be1439d247e72611086418210a8025ec773498611459767561c",
+      "decoded_bytes": 62434,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/reuse-4/edges/edge-fixtures.json"
+    },
+    "v2/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "4b0a9e1a0248bd43bd4759a586b298e46c73beab009521b3d8cc7500ad970473",
+      "bytes": 138140,
+      "decoded_sha256": "d01a1f04973609505fdc08adbfe62f9b5401dc129b68b182b93a6084762abb20",
+      "decoded_bytes": 2700911,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/reuse-4/build/metadata.json"
+    },
+    "v2/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/reuse-4/build/source.mec"
+    },
+    "v2/runners/build-initial-runners.py.gz": {
+      "sha256": "49c35c3951456e4d5e8ed745fbc9f29dcf8f18c5ff648a02f7adb3a74922e2d5",
+      "bytes": 1378,
+      "decoded_sha256": "95027b321749c767d6e4582bed43eba5ac17190404c13e92f935cc76cd10a2b1",
+      "decoded_bytes": 3323,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/build-initial-runners.py"
+    },
+    "v2/runners/native-code-comparison.json.gz": {
+      "sha256": "c4cd1ed266708ed86372e55722116f65db62be1349bdd46835102a937c673f92",
+      "bytes": 2891,
+      "decoded_sha256": "e43980f6d14b3aeee756ba873508db1ed15f1227c1fe8e416f14769e8b9469af",
+      "decoded_bytes": 26602,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v2/native-code-comparison.json"
+    },
+    "v3/opt/source-inventory.json.gz": {
+      "sha256": "a61e868dbe0c784b458c3c86b9fa54374425c1294a462128ad6ab756b47ef34e",
+      "bytes": 116530,
+      "decoded_sha256": "26bd30411a42feadf43a39f1cec54ec401b6b4d23a38a6a0bee7a7f3e8f273dc",
+      "decoded_bytes": 314803,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v3/source-inventory.json"
+    },
+    "v3/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v3/mech_gpu.stdout.log"
+    },
+    "v3/opt/mech_gpu.build.json.gz": {
+      "sha256": "0ffcbddb1d6fd6486e9b11220e8b1cac1ea939adb13a29d9bbf2ed2fbd5ddd17",
+      "bytes": 1841,
+      "decoded_sha256": "490588a63dc7ea64780b867fca510bf4dce67bd85511b5631b167fa685d6f760",
+      "decoded_bytes": 11939,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v3/mech_gpu.build.json"
+    },
+    "v3/opt/compiler-facts.rs.gz": {
+      "sha256": "995814ed83e9c5355589254ec17fbc42b72254fcd91760b1e906e6f2251d9936",
+      "bytes": 2008,
+      "decoded_sha256": "8ca13d1b4abf8b9eadd200de854c35c4de541f7756baab65da72a1fb985eb620",
+      "decoded_bytes": 6179,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v3/compiler-facts.rs"
+    },
+    "v3/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v3/mech_gpu.stderr.log"
+    },
+    "v3/opt/compiler.build.json.gz": {
+      "sha256": "5594c1ed235e579829291dfd1b8443400404b2c87cd992405eed1ed8a5d15c6b",
+      "bytes": 2172,
+      "decoded_sha256": "53a6e619428eb1237c989bf7bff28d6d3063c793bdc3537001d36dd7983227f6",
+      "decoded_bytes": 12801,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v3/compiler.build.json"
+    },
+    "v3/opt/build.json.gz": {
+      "sha256": "a6a11b137ec42283a5680da2d14b93d9cc0c4cc74ef05685f6e3d3f9f9118d76",
+      "bytes": 6912,
+      "decoded_sha256": "1319119ef87efbe8927536f1958a666d3001f5f39128e2db09aba1132984f914",
+      "decoded_bytes": 79684,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v3/build.json"
+    },
+    "v3/opt/compiler-build-run.json.gz": {
+      "sha256": "1644e56eb2403dac5ce260e761516f6c909afc902206bda80371781e2a3a75fc",
+      "bytes": 274,
+      "decoded_sha256": "99405b54d8c4229cb7d6e9db15cff23642b3cb72706601e6be2c74924f871a52",
+      "decoded_bytes": 541,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v3/compiler-build-run.json"
+    },
+    "v3/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v3/mech_gpu-build.stderr.log"
+    },
+    "v3/tests/focus-numeric_forward_windows.stderr.log.gz": {
+      "sha256": "3a17ebea58922a73142e3d4e4b8d94d7e77abd905015c70dece9fd886adf6201",
+      "bytes": 321,
+      "decoded_sha256": "469d2e70aa4fff47a5c5dc49324106011e0b3459821f1b6153598bc692bd6c6e",
+      "decoded_bytes": 473,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v3/focus-numeric_forward_windows.stderr.log"
+    },
+    "v3/tests/build-and-test.py.gz": {
+      "sha256": "a8aaa5b1414325a532f21d8a9537b260150a2d0e022c574c141a1d00eba67001",
+      "bytes": 1772,
+      "decoded_sha256": "0c5af4e8a2426753089aec92f49ebf59f0b12156e72008ffb06bc35444b83d45",
+      "decoded_bytes": 4186,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v3/build-and-test.py"
+    },
+    "v3/tests/mech_gpu-build.json.gz": {
+      "sha256": "32f945b55b4573b5441500eb140184f91533e910f28dc80171d5a84e6b461af5",
+      "bytes": 1539,
+      "decoded_sha256": "ffb78cd07f54b5821b49f29a438c772dec187d4c7f4a390ae66c3d94242d5a59",
+      "decoded_bytes": 11317,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v3/mech_gpu-build.json"
+    },
+    "v3/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v3/mech_gpu-build.stdout.log"
+    },
+    "v3/tests/focus-numeric_forward_windows.stdout.log.gz": {
+      "sha256": "715af95238d9c64f56daf433be39aded43075516f34a29be34979e2ed37ecc11",
+      "bytes": 505,
+      "decoded_sha256": "669c90d642e5039d15f8040bc7d10fe006c73c68a7e97bd420c186244e99d9e1",
+      "decoded_bytes": 3925,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v3/focus-numeric_forward_windows.stdout.log"
+    },
+    "v3/tests/focus-numeric_forward_windows.json.gz": {
+      "sha256": "d157e3d445c56c851cce08df0bcd52e9c4f2abbe4d0b08c343010723f106ede9",
+      "bytes": 181,
+      "decoded_sha256": "b3e98fb4e7f9f110069fe516a7bd75facc26536e68c4f84ace83b5a76e168ddb",
+      "decoded_bytes": 230,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v3/focus-numeric_forward_windows.json"
+    },
+    "v3/regressions/run.py.gz": {
+      "sha256": "ee9095de9be17341be88c4a4682789f004a7a37d29408cadb7ef8d21cb645df7",
+      "bytes": 1426,
+      "decoded_sha256": "69a9a64556514ee7cdf2ca76706cb7c39a4fb2caf9f5d6c466b60ee19c4f866a",
+      "decoded_bytes": 3558,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v3/run.py"
+    },
+    "v3/regressions/one-kib-comparison.json.gz": {
+      "sha256": "aa886359dc652bd5060f112047419588fb82ba51e441abfa98b70c0ad1da26a9",
+      "bytes": 326,
+      "decoded_sha256": "08447f431e4a5eca642ff0d38fe1c9771c48046cb302e81b828eaa12517c18d3",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v3/one-kib-comparison.json"
+    },
+    "v3/regressions/one-kib-run.json.gz": {
+      "sha256": "5cbc22a1ae908a29a08813575cfb6d6516c582297af841c456627b9ce16039de",
+      "bytes": 715,
+      "decoded_sha256": "ac1318694d188bdb5f91129184568ca33db3d187986bfea2855b3f3793d0f8a9",
+      "decoded_bytes": 3242,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v3/one-kib-run.json"
+    },
+    "v3/regressions/scalar-run.json.gz": {
+      "sha256": "e3f63dd5c384ed5c9a9aa7b9215422da3223a303990d5672766faf59fa8fbcd5",
+      "bytes": 1676,
+      "decoded_sha256": "21bb7abf30c5350c429e90b05870c2408a45a584333286a33bc45c3ab60ac50f",
+      "decoded_bytes": 39389,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v3/scalar-run.json"
+    },
+    "v3/regressions/one-kib.build.json.gz": {
+      "sha256": "73ab965c70f74e3a2a254208aecdcdd8199bde61a0cbc9c612efad8ba8bb3ba9",
+      "bytes": 1217,
+      "decoded_sha256": "85385fc50b4bf07c01fafa86f3fb5d6cf397bc41cc851aff7b6fecbf97b64230",
+      "decoded_bytes": 4563,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v3/one-kib.build.json"
+    },
+    "v3/regressions/scalar.build.json.gz": {
+      "sha256": "763e2783dd4e45be6e21d70123ed8b153918b30d21923f9b9c6595f007c04b97",
+      "bytes": 813,
+      "decoded_sha256": "b0222b85273a6e0ba33d44c23969745f9d05158bd8306bf08470923045e60059",
+      "decoded_bytes": 2365,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v3/scalar.build.json"
+    },
+    "v3/regressions/scalar-comparison.json.gz": {
+      "sha256": "732d178ff3c4d408a7477c1fe33d656ac928ff9d2eaef6d37905d22a7d65c736",
+      "bytes": 825,
+      "decoded_sha256": "67ccca05956db06a885ed0e4c066b8430497d497b8c3ed8affccb88bd39ed3ab",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v3/scalar-comparison.json"
+    },
+    "v3/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/after-4/runner.rs"
+    },
+    "v3/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "43f478d6aaf3fe025d94316838dc36f2ab03c96e15de3d4f8666c8424d94f344",
+      "bytes": 2091,
+      "decoded_sha256": "f22ee70a56e585551b8c4d6823cb75dc272f40b48bb8d73d07b7d6dfa0f6ccaa",
+      "decoded_bytes": 13177,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/after-4/native-link-audit.json"
+    },
+    "v3/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "80fa15830de3b6ca9a61a68130873fc763f2cf566c059ba2dc670b17e4680fa1",
+      "bytes": 3389,
+      "decoded_sha256": "4b958fc214872f9a2335afd18f79397d949a7a84650f8cc30221037cb284f62a",
+      "decoded_bytes": 17687,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/after-4/runner-aot.build.json"
+    },
+    "v3/runners/after-4/edge-run.json.gz": {
+      "sha256": "1d4307177e287c6980ea65addd131ba8a3bb1aabcce7f7ec327e852a430ee7d5",
+      "bytes": 693,
+      "decoded_sha256": "4e5d7a4613006cf0bc50bf80dd74c2cd229a5e5616e34c8321b9690001f68d36",
+      "decoded_bytes": 2853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/after-4/edge-run.json"
+    },
+    "v3/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "9f4afc6edd8156d3cc91d2b48a08e2c1b2a1e9ca4977d951425d87a2561e5e7d",
+      "bytes": 5451,
+      "decoded_sha256": "52bae7329490335fb241f267f08b6e39ffd9d7f9a80d7bb4655610ed5cd67a67",
+      "decoded_bytes": 62504,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/after-4/edges/edge-fixtures.json"
+    },
+    "v3/runners/after-4/build/metadata.json.gz": {
+      "sha256": "3cf2d8d8248061059b02b561b0bd527100f7b9bbcf7e88252a556c9912de390b",
+      "bytes": 140100,
+      "decoded_sha256": "61d1edabe3ed5ea160d5dd3e0de88d3f3c03ed0d3068ca543fabf4ff8da6f160",
+      "decoded_bytes": 2735883,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/after-4/build/metadata.json"
+    },
+    "v3/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/after-4/build/source.mec"
+    },
+    "v3/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/reuse-4/runner.rs"
+    },
+    "v3/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "c0b44a3e6a9b5becc84f5cf983fdb378cb9cea440b9bc39b2d948f6ec361c635",
+      "bytes": 2058,
+      "decoded_sha256": "7c9c8be1ad02a0bb0a2a6490b341bbdcdbf0b78d8ee357405ea8e60f8064d1ff",
+      "decoded_bytes": 12853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/reuse-4/native-link-audit.json"
+    },
+    "v3/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "58d2b9f41b33313a6c8cb8d4965a33ca2cf9bc3efacb077e2001eeee0bc3daa0",
+      "bytes": 3386,
+      "decoded_sha256": "e2da28ba1d8d7722e2448ff3f3c1a2ded0056f4ac14fc9591bc1b34cc2bdd691",
+      "decoded_bytes": 17687,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/reuse-4/runner-aot.build.json"
+    },
+    "v3/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "941ce4c0ac08133879cafe7b2b9d05864019f0170f56240e8d014a435fa26f5d",
+      "bytes": 694,
+      "decoded_sha256": "c4f3cced3bb5ba74bc7cea62bd7c60b8a75a804440b9301e2bd2489119ae7e6f",
+      "decoded_bytes": 2853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/reuse-4/edge-run.json"
+    },
+    "v3/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "23e35937d51b5ebd03aa5d01c6f40c3428367c4f43e0064375ca6b64f9faaccb",
+      "bytes": 5400,
+      "decoded_sha256": "9a0848f0466aaa83cf4b508cf49901e64243a267c8be3240580a9787230a7b3d",
+      "decoded_bytes": 62421,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/reuse-4/edges/edge-fixtures.json"
+    },
+    "v3/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "256153bc4235388fb0ffc0afafab77cba6089cb70227c7e77de9cdce1169d017",
+      "bytes": 138143,
+      "decoded_sha256": "7274aaf575832ef5dbd61b02d9b85f0d364612de0c8861d840bc8e921ef24634",
+      "decoded_bytes": 2700911,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/reuse-4/build/metadata.json"
+    },
+    "v3/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/reuse-4/build/source.mec"
+    },
+    "v3/runners/build-initial-runners.py.gz": {
+      "sha256": "bcf3e22dbb1d89dd3192cb5d587f6439d84acc22a57b64fb1296fb34c28e6253",
+      "bytes": 1378,
+      "decoded_sha256": "b5219738f8b380c7de2ee170383500a1313d453e5854b952fec696ff3f9ad2a4",
+      "decoded_bytes": 3323,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/build-initial-runners.py"
+    },
+    "v3/runners/native-code-comparison.json.gz": {
+      "sha256": "d6d091a371f55e4646301135cb27ee9be8da0e08b5fac2a176858a73a6b6707b",
+      "bytes": 2897,
+      "decoded_sha256": "ea39fa26dbb56c246da58846d408ecc7c86636b679dfa43cd6d6a2270279117c",
+      "decoded_bytes": 26602,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/native-code-comparison.json"
+    },
+    "v3/runners/native-text-equality.json.gz": {
+      "sha256": "f195e5a41707680086dbbf5169044c6d916faec237216a2a4efeb2929ad0b41d",
+      "bytes": 221,
+      "decoded_sha256": "b79503e09b66f19607041aedfd0bf82fa94855d84371d189033d73ad9867a8cf",
+      "decoded_bytes": 363,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v3/native-text-equality.json"
+    },
+    "v4/opt/source-inventory.json.gz": {
+      "sha256": "c8c984b9c882a53fa349bcb2df3456df909d92ab7d8ba09c16526c3d032c487c",
+      "bytes": 116525,
+      "decoded_sha256": "3b166614ac82b6e01958ea0969f5e6f1cde81904cfc36ecd4a11b10b63078b31",
+      "decoded_bytes": 314803,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v4/source-inventory.json"
+    },
+    "v4/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v4/mech_gpu.stdout.log"
+    },
+    "v4/opt/mech_gpu.build.json.gz": {
+      "sha256": "038547c0ec60c3a69f94489580c45eaca8ca00f64e98054058ec6843adce125c",
+      "bytes": 1844,
+      "decoded_sha256": "5fb64d2b3a237b13e4ddf051c3a0c8b956355aca511f4d0bba1e989744339d2c",
+      "decoded_bytes": 12030,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v4/mech_gpu.build.json"
+    },
+    "v4/opt/compiler-facts.rs.gz": {
+      "sha256": "995814ed83e9c5355589254ec17fbc42b72254fcd91760b1e906e6f2251d9936",
+      "bytes": 2008,
+      "decoded_sha256": "8ca13d1b4abf8b9eadd200de854c35c4de541f7756baab65da72a1fb985eb620",
+      "decoded_bytes": 6179,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v4/compiler-facts.rs"
+    },
+    "v4/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v4/mech_gpu.stderr.log"
+    },
+    "v4/opt/compiler.build.json.gz": {
+      "sha256": "5a39ebe45a59248d63b655f01c7741fc0e3436ec5a50c2e3c0f2d4efb341326c",
+      "bytes": 2182,
+      "decoded_sha256": "7655be4a83b171e14d14ee00a9cb3233ec8a12baae66208ddd3493b561eb346c",
+      "decoded_bytes": 12891,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v4/compiler.build.json"
+    },
+    "v4/opt/build.json.gz": {
+      "sha256": "faaaec85e417eea0d5183630ff5b2b4e28defbf9cc7d547dd7f2f703d9b31830",
+      "bytes": 6916,
+      "decoded_sha256": "53891113d0747b253729a6afc1ad1fc91c4a0360aa6f3d8c20b92a847d5f27f4",
+      "decoded_bytes": 79783,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v4/build.json"
+    },
+    "v4/opt/compiler-build-run.json.gz": {
+      "sha256": "d1565fc99816844e312be61557725b21a714fc393d909f5aa4f40b34289d52bc",
+      "bytes": 274,
+      "decoded_sha256": "84750dbd442239abf6e35c08621a2da121c160fd1d9eb8eca8b635bafaaf30bb",
+      "decoded_bytes": 541,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v4/compiler-build-run.json"
+    },
+    "v4/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v4/mech_gpu-build.stderr.log"
+    },
+    "v4/tests/focus-numeric_forward_windows.stderr.log.gz": {
+      "sha256": "b4b25798cd1b0ab7c54270ebc4788ac7c7394b240cf22dfa9f814da7fd4909d7",
+      "bytes": 350,
+      "decoded_sha256": "bc546f71358c19bc542d593f2df4154eb49f81e38ee8e2298f3973854621ac16",
+      "decoded_bytes": 508,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v4/focus-numeric_forward_windows.stderr.log"
+    },
+    "v4/tests/build-and-test.py.gz": {
+      "sha256": "14e75f1703768052408a7980b9cffe61bf278e5db1d80bd1a0e31ffb1d829a39",
+      "bytes": 1772,
+      "decoded_sha256": "46602647e1d26d7a117939f9a4186eb106770d8997dd893442579a55a6bf610d",
+      "decoded_bytes": 4186,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v4/build-and-test.py"
+    },
+    "v4/tests/mech_gpu-build.json.gz": {
+      "sha256": "0d6ec782073b3f14f2c4f4990a06ed2a7362c236031dad8f19eeadf5f7c2b14e",
+      "bytes": 1540,
+      "decoded_sha256": "79cc3ce8e12ee9b5f11d52ad63c512c6d87fa0353c52a0be7be2e42eabb23e0c",
+      "decoded_bytes": 11407,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v4/mech_gpu-build.json"
+    },
+    "v4/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v4/mech_gpu-build.stdout.log"
+    },
+    "v4/tests/focus-numeric_forward_windows.stdout.log.gz": {
+      "sha256": "640593422721f7cb90a0e430b24ec6664ec733df4d8c01bee0285d60a049691b",
+      "bytes": 505,
+      "decoded_sha256": "69c5431af2ce39d670441f016ffb5035174a5e8ecc7ded1915ebba583c1c9f88",
+      "decoded_bytes": 3925,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v4/focus-numeric_forward_windows.stdout.log"
+    },
+    "v4/tests/focus-numeric_forward_windows.json.gz": {
+      "sha256": "b6c63ebec14085843c73f8f67f28321ad6c929066f01d8e3bc88f03183775785",
+      "bytes": 181,
+      "decoded_sha256": "0f7107ee336b443d8e8c2f22edec2b377da2b9260a1a96856289a9b9095c6a65",
+      "decoded_bytes": 231,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v4/focus-numeric_forward_windows.json"
+    },
+    "v4/regressions/run.py.gz": {
+      "sha256": "c6586b09908b67e5eae25b1261a401f46f6f044967d6d8a5874ccb569ab683e4",
+      "bytes": 1426,
+      "decoded_sha256": "dc003ee8c034aad0712f74025ff050d4c8d2f12b31e457c16fc51ff30779bd2f",
+      "decoded_bytes": 3558,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v4/run.py"
+    },
+    "v4/regressions/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v4/one-kib-comparison.json"
+    },
+    "v4/regressions/one-kib-run.json.gz": {
+      "sha256": "b99760c44aec1149b66ba7f25943be6684dc4319678aea3737ca15242e805d59",
+      "bytes": 715,
+      "decoded_sha256": "9690caa77a9dbc4a3ed213f429758deae6b31791e9225ef7c1249681caedbebc",
+      "decoded_bytes": 3242,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v4/one-kib-run.json"
+    },
+    "v4/regressions/scalar-run.json.gz": {
+      "sha256": "4aaf2260d12119834d10f3d8ce4d4837401c5ef6040ddd36baf197b8fbd9811c",
+      "bytes": 1675,
+      "decoded_sha256": "f28ff026bb86e41a1c510efe03dbb3703d79919a36ebf606fe748f63c6568e2a",
+      "decoded_bytes": 39466,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v4/scalar-run.json"
+    },
+    "v4/regressions/one-kib.build.json.gz": {
+      "sha256": "e63514ee2254cc9737468c4e3bde0e84220970dc10e86db5dc197e816d57415a",
+      "bytes": 1216,
+      "decoded_sha256": "cc33fa507be34f16aba6834599630e11aa3aa19f8a10fe9d2df931f663c5469c",
+      "decoded_bytes": 4564,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v4/one-kib.build.json"
+    },
+    "v4/regressions/scalar.build.json.gz": {
+      "sha256": "73c14ddb35451b27c8bc9d28e24dba8c25da218d21f7138c08d888d3f3cd7935",
+      "bytes": 813,
+      "decoded_sha256": "9efd74c0b7b48724095ca402a09bcc76cde510079414811bb862eefc18d2ef40",
+      "decoded_bytes": 2366,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v4/scalar.build.json"
+    },
+    "v4/regressions/scalar-comparison.json.gz": {
+      "sha256": "8a00f7913bd5fa3c9853918a18321386f04e6e27c093c175589c08d0367a4bcb",
+      "bytes": 826,
+      "decoded_sha256": "7bb2b53dfcba3029e86f74a4c51dd2314f8237c29817bc55f0521001aa6fc5c0",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v4/scalar-comparison.json"
+    },
+    "v4/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/after-4/runner.rs"
+    },
+    "v4/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "653d896e3386bdb178ad6a6dfeff1bb50ee432fac424f8620336c493993b0971",
+      "bytes": 2084,
+      "decoded_sha256": "47fe9434cfdb63750a39e0f9c39dacc788f2b00e188b0829495f1cad6b3816b7",
+      "decoded_bytes": 13177,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/after-4/native-link-audit.json"
+    },
+    "v4/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "64455db687387686f6d88a3198d9f6b5aebc9c65518b3e52155b53c2fa3e7430",
+      "bytes": 3402,
+      "decoded_sha256": "b535ac5f48427bc5e5eebe5f1694a72f295858ce8eb2f3abb9f25f66094653a7",
+      "decoded_bytes": 17778,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/after-4/runner-aot.build.json"
+    },
+    "v4/runners/after-4/edge-run.json.gz": {
+      "sha256": "f04ca78d63c1dce08e613383fa4c28a1f90f465f7c674787dbd9fd398251b9a0",
+      "bytes": 693,
+      "decoded_sha256": "3ab05cc2dcbd5a94ca02a7f6062de2085d371e762b3243ea10cc7f179e2860b7",
+      "decoded_bytes": 2853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/after-4/edge-run.json"
+    },
+    "v4/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "f7eb2d194ee912360025d913b9806b6dfd2503a4956254126148fbdb5afa7507",
+      "bytes": 5430,
+      "decoded_sha256": "893e2f0131a51c52c90092f84b3931b796c79df944f78cc1a305010a7e66d5b9",
+      "decoded_bytes": 62464,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/after-4/edges/edge-fixtures.json"
+    },
+    "v4/runners/after-4/build/metadata.json.gz": {
+      "sha256": "8e8130b76b642a40e406c3d0884df04c6eb4e83e6ee999a766e820feb87ffe23",
+      "bytes": 140097,
+      "decoded_sha256": "90032e6ba4aed0acc84492f12c1da8477081d983a6d2a84869907bcf487bf4fd",
+      "decoded_bytes": 2735883,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/after-4/build/metadata.json"
+    },
+    "v4/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/after-4/build/source.mec"
+    },
+    "v4/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/reuse-4/runner.rs"
+    },
+    "v4/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "880b44cc1fc9618df891e49f992eae66d8c63ccfb089a2a81c437b7045473236",
+      "bytes": 2056,
+      "decoded_sha256": "fb6b19254b0dd176e05336f666cd7bbee31117586037072a8a19ff0dcbe9b767",
+      "decoded_bytes": 12853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/reuse-4/native-link-audit.json"
+    },
+    "v4/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "924c4601a6969b56d11a60ac4f979754a22a60a822a5b1cafd508b06b3c00ab3",
+      "bytes": 3395,
+      "decoded_sha256": "97916dd0119bf05bf9e9f6c8339952e53f3272860e40d52bfd5b3d2a31f6b17c",
+      "decoded_bytes": 17778,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/reuse-4/runner-aot.build.json"
+    },
+    "v4/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "0be4b8bd11d3aa19aea675ff368b063c5c6cdcb7d0a70d40fc7aa118bf79a14b",
+      "bytes": 695,
+      "decoded_sha256": "b6c98876e23a4ad0727f2866baa726b2ae5ea97d97dd54bc41b02ce4cd95a2c3",
+      "decoded_bytes": 2853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/reuse-4/edge-run.json"
+    },
+    "v4/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "a27f5bdd61739dc68453dca1fada972710b36b23133563e5a52d58e8b5730c1f",
+      "bytes": 5444,
+      "decoded_sha256": "a1ab55375e48f972ce8522286eecd0a7e8c9bbaf52b6d5ff18890b468d4f68f0",
+      "decoded_bytes": 62483,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/reuse-4/edges/edge-fixtures.json"
+    },
+    "v4/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "7b26d51358c2d8a9269976bf52ac87ff8a83505d8e9df76e047045240718922d",
+      "bytes": 138148,
+      "decoded_sha256": "d5ab2c1ffd6b5d1688f5e986c94b31cd3b6a4a2ecdb34b3ef71c9bc120354b7d",
+      "decoded_bytes": 2700911,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/reuse-4/build/metadata.json"
+    },
+    "v4/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/reuse-4/build/source.mec"
+    },
+    "v4/runners/build-initial-runners.py.gz": {
+      "sha256": "3a3eb36065e9936ea27fb9bc0a3f97cea37bd0e8435322ec01b0281dcfc09185",
+      "bytes": 1378,
+      "decoded_sha256": "4faf799e478da4dcd78cee4a7a2b6a6f2dba3096f9148afec44aa67166bef6ca",
+      "decoded_bytes": 3323,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/build-initial-runners.py"
+    },
+    "v4/runners/native-code-comparison.json.gz": {
+      "sha256": "7f59485e98fa635f8fe475f2a2fd15a762f1ac8fb3bbcbef8c084bc6d130dc4e",
+      "bytes": 2893,
+      "decoded_sha256": "e1605845a1585886b0c28022dea7ae05a879f420710c3f24c6f967c9378a7339",
+      "decoded_bytes": 26602,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v4/native-code-comparison.json"
+    },
+    "v5/opt/source-inventory.json.gz": {
+      "sha256": "0ed2f1d0ce65dfeebda5f19c296ad0ad1c2bd51fe2de93532347ddc3e674ffd6",
+      "bytes": 116531,
+      "decoded_sha256": "8b96ffbc210aff0560e26b804f845fedb60ce6576b920b869290b01188266ed7",
+      "decoded_bytes": 314803,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v5/source-inventory.json"
+    },
+    "v5/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v5/mech_gpu.stdout.log"
+    },
+    "v5/opt/mech_gpu.build.json.gz": {
+      "sha256": "2290646c98a55cb3cafd6ae8cbb18485c901f87de1231010df2cb5468c656aa8",
+      "bytes": 1848,
+      "decoded_sha256": "f61d57e55d0d5d0f692d2611e62f6024ab477bf4ebc768f792d9221d91dd9f8e",
+      "decoded_bytes": 12121,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v5/mech_gpu.build.json"
+    },
+    "v5/opt/compiler-facts.rs.gz": {
+      "sha256": "995814ed83e9c5355589254ec17fbc42b72254fcd91760b1e906e6f2251d9936",
+      "bytes": 2008,
+      "decoded_sha256": "8ca13d1b4abf8b9eadd200de854c35c4de541f7756baab65da72a1fb985eb620",
+      "decoded_bytes": 6179,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v5/compiler-facts.rs"
+    },
+    "v5/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v5/mech_gpu.stderr.log"
+    },
+    "v5/opt/compiler.build.json.gz": {
+      "sha256": "1cca76ea193155449224edeed939962df13ed60083a9636247403644731568c9",
+      "bytes": 2183,
+      "decoded_sha256": "421d1b7fc6c72ee6cbfb29c4d2d847b5e3a5e2edf43b294f322cf94b0c5a1e44",
+      "decoded_bytes": 12981,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v5/compiler.build.json"
+    },
+    "v5/opt/build.json.gz": {
+      "sha256": "f4e9fa886a5e86f1cdf0f04a188652b566b8b41f0bfaef2ac2ce066c93589818",
+      "bytes": 6921,
+      "decoded_sha256": "3f189cad5047dcc4e351b5419a4a302343211af888b7db57a2d7a7758c948b98",
+      "decoded_bytes": 79882,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v5/build.json"
+    },
+    "v5/opt/compiler-build-run.json.gz": {
+      "sha256": "727678345ef667e76cda38262a3fcc0c98a03e3cd481c22a4a1e097f07003b10",
+      "bytes": 273,
+      "decoded_sha256": "9442c1386c16e2448b3a763d4b9d839a88fa51e4ffd01d6d7d00e4aff259207d",
+      "decoded_bytes": 539,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v5/compiler-build-run.json"
+    },
+    "v5/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "fbc42185bbc2ecf1218f1bf2b0d5a7720dc24992572cb36d949a596036c7efe7",
+      "bytes": 395,
+      "decoded_sha256": "06e7393d27785419a8eb2d5321344be5ccc26ff89538515295c66f26e8c3f73a",
+      "decoded_bytes": 1278,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v5/mech_gpu-build.stderr.log"
+    },
+    "v5/tests/build-and-test.py.gz": {
+      "sha256": "5ffac2228fcbf38eb3d2ecb35240775027fe3528e8fcc896390a3b2154cf2c8a",
+      "bytes": 1772,
+      "decoded_sha256": "3fbc654e231f33bb27dd7436b76c63ce71bbea5ca240a1b0df740e8719f05e66",
+      "decoded_bytes": 4186,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v5/build-and-test.py"
+    },
+    "v5/tests/mech_gpu-build.json.gz": {
+      "sha256": "8dbcbd12e645e8d62caf56b192a36d985af77e60f68490c3da5193f4dd60b46f",
+      "bytes": 1544,
+      "decoded_sha256": "7f255e09bfa2e13aad73d628a0b75da48ce26e17fe1de7ce8d03cd761b4bea0f",
+      "decoded_bytes": 11498,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v5/mech_gpu-build.json"
+    },
+    "v5/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v5/mech_gpu-build.stdout.log"
+    },
+    "v5/regressions/run.py.gz": {
+      "sha256": "778dc0d1a491af0a12278bd79f8fdc13da933c24259d02ab92fa61aba3ec466c",
+      "bytes": 1426,
+      "decoded_sha256": "4bf8641ec5ccae12519ac183943e2e7dacb36a29fbbbb198081f91618a421fdc",
+      "decoded_bytes": 3558,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v5/run.py"
+    },
+    "v5/regressions/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v5/one-kib-comparison.json"
+    },
+    "v5/regressions/one-kib-run.json.gz": {
+      "sha256": "ce2865afa7e23bb71c4616607edebdca6007a538359c5a0517e5e7af4cc8e8f3",
+      "bytes": 718,
+      "decoded_sha256": "fdafb2fe26f82d23183436f4549bb329ac4a83d187be5b0bb6cbd753370c393c",
+      "decoded_bytes": 3245,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v5/one-kib-run.json"
+    },
+    "v5/regressions/scalar-run.json.gz": {
+      "sha256": "524551d8871a8ef77c2b86e0bfa0ef7bbec9d9683d0b5b7013f4da0989138eb2",
+      "bytes": 1644,
+      "decoded_sha256": "d200d0ae84f9ce40ef4f1c1b32eaaa66b4b06ff257f325a887eb53861e18c3a2",
+      "decoded_bytes": 39413,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v5/scalar-run.json"
+    },
+    "v5/regressions/one-kib.build.json.gz": {
+      "sha256": "3c048bc9e586a69e89091a86d9d9ed92b737937bd86cf737d2d3ca202b976e2a",
+      "bytes": 1218,
+      "decoded_sha256": "1dbfa2f6e83dcbf9dd35e96ba69082981986815cd9df19a5e55022ab84641ed2",
+      "decoded_bytes": 4564,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v5/one-kib.build.json"
+    },
+    "v5/regressions/scalar.build.json.gz": {
+      "sha256": "66cf44c4035a85af615678046e87f263749114c499af648a49650c5d532c4bc7",
+      "bytes": 815,
+      "decoded_sha256": "5a3bf14de05dd70e202a778fa0a72d278b90beddbcc06a4f6a9042b8121f21b2",
+      "decoded_bytes": 2365,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v5/scalar.build.json"
+    },
+    "v5/regressions/scalar-comparison.json.gz": {
+      "sha256": "8a00f7913bd5fa3c9853918a18321386f04e6e27c093c175589c08d0367a4bcb",
+      "bytes": 826,
+      "decoded_sha256": "7bb2b53dfcba3029e86f74a4c51dd2314f8237c29817bc55f0521001aa6fc5c0",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v5/scalar-comparison.json"
+    },
+    "v5/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/after-4/runner.rs"
+    },
+    "v5/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "8933f81cae23c683b1dd272b84eb6e97f6cb5bc91e735e776fd956c8722a72c3",
+      "bytes": 2087,
+      "decoded_sha256": "36565f4dff1b9688f5c4a49752f86c4954ef60b1d6593021e181bbd669af11b5",
+      "decoded_bytes": 13177,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/after-4/native-link-audit.json"
+    },
+    "v5/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "719b0c2334e3d9621583ea14d981d15a15277f6ea972913b663d2cfd5981ccca",
+      "bytes": 3395,
+      "decoded_sha256": "89b70901c6c2642029b237d0f71a178a3dd8b162b69fb2d92270a2e99a0ee3d1",
+      "decoded_bytes": 17869,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/after-4/runner-aot.build.json"
+    },
+    "v5/runners/after-4/edge-run.json.gz": {
+      "sha256": "d3cc64b7dd6f93ca656a7093f0bd9bd2657be7310b1be48d86ba0beb17c7a3cd",
+      "bytes": 692,
+      "decoded_sha256": "692305ec10af181f0c3f1453989650c2c5a81475cdf60159978422f66a2cb100",
+      "decoded_bytes": 2853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/after-4/edge-run.json"
+    },
+    "v5/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "f1fb459d3746fcc1ec70a09633be385a9cc162f59fed592ca0497862fb622fb9",
+      "bytes": 5424,
+      "decoded_sha256": "d2893e5e3bbb486446c403fc66ed8b7908e92ed7731f25e26d3af1a639f92392",
+      "decoded_bytes": 62468,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/after-4/edges/edge-fixtures.json"
+    },
+    "v5/runners/after-4/build/metadata.json.gz": {
+      "sha256": "80c9ecb5f78825017af5f8ce1e0a562d3d4e48f0f0db18cf9fcbf035199d8dfa",
+      "bytes": 140096,
+      "decoded_sha256": "e035003e18403eb8ac280795f710def80e327153acbda887bd919111262ea979",
+      "decoded_bytes": 2735883,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/after-4/build/metadata.json"
+    },
+    "v5/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/after-4/build/source.mec"
+    },
+    "v5/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/reuse-4/runner.rs"
+    },
+    "v5/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "355908bce51cbe47d78897d28eaabed121dc1a7a71cade6f5b6abb9021539c9a",
+      "bytes": 2059,
+      "decoded_sha256": "c72a92bd95cc6b0bb9d06a4e75c9aba01d0719660f0977eca22485f4418524dd",
+      "decoded_bytes": 12853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/reuse-4/native-link-audit.json"
+    },
+    "v5/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "1eac05ae5744ebb22473fff5fa2222f563b7106fece9b8e4d2e25e2160ec0587",
+      "bytes": 3392,
+      "decoded_sha256": "b97e99b1270cda19a04eb96b9cbf25c25dd23bc609c76fffc5d3f6fe28cc0a42",
+      "decoded_bytes": 17869,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/reuse-4/runner-aot.build.json"
+    },
+    "v5/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "c9652f28169acaee1be11c34e08e618df10779f39e67602950240318f0a6250a",
+      "bytes": 692,
+      "decoded_sha256": "9b13d6656f4f2b690a072088db2cb3c36935e2c0cbed69ad5f32c0aa1e63112f",
+      "decoded_bytes": 2852,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/reuse-4/edge-run.json"
+    },
+    "v5/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "3c4499a006304c1b616de07eca84b0220de662365fa9c79a37eb9bfff9ff7a8d",
+      "bytes": 5389,
+      "decoded_sha256": "e27b80dbc32199732004c062760b340e562d7ab43b64df1b8b367723e49c9d4f",
+      "decoded_bytes": 62435,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/reuse-4/edges/edge-fixtures.json"
+    },
+    "v5/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "bf17eed429f305cdb17bd7b6810d0462a198e94bbbecba1acdd1665b15e7500d",
+      "bytes": 138149,
+      "decoded_sha256": "2ef19ab49ac4b6483d60a6b40b375fc471d2861c258b841bf9186e52b92a833c",
+      "decoded_bytes": 2700911,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/reuse-4/build/metadata.json"
+    },
+    "v5/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/reuse-4/build/source.mec"
+    },
+    "v5/runners/build-initial-runners.py.gz": {
+      "sha256": "fc58a7971028005076a644cc04e123c82dc703ae2dc00164873596f66e1fc1f3",
+      "bytes": 1378,
+      "decoded_sha256": "fb4ed1e739f043899129fc58ffac0eaba14c4a9e9961691f2643167835d6ed80",
+      "decoded_bytes": 3323,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/build-initial-runners.py"
+    },
+    "v5/runners/native-code-comparison.json.gz": {
+      "sha256": "e2063453cd37d1d060ede9c0d0ccfea396158c7c0c408b595108835b606ee0df",
+      "bytes": 2892,
+      "decoded_sha256": "df1f617f8bda2b45086e4138244dd75cbc08038162f51d24435007da5981b06d",
+      "decoded_bytes": 26602,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v5/native-code-comparison.json"
+    },
+    "v6/opt/source-inventory.json.gz": {
+      "sha256": "56f4c9837b3d06c73906204cf3fbcd7816ad88f79a5f020f7479a836e9420182",
+      "bytes": 116535,
+      "decoded_sha256": "eb7161af0a8d0ef22417beeab3e56c7eb012a9b150582d11997ae4764b67cf53",
+      "decoded_bytes": 314803,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v6/source-inventory.json"
+    },
+    "v6/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v6/mech_gpu.stdout.log"
+    },
+    "v6/opt/mech_gpu.build.json.gz": {
+      "sha256": "96a96c1187939ea25b0c5e9f0a82834ba411ac50465cfbf393607b5b1ed72e29",
+      "bytes": 1848,
+      "decoded_sha256": "e7f32c8d4ab45b42d41ae003bc5876a00b40cabffa3039fb2df978a4e3e6e1c1",
+      "decoded_bytes": 12212,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v6/mech_gpu.build.json"
+    },
+    "v6/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v6/mech_gpu.stderr.log"
+    },
+    "v6/opt/build.json.gz": {
+      "sha256": "56de89905c2f475c8b85b1fcdf67998787efe86c2d4a7cb0488f60a488f96d0b",
+      "bytes": 6920,
+      "decoded_sha256": "62a2aec98b1031837c039661f3c608eb6b3d294a3c2bfd521da064c92f5d022f",
+      "decoded_bytes": 79981,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v6/build.json"
+    },
+    "v6/tests/build-and-test.py.gz": {
+      "sha256": "fac4c6b40c7eea4cbcd7fc805c9efd7ddf31458e2bb0ca47a4cc7efde5c5db2c",
+      "bytes": 1772,
+      "decoded_sha256": "ebf356d5c1a6e0ec673fb6684477e49cced72df3c37bdc6263651c2106fdcf11",
+      "decoded_bytes": 4186,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v6/build-and-test.py"
+    },
+    "v6/regressions/run.py.gz": {
+      "sha256": "a15880b9f255cd35e64ba6eaeafce1a3bd4b354d7e65622c598cf4a070dc494a",
+      "bytes": 1426,
+      "decoded_sha256": "10ecb1d1afae102fee7586cf0a21d5e817f44b75e43fee37c5a69948eb33b082",
+      "decoded_bytes": 3558,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v6/run.py"
+    },
+    "v6/runners/build-initial-runners.py.gz": {
+      "sha256": "408378511e3ffd151682c207ea27d48b67433766af624b35a8e644ed9a8d4957",
+      "bytes": 1379,
+      "decoded_sha256": "1d039182e7f9dce463f1344ed7712113efacae868270f190483d7348f5b49eea",
+      "decoded_bytes": 3323,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v6/build-initial-runners.py"
+    },
+    "v7/opt/source-inventory.json.gz": {
+      "sha256": "4d94e47ef6646656d85093b799933d008a78ac9a2de4466e2f46f96d62a70515",
+      "bytes": 116531,
+      "decoded_sha256": "1cc7b223a974dc3606496aa5def144032a197e7abcd83eb574e3a48ca557f627",
+      "decoded_bytes": 314803,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v7/source-inventory.json"
+    },
+    "v7/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v7/mech_gpu.stdout.log"
+    },
+    "v7/opt/mech_gpu.build.json.gz": {
+      "sha256": "131dcd00bf11e785d1d70b2c86940e271cb9b0e7685210f2715b513a6e9412d3",
+      "bytes": 1857,
+      "decoded_sha256": "450664de59c1d6fe8a77d2f43385b8d684475a35dfbe3cab5e62e314ec11f2a7",
+      "decoded_bytes": 12303,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v7/mech_gpu.build.json"
+    },
+    "v7/opt/compiler-facts.rs.gz": {
+      "sha256": "995814ed83e9c5355589254ec17fbc42b72254fcd91760b1e906e6f2251d9936",
+      "bytes": 2008,
+      "decoded_sha256": "8ca13d1b4abf8b9eadd200de854c35c4de541f7756baab65da72a1fb985eb620",
+      "decoded_bytes": 6179,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v7/compiler-facts.rs"
+    },
+    "v7/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v7/mech_gpu.stderr.log"
+    },
+    "v7/opt/compiler.build.json.gz": {
+      "sha256": "5c8f0aecf23fa97df1c7381219c3db07cd8f8042e5cf02853059611416a4409d",
+      "bytes": 2187,
+      "decoded_sha256": "0ac64821bfac491c4150943e538b101b0775e0bf27c9450c8f2629e85e813b52",
+      "decoded_bytes": 13165,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v7/compiler.build.json"
+    },
+    "v7/opt/build.json.gz": {
+      "sha256": "2b073dd3276464c6697594e8384ef51908a3e5d3b86961945f94154e0233a49d",
+      "bytes": 6925,
+      "decoded_sha256": "8089648fc5a56d682fc154f6f4711bdf4f04518ec4fa96105c1eb101cc0e1378",
+      "decoded_bytes": 80080,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v7/build.json"
+    },
+    "v7/opt/compiler-build-run.json.gz": {
+      "sha256": "b50cb0f3e856c069c90318b32da641a88ef32b90aa254f10908ed899a7d459eb",
+      "bytes": 275,
+      "decoded_sha256": "7fb586d566c9b2493f704339ea78418df4555474e740f944c9338da9e0eb9f90",
+      "decoded_bytes": 542,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v7/compiler-build-run.json"
+    },
+    "v7/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v7/mech_gpu-build.stderr.log"
+    },
+    "v7/tests/focus-numeric_forward_windows.stderr.log.gz": {
+      "sha256": "daa610e9d0962863a04b7adc9da4dd4e97499aa2fda2a693eccd972d5cdcc59b",
+      "bytes": 322,
+      "decoded_sha256": "80eea1a1fa924ba9fd8d6d5b7772eb1080f0747e72b6ce36e4458e00a34f6616",
+      "decoded_bytes": 477,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v7/focus-numeric_forward_windows.stderr.log"
+    },
+    "v7/tests/build-and-test.py.gz": {
+      "sha256": "833dfa36f8b8126922f462767b906274cb552cae8a9d9d6e9528533904f15622",
+      "bytes": 1772,
+      "decoded_sha256": "11e55607f65ef169682503e89f7dad3b90317a20fb231481443286f32c515fee",
+      "decoded_bytes": 4186,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v7/build-and-test.py"
+    },
+    "v7/tests/mech_gpu-build.json.gz": {
+      "sha256": "f99b1746545eacbc23674ae6778cf29c2851ec3264100d1a2e0050cded8dd70a",
+      "bytes": 1551,
+      "decoded_sha256": "b5fa9ffa423554afa731844ae98cd6d5d474764dc7cd7da31d4dfdedf26ba9b6",
+      "decoded_bytes": 11680,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v7/mech_gpu-build.json"
+    },
+    "v7/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v7/mech_gpu-build.stdout.log"
+    },
+    "v7/tests/focus-numeric_forward_windows.stdout.log.gz": {
+      "sha256": "37e2797cf55fc51c7aa95856c7011d7104e12fd3376327b3b89c2cb59bdc8e8e",
+      "bytes": 674,
+      "decoded_sha256": "d3730a3cec2c73b4696a31092fd2cb397e0f4f96986805f10350ef790bc56aed",
+      "decoded_bytes": 10537,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v7/focus-numeric_forward_windows.stdout.log"
+    },
+    "v7/tests/focus-numeric_forward_windows.json.gz": {
+      "sha256": "5972624c48182d4fa1e37f4eb19d3b64c62700fb4e6275514f0ebe6384188b3f",
+      "bytes": 180,
+      "decoded_sha256": "04905da7ee01df67bee8d7bd31d9245208f5efcd17447e5b70a2d707e52f49c6",
+      "decoded_bytes": 230,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v7/focus-numeric_forward_windows.json"
+    },
+    "v7/regressions/run.py.gz": {
+      "sha256": "5b9686acfbdbb466d049547221cc488c56f91fe46f0105ab07343fffbd0e1803",
+      "bytes": 1426,
+      "decoded_sha256": "fac27be0f58e9c35122fb87cc7d3893b5e03930bf180974eba3ad6098a8c5d87",
+      "decoded_bytes": 3558,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v7/run.py"
+    },
+    "v7/regressions/one-kib-comparison.json.gz": {
+      "sha256": "ebd01d9926c362938c26dcb90625fd2ffa866aaa3926108968d61fd639bbbc17",
+      "bytes": 325,
+      "decoded_sha256": "41039c226ef678300cea0a6606a0d34ac76e1ac2422b98382cad903df37faf46",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v7/one-kib-comparison.json"
+    },
+    "v7/regressions/one-kib-run.json.gz": {
+      "sha256": "9184e240bc619aafc62479c9e01991ba4f5198d9798b0b841c5d4b4bc0223588",
+      "bytes": 716,
+      "decoded_sha256": "29ee36d8e048eaeadfa27b476e2e938db460e1fc6409e78bb5923ef182960b60",
+      "decoded_bytes": 3242,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v7/one-kib-run.json"
+    },
+    "v7/regressions/scalar-run.json.gz": {
+      "sha256": "0f380e7dc8ceb38e6446f99b4134851214e271e6eaf46fd0165bdc7f316ca823",
+      "bytes": 1711,
+      "decoded_sha256": "d7c365c74a31a67597b9e439f4d591984ce22eab8071931bf07478f010dce1e3",
+      "decoded_bytes": 39509,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v7/scalar-run.json"
+    },
+    "v7/regressions/one-kib.build.json.gz": {
+      "sha256": "ebd98755413f6bd80dcaf9bbfb5ca3cc5d3e84f0fb49ab18aa925dcc5f06c5e4",
+      "bytes": 1219,
+      "decoded_sha256": "1ec51517836170410d35551419758f6d50e54bdfcb9a7f6d75205a069d1a8e13",
+      "decoded_bytes": 4565,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v7/one-kib.build.json"
+    },
+    "v7/regressions/scalar.build.json.gz": {
+      "sha256": "692ad82c956357829d9331af5eb7ab467514dfa62879f4f1d7b065e42086733f",
+      "bytes": 815,
+      "decoded_sha256": "d7ef328cc818f12f32092530faff0209fc5e0c1eb1d50b1ff148de00f77492cd",
+      "decoded_bytes": 2366,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v7/scalar.build.json"
+    },
+    "v7/regressions/scalar-comparison.json.gz": {
+      "sha256": "732d178ff3c4d408a7477c1fe33d656ac928ff9d2eaef6d37905d22a7d65c736",
+      "bytes": 825,
+      "decoded_sha256": "67ccca05956db06a885ed0e4c066b8430497d497b8c3ed8affccb88bd39ed3ab",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v7/scalar-comparison.json"
+    },
+    "v7/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/after-4/runner.rs"
+    },
+    "v7/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "ae7619f4b7f9a0c6557d072976c92c3ccd6c77bb40a6a46edbea4b42a875fb8b",
+      "bytes": 2094,
+      "decoded_sha256": "24d42cf0b8440243d4c30c2d37d0ef5fbfe0d3cd8e7739410c0306396c58cec7",
+      "decoded_bytes": 13177,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/after-4/native-link-audit.json"
+    },
+    "v7/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "ebe966ceb17508e3a34f5ea4ecf77817840a98f71b7db23fa59118d459496d7a",
+      "bytes": 3403,
+      "decoded_sha256": "5d3013098400922059f013b3cc60e9e627745aeb34f35876b2133c0bd36b188b",
+      "decoded_bytes": 18051,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/after-4/runner-aot.build.json"
+    },
+    "v7/runners/after-4/edge-run.json.gz": {
+      "sha256": "df171f1fc305ef7b5fa88916fd437f65e863e760ee9e6c3dfc9bb103ba9edcb7",
+      "bytes": 694,
+      "decoded_sha256": "1e667abf71a56e5e7f5e26dfb8400a1c28193c7bad9fc23957b40f7977097b22",
+      "decoded_bytes": 2853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/after-4/edge-run.json"
+    },
+    "v7/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "4c830389d90ba33a06cd840364b03a98ba1cf2d38ff9624e9c0a6bc0892de53a",
+      "bytes": 5439,
+      "decoded_sha256": "f675c9b1e8388483e5f493573606e2e45ba80930960bf9dfedd74b5a454bc359",
+      "decoded_bytes": 62478,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/after-4/edges/edge-fixtures.json"
+    },
+    "v7/runners/after-4/build/metadata.json.gz": {
+      "sha256": "804e90247ccc6a986eec6267582eee7333ad5a6f03c4081f1b911964aeb4f6d9",
+      "bytes": 142168,
+      "decoded_sha256": "680348e90b82f2dedcb3f2564543b3eb221f4284578b3ffa703f9a907279546d",
+      "decoded_bytes": 2758574,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/after-4/build/metadata.json"
+    },
+    "v7/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/after-4/build/source.mec"
+    },
+    "v7/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/reuse-4/runner.rs"
+    },
+    "v7/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "d3359f0dd35786ec55e8036360ed8c728df94f170125d87a2b403513864dad4f",
+      "bytes": 2062,
+      "decoded_sha256": "16a8c781c22dbc30a78762edfdeb959a192cbe2ca0fc41f64b66b21db200ef02",
+      "decoded_bytes": 12853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/reuse-4/native-link-audit.json"
+    },
+    "v7/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "16704ad9da3e37c2f0d33edd094c656c72b940ba0c2157b61df940a2b996eb33",
+      "bytes": 3397,
+      "decoded_sha256": "fa830dd80cf4141063edea79e4d6b99d9ab5784594f76f07bf42d536b568b51a",
+      "decoded_bytes": 18051,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/reuse-4/runner-aot.build.json"
+    },
+    "v7/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "ae512f11c385d9809f589662790c24dd458aeeef2ec01f7f8442e6617de398d7",
+      "bytes": 692,
+      "decoded_sha256": "9d991d11568aa655dc10fbb0f0464a831864b7f6446d08315c52df4c15acb814",
+      "decoded_bytes": 2852,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/reuse-4/edge-run.json"
+    },
+    "v7/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "cb6d7d643e76fa138e7f15383e38f21a5323443044d975fc2ac3801faaa33375",
+      "bytes": 5424,
+      "decoded_sha256": "af0405b2938dfcf4c76b7c7b279ca967b13c1cd0be3c316e5016eefa6c1105b0",
+      "decoded_bytes": 62458,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/reuse-4/edges/edge-fixtures.json"
+    },
+    "v7/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "a59ef3a1051d987ee2b7f392f8b2eddd5ba693f661b3824c32910c315367e433",
+      "bytes": 140321,
+      "decoded_sha256": "7474a1cdf74e143f071c766d6127f54e66f01cd7cc0b48ad182471aa3a0a8dd3",
+      "decoded_bytes": 2722751,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/reuse-4/build/metadata.json"
+    },
+    "v7/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/reuse-4/build/source.mec"
+    },
+    "v7/runners/build-initial-runners.py.gz": {
+      "sha256": "a757d23afc0fe16885e4cb3d7de079e9747fe016b4f9c1f34eaa7a875e377650",
+      "bytes": 1379,
+      "decoded_sha256": "acac563434b443f88fb7135707b4b2a2c16e11bdb4e485a3f6a1d92a156bc823",
+      "decoded_bytes": 3323,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/build-initial-runners.py"
+    },
+    "v7/runners/native-code-comparison.json.gz": {
+      "sha256": "3918e7f3753cdae84a3c83a4b2dc2adec4277709c935b891d133eea50ed0bbb8",
+      "bytes": 3765,
+      "decoded_sha256": "349b9dd024183d2a0dc944bbaebdef80e6fe5362b29adf9dd0bf7cac3dac4d8c",
+      "decoded_bytes": 52505,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v7/native-code-comparison.json"
+    },
+    "v8/opt/source-inventory.json.gz": {
+      "sha256": "098f619f6f75bf4a4bdf33045cf0e37967b4d75d5f21c3a66c0177154114d71a",
+      "bytes": 116530,
+      "decoded_sha256": "5c1422f8683e4497dfcd68a570d9bcc66bc32a6eca2b484c45f6f2a565451d26",
+      "decoded_bytes": 314803,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v8/source-inventory.json"
+    },
+    "v8/opt/mech_gpu.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v8/mech_gpu.stdout.log"
+    },
+    "v8/opt/mech_gpu.build.json.gz": {
+      "sha256": "915053d467b33e4b1a01b7c8aa92e0ab4d7266d54e8ec6fe54e13abdddd78f8a",
+      "bytes": 1858,
+      "decoded_sha256": "bcd7c655db8cdefcc1ebaa6db0d2f3ce5415c8873d4fe6e57d5c3a1285d62334",
+      "decoded_bytes": 12393,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v8/mech_gpu.build.json"
+    },
+    "v8/opt/compiler-facts.rs.gz": {
+      "sha256": "995814ed83e9c5355589254ec17fbc42b72254fcd91760b1e906e6f2251d9936",
+      "bytes": 2008,
+      "decoded_sha256": "8ca13d1b4abf8b9eadd200de854c35c4de541f7756baab65da72a1fb985eb620",
+      "decoded_bytes": 6179,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v8/compiler-facts.rs"
+    },
+    "v8/opt/mech_gpu.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v8/mech_gpu.stderr.log"
+    },
+    "v8/opt/compiler.build.json.gz": {
+      "sha256": "99501dc6fceef94ddaaafb41904f61b69aa4a80095f415158d75c4817064b203",
+      "bytes": 2190,
+      "decoded_sha256": "7e09c53d8296ce1d8b5bb1d0de1dfeee103c192a7a98b7f49ec898e765135b6d",
+      "decoded_bytes": 13256,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v8/compiler.build.json"
+    },
+    "v8/opt/build.json.gz": {
+      "sha256": "4f20a857cb6af2b9da4e131d35effc98de13281b1cb8576a492f1b740c5c9ed5",
+      "bytes": 6927,
+      "decoded_sha256": "4b96eff87b4dc150184d99b8c06ff11bc66bfd9b6af985b88d70e3f99cdcd2ba",
+      "decoded_bytes": 80178,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v8/build.json"
+    },
+    "v8/opt/compiler-build-run.json.gz": {
+      "sha256": "ac7cb9b40f5936f75e4ed559993a8a13d829e3730c78d8642bd2656f1314ce63",
+      "bytes": 274,
+      "decoded_sha256": "82fe59cd69514c66c316b31d7d8f37ec4181f473070b2fb8b2546537592f36a8",
+      "decoded_bytes": 541,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-opt-20261107-v8/compiler-build-run.json"
+    },
+    "v8/tests/focus-cfg_cleanup.json.gz": {
+      "sha256": "d0b89b213b25abb594ccb55226eea6a4187c1c5541a5b667a8fcbb54303821a4",
+      "bytes": 177,
+      "decoded_sha256": "c10e521de9ba0bdc10e69eec829311d74313dfabfa9eb22ea338f9f71dc43a2e",
+      "decoded_bytes": 217,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-cfg_cleanup.json"
+    },
+    "v8/tests/focus-movable_capture_reads.stdout.log.gz": {
+      "sha256": "47d5f3b52e4d71c8c597605bf43a6476266ccab7f2b16ff7f8747f8f75d0fceb",
+      "bytes": 348,
+      "decoded_sha256": "f3d75e2e9dc8ab0d9906469b459460f505306134432b62a700c27991b7c66e5a",
+      "decoded_bytes": 889,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-movable_capture_reads.stdout.log"
+    },
+    "v8/tests/mech_gpu-build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/mech_gpu-build.stderr.log"
+    },
+    "v8/tests/test-run.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/test-run.stderr.log"
+    },
+    "v8/tests/focus-numeric_current_windows.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-numeric_current_windows.stderr.log"
+    },
+    "v8/tests/focus-cfg_cleanup_program_local_homes.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-cfg_cleanup_program_local_homes.stderr.log"
+    },
+    "v8/tests/ci-selected-list.stdout.log.gz": {
+      "sha256": "b3933004e4c54d5730984b31fd674702c62a4776506289877618a404d230915b",
+      "bytes": 9192,
+      "decoded_sha256": "3f9726e1d17c272638522772bcbb03af2bb265eeb824dbcdedb22689d3c0e844",
+      "decoded_bytes": 57686,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/ci-selected-list.stdout.log"
+    },
+    "v8/tests/focus-numeric_forward_windows.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-numeric_forward_windows.stderr.log"
+    },
+    "v8/tests/focus-numeric_first_change.stdout.log.gz": {
+      "sha256": "78498ef748b0be7afdb708d2e80b46451b3ea0cc59acacb0967926ccaf6b8b05",
+      "bytes": 193,
+      "decoded_sha256": "0994ac8d3784757e9470e86f9e33e0799f5fa0721ca2d51820813a7230dcb41c",
+      "decoded_bytes": 266,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-numeric_first_change.stdout.log"
+    },
+    "v8/tests/focus-numeric_first_change.json.gz": {
+      "sha256": "0912a8c66d4138c5f958234932fa31ae8ae137de30141f40ce468c9733db5381",
+      "bytes": 182,
+      "decoded_sha256": "d4cdf2a7815768cc63352bdca409f601341523bca825c8af4e64e0385a68df3c",
+      "decoded_bytes": 225,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-numeric_first_change.json"
+    },
+    "v8/tests/focus-captured_read_windows.stdout.log.gz": {
+      "sha256": "a7f487f2fa2e2d53ac90e0ac277bcede574e0bedcb2417959bd218d7ede1699e",
+      "bytes": 285,
+      "decoded_sha256": "31f4d799aa67b8e657a8c9698d0d79d9bff6a33c6f36df0a58275f9074e5fc2e",
+      "decoded_bytes": 734,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-captured_read_windows.stdout.log"
+    },
+    "v8/tests/source-inventory.json.gz": {
+      "sha256": "098f619f6f75bf4a4bdf33045cf0e37967b4d75d5f21c3a66c0177154114d71a",
+      "bytes": 116530,
+      "decoded_sha256": "5c1422f8683e4497dfcd68a570d9bcc66bc32a6eca2b484c45f6f2a565451d26",
+      "decoded_bytes": 314803,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/source-inventory.json"
+    },
+    "v8/tests/focus-fresh_traversals.stdout.log.gz": {
+      "sha256": "97c9386d27e868b3ac28c0d73768b9df65f9ab0efc74645ececa4c936f296982",
+      "bytes": 263,
+      "decoded_sha256": "94ba356a3a87968c0b516e38bc6555406b02f03b29900a62d4d13411281a9635",
+      "decoded_bytes": 563,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-fresh_traversals.stdout.log"
+    },
+    "v8/tests/ci-selected-execute.json.gz": {
+      "sha256": "4ffbdbbaba1c2ed7864660c2928a4fcd44f862f6a0d9e3b559e538dc979ae86c",
+      "bytes": 514,
+      "decoded_sha256": "08b99d96862018f193b3e2e3c5dbf6c2b87ef6db7e4fa5e7a0433a5fc0e68056",
+      "decoded_bytes": 1166,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/ci-selected-execute.json"
+    },
+    "v8/tests/focus-cfg_cleanup.stdout.log.gz": {
+      "sha256": "feafa81a229afd34d88ec2f11c58089c9f3e254ff2bd26adb8098c149d22227b",
+      "bytes": 1216,
+      "decoded_sha256": "49bc81a0eafd0bab9f07d0a4c6ecf2d67b2f642b91044e33a93fe13a6bb7ec69",
+      "decoded_bytes": 5421,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-cfg_cleanup.stdout.log"
+    },
+    "v8/tests/focus-guarded_numeric_load.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-guarded_numeric_load.stderr.log"
+    },
+    "v8/tests/focus-fresh_traversals.json.gz": {
+      "sha256": "0e1a8e5ade8e3c98ef7513883a70277241accf40199d4cdc4d246cbd542c35ce",
+      "bytes": 180,
+      "decoded_sha256": "c9bca2a7ef177dbd3617729893c2317794f0bec3ae2a90012f3029af4c547d98",
+      "decoded_bytes": 223,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-fresh_traversals.json"
+    },
+    "v8/tests/focus-movable_capture_reads.json.gz": {
+      "sha256": "000a44b811721bc5946f10334d98e245066e19aae9db2871048726f339ed170e",
+      "bytes": 180,
+      "decoded_sha256": "f656ce9f764ae2c5508ab3ed41351bc6d36b0f3213c81dd7599d925d6a5ebf71",
+      "decoded_bytes": 227,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-movable_capture_reads.json"
+    },
+    "v8/tests/focus-unsigned_guard_facts.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-unsigned_guard_facts.stderr.log"
+    },
+    "v8/tests/focus-guarded_numeric_load.json.gz": {
+      "sha256": "7a6f8385ed015cc305d35670acdf4569db7e39918cca0795e425e54e40693d9c",
+      "bytes": 182,
+      "decoded_sha256": "039c7bea1153b569b249c33e4df02dc90775ebeee2504b503ef7439a0cdb51af",
+      "decoded_bytes": 226,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-guarded_numeric_load.json"
+    },
+    "v8/tests/ci-selected-execute.stdout.log.gz": {
+      "sha256": "9d603f4df06229b926efa62697f0c99509b9df15909af6760016c3a094da6c28",
+      "bytes": 9304,
+      "decoded_sha256": "18a743f90aea5dd670a0a5c7181c8ee15daf0f2ba7fb711f9625e5f551cf4aab",
+      "decoded_bytes": 60176,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/ci-selected-execute.stdout.log"
+    },
+    "v8/tests/focus-captured_read_windows.json.gz": {
+      "sha256": "3844e6a3bd06ca22f941591a6b557bfc4ec3ddf41071ede46459532ddd447ac6",
+      "bytes": 177,
+      "decoded_sha256": "9fe9d4e0b9e0f5bd6c1586cc27b075bd45d705607bce24e1ccab79399e5f71d6",
+      "decoded_bytes": 226,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-captured_read_windows.json"
+    },
+    "v8/tests/focus-cfg_cleanup_program_local_homes.stdout.log.gz": {
+      "sha256": "06ff8cbfaa2181bc298dca2e616cd332118ec2f5352670f1500460624358bf88",
+      "bytes": 197,
+      "decoded_sha256": "18121d29a0ae149630edded5ef784bdfeef79f3aa17b1300ea7c83aa50cfdd21",
+      "decoded_bytes": 267,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-cfg_cleanup_program_local_homes.stdout.log"
+    },
+    "v8/tests/build-and-test.py.gz": {
+      "sha256": "d6ce0cdece758dee13c9f15943a9768709097fa2e56ded5cbf9bfb6ddf2cd3d8",
+      "bytes": 1772,
+      "decoded_sha256": "8f2e3c2c058dbed17898d33f1df49c455ce3f07c7e16ae8f0899bc43d0c5e929",
+      "decoded_bytes": 4186,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/build-and-test.py"
+    },
+    "v8/tests/mech_gpu-build.json.gz": {
+      "sha256": "d73eed6fdf9356f988f6bced42e4c8afbb2d781a468d765612c52b0b86e004d0",
+      "bytes": 1554,
+      "decoded_sha256": "ff6cb3bdd86f444da3fc1fb14c0dcb34a9d33e11145b69d81c7576ec0816fbc1",
+      "decoded_bytes": 11772,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/mech_gpu-build.json"
+    },
+    "v8/tests/ci-selected-inventory-audit.json.gz": {
+      "sha256": "8aa0df7c07a37c49b7337761cefed929fd9953dbafb2f2d4285dcc2b965544b6",
+      "bytes": 9246,
+      "decoded_sha256": "b342f5f240686586c65f7edfaee51f97108dff3251cd8d4333ed0a1cda456e00",
+      "decoded_bytes": 58169,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/ci-selected-inventory-audit.json"
+    },
+    "v8/tests/ci-selected-list.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/ci-selected-list.stderr.log"
+    },
+    "v8/tests/mech_gpu-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/mech_gpu-build.stdout.log"
+    },
+    "v8/tests/focus-movable_capture_reads.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-movable_capture_reads.stderr.log"
+    },
+    "v8/tests/focus-numeric_current_windows.stdout.log.gz": {
+      "sha256": "69e51498026b4d8ce6bf417870bd65c5a8cce57e65b51dbce4d419d520e9828f",
+      "bytes": 473,
+      "decoded_sha256": "cb244474e96f8764b250812d6776e36678a80e6691c701b621af0108e1536135",
+      "decoded_bytes": 2430,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-numeric_current_windows.stdout.log"
+    },
+    "v8/tests/test-run.stdout.log.gz": {
+      "sha256": "db7e5fdd787e5a413f14682b8511dadcf83dcaa171f9bb77d520ce9e60a58ee7",
+      "bytes": 22476,
+      "decoded_sha256": "8b01403405a16fd48053372b2deb5fabafc7340d8c106e3708683445c3a060ef",
+      "decoded_bytes": 132201,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/test-run.stdout.log"
+    },
+    "v8/tests/focus-fresh_traversals.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-fresh_traversals.stderr.log"
+    },
+    "v8/tests/focus-captured_read_windows.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-captured_read_windows.stderr.log"
+    },
+    "v8/tests/focus-numeric_first_change.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-numeric_first_change.stderr.log"
+    },
+    "v8/tests/focus-numeric_forward_windows.stdout.log.gz": {
+      "sha256": "399fdc5d5c7aa142330e5142f575db9ae09b1a31aab820f3f67969faa3a957c0",
+      "bytes": 693,
+      "decoded_sha256": "19994e507df838e5e8e7874df4b1d7978c866f9bf5acd19c9052085d30136d1e",
+      "decoded_bytes": 13519,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-numeric_forward_windows.stdout.log"
+    },
+    "v8/tests/focus-cfg_cleanup_program_local_homes.json.gz": {
+      "sha256": "89b49015e234cf12722d16d9bdae385927ac02843f430e6a9668b2929c371870",
+      "bytes": 191,
+      "decoded_sha256": "e2260bfb210fbfac0d8f1481d2fdde7efb3476b0cc64e795b87ddaa7d1ac4e6e",
+      "decoded_bytes": 239,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-cfg_cleanup_program_local_homes.json"
+    },
+    "v8/tests/focus-cfg_cleanup.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-cfg_cleanup.stderr.log"
+    },
+    "v8/tests/focus-unsigned_guard_facts.json.gz": {
+      "sha256": "355499aad93aac59c392e58a874edb8e4e4c2adf5fa2d2640a567595a781ba32",
+      "bytes": 183,
+      "decoded_sha256": "16482e20ddf3d90b7efc75e99f717b0886fabfa3c83448afdedd0fd63266954e",
+      "decoded_bytes": 228,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-unsigned_guard_facts.json"
+    },
+    "v8/tests/ci-selected-execute.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/ci-selected-execute.stderr.log"
+    },
+    "v8/tests/focus-numeric_current_windows.json.gz": {
+      "sha256": "2b6d6d4e772fb3c697ccae3f5a7b15d43ac1ed531619961822a2851cd920afb8",
+      "bytes": 183,
+      "decoded_sha256": "499158e156a4639466d261885c19345fddc3f8abc058dd693631a0d9cd329e72",
+      "decoded_bytes": 229,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-numeric_current_windows.json"
+    },
+    "v8/tests/focus-numeric_forward_windows.json.gz": {
+      "sha256": "f1ec86048a427a261ecd496225cd36c2759a84a80b001e93a51e0a19a233ff7a",
+      "bytes": 179,
+      "decoded_sha256": "a1d1f57a8e93d3a1571b45d96c995f924892be1aa20730a9806d00c8f3984fb5",
+      "decoded_bytes": 228,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-numeric_forward_windows.json"
+    },
+    "v8/tests/focus-unsigned_guard_facts.stdout.log.gz": {
+      "sha256": "a4feb408a51b3e509cea1df14762fda78c4acda2d1bc964088064dfb1960efa8",
+      "bytes": 455,
+      "decoded_sha256": "362775089d09d1f4f6e204b8d680563778b74102114755dad93a5e295b1d2f07",
+      "decoded_bytes": 1267,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-unsigned_guard_facts.stdout.log"
+    },
+    "v8/tests/ci-selected-list.json.gz": {
+      "sha256": "1053c245da79af29a4cf6f1feaa707d8aade0854e29ad9cb6ed984d0409fca9c",
+      "bytes": 509,
+      "decoded_sha256": "4f3d6b3d51ca89bfcc99519b138f7ed215f39f1d97b46cb35716120a7b07f066",
+      "decoded_bytes": 1159,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/ci-selected-list.json"
+    },
+    "v8/tests/focus-guarded_numeric_load.stdout.log.gz": {
+      "sha256": "a1bf4c055b4eac8ef09bedacac175e59d9b2f9b2b6496ed7ffb9d8c894272716",
+      "bytes": 280,
+      "decoded_sha256": "cbde106600236732fb07b0f9089afcf1b39c6d7056ad8fbe6a349dd65c27b04c",
+      "decoded_bytes": 554,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/focus-guarded_numeric_load.stdout.log"
+    },
+    "v8/tests/test-run.json.gz": {
+      "sha256": "86142f6d9ad905c749f21e1488e90dc0dd4623cdcc94c92e731fc17a808f622a",
+      "bytes": 403,
+      "decoded_sha256": "cb21ede5f6ba5a1b125f11da8c95049d36c6cdf19a32bb7a0f7b36bda806c5a9",
+      "decoded_bytes": 628,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-tests-20261107-v8/test-run.json"
+    },
+    "v8/regressions/run.py.gz": {
+      "sha256": "ab3afb5a0c714390ad7759d4f4b02a5cd41f17e2fc0a5c168e0c0122f31cf75b",
+      "bytes": 1425,
+      "decoded_sha256": "292f22f49a1626e6c2a332c366250460606ff419b88c6de5041847cdf04330dd",
+      "decoded_bytes": 3558,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v8/run.py"
+    },
+    "v8/regressions/one-kib-comparison.json.gz": {
+      "sha256": "aa886359dc652bd5060f112047419588fb82ba51e441abfa98b70c0ad1da26a9",
+      "bytes": 326,
+      "decoded_sha256": "08447f431e4a5eca642ff0d38fe1c9771c48046cb302e81b828eaa12517c18d3",
+      "decoded_bytes": 1422,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v8/one-kib-comparison.json"
+    },
+    "v8/regressions/one-kib-run.json.gz": {
+      "sha256": "1a4df23ccda67ebf1ff28af24e691b067e9f8316a5de94926808f5091cd175eb",
+      "bytes": 716,
+      "decoded_sha256": "bf138cb12befb03b21bc084d39b1c816cebd0331d42861d5c085421a158569af",
+      "decoded_bytes": 3244,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v8/one-kib-run.json"
+    },
+    "v8/regressions/scalar-run.json.gz": {
+      "sha256": "333a0489247dcb11a13bc84c6f4438653b8fcfacfc0bddbe0e3e210733145b5c",
+      "bytes": 1702,
+      "decoded_sha256": "c5cc55a3b19c55308e73fcbfe620e3020aa2742f509f526c4f80eb64ecebc405",
+      "decoded_bytes": 39436,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v8/scalar-run.json"
+    },
+    "v8/regressions/one-kib.build.json.gz": {
+      "sha256": "e89304a029e3c13a9f4e9cafdf486b30d1e029c1a922936f26d9157be7847dd6",
+      "bytes": 1220,
+      "decoded_sha256": "6482a4375f805fb3dc440c8e243ed4a3448aa6e731b2a6df64acaaede26dca68",
+      "decoded_bytes": 4565,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v8/one-kib.build.json"
+    },
+    "v8/regressions/scalar.build.json.gz": {
+      "sha256": "fbc0b227f8654b4895dd973ce6f08f38b1727b3ac5d84de8b564a3447ed79e23",
+      "bytes": 814,
+      "decoded_sha256": "90fde095f00cc8d0877d5b5f30fef84f1edbc9e18313965b4fca461a0cd177a5",
+      "decoded_bytes": 2365,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v8/scalar.build.json"
+    },
+    "v8/regressions/scalar-comparison.json.gz": {
+      "sha256": "732d178ff3c4d408a7477c1fe33d656ac928ff9d2eaef6d37905d22a7d65c736",
+      "bytes": 825,
+      "decoded_sha256": "67ccca05956db06a885ed0e4c066b8430497d497b8c3ed8affccb88bd39ed3ab",
+      "decoded_bytes": 35991,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v8/scalar-comparison.json"
+    },
+    "v8/runners/after-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/after-4/runner.rs"
+    },
+    "v8/runners/after-4/native-link-audit.json.gz": {
+      "sha256": "d7ae15fbb1413f7cc6cdb3c97a3e5e282aabcc3f213d309112b2773fdefec505",
+      "bytes": 2093,
+      "decoded_sha256": "18552d4ba7fa50c01fa895f64e05cb55c2430a366b9192133450455d5632503d",
+      "decoded_bytes": 13177,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/after-4/native-link-audit.json"
+    },
+    "v8/runners/after-4/runner-aot.build.json.gz": {
+      "sha256": "271a11afd48c3fcb8db1a5f65a8577461d56c0bed88e2b78001073d5edb80c3a",
+      "bytes": 3401,
+      "decoded_sha256": "eacc9f2f3ca57330c05f2be71d127dadf11984964443ddcd66e803a9a91a6941",
+      "decoded_bytes": 18141,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/after-4/runner-aot.build.json"
+    },
+    "v8/runners/after-4/edge-run.json.gz": {
+      "sha256": "4f36c9fb9003722b860d91926c3ecd6b82acffce9215095f9cca5ab48f775059",
+      "bytes": 691,
+      "decoded_sha256": "d3bbd4e54154c02cf768feb35d938c95cc0927b926f0b38c343f9bfbfb98c120",
+      "decoded_bytes": 2852,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/after-4/edge-run.json"
+    },
+    "v8/runners/after-4/edges/edge-fixtures.json.gz": {
+      "sha256": "49fb6f1d0bf8739239102e073d4bb33714c1d92e3313bccd1f57911605e1b5e3",
+      "bytes": 5456,
+      "decoded_sha256": "a66b00d7394db66f998fe0c68d6de22f878e9ca45be4a5efc99d8e9442c11736",
+      "decoded_bytes": 62419,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/after-4/edges/edge-fixtures.json"
+    },
+    "v8/runners/after-4/build/metadata.json.gz": {
+      "sha256": "804e90247ccc6a986eec6267582eee7333ad5a6f03c4081f1b911964aeb4f6d9",
+      "bytes": 142168,
+      "decoded_sha256": "680348e90b82f2dedcb3f2564543b3eb221f4284578b3ffa703f9a907279546d",
+      "decoded_bytes": 2758574,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/after-4/build/metadata.json"
+    },
+    "v8/runners/after-4/build/source.mec.gz": {
+      "sha256": "fa4176a1c0bc16efce38f9a887bb401e2f67a3bd9beb17e5ac6e162ac4c553f9",
+      "bytes": 7754,
+      "decoded_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "decoded_bytes": 43374,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/after-4/build/source.mec"
+    },
+    "v8/runners/reuse-4/runner.rs.gz": {
+      "sha256": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+      "bytes": 3150,
+      "decoded_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "decoded_bytes": 8870,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/reuse-4/runner.rs"
+    },
+    "v8/runners/reuse-4/native-link-audit.json.gz": {
+      "sha256": "5047bf21cde2b7aed715048fe3888e073b09594a5e44012df0a773568580481d",
+      "bytes": 2063,
+      "decoded_sha256": "66b254e483e7e34c04488bd29d22eb801e671e2b2e4bf398c5e749ea39dd190e",
+      "decoded_bytes": 12853,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/reuse-4/native-link-audit.json"
+    },
+    "v8/runners/reuse-4/runner-aot.build.json.gz": {
+      "sha256": "3c2528935644dd81824b3313289d3aaded9d2d1d659b420070e737cc205286cf",
+      "bytes": 3400,
+      "decoded_sha256": "688abbdd7211faa7ed2726253d78b2d03e6511ad0d100c0b9753daf25e7789c6",
+      "decoded_bytes": 18142,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/reuse-4/runner-aot.build.json"
+    },
+    "v8/runners/reuse-4/edge-run.json.gz": {
+      "sha256": "d047844c81467cf9a601461d66aaf6013f89ceb0a3fea4c8e6b278ef7331c161",
+      "bytes": 692,
+      "decoded_sha256": "816f5015a76805fb5fef9110bbce82e8a768114df75ad606e343e5cdb7b28e3d",
+      "decoded_bytes": 2852,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/reuse-4/edge-run.json"
+    },
+    "v8/runners/reuse-4/edges/edge-fixtures.json.gz": {
+      "sha256": "4895adcd99bed002e67a75c0a01d720ddcd7f1a567b0e659b6ef3b8ede5dd185",
+      "bytes": 5416,
+      "decoded_sha256": "a116200d64d1db99d8ab2f4d83251a7613ef3d3ce286d83daa314bb0289f03be",
+      "decoded_bytes": 62475,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/reuse-4/edges/edge-fixtures.json"
+    },
+    "v8/runners/reuse-4/build/metadata.json.gz": {
+      "sha256": "a59ef3a1051d987ee2b7f392f8b2eddd5ba693f661b3824c32910c315367e433",
+      "bytes": 140321,
+      "decoded_sha256": "7474a1cdf74e143f071c766d6127f54e66f01cd7cc0b48ad182471aa3a0a8dd3",
+      "decoded_bytes": 2722751,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/reuse-4/build/metadata.json"
+    },
+    "v8/runners/reuse-4/build/source.mec.gz": {
+      "sha256": "fcf5e25010ae87d50426b65033fab1bb753e00a0fd8cc9a6399e9d95ba277572",
+      "bytes": 7735,
+      "decoded_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "decoded_bytes": 43191,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/reuse-4/build/source.mec"
+    },
+    "v8/runners/build-initial-runners.py.gz": {
+      "sha256": "615857482f0937ab424ce8d18b2298937d4f4206f3d26210ec8ff5e145c25bc1",
+      "bytes": 1380,
+      "decoded_sha256": "1d541c15e0af014d45d0b890038f5d8b7b0b8f455715b5cb80c70dd422babda8",
+      "decoded_bytes": 3323,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/build-initial-runners.py"
+    },
+    "v8/runners/native-code-comparison.json.gz": {
+      "sha256": "3918e7f3753cdae84a3c83a4b2dc2adec4277709c935b891d133eea50ed0bbb8",
+      "bytes": 3765,
+      "decoded_sha256": "349b9dd024183d2a0dc944bbaebdef80e6fe5362b29adf9dd0bf7cac3dac4d8c",
+      "decoded_bytes": 52505,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-runners-20261107-v8/native-code-comparison.json"
+    },
+    "diagnostics/D4/build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v4/build.stdout.log"
+    },
+    "diagnostics/D4/trace.json.gz": {
+      "sha256": "a77a4c61356cb4d8c78612689f270eac5af42c7b8f608bb8d37ea2ebe2086567",
+      "bytes": 232,
+      "decoded_sha256": "fe6dbf1fc1a5bc9a889db89062c397e010e25870992e460af3a486fd9f418406",
+      "decoded_bytes": 312,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v4/trace.json"
+    },
+    "diagnostics/D4/trace.stderr.log.gz": {
+      "sha256": "487b365f3e7c5da6cbbcc646fb37af5070ac5eab357c9c626224ca4c1f333966",
+      "bytes": 17125,
+      "decoded_sha256": "79a1f1a544649c193fcdad76d4b8102a6d2ca578038470e53b70071e6cc29144",
+      "decoded_bytes": 159771,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v4/trace.stderr.log"
+    },
+    "diagnostics/D4/original-files.json.gz": {
+      "sha256": "a8c880b52d815939e812a9eb45ff80e879b62c82b1139a83b4aa8d27cdc91814",
+      "bytes": 128,
+      "decoded_sha256": "75e014dcd15d3c7a39b1ff27655a85673aef34bb1fd227d825aaa51c6659a90c",
+      "decoded_bytes": 238,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v4/original-files.json"
+    },
+    "diagnostics/D4/temporary-trace.patch.gz": {
+      "sha256": "ae99bb42e2de922e457954d46851b3277989352c3254d59fd25ec12522c9976c",
+      "bytes": 1746,
+      "decoded_sha256": "b5aa9f98f030a98029434c0df3daeb5740015581c473652eed9fe693a95ff9c4",
+      "decoded_bytes": 5373,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v4/temporary-trace.patch"
+    },
+    "diagnostics/D4/build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v4/build.stderr.log"
+    },
+    "diagnostics/D4/trace.stdout.log.gz": {
+      "sha256": "6ca9fd9d8886577395ed19fc144a3005ff53452b3f49c3b69d576fe23e099832",
+      "bytes": 231,
+      "decoded_sha256": "6ea3bca6430db35087d9e9ef4bcd734abaa1b87a33bf306ffdae489c9b8b1cd4",
+      "decoded_bytes": 458,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v4/trace.stdout.log"
+    },
+    "diagnostics/D4/build.json.gz": {
+      "sha256": "3df9be0ba5a4e7423eacce7919b0dd20e46fca006139ea9579bf3025cb118ffe",
+      "bytes": 1575,
+      "decoded_sha256": "e83b5049a66314e1febb26223854df5abde148dc7685a96e2c0005f57688ba2a",
+      "decoded_bytes": 11372,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v4/build.json"
+    },
+    "diagnostics/D5/build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v5/build.stdout.log"
+    },
+    "diagnostics/D5/trace.json.gz": {
+      "sha256": "9ec89f05763c4fa59c84d4705f3a04cfb2ef8c78322f9d7aceb80b1ca2d80011",
+      "bytes": 212,
+      "decoded_sha256": "a5c46f2e7244abdaa99f8d92550fc7dae90c67d631b0337752d9d35dee787222",
+      "decoded_bytes": 272,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v5/trace.json"
+    },
+    "diagnostics/D5/run.py.gz": {
+      "sha256": "54011fceac020f186f0fbf3fde1926f9ab587f9caa65cd400ee0ba2c4d1ebe20",
+      "bytes": 557,
+      "decoded_sha256": "9009f2bad1b4c4a928c7e9c4d23ffb2d824530c138ca6a419d538225476461c2",
+      "decoded_bytes": 884,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v5/run.py"
+    },
+    "diagnostics/D5/build-command.json.gz": {
+      "sha256": "709b48991b09693dac5fef0a0ee982d0e7c8f9b796fa351f59d0487f7ccb8d45",
+      "bytes": 1744,
+      "decoded_sha256": "17698770e187dc0ea415148c9008f8f6f5c8f3a87933557423f8ee9c3e5a5db7",
+      "decoded_bytes": 11896,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v5/build-command.json"
+    },
+    "diagnostics/D5/trace.stderr.log.gz": {
+      "sha256": "a4b4d12871e2d00190cacecc4ad6f3ac97d3a2cd6b82e9335a265bd7f243eb56",
+      "bytes": 635,
+      "decoded_sha256": "3481dc67f286ec97058388fc9a6c1fad937d79621bd837be2c00039206b58a7c",
+      "decoded_bytes": 11540,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v5/trace.stderr.log"
+    },
+    "diagnostics/D5/temporary-trace.patch.gz": {
+      "sha256": "1e3fb29a6910a7418e54233bbeb56beac0b4397324b83aaaef07422ac3e32cc2",
+      "bytes": 1305,
+      "decoded_sha256": "23fe65cbd06b181423d0464af29b4b013ffb84d41bd1808fcfecf0d0bc21e558",
+      "decoded_bytes": 3980,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v5/temporary-trace.patch"
+    },
+    "diagnostics/D5/build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v5/build.stderr.log"
+    },
+    "diagnostics/D5/trace.stdout.log.gz": {
+      "sha256": "b28cbceafb37f2b77dfa7fd915eb9f6fb0b3cdc8738086e76eaa0287591ed898",
+      "bytes": 184,
+      "decoded_sha256": "2fefee89bf5a45f24dd3ab3676ff8bbe643e17b0880f3b6b3e5f963168f53f1b",
+      "decoded_bytes": 238,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v5/trace.stdout.log"
+    },
+    "diagnostics/D5/build.json.gz": {
+      "sha256": "6af3ee64fd5f487610b3d0223f883c02abd2cab38742747decb5910452b0c5be",
+      "bytes": 1557,
+      "decoded_sha256": "25eb9793afd797562faca81208e3ecb163586836c9bd4a969aaa9ece42f43ee2",
+      "decoded_bytes": 11436,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v5/build.json"
+    },
+    "diagnostics/D6/build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/build.stdout.log"
+    },
+    "diagnostics/D6/trace.json.gz": {
+      "sha256": "fb2d496fb3585c5517bd84b8a9495b6bbc76162802552c6ba4a0bb602fb954b8",
+      "bytes": 212,
+      "decoded_sha256": "810c2bf96f4d74fc7eaae5d0317ac8220c4168321c3a9a90b61f475e221a6847",
+      "decoded_bytes": 272,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/trace.json"
+    },
+    "diagnostics/D6/run.py.gz": {
+      "sha256": "54011fceac020f186f0fbf3fde1926f9ab587f9caa65cd400ee0ba2c4d1ebe20",
+      "bytes": 557,
+      "decoded_sha256": "9009f2bad1b4c4a928c7e9c4d23ffb2d824530c138ca6a419d538225476461c2",
+      "decoded_bytes": 884,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/run.py"
+    },
+    "diagnostics/D6/build-command.json.gz": {
+      "sha256": "3000019c4866bae0c338fb479a55dd85d11c4e24589b7ba95163b32fe1524f45",
+      "bytes": 1726,
+      "decoded_sha256": "43a62d2de78ae39ea4a0d9dd30752acd87180401674e7644724b86762c366fed",
+      "decoded_bytes": 11893,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/build-command.json"
+    },
+    "diagnostics/D6/trace.stderr.log.gz": {
+      "sha256": "d289babb52a3f71929531f35a111234923d00cd301327f78325a471845574f39",
+      "bytes": 13675,
+      "decoded_sha256": "199c6837d689513b5d841185c581523ddcba2902638ef80ca3eb7e73d649f436",
+      "decoded_bytes": 234620,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/trace.stderr.log"
+    },
+    "diagnostics/D6/failed-v1-build.stdout.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/failed-v1-build.stdout.log"
+    },
+    "diagnostics/D6/temporary-trace.patch.gz": {
+      "sha256": "a2f87da3d5b8e60deeee52b95483a866940778caf0fcfbbd28f9d8120768a74a",
+      "bytes": 1262,
+      "decoded_sha256": "ecbd39bee3ab515ee28a58577ec5efc17f9a1d9f0ac1b7cbb107f9659466d34f",
+      "decoded_bytes": 3469,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/temporary-trace.patch"
+    },
+    "diagnostics/D6/failed-v1-temporary-trace.patch.gz": {
+      "sha256": "e9e2ac0944a820106ba87105999d20b1af08b7386fe507558096988134154c28",
+      "bytes": 1276,
+      "decoded_sha256": "e9ec9a2cc9320fa4e4595b5a4021ce05a0cad34880bd784c246872c5b518ee9c",
+      "decoded_bytes": 3495,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/failed-v1-temporary-trace.patch"
+    },
+    "diagnostics/D6/build.stderr.log.gz": {
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20,
+      "decoded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "decoded_bytes": 0,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/build.stderr.log"
+    },
+    "diagnostics/D6/failed-v1-build.stderr.log.gz": {
+      "sha256": "671a3b8e16065cecec0a987559badece1d83affa1c2934f99e5fb879f208c5f5",
+      "bytes": 712,
+      "decoded_sha256": "9b394d6aada0129395202056d9840fd673b88daa6e73b9d05661752437ab6a74",
+      "decoded_bytes": 1700,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/failed-v1-build.stderr.log"
+    },
+    "diagnostics/D6/trace.stdout.log.gz": {
+      "sha256": "28e2319fe55d1f85289d8d2e3fd5635331e230d18de6c5abe457a099a9bbcdb5",
+      "bytes": 184,
+      "decoded_sha256": "c2e050d5e72dfa12233ab7fff5245dd3a3f4d52e5fc088042bdd9a5d75d7e88f",
+      "decoded_bytes": 238,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/trace.stdout.log"
+    },
+    "diagnostics/D6/failed-v1-build.json.gz": {
+      "sha256": "2dc2b0a412327e520ec26d1878d794e554f90efe0802fab5e4dd5b857557d96f",
+      "bytes": 1561,
+      "decoded_sha256": "ec0fdf6b5c3501dff2951301f6d5fe459204417bc83b8bd1a59581dc7070f11a",
+      "decoded_bytes": 11527,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/failed-v1-build.json"
+    },
+    "diagnostics/D6/build.json.gz": {
+      "sha256": "4dcc7ac378910c66d26a1835fd97fcbae8bcf2328e156110d4a5100c9e113aa2",
+      "bytes": 1562,
+      "decoded_sha256": "ff8b9807dcb23215323b3431de34453fd295b4babb155d2e34ab2cb13b706e9e",
+      "decoded_bytes": 11527,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-debug-20261107-v6/build.json"
+    },
+    "metrics/metrics-config.json.gz": {
+      "sha256": "04729499a3d4ab060ff38163c37bfd66383760d7668f9f48622ec1fb6c361951",
+      "bytes": 1490,
+      "decoded_sha256": "9e10bb9e8caddee9943a851b09c6f486dd66fc7cde9a969ab33e645f47610c1c",
+      "decoded_bytes": 3621,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-metrics-20261107-v1/metrics-config.json"
+    },
+    "metrics/source-pins.json.gz": {
+      "sha256": "446d00dc8bc2480c2080f156cb9a99023cffa106bbf05c6c618141aa8776f37e",
+      "bytes": 395,
+      "decoded_sha256": "f9ee3e01aca5ceffb377180326a6b7803983d537b3579f54e7108f763543c2af",
+      "decoded_bytes": 724,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-metrics-20261107-v1/source-pins.json"
+    },
+    "metrics/mech-ir264-reuse-4/runner-metrics.build.json.gz": {
+      "sha256": "9ccb30f98b9c37ee30e0566b45836653221991f77117f49b93a7b679089a7a91",
+      "bytes": 3423,
+      "decoded_sha256": "bcf9b857a1fd22ca3cea93f145b7e035dfd5ede8ffa117dfb69fd0475208bf69",
+      "decoded_bytes": 18234,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-metrics-20261107-v1/mech-ir264-reuse-4/runner-metrics.build.json"
+    },
+    "metrics/mech-ir264-reuse-4/runner.rs.gz": {
+      "sha256": "deccfb0f27b75764d13c9df3c8a9157c3d8a1232137d93806c705d574ad91453",
+      "bytes": 3457,
+      "decoded_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+      "decoded_bytes": 9883,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-metrics-20261107-v1/mech-ir264-reuse-4/runner.rs"
+    },
+    "metrics/mech-ir264-reuse-4/host-build-run.json.gz": {
+      "sha256": "7b8a2d4d48d26e0ea66311350b0326caaba9106a5b55ab9b159bed448ee278f2",
+      "bytes": 810,
+      "decoded_sha256": "aed8c70cdfd8ddaf3aabddc46035695127e23926b52484130531fea4fb24cb92",
+      "decoded_bytes": 2803,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-metrics-20261107-v1/mech-ir264-reuse-4/host-build-run.json"
+    },
+    "metrics/mech-ir264-reuse-4/audit-run.json.gz": {
+      "sha256": "45ac3ef3f74a35c4cbf84ad36727f77991f153e6169ef571025bb7f698b9a33a",
+      "bytes": 401,
+      "decoded_sha256": "b123c621da17b0859c04bdfbc4b277842bd8308ff43ee54db6b9ba7b18a6c038",
+      "decoded_bytes": 806,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-metrics-20261107-v1/mech-ir264-reuse-4/audit-run.json"
+    },
+    "metrics/mech-ir264-reuse-4/native-link-audit.json.gz": {
+      "sha256": "1ae1345fe07142c42449916a2c718c7eff1fd2517589b6d60ad26286e7df4609",
+      "bytes": 2077,
+      "decoded_sha256": "a7b1dee16e2c6bb2a8022f803dfac7bb7eac0abfe5f51cdf01b477306ea6f8d4",
+      "decoded_bytes": 12868,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-metrics-20261107-v1/mech-ir264-reuse-4/native-link-audit.json"
+    },
+    "recipes/report.py": {
+      "sha256": "fd18e32d7544143c3416150e1cf1d74f44a1d7e23bac36afaab6050a3295f12c",
+      "bytes": 6413,
+      "decoded_sha256": "fd18e32d7544143c3416150e1cf1d74f44a1d7e23bac36afaab6050a3295f12c",
+      "decoded_bytes": 6413,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-report-20261107.py"
+    },
+    "recipes/publish.py": {
+      "sha256": "67cfcad0cdea5ed643f138c4a95aa37b33eb33fbdc32e66eeb2fc2b14fcc1612",
+      "bytes": 9707,
+      "decoded_sha256": "67cfcad0cdea5ed643f138c4a95aa37b33eb33fbdc32e66eeb2fc2b14fcc1612",
+      "decoded_bytes": 9707,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-publish-20261107.py"
+    },
+    "cohort/resources-run.json": {
+      "sha256": "ef0357f7fea1e4b111c61928b529689321f3be3dbcc119fdb884e8cc3041ae47",
+      "bytes": 767,
+      "decoded_sha256": "ef0357f7fea1e4b111c61928b529689321f3be3dbcc119fdb884e8cc3041ae47",
+      "decoded_bytes": 767,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-cohort-20261107-v1/resources-run.json"
+    },
+    "cohort/latency-start-gate.json": {
+      "sha256": "579b879cfa414f0c39edd870ba70f916f603fd800a0973994b2aabc19feb9c9c",
+      "bytes": 748,
+      "decoded_sha256": "579b879cfa414f0c39edd870ba70f916f603fd800a0973994b2aabc19feb9c9c",
+      "decoded_bytes": 748,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-cohort-20261107-v1/latency-start-gate.json",
+      "unredacted_source_sha256": "477fb608d3b69234574560bce0258d4153364989790cffa20d4940426e2040ed"
+    },
+    "cohort/run-cohorts.py": {
+      "sha256": "197a65af9aec04f8b1598b6105b322004ebac56a3be53e6b11f9fdf5347288d8",
+      "bytes": 5072,
+      "decoded_sha256": "197a65af9aec04f8b1598b6105b322004ebac56a3be53e6b11f9fdf5347288d8",
+      "decoded_bytes": 5072,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-cohort-20261107-v1/run-cohorts.py"
+    },
+    "cohort/latency-config.json": {
+      "sha256": "60504629be67bb3edcfe08c96591f94b169da9775a24ace7d8ffd38056305946",
+      "bytes": 11166,
+      "decoded_sha256": "60504629be67bb3edcfe08c96591f94b169da9775a24ace7d8ffd38056305946",
+      "decoded_bytes": 11166,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-cohort-20261107-v1/latency-config.json"
+    },
+    "cohort/resources-config-base.json": {
+      "sha256": "c70d9913cfd506a2e27de77a09e9af64fba57fc101b8c549541edfd778d3cfc2",
+      "bytes": 12196,
+      "decoded_sha256": "c70d9913cfd506a2e27de77a09e9af64fba57fc101b8c549541edfd778d3cfc2",
+      "decoded_bytes": 12196,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-cohort-20261107-v1/resources-config-base.json"
+    },
+    "cohort/sizes-run.json": {
+      "sha256": "fb1e3fc58f3b48f1a66559626c6785381ad0f3bf5237f5c5d96357feeab7c7ec",
+      "bytes": 470,
+      "decoded_sha256": "fb1e3fc58f3b48f1a66559626c6785381ad0f3bf5237f5c5d96357feeab7c7ec",
+      "decoded_bytes": 470,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-cohort-20261107-v1/sizes-run.json"
+    },
+    "cohort/latency-run.json": {
+      "sha256": "5d13c02697c542ccd756427cf85525c3fdee33d2b03738c3d122f5cfc407fe7c",
+      "bytes": 744,
+      "decoded_sha256": "5d13c02697c542ccd756427cf85525c3fdee33d2b03738c3d122f5cfc407fe7c",
+      "decoded_bytes": 744,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-cohort-20261107-v1/latency-run.json"
+    },
+    "cohort/resources-config.json": {
+      "sha256": "faded8ca3e00927c0de05d7e63198c3c16671ea594612c02f11e456912ba4c75",
+      "bytes": 13432,
+      "decoded_sha256": "faded8ca3e00927c0de05d7e63198c3c16671ea594612c02f11e456912ba4c75",
+      "decoded_bytes": 13432,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-cohort-20261107-v1/resources-config.json"
+    },
+    "cohort/resources-start-gate.json": {
+      "sha256": "7b6ee9e294043daf57e12860c8f4ac245c8df4055e262a6ef6ace3d4a34cbf7d",
+      "bytes": 497,
+      "decoded_sha256": "7b6ee9e294043daf57e12860c8f4ac245c8df4055e262a6ef6ace3d4a34cbf7d",
+      "decoded_bytes": 497,
+      "retained_source": "/private/tmp/mech-related-forward-read-windows-cohort-20261107-v1/resources-start-gate.json",
+      "unredacted_source_sha256": "187e2e6315fb89851084141e690c7a737875e1a4561217d6f0af752d48284bf7"
+    },
+    "README.md": {
+      "sha256": "374d0af6541f6221f5f78871ba810b9c3b5fc63dddb24543de73e93664e9962c",
+      "bytes": 4293,
+      "decoded_sha256": "374d0af6541f6221f5f78871ba810b9c3b5fc63dddb24543de73e93664e9962c",
+      "decoded_bytes": 4293
+    },
+    "verify.py": {
+      "sha256": "273d84968b497bec9c015254520631ee52ea4fa814c075a2b68381e879b0ebc4",
+      "bytes": 1521,
+      "decoded_sha256": "273d84968b497bec9c015254520631ee52ea4fa814c075a2b68381e879b0ebc4",
+      "decoded_bytes": 1521
+    }
+  }
+}

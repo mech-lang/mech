@@ -1,0 +1,11 @@
+{
+  "quiet": true,
+  "latency_complete_exact": 248,
+  "seed": 9902647,
+  "samples": 7,
+  "variants": 9,
+  "resource_timings_excluded": true,
+  "process_snapshot_sha256": "7567f49ab9778b1fad9c8c5405b28c8c5474c8b9c378d026c959bd423f154f14",
+  "process_snapshot_retained_locally": "/private/tmp/mech-related-forward-read-windows-cohort-20261107-v1/resources-start-gate.json",
+  "process_snapshot_omission": "Unrelated workstation arguments remain local; all original gate predicates are unchanged."
+}
