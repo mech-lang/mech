@@ -42,9 +42,14 @@ pub(super) fn canonicalize(
     if !options.enabled(OptimizationPass::InvariantVectorGeometry) {
         return Ok(false);
     }
-    let Action::LibraryCall { template, .. } = code.blocks()[proof.arrays[array].witness].action()
-    else {
-        return Err(backend("numeric geometry lost its selected view witness"));
+    // Capture/frame-only views may intentionally carry no selected-call
+    // witness. Keep their checked geometry unless this current source call
+    // actually establishes the immutable unit-axis schema fact.
+    let Some(block) = code.blocks().get(proof.arrays[array].witness) else {
+        return Ok(false);
+    };
+    let Action::LibraryCall { template, .. } = block.action() else {
+        return Ok(false);
     };
     let schema = template
         .inputs()
