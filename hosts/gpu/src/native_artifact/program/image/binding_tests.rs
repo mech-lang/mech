@@ -285,6 +285,10 @@ fn borrowed_parent_frame_metadata_keeps_runtime_lanes_and_exact_public_images() 
     )) {
         let object = emit_program_object(&artifact, &catalog).unwrap();
         let expected = object.descriptor().encode_build_owned_image().unwrap();
+        let expected_table = object
+            .descriptor()
+            .encode_build_owned_table_image()
+            .unwrap();
         let bytes = Box::leak(object.native_metadata().to_vec().into_boxed_slice());
         // SAFETY: immutable data from this genuine checked Object. This reader
         // test does not bind or invoke an entry using caller-created metadata.
@@ -336,8 +340,18 @@ fn borrowed_parent_frame_metadata_keeps_runtime_lanes_and_exact_public_images() 
         assert!(
             frames
                 .iter()
+                .all(|frame| frame.compiler_data_is_borrowed_and_unmaterialized()),
+            "the legacy public image omits static composition layouts"
+        );
+        assert_eq!(
+            restored.encode_build_owned_table_image().unwrap(),
+            expected_table
+        );
+        assert!(
+            frames
+                .iter()
                 .all(|frame| !frame.compiler_data_is_borrowed_and_unmaterialized()),
-            "public serialization retains lazy compiler-field access"
+            "table serialization retains lazy compiler-field access"
         );
     }
 }
