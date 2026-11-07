@@ -376,7 +376,7 @@ mod tests {
             (source.replace("unknown<bool>", "(seed<u64> == 7u64)"), true),
         ] {
             let parsed = parse_canonical_document(
-                TextSnapshot::new(DocumentId(0x424f4f4c), Revision(1), &text).unwrap(),
+                TextSnapshot::new(DocumentId(0x424f4f4c), Revision(1), text.as_str()).unwrap(),
                 ParseConfig::default(),
             );
             assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
