@@ -419,7 +419,9 @@ fn selected_template(
 // IR248 adds data-dependent safe loads from direct immutable ancestor captures
 // inside outlined numeric callees. Replaced/retired roots are excluded; empty
 // captures lend immutable zero storage. Original source checks remain effects.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 248;
+// IR249 integrates PR973/IR204 unsigned interval predicate combination.
+// Demand liveness retains its ablation and extent-proof alias records.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 249;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

@@ -3,6 +3,7 @@
 //! Trapping loads, source failures and work debits retain their ordering.
 mod dead_values;
 mod local_phis;
+mod unsigned_intervals;
 mod preheaders;
 mod word_ranges;
 use crate::native_artifact::NativeCompileError;
@@ -302,6 +303,7 @@ fn optimize_ordered(
         constant_branches_removed: 0,
         neutral_operations_removed: 0,
         boolean_conditions_simplified: 0,
+        unsigned_intervals_combined: 0,
         before_blocks,
         before_instructions,
         after_blocks: before_blocks,
@@ -357,6 +359,7 @@ fn optimize_ordered(
     }
     report.local_phi_parameters_removed =
         local_phis::simplify(&mut context.func, &context.cfg, &context.domtree);
+    report.unsigned_intervals_combined = unsigned_intervals::combine(&mut context.func);
     if controls.enabled(OptimizationPass::DemandLiveness) {
         let dead = dead_values::eliminate(&mut context.func);
         report.dead_parameters_removed = dead.parameters;

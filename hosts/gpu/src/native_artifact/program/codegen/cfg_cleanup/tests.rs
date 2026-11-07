@@ -4,6 +4,213 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
 #[test]
+fn cfg_cleanup_unsigned_intervals_execute_boundaries_at_all_word_widths_and_keep_effects() {
+    use crate::native_artifact::codegen::options::OptimizationOptions;
+    use cranelift_codegen::ir::condcodes::IntCC;
+    for ty in [types::I8, types::I16, types::I32, types::I64] {
+        let mask = u64::MAX >> (64 - ty.bits());
+        for (lower, upper) in [
+            (3, 258.min(mask)),
+            (0, 0),
+            (0, mask),
+            (mask, mask),
+            (mask / 2 + 1, mask),
+            (0, mask / 2),
+        ] {
+            for form in 0..4 {
+                for enabled in [false, true] {
+                    let mut module = cranelift_jit::JITModule::new(
+                        cranelift_jit::JITBuilder::with_flags(
+                            &[("opt_level", "speed")],
+                            default_libcall_names(),
+                        )
+                        .unwrap(),
+                    );
+                    let mut context = module.make_context();
+                    context.func.signature.params = vec![AbiParam::new(types::I64); 2];
+                    context.func.signature.returns = vec![AbiParam::new(types::I64)];
+                    let id = module
+                        .declare_function(
+                            "unsigned_interval",
+                            Linkage::Local,
+                            &context.func.signature,
+                        )
+                        .unwrap();
+                    let mut fc = FunctionBuilderContext::new();
+                    {
+                        let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+                        let entry = b.create_block();
+                        b.append_block_params_for_function_params(entry);
+                        b.switch_to_block(entry);
+                        let args = b.block_params(entry).to_vec();
+                        let word = if ty == types::I64 {
+                            args[1]
+                        } else {
+                            b.ins().ireduce(ty, args[1])
+                        };
+                        let lo = b.ins().iconst(ty, lower as i64);
+                        let hi = b.ins().iconst(ty, upper as i64);
+                        let left = match form {
+                            1 => b.ins().icmp(IntCC::UnsignedLessThanOrEqual, lo, word),
+                            2 if lower > 0 => b.ins().icmp_imm(
+                                IntCC::UnsignedGreaterThan,
+                                word,
+                                (lower - 1) as i64,
+                            ),
+                            2 => b.ins().icmp_imm(
+                                IntCC::UnsignedGreaterThanOrEqual,
+                                word,
+                                lower as i64,
+                            ),
+                            _ => b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, word, lo),
+                        };
+                        // Even a false first predicate must retain the reached
+                        // source effect between the two pure comparisons.
+                        b.ins().store(MemFlags::new(), args[1], args[0], 0);
+                        let right = match form {
+                            1 => b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, hi, word),
+                            2 if upper < mask => {
+                                b.ins()
+                                    .icmp_imm(IntCC::UnsignedLessThan, word, (upper + 1) as i64)
+                            }
+                            2 => {
+                                b.ins()
+                                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, word, upper as i64)
+                            }
+                            _ => b.ins().icmp(IntCC::UnsignedLessThanOrEqual, word, hi),
+                        };
+                        let widen = |b: &mut FunctionBuilder<'_>, value| {
+                            let value = if form == 3 {
+                                b.ins().uextend(types::I16, value)
+                            } else {
+                                value
+                            };
+                            if form == 0 {
+                                value
+                            } else {
+                                b.ins().uextend(types::I64, value)
+                            }
+                        };
+                        let left = widen(&mut b, left);
+                        let right = widen(&mut b, right);
+                        let valid = b.ins().band(left, right);
+                        let valid = if form == 0 {
+                            b.ins().uextend(types::I64, valid)
+                        } else {
+                            valid
+                        };
+                        b.ins().return_(&[valid]);
+                        b.seal_all_blocks();
+                        b.finalize();
+                    }
+                    let options = if enabled {
+                        OptimizationOptions::default()
+                    } else {
+                        OptimizationOptions::without(OptimizationPass::CfgCleanup)
+                    };
+                    let report = optimize(
+                        &CompilationControls::new(options),
+                        &mut context,
+                        module.isa(),
+                    )
+                    .unwrap();
+                    assert_eq!(
+                        report.unsigned_intervals_combined,
+                        usize::from(enabled),
+                        "{ty} {lower} {upper} {form}"
+                    );
+                    context.verify(module.isa()).unwrap();
+                    module.define_function(id, &mut context).unwrap();
+                    module.finalize_definitions().unwrap();
+                    // SAFETY: this owned JIT entry has exactly the declared
+                    // bank/word ABI; the bank and code live through each call.
+                    let entry: unsafe extern "C" fn(*mut u64, u64) -> u64 =
+                        unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+                    let mut inputs = (0..=255).collect::<Vec<u64>>();
+                    inputs.extend([
+                        lower.wrapping_sub(1),
+                        lower,
+                        lower.wrapping_add(1),
+                        upper.wrapping_sub(1),
+                        upper,
+                        upper.wrapping_add(1),
+                        mask,
+                        mask.wrapping_add(1),
+                        i64::MAX as u64,
+                        i64::MIN as u64,
+                        u64::MAX,
+                    ]);
+                    for input in inputs {
+                        let mut observed = !input;
+                        let value = input & mask;
+                        assert_eq!(
+                            unsafe { entry(&mut observed, input) },
+                            u64::from(lower <= value && value <= upper),
+                            "{ty} {lower} {upper} {form} {input}"
+                        );
+                        assert_eq!(observed, input);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn cfg_cleanup_unsigned_intervals_refuse_other_words_signed_dynamic_and_empty_ranges() {
+    use cranelift_codegen::ir::condcodes::IntCC;
+    for mode in 0..7 {
+        let mut function = Function::new();
+        function.signature.params = vec![AbiParam::new(types::I64); 2];
+        function.signature.returns = vec![AbiParam::new(types::I64)];
+        let mut fc = FunctionBuilderContext::new();
+        {
+            let mut b = FunctionBuilder::new(&mut function, &mut fc);
+            let entry = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.switch_to_block(entry);
+            let args = b.block_params(entry).to_vec();
+            let left = match mode {
+                0 => b
+                    .ins()
+                    .icmp_imm(IntCC::SignedGreaterThanOrEqual, args[0], 3),
+                3 => b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, args[0], 9),
+                4 => b.ins().icmp_imm(IntCC::UnsignedGreaterThan, args[0], -1),
+                5 => b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, args[0], 0),
+                _ => b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, args[0], 3),
+            };
+            let right = match mode {
+                0 => b.ins().icmp_imm(IntCC::SignedLessThanOrEqual, args[0], 258),
+                1 => b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[1], 258),
+                2 => b.ins().icmp_imm(IntCC::UnsignedGreaterThan, args[0], 2),
+                3 => b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 3),
+                4 => b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], -1),
+                5 => b.ins().icmp_imm(IntCC::UnsignedLessThan, args[0], 0),
+                _ => b
+                    .ins()
+                    .icmp(IntCC::UnsignedLessThanOrEqual, args[0], args[1]),
+            };
+            let valid = b.ins().band(left, right);
+            let valid = b.ins().uextend(types::I64, valid);
+            b.ins().return_(&[valid]);
+            b.seal_all_blocks();
+            b.finalize();
+        }
+        assert_eq!(unsigned_intervals::combine(&mut function), 0, "mode={mode}");
+    }
+}
+
+#[test]
 fn early_identities_remove_invariant_loop_parameters_before_the_backend_data_pass() {
     let mut module = cranelift_jit::JITModule::new(
         cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
