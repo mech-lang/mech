@@ -9,6 +9,10 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(in crate::native_artifact) struct Range(pub u64, pub u64);
 impl Range {
     pub(in crate::native_artifact) fn bit_and(self, other: Self) -> Self {
+        if self.0 == self.1 && other.0 == other.1 {
+            let value = self.0 & other.0;
+            return Self(value, value);
+        }
         Self(0, self.1.min(other.1))
     }
     pub(super) fn kind(kind: Kind) -> Option<Self> {

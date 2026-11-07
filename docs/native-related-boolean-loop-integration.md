@@ -1,6 +1,6 @@
 # Boolean loop facts in the related-post compiler
 
-IR256 integrates PR973 commit
+IR257 integrates PR973 commit
 `b6a42fde80dbc011dfefa9de5d9659be334411b0` on the frozen IR252 related-post
 compiler. The same zero-or-one SSA transfer proof feeds selected-edge ranges,
 including current loop block arguments. Unsupported entry words, fresh loads,
@@ -30,4 +30,7 @@ carry facts back through that proven Boolean identity. IR256 composes the two
 passes only when independent SSA ranges prove the original word is zero or one.
 Unrestricted odd/even words never inherit a singleton value. The unchanged
 upstream assertion and a new four-width rejection/publication test cover this
-interaction. Original failed receipts remain; no expected value is weakened.
+interaction. The next retained attempt exposed that the shared bit-and range
+transfer discarded even exact singleton results. IR257 retains those exact
+results; non-singleton inputs keep the existing conservative bound. Original
+failed receipts remain; no expected value is weakened.

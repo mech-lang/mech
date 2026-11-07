@@ -429,7 +429,9 @@ fn selected_template(
 // IR254 integrates PR973/IR206 Boolean facts through current loop arguments.
 // IR256 carries selected-edge facts through separately proved Boolean low-bit
 // tests, composing direct branch lowering with the new loop-argument proof.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 256;
+// IR257 retains exact singleton results in the shared unsigned bit-and range
+// transfer, including the proved Boolean low-bit branch predicate.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 257;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
