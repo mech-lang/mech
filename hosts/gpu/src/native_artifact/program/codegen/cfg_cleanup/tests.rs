@@ -194,3 +194,103 @@ fn cfg_cleanup_executes_only_selected_effects_and_keeps_dynamic_branches_and_blo
         }
     }
 }
+
+#[test]
+fn cfg_cleanup_program_local_homes_retire_dead_reads_and_observe_current_boundary_writes() {
+    use crate::native_artifact::codegen::common::memory_regions;
+    use crate::native_artifact::codegen::options::{
+        CompilationControls, OptimizationOptions, OptimizationPass,
+    };
+    use cranelift_jit::{JITBuilder, JITModule};
+    use cranelift_module::{Linkage, Module, default_libcall_names};
+
+    unsafe extern "C" fn change_current(bank: *mut u64) {
+        // SAFETY: the synchronous test call retains the initialized two-word
+        // owner; the callback may mutate its first word, as ordinary hooks do.
+        unsafe { *bank = (*bank).wrapping_add(7) };
+    }
+    for (options, expected_removed) in [
+        (OptimizationOptions::default(), 1),
+        (
+            OptimizationOptions::without(OptimizationPass::NontrappingHomes),
+            0,
+        ),
+        (
+            OptimizationOptions::without(OptimizationPass::DisjointState),
+            1,
+        ),
+        (
+            OptimizationOptions::without(OptimizationPass::CfgCleanup),
+            0,
+        ),
+    ] {
+        let mut module = JITModule::new(
+            JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names()).unwrap(),
+        );
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+        context.func.signature.returns = vec![AbiParam::new(types::I64)];
+        let id = module
+            .declare_function(
+                "current_local_homes",
+                Linkage::Local,
+                &context.func.signature,
+            )
+            .unwrap();
+        let mut builder_context = FunctionBuilderContext::new();
+        {
+            let mut b = FunctionBuilder::new(&mut context.func, &mut builder_context);
+            let entry = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.switch_to_block(entry);
+            let args = b.block_params(entry).to_vec();
+            let (locals, incoming, callback) = (args[0], args[1], args[2]);
+            let flags = memory_regions::program_locals(options);
+            let _unused = b.ins().load(types::I64, flags, locals, 8);
+            let previous = b.ins().load(types::I64, flags, locals, 0);
+            b.ins().store(MemFlags::new(), incoming, locals, 0);
+            let after_store = b.ins().load(types::I64, flags, locals, 0);
+            let mut signature = module.make_signature();
+            signature.params.push(AbiParam::new(types::I64));
+            let signature = b.func.import_signature(signature);
+            b.ins().call_indirect(signature, callback, &[locals]);
+            let after_callback = b.ins().load(types::I64, flags, locals, 0);
+            let result = b.ins().iadd(previous, after_store);
+            let result = b.ins().iadd(result, after_callback);
+            b.ins().return_(&[result]);
+            b.seal_all_blocks();
+            b.finalize();
+        }
+        let controls = CompilationControls::new(options);
+        let report = crate::native_artifact::program::codegen::cfg_cleanup::optimize(
+            &controls,
+            &mut context,
+            module.isa(),
+        )
+        .unwrap();
+        assert_eq!(report.dead_loads_removed, expected_removed);
+        context.verify(module.isa()).unwrap();
+        module.define_function(id, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        // SAFETY: this JIT function has exactly the declared bank/word/callback
+        // ABI. Module, initialized bank and callback live through each call.
+        let entry: unsafe extern "C" fn(*mut u64, u64, u64) -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+        let mut bank = [5u64, 99];
+        for incoming in [11u64, 2, u64::MAX, 17] {
+            let previous = bank[0];
+            let changed = incoming.wrapping_add(7);
+            assert_eq!(
+                unsafe {
+                    entry(
+                        bank.as_mut_ptr(),
+                        incoming,
+                        change_current as *const () as usize as u64,
+                    )
+                },
+                previous.wrapping_add(incoming).wrapping_add(changed)
+            );
+            assert_eq!(bank, [changed, 99]);
+        }
+    }
+}

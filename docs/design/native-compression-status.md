@@ -1,5 +1,87 @@
 # Native compression milestone
 
+**R183 marks checked, initialized native source homes nontrapping.** The
+prepared invocation owns the initialized word bank throughout each synchronous
+entry. Ordinary source homes keep the default alias region and current callback
+barriers; no readonly, alignment or movement permission is added. Source checks,
+prices, ownership, funding, error order and publication contracts remain.
+
+Existing demand cleanup removes **15,420 additional unused IR loads**, for a
+total **24,298**, with **zero actual block parameters removed**. Text shrinks
+**120,784 B** to **8,468,144 B**; entry stack grows **176 B** to **17,008 B**.
+All previous recipes, windows and proof selections remain equal. IR/work/ABI/MBC
+are **203/107/39/14**. Independent mapping repeats the whole Object byte-for-byte.
+
+All **20 matched elapsed medians improve**, geometric **−1.760857%**. The original
+1.05 gates pass. Adverse paired blocks remain; independent rounds are not compounded.
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.683358× | 3.666824× | -0.448882% |
+| reymont-prefix-16384 | 4.445398× | 4.403575× | -0.940824% |
+| random-32769 | 4.891825× | 4.846826× | -0.919892% |
+| 16384-distribution-change | 6.464518× | 6.397616× | -1.034909% |
+| repeated-32769 | 3.200119× | 3.037840× | -5.071014% |
+| 33027-periodic-window | 3.557204× | 3.536104× | -0.593160% |
+| eight-literals | 4.719190× | 4.635783× | -1.767394% |
+
+The independent hardware cohort has **17 lower / three higher instruction
+medians**, with **eleven cycle medians higher**. Natural32 instructions fall
+**1.188933%** (223,430,043.5 → 220,773,609.5); eight literals **0.284913%**
+(12,579,982 → 12,544,140). Seven scalar medians are adverse, but all twelve pass
+unchanged latency/allocation/no-slope gates. All contrary cohorts remain.
+
+Allocation counts, requested bytes, reallocations and incremental usable peak
+are unchanged across all twenty cases. A fixed **+16 B** live-heap offset has an
+unproved cause. Separate RSS/physical cohorts establish no memory saving.
+
+Five exact-current profiles complete **17,556 calls**, with all recorder exits
+and per-case/final session cleanup zero. Natural32 remains about **80.18%** in
+the generated main entry; random32 **70.36%**. Roughly **38.70%** of natural32
+samples are native without a fine numeric source tag. CPU samples are not retired
+events or an estimate of removable host cost. Resolving this attribution gap and
+investigating complete-phase outlining remain future research.
+
+**Four focused / 654 GPU / all 237 CI-selected names executed** pass, with the
+same seven inherited exclusions. Unchanged **236 component / eight composition /
+one real-capacity path**, twelve scalar, fifteen architecture/catalog, runtime-only,
+formatting, warnings-as-errors and 132 workflow checks pass. A twenty-row full-native
+original/decoded witness preserves work/results/errors/aliases/publication/retry;
+resident results agree. Actual parent coverage fails (100 loads), candidate passes
+(534). No expectation or allowance increases.
+
+The raw JIT regression is placed in the existing allowed test boundary after the
+architecture audit catches its initial location. The allowlist is unchanged, and
+the production library rebuild remains byte-identical after that test-only move.
+The missing historical counter binding is recovered from hash-verified public
+R125 evidence; the original baseline counter executable rebuilds byte-for-byte.
+
+A copied human-readable scope label in sealed timing rows still says R182/IR202.
+The actual source/Object/worker pins and version checks identify R183/IR203. An
+explicit erratum preserves and corrects that metadata without changing measurements
+or immutable packets. The final report includes it.
+
+Parent `65436c6b01d6939b9ad9cb3d479c1020c1c16287`; measured source
+`8fc62da7db473ba744b804af7a16cdb8d4dfb2ec`. All five compiler/test/CI files
+reconstruct from the published parent/patch and match qualification. Frozen R145
+dependencies, original source/MBC/algorithm/tables/search/EOF, source allocation
+sites, real scratch capacities, output capacity 13 clear/reuse, aliases, mimalloc
+and full API timing remain. Largest input is 33,027 B.
+
+[Full R183 report](native-initialized-local-homes.md) contains all twenty timing/
+counter rows, current profiles, machine spans, exact receipts, repairs and skipped
+coverage. Evidence remains outside source Git. One commit in existing draft #973;
+no new PR. The broader parent/child brief and 1× goal remain incomplete.
+
+The approved public container and independently retrieved receipt bundle match
+server hashes. Fresh public replay verifies **38 inner packets / 6,403 file
+occurrences / 1,219 paths**, preserving thirteen paths with multiple versions.
+REPORT.md, results.json and packet-replay.json reproduce byte-for-byte. All39
+container/inner receipts agree with the index. Only two new release assets are
+used; no new release is created.
+
+## Historical R182 checkpoint
+
 **R182 removes unused native IR values before lowering.** Demand starts at
 observable effects and control and follows each current block argument. Calls,
 stores, trapping reads/arithmetic, conditions, CFG edges, infinite loops and the
