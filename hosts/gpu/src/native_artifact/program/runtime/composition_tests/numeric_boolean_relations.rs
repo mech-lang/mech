@@ -78,6 +78,19 @@ fn numeric_boolean_relations_lower_guarded_mask_reuse_and_preserve_each_current_
                 OptimizationPass::ScalarLoops,
             )
             .unwrap();
+            let prices = |jit: &JitProgramArtifact| {
+                jit.descriptor()
+                    .metadata()
+                    .visits
+                    .iter()
+                    .map(|visit| visit.work())
+                    .collect::<Vec<_>>()
+            };
+            assert_eq!(
+                prices(&native),
+                prices(&reference),
+                "every original source admission price remains exact"
+            );
             let region = native
                 .descriptor()
                 .metadata()
@@ -106,7 +119,6 @@ fn numeric_boolean_relations_lower_guarded_mask_reuse_and_preserve_each_current_
                     (vec![0], vec![], 0, 0),
                     (vec![0, 2], vec![2, 4], 1, 1),
                 ] {
-                    let mut same_work = None;
                     for (optimized, jit) in [(false, &reference), (true, &native)] {
                         let memory = mode.memory_budget();
                         let args =
@@ -114,19 +126,41 @@ fn numeric_boolean_relations_lower_guarded_mask_reuse_and_preserve_each_current_
                         let aliases = args.clone();
                         let before = contents(&args);
                         let mut output = vec![None; artifact.outputs().len()];
-                        let (result, calls) = if restored {
-                            observe::run_restored(
-                                jit,
-                                &args,
-                                &mut output,
-                                mode.execution(),
-                                &memory,
-                            )
-                        } else {
-                            observe::run(jit, &args, &mut output, mode.execution(), &memory)
-                        };
+                        let (result, calls) = observe::with_work_trace(|| {
+                            if restored {
+                                observe::run_restored(
+                                    jit,
+                                    &args,
+                                    &mut output,
+                                    mode.execution(),
+                                    &memory,
+                                )
+                            } else {
+                                observe::run(jit, &args, &mut output, mode.execution(), &memory)
+                            }
+                        });
                         let report = result.unwrap();
-                        assert_eq!(report.work, *same_work.get_or_insert(report.work));
+                        // Total work includes actual canonical owner inspection,
+                        // cloning, admission and retirement. Native transport
+                        // removes some of that work; do not assume its total
+                        // equals the ordinary callback route's total. Retain
+                        // every debit and the complete route-specific total.
+                        assert!(
+                            calls
+                                .callback_work
+                                .iter()
+                                .all(|(_, _, before, after)| after >= before)
+                        );
+                        let callback_work = calls
+                            .callback_work
+                            .iter()
+                            .map(|(_, _, before, after)| after - before)
+                            .sum::<u64>();
+                        assert!(callback_work <= report.work);
+                        println!(
+                            "{}",
+                            serde_json::json!({"witness":"boolean-relation-accounting","optimized":optimized,"restored":restored,"offsets":offsets,"ids":ids,"start":start,"posts":posts,"work":report.work,"visits":report.visits,"transport_bytes":report.transport_bytes,"callback_work":callback_work,"outside_callback_work":report.work-callback_work,"callback_debits":calls.callback_work,"source_prices_equal":true})
+                        );
                         assert_eq!(
                             output
                                 .last()

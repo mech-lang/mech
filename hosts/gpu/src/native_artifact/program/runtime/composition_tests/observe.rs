@@ -52,6 +52,7 @@ pub(super) struct Counts {
     pub selected_sites: BTreeMap<u64, u64>,
     pub closed_tail_exits: Vec<[u64; 4]>,
     pub closed_tail_work: BTreeMap<u64, u64>,
+    pub callback_work: Vec<(u64, u64, u64, u64)>,
     pub segment_retirements: BTreeMap<(u32, u32), u64>,
     pub virtual_retirements: BTreeMap<u32, u64>,
 }
@@ -90,6 +91,43 @@ thread_local! {
     static HELPER: Cell<Option<Helper>> = const { Cell::new(None) };
     static FIRST_CHANGE_COPY_LIMIT: Cell<Option<u64>> = const { Cell::new(None) };
     static FIRST_CHANGE_COPY_TARGET: Cell<Option<usize>> = const { Cell::new(None) };
+    static TRACE_WORK: Cell<bool> = const { Cell::new(false) };
+}
+pub(super) fn with_work_trace<T>(run: impl FnOnce() -> T) -> T {
+    struct Reset(bool);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            TRACE_WORK.with(|trace| trace.set(self.0));
+        }
+    }
+    let _reset = Reset(TRACE_WORK.with(|trace| trace.replace(true)));
+    run()
+}
+unsafe fn before_work(context: *mut c_void) -> Option<u64> {
+    TRACE_WORK.with(Cell::get).then(|| {
+        // SAFETY: observation runs only while this same checked callback is suspended.
+        unsafe { &*context.cast::<Invocation<'_, '_, '_>>() }
+            .state
+            .control
+            .work
+            .used()
+    })
+}
+unsafe fn after_work(context: *mut c_void, site: u64, op: u64, before: Option<u64>) {
+    if let Some(before) = before {
+        // SAFETY: the delegated callback has ended its synchronous mutable borrow.
+        let after = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() }
+            .state
+            .control
+            .work
+            .used();
+        COUNTS.with(|counts| {
+            counts
+                .borrow_mut()
+                .callback_work
+                .push((site, op, before, after))
+        });
+    }
 }
 pub(in crate::native_artifact::program::runtime) fn prepaid_segment_entry_work(entry: u64) {
     COUNTS.with(|v| v.borrow_mut().prepaid_segment_entry_work = Some(entry));
@@ -137,13 +175,16 @@ fn private_homes(
     unsafe { locals.add(start) }
 }
 unsafe extern "C" fn admit(context: *mut c_void, site: u64) -> u64 {
+    let before = unsafe { before_work(context) };
     COUNTS.with(|v| {
         let mut counts = v.borrow_mut();
         *counts.admits.entry(site).or_default() += 1;
         *counts.admission_callbacks.entry(site).or_default() += 1;
     });
     // SAFETY: run retains and restores this same synchronous callback/context.
-    unsafe { ADMIT.with(Cell::get).unwrap()(context, site) }
+    let result = unsafe { ADMIT.with(Cell::get).unwrap()(context, site) };
+    unsafe { after_work(context, site, u64::MAX, before) };
+    result
 }
 unsafe extern "C" fn helper(
     context: *mut c_void,
@@ -154,6 +195,7 @@ unsafe extern "C" fn helper(
     c: u64,
     out: *mut u64,
 ) -> u64 {
+    let before = unsafe { before_work(context) };
     if matches!(
         GlobalHelper::decode(op),
         GlobalHelper::AdmitMove
@@ -457,6 +499,7 @@ unsafe extern "C" fn helper(
     };
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    unsafe { after_work(context, site, op, before) };
     if op == GlobalHelper::ClosedTailEnd.raw() && c == 0 && status == 0 {
         // SAFETY: the delegated callback has returned and ended its exclusive
         // borrow of this same live Invocation. Observe the actual settled work.
