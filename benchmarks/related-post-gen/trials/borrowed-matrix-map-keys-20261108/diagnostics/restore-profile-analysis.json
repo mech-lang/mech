@@ -1,0 +1,8 @@
+{
+  "restoration_entry_samples": 3456,
+  "proof_derivation_inclusive_samples": 1161,
+  "full_plan_revalidation_under_proof": 1063,
+  "proof_fraction_of_restoration_samples": 0.3359375,
+  "revalidation_fraction_within_proof_samples": 0.9155900086132644,
+  "scope": "Repeated restore-only diagnostic with unchanged Mech Object; exact full5000 output afterwards. Samples are inclusive and not predicted removable latency."
+}
