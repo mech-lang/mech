@@ -447,7 +447,9 @@ fn selected_template(
 // independently of the proposed window, instead of rejecting all carrier writes.
 // IR276 selects scalar cardinality for genuine matrix-length calls independently
 // of element representation, including canonical String matrices.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 276;
+// IR277 uses checked count-times-width for already validated packed row blocks,
+// retaining their complete original accounting, capacity and alias envelope.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 277;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

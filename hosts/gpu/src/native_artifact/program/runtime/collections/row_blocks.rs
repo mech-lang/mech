@@ -4,6 +4,49 @@ use super::*;
 use mech_core::snapshot::SequenceView;
 use mech_engine::native_artifact::NativeMatchValue;
 
+#[cfg(test)]
+thread_local! {
+    static FORCE_GENERIC_PAYLOAD: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
+    static PACKED_PAYLOADS: core::cell::Cell<u64> = const { core::cell::Cell::new(0) };
+}
+
+/// Only canonical packed banks whose scalar payload width is fixed qualify.
+/// This replaces a payload-size pass, not a capacity/source/account check or
+/// any debit. Text and generic cells retain their checked element traversal.
+fn payload_bytes(value: &Value, additions: u64) -> Result<u64, Error> {
+    #[cfg(test)]
+    let packed = !FORCE_GENERIC_PAYLOAD.with(core::cell::Cell::get);
+    #[cfg(not(test))]
+    let packed = true;
+    if packed {
+        if let ValueData::Matrix(matrix) = value.data() {
+            let width = match matrix.elements() {
+                SequenceView::Bool(_) | SequenceView::U8(_) => Some(1),
+                SequenceView::U16(_) => Some(2),
+                SequenceView::U32(_) => Some(4),
+                SequenceView::U64(_)
+                | SequenceView::I64(_)
+                | SequenceView::F64(_)
+                | SequenceView::Index(_) => Some(8),
+                _ => None,
+            };
+            if let Some(width) = width {
+                #[cfg(test)]
+                PACKED_PAYLOADS.with(|count| count.set(count.get() + 1));
+                return mul(additions, width);
+            }
+        }
+    }
+    let mut bytes = 0;
+    for ordinal in 0..additions {
+        bytes = add(bytes, data::element(value, ordinal, 0)?.0.bytes())?;
+    }
+    Ok(bytes)
+}
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod tests;
+
 impl State {
     pub(super) fn push_row_block(
         &mut self,
@@ -42,10 +85,7 @@ impl State {
         {
             return Err(invalid("native row block must have exactly one row"));
         }
-        let mut payload = 0;
-        for ordinal in 0..additions {
-            payload = add(payload, data::element(&value, ordinal, 0)?.0.bytes())?;
-        }
+        let payload = payload_bytes(&value, additions)?;
         self.account(
             ctx,
             id,
