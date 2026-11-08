@@ -590,3 +590,6 @@ pub(in crate::native_artifact) mod word_collections;
 pub(in crate::native_artifact) mod numeric_maps;
 pub(in crate::native_artifact) mod query_stages;
 pub(in crate::native_artifact) mod utf8_reads;
+
+#[cfg(test)]
+mod borrowed_map_keys;

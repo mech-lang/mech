@@ -4,7 +4,7 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
-fn source(key: &str, value: &str, next: &str, seed: &str) -> String {
+pub(in crate::native_artifact::program::prepare) fn source(key: &str, value: &str, next: &str, seed: &str) -> String {
     format!(
         r#"
 +> map
@@ -23,7 +23,7 @@ build(tags<[string]>, first<u64>, last<u64>)
     )
 }
 
-fn artifact(source: &str) -> mech_engine::ProgramArtifact {
+pub(in crate::native_artifact::program::prepare) fn artifact(source: &str) -> mech_engine::ProgramArtifact {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x4f52444d), Revision(1), source).unwrap(),
         ParseConfig::default(),

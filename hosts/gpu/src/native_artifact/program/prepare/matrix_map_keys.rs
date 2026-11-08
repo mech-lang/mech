@@ -174,4 +174,4 @@ impl Layout {
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-mod tests;
+pub(super) mod tests;
