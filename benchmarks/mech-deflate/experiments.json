@@ -41505,6 +41505,94 @@
           }
         }
       ]
+    },
+    "207": {
+      "base": "da4a2d2819803335480ac6490947cefccd95eb7c",
+      "production": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Retain diagnostic evidence and exact source externally; do not adopt the diagnostic as production. Shared specializations cut real work, but six production gates still fail and ordinary contracts remain omitted. No favorable unchanged rerun.",
+      "source_files": [],
+      "archived_changed_compiler_files": 27,
+      "candidate_source_patch_sha256": "e2e7d8dc96109f3ed87ad009717c22b66c31344ef0f12f3abf0d0e446c79063f",
+      "measured_source_patch_sha256": "208d27cfeefcfb1b6cf736d7e064554b5cd80dd8280448ffa0891aa497bed53d",
+      "formatted_full_object_byte_identical": true,
+      "timed_object_sha256": "c5bbbc5618577f3c5de9f89c03de0ce6f4cedc0cc7d5415ceae627598d56cd04",
+      "replay": {
+        "archive_schema": "evidence/manifest.json; SHA256 inventory",
+        "scripts": [
+          "heap-summary.py",
+          "analyze.py"
+        ],
+        "scope": "Numerical receipt replay without compiler/compressor execution"
+      },
+      "events": [
+        {
+          "event": "complete-diagnostic-shared-numeric-phases-and-word-packs-unadopted",
+          "asset": "r207-compact-specializations-4c556b933168.tar.gz",
+          "sha256": "4c556b933168dfc7d50473cbfc9734436877ef01e55ead8e1e8ccb4b228caba9",
+          "bytes": 2813174,
+          "files": 813,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r207-compact-specializations-4c556b933168.tar.gz",
+          "compressor_source_unchanged": true,
+          "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+          "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+          "retained_production_unchanged_from_R199": true,
+          "diagnostic_contract_restored": false,
+          "totals": {
+            "primary_complete_calls": 8616,
+            "primary_observations": 8496,
+            "primary_reference_compressions": 5120,
+            "separate_mech_cpu_heap_calls": 2400,
+            "elapsed_lower_vs_previous": 17,
+            "elapsed_higher_vs_previous": 3,
+            "geometric_elapsed_ratio_to_previous": 0.7783564171182128,
+            "original_1_05_gate_vs_retained_pass": 14,
+            "original_1_05_gate_vs_previous_pass": 20,
+            "instruction_medians_lower_vs_previous": 12,
+            "instruction_medians_higher_vs_previous": 8,
+            "cycle_medians_lower_vs_previous": 14,
+            "cycle_medians_higher_vs_previous": 6,
+            "equal_diagnostic_heap_cases": 20,
+            "wall_stack_profile_complete_calls": 8669,
+            "exact_pc_profile_complete_calls": 20790
+          },
+          "reference_counter_observations": 1280,
+          "reference_verified_complete_calls": 10240,
+          "static_native_phases": 4,
+          "static_word_pack_sites": 27,
+          "code_bytes_previous": 8315704,
+          "code_bytes_root": 8897684,
+          "code_bytes_including_phases": 8906516,
+          "stack_root_bytes": 79696,
+          "stack_root_plus_phase_bytes": 80000,
+          "focused_phase_cases": 48,
+          "real_match_controls": 1724,
+          "resident_value_agreements": 1566,
+          "resident_default_cap_denials": 142,
+          "ordered_source_errors": 16,
+          "generic_builder_cases": 40,
+          "complete_smoke_calls": 120,
+          "fresh_production_native_suite": false,
+          "historical_R206_native_tests": 677,
+          "historical_R206_scheduled_selections": 260,
+          "public_verification": {
+            "asset": "r207-compact-specializations-4c556b933168.tar.gz",
+            "bytes": 2813174,
+            "sha256": "4c556b933168dfc7d50473cbfc9734436877ef01e55ead8e1e8ccb4b228caba9",
+            "file_occurrences": 813,
+            "server_digests_match": true,
+            "download_sha256_match": true,
+            "numerical_replay_byte_identical": true,
+            "scope": "Fresh public release retrieval; archived numerical replay only, no compiler/compressor execution."
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
