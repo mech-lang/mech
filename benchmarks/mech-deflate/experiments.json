@@ -42604,6 +42604,87 @@
       "ordinary_contract_restored": false,
       "new_branch_or_PR": false,
       "next": "Count reached consuming buffer results, reproduce their redundant ownership transport minimally, then preserve one source token through successful updates with exact aliases/errors/cleanup and all20 acceptance."
+    },
+    "221": {
+      "base": "9b1f27fdac88de32ea703cab4a876788cd0c84ac",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "versions_retained": {
+        "ir": 215,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "source_files": [],
+      "archived_compiler_delta": [
+        "hosts/gpu/src/native_artifact/program/compact/owner_flow.rs",
+        "hosts/gpu/src/native_artifact/program/compact/emit.rs"
+      ],
+      "decision": {
+        "retained_experiment": "R221 successful buffer-result ownership handoff",
+        "normal_compiler": "R215/IR215",
+        "ordinary_source_unchanged": true,
+        "geometric_blockmean_ratio": 0.9310145779131044,
+        "original_1_05_gates": 20,
+        "instructions_lower_higher": [
+          19,
+          1
+        ],
+        "cycles_lower_higher": [
+          17,
+          3
+        ],
+        "code_root_delta": 7364,
+        "stack_root_delta": 256,
+        "allocation_copy_peaks_unchanged_all20": true,
+        "ordinary_contract_restored": false,
+        "parity_achieved": false,
+        "next": "Existing complete shallow numeric proofs into compact entry, starting with hot headers12868/15737 and explicit witness/acceptance."
+      },
+      "events": [
+        {
+          "event": "successful-buffer-result-owned-reference-handoff",
+          "asset": "r221-buffer-result-handoff-d3a0e20b5df5.tar.gz",
+          "sha256": "d3a0e20b5df517343d120a543e7e92cd4d5eb7882cc956f868dee1af50233962",
+          "bytes": 3918343,
+          "files": 1200,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r221-buffer-result-handoff-d3a0e20b5df5.tar.gz"
+        }
+      ],
+      "observations": {
+        "primary_complete_calls": 161832,
+        "retained_primary_observations": 161712,
+        "primary_reference_compressions": 5120,
+        "separate_mech_cpu_heap_calls": 3120,
+        "reference_counter_windows": 1280,
+        "reference_counter_compressions": 10240,
+        "compiled_control_cases": 2560,
+        "original_1_05_gates_pass": 20,
+        "blockmean_1_05_gates_pass": 20,
+        "elapsed_medians_lower": 18,
+        "elapsed_medians_higher": 0,
+        "elapsed_medians_equal": 2,
+        "instructions_lower": 19,
+        "instructions_higher": 1,
+        "instructions_equal": 0,
+        "cycles_lower": 17,
+        "cycles_higher": 3,
+        "geometric_elapsed_ratio": 0.9386054762241361,
+        "geometric_blockmean_ratio": 0.9310145779131044,
+        "wall_profile_calls": 23052,
+        "pc_profile_calls": 72088,
+        "eligible_source_buffer_sites": 562,
+        "small_observed_nonnull_buffer_handoffs": 5380,
+        "full_observer_calls": 80,
+        "buffer_family_controls": 48,
+        "original_decoded_small_image_pairs": 38,
+        "unchanged_numeric_phase_functions": 7,
+        "scalar_control_code_identical": true
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "next": "Test the existing complete non-appending single-loop numeric class in compact entry; exact hot source witnesses, checked fallback/current-owner gates,original/decoded controls and all20 measurements."
     }
   },
   "repository": "mech-lang/mech",
