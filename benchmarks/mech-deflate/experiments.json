@@ -40809,6 +40809,67 @@
           }
         }
       ]
+    },
+    "201": {
+      "base": "a7c216810387b049516078478165564a8c29cb56",
+      "experimental_compiler_base": "b638320000f7cb33837df2ee73f09221551826a0",
+      "retained_production_commit": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "decision": "Reject adoption of this LLVM22 O3/fast-register-allocation configuration: 17 slower medians and 17 failed performance gates. Keep its completed comparison and narrowly tested enabler patch for review. Retained #973 production remains R199; unmodified-default LLVM runtime is unmeasured.",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "versions_experimental": {
+        "ir": 264,
+        "work": 115,
+        "abi": 41,
+        "bytecode": 14
+      },
+      "source_files": [],
+      "experimental_patch_sha256": "dc5e0dda755b11494041efeb8fbfe17d2ffbeeab0570902685d53a8f8cacd187",
+      "events": [
+        {
+          "event": "optional-llvm-complete-compression-comparison-rejected",
+          "asset": "r201-llvm-compression-comparison-1006d461b65f.tar.gz",
+          "sha256": "1006d461b65fa396bfbc2ef400f133b9b016569fb5feb2f3b055e63cae18b6a8",
+          "bytes": 4272254,
+          "files": 508,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "compressor_source_unchanged": true,
+          "retained_production_unchanged_from_R199": true,
+          "configuration": "O3 IR and machine emission; fast register allocation; no peephole or machine LICM; M1",
+          "ordinary_optimized_allocator_unmeasured": true,
+          "primary_observations": 8928,
+          "total_complete_primary_calls": 9048,
+          "separate_diagnostic_complete_calls": 3120,
+          "backend_comparison": {
+            "gates_1_05_pass": 3,
+            "lower_elapsed_medians": 3,
+            "higher_elapsed_medians": 17,
+            "geometric_change_percent": 77.1098359056201
+          },
+          "new_revision_control": {
+            "gates_1_05_pass": 4,
+            "lower_elapsed_medians": 3,
+            "higher_elapsed_medians": 17,
+            "geometric_change_percent": 18.61420088507142
+          },
+          "heap_equal_cases": 20,
+          "lower_instruction_medians": 3,
+          "higher_instruction_medians": 17,
+          "rust_native_tests": 14,
+          "real_object_metadata_tests": 8,
+          "fresh_profile_calls": 7922,
+          "broad_native_ci_rerun": false,
+          "public_verification": {
+            "file_occurrences": 508,
+            "server_digests_match": true,
+            "numerical_replay_byte_identical": true
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",

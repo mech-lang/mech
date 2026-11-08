@@ -1,5 +1,15 @@
 # Native compression milestone
 
+## R201: optional backend comparison rejected; retained compiler unchanged
+
+The unchanged complete level-12 program runs correctly on all twenty inputs through the optional LLVM backend. The measured configuration uses O3 IR/machine emission with fast register allocation, peephole and machine LICM disabled. Against the matched experimental Cranelift control, seventeen elapsed medians and seventeen instruction medians rise; geometric elapsed is **77.109836% higher**, and only three original 1.05 gates pass. The ordinary optimized allocator remains unmeasured; this result does not establish its eventual performance.
+
+Retained production is still **R199 / IR214**. In this fresh shared-reference cohort, natural32 is **3.361839× Roc**, periodic33 **3.398392×**, repeated32 **2.893338×**, eight literals **4.520977×**. The LLVM trial is respectively10.238742×,13.987677×,12.693051× and8.670089×. Revision/control differences are explicitly separated from the pure backend effect. No LLVM code or dependency is adopted on this branch.
+
+8,928 primary observations /9,048 complete calls,3,120 separate counter/heap calls and7,922 fresh profile calls retain exact bytes, independent inflate, aliases, capacities and zero managed cleanup. Heap medians agree for all20 matched-backend cases; natural32 instructions rise216.8M→759.3M and the reported stack envelope17,808→481,792 bytes.14 Rust/native andeight real-object metadata tests pass; broader experimental-backend CI and optimized-allocator runtime remain unqualified. [All rows, revisions, actual emitted code, narrow isolated fixes and immutable evidence](native-llvm-compression-comparison.md).
+
+The next active work returns to the retained approximately **3.3×** cases: profile that exact executable, improve one demonstrated native-loop cost, and rerun all twenty unchanged gates. Existing draft #973 only; no new PR. Parity and the compact-computation brief remain incomplete.
+
 ## R200: short reduction cutoff rejected; tests retained
 
 **Production remains R199 / IR214.** The candidate changes the four complete-group comparisons from sixteen to four, with no generated code-size or stack change. All20 original gates pass, but eleven elapsed medians rise and geometric elapsed worsens **0.066724%**. Natural32 **3.347987×→3.373958× Roc**, natural16 **4.047769×→4.081688×**, repeated32 **2.870054×→2.886755×**, and periodic33 **3.359533×→3.373970×** are adverse. These are paired candidate/control readings, not new retained-compiler gains or between-cohort regressions.
