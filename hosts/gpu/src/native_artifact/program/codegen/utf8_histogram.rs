@@ -372,7 +372,6 @@ fn emit(
     let tail = b.create_block();
     b.ins().brif(more, tail, &[], hit, &[]);
     b.switch_to_block(tail);
-    let remaining = b.ins().isub(bytes, offset);
     for width in if vectorized && halfwords {
         &[16i64, 8, 4, 2, 1][..]
     } else if vectorized {
@@ -382,6 +381,10 @@ fn emit(
     } {
         let read = b.create_block();
         let next = b.create_block();
+        // Full vectors loop; after a short width succeeds, every smaller
+        // exact tail is considered once without restarting the width ladder.
+        let offset = b.use_var(equal_at);
+        let remaining = b.ins().isub(bytes, offset);
         let enough = b
             .ins()
             .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, *width);
@@ -412,11 +415,26 @@ fn emit(
         b.switch_to_block(equal);
         let after = b.ins().iadd_imm(offset, *width);
         b.def_var(equal_at, after);
-        b.ins().jump(compare_head, &[]);
+        b.ins().jump(
+            if vectorized && halfwords && *width < 16 {
+                next
+            } else {
+                compare_head
+            },
+            &[],
+        );
         b.switch_to_block(next);
     }
-    // Offset<bytes proves the final one-byte case; retain a defensive failure.
-    b.ins().jump(invalid, &[]);
+    // The straight tail has exhausted the equal byte extent. The legacy
+    // ladder instead requires one width to jump back to its checked header.
+    b.ins().jump(
+        if vectorized && halfwords {
+            hit
+        } else {
+            invalid
+        },
+        &[],
+    );
     b.switch_to_block(advance);
     let position = b.use_var(probe_at);
     let next = b.ins().iadd_imm(position, 1);

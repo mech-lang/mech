@@ -796,7 +796,7 @@ fn utf8_word_chunks_keep_original_decoded_restored_outputs_reports_and_atomic_re
                             held
                         );
                     } else {
-                        assert_eq!(format!("{:?}",a.unwrap()), format!("{:?}",b.unwrap()));
+                        assert_eq!(format!("{:?}", a.unwrap()), format!("{:?}", b.unwrap()));
                         assert_eq!(drafts(&left), drafts(&right));
                         assert_eq!(
                             (ac.selected, ac.complete, bc.selected, bc.complete),

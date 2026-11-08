@@ -455,7 +455,16 @@ pub(in crate::native_artifact) fn emit(
     b.switch_to_block(next_compare);
     let at = b.ins().iadd_imm(at, 1);
     b.def_var(equal_at, at);
-    b.ins().jump(scalar_tail, &[]);
+    // The 8/4/2 tail leaves at most one byte. Its successful comparison can
+    // finish directly; scalar/legacy emission keeps its original byte loop.
+    b.ins().jump(
+        if word_chunks && vectorized {
+            hit
+        } else {
+            scalar_tail
+        },
+        &[],
+    );
     b.switch_to_block(advance);
     let at = b.use_var(probe_at);
     let at = b.ins().iadd_imm(at, 1);
