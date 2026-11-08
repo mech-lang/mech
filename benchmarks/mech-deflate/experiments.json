@@ -42320,6 +42320,71 @@
       "ordinary_contract_retained": false,
       "candidate_default_adopted": false,
       "new_branch_or_PR": false
+    },
+    "217": {
+      "base": "f2d890a0e0288ebe66703c360ce17e29f1b8f269",
+      "normal_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "retained_diagnostic": "efd9069b589512630891810191e7de35d57325d8",
+      "versions": {
+        "ir": 215,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": {
+        "adopted": false,
+        "pending_validation": false,
+        "reason": "Preserve the copy-elimination result and all evidence, but do not adopt while empty misses the original1.05 gate. Retained normalR215 and diagnosticR211 stay unchanged.",
+        "normal_compiler_unchanged": true,
+        "parity_achieved": false
+      },
+      "source_files": [],
+      "compiler_rust_files": 0,
+      "diagnostic_compiler_files": 4,
+      "events": [
+        {
+          "event": "current-path-indexed-owner-retirement",
+          "asset": "r217-guarded-indexed-retirement-deb2e8e72b9c.tar.gz",
+          "sha256": "deb2e8e72b9cfebd38c2fc8d7c69e6755d2394d1f1139e64ad32c14584c472d6",
+          "bytes": 3249254,
+          "files": 789,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r217-guarded-indexed-retirement-deb2e8e72b9c.tar.gz"
+        }
+      ],
+      "observations": {
+        "primary_complete_calls": 8616,
+        "retained_primary_observations": 8496,
+        "primary_reference_compressions": 5120,
+        "separate_mech_cpu_heap_calls": 3120,
+        "reference_counter_windows": 1280,
+        "reference_counter_compressions": 10240,
+        "full_smoke_calls": 40,
+        "compiled_regression_cases": 640,
+        "original_1_05_gates_pass": 19,
+        "elapsed_lower": 17,
+        "elapsed_higher": 1,
+        "elapsed_equal": 2,
+        "geometric_elapsed_ratio": 0.9891003034889645,
+        "instruction_medians_lower": 16,
+        "instruction_medians_higher": 4,
+        "cycle_medians_lower": 17,
+        "cycle_medians_higher": 3,
+        "wall_profile_calls": 22514,
+        "pc_profile_calls": 66472,
+        "eligible_static_retirement_sites": 73,
+        "qualified_small_nonnull_retirement_visits": 744,
+        "ordinary_managed_source_changes": 0
+      },
+      "code": {
+        "before_reported_bytes": 5597664,
+        "after_reported_bytes": 5608036,
+        "before_reported_root_stack": 61120,
+        "after_reported_root_stack": 61344
+      },
+      "ordinary_contract_retained": false,
+      "candidate_default_adopted": false,
+      "new_branch_or_PR": false
     }
   },
   "repository": "mech-lang/mech",

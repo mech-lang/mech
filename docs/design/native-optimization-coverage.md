@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R216
+# Production/diagnostic optimization coverage after R217
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -22,3 +22,5 @@ R214 combines dense initialization and the SAME canonical-home flag provider, re
 R215 adopts the qualified dense interface/home-fact combination in maintained normal execution, with IR215 identity and exact original contract checks. Native text matches R214 byte-for-byte, all678 maintained tests and52 linked controls pass, and all20 original elapsed gates pass vs R199/R214. No additional source operation becomes native through the identity/transport change. The same whole-native diagnostic remains R211 and still omits ordinary guarantees. Stable owner pooling and payload-site allocation census remain unimplemented; the full brief is open.
 
 R216 completes the separate stable owner-record experiment and source-site payload census. All151 executed sites resolve across all20 cases; payload event sequences remain identical while natural32 owner requests fall2588→29. Eight unit/640 compiled original-decoded controls pass. The pool stays unretained because two unchanged elapsed gates fail; normalR215 and retained diagnosticR211 remain unchanged. This closes the brief’s requested experiments and one ordinary integration checkpoint, not parity or qualification of the full diagnostic. [Complete disposition](native-owner-pool-census.md).
+
+R217 uses existing current-path last-use proof to retire stale other owner homes before a changing indexed update.73 static sites;640 compiled controls/all20 outputs pass, with major copy/request reductions. The candidate stays unretained because empty misses the original elapsed gate. NormalR215 and retained diagnosticR211 remain unchanged; no additional source operation becomes native and ordinary contracts are not restored by this lifetime experiment. [Results and next simplification](native-indexed-owner-retirement.md).
