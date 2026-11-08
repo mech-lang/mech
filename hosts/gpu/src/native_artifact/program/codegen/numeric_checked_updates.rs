@@ -22,11 +22,11 @@ pub(super) fn derive(code: CodePlan<'_>, numeric: &Numeric, shadow: usize) -> Pr
             entry.1 = site;
         }
     }
-    let jump = |site| match code.blocks()[site].terminator() {
+    let jump = |site: usize| match code.blocks()[site].terminator() {
         Term::Scalar(Branch::Jump(next)) => Some(next),
         _ => None,
     };
-    let pure = |site| match numeric.action(site) {
+    let pure = |site: usize| match numeric.action(site) {
         Some(
             Operation::Read { .. }
             | Operation::Length { .. }
