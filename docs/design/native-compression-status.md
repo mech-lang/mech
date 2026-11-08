@@ -1,5 +1,11 @@
 # Native compression milestone
 
+## R212: effect-aware phase transport measured, R211 retained
+
+The candidate keeps fixed descriptors with the caller and uses the existing owner-transfer proof at phase returns. All20 exact outputs and semantic controls pass, but two unchanged elapsed gates fail: periodic and repeated regress about6.1%. Geometric elapsed improves0.74%; large-case separate instructions/cycles fall and all20 heap cohorts match R211. Preserve both contrary cohorts; do not adopt R212 as the default. Production remains R199 and the retained diagnostic remains R211. [Full four-variant results, controls and current profiles](native-compact-phase-transport.md).
+
+Explicit parallel assignment, metadata/predicate and shared-readonly phase witnesses now execute. Next: one compact interface inside ordinary admission/ownership/funding, with exact error/recovery and checked fallback. This does not wait for whole-diagnostic superiority. Owner pooling and payload-site allocation census remain separate follow-ups.
+
 ## R211: dead-source ownership transfers in the complete diagnostic
 
 **Production remains R199 /IR214.** Existing field liveness and current-predicate facts now transfer one dead source reference into one aggregate destination after shared emission succeeds. Real aliases, additional duplicate destinations, previous target release, post-action outputs, errors and current mutation exclusivity remain. Three compiler files change from R210; the complete archived diagnostic has30 changed compiler files.
