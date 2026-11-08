@@ -97,10 +97,30 @@ pub(in crate::native_artifact) fn emit(
     matrix_keys: bool,
     key_views: bool,
     dictionary_views: bool,
+    seed_frames: bool,
 ) -> Result<(Option<Block>, bool), NativeCompileError> {
     let Some(owner) = owner else {
         return Ok((None, false));
     };
+    if seed_frames
+        && matches!(code,CodePlan::Program(program) if program.metadata().dictionary_seed_frames.producer(site).is_some())
+    {
+        let NativeIterationAction::LibraryCall { operands, .. } = code.blocks()[site].action()
+        else {
+            return Err(backend("native seed outside producer"));
+        };
+        let hooks = hooks.ok_or_else(|| backend("native seed lacks checked hooks"))?;
+        hooks.library_operation(
+            b,
+            site,
+            GlobalHelper::MapSeedFrame.raw(),
+            operands,
+            locals,
+            |value| code.kind(value).is_some(),
+            error,
+        )?;
+        return Ok((None, true));
+    }
     if key_views
         && matrix_keys
         && matches!(code, CodePlan::Program(program)

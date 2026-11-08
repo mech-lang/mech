@@ -81,6 +81,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     BorrowedMapKeys,
     /// Retain a completed generic dictionary through one native UTF8 lookup.
     GenericDictionary,
+    /// Omit a complete-use initial Map-state aggregate, retaining its real children.
+    DictionarySeedFrames,
     /// Test private ownership before loading/comparing an old write target.
     PrivateWritesFirst,
     /// Stronger immutable-cell facts require the guarded-load optimization.

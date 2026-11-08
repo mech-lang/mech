@@ -537,6 +537,14 @@ fn decode_inner<
         .transpose()
         .map_err(str::to_owned)?
         .unwrap_or_default();
+    let dictionary_seed_frames = map_owner_words
+        .as_ref()
+        .map(|owners| {
+            native::program::prepare::dictionary_seed_frames::Layout::derive(&plan, owners)
+        })
+        .transpose()
+        .map_err(str::to_owned)?
+        .unwrap_or_default();
     if (image.version >= 7) != w.numeric_maps.is_some() {
         return Err("native descriptor version differs from numeric map inventory".into());
     }
@@ -839,6 +847,7 @@ fn decode_inner<
             matrix_map_keys,
             borrowed_map_keys,
             generic_dictionary,
+            dictionary_seed_frames,
             utf8_reads,
             numeric_maps,
             frozen_maps,

@@ -172,12 +172,20 @@ impl Invocation<'_, '_, '_> {
             };
             self.state.map_owners.state = Some(state);
         }
+        let mut seed = self.take_seed(site)?;
         let mut state = self.state.map_owners.state.take().unwrap();
-        let result = state.try_begin_retained(&mut MapExecution::new(self), site);
+        let result = if let Some(seed) = seed.as_ref() {
+            state.try_begin_retained_seed(&mut MapExecution::new(self), site, Some(&seed.frame))
+        } else {
+            state.try_begin_retained(&mut MapExecution::new(self), site)
+        };
         // Restore on both success and failure. No new ledger or permit is made.
         self.state.map_owners.state = Some(state);
         let result = result?;
         if result.is_none() {
+            if let Some(seed) = seed.take() {
+                self.materialize_seed(seed)?;
+            }
             let metadata = self.descriptor.metadata();
             let owner = metadata
                 .map_owner_words

@@ -20,6 +20,7 @@ pub(in crate::native_artifact::program::runtime) mod frozen;
 pub(in crate::native_artifact::program::runtime) mod generic_dictionary;
 mod map_key_views;
 mod matrix_keys;
+pub(in crate::native_artifact::program::runtime) mod seed_frames;
 mod spans;
 use crate::native_artifact::program::runtime::maps::owner::frozen::FrozenSlot;
 
@@ -211,6 +212,7 @@ pub(in crate::native_artifact::program::runtime) struct State<'plan> {
     spans: Box<[Option<spans::Lane>]>,
     matrix_keys: Box<[matrix_keys::Lane]>,
     dictionaries: Box<[Option<generic_dictionary::Dictionary>]>,
+    seeds: Box<[Option<seed_frames::Seed>]>,
     descriptor: &'plan NativeProgramDescriptor,
     work_identity: u64,
     active_tables: u64,
@@ -302,6 +304,15 @@ impl<'plan> State<'plan> {
                 0,
             )?,
         )?;
+        let seed_count = descriptor.metadata().dictionary_seed_frames.regions.len();
+        let bytes = add(
+            bytes,
+            amount(
+                seed_count,
+                (2 * core::mem::size_of::<Option<seed_frames::Seed>>()) as u64,
+                0,
+            )?,
+        )?;
         if bytes > limit {
             return Ok(None);
         }
@@ -312,6 +323,7 @@ impl<'plan> State<'plan> {
                     .checked_add(span_count)
                     .and_then(|n| n.checked_add(matrix_key_count))
                     .and_then(|n| n.checked_add(dictionary_count))
+                    .and_then(|n| n.checked_add(seed_count))
                     .ok_or_else(|| invalid("map lane count overflow"))?,
                 512,
                 512,
@@ -347,11 +359,17 @@ impl<'plan> State<'plan> {
             return Ok(None);
         }
         dictionaries.resize_with(dictionary_count, || None);
+        let mut seeds = Vec::new();
+        if seeds.try_reserve_exact(seed_count).is_err() || seeds.capacity() != seed_count {
+            return Ok(None);
+        }
+        seeds.resize_with(seed_count, || None);
         Ok(Some(Self {
             slots: slots.into_boxed_slice(),
             spans: spans.into_boxed_slice(),
             matrix_keys: matrix_keys.into_boxed_slice(),
             dictionaries: dictionaries.into_boxed_slice(),
+            seeds: seeds.into_boxed_slice(),
             descriptor,
             work_identity: work.identity(),
             active_tables: 0,
@@ -430,6 +448,14 @@ impl<'plan> State<'plan> {
         for dictionary in self.dictionaries.iter().flatten() {
             geometry.live_nodes = add(geometry.live_nodes, dictionary.map.retained_nodes())?;
         }
+        ctx.work()
+            .charge(Phase::Setup, amount(self.seeds.len(), 64, 0)?)?;
+        for seed in self.seeds.iter().flatten() {
+            geometry.live_nodes = add(
+                geometry.live_nodes,
+                seed.frame.metadata_demand().retained_nodes,
+            )?;
+        }
         for span in &self.spans {
             if matches!(span, Some(spans::Lane::Span { .. })) {
                 geometry.live_nodes = add(geometry.live_nodes, 2)?;
@@ -446,6 +472,14 @@ impl<'plan> State<'plan> {
         &mut self,
         ctx: &mut MapExecution<'_, '_, '_, '_>,
         site: usize,
+    ) -> Result<Option<InitialWords>, Error> {
+        self.try_begin_retained_seed(ctx, site, None)
+    }
+    pub(in crate::native_artifact::program::runtime) fn try_begin_retained_seed(
+        &mut self,
+        ctx: &mut MapExecution<'_, '_, '_, '_>,
+        site: usize,
+        seed: Option<&mech_engine::native_artifact::NativeMapSeedFrame>,
     ) -> Result<Option<InitialWords>, Error> {
         self.guard(ctx, site)?;
         #[cfg(test)]
@@ -493,20 +527,33 @@ impl<'plan> State<'plan> {
             self.last_owned_visit = Some(ctx.control().visits);
             return Ok(None);
         }
-        let Some(geometry) = self.geometry(ctx, site)? else {
+        let Some(mut geometry) = self.geometry(ctx, site)? else {
             self.last_owned_visit = Some(ctx.control().visits);
             return Ok(None);
         };
-        let source = ctx.arena_copy_current(region.tail().seed().get())?;
-        let imported = Binding::import(
-            &self.descriptor.metadata().plan,
-            region,
-            &self.descriptor.metadata().schemas,
-            &source,
-            ctx.library().clone(),
-            geometry,
-            ctx.limits(),
-        );
+        let imported = if let Some(seed) = seed {
+            geometry.live_nodes = add(geometry.live_nodes, seed.metadata_demand().retained_nodes)?;
+            Binding::import_frame(
+                &self.descriptor.metadata().plan,
+                region,
+                &self.descriptor.metadata().schemas,
+                seed,
+                ctx.library().clone(),
+                geometry,
+                ctx.limits(),
+            )
+        } else {
+            let source = ctx.arena_copy_current(region.tail().seed().get())?;
+            Binding::import(
+                &self.descriptor.metadata().plan,
+                region,
+                &self.descriptor.metadata().schemas,
+                &source,
+                ctx.library().clone(),
+                geometry,
+                ctx.limits(),
+            )
+        };
         match imported {
             Ok((binding, words)) => {
                 let caller = self.capture_caller(ctx, index)?;

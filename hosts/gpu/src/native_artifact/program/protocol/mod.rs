@@ -59,6 +59,7 @@ pub(in crate::native_artifact) enum GlobalHelper {
     MapMatrixKey,
     MapKeys,
     MapDictionaryEnd,
+    MapSeedFrame,
 }
 impl GlobalHelper {
     // Decoding classifies only. Site, phase, lane, admission and cursor checks
@@ -115,6 +116,7 @@ impl GlobalHelper {
             value if value == u64::MAX - 47 => Self::MapMatrixKey,
             value if value == u64::MAX - 48 => Self::MapKeys,
             value if value == u64::MAX - 49 => Self::MapDictionaryEnd,
+            value if value == u64::MAX - 50 => Self::MapSeedFrame,
             value => Self::Output(OutputIndex(value - 3)),
         }
     }
@@ -171,6 +173,7 @@ impl GlobalHelper {
             Self::MapMatrixKey => u64::MAX - 47,
             Self::MapKeys => u64::MAX - 48,
             Self::MapDictionaryEnd => u64::MAX - 49,
+            Self::MapSeedFrame => u64::MAX - 50,
         }
     }
     #[cfg(feature = "canonical-native-program")]
@@ -199,6 +202,7 @@ fn collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space() {
         GlobalHelper::MapMatrixKey,
         GlobalHelper::MapKeys,
         GlobalHelper::MapDictionaryEnd,
+        GlobalHelper::MapSeedFrame,
     ];
     let mut codes = std::collections::BTreeSet::new();
     for tag in tags {

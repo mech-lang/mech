@@ -145,8 +145,9 @@ pub use borrowed_strings::{NativeBorrowedStringAction, NativeBorrowedStringRegio
 mod selected_text_join;
 #[cfg(feature = "sequence_buffers")]
 pub use crate::resident::general::native_collection_calls::{
-    NativeBorrowedMapKeys, NativeBorrowedMapKeysChoice, NativeStringMatrixKeyCell,
-    NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal, NativeStringMatrixKeyView,
+    NativeBorrowedMapKeys, NativeBorrowedMapKeysChoice, NativeMapSeedChoice, NativeMapSeedFrame,
+    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeStringMatrixKeyView,
 };
 #[cfg(feature = "pure_text")]
 pub use crate::resident::general::native_collection_calls::{

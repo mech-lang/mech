@@ -603,6 +603,9 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("helper while native numeric map loan is active"));
         }
+        if tag == GlobalHelper::MapSeedFrame {
+            return self.seed_frame_call(site, args);
+        }
         if tag == GlobalHelper::MapOwnerConstructorCheck {
             return self.retained_constructor_check(site, args);
         }

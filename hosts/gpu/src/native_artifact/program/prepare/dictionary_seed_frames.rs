@@ -9,7 +9,7 @@ use mech_engine::native_artifact::{
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) struct Region {
+pub(in crate::native_artifact) struct Region {
     pub owner: usize,
     pub producer: u32,
     pub initialize: u32,
@@ -18,10 +18,16 @@ pub(super) struct Region {
     pub map_ordinal: usize,
 }
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub(super) struct Layout {
+pub(in crate::native_artifact) struct Layout {
     pub regions: Vec<Region>,
 }
 impl Layout {
+    pub fn producer(&self, site: usize) -> Option<&Region> {
+        self.regions.iter().find(|r| r.producer as usize == site)
+    }
+    pub fn initializer(&self, site: usize) -> Option<&Region> {
+        self.regions.iter().find(|r| r.initialize as usize == site)
+    }
     pub fn derive(plan: &Plan, owners: &NativeMapOwnerWords) -> Result<Self, &'static str> {
         if owners.regions().is_empty()
             || plan.blocks().len() > 16_384

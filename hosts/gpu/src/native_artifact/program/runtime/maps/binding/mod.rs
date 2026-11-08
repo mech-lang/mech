@@ -171,6 +171,101 @@ pub(in crate::native_artifact) fn take_native_probe_counts() -> (u64, u64) {
     NATIVE_PROBE_COUNTS.with(|counts| counts.replace((0, 0)))
 }
 
+enum SeedSource<'a> {
+    Canonical(&'a Value),
+    Frame(&'a mech_engine::native_artifact::NativeMapSeedFrame),
+}
+impl SeedSource<'_> {
+    fn schema(&self) -> mech_core::SchemaId {
+        match self {
+            Self::Canonical(v) => v.schema(),
+            Self::Frame(v) => v.schema(),
+        }
+    }
+    fn key(&self) -> mech_core::SchemaKey {
+        match self {
+            Self::Canonical(v) => v.schema_key(),
+            Self::Frame(v) => v.schema_key(),
+        }
+    }
+    fn shape_empty(&self) -> bool {
+        match self {
+            Self::Canonical(v) => v.shape().parameter_values().is_empty(),
+            Self::Frame(_) => true,
+        }
+    }
+    fn retained(&self, work: &NativeLibraryWorkBudget) -> Result<u64, Error> {
+        let memory = work.memory_budget();
+        match self {
+            Self::Canonical(v) => v
+                .memory_budget_retained_bytes(&memory)
+                .ok_or(Error::Binding("unadmitted seed")),
+            Self::Frame(v) => {
+                v.check_account(work)
+                    .map_err(|_| Error::Binding("foreign private seed account"))?;
+                // Children may alias. A genuine same-account pin is enough;
+                // complete caller inventory, not a sum of shared owners, prices coexistence.
+                let mut largest = 0;
+                for child in v.children().iter().flatten() {
+                    largest = largest.max(
+                        child
+                            .memory_budget_retained_bytes(&memory)
+                            .ok_or(Error::Binding("unadmitted private seed child"))?,
+                    );
+                }
+                add(largest, v.metadata_demand().turn_peak_bytes)
+            }
+        }
+    }
+    fn footprint(&self, schemas: &SchemaTable) -> Result<(u64, u64), Error> {
+        match self {
+            Self::Canonical(v) => {
+                let f = v
+                    .retained_footprint(schemas)
+                    .map_err(|_| Error::Binding("seed footprint"))?;
+                Ok((f.retained_bytes, f.node_count))
+            }
+            Self::Frame(v) => Ok((v.logical_retained_bytes(), v.logical_nodes())),
+        }
+    }
+    fn words<'a>(
+        &'a self,
+        body: &SchemaBody,
+        words: &mut [u64; 33],
+    ) -> Result<(usize, &'a mech_core::snapshot::MapValue), Error> {
+        match self {
+            Self::Canonical(v) => {
+                let mut at = 0;
+                let mut map = None;
+                seed(body, v.data(), words, &mut at, &mut map)?;
+                map.ok_or(Error::Binding("missing seed map"))
+            }
+            Self::Frame(v) => {
+                if !matches!(body, SchemaBody::Tuple(_) | SchemaBody::Record(_))
+                    || width(body)? != v.children().len()
+                {
+                    return Err(Error::Binding("private seed layout differs"));
+                }
+                let mut map = None;
+                for (at, child) in v.children().iter().enumerate() {
+                    match child
+                        .as_ref()
+                        .ok_or(Error::Binding("missing private seed child"))?
+                        .data()
+                    {
+                        ValueData::U64(value) if at != v.map_ordinal() => words[at] = *value,
+                        ValueData::Map(value) if at == v.map_ordinal() && map.is_none() => {
+                            map = Some((at, value))
+                        }
+                        _ => return Err(Error::Binding("private seed kind differs")),
+                    }
+                }
+                map.ok_or(Error::Binding("private seed lost map"))
+            }
+        }
+    }
+}
+
 pub(in crate::native_artifact) struct Binding<'plan> {
     // Retire actual table/keys before the enclosing binding's reservation.
     map: Option<OwnedStringMap>,
@@ -188,6 +283,44 @@ impl<'plan> Binding<'plan> {
         region: &'plan NativeMapOwnerRegion,
         schemas: &Arc<SchemaTable>,
         source: &Value,
+        work: NativeLibraryWorkBudget,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<(Self, InitialWords), Error> {
+        Self::import_source(
+            plan,
+            region,
+            schemas,
+            SeedSource::Canonical(source),
+            work,
+            geometry,
+            limits,
+        )
+    }
+    pub(in crate::native_artifact) fn import_frame(
+        plan: &'plan Plan,
+        region: &'plan NativeMapOwnerRegion,
+        schemas: &Arc<SchemaTable>,
+        frame: &mech_engine::native_artifact::NativeMapSeedFrame,
+        work: NativeLibraryWorkBudget,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<(Self, InitialWords), Error> {
+        Self::import_source(
+            plan,
+            region,
+            schemas,
+            SeedSource::Frame(frame),
+            work,
+            geometry,
+            limits,
+        )
+    }
+    fn import_source(
+        plan: &'plan Plan,
+        region: &'plan NativeMapOwnerRegion,
+        schemas: &Arc<SchemaTable>,
+        source: SeedSource<'_>,
         work: NativeLibraryWorkBudget,
         geometry: Geometry,
         limits: MemoryBudgetLimits,
@@ -239,12 +372,10 @@ impl<'plan> Binding<'plan> {
             cap(limits.max_temporary_bytes)?,
             cap(limits.max_retained_nodes)?,
         );
-        let retained = source
-            .memory_budget_retained_bytes(&memory)
-            .ok_or(Error::Binding("unadmitted seed"))?;
+        let retained = source.retained(&work)?;
         if source.schema() != ty.schema()
-            || source.schema_key() != ty.schema_key()
-            || !source.shape().parameter_values().is_empty()
+            || source.key() != ty.schema_key()
+            || !source.shape_empty()
         {
             return Err(Error::Binding("seed schema"));
         }
@@ -256,20 +387,18 @@ impl<'plan> Binding<'plan> {
                 if schemas.get(ty.schema()) != Some(ty.definition()) {
                     return Err(Error::Binding("seed schema context"));
                 }
-                let footprint = source
-                    .retained_footprint(schemas)
-                    .map_err(|_| Error::Binding("seed footprint"))?;
-                if geometry.live_bytes < retained || geometry.live_nodes < footprint.node_count {
+                let (footprint_bytes, footprint_nodes) = source.footprint(schemas)?;
+                if geometry.live_bytes < retained || geometry.live_nodes < footprint_nodes {
                     return Err(Error::Binding("incomplete seed geometry"));
                 }
                 check(1, cap(limits.max_output_elements)?, "output elements")?;
                 check(
-                    footprint.retained_bytes,
+                    footprint_bytes,
                     cap(limits.max_output_bytes)?,
                     "output bytes",
                 )?;
                 check(
-                    footprint.retained_bytes,
+                    footprint_bytes,
                     cap(limits.max_cloned_bytes)?,
                     "cloned bytes",
                 )?;
@@ -287,17 +416,8 @@ impl<'plan> Binding<'plan> {
                     len: words_len,
                     _reservation: memory.reserve_capacity(size_of::<InitialWords>() as u64)?,
                 };
-                let mut source_map = None;
-                let mut at = 0;
-                seed(
-                    ty.definition().body(),
-                    source.data(),
-                    &mut initial.words,
-                    &mut at,
-                    &mut source_map,
-                )?;
                 let (map_word, source_map) =
-                    source_map.ok_or(Error::Binding("missing seed map"))?;
+                    source.words(ty.definition().body(), &mut initial.words)?;
                 let nodes = add(source_map.entries().len() as u64, 3)?;
                 check(
                     add(geometry.live_nodes, nodes)?,

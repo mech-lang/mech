@@ -134,6 +134,12 @@ impl Invocation<'_, '_, '_> {
                 .map_owners
                 .dictionary_nodes(&mut self.state.control.work)?,
         )?;
+        nodes = add(
+            nodes,
+            self.state
+                .map_owners
+                .seed_nodes(&mut self.state.control.work)?,
+        )?;
         nodes = add(nodes, self.line_matrix_coexistence(None)?.retained_nodes)?;
         if self.borrowed_strings.is_some() {
             // Two flat metadata backings; genuine canonical pins are already

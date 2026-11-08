@@ -469,7 +469,7 @@ fn selected_template(
 // IR301 permits the existing caller census after all borrowed cell loans in
 // an otherwise wholly native map loop have actually been admitted.
 // IR302 checks private ownership before the old-cell load on ordinary writes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 304;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 305;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -713,7 +713,7 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 304;
 // through the existing matrix-key loan, with separately funded loan residency.
 // Work119 funds the additional deferred complete-use inventory and fresh
 // private-node accounting; refused loans keep the ordinary census path.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 121;
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 122;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

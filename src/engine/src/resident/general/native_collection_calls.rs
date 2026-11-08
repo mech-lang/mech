@@ -26,8 +26,9 @@ mod headroom;
 mod prepared;
 #[cfg(feature = "sequence_buffers")]
 pub use prepared::{
-    NativeBorrowedMapKeys, NativeBorrowedMapKeysChoice, NativeStringMatrixKeyCell,
-    NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal, NativeStringMatrixKeyView,
+    NativeBorrowedMapKeys, NativeBorrowedMapKeysChoice, NativeMapSeedChoice, NativeMapSeedFrame,
+    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeStringMatrixKeyView,
 };
 pub use prepared::{
     NativeDescriptorTemplatePool, NativePreparedLibraryCall, NativePreparedLibraryCallCache,

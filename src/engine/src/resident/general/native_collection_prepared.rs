@@ -438,6 +438,11 @@ mod histogram;
 #[path = "native_collection_map_owner_constructors.rs"]
 mod map_owner_constructors;
 #[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_map_seed.rs"]
+mod map_seed;
+#[cfg(feature = "sequence_buffers")]
+pub use map_seed::{NativeMapSeedChoice, NativeMapSeedFrame};
+#[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_record_selector.rs"]
 mod record_selector;
 #[path = "native_collection_record_words.rs"]
