@@ -77,6 +77,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Borrow a selected String-matrix cell only for its adjacent retained
     /// insertion. Ablation keeps the original canonical String construction.
     BorrowedMatrixMapKeys,
+    /// Test private ownership before loading/comparing an old write target.
+    PrivateWritesFirst,
     /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
     DisjointState,

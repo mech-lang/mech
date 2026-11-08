@@ -817,9 +817,17 @@ pub(in crate::native_artifact) fn emit_entry(
                     .ins()
                     .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, spare, count as i64);
                 let fits = b.ins().band(valid, fits);
-                if count != 0 && controls.enabled(OptimizationPass::RefinedAppendCapacity)
+                if count != 0
+                    && controls.enabled(OptimizationPass::RefinedAppendCapacity)
                     && let Some(certificate) = super::numeric_append_guards::certificate(
-                        code, proof, shadow, &region.tail, region.numeric_tree.as_ref(), site, array, count,
+                        code,
+                        proof,
+                        shadow,
+                        &region.tail,
+                        region.numeric_tree.as_ref(),
+                        site,
+                        array,
+                        count,
                     )
                 {
                     capacity_refinements.push((certificate, fits, valid, spare));
@@ -843,16 +851,26 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.set_cold_block(preview);
                 b.ins().brif(enough, funded, &[], cold, &[]);
                 b.switch_to_block(cold);
-                b.ins().brif(unrefined_enough, preview, &[], bailouts[&site], &[]);
+                b.ins()
+                    .brif(unrefined_enough, preview, &[], bailouts[&site], &[]);
                 b.switch_to_block(preview);
                 let mut refined_enough = b.ins().iconst(types::I8, 1);
                 for (certificate, fits, valid, spare) in capacity_refinements {
                     let fits = super::numeric_append_guards::refine(
-                        b, &words, code, proof, shadow, &certificate, fits, valid, spare,
+                        b,
+                        &words,
+                        code,
+                        proof,
+                        shadow,
+                        &certificate,
+                        fits,
+                        valid,
+                        spare,
                     )?;
                     refined_enough = b.ins().band(refined_enough, fits);
                 }
-                b.ins().brif(refined_enough, funded, &[], bailouts[&site], &[]);
+                b.ins()
+                    .brif(refined_enough, funded, &[], bailouts[&site], &[]);
             }
             b.switch_to_block(funded);
             let cost = b.ins().iconst(types::I64, compute_cost as i64);
@@ -947,8 +965,10 @@ pub(in crate::native_artifact) fn emit_entry(
             }
             Some(Operation::ArrayCopy) => {}
             Some(Operation::Length { array, output }) => {
-                let fixed = controls.enabled(OptimizationPass::StaticNumericExtents)
-                    .then(|| super::numeric_words::fixed_length(code, proof, *array)).flatten();
+                let fixed = controls
+                    .enabled(OptimizationPass::StaticNumericExtents)
+                    .then(|| super::numeric_words::fixed_length(code, proof, *array))
+                    .flatten();
                 let length = if let Some(length) = fixed {
                     report.static_array_extents.push((site, *array, length));
                     b.ins().iconst(types::I64, length as i64)
@@ -1102,15 +1122,19 @@ pub(in crate::native_artifact) fn emit_entry(
                         incoming,
                     } if controls.enabled(OptimizationPass::CheckedIncrementWrites) => traversal
                         .increment_write(site, *array, *index, *incoming)
-                        .filter(|update| !update.crossed_write
-                            || controls.enabled(OptimizationPass::IndependentViewUpdates))
+                        .filter(|update| {
+                            !update.crossed_write
+                                || controls.enabled(OptimizationPass::IndependentViewUpdates)
+                        })
                         .copied(),
                     _ => None,
                 };
                 let view = shadow + proof.view(*array);
                 let index = words.read(b, *index as usize);
-                let fixed = controls.enabled(OptimizationPass::StaticNumericExtents)
-                    .then(|| super::numeric_words::fixed_length(code, proof, *array)).flatten();
+                let fixed = controls
+                    .enabled(OptimizationPass::StaticNumericExtents)
+                    .then(|| super::numeric_words::fixed_length(code, proof, *array))
+                    .flatten();
                 let length = if let Some(length) = fixed {
                     report.static_array_extents.push((site, *array, length));
                     b.ins().iconst(types::I64, length as i64)
@@ -1127,7 +1151,9 @@ pub(in crate::native_artifact) fn emit_entry(
                 } else if let Some(update) = checked_increment {
                     if update.crossed_write {
                         report.proven_independent_view_increment_writes.push((
-                            site, update.read_site, update.array,
+                            site,
+                            update.read_site,
+                            update.array,
                         ));
                     }
                     report.proven_checked_increment_writes.push((
@@ -1230,7 +1256,11 @@ pub(in crate::native_artifact) fn emit_entry(
                     )?;
                     (address, ty, None)
                 };
-                let value = if checked_increment.is_some() {
+                let private_first = controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::PrivateWritesFirst,
+                );
+                let deferred_old = private_first && matches!(operation, Operation::Write { .. });
+                let value = if checked_increment.is_some() || deferred_old {
                     None
                 } else {
                     let value = b.ins().load(
@@ -1276,25 +1306,54 @@ pub(in crate::native_artifact) fn emit_entry(
                     ),
                     Operation::Write { incoming, .. } => {
                         let incoming = words.read(b, *incoming as usize);
-                        let changed = if checked_increment.is_some() {
-                            b.ins().iconst(types::I8, 1)
-                        } else {
-                            b.ins().icmp(
-                                IntCC::NotEqual,
-                                value.expect("ordinary write retains old cell"),
-                                incoming,
-                            )
-                        };
-                        let update = b.create_block();
                         let done = b.create_block();
-                        b.ins().brif(changed, update, &[], done, &[]);
-                        b.switch_to_block(update);
-                        let private = words.read(b, shadow + proof.private_flag(*array));
                         let store = b.create_block();
                         let materialize = b.create_block();
                         b.set_cold_block(materialize);
                         boundaries.insert(materialize);
-                        b.ins().brif(private, store, &[], materialize, &[]);
+                        if private_first {
+                            // A private bank has already changed. Equal writes
+                            // need no old-cell read or first-change admission.
+                            let private = words.read(b, shadow + proof.private_flag(*array));
+                            let shared = b.create_block();
+                            b.ins().brif(private, store, &[], shared, &[]);
+                            b.switch_to_block(shared);
+                            let changed = if checked_increment.is_some() {
+                                b.ins().iconst(types::I8, 1)
+                            } else {
+                                let old = b.ins().load(
+                                    ty,
+                                    super::numeric_words::guarded_load_flags(controls.options()),
+                                    address,
+                                    0,
+                                );
+                                let old = if width < 8 {
+                                    b.ins().uextend(types::I64, old)
+                                } else {
+                                    old
+                                };
+                                report.typed_loads.push((site, width));
+                                b.ins().icmp(IntCC::NotEqual, old, incoming)
+                            };
+                            // Unowned zero-to-zero/equal writes retain the old
+                            // no-op path and never materialize a private copy.
+                            b.ins().brif(changed, materialize, &[], done, &[]);
+                        } else {
+                            let changed = if checked_increment.is_some() {
+                                b.ins().iconst(types::I8, 1)
+                            } else {
+                                b.ins().icmp(
+                                    IntCC::NotEqual,
+                                    value.expect("ordinary write retains old cell"),
+                                    incoming,
+                                )
+                            };
+                            let update = b.create_block();
+                            b.ins().brif(changed, update, &[], done, &[]);
+                            b.switch_to_block(update);
+                            let private = words.read(b, shadow + proof.private_flag(*array));
+                            b.ins().brif(private, store, &[], materialize, &[]);
+                        }
                         b.switch_to_block(materialize);
                         boundary::materialize(
                             controls,

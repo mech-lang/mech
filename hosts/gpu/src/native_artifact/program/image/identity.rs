@@ -468,7 +468,8 @@ fn selected_template(
 // traversal on the private checked-Object restoration route.
 // IR301 permits the existing caller census after all borrowed cell loans in
 // an otherwise wholly native map loop have actually been admitted.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 301;
+// IR302 checks private ownership before the old-cell load on ordinary writes.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 302;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
