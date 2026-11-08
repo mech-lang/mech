@@ -20,11 +20,13 @@ pub(in crate::native_artifact::program::codegen) enum Step<'a> {
         output: usize,
     },
     /// The numeric adapter supplies only U64 cells. The successful source
-    /// read/add must dominate this exact write before any intervening effect.
+    /// read/add must dominate this exact write. Only an adapter's proved
+    /// independent logical values may retain reads across this replacement.
     Write {
         array: usize,
         index: u32,
         incoming: u32,
+        preserved_arrays: Vec<usize>,
     },
     /// Successful checked replacement preserves shape and immutable scalar
     /// snapshots. This domain exports no array-content equality facts. The
@@ -393,6 +395,7 @@ fn analyze<'a>(
                 array,
                 index,
                 incoming,
+                preserved_arrays,
             } => {
                 let candidate = states
                     .iter()
@@ -407,7 +410,7 @@ fn analyze<'a>(
                     proof.increment_writes.insert(site, candidate);
                 }
                 for state in states.iter_mut().flatten() {
-                    state.checked_reads.clear();
+                    state.preserve_reads(&preserved_arrays);
                 }
             }
             Step::Replace | Step::Keep => {

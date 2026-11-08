@@ -9,6 +9,39 @@ use mech_engine::native_artifact::{
 const MAX_LOCAL_SITES: usize = 32;
 const MAX_LOCAL_WRITES: usize = 256;
 
+/// These are semantic carrier values, not disjoint raw pointers. The exact
+/// numeric provenance/current-version proof binds each distinct structural
+/// leaf to its own owner home. The first-change boundary retains every live
+/// owner and lets Core copy shared backing before replacing this one value;
+/// subsequent private stores can affect only that exclusive owner. Therefore
+/// even two incoming leaves sharing backing keep independent logical values.
+/// Decline captures, overlapping homes and any noncanonical root binding.
+pub(super) fn independent_carriers(numeric: &Numeric, written: usize) -> Vec<usize> {
+    use crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage;
+    let target = &numeric.arrays[written];
+    let ArrayStorage::Carrier { field, physical } = target.storage else {
+        return Vec::new();
+    };
+    if target.root != field || !target.writable {
+        return Vec::new();
+    }
+    numeric
+        .arrays
+        .iter()
+        .enumerate()
+        .filter_map(|(at, candidate)| {
+            let ArrayStorage::Carrier {
+                field: other,
+                physical: home,
+            } = candidate.storage
+            else {
+                return None;
+            };
+            (candidate.root == other && other != field && home != physical).then_some(at)
+        })
+        .collect()
+}
+
 pub(super) fn derive(code: CodePlan<'_>, numeric: &Numeric, shadow: usize) -> Proof {
     let CodePlan::Program(program) = code else {
         return Proof::default();
@@ -33,9 +66,11 @@ pub(super) fn derive(code: CodePlan<'_>, numeric: &Numeric, shadow: usize) -> Pr
             | Operation::Frame
             | Operation::Aggregate,
         ) => true,
+        Some(Operation::Write { array, .. }) => numeric.arrays[*array].width == 8,
         None => matches!(code.blocks()[site].action(), Action::Scalar(_)),
         // Even an otherwise transparent array-copy recipe is a conservative
-        // boundary here. No write, growth or callback is crossed.
+        // boundary here. Growth, copies and callbacks are not crossed. A
+        // supported replacement exports only the independent carrier proof.
         Some(_) => false,
     };
     let mut facts = Proof::default();

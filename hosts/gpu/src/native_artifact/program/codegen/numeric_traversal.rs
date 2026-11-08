@@ -164,6 +164,7 @@ fn analyze(
                 array: *array,
                 index: *index,
                 incoming: *incoming,
+                preserved_arrays: checked_updates::independent_carriers(numeric, *array),
             }),
             Some(Operation::Write { .. }) => Some(Step::Replace),
             // Growth and unknown effects still need their original guards.

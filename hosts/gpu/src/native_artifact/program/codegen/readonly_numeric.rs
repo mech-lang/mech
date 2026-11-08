@@ -47,6 +47,7 @@ pub(in crate::native_artifact) struct Report {
     pub proven_boolean_successors: Vec<(usize, u32)>,
     pub proven_scalar_read_guards: Vec<(usize, usize, u32)>,
     pub proven_checked_increment_writes: Vec<(usize, usize, usize, u32, u32)>,
+    pub proven_independent_view_increment_writes: Vec<(usize, usize, usize)>,
     pub proven_scalar_arithmetic: Vec<usize>,
     pub guarded_loop_windows: Vec<super::numeric_loop_windows::Report>,
     pub version_entry_gates: Vec<(usize, usize, Option<usize>)>,
@@ -519,6 +520,7 @@ pub(in crate::native_artifact) fn emit_entry(
         proven_projection_guards: Vec::new(),
         proven_scalar_read_guards: Vec::new(),
         proven_checked_increment_writes: Vec::new(),
+        proven_independent_view_increment_writes: Vec::new(),
         proven_scalar_arithmetic: Vec::new(),
         guarded_loop_windows: versions.iter().map(|v| v.report(proof)).collect(),
         version_entry_gates: Vec::new(),
@@ -1091,6 +1093,8 @@ pub(in crate::native_artifact) fn emit_entry(
                         incoming,
                     } if controls.enabled(OptimizationPass::CheckedIncrementWrites) => traversal
                         .increment_write(site, *array, *index, *incoming)
+                        .filter(|update| !update.crossed_write
+                            || controls.enabled(OptimizationPass::IndependentViewUpdates))
                         .copied(),
                     _ => None,
                 };
@@ -1105,6 +1109,11 @@ pub(in crate::native_artifact) fn emit_entry(
                         .proven_scalar_read_guards
                         .push((site, *array, *index));
                 } else if let Some(update) = checked_increment {
+                    if update.crossed_write {
+                        report.proven_independent_view_increment_writes.push((
+                            site, update.read_site, update.array,
+                        ));
+                    }
                     report.proven_checked_increment_writes.push((
                         site,
                         update.read_site,

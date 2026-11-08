@@ -59,6 +59,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Reuse a surviving successful U64 cell read for an immediately proved
     /// checked increment of the same current cell; retain ownership boundaries.
     CheckedIncrementWrites,
+    /// Preserve a checked cell across a replacement of a proved independent
+    /// logical carrier value, including its original copy-on-write boundary.
+    IndependentViewUpdates,
     /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
     DisjointState,

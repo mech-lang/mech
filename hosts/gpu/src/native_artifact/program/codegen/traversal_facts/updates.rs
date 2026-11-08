@@ -1,6 +1,7 @@
-//! Current-traversal read/update facts. No fact survives a write, unknown
-//! effect, incompatible merge or latch. Different views may alias, so every
-//! replacement invalidates all remembered cells, even of another array.
+//! Current-traversal read/update facts. Only an adapter's explicit proof of
+//! logical-value independence preserves cells across a replacement. A different
+//! array number alone is insufficient. Unknown effects, incompatible merges
+//! and latches still discard remembered cells.
 use super::*;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -8,6 +9,7 @@ pub(super) struct CheckedRead {
     pub site: usize,
     pub output: usize,
     value: Id,
+    crossed_write: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -16,6 +18,7 @@ pub(in crate::native_artifact::program::codegen) struct CheckedUpdate {
     pub index: u32,
     pub incoming: u32,
     pub read_site: usize,
+    pub crossed_write: bool,
 }
 
 impl State {
@@ -37,9 +40,20 @@ impl State {
                 site,
                 output,
                 value,
+                crossed_write: false,
             },
         );
         Some(())
+    }
+
+    pub(super) fn preserve_reads(&mut self, arrays: &[usize]) {
+        self.checked_reads.retain(|&(array, _), read| {
+            if !arrays.contains(&array) {
+                return false;
+            }
+            read.crossed_write = true;
+            true
+        });
     }
 
     pub(super) fn checked_increment(
@@ -72,6 +86,7 @@ impl State {
             index,
             incoming,
             read_site: read.site,
+            crossed_write: read.crossed_write,
         })
     }
 }
