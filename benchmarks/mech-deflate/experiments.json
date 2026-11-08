@@ -41779,6 +41779,98 @@
           }
         }
       ]
+    },
+    "210": {
+      "base": "94df733966ed70416be7382c2e7ec027b3a945af",
+      "production": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Preserve the total-word-collection diagnostic and all adverse evidence. Eight medians improve/twelve worsen; all20 prior-diagnostic gates pass, six production gates still fail. Existing total proof/shared scalar-vector emission removes scalar per-element builder work and physical growth, keeping result capacities. Ordinary production and guarantee restoration remain unchanged; no favorable unchanged rerun.",
+      "source_files": [],
+      "archived_changed_compiler_files": 29,
+      "changed_from_R209": [
+        "hosts/gpu/src/native_artifact/program/codegen/word_collections/mod.rs",
+        "hosts/gpu/src/native_artifact/program/compact/collections.rs",
+        "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+        "hosts/gpu/src/native_artifact/program/compact/mod.rs",
+        "hosts/gpu/src/native_artifact/program/compact/word_collections.rs"
+      ],
+      "candidate_source_patch_sha256": "339bc0179bc7cd3ec48a633f8333c6c04cf9089d73871aa05f4891aa789ecf84",
+      "five_file_delta_patch_sha256": "ca0adccc0218c96bc049f622fa40e56f34667c43042916958bef024c2b7fd6f6",
+      "timed_object_sha256": "155db6419bac33b1927fa66512e2de9e760a1d05eaa05dfc75a67823c8315a54",
+      "replay": {
+        "archive_schema": "evidence/manifest.json; SHA256 inventory",
+        "scripts": [
+          "heap-summary.py",
+          "analyze.py"
+        ],
+        "scope": "Numerical observation replay; no compiler/compressor execution"
+      },
+      "events": [
+        {
+          "event": "shared-total-word-collection-diagnostic-unadopted-in-production",
+          "asset": "r210-shared-word-collections-d56e614db03f.tar.gz",
+          "sha256": "d56e614db03f544268fde266f6aaa29cab8372bb0294c27236de2a4f3e441523",
+          "bytes": 3095725,
+          "files": 1319,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r210-shared-word-collections-d56e614db03f.tar.gz",
+          "retained_production_unchanged_from_R199": true,
+          "ordinary_contract_restored": false,
+          "compressor_source_unchanged": true,
+          "totals": {
+            "primary_complete_calls": 8616,
+            "primary_observations": 8496,
+            "primary_reference_compressions": 5120,
+            "separate_mech_cpu_heap_calls": 2400,
+            "elapsed_lower_vs_previous": 8,
+            "elapsed_higher_vs_previous": 12,
+            "elapsed_equal_vs_previous": 0,
+            "geometric_elapsed_ratio_to_previous": 0.9310558393921673,
+            "original_1_05_gate_vs_retained_pass": 14,
+            "original_1_05_gate_vs_previous_pass": 20,
+            "instruction_medians_lower_vs_previous": 20,
+            "instruction_medians_higher_vs_previous": 0,
+            "cycle_medians_lower_vs_previous": 12,
+            "cycle_medians_higher_vs_previous": 8,
+            "equal_diagnostic_heap_cases": 16,
+            "wall_stack_profile_complete_calls": 10370,
+            "exact_pc_profile_complete_calls": 24866
+          },
+          "new_map_cases": 1480,
+          "new_map_resident_values": 928,
+          "new_map_resident_errors": 96,
+          "fresh_C_Rust_pattern_controls": 224,
+          "ordinary_control_images": 8,
+          "fixed_buffer_cases": 320,
+          "exact_origin_controls": 192,
+          "phase_cases": 48,
+          "matching_cases": 1724,
+          "builder_cases": 40,
+          "complete_smoke_calls": 120,
+          "original_decoded_image_pairs": 33,
+          "fresh_production_native_suite": false,
+          "reference_counter_observations": 1280,
+          "reference_verified_compressions": 10240,
+          "code_bytes_including_all_kernels": 7669096,
+          "static_root_plus_kernel_stack": 85056,
+          "inherited_native_exclusions": 7,
+          "public_verification": {
+            "asset": "r210-shared-word-collections-d56e614db03f.tar.gz",
+            "bytes": 3095725,
+            "sha256": "d56e614db03f544268fde266f6aaa29cab8372bb0294c27236de2a4f3e441523",
+            "file_occurrences": 1319,
+            "server_digests_match": true,
+            "download_sha256_match": true,
+            "numerical_replay_byte_identical": true,
+            "scope": "Archived observation replay only; no compiler or compressor executed."
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",

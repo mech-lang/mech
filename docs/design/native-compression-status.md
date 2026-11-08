@@ -1,5 +1,18 @@
 # Native compression milestone
 
+## R210: existing total word collections retained in the diagnostic
+
+**Production remains R199 / IR214.** Two existing total pointwise proofs now use the same scalar/vector emitter with four dense current capture words and a fresh private sink. Result capacity/shape and checked fallback remain. No compressor algorithm, scratch capacity, allowance or timing boundary changes. The compiler folds physical collection growth into the single allocation already used by ordinary admitted maps; this is an external diagnostic prototype, not production adoption.
+
+Matched diagnostic natural32 **5.454456×→4.949050× Roc**, periodic33 **6.926624×→5.294152×**, repeated32 **6.403544×→4.889077×**, random32 **19.114018×→16.691392×**. Fresh unchanged production is3.364150×/3.456198×/2.944210×/5.152546× respectively. Eight literals remains about2.22× diagnostic versus4.49× production.
+
+Eight elapsed medians improve/twelve worsen; geometric elapsed−6.89%. All20 prior-diagnostic1.05 gates pass; only14 production gates pass. All20 instruction medians decrease, including about23–25% periodic/repeated and9.36% natural. Twelve cycle medians improve/eight worsen. Adverse small elapsed/cycle pairs stay explicit. Each of the four sliding inputs removes32 allocator requests /525,048 requestedB /262,192 incremental usable-peakB; the other16 heap cases stay equal. The real U16 map keeps capacity262144 while reducing17 payload requests→1 and524,280 initialized growth-copyB→0.
+
+1,480 new all-width/capture/vector-tail/shape/repeated-call/alias/error/cleanup/retry cases pass. Ordinary scalar and map Object/metadata/descriptor controls match byte-for-byte before/after and original/decoded. Fresh320 fixed-buffer/192 origin/48 phase/1,724 matching/40 builder/120 complete smoke controls pass; all33 image pairs match.8,616 primary calls,2,400 separate CPU/heap calls, fresh all20 reference counters,10,370 wall-profile calls and24,866 exact-PC calls preserve the pins. No introduced compiler/harness failure; the same resident cap denials and seven inherited exclusions remain. No fresh historical production-suite claim.
+
+Generated text grows808B to7,669,096B; static root-plus-kernel stack falls64B to85,056B. New six-family profiles show the selected maps are now small. Random/distribution share a hot root path with adjacent owner increments/decrements and stack reloads. Next is a minimal, traced aggregate-transport move proof using existing field liveness/path facts, preserving live aliases, old-target release and recovery. Ordinary guarantees and the production host/copy ledgers still need restoration; the full brief and parity remain open. [All20 timings, exact compiler patch, counters, actual C/Rust/reference code, failures and public replay](native-compact-word-collections.md). Existing draft#973 only.
+
+
 ## R209: fixed-buffer nested matching phases; production unchanged
 
 **Production remains R199 / IR214.** Three additional complete disjoint matching proofs now execute through the same numeric emitter, beneath a correctly declined broad parent. Actual unique-owner and fixed length/capacity gates retain fallback; real capacities return unchanged. No compressor source, allocation site, table, allowance or timing boundary changes. The full prototype and four-file delta remain external, not adopted production.
