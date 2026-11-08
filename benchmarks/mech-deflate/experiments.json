@@ -41683,6 +41683,102 @@
           }
         }
       ]
+    },
+    "209": {
+      "base": "3196185106203540f3eade734010125604ace5bc",
+      "production": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Retain the diagnostic and evidence, not production adoption. Three additional existing fixed-buffer matching proofs execute through shared emission; large matching elapsed/instructions fall substantially, allocation families do not change, code/stack grow, tiny-case contrary observations remain. Six production gates still fail and ordinary contracts remain omitted. No favorable unchanged rerun.",
+      "source_files": [],
+      "archived_changed_compiler_files": 27,
+      "changed_from_R208": [
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_minimal.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_outlined.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+        "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+      ],
+      "candidate_source_patch_sha256": "5ee09927eb1650d6510e973b59da5657263ef41f22d90da542cadc3a6b8b6c33",
+      "four_file_delta_patch_sha256": "88fa82c76147445e5cfaf2578e523665865785340472527af1e715d7ac2b7277",
+      "timed_object_sha256": "43e9f4fc49e481f3d21eb51b0e2742dd7ed71bfa1c77b2f86e86c3d17167786f",
+      "replay": {
+        "archive_schema": "evidence/manifest.json; SHA256 inventory",
+        "scripts": [
+          "heap-summary.py",
+          "analyze.py"
+        ],
+        "scope": "Numerical archived-observation replay without compiler/compressor execution"
+      },
+      "events": [
+        {
+          "event": "qualified-fixed-buffer-nested-diagnostic-phases-unadopted-in-production",
+          "asset": "r209-fixed-nested-phases-5ea730e968ed.tar.gz",
+          "sha256": "5ea730e968ed56c6f51b73d81600010ad228963b35c5cb6b348ae4b14d238ab6",
+          "bytes": 2623051,
+          "files": 908,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r209-fixed-nested-phases-5ea730e968ed.tar.gz",
+          "retained_production_unchanged_from_R199": true,
+          "diagnostic_preserved": true,
+          "ordinary_contract_restored": false,
+          "compressor_source_unchanged": true,
+          "totals": {
+            "primary_complete_calls": 8616,
+            "primary_observations": 8496,
+            "primary_reference_compressions": 5120,
+            "separate_mech_cpu_heap_calls": 2400,
+            "elapsed_lower_vs_previous": 12,
+            "elapsed_higher_vs_previous": 8,
+            "elapsed_equal_vs_previous": 0,
+            "geometric_elapsed_ratio_to_previous": 0.9265341546255108,
+            "original_1_05_gate_vs_retained_pass": 14,
+            "original_1_05_gate_vs_previous_pass": 17,
+            "instruction_medians_lower_vs_previous": 9,
+            "instruction_medians_higher_vs_previous": 11,
+            "cycle_medians_lower_vs_previous": 11,
+            "cycle_medians_higher_vs_previous": 9,
+            "equal_diagnostic_heap_cases": 20,
+            "wall_stack_profile_complete_calls": 9296,
+            "exact_pc_profile_complete_calls": 22297
+          },
+          "new_fixed_buffer_cases": 320,
+          "fixed_resident_value_agreements": 224,
+          "fixed_resident_error_agreements": 72,
+          "fixed_resident_default_cap_denials": 24,
+          "reference_counter_observations": 1280,
+          "reference_verified_complete_calls": 10240,
+          "exact_origin_controls": 192,
+          "focused_phase_cases": 48,
+          "real_match_controls": 1724,
+          "resident_matching_value_agreements": 1566,
+          "resident_matching_default_cap_denials": 142,
+          "ordered_matching_source_errors": 16,
+          "generic_builder_cases": 40,
+          "complete_smoke_calls": 80,
+          "observed_complete_smoke_calls": 40,
+          "original_decoded_image_pairs": 13,
+          "code_bytes_including_phases": 7668288,
+          "stack_root_plus_phase_bytes": 85120,
+          "fresh_production_native_suite": false,
+          "inherited_native_exclusions": 7,
+          "historical_R206_native_tests": 677,
+          "historical_R206_scheduled_selections": 260,
+          "public_verification": {
+            "asset": "r209-fixed-nested-phases-5ea730e968ed.tar.gz",
+            "bytes": 2623051,
+            "sha256": "5ea730e968ed56c6f51b73d81600010ad228963b35c5cb6b348ae4b14d238ab6",
+            "file_occurrences": 908,
+            "server_digests_match": true,
+            "download_sha256_match": true,
+            "numerical_replay_byte_identical": true,
+            "scope": "Archived observation replay only; no compiler or compressor executed."
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",

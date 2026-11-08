@@ -1,5 +1,18 @@
 # Native compression milestone
 
+## R209: fixed-buffer nested matching phases; production unchanged
+
+**Production remains R199 / IR214.** Three additional complete disjoint matching proofs now execute through the same numeric emitter, beneath a correctly declined broad parent. Actual unique-owner and fixed length/capacity gates retain fallback; real capacities return unchanged. No compressor source, allocation site, table, allowance or timing boundary changes. The full prototype and four-file delta remain external, not adopted production.
+
+Matched diagnostic natural32 **6.927688×→5.454108× Roc**, periodic33 **12.365468×→6.959786×**, repeated32 **11.432981×→6.427938×**: elapsed−21.27%/−43.72%/−43.78%. Fresh unchanged production is3.368571×/3.521251×/2.952729× respectively. Eight literals stays about2.20× diagnostic versus4.50× production. These are current-cohort comparisons, not compounded improvements.
+
+Twelve medians fall/eight rise; equal-weight geometric elapsed−7.35%. Only17/20 unchanged gates pass versus R208: empty/one/seven-byte sub-microsecond cases regress and are preserved. Fourteen gates pass against production; the same six larger cases still fail. Separate matching instructions fall about56%, natural17%; eight instructions rise1.03%. All20 diagnostic heap-request/byte/reallocation/incremental-peak medians stay equal. Generated text grows7,534,880→7,668,288B and static root-plus-phase stack84,048→85,120B.
+
+320 new private/saved-alias, fixed U16/U32, original/decoded, exact-capacity/error/origin/publication/cleanup/retry controls pass. Fresh192 origin/48 phase/1,724 matching/40 builder/120 complete smoke calls pass, with13 byte-identical original/decoded pairs. The same resident default-cap denials and seven inherited native exclusions remain explicit.8,616 primary calls,2,400 separate CPU/heap calls, fresh all20 reference counters,9,296 wall-profile calls and22,297 exact-PC calls retain every adverse observation. No fresh historical production native-suite claim.
+
+Current periodic/repeated profiles put about80% of total timer weights in the outer generated root. Its hot tree-rebase/collection append path still rebuilds ownership/capacity state and reloads deep stack values; the matching word loop is compact. Next is one bounded same-Plan typed collection-builder lifetime, preceded by a minimal alias/error reproducer. Ordinary contract restoration, production exclusive-host/copy census and full-brief completion remain open. [All20 timings, exact source patch, failures, skipped coverage and verified public replay](native-fixed-nested-phases.md). Existing draft#973 only; no new PR.
+
+
 ## R208: cold error origins give a small complete diagnostic win
 
 **Production remains R199 / IR214.** The diagnostic removes its shared mutable source-origin home and materializes exact locations on cold failure paths; outlined errors return the callee location directly. Natural32 **7.057284×→6.995653× Roc**, periodic33 **12.498903×→12.300961×**, repeated32 **11.721204×→11.469044×**, eight literals **2.265164×→2.235719×**. Fresh unchanged production is **3.393281× /3.513269× /3.021483× /4.616164×** respectively. This is an experimental-path gain, not a production speedup or a cost-of-contract floor.
