@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "mech-ir277-packed-row-4",
+    "original_source": "/private/tmp/mech-related-packed-row-payload-runners-20261107-v2/plain/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-packed-row-payload-metrics-20261107-v1/mech-ir277-packed-row-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "250e3d1ce3c32ad26264739de80f48c7c7b524a0ddb4b28ff9058dcf509b2c6a",
+    "diagnostic_executable_sha256": "659faef0dd94b2b4ad38b3b862c90ef59ee44c88659de6d5a5a3e6a55697425b"
+  }
+]

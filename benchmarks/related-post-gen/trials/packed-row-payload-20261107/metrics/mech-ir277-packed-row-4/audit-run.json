@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-packed-row-payload-runners-20261107-v2/plain/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-packed-row-payload-metrics-20261107-v1/mech-ir277-packed-row-4/runner-metrics",
+    "--output",
+    "/private/tmp/mech-related-packed-row-payload-metrics-20261107-v1/mech-ir277-packed-row-4/native-link-audit.json"
+  ],
+  "cwd": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen",
+  "exit": 0,
+  "seconds": 0.0760255001951009,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 53, \"normalized_text_sha256\": \"a89fd61ff00cf98854fdc474ff3f57dbc0b2ac61412caffaca3db2f6dd66c3da\"}\n",
+  "stderr": "",
+  "rustflags": null
+}

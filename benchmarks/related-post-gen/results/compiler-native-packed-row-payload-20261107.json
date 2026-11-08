@@ -1,0 +1,732 @@
+{
+  "schema": "mech.related-post-gen.packed-row-payload.v1",
+  "source_commit": "80c91ec89ec0b57ddc1820a57fec4063c920de06",
+  "branch": "codex/related-packed-row-payload-20261107",
+  "parent": "3f9fa5a8c34bb39cfebbcfd7199786263b5a2a4b",
+  "identity": "IR277/work116/ABI41/image9",
+  "backend": "Cranelift0.131.3",
+  "LLVM_optional": true,
+  "new_dependency": false,
+  "source_algorithm_unchanged": true,
+  "selected": false,
+  "goal_complete": false,
+  "prospective_rule": {
+    "schema": "mech.related-post-gen.packed-row-payload.prospective-rule.v1",
+    "declared_utc": "2026-11-08T01:34:29.572545+00:00",
+    "declared_before_randomized_cohorts": true,
+    "qualification_timings_ineligible": true,
+    "identity": "IR277/work116/ABI41/image9",
+    "production_backend": "Cranelift0.131.3",
+    "default_dependency_change": false,
+    "LLVM_optional": true,
+    "source_branch": "codex/related-packed-row-payload-20261107",
+    "fixed_reference": "mech-ir242-reuse-4",
+    "matched_parent": "mech-ir264-cranelift-runtime-control",
+    "candidates": [
+      "mech-ir277-packed-row-4"
+    ],
+    "primary_references": {
+      "mech-ir277-packed-row-4": [
+        "mech-ir242-reuse-4",
+        "mech-ir264-cranelift-runtime-control",
+        "mech-ir276-matrix-length-4"
+      ]
+    },
+    "target": "post_json_seconds",
+    "mechanism": "Compiler selected row transport uses checked count times canonical packed scalar width instead of scanning each element to measure payload bytes. All source/account/shape/alias/capacity checks, work prices and generic variable-width traversal remain. Combined with IR276 matrix length, without changing the Mech source algorithm.",
+    "samples": 31,
+    "seed": 990289,
+    "resource_samples": 7,
+    "resource_seed": 9902897,
+    "bootstrap": {
+      "resamples": 20000,
+      "seed": 99028999
+    },
+    "superiority": "Each candidate independently needs at least21/31 paired postJSON wins and upper two-sided95% bootstrap median relative change<0 against every declared primary reference.",
+    "other_boundary": "Whole-process one-sided95% upper paired median change<=1% against every declared primary reference; no accumulated concessions.",
+    "memory": "Report physical allocations/requested/tracked heap, retained nodes, RSS/footprint, restore instructions and binary/code/stack. Explain material regressions before selection. Compare actual worker admission to physical backing while retaining logical transport thresholds.",
+    "instructions": "Report retired instructions/cycles and native code; static code/physical size alone does not establish latency superiority.",
+    "confirmation": "Only first-cohort passing candidates receive independent seeded confirmation; no unchanged rejected-candidate retry.",
+    "all_first_and_adverse_results_retained": true,
+    "goal": "Fastest eligible measured Rust independently at continuous postJSON and launch-to-exit boundaries.",
+    "retained_Rust_controls": 22,
+    "latency_implementations": 27,
+    "resource_implementations": 28
+  },
+  "analysis": {
+    "rule_sha256": "8c2dfd2f1d212112e64a6011c48bb4542e3a5c18cb3027556a508caedd8b6467",
+    "first_cohort": true,
+    "all_first_and_adverse_results_retained": true,
+    "latency_exact_outputs": 837,
+    "resource_exact_outputs": 196,
+    "fastest_processing_Rust": {
+      "variant": "rust-ordered-mask-tables256",
+      "median_seconds": 0.001509209,
+      "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+      "eligible_variants": [
+        "rust",
+        "rust-mech-control-streaming",
+        "rust-mech-control-u32-casts",
+        "rust-mech-control-u8-ids-u32",
+        "rust-ordered-scan-only",
+        "rust-ordered-ordered",
+        "rust-ordered-mask-reuse",
+        "rust-ordered-ordered-mask",
+        "rust-ordered-ordered-mask-tables",
+        "rust-apple-m3",
+        "rust-mech-control-streaming-apple-m3",
+        "rust-mech-control-u32-casts-apple-m3",
+        "rust-mech-control-u8-ids-u32-apple-m3",
+        "rust-ordered-scan-only-apple-m3",
+        "rust-ordered-ordered-apple-m3",
+        "rust-ordered-mask-reuse-apple-m3",
+        "rust-ordered-ordered-mask-apple-m3",
+        "rust-ordered-ordered-mask-tables-apple-m3",
+        "rust-ordered-mask-tables256",
+        "rust-ordered-mask-tables256-apple-m3"
+      ]
+    },
+    "fastest_whole_Rust": {
+      "variant": "rust-mech-control-u32-casts",
+      "median_seconds": 0.025048624956980348,
+      "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+    },
+    "medians": {
+      "mech-ir242-reuse-4": {
+        "post_json_seconds": 0.002806917,
+        "wall_seconds": 0.037387208081781864,
+        "compile_or_restore_seconds": 0.007775708,
+        "times_fastest_processing_Rust": 1.8598597013402383,
+        "times_fastest_whole_Rust": 1.4925852475332424
+      },
+      "mech-ir264-cranelift-runtime-control": {
+        "post_json_seconds": 0.002718333,
+        "wall_seconds": 0.036772541934624314,
+        "compile_or_restore_seconds": 0.007780958,
+        "times_fastest_processing_Rust": 1.8011640534876214,
+        "times_fastest_whole_Rust": 1.468046329799706
+      },
+      "mech-llvm-reuse-4": {
+        "post_json_seconds": 0.002354875,
+        "wall_seconds": 0.037490042159333825,
+        "compile_or_restore_seconds": 0.007818333,
+        "times_fastest_processing_Rust": 1.5603372362608492,
+        "times_fastest_whole_Rust": 1.4966906256818862
+      },
+      "mech-ir276-matrix-length-4": {
+        "post_json_seconds": 0.002726875,
+        "wall_seconds": 0.03778795897960663,
+        "compile_or_restore_seconds": 0.007793625,
+        "times_fastest_processing_Rust": 1.806823972027731,
+        "times_fastest_whole_Rust": 1.5085841655781662
+      },
+      "mech-ir277-packed-row-4": {
+        "post_json_seconds": 0.002626209,
+        "wall_seconds": 0.03761445777490735,
+        "compile_or_restore_seconds": 0.007854541,
+        "times_fastest_processing_Rust": 1.740122806052707,
+        "times_fastest_whole_Rust": 1.5016575895686146
+      }
+    },
+    "resource_medians": {
+      "mech-ir242-reuse-4": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010197,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions_retired": 125865494,
+          "cycles": 30672910
+        },
+        "post_JSON": {
+          "allocation_requests": 3758,
+          "requested_allocation_bytes": 8012356,
+          "peak_live_requested_heap_bytes": 13344061,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "instructions_retired": 54878395,
+          "cycles": 15368174
+        },
+        "process_resources": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 88819040,
+          "instructions_retired": 348661688,
+          "involuntary_context_switches": 15,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1785,
+          "peak_physical_footprint_bytes": 15991144,
+          "peak_resident_bytes": 26542080,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 17,
+          "wall_seconds": 0.03
+        }
+      },
+      "mech-ir264-cranelift-runtime-control": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010216,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions_retired": 125885199,
+          "cycles": 30346523
+        },
+        "post_JSON": {
+          "allocation_requests": 3758,
+          "requested_allocation_bytes": 8012356,
+          "peak_live_requested_heap_bytes": 13344080,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "instructions_retired": 54827101,
+          "cycles": 14971857
+        },
+        "process_resources": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 88317842,
+          "instructions_retired": 348655480,
+          "involuntary_context_switches": 15,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1799,
+          "peak_physical_footprint_bytes": 16105832,
+          "peak_resident_bytes": 26755072,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 21,
+          "wall_seconds": 0.03
+        }
+      },
+      "mech-llvm-reuse-4": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010183,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions_retired": 125896431,
+          "cycles": 30297391
+        },
+        "post_JSON": {
+          "allocation_requests": 3758,
+          "requested_allocation_bytes": 8012356,
+          "peak_live_requested_heap_bytes": 13344047,
+          "peak_additional_live_requested_heap_bytes": 5567167,
+          "instructions_retired": 40021075,
+          "cycles": 12858785
+        },
+        "process_resources": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 84322187,
+          "instructions_retired": 330984839,
+          "involuntary_context_switches": 15,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1791,
+          "peak_physical_footprint_bytes": 16105832,
+          "peak_resident_bytes": 26656768,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 13,
+          "wall_seconds": 0.03
+        }
+      },
+      "mech-ir276-matrix-length-4": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010197,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions_retired": 125816151,
+          "cycles": 30475027
+        },
+        "post_JSON": {
+          "allocation_requests": 2945,
+          "requested_allocation_bytes": 7919355,
+          "peak_live_requested_heap_bytes": 13343021,
+          "peak_additional_live_requested_heap_bytes": 5566127,
+          "instructions_retired": 53509658,
+          "cycles": 14693477
+        },
+        "process_resources": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 89215070,
+          "instructions_retired": 348993111,
+          "involuntary_context_switches": 15,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1789,
+          "peak_physical_footprint_bytes": 16007528,
+          "peak_resident_bytes": 26624000,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 22,
+          "wall_seconds": 0.03
+        }
+      },
+      "mech-ir277-packed-row-4": {
+        "restore": {
+          "allocation_requests": 26837,
+          "requested_allocation_bytes": 12830999,
+          "peak_live_requested_heap_bytes": 7010190,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "instructions_retired": 125597085,
+          "cycles": 30238076
+        },
+        "post_JSON": {
+          "allocation_requests": 2945,
+          "requested_allocation_bytes": 7919355,
+          "peak_live_requested_heap_bytes": 13343014,
+          "peak_additional_live_requested_heap_bytes": 5566127,
+          "instructions_retired": 51102397,
+          "cycles": 14289683
+        },
+        "process_resources": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 86981549,
+          "instructions_retired": 340967580,
+          "involuntary_context_switches": 16,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1767,
+          "peak_physical_footprint_bytes": 15729024,
+          "peak_resident_bytes": 26279936,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.01,
+          "voluntary_context_switches": 12,
+          "wall_seconds": 0.03
+        }
+      }
+    },
+    "decisions": {
+      "mech-ir277-packed-row-4": {
+        "target_passed": true,
+        "other_boundary_passed": false,
+        "first_cohort_passed": false,
+        "selected": false,
+        "paired": {
+          "mech-ir242-reuse-4": {
+            "post_json_seconds": {
+              "wins": 30,
+              "pairs": 31,
+              "median_paired_relative_change": -0.06869228682521022,
+              "two_sided_95_interval": [
+                -0.0752241417012901,
+                -0.06254729336692377
+              ],
+              "one_sided_95_upper": -0.06372049934738644,
+              "all_pair_relative_changes": [
+                0.16095117323089725,
+                -0.07982067292086203,
+                -0.04492729377446991,
+                -0.08635526437205865,
+                -0.08451164173218384,
+                -0.07206226211458078,
+                -0.07553279956821635,
+                -0.01245358115084938,
+                -0.05089331529598362,
+                -0.06869228682521022,
+                -0.06427725894799374,
+                -0.0927265110224188,
+                -0.09176822702121212,
+                -0.0688627165532647,
+                -0.03341566659007744,
+                -0.03776013598374639,
+                -0.08399627134995691,
+                -0.08073350980002136,
+                -0.06254729336692377,
+                -0.06735311110040565,
+                -0.08525048141827751,
+                -0.0561318681318681,
+                -0.06372049934738644,
+                -0.07162462423212645,
+                -0.07852235160043253,
+                -0.0752241417012901,
+                -0.05485895075818237,
+                -0.0671884006404555,
+                -0.04525019772124261,
+                -0.07385646744692476,
+                -0.05559195373429282
+              ]
+            },
+            "wall_seconds": {
+              "wins": 11,
+              "pairs": 31,
+              "median_paired_relative_change": 0.022549495701522648,
+              "two_sided_95_interval": [
+                -0.0040229025450572165,
+                0.03991338368739927
+              ],
+              "one_sided_95_upper": 0.03277432089594279,
+              "all_pair_relative_changes": [
+                0.09688598110840507,
+                0.03277432089594279,
+                0.011533073297282925,
+                0.0547788475171731,
+                0.032720659659777995,
+                -0.059642506359087855,
+                -0.037694220235575004,
+                -0.08433772538998896,
+                -0.08179435596587126,
+                0.11689792888222694,
+                -0.024888604142241588,
+                0.10168256332536707,
+                -0.011463908722540217,
+                0.03991338368739927,
+                -0.0040229025450572165,
+                0.020072807368435308,
+                -0.005980606671321165,
+                0.06375078361025044,
+                0.022549495701522648,
+                0.0022001086061678166,
+                -0.06686099019961367,
+                0.014598689659348851,
+                0.10956663887504803,
+                0.08775791135377453,
+                0.11823366421107728,
+                0.04118116980864661,
+                0.14792638051311835,
+                0.03197974745542598,
+                0.02378270197148069,
+                -0.14527866129964262,
+                -0.1976530135355239
+              ]
+            }
+          },
+          "mech-ir264-cranelift-runtime-control": {
+            "post_json_seconds": {
+              "wins": 30,
+              "pairs": 31,
+              "median_paired_relative_change": -0.05736880060080907,
+              "two_sided_95_interval": [
+                -0.059889272904707136,
+                -0.03878905512872355
+              ],
+              "one_sided_95_upper": -0.04268800266499906,
+              "all_pair_relative_changes": [
+                0.16826865398042723,
+                -0.059178717662421,
+                -0.04268800266499906,
+                -0.08707131990226358,
+                -0.07255769052260275,
+                -0.06401408458599622,
+                -0.048194799615546846,
+                -0.013703464116626818,
+                -0.05770655798443869,
+                -0.031107055503292624,
+                -0.05255144463675465,
+                -0.07308509874326752,
+                -0.06015166129151284,
+                -0.06177754718242934,
+                -0.024842528518720375,
+                -0.018189721903962175,
+                -0.07421427006687886,
+                -0.07475451721573256,
+                -0.0384714381871214,
+                -0.02700925963629852,
+                -0.021000461324286568,
+                -0.012584183026877138,
+                -0.03878905512872355,
+                -0.029306038318655414,
+                -0.05918340881360207,
+                -0.06337848088941289,
+                -0.059889272904707136,
+                -0.05952000011479486,
+                -0.049582011597688935,
+                -0.08980692182218564,
+                -0.05736880060080907
+              ]
+            },
+            "wall_seconds": {
+              "wins": 9,
+              "pairs": 31,
+              "median_paired_relative_change": 0.02510803821291341,
+              "two_sided_95_interval": [
+                0.004939482771729953,
+                0.07021345020966052
+              ],
+              "one_sided_95_upper": 0.0576128954296391,
+              "all_pair_relative_changes": [
+                -0.010623546032134445,
+                0.11233056901616822,
+                0.10676872074638055,
+                0.07021345020966052,
+                0.07856325510022066,
+                0.004939482771729953,
+                0.1383233759057525,
+                0.009251780805799026,
+                -0.0609080920842795,
+                0.0457771492495076,
+                0.01795893809293725,
+                0.153712254945225,
+                -0.027190292630902446,
+                0.13179980485660026,
+                0.049234945577554035,
+                0.04141882229036464,
+                0.02278414847496002,
+                -0.01728708381129529,
+                0.00010309815887499241,
+                -0.016524698316747632,
+                -0.018525597845962527,
+                -0.019042203532357638,
+                0.1286422549393864,
+                0.02510803821291341,
+                0.09417987655071802,
+                0.0576128954296391,
+                0.15872262441244755,
+                0.07570229325534927,
+                0.016239424991253415,
+                -0.16923456466019804,
+                -0.1972758888632452
+              ]
+            }
+          },
+          "mech-ir276-matrix-length-4": {
+            "post_json_seconds": {
+              "wins": 29,
+              "pairs": 31,
+              "median_paired_relative_change": -0.034231708971410146,
+              "two_sided_95_interval": [
+                -0.04398451138516324,
+                -0.02781562749612365
+              ],
+              "one_sided_95_upper": -0.028103659869079256,
+              "all_pair_relative_changes": [
+                0.18312762946891814,
+                -0.047255198067985615,
+                -0.03817740767068489,
+                -0.04044502592431065,
+                -0.08894966203549026,
+                -0.04446291857220863,
+                -0.04398451138516324,
+                0.022036430757274017,
+                -0.020979693965932023,
+                -0.04043478763165065,
+                -0.028103659869079256,
+                -0.05536254688500597,
+                -0.034231708971410146,
+                -0.07228814104322545,
+                -0.00025364587379850256,
+                -0.024102119991136983,
+                -0.02781562749612365,
+                -0.04405659268634454,
+                -0.019388837369028633,
+                -0.02901291651382254,
+                -0.061561613376617585,
+                -0.03140987172552223,
+                -0.021138319110323156,
+                -0.019298677744555404,
+                -0.05050980528265425,
+                -0.0738792309083901,
+                -0.020056878972155023,
+                -0.052223959510145135,
+                -0.014103690121476165,
+                -0.04358138512126142,
+                -0.029768586517356588
+              ]
+            },
+            "wall_seconds": {
+              "wins": 18,
+              "pairs": 31,
+              "median_paired_relative_change": -0.0011743659018577102,
+              "two_sided_95_interval": [
+                -0.03259104066630847,
+                0.005535882547824222
+              ],
+              "one_sided_95_upper": 0.0049107746237940664,
+              "all_pair_relative_changes": [
+                -0.040130190520261566,
+                0.021546686809130966,
+                -0.007993319544015387,
+                -0.012277464362272172,
+                0.009628286768037508,
+                -0.0011243088135439727,
+                -0.07558563262284423,
+                0.0022700604659668944,
+                -0.04619821443722616,
+                0.004877874206740351,
+                -0.03273379790033859,
+                0.03233572399151363,
+                0.005535882547824222,
+                -0.022573373145391873,
+                0.05256361799024689,
+                -0.008179547121632935,
+                -0.0011743659018577102,
+                -0.03539272652464032,
+                -0.0723422652532244,
+                0.03426559741344515,
+                -0.10731353932947785,
+                -0.03280470162749738,
+                -0.0010455423898827476,
+                0.019638831095451614,
+                0.00640831319622559,
+                -0.03259104066630847,
+                0.1880062044225712,
+                0.008975395739918346,
+                0.11998724647506553,
+                -0.16461592933021596,
+                -0.1821056275499099
+              ]
+            }
+          }
+        },
+        "confirmation_run": false
+      }
+    },
+    "selected": false,
+    "goal_complete": false
+  },
+  "native_code": {
+    "code_bytes": 886344,
+    "stack_bytes": 1536,
+    "native_functions": 51,
+    "Object_text_comparison": {
+      "native_Object_text_exact": true,
+      "parent_bytes": 889544,
+      "candidate_bytes": 889544,
+      "parent_sha256": "a89fd61ff00cf98854fdc474ff3f57dbc0b2ac61412caffaca3db2f6dd66c3da",
+      "candidate_sha256": "a89fd61ff00cf98854fdc474ff3f57dbc0b2ac61412caffaca3db2f6dd66c3da",
+      "runtime_helper_change": true,
+      "no_native_inner_loop_change": true,
+      "parent_IR": 276
+    },
+    "linked_audit": "passed",
+    "normalized_text_sha256": "a89fd61ff00cf98854fdc474ff3f57dbc0b2ac61412caffaca3db2f6dd66c3da",
+    "executable_file_bytes": 16627808
+  },
+  "fastest_Rust_resources": {
+    "processing": {
+      "variant": "rust-ordered-mask-tables256",
+      "post_JSON": {
+        "allocation_requests": 58,
+        "requested_allocation_bytes": 6825713,
+        "peak_live_requested_heap_bytes": 7703209
+      },
+      "hardware": {
+        "instructions_retired": 17653206,
+        "cycles": 5900186
+      },
+      "process_resources": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 43981448,
+        "instructions_retired": 174801293,
+        "involuntary_context_switches": 5,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 520,
+        "peak_physical_footprint_bytes": 5538128,
+        "peak_resident_bytes": 6111232,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.0,
+        "voluntary_context_switches": 19,
+        "wall_seconds": 0.02
+      }
+    },
+    "whole": {
+      "variant": "rust-mech-control-u32-casts",
+      "post_JSON": {
+        "allocation_requests": 57,
+        "requested_allocation_bytes": 6803175,
+        "peak_live_requested_heap_bytes": 7640671
+      },
+      "hardware": {
+        "instructions_retired": 19282846,
+        "cycles": 6262277
+      },
+      "process_resources": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 44227280,
+        "instructions_retired": 173734389,
+        "involuntary_context_switches": 5,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 516,
+        "peak_physical_footprint_bytes": 5456208,
+        "peak_resident_bytes": 6029312,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.0,
+        "voluntary_context_switches": 12,
+        "wall_seconds": 0.02
+      }
+    }
+  },
+  "total_qualification_outputs_exact": 35,
+  "qualification": {
+    "actual_native_CI_names_passed": 405,
+    "focused_row_and_route_checks_passed": 8,
+    "image_and_caller_checks_passed": 25,
+    "optional_LLVM_tests_explicitly_passed": 4,
+    "scalar_DEFLATE_rows": 133,
+    "all_scalar_DEFLATE_nontiming_and_allocation_fields_exact": true,
+    "runtime_only_GPU": true,
+    "same_Object_audit_passed": true,
+    "broader_promotion_GPU_checks_run": false
+  },
+  "mechanism": [
+    "Validated fixed-row transport now measures Bool/U8/U16/U32/U64/I64/F64/Index packed payloads by checked count*width, replacing the complete scalar-element sizing walk. String and generic-cell traversal remain.",
+    "All preceding source/shape/schema/account/alias checks and every original work/capacity/output/coexistence charge remain in the same order. The row is immutable for this call, and count comes from its canonical stored element extent.",
+    "Original/decoded/restored execution is compared against a test-only ablation that retains the old scan. Reports, exact work prices, transport, output values, retained accounting, errors, aliases, atomic publication and retries agree.",
+    "The source algorithm and native arithmetic Object are unchanged. This lowers compiler-owned typed result transport; it remains a helper boundary. It composes with the IR276 matrix-length route and keeps work116 prices."
+  ],
+  "first_failures_retained": [
+    "Initial test compilation needed an explicit borrow of the source input name.",
+    "The first unconstrained 2D-block fixture was unadmitted: general horizontal blocks can permute rows and differ from the fixed-row family being optimized. Replaced the fixture with maintained append-produced rows, as used by the benchmark, preserving the visible general-2D admission limitation. No production source change.",
+    "The corrected fixture initially assumed append accepted any row count; its maintained geometry requires exactly one row. The test now checks that genuine shape error, division by zero, and their unvisited branches against the old scan.",
+    "A first standalone compiler postprocess and scalar executable postprocess ran out of temporary space. Failed non-executable outputs were recorded and removed; older qualified test binaries were losslessly archived; new builds validate postprocessing and are rerun. No timings from these attempts qualify."
+  ],
+  "decision": "First cohort fails its predeclared acceptance rule. No unchanged confirmation or promotion.",
+  "limits": [
+    "No scalar-native entry was retired and no generic per-operation dispatch or allocation was added.",
+    "Validation is already an O(1) schema identity check; this does not claim to eliminate a traversal there.",
+    "Native Object text is exactly the parent. This removes scalar payload traversal in compiler-owned result transport, not native inner-loop arithmetic instructions.",
+    "Diagnostic profile measurements are excluded from promotion timings.",
+    "All first/adverse performance samples and all22 Rust controls remain; fastest eligible references are chosen independently at both continuous timer boundaries."
+  ],
+  "next_work": "Use the new per-thread native instruction census and matched LLVM reference to prioritize compiler/backend gaps. Native numeric bodies account for roughly33M instructions; descriptor restoration still consumes about126M. Keep all prior rejected results and investigate startup independently of serializer/teardown."
+}

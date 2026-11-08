@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/private/tmp/mech-related-packed-row-payload-tests-20261107-v3/gpu-tests",
+    "packed_row_payload",
+    "native_row_blocks_preserve",
+    "matrix_length_lowering_tests",
+    "call_routes::tests",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {},
+  "exit": 101,
+  "seconds": 1.557152000023052,
+  "stdout": "\nrunning 8 tests\ntest native_artifact::program::prepare::call_routes::tests::prepared_selected_routes_are_rederived_from_actual_factories_on_image_restore ... ok\ntest native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_keeps_all_scalar_kinds_unicode_empty_shapes_and_exact_prices ... ok\ntest native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_preserves_large_borrowed_rows_shapes_unvisited_errors_and_aliases ... FAILED\ntest native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_retains_finite_denials_atomic_publication_and_recovery ... ok\ntest native_artifact::program::runtime::invocation::parallel::tests::numeric_tests::native_row_blocks_preserve_scalar_kinds_empty_shapes_and_atomic_output_limits ... ok\ntest native_artifact::program::runtime::session::matrix_length_lowering_tests::matrix_length_lowering_failures_preserve_publication_aliases_and_retry ... ok\ntest native_artifact::program::runtime::session::matrix_length_lowering_tests::matrix_length_lowering_keeps_rectangles_empty_unicode_and_canonical_ablation ... ok\ntest native_artifact::program::runtime::session::matrix_length_lowering_tests::matrix_length_lowering_kernel_retains_finite_caps_schema_and_same_account_checks ... ok\n\nfailures:\n\nfailures:\n    native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_preserves_large_borrowed_rows_shapes_unvisited_errors_and_aliases\n\ntest result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 902 filtered out; finished in 0.28s\n\n",
+  "stderr": "\nthread 'native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_preserves_large_borrowed_rows_shapes_unvisited_errors_and_aliases' (21523366) panicked at /private/tmp/mech-related-matrix-length-lowering-compiler-20261107/hosts/gpu/src/native_artifact/program/runtime/collections/row_blocks/tests.rs:258:33:\nassertion failed: denominator == 0 && count > 0\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "original": "/private/tmp/mech-related-native-vector-shape-identities-tests-20261107-v1/gpu-tests",
+    "archive": "/private/tmp/mech-related-native-vector-shape-identities-tests-20261107-v1/gpu-tests.retained.gz",
+    "bytes": 134569912,
+    "sha256": "8b1b442156c8b808eb15307c2379a6024c99b762c4ebecfb2dea36e0055108bf",
+    "archive_bytes": 22491322,
+    "mode": 493,
+    "lossless_verified": true
+  },
+  {
+    "original": "/private/tmp/mech-related-native-vector-shape-identities-tests-20261107-v2/gpu-tests",
+    "archive": "/private/tmp/mech-related-native-vector-shape-identities-tests-20261107-v2/gpu-tests.retained.gz",
+    "bytes": 134569224,
+    "sha256": "a6ccf9f3e6a4405f9605592ad5aa974b4b2cd08a381a09a0f310bc6b4154a70f",
+    "archive_bytes": 22488532,
+    "mode": 493,
+    "lossless_verified": true
+  },
+  {
+    "original": "/private/tmp/mech-related-native-vector-shape-identities-tests-20261107-v3/gpu-tests",
+    "archive": "/private/tmp/mech-related-native-vector-shape-identities-tests-20261107-v3/gpu-tests.retained.gz",
+    "bytes": 134569224,
+    "sha256": "15af3c3a0a257e242eefd5c8bcf19fd671337dd0021c6ddb2a4bdbb783ed016e",
+    "archive_bytes": 22490433,
+    "mode": 493,
+    "lossless_verified": true
+  },
+  {
+    "original": "/private/tmp/mech-related-positional-metadata-tests-20261107-v1/gpu-tests",
+    "archive": "/private/tmp/mech-related-positional-metadata-tests-20261107-v1/gpu-tests.retained.gz",
+    "bytes": 135110056,
+    "sha256": "e8595e1e235799d48b4b200da1600e58e4461b250f96737e6d57b2ee304dc02c",
+    "archive_bytes": 22592014,
+    "mode": 493,
+    "lossless_verified": true
+  }
+]

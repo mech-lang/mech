@@ -1,0 +1,43 @@
+{
+  "schema": "mech.related-post-gen.packed-row-payload.prospective-rule.v1",
+  "declared_utc": "2026-11-08T01:34:29.572545+00:00",
+  "declared_before_randomized_cohorts": true,
+  "qualification_timings_ineligible": true,
+  "identity": "IR277/work116/ABI41/image9",
+  "production_backend": "Cranelift0.131.3",
+  "default_dependency_change": false,
+  "LLVM_optional": true,
+  "source_branch": "codex/related-packed-row-payload-20261107",
+  "fixed_reference": "mech-ir242-reuse-4",
+  "matched_parent": "mech-ir264-cranelift-runtime-control",
+  "candidates": [
+    "mech-ir277-packed-row-4"
+  ],
+  "primary_references": {
+    "mech-ir277-packed-row-4": [
+      "mech-ir242-reuse-4",
+      "mech-ir264-cranelift-runtime-control",
+      "mech-ir276-matrix-length-4"
+    ]
+  },
+  "target": "post_json_seconds",
+  "mechanism": "Compiler selected row transport uses checked count times canonical packed scalar width instead of scanning each element to measure payload bytes. All source/account/shape/alias/capacity checks, work prices and generic variable-width traversal remain. Combined with IR276 matrix length, without changing the Mech source algorithm.",
+  "samples": 31,
+  "seed": 990289,
+  "resource_samples": 7,
+  "resource_seed": 9902897,
+  "bootstrap": {
+    "resamples": 20000,
+    "seed": 99028999
+  },
+  "superiority": "Each candidate independently needs at least21/31 paired postJSON wins and upper two-sided95% bootstrap median relative change<0 against every declared primary reference.",
+  "other_boundary": "Whole-process one-sided95% upper paired median change<=1% against every declared primary reference; no accumulated concessions.",
+  "memory": "Report physical allocations/requested/tracked heap, retained nodes, RSS/footprint, restore instructions and binary/code/stack. Explain material regressions before selection. Compare actual worker admission to physical backing while retaining logical transport thresholds.",
+  "instructions": "Report retired instructions/cycles and native code; static code/physical size alone does not establish latency superiority.",
+  "confirmation": "Only first-cohort passing candidates receive independent seeded confirmation; no unchanged rejected-candidate retry.",
+  "all_first_and_adverse_results_retained": true,
+  "goal": "Fastest eligible measured Rust independently at continuous postJSON and launch-to-exit boundaries.",
+  "retained_Rust_controls": 22,
+  "latency_implementations": 27,
+  "resource_implementations": 28
+}

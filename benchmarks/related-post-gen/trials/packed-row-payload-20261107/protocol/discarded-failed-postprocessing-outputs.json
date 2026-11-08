@@ -1,0 +1,16 @@
+[
+  {
+    "path": "/private/tmp/mech-related-packed-row-payload-runners-20261107-v1/compiler",
+    "bytes": 1216,
+    "sha256": "fb529a2b662e18c3158135de7f909d51d1fbc073971b422de4bbf6751f73e456",
+    "mode": 33188,
+    "invalid_postprocessing_output": true
+  },
+  {
+    "path": "/private/tmp/mech-related-packed-row-payload-regressions-20261107-v1/scalar",
+    "bytes": 496,
+    "sha256": "3012545532870c9a557eebc316ae953123f05706c657791e3c46c23e5a04c7e5",
+    "mode": 33188,
+    "invalid_postprocessing_output": true
+  }
+]

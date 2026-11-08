@@ -1,0 +1,12 @@
+{
+  "expected": 405,
+  "listed": 405,
+  "executed_passed": 405,
+  "all_names_match": true,
+  "old_names_retained": true,
+  "new_names": [
+    "native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_keeps_all_scalar_kinds_unicode_empty_shapes_and_exact_prices",
+    "native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_preserves_large_borrowed_rows_shapes_unvisited_errors_and_aliases",
+    "native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_retains_finite_denials_atomic_publication_and_recovery"
+  ]
+}

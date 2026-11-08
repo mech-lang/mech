@@ -1,0 +1,8 @@
+{
+  "source": "/private/tmp/mech-related-matrix-length-lowering-compiler-20261107",
+  "build": "/private/tmp/mech-related-packed-row-payload-opt-20261107-v3",
+  "source_inventory_exact": true,
+  "commit": "80c91ec89ec0b57ddc1820a57fec4063c920de06",
+  "predeclared_rule_sha256": "8c2dfd2f1d212112e64a6011c48bb4542e3a5c18cb3027556a508caedd8b6467",
+  "no_prior_cohort": true
+}

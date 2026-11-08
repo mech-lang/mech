@@ -1,0 +1,6 @@
+{
+  "source_inventory_exact": true,
+  "runtime_library_sha256": "414cc7d2a89031d3103091eeadc3c9d9ea69819e74d97e40d804d239437c6798",
+  "reused_build": "/private/tmp/mech-related-packed-row-payload-runners-20261107-v1/runtime/build.json",
+  "reason": "Runtime stage completed successfully before subsequent host executable postprocessing ran out of temporary space; all source bytes and runtime library hash verified."
+}

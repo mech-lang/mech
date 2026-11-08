@@ -1,0 +1,6 @@
+{
+  "matrix_length_tests_passed": true,
+  "canonical_ablation_executed": true,
+  "finite_checks_passed": true,
+  "actual_CI_passed": 405
+}

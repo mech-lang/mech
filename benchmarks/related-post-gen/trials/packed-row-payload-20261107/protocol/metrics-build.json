@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-packed-row-payload-cohort-20261107-v1/latency-config.json",
+    "--out",
+    "/private/tmp/mech-related-packed-row-payload-metrics-20261107-v1",
+    "--variant",
+    "mech-ir277-packed-row-4"
+  ],
+  "exit": 0,
+  "stdout": "{\"variant\": \"mech-ir277-packed-row-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n",
+  "stderr": ""
+}

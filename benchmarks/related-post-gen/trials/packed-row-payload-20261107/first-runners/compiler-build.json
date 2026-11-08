@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-packed-row-payload-opt-20261107-v3/build.json",
+    "--source",
+    "/private/tmp/mech-related-packed-row-payload-runners-20261107-v1/compiler-facts.rs",
+    "--out",
+    "/private/tmp/mech-related-packed-row-payload-runners-20261107-v1/compiler"
+  ],
+  "environment": {},
+  "exit": 1,
+  "seconds": 2.615423875162378,
+  "stdout": "warning: stripping debug info with `rust-objcopy` failed: exit status: 1\n  |\n  = note: LLVM ERROR: IO failure on output stream: No space left on device\n          \n\nwarning: 1 warning emitted\n\nRust reported failed executable postprocessing\n{\"seconds\": 2.1122060420457274, \"exit\": 1}\n",
+  "stderr": ""
+}

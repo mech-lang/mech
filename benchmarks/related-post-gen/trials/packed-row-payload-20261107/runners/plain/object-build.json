@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-packed-row-payload-runners-20261107-v2/compiler",
+    "/private/tmp/mech-related-llvm-native-image-cranelift-control-20261107-v4/build/source.mec",
+    "/private/tmp/mech-related-packed-row-payload-runners-20261107-v2/plain/build"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 5.7882337919436395,
+  "stdout": "{\"code_bytes\":886344,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1536}\n",
+  "stderr": ""
+}

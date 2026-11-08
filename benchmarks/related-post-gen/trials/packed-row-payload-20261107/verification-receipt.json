@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-matrix-length-lowering-compiler-20261107/benchmarks/related-post-gen/trials/packed-row-payload-20261107/verify.py"
+  ],
+  "exit": 0,
+  "seconds": 0.7624645831529051,
+  "stdout": "{\n  \"records\": 313,\n  \"cohort_outputs_exact\": 1033,\n  \"qualification_outputs_exact\": 35,\n  \"bootstrap_rederived\": true,\n  \"fastest_Rust_rederived\": true,\n  \"native_text_exact\": true,\n  \"native_CI_names_executed\": 405,\n  \"scalar_DEFLATE_rows_exact\": 133,\n  \"first_failures_retained\": true,\n  \"selected\": false,\n  \"goal_complete\": false\n}\n",
+  "stderr": ""
+}

@@ -1,0 +1,10 @@
+{
+  "native_Object_text_exact": true,
+  "parent_bytes": 889544,
+  "candidate_bytes": 889544,
+  "parent_sha256": "a89fd61ff00cf98854fdc474ff3f57dbc0b2ac61412caffaca3db2f6dd66c3da",
+  "candidate_sha256": "a89fd61ff00cf98854fdc474ff3f57dbc0b2ac61412caffaca3db2f6dd66c3da",
+  "runtime_helper_change": true,
+  "no_native_inner_loop_change": true,
+  "parent_IR": 276
+}
