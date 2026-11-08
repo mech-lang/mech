@@ -1,6 +1,17 @@
 # Native compression milestone
 
 
+
+## R204: whole diagnostic ownership improved; retained numeric lowering still missing
+
+**Production remains R199 / IR214.** The improved complete diagnostic produces the exact20 streams through original and independently decoded, separately linked images. The three-way matched natural32 result is retained **3.342× Roc**, R203 diagnostic **149.617×**, new diagnostic **14.445×**. Periodic33 is **3.519× /235.408× /24.942×**; repeated32 **3.019× /225.168× /23.178×**; eight literals **4.439× /2.400× /2.187×**. This is a large diagnostic improvement, still a large-input regression versus production. No adoption or parity claim.
+
+Field-only liveness fixes the focused witness but leaves almost all real copying. Actual helper tracing identifies163,845 unique, sufficiently capacious U64 path updates denied consumption by contradictory repeated-Bool paths. Exact current-predicate must-facts with definition kills remove every path-buffer fallback while retaining final runtime exclusivity and real aliases. Natural32 tracked copies16.398GB→2.178MB, full allocator requests515,206→9,224, requested bytes400.284GB→12.057MB, incremental usable peak15.263MB→10.013MB. These are different quantities.
+
+8,616 matched primary calls,2,400 separate CPU/heap calls,8,297 fresh stack-profile calls,973 fresh PC-profile calls,180 focused original/decoded cases, unchanged real-capacity builder controls and80 complete smoke calls pass.19 diagnostic medians fall and one is equal; only11/20 original production gates pass. Ordinary exact contracts remain omitted. Current large-case profiles are99% native-exclusive, yet natural instructions are649.6M versus208.3M retained. Actual code rebuilds words byte-by-byte and retains excess state/spills where production has packed loads and compact numeric phases. The raw lowering must retain those existing specializations before it provides a useful cost-of-contracts floor. [All20 data, patches, failures, code inspection, exact pins and public replay](native-compact-guarded-ownership.md).
+
+The full brief remains open: guarantee-restoration increments and the exclusive production host-family ledger are unfinished. Direct reduction completion into its parent remains the next retained-production target. Existing draft#973 only; no new PR or production dependency change.
+
 ## R203: complete typed native diagnostic exposes repeated buffer copying
 
 The entire unchanged level-12 computation now produces exact streams for all20 cases, with independent inflate, input/prepared-output aliases, capacities and zero residual private cleanup. **Production remains R199 / IR214.** This first diagnostic is not adoptable: natural32 is **151.134× Roc versus retained3.328×**, periodic33 **235.224× versus3.394×**, repeated32 **223.671× versus2.899×**. Eight literals improve **4.458×→2.440×**, but larger cases copy gigabytes; no new cost-of-guarantees floor is established.

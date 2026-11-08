@@ -41076,6 +41076,255 @@
           }
         }
       ]
+    },
+    "204": {
+      "base": "9e38c3346fd856b9b0d45824af21002640011676",
+      "production_commit": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "decision": "Retain complete diagnostic field/current-path ownership and measurements as evidence only. Real path COW fallbacks disappear; diagnostic medians improve on19 cases and tie on one, but larger cases remain substantially slower than production because raw lowering lacks retained numeric specialization and carries excess native state. Do not adopt or call this a cost-of-contracts floor. Full brief and parity remain open.",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "diagnostic_entry": "Separate typed mech_compact_closed_v2 ABI; ordinary exact contracts omitted. Not managed ABI39 or ordinary NoLimits.",
+      "source_files": [],
+      "candidate_source_files": [
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compiler.rs",
+          "bytes": 20196,
+          "sha256": "4efbc4e6f4913548d1c302457eec5e9b7e5c9b167ccc97044c4bc2f87e37e31b"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/mod.rs",
+          "bytes": 920,
+          "sha256": "4cec9a3b0851dc398db114f1729f7f28fd08ffee132a88220f81319e99cbe229"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/mod.rs",
+          "bytes": 6078,
+          "sha256": "35dc9336b2c9221d3faeaabae4df83c8da5d5e84f5150b54af26b5c488a1e139"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/codegen/common/aggregates/mod.rs",
+          "bytes": 9836,
+          "sha256": "b631a0b527020c94f27ec6a5c6b296675d7f7880ed2f02df049ffd091600ab98"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/arrays.rs",
+          "bytes": 24104,
+          "sha256": "e18211270cf83d4c45ccc909808057d1495bca2b615b17b24f7bb4d5fdd72907"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/collections.rs",
+          "bytes": 15129,
+          "sha256": "fa38d01d4bf2025f492f9204255a0533bc0a090278e3b86d8ce0f281c4f9fd67"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/constants.rs",
+          "bytes": 8549,
+          "sha256": "bc5feccd59575e9ebd32eaf596f31de759bed72c1341cda6eafd1b4c56e59fc5"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+          "bytes": 21448,
+          "sha256": "4e40de122cf0876cbbbaddd1df292630e43cda44f07af543e6558f7a5918701b"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/flow.rs",
+          "bytes": 10016,
+          "sha256": "94f08111b04fe5e2aad136c09b2c916985f4e3648a15f8f25047eca1bd99c225"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/guards.rs",
+          "bytes": 3567,
+          "sha256": "c278cd39ccdb5fcc1d4f97236b6cb6b94a24f35882d690fca9e4fcabe3b43c9a"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/layout.rs",
+          "bytes": 10537,
+          "sha256": "49cfa7426b936c39c789cb77b4d94549bd628180b14259b5c94852edf04c9974"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/mod.rs",
+          "bytes": 2907,
+          "sha256": "5439090195a536f57258168ed0a2fd0679ee8bfe93f1f56a1d68fc29ab855025"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/owner_flow.rs",
+          "bytes": 12665,
+          "sha256": "38a95acb1600a9a557967862ccf2b5c85ab8616d762eed091d381c556d6b5e86"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/packed.rs",
+          "bytes": 2915,
+          "sha256": "2d7be6896ddaf3c087d3b39ed7f8a1cf03aafe05c76d94da625dc3b91db72192"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/recipes.rs",
+          "bytes": 10763,
+          "sha256": "b09d2b2d2e4032ff34bd2106b1cbaa6ac0402b674401f2de5f011f00ed9494ed"
+        }
+      ],
+      "events": [
+        {
+          "event": "complete-compact-guarded-ownership",
+          "asset": "r204-compact-guarded-ownership-651f4be7cec1.tar.gz",
+          "sha256": "651f4be7cec1ece04b418d24dd1bfb43067dba2bf4c9fe45d42728c37b7cf355",
+          "bytes": 1196876,
+          "files": 591,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "compressor_source_unchanged": true,
+          "retained_production_unchanged_from_R199": true,
+          "ordinary_contract_omitted": true,
+          "full_original_decoded_objects_identical": true,
+          "primary_observations": 8496,
+          "total_complete_calls": 8616,
+          "separate_counter_calls": 2400,
+          "fresh_profile_calls": 8297,
+          "fresh_pc_profile_calls": 973,
+          "gates_1_05_pass": 11,
+          "diagnostic_medians_lower": 19,
+          "diagnostic_medians_equal": 1,
+          "code": {
+            "production_bytes": 8152436,
+            "R203_bytes": 10260180,
+            "new_bytes": 8315704,
+            "production_stack_bytes": 16480,
+            "R203_stack_bytes": 83264,
+            "new_stack_bytes": 78160,
+            "new_static_calls_not_dynamic_calls": 58193,
+            "static_buffer_source_decisions": 562
+          },
+          "real_path_fallbacks_before": 163845,
+          "real_path_fallbacks_after": 0,
+          "focused_original_decoded_cases": 180,
+          "builder_collection_cases": 16,
+          "builder_buffer_cases": 24,
+          "shared_and_unique_transfer_sequences": 4,
+          "complete_original_decoded_smoke_calls": 80,
+          "qualification": {
+            "focused_workers": [
+              {
+                "receipt": "owner-fields-baseline-dead-decoded-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-fields-baseline-dead-original-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-fields-baseline-live-decoded-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-fields-baseline-live-original-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-fields-field-dead-decoded-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-fields-field-dead-original-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-fields-field-live-decoded-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-fields-field-live-original-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-correlated-baseline-decoded-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-correlated-baseline-original-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-correlated-guarded-decoded-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-correlated-guarded-original-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-independent-baseline-decoded-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-independent-baseline-original-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-independent-guarded-decoded-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-independent-guarded-original-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-redefined-baseline-decoded-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-redefined-baseline-original-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-redefined-guarded-decoded-controls.json",
+                "cases": 9,
+                "exit": 0
+              },
+              {
+                "receipt": "owner-redefined-guarded-original-controls.json",
+                "cases": 9,
+                "exit": 0
+              }
+            ],
+            "focused_cases": 180,
+            "collection_cases_per_form": 8,
+            "buffer_cases_per_form": 12,
+            "additional_shared_rejection_and_unique_U8_transfer_controls": 4,
+            "complete_smoke_original_and_decoded_calls": 80,
+            "full_original_decoded_object_and_metadata_identical": true,
+            "ordinary_resource_error_recovery_restored": false,
+            "new_production_native_suite": false,
+            "sparse_frontend_unchanged_R203_tests_reused": 11,
+            "fresh_reference_instruction_cohort": false,
+            "exclusive_production_host_operation_families": false
+          },
+          "public_verification": {
+            "file_occurrences": 591,
+            "server_digests_match": true,
+            "numerical_replay_byte_identical": true
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
