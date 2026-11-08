@@ -308,7 +308,7 @@
   "report": "compiler-native-conjoined-windows-and-shared-call-certificates-20261107.json",
   "current_public_compiler": "IR242",
   "goal_complete": false,
-  "updated_utc": "2026-11-07T17:41:30.374200+00:00",
+  "updated_utc": "2026-11-08T02:00:13.828930+00:00",
   "source_tradeoff": "Ordering eligibility sends unordered unique rows to the exact original CSR fallback. This may be slower than the previous fast path on unordered input.",
   "published_head": "c39f78c403e3de12f4e65c222ddd0f2f7b227362",
   "latest_selected_remeasurement": {
@@ -10255,5 +10255,20 @@
     },
     "report": "compiler-native-packed-row-payload-20261107.json"
   },
-  "latest_packed_row_payload_report": "compiler-native-packed-row-payload-20261107.json"
+  "latest_packed_row_payload_report": "compiler-native-packed-row-payload-20261107.json",
+  "current_working_baseline": {
+    "compiler_source": "80c91ec89ec0b57ddc1820a57fec4063c920de06",
+    "evidence": "a47330b5eb96904ef0d5fd4f79bd7895a6f6ded7",
+    "identity": "IR277/work116/ABI41/image9",
+    "runner": "/private/tmp/mech-related-packed-row-payload-runners-20261107-v2/plain/runner-aot",
+    "post_json_ms": 2.626209,
+    "times_fastest_processing_Rust": 1.740122806052707,
+    "whole_ms": 37.61445777490735,
+    "times_fastest_whole_Rust": 1.5016575895686146,
+    "cohort": "comparison-native-packed-row-payload-20261107-5000-m3.json",
+    "processing_gate_passed_against_all_three_controls": true,
+    "original_whole_gate_failed": true,
+    "unchanged_favorable_retry": false
+  },
+  "working_baseline_policy": "compiler-working-baseline-policy-20261108.json"
 }

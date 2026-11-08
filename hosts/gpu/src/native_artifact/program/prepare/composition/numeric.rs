@@ -13,7 +13,7 @@ use mech_engine::native_artifact::{
 };
 
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.View")]
 pub(in crate::native_artifact) struct View {
     pub source: usize,
     pub width: u8,
@@ -27,7 +27,7 @@ pub(in crate::native_artifact) enum Retirement {
     Current(u32),
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
 pub(in crate::native_artifact) struct Layout {
     pub views: Vec<View>,
     pub actions: Vec<(usize, Operation)>,

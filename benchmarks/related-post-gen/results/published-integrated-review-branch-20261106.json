@@ -629,7 +629,7 @@
     "applied": false,
     "full_adoption_qualification_not_run": true
   },
-  "updated_utc": "2026-11-07T17:41:30.374200+00:00",
+  "updated_utc": "2026-11-08T02:00:13.828930+00:00",
   "unselected_IR241": {
     "compiler": "8f6516cd93410c75df18648ed10b9d335ca5311b",
     "identity": "IR241/work115/ABI41/image9",
@@ -10690,5 +10690,20 @@
     },
     "report": "compiler-native-packed-row-payload-20261107.json"
   },
-  "latest_packed_row_payload_report": "compiler-native-packed-row-payload-20261107.json"
+  "latest_packed_row_payload_report": "compiler-native-packed-row-payload-20261107.json",
+  "current_working_baseline": {
+    "compiler_source": "80c91ec89ec0b57ddc1820a57fec4063c920de06",
+    "evidence": "a47330b5eb96904ef0d5fd4f79bd7895a6f6ded7",
+    "identity": "IR277/work116/ABI41/image9",
+    "runner": "/private/tmp/mech-related-packed-row-payload-runners-20261107-v2/plain/runner-aot",
+    "post_json_ms": 2.626209,
+    "times_fastest_processing_Rust": 1.740122806052707,
+    "whole_ms": 37.61445777490735,
+    "times_fastest_whole_Rust": 1.5016575895686146,
+    "cohort": "comparison-native-packed-row-payload-20261107-5000-m3.json",
+    "processing_gate_passed_against_all_three_controls": true,
+    "original_whole_gate_failed": true,
+    "unchanged_favorable_retry": false
+  },
+  "working_baseline_policy": "compiler-working-baseline-policy-20261108.json"
 }

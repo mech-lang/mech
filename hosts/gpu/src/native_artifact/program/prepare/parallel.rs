@@ -10,7 +10,7 @@ use mech_engine::native_artifact::{
 use std::collections::BTreeSet;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Region")]
 pub(in crate::native_artifact) struct Region {
     pub collection: u32,
     pub iteration: u32,
@@ -32,7 +32,7 @@ impl Region {
 }
 
 #[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
 pub(in crate::native_artifact) struct Layout {
     pub regions: Box<[Region]>,
 }

@@ -8,7 +8,7 @@ use mech_engine::native_artifact::{
 };
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Region")]
 pub(in crate::native_artifact) struct Region {
     pub owner: usize,
     pub exit: usize,
@@ -21,7 +21,7 @@ pub(in crate::native_artifact) struct Region {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
 pub(in crate::native_artifact) struct Layout {
     pub regions: Vec<Region>,
     pub projects: Vec<Option<usize>>,

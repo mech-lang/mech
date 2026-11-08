@@ -19,7 +19,7 @@ pub(in crate::native_artifact) enum Source {
     Field { value: u32, ordinal: usize },
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Exit")]
 pub(in crate::native_artifact) struct Exit {
     pub from: u32,
     pub to: u32,
@@ -29,7 +29,7 @@ pub(in crate::native_artifact) struct Exit {
     pub aliases: Vec<NativeMatchValue>,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Alias")]
 pub(in crate::native_artifact) struct Alias {
     #[serde(deserialize_with = "super::image::value")]
     pub value: NativeMatchValue,
@@ -39,7 +39,7 @@ pub(in crate::native_artifact) struct Alias {
     pub call_result: bool,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
 pub(in crate::native_artifact) struct Layout {
     pub sources: Vec<Source>,
     pub aliases: Vec<Alias>,

@@ -19,7 +19,7 @@ const MAX_REGIONS: usize = 256;
 pub(in crate::native_artifact) const HEADER_WORK: u64 = 4096;
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Region")]
 pub(in crate::native_artifact) struct Region {
     pub collection: u32,
     pub iteration: u32,
@@ -37,7 +37,7 @@ pub(in crate::native_artifact) struct Region {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
 pub(in crate::native_artifact) struct Layout {
     pub regions: Vec<Region>,
     pub headers: Vec<Option<usize>>,

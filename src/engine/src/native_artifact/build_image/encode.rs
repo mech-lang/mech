@@ -5,26 +5,33 @@ use super::*;
 /// Integer tokens are resolved at full U128/I128 width; no JSON Value or float
 /// intermediary is used. The result grants no Object or execution authority.
 pub fn encode_native_metadata_image(json: &[u8]) -> Result<Vec<u8>, Error> {
-    image::<true>(json)
+    image::<true, true>(json)
 }
 
 #[cfg(test)]
 pub(super) fn legacy_image(json: &[u8]) -> Result<Vec<u8>, Error> {
-    image::<false>(json)
+    image::<false, false>(json)
 }
 
-fn image<const PACKED: bool>(json: &[u8]) -> Result<Vec<u8>, Error> {
+#[cfg(test)]
+pub(super) fn interleaved_image(json: &[u8]) -> Result<Vec<u8>, Error> {
+    image::<true, false>(json)
+}
+
+fn image<const PACKED: bool, const GROUPED: bool>(json: &[u8]) -> Result<Vec<u8>, Error> {
     if json.len() > MAX_BYTES {
         return Err(error("build JSON exceeds its size limit"));
     }
     let raw: &RawValue = serde_json::from_slice(json)?;
-    let mut bytes = if PACKED {
+    let mut bytes = if GROUPED {
         NATIVE_METADATA_IMAGE_MAGIC
+    } else if PACKED {
+        INTERLEAVED_NATIVE_METADATA_IMAGE_MAGIC
     } else {
         LEGACY_NATIVE_METADATA_IMAGE_MAGIC
     }
     .to_vec();
-    encode::<PACKED>(raw, &mut bytes, 0)?;
+    encode::<PACKED, GROUPED>(raw, &mut bytes, 0)?;
     Ok(bytes)
 }
 
@@ -55,7 +62,7 @@ impl<'de> Deserialize<'de> for Members<'de> {
     }
 }
 
-fn encode<const PACKED: bool>(
+fn encode<const PACKED: bool, const GROUPED: bool>(
     raw: &RawValue,
     out: &mut Vec<u8>,
     depth: usize,
@@ -101,7 +108,7 @@ fn encode<const PACKED: bool>(
             } else {
                 out.truncate(start);
                 for value in values {
-                    encode::<PACKED>(value, out, depth + 1)?;
+                    encode::<PACKED, GROUPED>(value, out, depth + 1)?;
                 }
                 ARRAY
             }
@@ -111,12 +118,28 @@ fn encode<const PACKED: bool>(
             // must not lose duplicate keys before the private reader rejects it.
             let members: Members<'_> = serde_json::from_str(text)?;
             out.extend_from_slice(&length(members.0.len())?);
-            for (key, value) in members.0 {
-                out.extend_from_slice(&length(key.len())?);
-                out.extend_from_slice(key.as_bytes());
-                encode::<PACKED>(value, out, depth + 1)?;
+            if GROUPED {
+                let size_at = out.len();
+                out.extend_from_slice(&[0; 4]);
+                let keys_at = out.len();
+                for (key, _) in &members.0 {
+                    out.extend_from_slice(&length(key.len())?);
+                    out.extend_from_slice(key.as_bytes());
+                }
+                let size = length(out.len() - keys_at)?;
+                out[size_at..size_at + 4].copy_from_slice(&size);
+                for (_, value) in members.0 {
+                    encode::<PACKED, GROUPED>(value, out, depth + 1)?;
+                }
+                GROUPED_OBJECT
+            } else {
+                for (key, value) in members.0 {
+                    out.extend_from_slice(&length(key.len())?);
+                    out.extend_from_slice(key.as_bytes());
+                    encode::<PACKED, GROUPED>(value, out, depth + 1)?;
+                }
+                OBJECT
             }
-            OBJECT
         }
         Some(b'-' | b'0'..=b'9') => {
             if text.bytes().any(|byte| matches!(byte, b'.' | b'e' | b'E')) {

@@ -60,7 +60,7 @@ struct Origin {
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Key")]
 struct Key {
     module_path: Box<[String]>,
     operation_name: String,
@@ -71,7 +71,7 @@ enum Selected<'a> {
     Lexical(#[serde(borrow)] BuildOwnedImageRecord<'a>),
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Template")]
 struct Template<'a> {
     origin: Origin,
     revision: ProgramRevision,

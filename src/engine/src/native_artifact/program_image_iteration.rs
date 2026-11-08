@@ -90,7 +90,7 @@ enum Terminator {
     },
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Block")]
 struct Block<'a> {
     origin: WireOrigin,
     #[serde(borrow)]

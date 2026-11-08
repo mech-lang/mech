@@ -16,7 +16,8 @@ mod key;
 mod packed;
 pub use encode::encode_native_metadata_image;
 
-pub const NATIVE_METADATA_IMAGE_MAGIC: &[u8; 8] = b"MECHTVI3";
+pub const NATIVE_METADATA_IMAGE_MAGIC: &[u8; 8] = b"MECHTVI4";
+const INTERLEAVED_NATIVE_METADATA_IMAGE_MAGIC: &[u8; 8] = b"MECHTVI3";
 const LEGACY_NATIVE_METADATA_IMAGE_MAGIC: &[u8; 8] = b"MECHTVI1";
 pub(crate) const RAW_RECORD: &str = "mech.build-owned-image.record.v1";
 const HEADER: usize = 5;
@@ -34,6 +35,8 @@ const TEXT: u8 = 8;
 const ARRAY: u8 = 9;
 const OBJECT: u8 = 10;
 const BYTE_ARRAY: u8 = 11;
+// Same named map vocabulary, with keys contiguous before the child records.
+const GROUPED_OBJECT: u8 = 12;
 
 fn error(message: &str) -> Error {
     <Error as de::Error>::custom(message)
@@ -66,6 +69,32 @@ impl<'a> BuildOwnedImageRecord<'a> {
             },
         }
     }
+    /// Borrow a checked contiguous unsigned-byte array when the native writer
+    /// packed it. Other supported image forms retain the same typed byte reads.
+    /// This view grants no schema, execution or provenance authority.
+    pub fn unsigned_byte_payload(self) -> Result<std::borrow::Cow<'a, [u8]>, Error> {
+        if let Self::Native(bytes) = self {
+            let node = Node {
+                bytes,
+                depth: 0,
+                canonical: false,
+            };
+            let (tag, payload) = node.parts()?;
+            if tag == BYTE_ARRAY {
+                let count = payload
+                    .get(..4)
+                    .ok_or_else(|| error("truncated packed metadata array"))?;
+                let count = u32::from_le_bytes(count.try_into().unwrap()) as usize;
+                let bytes = &payload[4..];
+                if count != bytes.len() {
+                    return Err(error("packed metadata array count differs from its bytes"));
+                }
+                return Ok(std::borrow::Cow::Borrowed(bytes));
+            }
+        }
+        self.decode::<Vec<u8>>().map(std::borrow::Cow::Owned)
+    }
+
     pub fn decode<T: Deserialize<'a>>(self) -> Result<T, Error> {
         let mut reader = self.reader();
         let value = T::deserialize(&mut reader)?;
@@ -132,6 +161,7 @@ impl<'a> BuildOwnedImageReader<'a> {
         }
         if let Some(bytes) = bytes
             .strip_prefix(NATIVE_METADATA_IMAGE_MAGIC)
+            .or_else(|| bytes.strip_prefix(INTERLEAVED_NATIVE_METADATA_IMAGE_MAGIC))
             .or_else(|| bytes.strip_prefix(LEGACY_NATIVE_METADATA_IMAGE_MAGIC))
         {
             Ok(Self::native(bytes, 0))
@@ -179,14 +209,14 @@ impl<'a> Node<'a> {
         }
         let tag = self.bytes[0];
         let length = u32::from_le_bytes(self.bytes[1..HEADER].try_into().unwrap()) as usize;
-        if tag > BYTE_ARRAY || length != self.bytes.len() - HEADER {
+        if tag > GROUPED_OBJECT || length != self.bytes.len() - HEADER {
             return Err(error("native metadata node length or kind differs"));
         }
         Ok((tag, &self.bytes[HEADER..]))
     }
     fn fields(&self, expected: u8) -> Result<Fields<'a>, Error> {
         let (tag, payload) = self.parts()?;
-        if tag != expected {
+        if tag != expected && !(expected == OBJECT && tag == GROUPED_OBJECT) {
             return Err(error("native metadata collection has a different kind"));
         }
         self.members(tag, payload)
@@ -196,13 +226,31 @@ impl<'a> Node<'a> {
             return Err(error("native metadata collection has a different kind"));
         }
         let count = u32::from_le_bytes(payload[..4].try_into().unwrap()) as usize;
-        let bytes = &payload[4..];
+        let (keys, bytes) = if tag == GROUPED_OBJECT {
+            let size = payload
+                .get(4..8)
+                .ok_or_else(|| error("truncated grouped metadata keys"))?;
+            let size = u32::from_le_bytes(size.try_into().unwrap()) as usize;
+            let end = 8usize
+                .checked_add(size)
+                .ok_or_else(|| error("grouped metadata key length overflows"))?;
+            let keys = payload
+                .get(8..end)
+                .ok_or_else(|| error("grouped metadata keys exceed their parent"))?;
+            if count > keys.len() / 4 {
+                return Err(error("grouped metadata key count exceeds its bytes"));
+            }
+            (Some(keys), &payload[end..])
+        } else {
+            (None, &payload[4..])
+        };
         let minimum = if tag == OBJECT { HEADER + 4 } else { HEADER };
         if count > bytes.len() / minimum {
             return Err(error("native metadata item count exceeds its bytes"));
         }
         Ok(Fields {
             bytes,
+            keys,
             remaining: count,
             pending_key: false,
             depth: self.depth + 1,
@@ -250,6 +298,7 @@ impl NativeReader<'_> {
 
 struct Fields<'a> {
     bytes: &'a [u8],
+    keys: Option<&'a [u8]>,
     remaining: usize,
     pending_key: bool,
     depth: usize,
@@ -273,7 +322,11 @@ enum StructKeys {
 }
 impl<'a> Fields<'a> {
     fn end(&self) -> Result<(), Error> {
-        if self.remaining != 0 || self.pending_key || !self.bytes.is_empty() {
+        if self.remaining != 0
+            || self.pending_key
+            || !self.bytes.is_empty()
+            || self.keys.is_some_and(|keys| !keys.is_empty())
+        {
             Err(error("native metadata collection has trailing fields"))
         } else if let Some(StructKeys::Canonical { names, seen }) = &self.known_keys
             && seen.count_ones() as usize != names.len()
@@ -299,19 +352,18 @@ impl<'a> Fields<'a> {
         Ok(value)
     }
     fn key_bytes(&mut self) -> Result<&'a [u8], Error> {
-        let length = self
-            .bytes
+        let bytes = self.keys.as_mut().unwrap_or(&mut self.bytes);
+        let length = bytes
             .get(..4)
             .ok_or_else(|| error("truncated native metadata key"))?;
         let length = u32::from_le_bytes(length.try_into().unwrap()) as usize;
         let end = 4usize
             .checked_add(length)
             .ok_or_else(|| error("native metadata key length overflows"))?;
-        let text = self
-            .bytes
+        let text = bytes
             .get(4..end)
             .ok_or_else(|| error("native metadata key exceeds its parent"))?;
-        self.bytes = &self.bytes[end..];
+        *bytes = &bytes[end..];
         Ok(text)
     }
     fn key(&mut self) -> Result<&'a str, Error> {
@@ -473,7 +525,7 @@ impl<'de> Deserializer<'de> for Node<'de> {
                     .map_err(|_| error("native metadata string is not UTF8"))?,
             ),
             ARRAY | BYTE_ARRAY => self.array(visitor, None),
-            OBJECT => self.object(visitor),
+            OBJECT | GROUPED_OBJECT => self.object(visitor),
             _ => Err(error("unknown native metadata kind")),
         }
     }
@@ -548,11 +600,38 @@ impl<'de> Deserializer<'de> for Node<'de> {
     }
     fn deserialize_struct<V: Visitor<'de>>(
         self,
-        _: &'static str,
+        name: &'static str,
         expected: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Error> {
         let mut fields = self.fields(OBJECT)?;
+        // Only private, explicitly opted-in derived readers have the sequence
+        // visitor contract. The bytes still supply real checked field names;
+        // no image flag, ordinal or hash grants semantic/provenance authority.
+        // Unlike probing an interleaved record, this does not traverse any
+        // child headers twice. Reordered/partial records retain the map path.
+        if name.starts_with("mech.native.image.")
+            && fields.keys.is_some()
+            && fields.remaining == expected.len()
+        {
+            let mut probe = self.fields(OBJECT)?;
+            let mut ordered = true;
+            for expected in expected {
+                if probe.key_bytes()? != expected.as_bytes() {
+                    ordered = false;
+                    break;
+                }
+            }
+            if ordered {
+                if probe.keys.is_some_and(|keys| !keys.is_empty()) {
+                    return Err(error("grouped metadata has trailing keys"));
+                }
+                fields.keys = Some(&[]);
+                let value = visitor.visit_seq(&mut fields)?;
+                fields.end()?;
+                return Ok(value);
+            }
+        }
         if self.canonical {
             if fields.remaining != expected.len() {
                 return Err(error("canonical native metadata field count differs"));
@@ -572,7 +651,7 @@ impl<'de> Deserializer<'de> for Node<'de> {
             fields.end()?;
             return Ok(value);
         }
-        if fields.remaining == expected.len() {
+        if fields.keys.is_none() && fields.remaining == expected.len() {
             let mut probe = self.fields(OBJECT)?;
             let mut ordered = true;
             for name in expected {
@@ -816,3 +895,7 @@ impl<'de> Deserializer<'de> for &mut BuildOwnedImageReader<'de> {
         deserialize_enum(name: &'static str, variants: &'static [&'static str]); deserialize_identifier(); deserialize_ignored_any();
     }
 }
+
+#[cfg(test)]
+#[path = "build_image/grouped_tests.rs"]
+mod grouped_tests;

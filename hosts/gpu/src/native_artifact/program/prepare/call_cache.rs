@@ -3,7 +3,7 @@ use mech_engine::native_artifact::{NativePreparedLibraryCall, NativeProgramArtif
 use std::num::NonZeroUsize;
 
 #[derive(Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
 pub(in crate::native_artifact) struct Layout {
     slots: Box<[Option<NonZeroUsize>]>,
     repeated: Box<[bool]>,

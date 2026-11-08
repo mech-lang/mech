@@ -92,7 +92,7 @@ impl NativeProgramDescriptor {
         }
         serde_json::to_vec(&Image {
             format: "mech.build-owned-native-descriptor",
-            version: 10,
+            version: 12,
             descriptor: super::TableDescriptor(self),
         })
     }
@@ -113,9 +113,9 @@ impl NativeProgramDescriptor {
         let json = serde_json::to_vec(&Image {
             format: "mech.build-owned-native-descriptor",
             version: if self.machine_backend.is_some() {
-                10
+                12
             } else {
-                9
+                11
             },
             descriptor: super::TableDescriptor(self),
         })?;

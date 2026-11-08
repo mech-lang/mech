@@ -32,7 +32,7 @@ impl<'a> From<&'a ProgramMetadata> for Borrowed<'a> {
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Owned")]
 pub(super) struct Owned {
     #[serde(deserialize_with = "buffers")]
     pub unsigned_buffer_calls: Box<[Option<NativeUnsignedBufferCall>]>,

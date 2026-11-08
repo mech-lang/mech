@@ -10,13 +10,13 @@ use mech_engine::native_artifact::{
 };
 
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Frontier")]
 pub(in crate::native_artifact) struct Frontier {
     pub site: u32,
     pub previous: u32,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Group")]
 pub(in crate::native_artifact) struct Group {
     /// None selects only scalar instructions; it grants no ownership rights.
     pub owner: Option<usize>,
@@ -37,7 +37,7 @@ impl Group {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
 pub(in crate::native_artifact) struct Layout {
     pub groups: Box<[Group]>,
     pub sites: Box<[Option<usize>]>,

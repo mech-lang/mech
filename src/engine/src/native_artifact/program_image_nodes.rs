@@ -12,7 +12,7 @@ fn wire<'de, T: Deserialize<'de>, D: Deserializer<'de>>(image: D) -> Result<T, S
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Scalar")]
 struct Scalar<'a> {
     kind: String,
     schema: SchemaId,
@@ -21,7 +21,7 @@ struct Scalar<'a> {
     descriptor: BuildOwnedImageRecord<'a>,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Type")]
 struct Type<'a> {
     schema: SchemaId,
     #[serde(borrow)]
@@ -139,7 +139,7 @@ impl<'a> TypeTable<'a> {
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Request")]
 struct Request {
     base_uri: String,
     path: String,
@@ -163,7 +163,7 @@ pub(super) fn request<'de, D: Deserializer<'de>>(
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Input")]
 struct Input<'a> {
     input: InputId,
     slot: CellSlotId,
@@ -186,7 +186,7 @@ pub(super) fn input<'de, D: Deserializer<'de>>(
     })
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Constant")]
 struct Constant<'a> {
     value: u32,
     #[serde(borrow)]
@@ -203,7 +203,7 @@ pub(super) fn constant(
     })
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Observation")]
 struct Observation<'a> {
     node: NodeId,
     requirement: ApplicationRequirementId,
@@ -245,7 +245,7 @@ impl Source {
     }
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Effect")]
 struct Effect<'a> {
     node: NodeId,
     requirement: ApplicationRequirementId,
@@ -273,7 +273,7 @@ pub(super) fn effect<'de, D: Deserializer<'de>>(
     })
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Binding")]
 struct Binding {
     lexical_name: String,
     artifact_source: Source,
@@ -281,7 +281,7 @@ struct Binding {
     output: OutputId,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Output")]
 struct Output<'a> {
     output: OutputId,
     slot: CellSlotId,

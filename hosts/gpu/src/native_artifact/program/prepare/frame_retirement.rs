@@ -11,7 +11,7 @@ pub(in crate::native_artifact) enum Operation {
     Managed(usize),
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Recipe")]
 struct Recipe {
     work: u64,
     operations: Range<usize>,
@@ -19,7 +19,7 @@ struct Recipe {
 /// Immutable compiler-derived data. Independent images rederive this inventory;
 /// a genuine bound Object may restore it. Runtime liveness checks still apply.
 #[derive(Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.FrameRetirements")]
 pub(in crate::native_artifact) struct FrameRetirements {
     recipes: Box<[Option<Recipe>]>,
     operations: Box<[Operation]>,

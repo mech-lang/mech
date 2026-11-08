@@ -15,7 +15,7 @@ pub(in crate::native_artifact) mod image;
 pub(in crate::native_artifact) mod numeric;
 
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Segment")]
 pub(in crate::native_artifact) struct Segment {
     pub entry: u32,
     pub sites: Vec<u32>,
@@ -29,7 +29,7 @@ pub(in crate::native_artifact) struct Segment {
     pub rejection: Option<std::borrow::Cow<'static, str>>,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Parent")]
 pub(in crate::native_artifact) struct Parent {
     pub iteration: u32,
     /// Innermost suspended ancestor edge, rederived from validated loop ancestry
@@ -39,7 +39,7 @@ pub(in crate::native_artifact) struct Parent {
     pub segments: Vec<Segment>,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Child")]
 pub(in crate::native_artifact) struct Child {
     pub child: u32,
     pub child_initialize: u32,

@@ -4,7 +4,7 @@ use sha2::{Digest, Sha256};
 /// Stored only for the distinct LLVM image family. The maintained Cranelift
 /// descriptor has no extra record or changed identity/serialization.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.MachineBackend")]
 pub(in crate::native_artifact) struct MachineBackend {
     kind: u64,
     revision: u64,

@@ -3,7 +3,7 @@
 //! these records describe operations and word homes, never a second program.
 use super::readonly_numeric::ResultRecipe;
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Array")]
 pub(in crate::native_artifact) struct Array {
     pub field: usize,
     pub width: u8,
@@ -13,7 +13,7 @@ pub(in crate::native_artifact) struct Array {
     pub appends: bool,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.FrameWords")]
 pub(in crate::native_artifact) struct FrameWords {
     pub value: u32,
     /// Relative native scalar lane, or None for an invariant managed field.
@@ -73,7 +73,7 @@ pub(in crate::native_artifact) enum ExitKind {
     ChildHeader { iteration: u32 },
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Exit")]
 pub(in crate::native_artifact) struct Exit {
     pub from: usize,
     pub to: usize,
@@ -86,7 +86,7 @@ pub(in crate::native_artifact) struct Exit {
     pub kind: ExitKind,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.BoundaryValues")]
 pub(in crate::native_artifact) struct BoundaryValues {
     /// Superset of every source word that this region can register or modify.
     pub candidates: Vec<u32>,
@@ -94,7 +94,7 @@ pub(in crate::native_artifact) struct BoundaryValues {
     pub exit: Vec<u32>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Plan")]
 pub(in crate::native_artifact) struct Plan {
     pub arrays: Vec<Array>,
     pub frames: Vec<FrameWords>,

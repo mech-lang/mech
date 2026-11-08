@@ -22,7 +22,7 @@ enum CollectionImageKind {
     MatrixHorizontalBlocks { rows: Rows },
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Span")]
 struct Span<'a> {
     range_site: u32,
     selection_site: u32,
@@ -36,7 +36,7 @@ struct Span<'a> {
     output: u32,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.MapProjection")]
 struct MapProjection<'a> {
     iteration: u32,
     element_site: u32,
@@ -49,7 +49,7 @@ struct MapProjection<'a> {
     selection_template: BuildOwnedImageRecord<'a>,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Collection")]
 struct Collection<'a> {
     origin: WireOrigin,
     parent: Option<u32>,

@@ -28,7 +28,7 @@ impl Layout {
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Owned")]
 pub(in crate::native_artifact) struct Owned {
     parents: Vec<Parent>,
     entries: Box<[Option<NonZeroUsize>]>,

@@ -7,7 +7,7 @@ use mech_engine::native_artifact::{
 };
 
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Boundary")]
 pub(in crate::native_artifact) struct Boundary {
     pub(in crate::native_artifact) total: u64,
     pub(in crate::native_artifact) charges: usize,
@@ -19,7 +19,7 @@ pub(in crate::native_artifact) struct Boundary {
 /// Pure descriptor data, rederived for owned images. Original inventories remain
 /// authoritative for scan charges, ordered failures and partial cleanup.
 #[derive(Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
 pub(in crate::native_artifact) struct Layout {
     boundaries: Box<[Option<Boundary>]>,
 }

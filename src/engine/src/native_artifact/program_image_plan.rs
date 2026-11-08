@@ -10,7 +10,7 @@ use serde_json::Value as Json;
 use serde_json::value::RawValue;
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Plan")]
 struct Plan<'a> {
     revision: ProgramRevision,
     #[serde(borrow)]
@@ -42,7 +42,7 @@ struct Plan<'a> {
     template_definitions: Option<BuildOwnedImageRecord<'a>>,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Image")]
 struct Image<'a> {
     format: String,
     version: u32,

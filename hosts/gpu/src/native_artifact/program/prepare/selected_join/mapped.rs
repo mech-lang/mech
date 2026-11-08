@@ -7,7 +7,7 @@ use mech_engine::native_artifact::{
 };
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Map")]
 pub(in crate::native_artifact) struct Map {
     pub collection: u32,
     pub iteration: u32,

@@ -12,14 +12,14 @@ use serde::Deserialize;
 use serde_json::Value as Json;
 
 #[derive(Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Parameter")]
 struct Parameter {
     lifetime: DimensionLifetime,
     lower_bound: DimensionExpr,
     upper_bound: Option<DimensionExpr>,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.SchemaImage")]
 struct SchemaImage {
     dimension_parameters: Vec<Parameter>,
     body: SchemaBody,

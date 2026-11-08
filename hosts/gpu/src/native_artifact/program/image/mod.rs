@@ -56,7 +56,11 @@ impl NativeProgramDescriptor {
             fields.serialize_field("calls", &self.metadata.calls)?;
         }
         fields.serialize_field("types", &self.metadata.types)?;
-        fields.serialize_field("visits", &self.metadata.visits)?;
+        if TABLES {
+            fields.serialize_field("visit_work", &VisitWork(&self.metadata))?;
+        } else {
+            fields.serialize_field("visits", &self.metadata.visits)?;
+        }
         fields.serialize_field("retirements", &self.metadata.retirements)?;
         fields.serialize_field("constant_bytes", &self.metadata.constant_bytes)?;
         fields.serialize_field("scalar_bytes", &self.metadata.scalar_bytes)?;
@@ -262,5 +266,41 @@ struct TableDescriptor<'a>(&'a NativeProgramDescriptor);
 impl serde::Serialize for TableDescriptor<'_> {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         self.0.serialize_image_fields::<S, true>(s)
+    }
+}
+
+// Checked build-time projection: only work may differ after control derivation.
+// New control metadata cannot silently disappear if a future writer changes it.
+struct VisitWork<'a>(&'a crate::native_artifact::program::prepare::ProgramMetadata);
+impl serde::Serialize for VisitWork<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::Error;
+        let plan = &self.0.plan;
+        let base = crate::native_artifact::iteration_abi::control_visits(
+            plan.blocks(),
+            plan.iterations().iter().map(Into::into),
+            0,
+        )
+        .map_err(S::Error::custom)?;
+        if base.len() != self.0.visits.len() {
+            return Err(S::Error::custom(
+                "visit work inventory differs from its plan",
+            ));
+        }
+        let length = base
+            .len()
+            .checked_mul(8)
+            .ok_or_else(|| S::Error::custom("visit work byte length overflows"))?;
+        let mut bytes = Vec::with_capacity(length);
+        for (mut expected, visit) in base.into_iter().zip(self.0.visits.iter()) {
+            expected.work = visit.work;
+            if expected != *visit {
+                return Err(S::Error::custom(
+                    "visit control differs from plan-derived fields",
+                ));
+            }
+            bytes.extend_from_slice(&visit.work.to_le_bytes());
+        }
+        serde::Serialize::serialize(&bytes, s)
     }
 }

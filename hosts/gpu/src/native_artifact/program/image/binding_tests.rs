@@ -290,7 +290,7 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
             mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 9);
+        assert_eq!(image["version"], 11);
         let independent =
             unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }.unwrap();
         let bound = unsafe {
@@ -336,6 +336,7 @@ fn frozen_static_layouts_match_independent_derivation_and_reject_each_inventory_
         }
         for version in [3, 4] {
             let mut legacy = image.clone();
+            legacy_visits(&mut legacy, object.descriptor());
             legacy["version"] = version.into();
             legacy["descriptor"]
                 .as_object_mut()
@@ -451,7 +452,7 @@ fn native_table_rows_reject_foreign_types_and_mismatched_binding_arity() {
         .unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 9);
+        assert_eq!(image["version"], 11);
         let rows = image["descriptor"]["plan"]["values"].as_array().unwrap();
         assert!(
             rows.iter()
@@ -554,7 +555,7 @@ fn frozen_uniform_collections_preserve_fields_and_reject_changed_proofs() {
                     mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
                 let image = serde_json::Value::deserialize(&mut reader).unwrap();
                 reader.end().unwrap();
-                assert_eq!(image["version"], 9);
+                assert_eq!(image["version"], 11);
                 assert_eq!(
                     image["descriptor"]["static_layouts"]["uniform_word_collections"]
                         .as_array()
@@ -586,6 +587,7 @@ fn frozen_uniform_collections_preserve_fields_and_reject_changed_proofs() {
                 // Genuine V5 representation lacks this inventory and rederives
                 // it. Relabeling V6 while retaining its extra field must fail.
                 let mut legacy = image.clone();
+                legacy_visits(&mut legacy, object.descriptor());
                 legacy["version"] = 5.into();
                 legacy["descriptor"]
                     .as_object_mut()
@@ -706,7 +708,7 @@ fn shared_template_definitions_preserve_sites_and_reject_foreign_rows_and_factor
                 mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
             let image = serde_json::Value::deserialize(&mut reader).unwrap();
             reader.end().unwrap();
-            assert_eq!(image["version"], 9);
+            assert_eq!(image["version"], 11);
             let definitions = image["descriptor"]["plan"]["template_definitions"]
                 .as_array()
                 .unwrap();
@@ -909,6 +911,7 @@ fn frozen_frames_preserve_metadata_and_independent_legacy_validation() {
                 assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
             }
             let mut legacy = image.clone();
+            legacy_visits(&mut legacy, object.descriptor());
             legacy["version"] = 1.into();
             legacy["descriptor"]
                 .as_object_mut()
@@ -991,7 +994,7 @@ fn native_numeric_map_inventory_matches_source_and_rejects_changed_proofs_and_un
             mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 9);
+        assert_eq!(image["version"], 11);
         let expected = &object.descriptor().metadata().numeric_maps;
         assert_eq!(expected.regions.len(), 1);
         for bound in [false, true] {
@@ -1013,6 +1016,7 @@ fn native_numeric_map_inventory_matches_source_and_rejects_changed_proofs_and_un
         // A real V6 representation omits this inventory; its ordinary source
         // plan remains authoritative and must rederive the same facts.
         let mut legacy = image.clone();
+        legacy_visits(&mut legacy, object.descriptor());
         legacy["version"] = 6.into();
         legacy["descriptor"]
             .as_object_mut()
@@ -1060,8 +1064,12 @@ fn native_numeric_map_inventory_matches_source_and_rejects_changed_proofs_and_un
                         serde_json::json!({"regions":[],"headers":[]})
                 }
                 14 => {
-                    changed["descriptor"]["visits"][expected.regions[0].header as usize]["work"] =
-                        0.into()
+                    let at = expected.regions[0].header as usize * 8;
+                    for byte in
+                        &mut changed["descriptor"]["visit_work"].as_array_mut().unwrap()[at..at + 8]
+                    {
+                        *byte = 0.into();
+                    }
                 }
                 15 => maps["regions"][0]["sites"] = serde_json::json!([]),
                 _ => unreachable!(),
@@ -1105,7 +1113,7 @@ fn frozen_schema_templates_preserve_public_metadata_and_reject_type_evidence_for
         .unwrap();
         let image = serde_json::Value::deserialize(&mut reader).unwrap();
         reader.end().unwrap();
-        assert_eq!(image["version"], 9);
+        assert_eq!(image["version"], 11);
         let templates = image["descriptor"]["schema_templates"].as_array().unwrap();
         assert_eq!(
             templates.len(),
@@ -1122,6 +1130,7 @@ fn frozen_schema_templates_preserve_public_metadata_and_reject_type_evidence_for
         .unwrap();
         assert_eq!(independent.encode_build_owned_image().unwrap(), expected);
         let mut legacy = image.clone();
+        legacy_visits(&mut legacy, object.descriptor());
         legacy["version"] = 7.into();
         legacy["descriptor"]
             .as_object_mut()
@@ -1183,6 +1192,232 @@ fn frozen_schema_templates_preserve_public_metadata_and_reject_type_evidence_for
                 }
                 .is_err(),
                 "bound fault {fault}"
+            );
+        }
+    }
+}
+
+// Reproduce actual earlier field-rich wire shapes for compatibility checks.
+// Version relabeling alone must continue to fail the representation inventory.
+fn legacy_visits(image: &mut serde_json::Value, descriptor: &NativeProgramDescriptor) {
+    let fields = image["descriptor"].as_object_mut().unwrap();
+    if fields.remove("visit_work").is_some() {
+        fields.insert(
+            "visits".into(),
+            serde_json::to_value(&descriptor.metadata().visits).unwrap(),
+        );
+    }
+}
+
+#[test]
+fn compact_visit_work_preserves_every_field_final_completion_and_legacy_funding() {
+    use serde::Deserialize;
+    let catalog = mech_stdlib::source_catalog();
+    let mode = crate::native_artifact::NativeProgramLimitMode::NoLimits;
+    for source in [
+        "input<u64> + 1u64\n",
+        include_str!("../../../../tests/fixtures/native/numeric-parent-child.mec"),
+        include_str!("../../../../tests/fixtures/native/numeric-changing-capture-tree.mec"),
+        "+> map\n+> sequence\nwords := input<[string]>\nmap/histogram(words)\n",
+        "byte(x<u64>) => (out<u8>) :=\n  result<u8> := x\n  out := result.\n[byte(x) | x <- words<[u64]>]\n",
+        "+> text\n+> map\nentries := {\"a\": \"A\", \"b\": \"B\"}\ntext/join([entries{ch} | ch <- seed<string>], \"\")\n",
+        concat!(
+            include_str!("../../../../tests/fixtures/native/deflate-matchfinder.mec"),
+            "\n",
+            include_str!("../../../../tests/fixtures/native/deflate-binary-tree.mec"),
+            "\n",
+            include_str!("../../../../tests/fixtures/native/deflate-collector.mec"),
+            "\n",
+            include_str!("../../../../tests/fixtures/native/deflate-block-collector.mec"),
+            "\n",
+            include_str!("../../../../tests/fixtures/native/deflate-block-heuristics.mec"),
+            "\n",
+            include_str!("../../../../tests/fixtures/native/deflate-block-loop.mec"),
+            "\n",
+            "optimal-skip-run(tables<[u16]>, cache<[u32]>, 0u64, 0u64, input<[u8]>, 0u64, 0u64, slide<u64>, 258u64, 258u64, skip<u64>, 0u64)\n",
+        ),
+    ] {
+        for artifact in artifacts(source) {
+            let object = crate::native_artifact::emit_program_object_with_limits(
+                &artifact,
+                &catalog,
+                mode.compilation(),
+            )
+            .unwrap();
+            let original = object.descriptor();
+            let bytes = object.native_metadata();
+            let mut reader =
+                mech_engine::native_artifact::BuildOwnedImageReader::from_image(bytes).unwrap();
+            let image = serde_json::Value::deserialize(&mut reader).unwrap();
+            reader.end().unwrap();
+            assert_eq!(image["version"], 11);
+            assert!(image["descriptor"].get("visits").is_none());
+            let count = original.metadata().visits.len();
+            assert_eq!(
+                image["descriptor"]["visit_work"].as_array().unwrap().len(),
+                count * 8
+            );
+            let independent =
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(bytes, &catalog) }
+                    .unwrap();
+            let bound = unsafe {
+                NativeProgramDescriptor::decode_object_bound_image(
+                    bytes,
+                    &catalog,
+                    object.identity().bytes(),
+                    object.native_metadata_binding().bytes(),
+                )
+            }
+            .unwrap();
+            for restored in [&independent, &bound] {
+                assert_eq!(restored.metadata().visits, original.metadata().visits);
+                assert_eq!(
+                    restored.encode_build_owned_image().unwrap(),
+                    original.encode_build_owned_image().unwrap()
+                );
+            }
+            let base = crate::native_artifact::iteration_abi::control_visits(
+                original.plan().blocks(),
+                original.plan().iterations().iter().map(Into::into),
+                0,
+            )
+            .unwrap();
+            for (base, final_visit) in base.iter().zip(original.metadata().visits.iter()) {
+                if final_visit.is_completion() {
+                    assert!(final_visit.work > base.work);
+                }
+            }
+            let mut legacy = image.clone();
+            legacy_visits(&mut legacy, original);
+            legacy["version"] = 9.into();
+            let legacy_bytes = mech_engine::native_artifact::encode_native_metadata_image(
+                &serde_json::to_vec(&legacy).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                unsafe {
+                    NativeProgramDescriptor::decode_build_owned_image(&legacy_bytes, &catalog)
+                }
+                .unwrap()
+                .metadata()
+                .visits,
+                original.metadata().visits
+            );
+            // Match legacy acceptance/refusal for malformed prices; neither path
+            // turns caller-supplied bytes into Object execution authority.
+            for at in [0, count / 2, count - 1] {
+                for price in [0, u64::MAX] {
+                    let mut old = legacy.clone();
+                    old["descriptor"]["visits"][at]["work"] = price.into();
+                    let mut new = image.clone();
+                    for (byte, value) in new["descriptor"]["visit_work"].as_array_mut().unwrap()
+                        [at * 8..at * 8 + 8]
+                        .iter_mut()
+                        .zip(price.to_le_bytes())
+                    {
+                        *byte = value.into();
+                    }
+                    let old = serde_json::to_vec(&old).unwrap();
+                    let new = serde_json::to_vec(&new).unwrap();
+                    let a = unsafe {
+                        NativeProgramDescriptor::decode_build_owned_image(&old, &catalog)
+                    };
+                    let b = unsafe {
+                        NativeProgramDescriptor::decode_build_owned_image(&new, &catalog)
+                    };
+                    assert_eq!(a.is_ok(), b.is_ok(), "visit {at}, price {price}");
+                    if let (Ok(a), Ok(b)) = (a, b) {
+                        assert_eq!(a.metadata().visits, b.metadata().visits);
+                    }
+                }
+            }
+            let mut altered = independent;
+            altered.metadata.visits[0].complete = !altered.metadata.visits[0].complete;
+            assert!(
+                altered.encode_build_owned_table_image().is_err(),
+                "the writer must reject changed control fields"
+            );
+        }
+    }
+}
+
+#[test]
+fn compact_visit_work_rejects_wrong_lengths_shapes_versions_duplicates_and_bound_tampering() {
+    use serde::Deserialize;
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts("input<u64> + 1u64\n") {
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let mut reader = mech_engine::native_artifact::BuildOwnedImageReader::from_image(
+            object.native_metadata(),
+        )
+        .unwrap();
+        let image = serde_json::Value::deserialize(&mut reader).unwrap();
+        reader.end().unwrap();
+        for case in 0..12 {
+            let mut changed = image.clone();
+            match case {
+                0 => {
+                    changed["descriptor"]["visit_work"]
+                        .as_array_mut()
+                        .unwrap()
+                        .pop();
+                }
+                1 => changed["descriptor"]["visit_work"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(0.into()),
+                2 => changed["descriptor"]["visit_work"] = serde_json::Value::Null,
+                3 => changed["descriptor"]["visit_work"] = serde_json::json!({"count":1}),
+                4 => changed["descriptor"]["visit_work"][0] = 256.into(),
+                5 => changed["descriptor"]["visit_work"][0] = (-1).into(),
+                6 => changed["descriptor"]["visit_work"][0] = true.into(),
+                7 => {
+                    changed["descriptor"]
+                        .as_object_mut()
+                        .unwrap()
+                        .remove("visit_work");
+                }
+                8 => {
+                    changed["descriptor"]["visits"] =
+                        serde_json::to_value(&object.descriptor().metadata().visits).unwrap()
+                }
+                9 => changed["version"] = 9.into(),
+                10 => changed["version"] = 12.into(),
+                _ => changed["descriptor"]["visit_work"] = serde_json::json!([]),
+            }
+            let json = serde_json::to_vec(&changed).unwrap();
+            for bytes in [
+                json.clone(),
+                mech_engine::native_artifact::encode_native_metadata_image(&json).unwrap(),
+            ] {
+                assert!(
+                    unsafe { NativeProgramDescriptor::decode_build_owned_image(&bytes, &catalog) }
+                        .is_err(),
+                    "case {case}"
+                );
+                assert!(
+                    unsafe {
+                        NativeProgramDescriptor::decode_object_bound_image(
+                            &bytes,
+                            &catalog,
+                            object.identity().bytes(),
+                            object.native_metadata_binding().bytes(),
+                        )
+                    }
+                    .is_err()
+                );
+            }
+        }
+        let json = serde_json::to_string(&image).unwrap();
+        let duplicate = json.replacen("\"visit_work\":", "\"visit_work\":[],\"visit_work\":", 1);
+        for bytes in [
+            duplicate.as_bytes().to_vec(),
+            mech_engine::native_artifact::encode_native_metadata_image(duplicate.as_bytes())
+                .unwrap(),
+        ] {
+            assert!(
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&bytes, &catalog) }
+                    .is_err()
             );
         }
     }

@@ -29,7 +29,7 @@ macro_rules! image_struct {
         impl $crate::native_artifact::program_image_proofs::ImageRead for $name {
             fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
                 #[derive(serde::Deserialize)]
-                #[serde(deny_unknown_fields)]
+                #[serde(deny_unknown_fields, rename = "mech.native.image.Wire")]
                 struct Wire {
                     $(#[serde(deserialize_with = "crate::native_artifact::program_image_proofs::field")]
                     $field: $ty,)*

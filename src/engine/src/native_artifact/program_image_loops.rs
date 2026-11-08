@@ -4,7 +4,7 @@ use crate::native_artifact::*;
 use serde::{Deserialize, Deserializer};
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Counted")]
 struct Counted {
     origin: WireOrigin,
     count: u64,
@@ -20,7 +20,7 @@ struct Counted {
     exit: u32,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Tail")]
 struct Tail {
     origin: WireOrigin,
     parent: Option<u32>,
@@ -37,7 +37,7 @@ struct Tail {
     exit: u32,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Range")]
 struct Range<'a> {
     prepare: u32,
     #[serde(borrow)]
@@ -52,7 +52,7 @@ enum Source<'a> {
     U64Range(#[serde(borrow)] Range<'a>),
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Collection")]
 struct Collection<'a> {
     origin: WireOrigin,
     parent: Option<u32>,

@@ -47,7 +47,7 @@ pub(super) fn immutable_source_id(
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Capture")]
 pub(in crate::native_artifact) struct Capture {
     pub value: u32,
     pub width: u8,
@@ -77,7 +77,7 @@ impl Operation {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Proof")]
 pub(in crate::native_artifact) struct Proof {
     pub captures: Vec<Capture>,
     pub actions: Vec<(usize, Operation)>,

@@ -620,3 +620,73 @@ fn streamed_struct_fields_still_reject_invalid_bytes_and_incomplete_visitors() {
 
 #[path = "packed_tests.rs"]
 mod packed;
+
+#[test]
+fn checked_bulk_byte_views_borrow_exact_packed_payload_and_reject_corruption() {
+    for values in [vec![], vec![0], vec![255, 0, 17], (0..=255u8).collect()] {
+        let json = serde_json::to_vec(&values).unwrap();
+        let image = encode_native_metadata_image(&json).unwrap();
+        let record: BuildOwnedImageRecord<'_> = decode(&image).unwrap();
+        let bytes = record.unsigned_byte_payload().unwrap();
+        assert_eq!(bytes.as_ref(), &values);
+        assert_eq!(
+            matches!(bytes, std::borrow::Cow::Borrowed(_)),
+            values.len() >= 4
+        );
+        if values.len() >= 4 {
+            assert!(bytes.as_ptr() as usize >= image.as_ptr() as usize);
+            assert!(bytes.as_ptr() as usize + bytes.len() <= image.as_ptr() as usize + image.len());
+        }
+        assert_eq!(
+            BuildOwnedImageRecord::Json(std::str::from_utf8(&json).unwrap())
+                .unsigned_byte_payload()
+                .unwrap()
+                .as_ref(),
+            &values
+        );
+    }
+    let image = encode_native_metadata_image(b"[0,1,2,255]").unwrap();
+    let node = &image[8..];
+    for end in 0..node.len() {
+        assert!(
+            BuildOwnedImageRecord::Native(&node[..end])
+                .unsigned_byte_payload()
+                .is_err()
+        );
+    }
+    for offset in [0, 1, 5] {
+        let mut changed = node.to_vec();
+        changed[offset] ^= 0xff;
+        assert!(
+            BuildOwnedImageRecord::Native(&changed)
+                .unsigned_byte_payload()
+                .is_err()
+        );
+    }
+    let mut extended = node.to_vec();
+    extended.push(0);
+    assert!(
+        BuildOwnedImageRecord::Native(&extended)
+            .unsigned_byte_payload()
+            .is_err()
+    );
+    for wrong in [
+        "null",
+        "true",
+        "1",
+        "[256]",
+        "[-1]",
+        "[1.0]",
+        "[true]",
+        "[0,1,2,null]",
+        "{}",
+    ] {
+        let image = encode_native_metadata_image(wrong.as_bytes()).unwrap();
+        assert!(
+            BuildOwnedImageRecord::Native(&image[8..])
+                .unsigned_byte_payload()
+                .is_err(),
+            "{wrong}"
+        );
+    }
+}

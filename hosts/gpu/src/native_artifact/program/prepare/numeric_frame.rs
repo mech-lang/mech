@@ -6,7 +6,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{marker::PhantomData, ops::Deref, sync::OnceLock};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.OwnedFrameWords")]
 pub(in crate::native_artifact) struct OwnedFrameWords {
     pub value: u32,
     pub fields: Vec<Option<usize>>,
@@ -184,7 +184,7 @@ impl From<CompiledFrame> for FrameWords {
 impl Deserialize<'static> for CompiledFrame {
     fn deserialize<D: Deserializer<'static>>(reader: D) -> Result<Self, D::Error> {
         #[derive(Deserialize)]
-        #[serde(deny_unknown_fields)]
+        #[serde(deny_unknown_fields, rename = "mech.native.image.Wire")]
         struct Wire<'a> {
             value: u32,
             #[serde(borrow)]

@@ -1,7 +1,7 @@
 //! Private sink metadata decoding; invocation accounting stays in the runtime.
 use super::*;
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Join")]
 struct Join<'a> {
     consumer: u32,
     #[serde(borrow)]
@@ -10,7 +10,7 @@ struct Join<'a> {
     output: u32,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Histogram")]
 struct Histogram<'a> {
     consumer: u32,
     #[serde(borrow)]
@@ -38,7 +38,7 @@ enum StepKind {
     Alias { phase: Phase },
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Step")]
 struct Step<'a> {
     site: u32,
     kind: StepKind,
@@ -53,7 +53,7 @@ enum SetShape {
     FreeExact,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Query")]
 struct Query<'a> {
     query: u32,
     #[serde(borrow)]
