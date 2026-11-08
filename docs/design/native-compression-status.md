@@ -1,5 +1,18 @@
 # Native compression milestone
 
+## R220: omit unused copied owner references; small measured latency gain
+
+The existing field proof now omits an additional retain when a pure copied destination owner is never read. Scalar metadata and checked aggregate/error order remain. The complete experiment keeps the R217 owner-retirement work and omits73 static lanes. Fresh2560 original/decoded controls pass, including aliases, self/swap/overlap/fanout, metadata-only reads, predicate redefinition, errors/cleanup/retry. All20 exact streams/inflate and unchanged1.05 elapsed gates pass.
+
+Balanced block means improve1.022% geometrically. Experimental natural32 **2.743081×→2.723254× Roc**, eight **0.814024×→0.798199×**. Contrary results: periodic **2.590599×→2.613494×**, repeated **2.409801×→2.420679×**, random **4.479365×→4.484920×**; distribution **4.135232×→4.129329×**. Do not advertise the quantized seven-byte125→84ns median as32.8% faster: its block means improve2.310%. All raw observations remain.
+
+Instructions rise on18 cases/fall on one/equal one; cycles fall on18/rise on two. This is a small latency/cycle tradeoff. All20 heap/copy/zero/peak counts match R217. Root code−3712B/root stack−48B.161832 primary calls,3120 separate CPU/heap calls, fresh reference counters and22487 wall/67010 actual-PC profile calls verify outputs and cleanup. Current large profiles remain94.97–98.52% generated code. A missing-symbol analyzer error is corrected from the actual worker symbol table; raw samples and initial wrong classification stay preserved.
+
+Before this change, inert SourceLoc tags produced a byte-identical R217 Object, allowing exact current Plan/sample joins. Only45–63% of native timer samples have explicit source tags; backend gaps remain unknown, and those offsets are not reused for the changed candidate. Full source tags and replay tables are archived. A separate observer shows only13 nonnull removed copied references per natural32 compression, so this is not the main remaining ownership cost.
+
+Retain R220 experimentally; normalR215/IR215 and its ordinary contracts remain unchanged. No normal speedup or parity claim. Next count and minimize retain/retire traffic through successful consuming buffer updates: the actual reference list-set helper directly returns its owned view. Keep actual mutation exclusivity, fresh fallback ownership, same-site outputs, check/error order and recovery. [All20 results, code, exact scope and verified public evidence](native-unused-copy-owners.md).
+
+
 ## R219: timing precision qualified; faster owner retirement retained
 
 **The earlier R217 owner-retirement strategy is now the retained experimental native baseline after precision qualification. Normal compilation remains R215/IR215.** The simpler R218 variant stays available as an alternative. Its code is smaller but its instruction counts are higher on17 inputs, equal on two and lower on one; the refined geometric elapsed point is0.184% higher than R217. All tradeoffs remain visible.
