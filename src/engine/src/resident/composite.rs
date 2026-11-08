@@ -62,6 +62,10 @@ struct CompositePackPlan {
     // and bind a newly witnessed constructor per execution.
     constructor: mech_core::snapshot::CompositeSnapshotConstructor,
     constructor_is_fixed: bool,
+    // Closed tuple/record schemas have no current shape parameters to infer.
+    // Keep the ordinary normalization envelope and validate fresh child headers
+    // at the original visit; only reuse the already checked constructor.
+    reuse_closed_constructor: bool,
     normalization: mech_core::snapshot::CompositeBindingCost,
 }
 
@@ -70,6 +74,10 @@ struct CompositeTablePlan {
     rows: CardinalitySpec,
     row_count: usize,
 }
+
+#[cfg(all(test, feature = "native-artifact"))]
+#[path = "composite_closed_constructor_tests.rs"]
+mod closed_constructor_tests;
 
 #[derive(Clone, Debug)]
 struct EnumPackPlan {
@@ -319,6 +327,18 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
                 .inputs
                 .iter()
                 .all(|input| input.activation_fixed_shape),
+        reuse_closed_constructor: matches!(
+            output.body(),
+            SchemaBody::Tuple(_) | SchemaBody::Record(_)
+        ) && output.dimension_parameters().is_empty()
+            && request.output.shape_instance.parameter_values().is_empty()
+            && request.inputs.iter().all(|input| {
+                input.shape_instance.parameter_values().is_empty()
+                    && request
+                        .schemas
+                        .get(input.schema_id)
+                        .is_some_and(|schema| schema.dimension_parameters().is_empty())
+            }),
         output: request.output.clone(),
         schemas: Arc::new(request.schemas.clone()),
     })
@@ -1142,6 +1162,25 @@ fn current_constructor(
     .map_err(|_| ResidentKernelError::InvalidShape)
 }
 
+fn closed_constructor_matches_current(
+    plan: &CompositePackPlan,
+    inputs: &dyn ResidentKernelInputs,
+) -> bool {
+    plan.reuse_closed_constructor
+        && plan
+            .children
+            .iter()
+            .enumerate()
+            .all(|(index, child)| match inputs.get(index) {
+                Some(ResidentValueRef::Snapshot([Some(value)])) => {
+                    value.schema_key() == child.source.schema_key
+                        && value.shape().parameter_values().is_empty()
+                }
+                Some(ResidentValueRef::Snapshot(_)) | None => false,
+                Some(_) => true,
+            })
+}
+
 fn composite_pack(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -1361,12 +1400,13 @@ fn composite_pack(
     .admit()?
     .into_plan();
     let dynamic_constructor;
-    let constructor = if plan.constructor_is_fixed {
-        &plan.constructor
-    } else {
-        dynamic_constructor = current_constructor(plan, inputs)?;
-        &dynamic_constructor
-    };
+    let constructor =
+        if plan.constructor_is_fixed || closed_constructor_matches_current(plan, inputs) {
+            &plan.constructor
+        } else {
+            dynamic_constructor = current_constructor(plan, inputs)?;
+            &dynamic_constructor
+        };
     let context =
         mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&plan.schemas);
     let children = (0..admitted_children)
@@ -1490,7 +1530,7 @@ mod tests {
 
     use mech_core::ValueDataDraft;
 
-    struct Inputs<'a>(&'a [ResidentValueRef<'a>]);
+    pub(super) struct Inputs<'a>(pub(super) &'a [ResidentValueRef<'a>]);
 
     impl ResidentKernelInputs for Inputs<'_> {
         fn len(&self) -> usize {
@@ -1502,7 +1542,7 @@ mod tests {
         }
     }
 
-    fn schema(body: SchemaBody) -> mech_core::Schema {
+    pub(super) fn schema(body: SchemaBody) -> mech_core::Schema {
         mech_core::SchemaDraft {
             dimension_parameters: Box::new([]),
             body,
@@ -1511,7 +1551,7 @@ mod tests {
         .unwrap()
     }
 
-    fn layout(
+    pub(super) fn layout(
         schemas: &mech_core::SchemaTable,
         schema_id: mech_core::SchemaId,
         kind: ResidentValueKind,
@@ -2030,6 +2070,7 @@ mod tests {
         let mismatched = CompositePackPlan {
             normalization: mech_core::snapshot::CompositeBindingCost::default(),
             constructor_is_fixed: true,
+            reuse_closed_constructor: false,
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions.clone()),
                 input_is_matrix: true,
@@ -2061,6 +2102,7 @@ mod tests {
         let matching = CompositePackPlan {
             normalization: mech_core::snapshot::CompositeBindingCost::default(),
             constructor_is_fixed: true,
+            reuse_closed_constructor: false,
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions),
                 input_is_matrix: true,
