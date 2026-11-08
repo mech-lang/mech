@@ -1,0 +1,24 @@
+{
+  "plain": {
+    "native_arithmetic_text_exact_parent": true,
+    "normalized_text_sha256": "fd33588597e17028d3c45709626a771545e246cc48e1a05453645a8eeb5f3960",
+    "code_bytes": 889768,
+    "stack_bytes": 1552,
+    "source_exact": true,
+    "metadata_bytes": 4335172,
+    "parent_metadata_bytes": 4335172,
+    "executable_bytes": 16451968,
+    "parent_executable_bytes": 16463856
+  },
+  "both-rows": {
+    "native_arithmetic_text_exact_parent": true,
+    "normalized_text_sha256": "3e31c27d6b8e9c90e6826b94dec8f241f6f422c2b606023ae17abade885de6b8",
+    "code_bytes": 1077480,
+    "stack_bytes": 2144,
+    "source_exact": true,
+    "metadata_bytes": 4532218,
+    "parent_metadata_bytes": 4532218,
+    "executable_bytes": 16848256,
+    "parent_executable_bytes": 16843648
+  }
+}

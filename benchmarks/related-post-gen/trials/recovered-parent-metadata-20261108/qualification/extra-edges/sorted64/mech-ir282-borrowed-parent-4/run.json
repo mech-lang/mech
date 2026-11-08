@@ -1,0 +1,18 @@
+{
+  "case": "sorted64",
+  "variant": "mech-ir282-borrowed-parent-4",
+  "command": [
+    "/private/tmp/mech-related-recovered-parent-metadata-runners-20261108-v1/plain/runner-aot",
+    "/private/tmp/mech-related-recovered-parent-metadata-runners-20261108-v1/plain/build/source.mec",
+    "/private/tmp/mech-related-recovered-parent-metadata-20261108/extra-edges/sorted64/posts.json",
+    "/private/tmp/mech-related-recovered-parent-metadata-20261108/extra-edges/sorted64/mech-ir282-borrowed-parent-4/output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.023384250001981854,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.012494417,\"input_admission_seconds\":0.000062167,\"json_read_and_parse_seconds\":0.000073333,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00150875,\"posts\":64,\"processing_plus_admission_seconds\":0.0014977089999999998,\"retained_bytes\":207743,\"sample\":0,\"seconds\":0.001435542,\"work\":5402409209}\n",
+  "stderr": "",
+  "all_timing_fields_ineligible": true,
+  "exact_Rust_output": true,
+  "output_sha256": "7bb1e83ef42a8f2b9010c2372a7a90f9768abaccb8c92cd702768d7497b76ff6"
+}

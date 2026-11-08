@@ -1,9 +1,48 @@
 {
   "schema": "mech.related-post-gen.user-directed-working-baseline.v1",
-  "updated_utc": "2026-11-08T03:25:46.692532+00:00",
+  "updated_utc": "2026-11-08T04:23:35.708253+00:00",
   "user_instruction": "it's okay to fail the whole process acceptance check taht's too strict like we need to keep getting better",
-  "decision": "Advance verified processing improvements as the working baseline; whole-process timing remains measured and reported but noninferiority is not a required gate for progress. Original cohort acceptance decisions remain immutable.",
+  "decision": "Adopt verified allocation/heap recovery for composition. No elapsed speed gain established; both-source first/adverse timing data retained. Current-source whole paired+0.345%,95%[-0.890%,+0.877%]. Original-source whole paired+3.418%,95%[+0.818%,+4.592%]. Neither is hidden or a mandatory adoption gate.",
   "working_baseline": {
+    "compiler_source": "42c67df062c9228cd5250da353311d21bc9deca5",
+    "identity": "IR282/work116/ABI41/image11",
+    "source_variant": "Checked4/5tag-row triple and quartet specialization, cached choose terms; original other-width loops",
+    "benchmark_source": "experiments/subset3-specialized-rows4-5-native-4.mec",
+    "benchmark_source_sha256": "97fc6c5a448aee096d19eb89839512974c724fee5efae5653ca88bed51b9c00a",
+    "workers": 4,
+    "runner": "/private/tmp/mech-related-recovered-parent-metadata-runners-20261108-v1/both-rows/runner-aot",
+    "post_json_ms": 2.347417,
+    "times_fastest_processing_Rust": 1.5064038062186036,
+    "whole_ms": 30.73958307504654,
+    "times_fastest_whole_Rust": 1.588407175547432,
+    "cohort": "comparison-native-recovered-parent-metadata-20261108-5000-m3.json",
+    "selection_reason": {
+      "adopted": true,
+      "scope": "Working compiler/resource recovery; specialized source unchanged and retains earlier independently confirmed source optimization.",
+      "reason": "All7resource repetitions save1695restoreallocations and61496requestedbytes with exact processing allocations and scalar/DEFLATE controls. Parent metadata and validated field-count consumer are recovered together. No processing or whole-process latency improvement established; native arithmetic text exact.",
+      "original_frozen_raw_decisions_preserved": true,
+      "whole_process_required_gate": false,
+      "processing_speedup_claimed": false,
+      "whole_process_speedup_claimed": false,
+      "post_JSON_paired_change": -0.005319102488775984,
+      "post_JSON_paired_95_interval": [
+        -0.012236495154083094,
+        0.004423495068267114
+      ],
+      "whole_process_paired_change": 0.003451256081096643,
+      "whole_process_paired_95_interval": [
+        -0.008897111332935581,
+        0.008773880009484758
+      ]
+    },
+    "report": "compiler-native-recovered-parent-metadata-20261108.json",
+    "evidence_branch": "codex/related-recovered-parent-metadata-20261108",
+    "source_change": false
+  },
+  "historical_selected_IR242_record_preserved": true,
+  "goal_active": true,
+  "goal_complete": false,
+  "previous_working_baseline": {
     "compiler_source": "ccfadbdf0af69f741237f5d1099a3c3eef79386a",
     "identity": "IR280/work116/ABI41/image11",
     "source_variant": "Checked4/5tag-row triple and quartet specialization, cached choose terms; original other-width loops",
@@ -31,28 +70,6 @@
       "no_unchanged_failed_candidate_retry": true
     }
   },
-  "historical_selected_IR242_record_preserved": true,
-  "goal_active": true,
-  "goal_complete": false,
-  "previous_working_baseline": {
-    "compiler_source": "7e2b75c5b0317f610af2a83e46dc0a4deccb67c6",
-    "identity": "IR278/work116/ABI41/image11",
-    "runner": "/private/tmp/mech-related-grouped-metadata-runners-20261108-v1/plain/runner-aot",
-    "post_json_ms": 2.63925,
-    "times_fastest_processing_Rust": 1.7037498959061588,
-    "whole_ms": 30.96829098649323,
-    "times_fastest_whole_Rust": 1.5839579309239284,
-    "cohort": "comparison-native-grouped-metadata-20261108-5000-m3.json",
-    "selection_reason": {
-      "adopted": true,
-      "reason": "Useful verified restoration/whole-process gain with preserved processing and exact semantic/resource checks, following explicit user instruction to keep advancing improvements. The prospective10% restoration target narrowly misses at9.9614%; this miss remains recorded and is not converted into a frozen-rule pass.",
-      "processing_superiority_vs_IR277_established": false,
-      "original_prospective_target_passed": false,
-      "whole_process_not_a_required_gate": true,
-      "all_first_and_adverse_results_retained": true,
-      "no_unchanged_favorable_retry": true
-    }
-  },
   "working_baseline_history": [
     {
       "compiler_source": "7e2b75c5b0317f610af2a83e46dc0a4deccb67c6",
@@ -71,6 +88,34 @@
         "whole_process_not_a_required_gate": true,
         "all_first_and_adverse_results_retained": true,
         "no_unchanged_favorable_retry": true
+      }
+    },
+    {
+      "compiler_source": "ccfadbdf0af69f741237f5d1099a3c3eef79386a",
+      "identity": "IR280/work116/ABI41/image11",
+      "source_variant": "Checked4/5tag-row triple and quartet specialization, cached choose terms; original other-width loops",
+      "benchmark_source": "experiments/subset3-specialized-rows4-5-native-4.mec",
+      "benchmark_source_sha256": "97fc6c5a448aee096d19eb89839512974c724fee5efae5653ca88bed51b9c00a",
+      "workers": 4,
+      "runner": "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/both-rows/runner-aot",
+      "post_json_ms": 2.3588329999999997,
+      "times_fastest_processing_Rust": 1.554335413614939,
+      "whole_ms": 36.62362485192716,
+      "times_fastest_whole_Rust": 1.5196603649904947,
+      "cohort": "comparison-native-specialized-rows-confirmation-20261108-5000-m3.json",
+      "selection_reason": {
+        "adopted": true,
+        "scope": "Working benchmark compiler and Mech source, independently confirmed; historical selectedIR242 and every raw trial decision remain unchanged.",
+        "reason": "Two independent cohorts each31/31 faster processing pairs versus the identical current compiler/source control;17.47% fewer processing instructions in confirmation. Per user instruction, retain the measured whole-process/restoration/memory/code costs without a mandatory whole-process gate.",
+        "source_change": true,
+        "compiler_integration_alone_has_no_established_processing_gain": true,
+        "whole_process_paired_change_vs_IR278": 0.04424350700404833,
+        "whole_process_paired_95_interval_vs_IR278": [
+          0.005905048033880922,
+          0.08289072923239726
+        ],
+        "original_frozen_raw_decisions_preserved": true,
+        "no_unchanged_failed_candidate_retry": true
       }
     }
   ]

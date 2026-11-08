@@ -1,0 +1,11 @@
+{
+  "exact_outputs": 32,
+  "linked_audit_passed": true,
+  "runtime_only_GPU": true,
+  "LLVM_tools_used": false,
+  "typed_IR": 282,
+  "code_bytes": 1077480,
+  "stack_bytes": 2144,
+  "native_functions": 51,
+  "qualification_times_ineligible": true
+}

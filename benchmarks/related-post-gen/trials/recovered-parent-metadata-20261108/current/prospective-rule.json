@@ -1,0 +1,54 @@
+{
+  "schema": "mech.related-post-gen.recovered-parent-metadata.prospective-rule.v1",
+  "declared_utc": "2026-11-08T04:16:42.192043+00:00",
+  "declared_before_timing": true,
+  "source_commit": "42c67df062c9228cd5250da353311d21bc9deca5",
+  "identity": "IR282/work116/ABI41/image11",
+  "candidates": [
+    "mech-ir282-borrowed-parent-4",
+    "mech-ir282-both-rows-borrowed-parent-4"
+  ],
+  "matched_parent": "mech-ir280-latest-deflate-4",
+  "fixed_reference": "mech-ir242-reuse-4",
+  "primary_references": {
+    "mech-ir282-borrowed-parent-4": [
+      "mech-ir280-latest-deflate-4",
+      "mech-ir280-both-rows-4",
+      "mech-ir278-grouped-metadata-4",
+      "mech-ir242-reuse-4",
+      "mech-llvm-reuse-4"
+    ],
+    "mech-ir282-both-rows-borrowed-parent-4": [
+      "mech-ir280-both-rows-4",
+      "mech-ir278-grouped-metadata-4",
+      "mech-ir242-reuse-4",
+      "mech-llvm-reuse-4"
+    ]
+  },
+  "samples": 31,
+  "seed": 990296,
+  "resource_samples": 7,
+  "resource_seed": 9902967,
+  "bootstrap": {
+    "resamples": 20000,
+    "seed": 99029699
+  },
+  "processing": "Report same-source IR280 paired latency and95% intervals; evaluate useful allocation/heap/instruction/size gains even if latency superiority is not established. Whole-process noninferiority is not required.",
+  "whole_process": "Report all whole-process results; no mandatory whole-process acceptance gate, per explicit user instruction.",
+  "instructions": "Report native code/stack, retired instructions/cycles and their changes against identical-baseline controls. Lower instruction counts alone do not prove lower latency.",
+  "memory": "Require exact scalar/DEFLATE semantic/allocation rows; report full heap, allocations, RSS/footprint and size.",
+  "correctness": "418 actual native CI names retaining415; original/compiled parent metadata and malformed nested records; exact checked frame counts;35related fixtures per source;133scalar/DEFLATE semantic/allocation rows exact.",
+  "all_first_and_adverse_results_retained": true,
+  "no_unchanged_favorable_retry": true,
+  "latency_implementations": 30,
+  "resource_implementations": 31,
+  "retained_Rust_controls": 22,
+  "goal_complete": false,
+  "source_experiments": "Mech sources unchanged. Carry the selected private compiled-frame reader through parent compositions; retain checked field counts for the existing output-element predicate.",
+  "per_candidate_matched_parents": {
+    "mech-ir282-borrowed-parent-4": "mech-ir280-latest-deflate-4",
+    "mech-ir282-both-rows-borrowed-parent-4": "mech-ir280-both-rows-4"
+  },
+  "confirmation_run": false,
+  "selection": "Adopt useful verified startup allocation/heap/instruction savings with separately reported processing/whole costs. Never claim Rust parity from a phase-resource reduction."
+}

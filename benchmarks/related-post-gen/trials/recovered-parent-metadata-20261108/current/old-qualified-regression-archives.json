@@ -1,0 +1,146 @@
+[
+  {
+    "path": "/private/tmp/mech-related-parent-frame-runtime-counts-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-parent-frame-runtime-counts-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "233f3e4643b46a61c06cb76abb2cc4f85a672323e0fe64eaf542f588765e8c5f",
+    "original_bytes": 108686416,
+    "archive_bytes": 15063123,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-paired-scalar-selects-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-paired-scalar-selects-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "5db214d9cfde75f58bd6495a71a6ac989e1bb7bb76085cb209443816130b2ffc",
+    "original_bytes": 108683936,
+    "archive_bytes": 15056843,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-wide-retirement-stores-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-wide-retirement-stores-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "ca7e6a73bf24fbae66cadf89bcb2c466c07632d89c16a5d8a6a3ba61e213babe",
+    "original_bytes": 108683472,
+    "archive_bytes": 15053608,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-borrowed-parent-frame-metadata-regressions-20261107-v2/scalar",
+    "archive": "/private/tmp/mech-related-borrowed-parent-frame-metadata-regressions-20261107-v2/scalar.retained.gz",
+    "decoded_sha256": "774051c42184e9eef8520e558bf3190db19e56dab85a5670cfb1cce66051a27c",
+    "original_bytes": 108683360,
+    "archive_bytes": 15061130,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-borrowed-parent-frame-metadata-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-borrowed-parent-frame-metadata-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "84f8b7047770db3d2e5b37a51e08fdf90cf182f6975eaf348f4c4972de311335",
+    "original_bytes": 108683344,
+    "archive_bytes": 15060514,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-vector-shape-identities-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-vector-shape-identities-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "217dc82944dd8da215b23f4bb535501fa43e8bdf4df4d2cff67910b65642dca3",
+    "original_bytes": 108682624,
+    "archive_bytes": 15054750,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-vector-shape-identities-regressions-20261107-v3/scalar",
+    "archive": "/private/tmp/mech-related-native-vector-shape-identities-regressions-20261107-v3/scalar.retained.gz",
+    "decoded_sha256": "f0018d5b90d2f163d778e639cb0d76a7220f06885095215d1ee85eb8ad2f53f4",
+    "original_bytes": 108682496,
+    "archive_bytes": 15056055,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-zero-branches-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-zero-branches-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "59df07b54d8313ac5e34521302bd509dec0b3ef71589c0ee3ba2dfdee0fe6ba2",
+    "original_bytes": 108674208,
+    "archive_bytes": 15054210,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-immutable-capture-views-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-immutable-capture-views-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "38bc5b70edce2aa147ce21dfd9ff72241450459a3e6f95bb5c0588f2bb794145",
+    "original_bytes": 108658976,
+    "archive_bytes": 15052845,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-movable-capture-reads-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-movable-capture-reads-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "f58fe0abc23ef7ae9cca04d7536fc56fccfc3d3435b8eaefc2a4701f4aea4bcc",
+    "original_bytes": 108655488,
+    "archive_bytes": 15050597,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-invariant-capture-hoisting-regressions-20261107-v2/scalar",
+    "archive": "/private/tmp/mech-related-invariant-capture-hoisting-regressions-20261107-v2/scalar.retained.gz",
+    "decoded_sha256": "5764af1b0a9d53982ca30ae432a6e34592c0a4467685bee7b694e3ce28087f7c",
+    "original_bytes": 108637264,
+    "archive_bytes": 15051792,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-guarded-load-demand-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-guarded-load-demand-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "9ad9f03cc7999a1a5f69460c3c71f049e9aee6fbe50f23225692713e3eefb981",
+    "original_bytes": 108635152,
+    "archive_bytes": 15041923,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-invariant-capture-integration-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-invariant-capture-integration-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "12a1d63aa66ef3f36a85bcea0ac51ebc625d47fbb218a4ce30e938bb09c5361d",
+    "original_bytes": 108635008,
+    "archive_bytes": 15047083,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-shared-call-certificates-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-shared-call-certificates-regressions-20261107-v1/scalar.retained.gz",
+    "decoded_sha256": "641c6d94a0f87fe1b9e34bf13b169df902809ecbcf49963c4de6c22fc89325c7",
+    "original_bytes": 108634368,
+    "archive_bytes": 15013106,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-movable-capture-reads-regressions-20261107-v3/scalar",
+    "archive": "/private/tmp/mech-related-movable-capture-reads-regressions-20261107-v3/scalar.retained.gz",
+    "decoded_sha256": "849742aa01217eb98fe3cf5d8b20a0395831ed81f3e0a7b9814440b7befa72e5",
+    "original_bytes": 108632336,
+    "archive_bytes": 15042038,
+    "mode": 33261,
+    "losslessly_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-movable-capture-reads-regressions-20261107-v2/scalar",
+    "archive": "/private/tmp/mech-related-movable-capture-reads-regressions-20261107-v2/scalar.retained.gz",
+    "decoded_sha256": "f535b9675dfa8ec1a40cab3021d38b7c1daf8f05bb98ed1e17c70f2447b04e17",
+    "original_bytes": 108632320,
+    "archive_bytes": 15043729,
+    "mode": 33261,
+    "losslessly_verified": true
+  }
+]

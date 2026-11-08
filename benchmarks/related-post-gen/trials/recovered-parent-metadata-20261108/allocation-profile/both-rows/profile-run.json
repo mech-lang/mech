@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/private/tmp/mech-related-current-allocation-profile-20261108/both-rows/runner-profile",
+    "/private/tmp/mech-related-current-allocation-profile-20261108/both-rows/build/source.mec",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "/private/tmp/mech-related-current-allocation-profile-20261108/both-rows/related_posts_profile.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.5551930000074208,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.027915833,\"input_admission_seconds\":0.000457542,\"json_read_and_parse_seconds\":0.00191975,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":8,\"parallel_numeric_work\":24693182666,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":4,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.007820417,\"posts\":5000,\"processing_plus_admission_seconds\":0.007784042,\"retained_bytes\":929689,\"sample\":0,\"seconds\":0.0073265,\"work\":38354246281}\n",
+  "stderr": "",
+  "exact_standard_rust_output": true,
+  "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+  "expected_output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+  "diagnostic_timings_excluded": true
+}

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-recovered-parent-metadata-runners-20261108-v1/build-and-qualify.py"
+  ],
+  "exit": 0,
+  "seconds": 74.7777759579476,
+  "stdout": "runtime-build.json 0\ncompiler-build.json 0\nobject-build.json 0\nrunner-build.json 0\nlink-audit.json 0\nfull5000-run.json 0\nedge-run.json 0\nplain 32 exact outputs and same-Object audit passed\nobject-build.json 0\nrunner-build.json 0\nlink-audit.json 0\nfull5000-run.json 0\nedge-run.json 0\nboth-rows 32 exact outputs and same-Object audit passed\n",
+  "stderr": ""
+}

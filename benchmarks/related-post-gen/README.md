@@ -1,10 +1,47 @@
 # Related-post generation: Rust and Mech
 
-The working benchmark is **IR280 with the specialized four/five-tag-row Mech source and four native query workers**. Cranelift remains the production backend; LLVM is an optional comparison. Rust parity remains unmet.
+The working benchmark is **IR282 with the specialized four/five-tag-row Mech source and four native query workers**. Cranelift remains the production backend; LLVM is an optional comparison. Rust parity remains unmet.
 
-The compiler integrates the current DEFLATE work from PR #973 at `a7c216810387b049516078478165564a8c29cb56`, including the previously unmerged nullary-state foundation. Compiler source: `ccfadbdf0af69f741237f5d1099a3c3eef79386a`. The [maintained Mech source](experiments/subset3-specialized-rows4-5-native-4.mec) specializes triple/quartet generation for checked four/five-tag rows, caches shared choose terms, and keeps the original loops for all other widths. Input, scoring, tie order and Rust oracle are unchanged.
+The compiler integrates the current DEFLATE work from PR #973 at `a7c216810387b049516078478165564a8c29cb56`, including the previously unmerged nullary-state foundation. Compiler source: `42c67df062c9228cd5250da353311d21bc9deca5`. IR282 adds recovered parent-frame metadata borrowing with its completed runtime field-count consumer. The [maintained Mech source](experiments/subset3-specialized-rows4-5-native-4.mec) specializes triple/quartet generation for checked four/five-tag rows, caches shared choose terms, and keeps the original loops for all other widths. Input, scoring, tie order and Rust oracle are unchanged.
 
-## Latest independent confirmation
+## Latest compiler recovery: IR282
+
+The parent composition loader now borrows checked compiler-only frame metadata
+and retains the exact validated field count for runtime element-limit checks.
+The native arithmetic text and metadata byte count are identical to IR280 for
+both sources. No Mech source or algorithm change.
+
+| Same-cohort implementation | Continuous post-JSON | Times fastest Rust | Launch through exit | Times fastest Rust |
+|---|---:|---:|---:|---:|
+| Fastest eligible Rust at each boundary | 1.558292 ms | 1.000000x | 19.352458 ms | 1.000000x |
+| IR282 specialized rows, working compiler | **2.347417 ms** | **1.506404x** | 30.739583 ms | 1.588407x |
+| Matched IR280 specialized-source control | 2.357500 ms | 1.512874x | 30.412417 ms | 1.571502x |
+
+Processing wins 17/31 pairs, median -0.532%, 95% [-1.224%, +0.442%]: no
+established elapsed gain. Whole-process paired +0.345%, 95% [-0.890%, +0.877%],
+also inconclusive. The original-source whole-process paired +3.418%,
+95% [+0.818%, +4.592%] regression is retained. Cross-cohort changes in
+unchanged Rust/Mech clocks are not compiler gains.
+
+All seven resource repetitions save **1,695 startup allocations and 61,496
+requested bytes**: 27,302 -> 25,607 requests and 13,193,328 -> 13,131,832 B.
+Restore instructions fall 118,114,193 -> 117,897,212. Processing stays at
+2,945 requests / 8,006,235 B, with the same 5,653,007 B additional peak heap.
+Native code 1,077,480 B, stack 2,144 B, and metadata 4,532,218 B are unchanged;
+executable size is 16,843,648 -> 16,848,256 B. RSS 27,131,904 B is unchanged;
+measured physical footprint is 16,482,664 -> 16,449,872 B.
+
+This recovery is adopted for verified allocation/heap savings under the user's
+phase-improvement policy. Whole-process noninferiority is not required, and no
+elapsed gain is claimed. Qualification passes **418 actual native checks**,
+retaining all 415 previous names; 133 exact scalar/DEFLATE semantic/allocation
+rows; 70 Rust fixtures; and 1,147 exact randomized cohort outputs.
+The [report](results/compiler-native-recovered-parent-metadata-20261108.json)
+and [raw latency](results/comparison-native-recovered-parent-metadata-20261108-5000-m3.json)
+retain both source controls and all first/adverse data.
+
+## Earlier independently confirmed IR280 source optimization
+
 
 Apple M3, 5,000 posts, 31 randomized fresh-process repetitions per implementation, 22 retained Rust controls. Each boundary has its own fastest eligible measured Rust denominator.
 
@@ -48,7 +85,7 @@ The primary comparison is one continuous post-JSON interval including input prep
 
 [Implementation and both analyses](results/compiler-native-latest-deflate-integration-20261108.json), [working-baseline policy](results/compiler-working-baseline-policy-20261108.json), [recovery audit](results/optimization-recovery-audit-20261108.json), [initial cohort](results/comparison-native-latest-deflate-integration-20261108-5000-m3.json), [independent confirmation](results/comparison-native-specialized-rows-confirmation-20261108-5000-m3.json).
 
-Qualification: **415 actual native CI names**, seven new upstream state/address/geometry checks, three retained mask checks, eight row/route tests, 27 image/caller tests, four explicitly executed optional LLVM checks, **133 exact scalar/DEFLATE non-timing/allocation rows**, **140 related output fixtures**, and **2,332 exact benchmark outputs** across both latency/resource cohorts. Native link audits bind every executable to its actual Object. First setup failures, the missing-dependency witness failure and disk-exhausted link are retained. No full hosted-CI-green claim.
+Earlier IR280 source qualification: **415 actual native CI names**, seven new upstream state/address/geometry checks, three retained mask checks, eight row/route tests, 27 image/caller tests, four explicitly executed optional LLVM checks, **133 exact scalar/DEFLATE non-timing/allocation rows**, **140 related output fixtures**, and **2,332 exact benchmark outputs** across both latency/resource cohorts. Native link audits bind every executable to its actual Object. First setup failures, the missing-dependency witness failure and disk-exhausted link are retained. No full hosted-CI-green claim.
 
 A new diagnostic profile compares the final original and specialized Objects with the same instrumented runtime and calling-thread counters. It is separate from all promotion timings. Further work targets the remaining native instruction and runtime costs; the goal remains to meet or beat the fastest eligible Rust.
 

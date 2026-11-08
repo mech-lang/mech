@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/private/tmp/mech-related-recovered-parent-metadata-tests-20261108-v1/gpu-tests",
+    "borrowed_parent_frame_metadata",
+    "borrowed_frame_metadata_field_count",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.3274495000950992,
+  "stdout": "\nrunning 3 tests\ntest native_artifact::program::image::binding::tests::borrowed_parent_frame_metadata_keeps_runtime_lanes_and_exact_public_images ... ok\ntest native_artifact::program::image::binding::tests::borrowed_parent_frame_metadata_rejects_malformed_fields_at_every_wire_level ... ok\ntest native_artifact::program::prepare::readonly_numeric::numeric_frame::tests::borrowed_frame_metadata_field_count_uses_the_exact_validated_field_sequence ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 922 filtered out; finished in 0.31s\n\n",
+  "stderr": ""
+}

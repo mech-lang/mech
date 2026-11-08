@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-recovered-parent-metadata-runners-20261108-v1/compiler",
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/plain/build/source.mec",
+    "/private/tmp/mech-related-recovered-parent-metadata-runners-20261108-v1/plain/build"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 10.966488083824515,
+  "stdout": "{\"code_bytes\":889768,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1552}\n",
+  "stderr": ""
+}

@@ -1,0 +1,12 @@
+{
+  "expected": 418,
+  "listed": 418,
+  "executed_passed": 418,
+  "all_names_match": true,
+  "old_names_retained": true,
+  "new_names": [
+    "native_artifact::program::image::binding::tests::borrowed_parent_frame_metadata_keeps_runtime_lanes_and_exact_public_images",
+    "native_artifact::program::image::binding::tests::borrowed_parent_frame_metadata_rejects_malformed_fields_at_every_wire_level",
+    "native_artifact::program::prepare::readonly_numeric::numeric_frame::tests::borrowed_frame_metadata_field_count_uses_the_exact_validated_field_sequence"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/private/tmp/mech-related-recovered-parent-metadata-tests-20261108-v1/gpu-tests",
+    "llvm_",
+    "--ignored",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "MECH_LLVM_TEST_BIN": "/opt/homebrew/opt/llvm/bin",
+    "MECH_LLVM_TEST_CLANG": "/opt/homebrew/opt/llvm/bin/clang",
+    "SDKROOT": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+  },
+  "exit": 0,
+  "seconds": 8.516813875176013,
+  "stdout": "\nrunning 4 tests\ntest native_artifact::program::llvm_backend::image_tests::llvm_image_sources_errors_finite_limits_and_backend_forgery ... {\"LLVM_executed\":true,\"artifact\":\"original\",\"case\":\"u64-add\",\"comparisons_so_far\":16,\"loader_checks_so_far\":11,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"decoded\",\"case\":\"u64-add\",\"comparisons_so_far\":32,\"loader_checks_so_far\":22,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"original\",\"case\":\"u64-div\",\"comparisons_so_far\":48,\"loader_checks_so_far\":33,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"decoded\",\"case\":\"u64-div\",\"comparisons_so_far\":64,\"loader_checks_so_far\":44,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"original\",\"case\":\"i64-div\",\"comparisons_so_far\":80,\"loader_checks_so_far\":55,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"decoded\",\"case\":\"i64-div\",\"comparisons_so_far\":96,\"loader_checks_so_far\":66,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"original\",\"case\":\"bool-branch\",\"comparisons_so_far\":112,\"loader_checks_so_far\":77,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"decoded\",\"case\":\"bool-branch\",\"comparisons_so_far\":128,\"loader_checks_so_far\":88,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"original\",\"case\":\"f64-add\",\"comparisons_so_far\":152,\"loader_checks_so_far\":99,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"decoded\",\"case\":\"f64-add\",\"comparisons_so_far\":176,\"loader_checks_so_far\":110,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"original\",\"case\":\"f64-to-u64\",\"comparisons_so_far\":208,\"loader_checks_so_far\":121,\"timing_claim\":false}\n{\"LLVM_executed\":true,\"artifact\":\"decoded\",\"case\":\"f64-to-u64\",\"comparisons_so_far\":240,\"loader_checks_so_far\":132,\"timing_claim\":false}\nok\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_floating_semantics ... ok\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_integer_boolean_and_vector_semantics ... ok\ntest native_artifact::program::llvm_backend::tests::llvm_ssa_native_pair_returns_indirect_calls_and_preserving_bridge ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 921 filtered out; finished in 8.50s\n\n",
+  "stderr": ""
+}

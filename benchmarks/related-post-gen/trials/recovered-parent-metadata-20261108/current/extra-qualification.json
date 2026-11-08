@@ -1,0 +1,11 @@
+{
+  "extra_edge_outputs_exact": 3,
+  "prior_qualification_outputs_exact": 32,
+  "variants": [
+    "mech-ir282-borrowed-parent-4",
+    "mech-ir282-both-rows-borrowed-parent-4"
+  ],
+  "total_extra_outputs_exact": 6,
+  "total_qualification_outputs_exact": 70,
+  "timing_claim": false
+}

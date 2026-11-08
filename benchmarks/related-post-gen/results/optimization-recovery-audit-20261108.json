@@ -1,8 +1,8 @@
 {
-  "schema": "mech.related-post-gen.optimization-recovery-audit.v1",
-  "updated_utc": "2026-11-08T02:48:49.935831+00:00",
-  "current_baseline": "IR280/sourceccfadbdf0af69f741237f5d1099a3c3eef79386a; specialized4/5row source97fc6c5a448aee096d19eb89839512974c724fee5efae5653ca88bed51b9c00a",
-  "reports_inventoried": 120,
+  "schema": "mech.related-post-gen.optimization-recovery-audit.v2",
+  "updated_utc": "2026-11-08T04:23:35.708253+00:00",
+  "current_baseline": "IR282/work116/ABI41/image11;source42c67df062c9228cd5250da353311d21bc9deca5;specialized4/5row source unchanged",
+  "reports_inventoried": 125,
   "prioritized_entries": [
     {
       "id": "IR241",
@@ -99,11 +99,12 @@
       "feature": "Paired16-byte scalar retirement clears",
       "report": "compiler-native-wide-retirements-and-opportunities-20261107.json",
       "rule_casualty": false,
-      "current": "not in IR278",
-      "gain": "Processing instructions-1.867%, but elapsed processing also regressed.",
-      "action": "Test interaction with recovered dirty masks; preserve unfavorable standalone results.",
+      "current": "Recovered/tested with current scalar-home masks as IR281; not selected as current working baseline.",
+      "gain": "Old standalone instructions-1.867% did not establish speed. Fresh specialized-source processing2.340583->2.340292ms,paired+0.2258%,95%[-0.4148%,+1.0226%];instructions40781439->40794475(+0.032%). Code1077480->1075672B;maxstack2144->2128B;allocations2945/8006235B unchanged.",
+      "action": "Keep the general compiler implementation available for combinations; no speed gain claimed. All418native checks,133scalar/DEFLATE controls and70fixtures pass;1147exactcohort outputs.",
       "double_count": false,
-      "report_sha256": "6aa2274bc7f08e38d924b9112fac200f1c01b6a1c1da741e24e19a40c424072d"
+      "report_sha256": "6aa2274bc7f08e38d924b9112fac200f1c01b6a1c1da741e24e19a40c424072d",
+      "current_report": "compiler-native-masked-wide-retirements-20261108.json"
     },
     {
       "id": "IR275",
@@ -112,7 +113,7 @@
       "rule_casualty": false,
       "current": "not in IR278",
       "gain": "Conditional table sources save70560B or277560B postJSON backing; plain source saves0B. All timing candidates also fail processing criteria.",
-      "action": "Retain as a memory-saving option and combination hypothesis; not an established processing win.",
+      "action": "Priority2 conditional memory recovery: pair compact slots with a newly competitive constant-table source; historical backing savings70560B/277560B depend on those tables. Current plain and specialized-row source have no established incremental saving from this layout.",
       "double_count": false,
       "report_sha256": "b8d385a3089b24570b0e17c2887aaf4cbc980c69a72cdba3c3ff402824b72192"
     },
@@ -140,14 +141,17 @@
     },
     {
       "id": "IR253",
-      "feature": "Borrowed parent-frame metadata",
+      "feature": "Borrowed parent-frame metadata plus exact runtime field-count consumer (IR253/IR255)",
       "report": "compiler-native-borrowed-parent-frame-metadata-20261107.json",
       "rule_casualty": false,
-      "current": "not in IR278",
-      "gain": "1695 fewer restore allocations, but66 additional processing allocations; only10/31 processing wins.",
-      "action": "Needs runtime-consumer fix before revival; no shifting work outside timer.",
-      "double_count": false,
-      "report_sha256": "34e5e700e54ffeb543ca785a4e75e5e67690d19a697bb9771737269be0029124"
+      "current": "Recovered and adopted in IR282 on current IR280/compiler/source; actual native arithmetic text and metadata byte counts unchanged.",
+      "gain": "Fresh current specialized-source restore27302->25607allocations(-1695);13193328->13131832requestedbytes(-61496B),all7repetitions. Processing2945requests/8006235B exact. Restoreinstructions118114193->117897212(-216981). Processing2.357500->2.347417ms,paired95%[-1.22365%,+0.44235%],inconclusive.",
+      "action": "Keep recovered parent borrowing and validated count consumer in working compiler. Not counted as a processing speed gain.",
+      "double_count": true,
+      "report_sha256": "34e5e700e54ffeb543ca785a4e75e5e67690d19a697bb9771737269be0029124",
+      "historical_followup_report": "compiler-native-boolean-loops-and-parent-counts-20261107.json",
+      "runtime_consumer_fix_commit": "36b202a4ef8112474079c05ee8f1a39c525d95d4",
+      "current_report": "compiler-native-recovered-parent-metadata-20261108.json"
     },
     {
       "id": "IR266",
@@ -203,6 +207,61 @@
       "action": "Retained; do not count this historical gain a second time.",
       "double_count": true,
       "report_sha256": "0bd1fb6ade081665e4dba2af36d2373b0048d608f235a1fe676c4ef5f1e49568"
+    },
+    {
+      "id": "IR198",
+      "feature": "Metadata key atoms/compression",
+      "report": "compiler-native-metadata-key-atoms-candidate-20261105.json",
+      "rule_casualty": false,
+      "current": "Not adopted; current grouped-key typed metadata remains a different implementation.",
+      "gain": "Historical metadata-1365962B and executable-1403632B. Restore instructions201712790->204550767(+1.41%);111664restoreallocations unchanged. Whole time regressed.",
+      "action": "Priority3 size candidate: remeasure incremental savings with current grouped metadata; historical1.4MB cannot be carried forward unchanged. Retain restoration cost.",
+      "double_count": false,
+      "report_sha256": "5d909d933a8da9ed68e2415a21645234d6990b0d409161df6977d624759a998e"
+    },
+    {
+      "id": "IR192",
+      "feature": "Word-at-a-time UTF8 lookup hashing",
+      "report": "compiler-native-word-utf8-hash-candidate-20261105.json",
+      "rule_casualty": true,
+      "current": "Historical lookup-hash alternative not adopted; current generated UTF8 lookup still performs bytewise FNV, while histogram already uses bounded-word hashing.",
+      "gain": "Historical four-worker processing median-1.25%,instructions-0.33%,whole+2.11%;eight-worker processing+0.99%. No independent confirmation was run.",
+      "action": "Priority4 source-sensitive recovery: test only after isolating the still-bytewise lookup cost, preserving exact equality/collision checks. Do not count bounded-word histogram hashing again.",
+      "double_count": false,
+      "report_sha256": "269a38914fbf9e0e0d6d893318f90d0106dad816dc7dae0ce069be6519bbe8e5"
+    },
+    {
+      "id": "IR202",
+      "feature": "Invariant loop parameters and cold fallback placement",
+      "report": "compiler-native-loop-params-cold-layout-candidate-20261105.json",
+      "rule_casualty": false,
+      "current": "Old combined branch is not ancestor, but current CFG cleanup already retires invariant loop parameters and current numeric emission marks fallback blocks cold.",
+      "gain": "Historical1.45%fewerfour-workerinstructions,query704->688Bstack,cyclesincreased. Current overlap prevents claiming those savings as still available.",
+      "action": "Audit remaining differences only; do not blindly reapply the old patch or add its historical gain.",
+      "double_count": true,
+      "report_sha256": "ef2664a5c950e7b4032f466cf3880a40fcd576cd0c67f1e11091f81818a68532"
+    },
+    {
+      "id": "IR219/IR220",
+      "feature": "Native SIMD ledger/fuel pairing",
+      "report": "compiler-native-vector-fuel-debits-candidate-20261106.json",
+      "rule_casualty": false,
+      "current": "Not adopted. Actual SIMD was emitted; this was not left in a host implementation.",
+      "gain": "Historical query stack688->656B. Revised IR220 uses0.087%more instructions than matched scalarIR217 and processing isflat;IR219 was0.398%moreinstructions.",
+      "action": "Lower priority, reconsider with a changed dependency/packing design; useful stack tradeoff is retained but this supplies no established omitted speedup.",
+      "double_count": false,
+      "report_sha256": "92cd5f9e08f4d64f9c5a61f53836a9edc8d84779d6fbd2f3f2868b20b234c944"
+    },
+    {
+      "id": "borrowed-JSON",
+      "feature": "Borrow ID/title text while decoding JSON",
+      "report": "compiler-native-selected-ranges-and-json-ownership-20261107.json",
+      "rule_casualty": false,
+      "current": "Unselected host-adapter source optimization.",
+      "gain": "JSON allocation requests40089->30089(-10000). Measured processing and memory worsened; whole-process latency did not improve.",
+      "action": "Lower-priority allocation experiment with current lifetimes/consumer design; do not label it a compiler lowering win or shift setup outside timing.",
+      "double_count": false,
+      "report_sha256": "23ff66db43d962bd4b3701de6c939dd23383090118f24ba2ae7505bd86fe135f"
     }
   ],
   "inventory": [
@@ -929,20 +988,49 @@
       "identity": "IR211/work114/ABI40",
       "selected": false,
       "status": "qualified_redundant_native_guards_removed_modest_processing_gain_whole_process_mixed"
+    },
+    {
+      "report": "compiler-native-entry-interval-profile-20261107.json",
+      "identity": null,
+      "selected": false,
+      "status": null
+    },
+    {
+      "report": "compiler-native-latest-deflate-integration-20261108.json",
+      "identity": "IR280/work116/ABI41/image11",
+      "selected": true,
+      "status": null
+    },
+    {
+      "report": "compiler-native-masked-wide-retirements-20261108.json",
+      "identity": "IR281/work116/ABI41/image11",
+      "selected": null,
+      "status": "Keep available as an unselected compiler combination. No processing speed gain established: both-row paired+0.2258%,95%[-0.4148%,+1.0226%],13/31wins; native code-1808B,maximum stack-16B,allocation counts/bytes exact. This is not rejected by whole-process policy; measured whole paired direction is also retained. Current IR280 working compiler/source stays unchanged."
+    },
+    {
+      "report": "compiler-native-recovered-scalar-homes-20261108.json",
+      "identity": "IR279/work116/ABI41/image11",
+      "selected": false,
+      "status": "Verified processing instruction saving; elapsed-time superiority remains inconclusive. Retained for compiler composition; IR278 remains the latency control. No whole-process gate or unchanged favorable retry."
+    },
+    {
+      "report": "compiler-native-recovered-parent-metadata-20261108.json",
+      "identity": "IR282/work116/ABI41/image11",
+      "selected": null,
+      "status": "Adopt verified allocation/heap recovery for composition. No elapsed speed gain established; both-source first/adverse timing data retained. Current-source whole paired+0.345%,95%[-0.890%,+0.877%]. Original-source whole paired+3.418%,95%[+0.818%,+4.592%]. Neither is hidden or a mandatory adoption gate."
     }
   ],
   "policy": "Keep verified useful phase/instruction/memory gains. Whole-process timing remains measured but is not a mandatory progress gate. Preserve all historical results; no summing incompatible cohorts, double-counting inherited changes or assuming instruction reductions guarantee latency wins.",
   "active_test": {
-    "identity": "IR279/work116/ABI41/image11",
+    "identity": "IR282/work116/ABI41/image11",
     "completed": true,
-    "report": "compiler-native-recovered-scalar-homes-20261108.json",
-    "processing_instruction_gain_percent": 3.18055222177556,
-    "elapsed_time_superiority_established": false,
+    "report": "compiler-native-recovered-parent-metadata-20261108.json",
     "retained_for_composition": true,
-    "next": "Assess paired wide clears with masks, compact-visit/grouped-reader ablation and newest PR973 native geometry/address staging; keep adverse standalone results."
+    "processing_speed_gain_established": false,
+    "next": "Processing-stage descriptor sharing and native count/posting geometry/address handling."
   },
   "goal_complete": false,
-  "prioritized_count": 18,
+  "prioritized_count": 23,
   "latest_measured_recovery": {
     "report": "compiler-native-latest-deflate-integration-20261108.json",
     "source_combination_processing_paired_gain_vs_parent": 0.09527966142919686,
@@ -950,5 +1038,32 @@
     "whole_paired_regression_vs_previous_working": 0.04424350700404833,
     "adopted_under_user_policy": true,
     "not_counted_as_new_compiler_only_speedup": true
-  }
+  },
+  "previous_audit_sha256": "75a08e9c577f29d7d62213041e6ef6a18367f23655cf1f3d5ea85e262bed41a4",
+  "current_user_request": "Identify other advances omitted under old joint/whole-process timing rules and reassess phase, instruction, memory and size savings.",
+  "fresh_profile_opportunity": {
+    "not_a_historical_rule_casualty": true,
+    "scope": "Current IR280 continuous post-JSON allocation stack profile",
+    "requests_per_variant": 2945,
+    "requested_bytes": {
+      "plain": 7919355,
+      "both-rows": 8006235
+    },
+    "zero_event_loss": true,
+    "BoundCall_clone_inclusive_allocations": 381,
+    "BoundCall_clone_requested_bytes": 27126,
+    "ResolvedValueDescriptor_clone_inclusive_allocations": 526,
+    "counts_overlap_do_not_sum": true,
+    "action": "Share immutable call certificates across memory planning while retaining fresh shape/evidence and budget admission for each call; no measured speed claim yet.",
+    "local_evidence": "/private/tmp/mech-related-current-allocation-profile-20261108/summary.json",
+    "caller_census": "/private/tmp/mech-related-current-allocation-profile-20261108/bound-call-clone-callers.json"
+  },
+  "priority_order": [
+    "Current processing BoundCall/descriptor deep-copy removal",
+    "Current native count/posting root source/compiler improvements",
+    "Conditional IR275compact slots with competitive constant-table source",
+    "IR198incremental metadata size",
+    "IR192still-bytewise lookup hashing",
+    "IR281small code/stack combination"
+  ]
 }

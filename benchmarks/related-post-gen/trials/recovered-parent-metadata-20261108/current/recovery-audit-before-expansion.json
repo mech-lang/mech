@@ -1,0 +1,1062 @@
+{
+  "schema": "mech.related-post-gen.optimization-recovery-audit.v2",
+  "updated_utc": "2026-11-08T04:05:58.260798+00:00",
+  "current_baseline": "IR280/sourceccfadbdf0af69f741237f5d1099a3c3eef79386a; specialized4/5row source97fc6c5a448aee096d19eb89839512974c724fee5efae5653ca88bed51b9c00a",
+  "reports_inventoried": 124,
+  "prioritized_entries": [
+    {
+      "id": "IR241",
+      "feature": "Conservative scalar-home retirement masks",
+      "report": "compiler-native-scalar-home-and-root-phases-20261107.json",
+      "rule_casualty": true,
+      "current": "Recovered asIR279 and inherited in independently confirmed IR280 working compiler/source",
+      "gain": "Fresh same-cohort processing instructions 51147313->49520546 (-3.18055%). Processing 2.912833->2.881333ms,20/31 paired wins;95% paired change[-1.38028%,+0.24786%],so elapsed superiority is inconclusive.",
+      "action": "Keep recovered native masks available for composition;408 actual native CI checks,35 related outputs and133 exact scalar/DEFLATE allocation rows pass. No mandatory whole-process gate.",
+      "double_count": true,
+      "report_sha256": "c387eeded93736d1f9b903aa9a21f94e7c828208c3f76ddef392c14c76550fd8",
+      "historical_gain": "Reuse-source processing instructions54824599->53544125(-2.34%);23/31 processing wins vs IR240 reuse; original-source22/31 processing but14/31 whole vs then-selectedIR238.",
+      "current_report": "compiler-native-recovered-scalar-homes-20261108.json"
+    },
+    {
+      "id": "IR269",
+      "feature": "Plan-derived compact visit-work tables",
+      "report": "compiler-native-paired-select-and-visit-work-20261107.json",
+      "rule_casualty": true,
+      "current": "recovered in IR278",
+      "gain": "Earlier same-parent restore125901249->110070701instructions(-12.574%),about0.89ms; whole-process superiority failed.",
+      "action": "IR278 composition verifies9.9614% fewer restore instructions and0.681ms lower restore median. Test identical-baseline ablation of grouped layout before claiming remaining difference as savings.",
+      "double_count": true,
+      "report_sha256": "9fbac07ee800ccea70c7d6371548242a2e5c7bd1e486d03cd441a05d57df4aaf"
+    },
+    {
+      "id": "IR276",
+      "feature": "Native scalar matrix cardinality",
+      "report": "compiler-native-matrix-length-lowering-20261107.json",
+      "rule_casualty": true,
+      "current": "recovered in IR277 and IR278",
+      "gain": "813 fewer processing allocations and about1.31M fewer processing instructions; processing passes but old whole-process gate fails.",
+      "action": "Already in working baseline.",
+      "double_count": true,
+      "report_sha256": "d8efbd23ea04800699a86f33734b5208fc67896a9a3a0869744a05fbc837bd91"
+    },
+    {
+      "id": "IR277",
+      "feature": "Checked fixed-width packed-row payload sizing",
+      "report": "compiler-native-packed-row-payload-20261107.json",
+      "rule_casualty": true,
+      "current": "recovered in IR278",
+      "gain": "About2.407M fewer processing instructions, with original work/limits/aliases intact; old whole gate fails despite processing gains.",
+      "action": "Already in working baseline following user policy change.",
+      "double_count": true,
+      "report_sha256": "e2647d3a4487ab05c977866fb5e4d617eb86092ed685e23512d2b0fc21871474"
+    },
+    {
+      "id": "IR264",
+      "feature": "Forward native read windows",
+      "report": "compiler-native-forward-read-windows-20261107.json",
+      "rule_casualty": true,
+      "current": "inherited; IR278 raw native arithmetic text is exactly IR264",
+      "gain": "21/31 processing wins vs IR242 and22/31 vs IR257; only6/31 and1/31 whole wins.",
+      "action": "Retained; do not add historical gains again.",
+      "double_count": true,
+      "report_sha256": "3025ba31e44f6582d9bf7f7a10e1e9397cd636119efa50fc09ec929fb5f4c526"
+    },
+    {
+      "id": "IR223",
+      "feature": "Fixed native typed backing arenas",
+      "report": "compiler-native-fixed-frame-arenas-candidate-20261106.json",
+      "rule_casualty": true,
+      "current": "inherited; FixedHostArenaPlan still used by native memory",
+      "gain": "Processing allocation/time improvement; complete-process gain rejected.",
+      "action": "Retained; not a new omission.",
+      "double_count": true,
+      "report_sha256": "40954dc28609990346f89332b99d2150257d388b229e7e50160c360fcd3baafe"
+    },
+    {
+      "id": "IR204",
+      "feature": "Prepaid adaptive UTF8 histogram passes and bounded-word hashing",
+      "report": "compiler-native-adaptive-prepaid-histogram-candidate-20261105.json",
+      "rule_casualty": true,
+      "current": "inherited; prepaid kernel and metered comparison remain",
+      "gain": "Consistent processing improvement; complete-process gain not confirmed.",
+      "action": "Retained; not a new omission.",
+      "double_count": true,
+      "report_sha256": "ce3cfacec6656202a7875ad384c2f8ff254048d4102aa0021cb806cddbf540e0"
+    },
+    {
+      "id": "IR228",
+      "feature": "DEFLATE compiler/reduction integration",
+      "report": "compiler-native-deflate-reduction-integration-screen-20261106.json",
+      "rule_casualty": true,
+      "current": "inherited in current source history",
+      "gain": "Processing improves against pre-integration controls; whole-process regression blocked promotion.",
+      "action": "NewestPR973a7c2168 plus previously unmerged nullary-state dependency now integrated and qualified asIR280. Original-source arithmetic text is exactIR279; no processing gain established for compiler-only integration. Source simplifications separately confirmed.",
+      "double_count": true,
+      "report_sha256": "decdc9e5b4a9ab31f52f67a3d4ab414926033cf1cfde4c014a7384f0800adf35"
+    },
+    {
+      "id": "IR270",
+      "feature": "Paired16-byte scalar retirement clears",
+      "report": "compiler-native-wide-retirements-and-opportunities-20261107.json",
+      "rule_casualty": false,
+      "current": "Recovered/tested with current scalar-home masks as IR281; not selected as current working baseline.",
+      "gain": "Old standalone instructions-1.867% did not establish speed. Fresh specialized-source processing2.340583->2.340292ms,paired+0.2258%,95%[-0.4148%,+1.0226%];instructions40781439->40794475(+0.032%). Code1077480->1075672B;maxstack2144->2128B;allocations2945/8006235B unchanged.",
+      "action": "Keep the general compiler implementation available for combinations; no speed gain claimed. All418native checks,133scalar/DEFLATE controls and70fixtures pass;1147exactcohort outputs.",
+      "double_count": false,
+      "report_sha256": "6aa2274bc7f08e38d924b9112fac200f1c01b6a1c1da741e24e19a40c424072d",
+      "current_report": "compiler-native-masked-wide-retirements-20261108.json"
+    },
+    {
+      "id": "IR275",
+      "feature": "Compact managed slots for immutable tables",
+      "report": "compiler-native-compact-managed-slots-20261107.json",
+      "rule_casualty": false,
+      "current": "not in IR278",
+      "gain": "Conditional table sources save70560B or277560B postJSON backing; plain source saves0B. All timing candidates also fail processing criteria.",
+      "action": "Priority2 conditional memory recovery: pair compact slots with a newly competitive constant-table source; historical backing savings70560B/277560B depend on those tables. Current plain and specialized-row source have no established incremental saving from this layout.",
+      "double_count": false,
+      "report_sha256": "b8d385a3089b24570b0e17c2887aaf4cbc980c69a72cdba3c3ff402824b72192"
+    },
+    {
+      "id": "IR268",
+      "feature": "Paired scalar selections",
+      "report": "compiler-native-paired-select-and-visit-work-20261107.json",
+      "rule_casualty": false,
+      "current": "not in IR278",
+      "gain": "0.3% fewer instructions and204B less native code; loses27/31 processing pairs.",
+      "action": "Lower priority until a specific compatible combination changes its cost.",
+      "double_count": false,
+      "report_sha256": "9fbac07ee800ccea70c7d6371548242a2e5c7bd1e486d03cd441a05d57df4aaf"
+    },
+    {
+      "id": "IR248",
+      "feature": "Hoisted-ID/source key combinations",
+      "report": "compiler-native-invariant-keys-and-movable-captures-20261107.json",
+      "rule_casualty": false,
+      "current": "original source remains",
+      "gain": "Initial source cohort passed, but independent processing confirmation failed.",
+      "action": "Do not restore as an established win solely from changing whole-process policy.",
+      "double_count": false,
+      "report_sha256": "6a7addec32466c6f9b4554b3592288ece452bfdf968c857a7a8b5a0c210b1619"
+    },
+    {
+      "id": "IR253",
+      "feature": "Borrowed parent-frame metadata plus exact runtime field-count consumer (IR253/IR255)",
+      "report": "compiler-native-borrowed-parent-frame-metadata-20261107.json",
+      "rule_casualty": false,
+      "current": "Absent from IR280. IR255 completed the consumer fix; current numeric_segments.rs still uses frame.fields.len().",
+      "gain": "Historical completed IR255: restore allocations26837->25142(-1695),requested bytes12830999->12769503(-61496B). Processing3758requests/8012356B exactly restored; initial IR253+66processing allocations removed. Processing elapsed remains inconclusive.",
+      "action": "Priority1 recovery: port the borrowed metadata and validated field-count consumer together onto IR280, then measure current specialized source. The earlier audit incorrectly left the consumer fix as work still to do.",
+      "double_count": false,
+      "report_sha256": "34e5e700e54ffeb543ca785a4e75e5e67690d19a697bb9771737269be0029124",
+      "historical_followup_report": "compiler-native-boolean-loops-and-parent-counts-20261107.json",
+      "runtime_consumer_fix_commit": "36b202a4ef8112474079c05ee8f1a39c525d95d4"
+    },
+    {
+      "id": "IR266",
+      "feature": "Positional metadata readers",
+      "report": "compiler-native-positional-metadata-20261107.json",
+      "rule_casualty": false,
+      "current": "not in IR278",
+      "gain": "Restore instructions increased0.97%; no established gain.",
+      "action": "Keep original negative result.",
+      "double_count": false,
+      "report_sha256": "621581733ba3b8dd25e3f2f48c66d9324e154c83677fad54712c9964c3bbc5e0"
+    },
+    {
+      "id": "IR267",
+      "feature": "Extra vector geometry identities",
+      "report": "compiler-native-vector-shape-identities-20261107.json",
+      "rule_casualty": false,
+      "current": "not adopted",
+      "gain": "Native text byte-identical; no added executable optimization.",
+      "action": "Do not count as untapped savings.",
+      "double_count": false,
+      "report_sha256": "6e7ea99b278868713eabc3a8b52374fd5e93efc722557f7eba5365abc951c9e0"
+    },
+    {
+      "id": "IR211",
+      "feature": "Omit proved zero append-frontier guards",
+      "report": "compiler-native-zero-append-frontiers-candidate-20261106.json",
+      "rule_casualty": true,
+      "current": "Already inherited: ancestor7661fb381e28171222858f685d1a0efcf17f29ec; ZeroAppendFrontiers remains enabled in readonly_numeric.rs.",
+      "gain": "Historical processing instructions -1.45%; confirmation10/15 processing wins but6/15 whole wins versus immediate parent.",
+      "action": "Retained; do not count this historical gain a second time.",
+      "double_count": true,
+      "report_sha256": "0a47844a57f82e4f2ee46c07d1401c0698e2b133023ceaf7a753a09435d40772"
+    },
+    {
+      "id": "IR221",
+      "feature": "Borrow compiler-only frame metadata from immutable native records",
+      "report": "compiler-native-borrowed-frame-metadata-candidate-20261106.json",
+      "rule_casualty": true,
+      "current": "Already inherited: ancestorc34338953b316c48d78c2f7f0c2ef0ae19bd6f29; numeric_frame.rs retains genuine borrowed storage and private OnceLock decoding.",
+      "gain": "Historical restore allocations58019->50828(-12.394%), instructions-2.131%; mixed whole timing versus then-selectedIR208.",
+      "action": "Retained; do not count this historical gain a second time.",
+      "double_count": true,
+      "report_sha256": "6cc78b8f5b55dc2d7ca8579f3992c0c7139e6f98f2efce22600ce88169c4117d"
+    },
+    {
+      "id": "IR227",
+      "feature": "Earlier latest-DEFLATE compiler integration",
+      "report": "compiler-native-latest-deflate-integration-screen-20261106.json",
+      "rule_casualty": true,
+      "current": "Already inherited: ancestordae0b9b6c33b39ce55104880660501929ee07b6b; distinguish this from newest PR973 changes not yet in the frozen compiler.",
+      "gain": "Extended original-source processing31/31 wins versus old selected compiler; whole19/31,below old21/31 rule.",
+      "action": "Retained; do not count this historical gain a second time.",
+      "double_count": true,
+      "report_sha256": "0bd1fb6ade081665e4dba2af36d2373b0048d608f235a1fe676c4ef5f1e49568"
+    },
+    {
+      "id": "IR198",
+      "feature": "Metadata key atoms/compression",
+      "report": "compiler-native-metadata-key-atoms-candidate-20261105.json",
+      "rule_casualty": false,
+      "current": "Not adopted; current grouped-key typed metadata remains a different implementation.",
+      "gain": "Historical metadata-1365962B and executable-1403632B. Restore instructions201712790->204550767(+1.41%);111664restoreallocations unchanged. Whole time regressed.",
+      "action": "Priority3 size candidate: remeasure incremental savings with current grouped metadata; historical1.4MB cannot be carried forward unchanged. Retain restoration cost.",
+      "double_count": false,
+      "report_sha256": "5d909d933a8da9ed68e2415a21645234d6990b0d409161df6977d624759a998e"
+    },
+    {
+      "id": "IR192",
+      "feature": "Word-at-a-time UTF8 lookup hashing",
+      "report": "compiler-native-word-utf8-hash-candidate-20261105.json",
+      "rule_casualty": true,
+      "current": "Historical lookup-hash alternative not adopted; current generated UTF8 lookup still performs bytewise FNV, while histogram already uses bounded-word hashing.",
+      "gain": "Historical four-worker processing median-1.25%,instructions-0.33%,whole+2.11%;eight-worker processing+0.99%. No independent confirmation was run.",
+      "action": "Priority4 source-sensitive recovery: test only after isolating the still-bytewise lookup cost, preserving exact equality/collision checks. Do not count bounded-word histogram hashing again.",
+      "double_count": false,
+      "report_sha256": "269a38914fbf9e0e0d6d893318f90d0106dad816dc7dae0ce069be6519bbe8e5"
+    },
+    {
+      "id": "IR202",
+      "feature": "Invariant loop parameters and cold fallback placement",
+      "report": "compiler-native-loop-params-cold-layout-candidate-20261105.json",
+      "rule_casualty": false,
+      "current": "Old combined branch is not ancestor, but current CFG cleanup already retires invariant loop parameters and current numeric emission marks fallback blocks cold.",
+      "gain": "Historical1.45%fewerfour-workerinstructions,query704->688Bstack,cyclesincreased. Current overlap prevents claiming those savings as still available.",
+      "action": "Audit remaining differences only; do not blindly reapply the old patch or add its historical gain.",
+      "double_count": true,
+      "report_sha256": "ef2664a5c950e7b4032f466cf3880a40fcd576cd0c67f1e11091f81818a68532"
+    },
+    {
+      "id": "IR219/IR220",
+      "feature": "Native SIMD ledger/fuel pairing",
+      "report": "compiler-native-vector-fuel-debits-candidate-20261106.json",
+      "rule_casualty": false,
+      "current": "Not adopted. Actual SIMD was emitted; this was not left in a host implementation.",
+      "gain": "Historical query stack688->656B. Revised IR220 uses0.087%more instructions than matched scalarIR217 and processing isflat;IR219 was0.398%moreinstructions.",
+      "action": "Lower priority, reconsider with a changed dependency/packing design; useful stack tradeoff is retained but this supplies no established omitted speedup.",
+      "double_count": false,
+      "report_sha256": "92cd5f9e08f4d64f9c5a61f53836a9edc8d84779d6fbd2f3f2868b20b234c944"
+    },
+    {
+      "id": "borrowed-JSON",
+      "feature": "Borrow ID/title text while decoding JSON",
+      "report": "compiler-native-selected-ranges-and-json-ownership-20261107.json",
+      "rule_casualty": false,
+      "current": "Unselected host-adapter source optimization.",
+      "gain": "JSON allocation requests40089->30089(-10000). Measured processing and memory worsened; whole-process latency did not improve.",
+      "action": "Lower-priority allocation experiment with current lifetimes/consumer design; do not label it a compiler lowering win or shift setup outside timing.",
+      "double_count": false,
+      "report_sha256": "23ff66db43d962bd4b3701de6c939dd23383090118f24ba2ae7505bd86fe135f"
+    }
+  ],
+  "inventory": [
+    {
+      "report": "compiler-native-24-hour-progress-20261107.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-24-hour-progress-20261107T094857Z.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-24-hour-progress-20261107T110942Z.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-24-hour-progress-20261107T114151Z.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-24-hour-progress-20261107T125809Z.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-adaptive-histogram-schema-reuse-candidate-20261105.json",
+      "identity": "IR204/work114/ABI40",
+      "selected": true,
+      "status": "qualified_selected_both_timing_scopes_improve_parity_unmet"
+    },
+    {
+      "report": "compiler-native-adaptive-prepaid-histogram-candidate-20261105.json",
+      "identity": "IR204/work114/ABI40",
+      "selected": false,
+      "status": "unselected_consistent_processing_gain_but_complete_process_gain_not_confirmed"
+    },
+    {
+      "report": "compiler-native-arithmetic-ranges-candidate-20261106.json",
+      "identity": "IR214/work114/ABI40",
+      "selected": false,
+      "status": "tested_screened_unselected_full_loader_runtime_qualification_pending"
+    },
+    {
+      "report": "compiler-native-array-extent-ranges-candidate-20261105.json",
+      "identity": "IR197/work111/ABI38",
+      "selected": true,
+      "status": "qualified_and_selected_fewer_native_checks_elapsed_nearly_flat"
+    },
+    {
+      "report": "compiler-native-boolean-bit-tests-screen-20261106.json",
+      "identity": "IR224/work114/ABI40/image8",
+      "selected": false,
+      "status": "implemented_and_screened_not_adopted"
+    },
+    {
+      "report": "compiler-native-boolean-chain-branches-20261107.json",
+      "identity": "IR265/work115/ABI41/image9",
+      "selected": false,
+      "status": "Rejected:0/31 processing wins versus parent IR264; paired median+3.143%, instructions+6.06%, whole-process paired+8.983%. No unchanged rerun to seek promotion. Further work should target instruction combining/dataflow, not this branch distribution."
+    },
+    {
+      "report": "compiler-native-boolean-conditions-screen-20261106.json",
+      "identity": "IR224/work114/ABI40/image8",
+      "selected": false,
+      "status": "implemented_and_screened_not_adopted"
+    },
+    {
+      "report": "compiler-native-boolean-experiments-20261106.json",
+      "identity": null,
+      "selected": false,
+      "status": "unselected_no_clear_processing_gain"
+    },
+    {
+      "report": "compiler-native-boolean-implication-mask-reuse-20261106.json",
+      "identity": "IR235/work115/ABI41/image9",
+      "selected": false,
+      "status": null
+    },
+    {
+      "report": "compiler-native-boolean-literal-branches-preliminary-20261106.json",
+      "identity": null,
+      "selected": false,
+      "status": null
+    },
+    {
+      "report": "compiler-native-boolean-loops-and-parent-counts-20261107.json",
+      "identity": "IR257/work115/ABI41/image9",
+      "selected": false,
+      "status": "Keep selectedIR242/four native workers. Neither IR255 nor IR257 passes21/31 paired wins at both scopes. Compiler gaps are fixed in separately published, unselected branches; no full adoption qualification or Rust parity is claimed."
+    },
+    {
+      "report": "compiler-native-borrowed-frame-metadata-candidate-20261106.json",
+      "identity": "IR221/work114/ABI40",
+      "selected": false,
+      "status": "qualified_startup_allocation_and_instruction_gain_mixed_speed_against_selected_IR208"
+    },
+    {
+      "report": "compiler-native-borrowed-parent-frame-metadata-20261107.json",
+      "identity": "IR253/work115/ABI41/image9",
+      "selected": false,
+      "status": "Reject IR253 as a performance candidate. It saves1695 restore allocations but adds66 processing allocations and wins only10/31 processing and2/31 whole-process pairs against selectedIR242. Fix the runtime metadata consumer rather than shifting compiler reconstruction out of the startup timer."
+    },
+    {
+      "report": "compiler-native-borrowed-utf8-histogram-candidate-20261105.json",
+      "identity": "IR203/work113/ABI39",
+      "selected": false,
+      "status": "unselected_native_histogram_moves_work_out_of_host_but_elapsed_gain_is_negligible"
+    },
+    {
+      "report": "compiler-native-borrowed-utf8-histogram-kernel-checkpoint-20261105.json",
+      "identity": null,
+      "selected": false,
+      "status": "checked_generated_leaf_not_integrated_into_production_emission"
+    },
+    {
+      "report": "compiler-native-boundary-readsets-prototype-20261105.json",
+      "identity": "IR186/work111/ABI38",
+      "selected": null,
+      "status": "measured_unselected_no_material_execution_gain"
+    },
+    {
+      "report": "compiler-native-canonical-schema-and-boolean-ablations-20261107.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-child-entry-facts-integration-20261107.json",
+      "identity": "IR240/work115/ABI41/image9",
+      "selected": false,
+      "status": null
+    },
+    {
+      "report": "compiler-native-compact-managed-slots-20261107.json",
+      "identity": "IR275/work115/ABI41/image9",
+      "selected": false,
+      "status": "All three candidates fail declared processing and whole-process criteria. Byte/table layout saves1.6135%paired processing against its own slower source control, but loses to ordinary IR264 and byte-only controls. No unchanged confirmation or promotion."
+    },
+    {
+      "report": "compiler-native-compound-facts-and-byte-keys-20261107.json",
+      "identity": null,
+      "selected": false,
+      "status": "Unselected. The compiler passes first processing target (23/31 versus matched parent) but fails independent confirmation (17/31,paired -0.185%,95% interval [-1.367%,+0.353%]). All first/adverse samples retained. Both compact-source compositions fail additional superiority versus the matched same compiler; no unchanged source rerun. No third compiler retry."
+    },
+    {
+      "report": "compiler-native-conjoined-windows-and-shared-call-certificates-20261107.json",
+      "identity": "IR242/work115/ABI41/image9",
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-constant-conditions-candidate-20261106.json",
+      "identity": "IR212/work114/ABI40",
+      "selected": false,
+      "status": "qualified_constant_conditions_folded_small_processing_gain_eight_workers_mixed"
+    },
+    {
+      "report": "compiler-native-deflate-reduction-integration-screen-20261106.json",
+      "identity": "IR228/work115/ABI41/image9",
+      "selected": false,
+      "status": "qualified_measured_unselected_whole_process_regression"
+    },
+    {
+      "report": "compiler-native-demand-liveness-and-numeric-aliases-20261107.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-dominated-guards-candidate-20261105.json",
+      "identity": "IR187/work111/ABI38",
+      "selected": true,
+      "status": "qualified_and_selected_with_three_retained_baseline_failures"
+    },
+    {
+      "report": "compiler-native-early-identities-candidate-20261106.json",
+      "identity": "IR213/work114/ABI40",
+      "selected": false,
+      "status": "qualified_early_integer_identities_no_meaningful_elapsed_gain"
+    },
+    {
+      "report": "compiler-native-exact-zero-branches-20261107.json",
+      "identity": "IR273/work115/ABI41/image9",
+      "selected": false,
+      "status": "Unselected: missed processing target against both fixed selected compiler and matched parent. Native/static code-size recovery is not hot-computation recovery. Retain all first/adverse samples and investigate executed hot source loops and worker preparation."
+    },
+    {
+      "report": "compiler-native-executed-check-census-20261107.json",
+      "identity": null,
+      "selected": false,
+      "status": null
+    },
+    {
+      "report": "compiler-native-fill-accounting-20261104.json",
+      "identity": null,
+      "selected": null,
+      "status": "checked"
+    },
+    {
+      "report": "compiler-native-fill-commit-20261104.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-fill-design-20261104.json",
+      "identity": null,
+      "selected": null,
+      "status": "qualified_measured"
+    },
+    {
+      "report": "compiler-native-fill-validation-20261104.json",
+      "identity": {
+        "typed_ir": 156,
+        "work_policy": 107,
+        "abi": 38
+      },
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-fixed-frame-arenas-candidate-20261106.json",
+      "identity": "IR223/work114/ABI40",
+      "selected": false,
+      "status": "qualified_fixed_native_arenas_reduce_processing_allocations_and_time_complete_process_unselected"
+    },
+    {
+      "report": "compiler-native-forward-child-funding-20261107.json",
+      "identity": "IR274/work115/ABI41/image9",
+      "selected": false,
+      "status": "Unselected: processing superiority versus matched parent and whole-process noninferiority both fail. No unchanged confirmation. This qualified native proof is a foundation, not a measured benchmark gain."
+    },
+    {
+      "report": "compiler-native-forward-read-windows-20261107.json",
+      "identity": "IR264/work115/ABI41/image9",
+      "selected": false,
+      "status": "Keep selectedIR242/four native workers. IR264 fails the unchanged joint paired timing gate."
+    },
+    {
+      "report": "compiler-native-frozen-type-descriptors-candidate-20261106.json",
+      "identity": "IR222/work114/ABI40",
+      "selected": false,
+      "status": "qualified_frozen_type_evidence_large_startup_allocation_gain_elapsed_selection_mixed"
+    },
+    {
+      "report": "compiler-native-frozen-uniform-layouts-candidate-20261106.json",
+      "identity": "IR208/work114/ABI40",
+      "selected": true,
+      "status": "selected_confirmed_startup_gain_processing_flat"
+    },
+    {
+      "report": "compiler-native-fuel-derived-debits-screen-20261106.json",
+      "identity": "IR225/work114/ABI40/image8",
+      "selected": false,
+      "status": "implemented_and_screened_not_adopted"
+    },
+    {
+      "report": "compiler-native-grouped-metadata-20261108.json",
+      "identity": "IR278/work116/ABI41/image11",
+      "selected": true,
+      "status": null
+    },
+    {
+      "report": "compiler-native-immutable-capture-views-noop-20261107.json",
+      "identity": "IR251/work115/ABI41/image9",
+      "selected": false,
+      "status": "Reject optimization hypothesis for this benchmark: both full native text sections equalIR250 exactly. Existing compiler already retains these view values. No native processing gain claimed."
+    },
+    {
+      "report": "compiler-native-immutable-view-homes-candidate-20261106.json",
+      "identity": "IR206/work114/ABI40",
+      "selected": false,
+      "status": "unselected_smaller_hot_stack_frames_but_elapsed_gain_not_confirmed"
+    },
+    {
+      "report": "compiler-native-initialized-homes-20261107.json",
+      "identity": "IR247/work115/ABI41/image9",
+      "selected": false,
+      "status": null
+    },
+    {
+      "report": "compiler-native-integer-ranges-diagnostic-20261105.json",
+      "identity": "IR195/work111/ABI38",
+      "selected": false,
+      "status": "unselected_no_additional_native_changes_for_this_workload"
+    },
+    {
+      "report": "compiler-native-invariant-capture-selection-20261107.json",
+      "identity": "IR250/work115/ABI41/image9",
+      "selected": false,
+      "status": "Keep selectedIR242. IR250 removes most blanket-clamp overhead but fails the joint speed gate. Newer unsigned-interval combination selects no predicates in this benchmark and all IR249 numeric function bytes equalIR248."
+    },
+    {
+      "report": "compiler-native-invariant-keys-and-movable-captures-20261107.json",
+      "identity": "IR248/work115/ABI41/image9",
+      "selected": false,
+      "status": "Keep selectedIR242 and original mask-reuse source. The hoisted-ID source passed its first joint gate but failed the processing gate in the independent compiler recheck. EveryIR248 combination fails the joint gate. Do not choose a favorable cohort or mix endpoints."
+    },
+    {
+      "report": "compiler-native-latest-deflate-integration-screen-20261106.json",
+      "identity": "IR227/work115/ABI41/image9",
+      "selected": false,
+      "status": "qualified_measured_whole_process_selection_unresolved"
+    },
+    {
+      "report": "compiler-native-llvm-native-image-20261107.json",
+      "identity": null,
+      "selected": false,
+      "status": null
+    },
+    {
+      "report": "compiler-native-llvm-typed-ssa-20261107.json",
+      "identity": "IR264 default Object only; no LLVM native-image identity yet",
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-local-bank-proof-candidate-20261105.json",
+      "identity": "IR181/work111/ABI38",
+      "selected": null,
+      "status": "The smaller query kernel does not produce a clear complete-process or material calculation/instruction gain. Keep the selected f8e4898 while pursuing String/Map key materialization and native metadata."
+    },
+    {
+      "report": "compiler-native-local-facts-and-metadata-ablations-20261107.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-local-facts-integration-qualification-20261107.json",
+      "identity": "IR236/work115/ABI41/image9",
+      "selected": false,
+      "status": "locally_qualified_measurement_pending"
+    },
+    {
+      "report": "compiler-native-loop-params-cold-layout-candidate-20261105.json",
+      "identity": "IR202/work111/ABI38",
+      "selected": false,
+      "status": "unselected_native_combination_reduces_instructions_but_no_consistent_elapsed_gain"
+    },
+    {
+      "report": "compiler-native-matrix-length-lowering-20261107.json",
+      "identity": "IR276/work116/ABI41/image9",
+      "selected": false,
+      "status": "First cohort fails its predeclared acceptance rule. No unchanged confirmation or promotion."
+    },
+    {
+      "report": "compiler-native-metadata-key-atoms-candidate-20261105.json",
+      "identity": "IR198/work111/ABI38",
+      "selected": false,
+      "status": "unselected_smaller_metadata_but_no_restoration_or_elapsed_gain"
+    },
+    {
+      "report": "compiler-native-metadata-records-patch-check-20261104.json",
+      "identity": null,
+      "selected": null,
+      "status": "passed"
+    },
+    {
+      "report": "compiler-native-metadata-records-source-correspondence-20261104.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-metadata-records-validation-20261104.json",
+      "identity": "IR180/work111/ABI38",
+      "selected": null,
+      "status": "qualified_with_three_baseline_failures_inherited_accounting_issues_and_legacy_json_loading_regression"
+    },
+    {
+      "report": "compiler-native-metadata-tables-prototype-20261104.json",
+      "identity": "IR180/work111/ABI38;typed-metadata-v1",
+      "selected": null,
+      "status": "measured_unselected_prototype"
+    },
+    {
+      "report": "compiler-native-numeric-collections-candidate-20261106.json",
+      "identity": "IR210/work114/ABI40",
+      "selected": false,
+      "status": "qualified_native_numeric_collection_gap_fixed_no_gain_over_selected_source"
+    },
+    {
+      "report": "compiler-native-packed-byte-arrays-candidate-20261105.json",
+      "identity": "IR185/work111/ABI38",
+      "selected": null,
+      "status": "qualified_and_selected"
+    },
+    {
+      "report": "compiler-native-packed-byte-arrays-patch-check-20261105.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-packed-byte-arrays-source-correspondence-20261105.json",
+      "identity": null,
+      "selected": null,
+      "status": "passed"
+    },
+    {
+      "report": "compiler-native-packed-byte-arrays-validation-20261105.json",
+      "identity": "IR185/work111/ABI38",
+      "selected": null,
+      "status": "qualified_with_three_baseline_failures_inherited_accounting_and_legacy_json_loading_regression"
+    },
+    {
+      "report": "compiler-native-packed-row-payload-20261107.json",
+      "identity": "IR277/work116/ABI41/image9",
+      "selected": false,
+      "status": "First cohort fails its predeclared acceptance rule. No unchanged confirmation or promotion."
+    },
+    {
+      "report": "compiler-native-paired-select-and-visit-work-20261107.json",
+      "identity": null,
+      "selected": false,
+      "status": "Both candidates fail their prospective promotion targets and remain unselected. No unchanged confirmation rerun. Paired selects use0.3% fewer processing instructions but lose27/31 parent processing pairs,paired+2.100%. Compact visits reduce restore instructions125.901M to110.071M(-12.574%) and native metadata by830788B(16.91%), but win only15/31 parent whole pairs and8/31 fixed242 whole pairs. Phase savings do not establish full-process superiority."
+    },
+    {
+      "report": "compiler-native-positional-metadata-20261107.json",
+      "identity": "IR266/work115/ABI41/image9",
+      "selected": false,
+      "status": "Rejected:125.883M to127.105M restoration instructions (+0.97%);26,837 allocations/12,830,999B unchanged. Whole-process paired median+2.823% and12/31wins versus matched parent. No source or native processing gain. Do not rerun unchanged."
+    },
+    {
+      "report": "compiler-native-positional-metadata-candidate-20261105.json",
+      "identity": "IR194/work111/ABI38",
+      "selected": false,
+      "status": "measured_unselected_restoration_instruction_and_cpu_regression"
+    },
+    {
+      "report": "compiler-native-program-home-facts-candidate-20261106.json",
+      "identity": "IR205/work114/ABI40",
+      "selected": false,
+      "status": "unselected_no_native_machine_code_change"
+    },
+    {
+      "report": "compiler-native-projected-debits-candidate-20261106.json",
+      "identity": "IR217/work114/ABI40",
+      "selected": false,
+      "status": "qualified_exact_native_debit_projection_small_instruction_reduction_no_repeatable_four_worker_elapsed_gain"
+    },
+    {
+      "report": "compiler-native-record-reader-candidate-20261105.json",
+      "identity": null,
+      "selected": null,
+      "status": "measured_unselected_microoptimization_followed_by_shared_descriptor_implementation"
+    },
+    {
+      "report": "compiler-native-scalar-home-and-root-phases-20261107.json",
+      "identity": "IR241/work115/ABI41/image9",
+      "selected": false,
+      "status": "Original-source wins22/31 processing but14/31 whole-process pairs against selectedIR238; does not pass the21/31 both-boundaries promotion gate."
+    },
+    {
+      "report": "compiler-native-select-live-outputs-diagnostic-20261106.json",
+      "identity": "IR215/work114/ABI40",
+      "selected": false,
+      "status": "hypothesis_refuted_no_native_code_change_on_both_sources"
+    },
+    {
+      "report": "compiler-native-selected-ranges-and-json-ownership-20261107.json",
+      "identity": "IR252/work115/ABI41/image9",
+      "selected": false,
+      "status": "Keep selectedIR242. IR252 wins18 processing/20 whole pairs; all source/host combinations fail the joint timing gate. Eight compact workers regress again. Original promotion record stays unchanged."
+    },
+    {
+      "report": "compiler-native-shared-template-tables-candidate-20261106.json",
+      "identity": "IR207/work114/ABI40",
+      "selected": true,
+      "status": "selected_confirmed_whole_process_gain_small_post_json_change"
+    },
+    {
+      "report": "compiler-native-single-pass-fields-candidate-20261105.json",
+      "identity": "IR185/work111/ABI38",
+      "selected": null,
+      "status": "Canonical-only loading improves about2percent, with less than1percent fewer restore instructions. Eight-worker post-JSON median is1.15percent higher; no calculation gain is claimed. Noncanonical struct probe passes remain and a broader streaming variant is in development."
+    },
+    {
+      "report": "compiler-native-static-active-flags-candidate-20261106.json",
+      "identity": "IR218/work114/ABI40",
+      "selected": false,
+      "status": "tested_screened_unselected_instruction_regression_full_additional_loader_runtime_qualification_not_performed"
+    },
+    {
+      "report": "compiler-native-streaming-fields-candidate-20261105.json",
+      "identity": "IR185/work111/ABI38",
+      "selected": null,
+      "status": "qualified_and_selected"
+    },
+    {
+      "report": "compiler-native-streaming-fields-patch-check-20261105.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-streaming-fields-source-correspondence-20261105.json",
+      "identity": null,
+      "selected": null,
+      "status": "passed"
+    },
+    {
+      "report": "compiler-native-streaming-fields-validation-20261105.json",
+      "identity": "IR185/work111/ABI38",
+      "selected": null,
+      "status": "qualified_with_three_baseline_failures_inherited_accounting_and_legacy_json_loading_regression"
+    },
+    {
+      "report": "compiler-native-thread-instruction-profile-20261107.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-u32-arithmetic-candidate-20261106.json",
+      "identity": "IR209/work114/ABI40",
+      "selected": false,
+      "status": "qualified_native_semantic_gap_fixed_no_established_speed_gain"
+    },
+    {
+      "report": "compiler-native-unsigned-guards-candidate-20261105.json",
+      "identity": "IR185/work111/ABI38",
+      "selected": null,
+      "status": "qualified_and_selected"
+    },
+    {
+      "report": "compiler-native-unsigned-guards-patch-check-20261105.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-unsigned-guards-source-correspondence-20261105.json",
+      "identity": null,
+      "selected": null,
+      "status": "passed"
+    },
+    {
+      "report": "compiler-native-unsigned-guards-validation-20261105.json",
+      "identity": "IR185/work111/ABI38",
+      "selected": null,
+      "status": "qualified_with_three_baseline_failures_inherited_accounting_and_legacy_json_loading_regression"
+    },
+    {
+      "report": "compiler-native-utf8-actual-v2-build.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-actual-v2-focused.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-actual-v2.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-kernel-v1c-build.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-kernel-v1c-source-inventory.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-kernel-validation.json",
+      "identity": null,
+      "selected": null,
+      "status": "isolated_emission_kernel_tests_passed"
+    },
+    {
+      "report": "compiler-native-utf8-policy.json",
+      "identity": null,
+      "selected": null,
+      "status": "candidate awaiting executable canonical-region qualification"
+    },
+    {
+      "report": "compiler-native-utf8-prototype-validation.json",
+      "identity": null,
+      "selected": null,
+      "status": "isolated cfg(test) prototype, not source-selected"
+    },
+    {
+      "report": "compiler-native-utf8-v2-actual-observer.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-build.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-final-huffman.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-final-test-source-overlay.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-fixed-correctness.json",
+      "identity": null,
+      "selected": null,
+      "status": "passed"
+    },
+    {
+      "report": "compiler-native-utf8-v2-focused.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-full.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-interrupted-build.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-patch-check.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-regressions.json",
+      "identity": null,
+      "selected": null,
+      "status": "passed"
+    },
+    {
+      "report": "compiler-native-utf8-v2-scalar-native-byte-proof.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-source-correspondence.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-test-source-overlay.json",
+      "identity": null,
+      "selected": null,
+      "status": null
+    },
+    {
+      "report": "compiler-native-utf8-v2-validation.json",
+      "identity": null,
+      "selected": null,
+      "status": "focused_actual_and_full_suite_qualified_with_same_three_established_baseline_failures"
+    },
+    {
+      "report": "compiler-native-utf8-work-independent-review.json",
+      "identity": null,
+      "selected": null,
+      "status": "no_blocker_under_explicit_checked_loan_preconditions"
+    },
+    {
+      "report": "compiler-native-vector-fuel-debits-candidate-20261106.json",
+      "identity": "IR220/work114/ABI40",
+      "selected": false,
+      "status": "tested_screened_unselected_no_default_elapsed_gain_full_additional_loader_runtime_matrix_not_performed"
+    },
+    {
+      "report": "compiler-native-vector-ledger-candidate-20261106.json",
+      "identity": "IR219/work114/ABI40",
+      "selected": false,
+      "status": "tested_screened_unselected_no_default_elapsed_gain_full_additional_loader_runtime_matrix_not_performed"
+    },
+    {
+      "report": "compiler-native-vector-shape-identities-20261107.json",
+      "identity": "IR267/work115/ABI41/image9",
+      "selected": false,
+      "status": "Reject for the related-post goal without running a latency cohort: the complete emitted native text is byte-exact to the matched IR264 parent. This source transformation adds no native processing optimization."
+    },
+    {
+      "report": "compiler-native-wide-retirements-and-opportunities-20261107.json",
+      "identity": "IR270/work115/ABI41/image9",
+      "selected": false,
+      "status": "Unselected: processing target versus matched parent fails with16/31 wins, paired median -0.131%,95% interval [-0.903%,+0.744%]. Whole-process improves in this cohort but cannot replace the prospective processing target. Processing instructions54.984M to53.957M(-1.867%); allocations unchanged. Keep as an unselected composition foundation; no unchanged confirmation rerun."
+    },
+    {
+      "report": "compiler-native-word-utf8-hash-candidate-20261105.json",
+      "identity": "IR192/work111/ABI38",
+      "selected": false,
+      "status": "measured_unselected_mixed_small_processing_effect"
+    },
+    {
+      "report": "compiler-native-zero-append-frontiers-candidate-20261106.json",
+      "identity": "IR211/work114/ABI40",
+      "selected": false,
+      "status": "qualified_redundant_native_guards_removed_modest_processing_gain_whole_process_mixed"
+    },
+    {
+      "report": "compiler-native-entry-interval-profile-20261107.json",
+      "identity": null,
+      "selected": false,
+      "status": null
+    },
+    {
+      "report": "compiler-native-latest-deflate-integration-20261108.json",
+      "identity": "IR280/work116/ABI41/image11",
+      "selected": true,
+      "status": null
+    },
+    {
+      "report": "compiler-native-masked-wide-retirements-20261108.json",
+      "identity": "IR281/work116/ABI41/image11",
+      "selected": null,
+      "status": "Keep available as an unselected compiler combination. No processing speed gain established: both-row paired+0.2258%,95%[-0.4148%,+1.0226%],13/31wins; native code-1808B,maximum stack-16B,allocation counts/bytes exact. This is not rejected by whole-process policy; measured whole paired direction is also retained. Current IR280 working compiler/source stays unchanged."
+    },
+    {
+      "report": "compiler-native-recovered-scalar-homes-20261108.json",
+      "identity": "IR279/work116/ABI41/image11",
+      "selected": false,
+      "status": "Verified processing instruction saving; elapsed-time superiority remains inconclusive. Retained for compiler composition; IR278 remains the latency control. No whole-process gate or unchanged favorable retry."
+    }
+  ],
+  "policy": "Keep verified useful phase/instruction/memory gains. Whole-process timing remains measured but is not a mandatory progress gate. Preserve all historical results; no summing incompatible cohorts, double-counting inherited changes or assuming instruction reductions guarantee latency wins.",
+  "active_test": {
+    "identity": "IR281/work116/ABI41/image11",
+    "completed": true,
+    "report": "compiler-native-masked-wide-retirements-20261108.json",
+    "processing_speed_gain_established": false,
+    "retained_for_composition": true,
+    "next": "Port IR253+IR255 together onto current compiler; compact-slot/constant-source combination; measured descriptor deep-clone removal."
+  },
+  "goal_complete": false,
+  "prioritized_count": 23,
+  "latest_measured_recovery": {
+    "report": "compiler-native-latest-deflate-integration-20261108.json",
+    "source_combination_processing_paired_gain_vs_parent": 0.09527966142919686,
+    "source_combination_processing_instruction_gain": 0.1747139788810128,
+    "whole_paired_regression_vs_previous_working": 0.04424350700404833,
+    "adopted_under_user_policy": true,
+    "not_counted_as_new_compiler_only_speedup": true
+  },
+  "previous_audit_sha256": "75a08e9c577f29d7d62213041e6ef6a18367f23655cf1f3d5ea85e262bed41a4",
+  "current_user_request": "Identify other advances omitted under old joint/whole-process timing rules and reassess phase, instruction, memory and size savings.",
+  "fresh_profile_opportunity": {
+    "not_a_historical_rule_casualty": true,
+    "scope": "Current IR280 continuous post-JSON allocation stack profile",
+    "requests_per_variant": 2945,
+    "requested_bytes": {
+      "plain": 7919355,
+      "both-rows": 8006235
+    },
+    "zero_event_loss": true,
+    "BoundCall_clone_inclusive_allocations": 381,
+    "BoundCall_clone_requested_bytes": 27126,
+    "ResolvedValueDescriptor_clone_inclusive_allocations": 526,
+    "counts_overlap_do_not_sum": true,
+    "action": "Share immutable call certificates across memory planning while retaining fresh shape/evidence and budget admission for each call; no measured speed claim yet.",
+    "local_evidence": "/private/tmp/mech-related-current-allocation-profile-20261108/summary.json",
+    "caller_census": "/private/tmp/mech-related-current-allocation-profile-20261108/bound-call-clone-callers.json"
+  },
+  "priority_order": [
+    "IR253+IR255 borrowed-parent metadata with completed count consumer",
+    "IR275 compact storage with a competitive constant-table source",
+    "IR198 incremental current metadata-size savings",
+    "IR192 still-bytewise lookup hash, if current profile warrants it",
+    "IR281 paired clears retained as small code/stack composition option",
+    "IR219/IR220 SIMD packing only after a changed design"
+  ]
+}

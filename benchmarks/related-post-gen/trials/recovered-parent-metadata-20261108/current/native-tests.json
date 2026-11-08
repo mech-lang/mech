@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-recovered-parent-metadata-tests-20261108-v1/run.py"
+  ],
+  "exit": 0,
+  "seconds": 318.1287200001534,
+  "stdout": "test-build 0\npacked-row-and-route-tests 0\nnewest-deflate-tests 0\nparent-metadata-tests 0\nnumeric-frame-metadata-tests 0\nrecovered-scalar-home-tests 0\nci-list 0\nci-execute 0\nimage-and-caller-geometry-tests 0\noptional-llvm-regressions 0\n",
+  "stderr": ""
+}

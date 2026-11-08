@@ -1,0 +1,10 @@
+{
+  "records_hashed": 524,
+  "actual_cohort_outputs_rederived": 1147,
+  "native_CI_names_rederived": 418,
+  "retained_names": 415,
+  "exact_scalar_DEFLATE_rows_rederived": 133,
+  "current_allocation_events_rederived": 5890,
+  "paired_current_parent_bootstrap_checks": 6,
+  "all_passed": true
+}

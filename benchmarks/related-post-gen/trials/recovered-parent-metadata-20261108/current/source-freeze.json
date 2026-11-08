@@ -1,0 +1,8 @@
+{
+  "source": "/private/tmp/mech-related-recovered-parent-metadata-compiler-20261108",
+  "build": "/private/tmp/mech-related-recovered-parent-metadata-opt-20261108-v1",
+  "source_inventory_exact": true,
+  "commit": "42c67df062c9228cd5250da353311d21bc9deca5",
+  "predeclared_rule_sha256": "026653a0df35289c1b235dcf98c3e7560ee452258699cbbb76983b0056c2f98e",
+  "no_prior_cohort": true
+}

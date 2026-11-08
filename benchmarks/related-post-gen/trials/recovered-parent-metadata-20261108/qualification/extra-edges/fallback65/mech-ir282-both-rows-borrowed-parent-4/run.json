@@ -1,0 +1,18 @@
+{
+  "case": "fallback65",
+  "variant": "mech-ir282-both-rows-borrowed-parent-4",
+  "command": [
+    "/private/tmp/mech-related-recovered-parent-metadata-runners-20261108-v1/both-rows/runner-aot",
+    "/private/tmp/mech-related-recovered-parent-metadata-runners-20261108-v1/both-rows/build/source.mec",
+    "/private/tmp/mech-related-recovered-parent-metadata-20261108/extra-edges/fallback65/posts.json",
+    "/private/tmp/mech-related-recovered-parent-metadata-20261108/extra-edges/fallback65/mech-ir282-both-rows-borrowed-parent-4/output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.02380479103885591,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009824125,\"input_admission_seconds\":0.000028083,\"json_read_and_parse_seconds\":0.001566042,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.001143542,\"posts\":65,\"processing_plus_admission_seconds\":0.001138791,\"retained_bytes\":207943,\"sample\":0,\"seconds\":0.001110708,\"work\":4872131112}\n",
+  "stderr": "",
+  "all_timing_fields_ineligible": true,
+  "exact_Rust_output": true,
+  "output_sha256": "4106a3a4bb78e09ee453973fbd2481d06b41541b9a72ca3fc292492785bd31a7"
+}

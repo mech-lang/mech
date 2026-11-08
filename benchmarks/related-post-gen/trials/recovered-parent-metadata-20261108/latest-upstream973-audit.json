@@ -1,0 +1,14 @@
+{
+  "upstream_PR": 973,
+  "latest_head": "8879d21bcde5828a4244a5b029e72cda5ead76dd",
+  "integrated_production_source_through": "a7c216810387b049516078478165564a8c29cb56",
+  "changed_paths": [
+    "benchmarks/mech-deflate/experiments.json",
+    "docs/design/native-compression-status.md",
+    "docs/design/native-llvm-compression-comparison.md"
+  ],
+  "Rust_or_manifest_changes": [],
+  "all_new_changes_are_status_experiment_documentation": true,
+  "additional_compiler_integration_required": false,
+  "observed_utc": "2026-11-08T04:26:19.052299+00:00"
+}

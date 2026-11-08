@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/private/tmp/mech-related-recovered-parent-metadata-tests-20261108-v1/gpu-tests",
+    "numeric_retirement::tests",
+    "scalar_home_retirement",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 1.1805859170854092,
+  "stdout": "\nrunning 3 tests\ntest native_artifact::program::codegen::numeric_retirement::tests::scalar_home_masks_preserve_dirty_entry_repeated_exits_and_helper_reentry ... ok\ntest native_artifact::program::runtime::composition_tests::numeric_tree::numeric_tree_scalar_home_retirement_keeps_cold_writes_reports_errors_and_retry ... ok\ntest native_artifact::program::runtime::composition_tests::numeric_tree::numeric_tree_scalar_home_retirement_keeps_finite_fuel_publication_and_reentry ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 922 filtered out; finished in 1.17s\n\n",
+  "stderr": ""
+}
