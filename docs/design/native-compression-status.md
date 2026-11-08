@@ -1,5 +1,17 @@
 # Native compression milestone
 
+## R217: retire proved-unused aliases before indexed changes; one gate remains
+
+The compiler already grants consume permission at every observed indexed copy, but two current references force copying. The new home/proof census identifies older array homes that the EXISTING current-path proof already marks dead. The candidate retires those homes only after bounds/value/unchanged checks, then keeps the original uniqueness/capacity gate. Source/algorithms, runtime, allocator, allocation sites and real capacities stay unchanged.
+
+Natural32 payload allocations fall2588→300, global requests5184→608 and tracked writable copying949428→14932B. Random32 global requests4262→276. Full20 exact streams/inflate and640 before/after original/decoded controls pass. Eighty queries identify34 already-proved-dead other homes;73 static retirement sites/744 small nonnull visits are separate counts.
+
+Elapsed improves1.090% geometrically: random32 **4.511857×→4.437717× Roc**, distribution16 **4.187816×→4.126050×**, eight literals **0.816021×→0.799138×**. Natural32 **2.742809×→2.738871×** and periodic33 **2.609824×→2.603523×** move less. These are DIAGNOSTIC candidates, not normal-entry speedups. Normal R215 is freshly3.437758×/3.668254×/3.112251×/5.061770×/6.613204×/4.429884× for natural/periodic/repeated/random/distribution/eight.
+
+**The candidate remains unretained:19/20 unchanged gates pass; empty209→250ns fails.**17 medians fall/one rises/two equal.16 instruction medians and17 cycle medians fall. Code grows10372B and root stack224B; no stack-probe cause is inferred from the actual entry assembly. NormalR215/IR215 and retained diagnosticR211 remain unchanged; no allowance is waived.
+
+8616 primary calls,3120 separate CPU/heap calls, fresh reference counters and six wall/six PC profiles preserve every adverse observation. The reference binary’s actual makeUnique helper confirms the same unique-return/shared-copy pattern; source permission is not being weakened. Next test finishing a guarded consumed source immediately after the earlier checked update, preventing the stale token rather than finding it at the next update. [Full results, source, exact failures and verified public evidence](native-indexed-owner-retirement.md).
+
 ## R216: brief experiments addressed; allocation pool unretained
 
 **The brief’s requested work is addressed, including the separate allocation follow-up. Normal compilation remains R215/IR215 and the retained whole-native diagnostic remains R211.** The stable owner pool passes8 unit tests and640 freshly compiled original/decoded controls, and its source-site census attributes every payload request on all20 cases to151 exact Plan operations. Natural32 global requests fall5184→2625, with payload allocations/copies unchanged. This evaluates the pool; it does not adopt it.
