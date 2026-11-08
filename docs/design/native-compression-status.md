@@ -1,5 +1,13 @@
 # Native compression milestone
 
+## R214: combined ordinary interface and home facts; measured gain retained
+
+The R213 dense initializer now retains the existing canonical-home flags through the SAME SSA builder. Each full-compressor phase removes 242 loads (predicted 288; discrepancy preserved), and code shrinks 6128/6848→3888/3920 B. Packet storage retains its own default flags. Full source/resource/ownership/error/recovery contracts remain.
+
+Two predeclared complete timing cohorts pass all 20 original 1.05 gates. Pooled elapsed is **1.157% lower than normal production**, **0.219% lower than R213**; the individual production changes are −1.527% and −0.735%. This gain and the exact candidate are retained for versioned integration. Contrary evidence: all 20 instruction medians and 15 cycle medians rise vs production; all 20 heap metrics match; native stack grows 4080 B. 677 maintained tests / 52 linked checks / 40 full-stream smokes pass, with the same seven inherited exclusions. Production default remains R199 and the retained whole-native diagnostic remains R211 in this evidence checkpoint.
+
+Next: versioned integration and repeat acceptance, then remove duplicated canonical→packet→canonical transport using existing current-entry/exit and ownership facts. Stable owner pooling and payload-site census remain separate unimplemented follow-ups. [Both timing cohorts, exact source patch, counters, current profiles and verified public replay](native-combined-phase-facts.md).
+
 ## R213: ordinary dense-interface qualification complete; default unchanged
 
 One generic existing nested numeric append class now has a dense internal input/result interface under ordinary ownership/admission/funding.677 maintained tests and52 real linked parent/candidate original/decoded cases pass; all20 full streams match bytes/inflate and exact production logical work, with all20 unchanged elapsed gates. The candidate is0.354% slower geometrically and17 instruction medians rise, so production remains R199 and diagnosticR211 remains retained. Native heap metrics match production; native stack rises16480→20560B. [Exact qualified checkpoint, evidence and profiles](native-managed-phase-packets.md).

@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R213
+# Production/diagnostic optimization coverage after R214
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Production remains R199. This table is source/metadata inventory, not a new production timing claim.
 
@@ -16,3 +16,5 @@ The next production checkpoint qualifies one compact phase inside ordinary admis
 
 
 R213 qualifies one existing nested append/direct-array computation class through the ordinary entry using dense inputs and exact existing exit words. Canonical owners, current funding, source/error-prefix and publication/retry remain. Four full-compressor instances and the maintained small witness execute;677 tests and52 real linked original/decoded parent/candidate cases pass. The candidate remains archived: all20 elapsed gates pass, but elapsed rises0.354% geometrically and17 instruction medians rise. ProductionR199 and diagnosticR211 remain unchanged. The dense initializer currently drops existing canonical-home flags, losing288 load eliminations; restoring those facts is the next controlled experiment. No additional source operations are claimed newly native merely because their transport changed.
+
+R214 combines dense initialization and the SAME canonical-home flag provider, retaining 242 load eliminations per full-compressor phase. It qualifies the same operation class as R213; no new source operation is counted as newly native. Two full 20-case cohorts show a retained 1.157% pooled elapsed gain vs production and 0.219% vs R213, with all original gates passing, but all 20 instruction medians remain higher than production and native stack rises 4080 B. The seven-file candidate is retained for versioned integration; maintained default stays R199 in this evidence checkpoint. Next eliminate duplicated boundary transport rather than adding another representation.
