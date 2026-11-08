@@ -1,5 +1,17 @@
 # Native compression milestone
 
+## R216: brief experiments addressed; allocation pool unretained
+
+**The brief’s requested work is addressed, including the separate allocation follow-up. Normal compilation remains R215/IR215 and the retained whole-native diagnostic remains R211.** The stable owner pool passes8 unit tests and640 freshly compiled original/decoded controls, and its source-site census attributes every payload request on all20 cases to151 exact Plan operations. Natural32 global requests fall5184→2625, with payload allocations/copies unchanged. This evaluates the pool; it does not adopt it.
+
+The candidate passes18/20 unchanged elapsed gates. Empty167→208ns and one-stored209→291ns fail, so the pool remains archived.17 medians fall/two rise/one equals; equal-case geometric elapsed rises1.664%. Larger improvements are small: natural32−0.156%,periodic33−0.337%,repeated32−0.266%,random32−0.155%,distribution16−0.805%,eight literals−0.279%. No gates or expected values change.
+
+Fresh normal R215 multiples: natural32 **3.453993× Roc**,periodic33 **3.657685×**,repeated32 **3.116981×**,random32 **5.093416×**,distribution16 **6.673419×**,eight literals **4.547004×**. The retained diagnostic is separately **2.746509×/2.598603×/2.392766×/4.495676×/4.202160×/0.837793×**. Its omitted ordinary guarantees remain explicit; no diagnostic-to-normal speedup is claimed.
+
+8616 primary calls,3120 separate Mech CPU/heap calls,1280 fresh reference counter windows,80 complete census calls and six wall/six PC profiles all preserve exact reference bytes and independent inflate.17 instruction medians fall/three rise;12 cycle medians fall/eight rise. Natural32 retained-owner peak rises384B; requested-byte reductions are not reductions in initialized copying. Largest input33027B. Historical R215678 maintained tests and seven exclusions are not claimed freshly rerun.
+
+Root transfers(R211), rejected boundary experiment(R212), ordinary qualification/home facts(R213/R214), maintained integration(R215), and pool evaluation/census(R216) now have dispositions. Parity and a fully qualified whole-native replacement remain open. The new census identifies indexed updates as2306/2588 natural32 payload requests, a bounded next ownership/copy target. [Full all20 table, source patches, failures, qualifications and verified evidence](native-owner-pool-census.md).
+
 ## R215: qualified ordinary integration is now maintained
 
 **The normal compiler now uses IR215 and the qualified R214 dense phase/home-fact combination.** Public ABI39, work107 and MBC14 remain. The exact generated ARM64 text is byte-identical to R214; current image binding rejects an actual old IR214 Object. Metadata-only restoration remains compatible and grants no entry authority. No compressor source, algorithm, tables, allocation sites, buffer sizes, search/EOF limits or timing boundaries changed.

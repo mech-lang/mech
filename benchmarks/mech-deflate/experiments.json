@@ -42251,6 +42251,75 @@
         "CI_selected_listed": 261
       },
       "new_branch_or_PR": false
+    },
+    "216": {
+      "base": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "normal_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "retained_diagnostic": "efd9069b589512630891810191e7de35d57325d8",
+      "versions": {
+        "ir": 215,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": {
+        "adopted": false,
+        "pending_validation": false,
+        "reason": "Two unchanged 1.05 gates fail on empty and one-stored. Allocation reductions and small larger-case elapsed wins are preserved as experimental evidence; do not waive gates or claim default adoption.",
+        "normal_compiler_unchanged": true,
+        "brief_work_addressed": true,
+        "parity_achieved": false
+      },
+      "source_files": [],
+      "compiler_rust_files": 0,
+      "diagnostic_runtime_files": 1,
+      "diagnostic_observer_files": 5,
+      "events": [
+        {
+          "event": "owner-record-pool-evaluation-and-payload-site-census",
+          "asset": "r216-owner-pool-census-ee2be6268dde.tar.gz",
+          "sha256": "ee2be6268dde56788558bb6bef2daa9a02a5caa5f01b46e0c51a3a620149559f",
+          "bytes": 2941444,
+          "files": 728,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r216-owner-pool-census-ee2be6268dde.tar.gz"
+        }
+      ],
+      "observations": {
+        "primary_complete_calls": 8616,
+        "retained_primary_observations": 8496,
+        "primary_reference_compressions": 5120,
+        "separate_mech_cpu_heap_calls": 3120,
+        "fresh_reference_counter_windows": 1280,
+        "fresh_reference_counter_compressions": 10240,
+        "census_complete_calls": 80,
+        "small_compiled_regression_cases": 640,
+        "unit_tests_pass": 8,
+        "original_1_05_gates_pass": 18,
+        "elapsed_lower": 17,
+        "elapsed_higher": 2,
+        "elapsed_equal": 1,
+        "geometric_elapsed_ratio_to_before": 1.016636565108742,
+        "instruction_medians_lower": 17,
+        "instruction_medians_higher": 3,
+        "cycle_medians_lower": 12,
+        "cycle_medians_higher": 8,
+        "wall_profile_complete_calls": 22486,
+        "pc_profile_complete_calls": 65027,
+        "unattributed_payload_requests": 0,
+        "distinct_executed_allocation_sites": 151
+      },
+      "qualification": {
+        "runtime_tests_pass": 8,
+        "compiled_cases": 640,
+        "original_decoded_images_identical": true,
+        "census_complete_calls": 80,
+        "unattributed_payload_requests": 0,
+        "ordinary_Rust_suite": "R215 historical678/7 exclusions; not freshly rerun"
+      },
+      "ordinary_contract_retained": false,
+      "candidate_default_adopted": false,
+      "new_branch_or_PR": false
     }
   },
   "repository": "mech-lang/mech",
