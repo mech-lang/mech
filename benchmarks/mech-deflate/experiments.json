@@ -42047,6 +42047,129 @@
         "full_stream_smokes": 40
       },
       "new_branch_or_PR": false
+    },
+    "214": {
+      "base": "b5c09ae77d234325873acb71bd2754b10afc4178",
+      "production": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "retained_diagnostic": "efd9069b589512630891810191e7de35d57325d8",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": {
+        "adopted": false,
+        "pending_confirmation": false,
+        "first_primary_elapsed_ratio_to_production": 0.9847270555608515,
+        "first_primary_elapsed_ratio_to_R213": 0.9978531594434452,
+        "independent_instructions_lower_vs_production": 0,
+        "independent_instructions_lower_vs_R213": 17,
+        "native_stack_bytes": 20560,
+        "production_native_stack_bytes": 16480,
+        "allocation_and_heap_peak_change": 0,
+        "reason": "The measured elapsed gain is retained, including the modest 0.219% increment over R213. Both timing cohorts and all original gates remain. All20 instruction medians and15 cycle medians are higher than production and stack grows4080B, so the next integration must report these costs and remove duplicate transport rather than count static load removal as a large win. Normal production remains R199 in this evidence checkpoint; versioned source integration is the next bounded change.",
+        "pooled": {
+          "complete_calls": 22976,
+          "retained_observations": 22656,
+          "reference_compressions": 10240,
+          "elapsed_geometric_ratio_to_production": 0.9884323710038149,
+          "elapsed_geometric_ratio_to_R213": 0.9978122320312297,
+          "lower_vs_production": 17,
+          "higher_vs_production": 3,
+          "pooled_original_1_05_gates": 20,
+          "each_cohort_original_1_05_gates": [
+            20,
+            20
+          ],
+          "each_cohort_geometric_to_production": [
+            0.9847270555608515,
+            0.9926507773456439
+          ],
+          "each_cohort_geometric_to_R213": [
+            0.9978531594434452,
+            0.9983044033153449
+          ]
+        },
+        "retain_measured_candidate": true,
+        "accepted_for_versioned_integration": true,
+        "instruction_medians_higher_vs_production": 20,
+        "cycle_medians_higher_vs_production": 15,
+        "cycle_medians_lower_vs_production": 5
+      },
+      "source_files": [],
+      "archived_changed_compiler_test_files": 7,
+      "archived_patch_files": [
+        "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_outlined.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_packet.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_snapshots.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+        "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_outlining.rs"
+      ],
+      "events": [
+        {
+          "event": "combined-ordinary-home-facts",
+          "asset": "r214-combined-home-facts-d137662df337.tar.gz",
+          "sha256": "d137662df337f45c4dddb4e110d07082a0acf5021e520f55146a1ed30d4a6498",
+          "bytes": 3479534,
+          "files": 711,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r214-combined-home-facts-d137662df337.tar.gz"
+        }
+      ],
+      "first_cohort_observations": {
+        "primary_complete_calls": 11488,
+        "retained_primary_observations": 11328,
+        "primary_reference_compressions": 5120,
+        "separate_cpu_heap_mech_calls": 4160,
+        "elapsed_lower": 18,
+        "elapsed_higher": 2,
+        "geometric_elapsed_ratio_to_production": 0.9847270555608515,
+        "geometric_elapsed_ratio_to_R213": 0.9978531594434452,
+        "unchanged_1_05_gates": 20,
+        "instructions_lower": 0,
+        "instructions_higher": 20,
+        "cycles_lower": 5,
+        "cycles_higher": 15,
+        "heap_equal_cases": 20,
+        "wall_profile_complete_calls": 8164,
+        "pc_profile_complete_calls": 19573
+      },
+      "both_cohort_observations": {
+        "complete_calls": 22976,
+        "retained_observations": 22656,
+        "reference_compressions": 10240,
+        "elapsed_geometric_ratio_to_production": 0.9884323710038149,
+        "elapsed_geometric_ratio_to_R213": 0.9978122320312297,
+        "lower_vs_production": 17,
+        "higher_vs_production": 3,
+        "pooled_original_1_05_gates": 20,
+        "each_cohort_original_1_05_gates": [
+          20,
+          20
+        ],
+        "each_cohort_geometric_to_production": [
+          0.9847270555608515,
+          0.9926507773456439
+        ],
+        "each_cohort_geometric_to_R213": [
+          0.9978531594434452,
+          0.9983044033153449
+        ]
+      },
+      "ordinary_contract_retained": true,
+      "candidate_default_adopted": false,
+      "retained_for_versioned_integration": true,
+      "maintained_test_counts": {
+        "passed": 677,
+        "failed": 0,
+        "inherited_exclusions": 7,
+        "linked_cases": 52,
+        "full_stream_smokes": 40
+      },
+      "new_branch_or_PR": false
     }
   },
   "repository": "mech-lang/mech",
