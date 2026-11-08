@@ -11,6 +11,7 @@ pub(in crate::native_artifact) enum LibraryCallRoute {
     UnsignedBuffer,
     RecordScalarField,
     UnsignedMatrixLength,
+    MatrixLength,
     UnsignedMatrixElement,
     StringMatrixElement,
     UnsignedMatrixReplace,
@@ -49,6 +50,8 @@ pub(in crate::native_artifact) fn derive(
                 LibraryCallRoute::RecordScalarField
             } else if call.supports_unsigned_matrix_length() {
                 LibraryCallRoute::UnsignedMatrixLength
+            } else if call.supports_matrix_length() {
+                LibraryCallRoute::MatrixLength
             } else if call.supports_unsigned_matrix_element() {
                 LibraryCallRoute::UnsignedMatrixElement
             } else if call.supports_string_matrix_element() {

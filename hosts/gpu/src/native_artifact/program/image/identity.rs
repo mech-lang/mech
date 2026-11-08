@@ -445,7 +445,9 @@ fn selected_template(
 // the zero-offset interval. Forward selection requires a new read or branch fact.
 // IR264 proves copied interval bounds unchanged at every ordinary backedge,
 // independently of the proposed window, instead of rejecting all carrier writes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 264;
+// IR276 selects scalar cardinality for genuine matrix-length calls independently
+// of element representation, including canonical String matrices.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 276;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -683,7 +685,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 264;
 // still charged; neither a source debit nor an account is renewed or refunded.
 // Policy115 combines phase/continuation pricing with the complete numeric-tree
 // and typed collection envelopes; neither branch can authenticate old Objects.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 115;
+// Work116 admits the fixed native matrix-header kernel for all selected matrix
+// element kinds; unsigned routes retain their established prices and checks.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 116;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

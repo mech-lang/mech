@@ -18,6 +18,18 @@ fn prepared_selected_routes_are_rederived_from_actual_factories_on_image_restore
             Route::UnsignedMatrixLength,
         ),
         (
+            "+> sequence\nsequence/length(input<[string]>)\n",
+            Route::MatrixLength,
+        ),
+        (
+            "+> sequence\nsequence/length(input<[i64]>)\n",
+            Route::MatrixLength,
+        ),
+        (
+            "+> sequence\nsequence/length(input<[f64]>)\n",
+            Route::MatrixLength,
+        ),
+        (
             "xs := input<[u16]>\nxs[at<u64>]\n",
             Route::UnsignedMatrixElement,
         ),

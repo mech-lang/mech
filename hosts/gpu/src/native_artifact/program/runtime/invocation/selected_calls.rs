@@ -22,6 +22,7 @@ impl Invocation<'_, '_, '_> {
             LibraryCallRoute::UnsignedMatrixLength => {
                 Ok(self.unsigned_matrix_length_call(site, words)?.map(Some))
             }
+            LibraryCallRoute::MatrixLength => Ok(self.matrix_length_call(site, words)?.map(Some)),
             LibraryCallRoute::UnsignedMatrixElement => {
                 Ok(self.unsigned_matrix_element_call(site, words)?.map(Some))
             }
