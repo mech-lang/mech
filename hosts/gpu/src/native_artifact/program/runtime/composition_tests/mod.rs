@@ -124,9 +124,9 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                119
+                120
             );
-            // Policy119 adds deferred key-loan census; this fixture has none and keeps exact work.
+            // Policy120 adds private key views; this fixture has none and keeps exact work.
             // Policies107/108/110/111 add fills, recursive frames, worker
             // transport and selected String-matrix scalar projections.
             // This fixture has none, so the policy105 decomposition below
@@ -597,11 +597,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                119
+                120
             );
             assert_eq!(
                 report.work, 41_515_826,
-                "policy119 retains policy115 child fallback banks (+296 setup work) and exact source prices"
+                "policy120 retains policy115 child fallback banks (+296 setup work) and exact source prices"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(
@@ -809,3 +809,5 @@ fn composition_native_parent_resumes_after_an_ordinary_empty_child_latest_phase(
         );
     }
 }
+
+pub(super) mod borrowed_map_keys;

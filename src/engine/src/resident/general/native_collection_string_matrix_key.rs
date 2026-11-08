@@ -573,4 +573,4 @@ impl NativeStringMatrixKeyLoan {
 
 #[path = "native_collection_borrowed_map_keys.rs"]
 mod map_keys;
-pub use map_keys::NativeBorrowedMapKeys;
+pub use map_keys::{NativeBorrowedMapKeys, NativeBorrowedMapKeysChoice};

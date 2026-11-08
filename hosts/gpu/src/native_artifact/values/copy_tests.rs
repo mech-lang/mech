@@ -207,3 +207,86 @@ fn copy_denials_preserve_both_slots_and_recover_on_the_same_account() {
     drop((arena, first, second, work, library, foreign));
     assert_eq!(memory.used_bytes(), 0);
 }
+
+#[test]
+fn virtual_value_definitions_keep_current_generations_ledger_and_failure_atomicity() {
+    let memory = ManagedMemoryBudget::new(1_000_000);
+    let (ty, raw) = text("canonical owner and alias");
+    let payload = admit(&raw, &memory);
+    let alias = payload.clone();
+    let types = [ty];
+    let mut work = NativeWorkMeter::new(1_000_000).unwrap();
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    let canonical = arena.put(0, &payload, &mut work).unwrap();
+    let virtual_handle = arena
+        .define_virtual(0, ty.schema, ty.key, &mut work)
+        .unwrap();
+    assert_eq!(
+        arena.get(canonical, &mut work).unwrap_err(),
+        NativeValueError::StaleHandle
+    );
+    assert_eq!(
+        arena.get(virtual_handle, &mut work).unwrap_err(),
+        NativeValueError::StaleHandle
+    );
+    arena.check_virtual(virtual_handle, &mut work).unwrap();
+    let renewed = arena
+        .define_virtual(0, ty.schema, ty.key, &mut work)
+        .unwrap();
+    assert_eq!(
+        arena.check_virtual(virtual_handle, &mut work),
+        Err(NativeValueError::StaleHandle)
+    );
+    arena.check_virtual(renewed, &mut work).unwrap();
+    let mut other_work = NativeWorkMeter::new(1_000_000).unwrap();
+    let other_before = other_work.used();
+    assert_eq!(
+        arena.check_virtual(renewed, &mut other_work),
+        Err(NativeValueError::WrongWorkLedger)
+    );
+    assert_eq!(
+        arena.define_virtual(0, ty.schema, ty.key, &mut other_work),
+        Err(NativeValueError::WrongWorkLedger)
+    );
+    assert_eq!(other_work.used(), other_before);
+    let mut other = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    let foreign = other
+        .define_virtual(0, ty.schema, ty.key, &mut work)
+        .unwrap();
+    assert_eq!(
+        arena.check_virtual(foreign, &mut work),
+        Err(NativeValueError::StaleHandle)
+    );
+    let (wrong, _) = value(SchemaBody::Bool, ValueDataDraft::Bool(true));
+    assert_eq!(
+        arena.define_virtual(0, ty.schema, wrong.key, &mut work),
+        Err(NativeValueError::TypeMismatch)
+    );
+    assert_eq!(
+        arena.define_virtual(1, ty.schema, ty.key, &mut work),
+        Err(NativeValueError::InvalidSlot)
+    );
+    arena.check_virtual(renewed, &mut work).unwrap();
+    let mut canonical = arena.put(0, &payload, &mut work).unwrap();
+    assert_eq!(
+        arena.check_virtual(renewed, &mut work),
+        Err(NativeValueError::StaleHandle)
+    );
+    arena.generations.values_mut()[0] = u64::MAX;
+    canonical.generation = u64::MAX;
+    assert_eq!(
+        arena.define_virtual(0, ty.schema, ty.key, &mut work),
+        Err(NativeValueError::GenerationExhausted)
+    );
+    assert!(
+        arena
+            .get(canonical, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&alias)
+    );
+    drop((arena, other, payload, alias));
+    assert_eq!(
+        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+        (0, 0)
+    );
+}

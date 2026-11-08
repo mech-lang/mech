@@ -10,6 +10,15 @@ pub struct NativeBorrowedMapKeys {
     schema_key: SchemaKey,
     shape: ShapeInstance,
     logical: ValueFootprint,
+    source_factory: std::sync::Arc<()>,
+    source_limits: MemoryBudgetLimits,
+    source_spent: (u64, u64),
+}
+
+#[derive(Debug)]
+pub enum NativeBorrowedMapKeysChoice {
+    View(NativeBorrowedMapKeys),
+    Canonical(Value),
 }
 impl NativePreparedLibraryCall {
     #[cfg(feature = "map_ops")]
@@ -20,6 +29,23 @@ impl NativePreparedLibraryCall {
         limits: MemoryBudgetLimits,
         work: &NativeLibraryWorkBudget,
         coexistence: ResourceDemand,
+    ) -> Result<Option<NativeBorrowedMapKeys>, InvokeError> {
+        finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
+        if work.has_active_call_limit()? {
+            return Ok(None);
+        }
+        self.try_borrowed_map_keys_in_call(element, source, limits, work, coexistence, work.used())
+    }
+
+    #[cfg(feature = "map_ops")]
+    fn try_borrowed_map_keys_in_call(
+        &self,
+        element: &NativePreparedLibraryCall,
+        source: &Value,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+        source_start: (u64, u64),
     ) -> Result<Option<NativeBorrowedMapKeys>, InvokeError> {
         finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
         if self.template.primitive() != Primitive::StringMapKeys
@@ -194,11 +220,111 @@ impl NativePreparedLibraryCall {
                     schema_key: self.output_key,
                     shape,
                     logical,
+                    source_factory: self.cache_identity.clone(),
+                    source_limits: limits,
+                    source_spent: {
+                        let used = work.used();
+                        (
+                            used.0
+                                .checked_sub(source_start.0)
+                                .ok_or(InvokeError::InvalidInput)?,
+                            used.1
+                                .checked_sub(source_start.1)
+                                .ok_or(InvokeError::InvalidInput)?,
+                        )
+                    },
                 }))
             },
         )?
     }
 }
+impl NativePreparedLibraryCall {
+    /// ONE original selected producer visit. Immediate refusal and canonical
+    /// construction share its existing call cap and cumulative account.
+    #[cfg(feature = "map_ops")]
+    pub fn borrowed_map_keys_or_canonical(
+        &self,
+        element: &NativePreparedLibraryCall,
+        source: &Value,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<NativeBorrowedMapKeysChoice, InvokeError> {
+        finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
+        if self.template.primitive() != Primitive::StringMapKeys {
+            return Err(InvokeError::InvalidInput);
+        }
+        let enclosing = work.has_active_call_limit()?;
+        let started = work.used();
+        work.with_call_limits(
+            limits.max_compute_work.unwrap(),
+            limits.max_comparison_work.unwrap(),
+            || {
+                // Nested callers retain their original ordinary path: an enclosing
+                // relative cap is not a suspendable permission after its guard ends.
+                if !enclosing
+                    && let Some(view) = self.try_borrowed_map_keys_in_call(
+                        element,
+                        source,
+                        limits,
+                        work,
+                        coexistence,
+                        started,
+                    )?
+                {
+                    return Ok(NativeBorrowedMapKeysChoice::View(view));
+                }
+                let mut output = None;
+                self.invoke_current(&[Some(source.clone())], &mut output, limits, work)?;
+                Ok(NativeBorrowedMapKeysChoice::Canonical(
+                    output.ok_or(InvokeError::InvalidInput)?,
+                ))
+            },
+        )?
+    }
+
+    /// Materialize a previously admitted logical output, not a second source
+    /// visit. Consumption is one-shot. All original logical caps remain, and
+    /// only the original producer's unspent relative work allowance is usable.
+    /// Intervening calls still consume the SAME cumulative invocation account.
+    #[cfg(feature = "map_ops")]
+    pub fn materialize_borrowed_map_keys(
+        &self,
+        keys: NativeBorrowedMapKeys,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<Value, InvokeError> {
+        keys.loan.current(&keys.loan.owner, work)?;
+        if self.template.primitive() != Primitive::StringMapKeys
+            || !std::sync::Arc::ptr_eq(&self.cache_identity, &keys.source_factory)
+            || self.output_key != keys.schema_key
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        let mut limits = keys.source_limits;
+        limits.max_compute_work = Some(
+            limits
+                .max_compute_work
+                .ok_or(InvokeError::InvalidInput)?
+                .checked_sub(keys.source_spent.0)
+                .ok_or(InvokeError::InvalidInput)?,
+        );
+        limits.max_comparison_work = Some(
+            limits
+                .max_comparison_work
+                .ok_or(InvokeError::InvalidInput)?
+                .checked_sub(keys.source_spent.1)
+                .ok_or(InvokeError::InvalidInput)?,
+        );
+        let source = keys.loan.owner.clone();
+        // Release the optional table, shape and metadata claims before the
+        // ordinary allocation. The immutable source pin remains a real owner.
+        drop(keys);
+        let mut output = None;
+        self.invoke_current(&[Some(source)], &mut output, limits, work)?;
+        output.ok_or(InvokeError::InvalidInput)
+    }
+}
+
 impl NativePreparedLibraryCall {
     /// Selected sequence length for this sealed row-vector view. Its genuine
     /// key snapshot stays pinned even after an unrelated arena retires a handle.

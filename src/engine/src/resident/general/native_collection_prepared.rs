@@ -418,8 +418,8 @@ mod borrowed_record_map;
 mod string_matrix_key;
 #[cfg(feature = "sequence_buffers")]
 pub use string_matrix_key::{
-    NativeBorrowedMapKeys, NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
-    NativeStringMatrixKeyView,
+    NativeBorrowedMapKeys, NativeBorrowedMapKeysChoice, NativeStringMatrixKeyCell,
+    NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal, NativeStringMatrixKeyView,
 };
 #[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_buffer_frames.rs"]

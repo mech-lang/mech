@@ -25,7 +25,9 @@ pub(in crate::native_artifact::program::runtime) fn fixed_nodes() -> Result<u64,
 impl Invocation<'_, '_, '_> {
     /// These private loans have no ordinary canonical-owner census yet.
     /// Every selecting consumer retains its own check order and fallback.
-    pub(super) fn has_uninventoried_private_owners(&self) -> bool {
+    pub(in crate::native_artifact::program::runtime) fn has_uninventoried_private_owners(
+        &self,
+    ) -> bool {
         self.histogram.is_some()
             || self.line_window.is_some()
             || self.window_region.is_some()

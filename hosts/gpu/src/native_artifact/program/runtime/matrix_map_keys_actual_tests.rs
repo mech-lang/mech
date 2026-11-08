@@ -43,6 +43,16 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
             super::maps::owner::tests::take_geometry_counts();
             let (result, counts) = run(&native, &args, &mut output, &memory, restored, Fault::None);
             result.unwrap(); assert_eq!(counts, (28,28,0,28));
+            let mut viewed = vec![None; artifact.outputs().len()];
+            let (result, views) = super::composition_tests::borrowed_map_keys::run(
+                &native, &args, &mut viewed, &memory, restored,
+                super::composition_tests::borrowed_map_keys::Fault::None);
+            result.unwrap();
+            assert_eq!(views, [1,0,28,1]);
+            assert_eq!(output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>(),
+                viewed.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>());
+            drop(viewed);
+
             let (cached_census, full_census) = super::maps::owner::tests::take_geometry_counts();
             assert!(cached_census >= 28, "actual dictionary must use the admitted caller census: {cached_census}/{full_census}");
             let ValueData::Matrix(matrix) = output.last().unwrap().as_ref().unwrap().data() else { panic!("result matrix"); };
@@ -53,7 +63,7 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
                     assert_eq!(&posts[*index as usize], expected);
                 }
             }
-            println!("{}", serde_json::json!({"full_input_posts":posts.len(),"restored":restored,"producer_callbacks":counts.0,"borrowed_cells":counts.1,"canonical_string_values":counts.2,"retained_insertions":counts.3,"cached_census":cached_census,"full_census":full_census,"exact_related_posts":true,"timings_ineligible":true}));
+            println!("{}", serde_json::json!({"full_input_posts":posts.len(),"restored":restored,"producer_callbacks":counts.0,"borrowed_cells":counts.1,"canonical_string_values":counts.2,"retained_insertions":counts.3,"cached_census":cached_census,"full_census":full_census,"owned_key_views":views[0],"canonical_key_matrices":views[1],"retired_histogram_handles":views[3],"exact_related_posts":true,"timings_ineligible":true}));
         }
         drop(args); assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0,0));
     }).unwrap().join().unwrap();

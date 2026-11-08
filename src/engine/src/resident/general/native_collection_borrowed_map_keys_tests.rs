@@ -360,3 +360,214 @@ fn borrowed_map_keys_decline_headroom_preserve_empty_bounds_and_reject_replayed_
         assert_eq!((m.used_bytes(), m.retained_snapshot_nodes()), (0, 0));
     }
 }
+
+#[test]
+fn borrowed_map_keys_deferred_materialization_preserves_caps_and_paid_prefix() {
+    for a in artifacts(source()) {
+        let calls = prepared(&a);
+        let keys = calls
+            .iter()
+            .find(|c| c.template.primitive() == Primitive::StringMapKeys)
+            .unwrap();
+        let element = calls
+            .iter()
+            .find(|c| c.supports_string_matrix_key_loan())
+            .unwrap();
+        let mut texts = vec!["".into(), "a\0b".into(), "é🧑‍🚀".into(), "long".repeat(400)];
+        texts.sort();
+        // Fresh accounts and owners make each boundary independent. Only the
+        // original source call's work counts toward its relative cap; another
+        // call's 37 units remain in the shared cumulative account instead.
+        let run = |cap: u64, total: u64, other: u64| {
+            let m = ManagedMemoryBudget::new(64 << 20);
+            let w = NativeLibraryWorkBudget::new(total, u64::MAX, &m).unwrap();
+            let mut input = Some(seed(&a, keys, &texts, &m));
+            let mut l = limits();
+            l.max_compute_work = Some(cap);
+            let choice = keys.borrowed_map_keys_or_canonical(
+                element,
+                input.as_ref().unwrap(),
+                l,
+                &w,
+                ResourceDemand::default(),
+            );
+            let (result, prefix, chosen) = match choice {
+                Ok(NativeBorrowedMapKeysChoice::View(view)) => {
+                    let prefix = view.source_spent.0;
+                    // The original arena owner is really gone before fallback.
+                    drop(input.take());
+                    let result = w
+                        .charge(other, 0)
+                        .map_err(InvokeError::Kernel)
+                        .and_then(|()| keys.materialize_borrowed_map_keys(view, &w));
+                    (result, prefix, true)
+                }
+                Ok(NativeBorrowedMapKeysChoice::Canonical(value)) => (Ok(value), 0, false),
+                Err(error) => (Err(error), 0, false),
+            };
+            drop(input);
+            let used = w.used().0;
+            let ok = result.is_ok();
+            if let Ok(value) = &result {
+                let ValueData::Matrix(matrix) = value.data() else {
+                    panic!("Matrix")
+                };
+                let SequenceView::String(values) = matrix.elements() else {
+                    panic!("Strings")
+                };
+                assert_eq!(
+                    values.iter().map(|s| s.as_ref()).collect::<Vec<_>>(),
+                    texts.iter().map(String::as_str).collect::<Vec<_>>()
+                );
+            }
+            let error = format!("{result:?}");
+            drop((result, w));
+            assert_eq!((m.used_bytes(), m.retained_snapshot_nodes()), (0, 0));
+            (ok, used, prefix, chosen, error)
+        };
+        let full = run(u64::MAX, u64::MAX, 0);
+        assert!(full.0 && full.3, "{full:?}");
+        let mut low = 0;
+        let mut high = full.1 * 2;
+        while low < high {
+            let mid = low + (high - low) / 2;
+            if run(mid, u64::MAX, 0).0 {
+                high = mid;
+            } else {
+                low = mid + 1;
+            }
+        }
+        let exact = run(low, u64::MAX, 0);
+        let denied = run(low - 1, u64::MAX, 0);
+        assert!(exact.0 && exact.3);
+        assert!(!denied.0 && denied.3, "{denied:?}");
+        assert!(denied.4.contains("ComputeWork"), "{denied:?}");
+        assert!(denied.1 <= low - 1);
+        assert!(exact.2 > 0 && exact.1 > exact.2);
+        let with_other = run(low, u64::MAX, 37);
+        assert!(with_other.0 && with_other.3, "{with_other:?}");
+        assert_eq!(with_other.1, exact.1 + 37);
+        let global_denied = run(u64::MAX, full.1 + 37 - 1, 37);
+        assert!(!global_denied.0 && global_denied.3, "{global_denied:?}");
+        assert!(global_denied.4.contains("ComputeWork"));
+    }
+}
+
+#[test]
+fn borrowed_map_keys_nested_and_immediate_refusal_keep_original_canonical_scope() {
+    for a in artifacts(source()) {
+        let calls = prepared(&a);
+        let keys = calls
+            .iter()
+            .find(|c| c.template.primitive() == Primitive::StringMapKeys)
+            .unwrap();
+        let element = calls
+            .iter()
+            .find(|c| c.supports_string_matrix_key_loan())
+            .unwrap();
+        let length = calls
+            .iter()
+            .find(|c| c.template.primitive() == Primitive::SequenceLength)
+            .unwrap();
+        let m = ManagedMemoryBudget::new(64 << 20);
+        let w = NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &m).unwrap();
+        let input = seed(&a, keys, &["one".into(), "two".into()], &m);
+        let before = w.used();
+        // A wrong optional element specialization must use the original call,
+        // not publish a fake matrix or restart a second independent allowance.
+        let canonical = keys
+            .borrowed_map_keys_or_canonical(length, &input, limits(), &w, ResourceDemand::default())
+            .unwrap();
+        assert!(matches!(
+            canonical,
+            NativeBorrowedMapKeysChoice::Canonical(_)
+        ));
+        let ordinary = w.used().0 - before.0;
+        drop(canonical);
+        let nested = w
+            .with_call_limits(u64::MAX, u64::MAX, || {
+                keys.borrowed_map_keys_or_canonical(
+                    element,
+                    &input,
+                    limits(),
+                    &w,
+                    ResourceDemand::default(),
+                )
+            })
+            .unwrap()
+            .unwrap();
+        assert!(matches!(nested, NativeBorrowedMapKeysChoice::Canonical(_)));
+        drop(nested);
+        let denied = w
+            .with_call_limits(ordinary - 1, u64::MAX, || {
+                keys.borrowed_map_keys_or_canonical(
+                    element,
+                    &input,
+                    limits(),
+                    &w,
+                    ResourceDemand::default(),
+                )
+            })
+            .unwrap();
+        assert!(format!("{denied:?}").contains("ComputeWork"), "{denied:?}");
+        drop(denied);
+        drop((input, w));
+        assert_eq!((m.used_bytes(), m.retained_snapshot_nodes()), (0, 0));
+    }
+}
+
+#[test]
+fn borrowed_map_keys_publication_rejects_foreign_factory_and_account_and_keeps_later_reads() {
+    for a in artifacts(source()) {
+        let calls = prepared(&a);
+        let other_calls = prepared(&a);
+        let keys = calls
+            .iter()
+            .find(|c| c.template.primitive() == Primitive::StringMapKeys)
+            .unwrap();
+        let other_keys = other_calls
+            .iter()
+            .find(|c| c.template.primitive() == Primitive::StringMapKeys)
+            .unwrap();
+        let element = calls
+            .iter()
+            .find(|c| c.supports_string_matrix_key_loan())
+            .unwrap();
+        let length = calls
+            .iter()
+            .find(|c| c.template.primitive() == Primitive::SequenceLength)
+            .unwrap();
+        let m = ManagedMemoryBudget::new(64 << 20);
+        let w = NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &m).unwrap();
+        let foreign = NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &m).unwrap();
+        let input = seed(&a, keys, &["one".into(), "two".into()], &m);
+        let make = || {
+            keys.try_borrowed_map_keys(element, &input, limits(), &w, ResourceDemand::default())
+                .unwrap()
+                .unwrap()
+        };
+        assert!(
+            other_keys
+                .materialize_borrowed_map_keys(make(), &w)
+                .is_err()
+        );
+        assert!(
+            keys.materialize_borrowed_map_keys(make(), &foreign)
+                .is_err()
+        );
+        let view = make();
+        drop(input);
+        // Insertion-owner retirement does not own this independent snapshot.
+        // A later length remains valid until the source itself materializes.
+        assert_eq!(
+            length
+                .borrowed_map_keys_length(&view, limits(), &w, ResourceDemand::default())
+                .unwrap(),
+            2
+        );
+        let value = keys.materialize_borrowed_map_keys(view, &w).unwrap();
+        assert!(matches!(value.data(), ValueData::Matrix(_)));
+        drop((value, foreign, w));
+        assert_eq!((m.used_bytes(), m.retained_snapshot_nodes()), (0, 0));
+    }
+}

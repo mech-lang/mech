@@ -511,6 +511,12 @@ fn decode_inner<
         native::program::prepare::matrix_map_keys::Layout::derive(&plan, map_owner_words.as_ref())
     }
     .map_err(str::to_owned)?;
+    let borrowed_map_keys = native::program::prepare::borrowed_map_keys::Layout::derive(
+        &plan,
+        &buffer_frames,
+        &matrix_map_keys,
+    )
+    .map_err(str::to_owned)?;
     let utf8_reads = if frozen_layouts {
         w.utf8_reads
     } else {
@@ -717,6 +723,7 @@ fn decode_inner<
                 &buffer_frames,
                 &unsigned_buffer_calls,
                 &calls,
+                &borrowed_map_keys,
             );
             let frame_retirements =
                 native::program::prepare::frame_retirement::FrameRetirements::derive(
@@ -822,6 +829,7 @@ fn decode_inner<
             map_owner_words,
             borrowed_record_maps,
             matrix_map_keys,
+            borrowed_map_keys,
             utf8_reads,
             numeric_maps,
             frozen_maps,

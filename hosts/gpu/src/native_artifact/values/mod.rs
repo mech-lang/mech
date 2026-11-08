@@ -353,6 +353,54 @@ impl<'a> NativeValueArena<'a> {
         }))
     }
 
+    /// Define one typed compiler-private logical value without a canonical
+    /// snapshot. The opaque generation grants no `get` access; its real owner
+    /// must remain in the selecting loan until canonicalization or retirement.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn define_virtual(
+        &mut self,
+        slot: u32,
+        schema: SchemaId,
+        key: SchemaKey,
+        work: &mut NativeWorkMeter,
+    ) -> Result<NativeValueHandle, NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 96)?;
+        let index = slot as usize;
+        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        if ty.schema != schema || ty.key != key {
+            return Err(NativeValueError::TypeMismatch);
+        }
+        let generation = self.generations.values()[index]
+            .checked_add(1)
+            .ok_or(NativeValueError::GenerationExhausted)?;
+        self.values.values_mut()[index] = None;
+        self.generations.values_mut()[index] = generation;
+        Ok(NativeValueHandle {
+            domain: self.values.domain_id(),
+            slot,
+            generation,
+        })
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn check_virtual(
+        &self,
+        handle: NativeValueHandle,
+        work: &mut NativeWorkMeter,
+    ) -> Result<(), NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 16)?;
+        let index = handle.slot as usize;
+        if handle.domain != self.values.domain_id()
+            || self.generations.values().get(index) != Some(&handle.generation)
+            || !self.values.values().get(index).is_some_and(Option::is_none)
+        {
+            return Err(NativeValueError::StaleHandle);
+        }
+        Ok(())
+    }
+
     /// Capture an existing current generation without publishing/replacing a
     /// slot. Only the certified generated caller can obtain this handle.
     #[cfg(feature = "canonical-native-program-runtime")]

@@ -114,6 +114,14 @@ impl<'borrow, 'state, 'visit, 'plan> MapExecution<'borrow, 'state, 'visit, 'plan
         Ok(state.arena.current_handle(slot, &mut state.control.work)?)
     }
     #[inline]
+    pub(in crate::native_artifact::program::runtime) fn arena_check_virtual(
+        &mut self,
+        handle: NativeValueHandle,
+    ) -> Result<(), Error> {
+        let state = &mut *self.invocation.state;
+        Ok(state.arena.check_virtual(handle, &mut state.control.work)?)
+    }
+    #[inline]
     pub(in crate::native_artifact::program::runtime) fn arena_get(
         &mut self,
         handle: NativeValueHandle,
@@ -549,6 +557,9 @@ impl Invocation<'_, '_, '_> {
             return Err(invalid("helper outside exact admitted visit"));
         }
         let site = site as usize;
+        if tag == GlobalHelper::MapKeys {
+            return self.borrowed_map_keys_call(site, args);
+        }
         if tag == GlobalHelper::MapMatrixKey {
             return self.matrix_map_key_call(site, args);
         }
@@ -1147,6 +1158,9 @@ impl Invocation<'_, '_, '_> {
             .retirements
             .slots(self.retirements, iteration, kind)
             .map_err(invalid)?;
+        self.state
+            .map_owners
+            .retire_borrowed_keys(slots, &mut self.state.control.work)?;
         super::retirement::run(
             slots,
             &self.descriptor.metadata().frame_retirements,

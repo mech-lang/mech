@@ -176,7 +176,26 @@ impl Invocation<'_, '_, '_> {
         let result = state.try_begin_retained(&mut MapExecution::new(self), site);
         // Restore on both success and failure. No new ledger or permit is made.
         self.state.map_owners.state = Some(state);
-        result
+        let result = result?;
+        if result.is_none() {
+            let metadata = self.descriptor.metadata();
+            let owner = metadata
+                .map_owner_words
+                .as_ref()
+                .unwrap()
+                .initializer(site)
+                .unwrap();
+            for proof in &metadata.borrowed_map_keys.regions {
+                if metadata
+                    .matrix_map_keys
+                    .producer(proof.cells[0])
+                    .is_some_and(|(_, p)| p.owner == owner)
+                {
+                    self.materialize_borrowed_keys(proof.output.get())?;
+                }
+            }
+        }
+        Ok(result)
     }
 
     pub(in crate::native_artifact::program::runtime) fn call_retained_map(

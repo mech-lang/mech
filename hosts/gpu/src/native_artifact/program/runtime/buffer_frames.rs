@@ -173,6 +173,39 @@ impl BufferFrames {
         bits: &[u64],
         work: &mut NativeWorkMeter,
     ) -> Result<(), NativeProgramExecutionError> {
+        self.pack_inner(layout, output, operands, inputs, bits, work, None)
+    }
+    pub(super) fn pack_borrowed_map_keys(
+        &mut self,
+        layout: &Layout,
+        output: NativeMatchValue,
+        operands: &[NativeMatchValue],
+        inputs: &mut [Option<Value>],
+        bits: &[u64],
+        work: &mut NativeWorkMeter,
+        index: usize,
+        keys: &mech_engine::native_artifact::NativeBorrowedMapKeys,
+    ) -> Result<(), NativeProgramExecutionError> {
+        self.pack_inner(
+            layout,
+            output,
+            operands,
+            inputs,
+            bits,
+            work,
+            Some((index, keys)),
+        )
+    }
+    fn pack_inner(
+        &mut self,
+        layout: &Layout,
+        output: NativeMatchValue,
+        operands: &[NativeMatchValue],
+        inputs: &mut [Option<Value>],
+        bits: &[u64],
+        work: &mut NativeWorkMeter,
+        borrowed: Option<(usize, &mech_engine::native_artifact::NativeBorrowedMapKeys)>,
+    ) -> Result<(), NativeProgramExecutionError> {
         let fields = layout
             .fields(output)
             .ok_or_else(|| invalid("private frame output has no lanes"))?;
@@ -192,6 +225,13 @@ impl BufferFrames {
         {
             match field.lane() {
                 Lane::Scalar { kind, .. } if owner.is_none() && kind.accepts_bits(*word) => {}
+                Lane::Managed { .. }
+                    if borrowed.is_some_and(|(i, keys)| {
+                        i == index
+                            && owner.is_none()
+                            && *word == 0
+                            && keys.schema() == field.schema()
+                    }) => {}
                 Lane::Managed { .. }
                     if *word == 0
                         && owner.as_ref().is_some_and(|v| v.schema() == field.schema()) => {}

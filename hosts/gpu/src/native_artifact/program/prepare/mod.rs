@@ -117,6 +117,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) frozen_maps: native::program::prepare::frozen_map::Layout,
     pub(in crate::native_artifact) borrowed_record_maps: borrowed_record_map::Layout,
     pub(in crate::native_artifact) matrix_map_keys: matrix_map_keys::Layout,
+    pub(in crate::native_artifact) borrowed_map_keys: borrowed_map_keys::Layout,
     pub(in crate::native_artifact) map_admission: native::program::prepare::map_admission::Layout,
     pub(in crate::native_artifact) parallel: native::program::prepare::parallel::Layout,
     pub(in crate::native_artifact) borrowed_strings: native::program::prepare::borrowed::Layout,
@@ -411,8 +412,16 @@ impl PreparedNativeProgram {
             .unwrap_or_default();
         let matrix_map_keys = matrix_map_keys::Layout::derive(&plan, map_owner_words.as_ref())
             .map_err(str::to_owned)?;
-        let call_routes =
-            call_routes::derive(&plan, &buffer_frames, &unsigned_buffer_calls, &calls);
+        let borrowed_map_keys =
+            borrowed_map_keys::Layout::derive(&plan, &buffer_frames, &matrix_map_keys)
+                .map_err(str::to_owned)?;
+        let call_routes = call_routes::derive(
+            &plan,
+            &buffer_frames,
+            &unsigned_buffer_calls,
+            &calls,
+            &borrowed_map_keys,
+        );
         let call_cache = call_cache::Layout::derive(&plan, &calls)?;
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let metadata = ProgramMetadata {
@@ -446,6 +455,7 @@ impl PreparedNativeProgram {
             frozen_maps,
             borrowed_record_maps,
             matrix_map_keys,
+            borrowed_map_keys,
             map_admission,
             parallel,
             borrowed_strings,
@@ -591,5 +601,4 @@ pub(in crate::native_artifact) mod numeric_maps;
 pub(in crate::native_artifact) mod query_stages;
 pub(in crate::native_artifact) mod utf8_reads;
 
-#[cfg(test)]
-mod borrowed_map_keys;
+pub(in crate::native_artifact) mod borrowed_map_keys;

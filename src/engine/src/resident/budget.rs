@@ -621,6 +621,24 @@ impl NativeLibraryWorkBudget {
         Ok(execute())
     }
 
+    /// Eligibility for a suspended selected-call result. An enclosing call's
+    /// relative cap cannot be exported past its guard, so such producers keep
+    /// their ordinary immediate canonical route. This observes no new credit.
+    #[cfg(feature = "sequence_buffers")]
+    pub(in crate::resident) fn has_active_call_limit(&self) -> Result<bool, ResidentKernelError> {
+        CONTROL_WORK_CONTEXT.with(|context| {
+            if context
+                .active
+                .borrow()
+                .as_ref()
+                .is_some_and(|account| !std::rc::Rc::ptr_eq(account, &self.account))
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Ok(context.limits.get().is_some())
+        })
+    }
+
     /// A call may impose a tighter relative allowance on this same account.
     /// Leaving a call restores its enclosing cap, never spent work. Nested
     /// scopes cannot exceed either the enclosing call or invocation allowance.

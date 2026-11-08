@@ -143,16 +143,16 @@ pub use borrowed_strings::{NativeBorrowedStringAction, NativeBorrowedStringRegio
 
 #[cfg(feature = "pure_text")]
 mod selected_text_join;
+#[cfg(feature = "sequence_buffers")]
+pub use crate::resident::general::native_collection_calls::{
+    NativeBorrowedMapKeys, NativeBorrowedMapKeysChoice, NativeStringMatrixKeyCell,
+    NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal, NativeStringMatrixKeyView,
+};
 #[cfg(feature = "pure_text")]
 pub use crate::resident::general::native_collection_calls::{
     NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts,
     NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
     NativeTextLineMatrixChoice, NativeTextLineWindow,
-};
-#[cfg(feature = "sequence_buffers")]
-pub use crate::resident::general::native_collection_calls::{
-    NativeBorrowedMapKeys, NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
-    NativeStringMatrixKeyView,
 };
 #[cfg(feature = "pure_text")]
 pub use selected_text_join::{NativeSelectedTextJoin, NativeSelectedTextJoinRange};

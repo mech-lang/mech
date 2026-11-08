@@ -95,10 +95,32 @@ pub(in crate::native_artifact) fn emit(
     code: CodePlan<'_>,
     error: Block,
     matrix_keys: bool,
+    key_views: bool,
 ) -> Result<(Option<Block>, bool), NativeCompileError> {
     let Some(owner) = owner else {
         return Ok((None, false));
     };
+    if key_views
+        && matrix_keys
+        && matches!(code, CodePlan::Program(program)
+        if program.metadata().borrowed_map_keys.producer(site).is_some())
+    {
+        let NativeIterationAction::LibraryCall { operands, .. } = code.blocks()[site].action()
+        else {
+            return Err(backend("borrowed map keys outside selected producer"));
+        };
+        let hooks = hooks.ok_or_else(|| backend("borrowed map keys lacks checked hooks"))?;
+        hooks.library_operation(
+            b,
+            site,
+            GlobalHelper::MapKeys.raw(),
+            operands,
+            locals,
+            |value| code.kind(value).is_some(),
+            error,
+        )?;
+        return Ok((None, true));
+    }
     let frozen_copy = frozen.copies.get(site).copied().flatten();
     let frozen_read = frozen.reads.get(site).copied().flatten();
     let frozen_id = frozen_copy.or(frozen_read);

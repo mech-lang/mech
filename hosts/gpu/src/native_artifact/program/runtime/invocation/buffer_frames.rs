@@ -164,6 +164,20 @@ impl Invocation<'_, '_, '_> {
                 if expected != output || words.len() != operands.len() {
                     return Err(invalid("private frame pack operands differ"));
                 }
+                let borrowed = descriptor
+                    .metadata()
+                    .borrowed_map_keys
+                    .frame(site)
+                    .filter(|(r, _)| {
+                        self.state
+                            .map_owners
+                            .borrowed_keys(r.output.get())
+                            .is_some()
+                    })
+                    .map(|(r, f)| (r.output.get(), f.field));
+                if let Some((source, _)) = borrowed {
+                    self.check_borrowed_keys_current(source)?;
+                }
                 for (index, operand) in operands.iter().enumerate() {
                     self.state.call_inputs.values_mut()[index] = if let Some(kind) =
                         descriptor.metadata().plan.values()[operand.get() as usize].scalar_kind()
@@ -176,7 +190,9 @@ impl Invocation<'_, '_, '_> {
                         if words[index] != 0 {
                             return Err(invalid("private frame managed input has native bits"));
                         }
-                        if layout.fields(*operand).is_some() {
+                        if borrowed.is_some_and(|(_, field)| field == index)
+                            || layout.fields(*operand).is_some()
+                        {
                             None
                         } else {
                             Some(
@@ -191,7 +207,22 @@ impl Invocation<'_, '_, '_> {
                     .as_ref()
                     .ok_or_else(|| invalid("private frame lost selected factory"))?;
                 let coexistence = self.selected_join_coexistence(None)?;
-                let outcome = if operands.iter().any(|v| layout.fields(*v).is_some()) {
+                let outcome = if let Some((source, index)) = borrowed {
+                    let keys = self
+                        .state
+                        .map_owners
+                        .borrowed_keys(source)
+                        .ok_or_else(|| invalid("private frame lost borrowed keys"))?;
+                    call.admit_buffer_frame_borrowed_map_keys(
+                        &self.state.call_inputs.values()[..words.len()],
+                        words,
+                        index,
+                        keys,
+                        self.limits,
+                        &self.state.library,
+                        coexistence,
+                    )
+                } else if operands.iter().any(|v| layout.fields(*v).is_some()) {
                     call.admit_buffer_frame_composition(
                         &self.state.call_inputs.values()[..words.len()],
                         words,
@@ -217,14 +248,32 @@ impl Invocation<'_, '_, '_> {
                         error,
                     });
                 }
-                let packed = self.state.buffer_frames.pack(
-                    layout,
-                    *output,
-                    operands,
-                    &mut self.state.call_inputs.values_mut()[..words.len()],
-                    words,
-                    &mut self.state.control.work,
-                );
+                let packed = if let Some((source, index)) = borrowed {
+                    let keys = self
+                        .state
+                        .map_owners
+                        .borrowed_keys(source)
+                        .ok_or_else(|| invalid("private frame lost admitted key view"))?;
+                    self.state.buffer_frames.pack_borrowed_map_keys(
+                        layout,
+                        *output,
+                        operands,
+                        &mut self.state.call_inputs.values_mut()[..words.len()],
+                        words,
+                        &mut self.state.control.work,
+                        index,
+                        keys,
+                    )
+                } else {
+                    self.state.buffer_frames.pack(
+                        layout,
+                        *output,
+                        operands,
+                        &mut self.state.call_inputs.values_mut()[..words.len()],
+                        words,
+                        &mut self.state.control.work,
+                    )
+                };
                 self.state.call_inputs.values_mut()[..words.len()].fill(None);
                 packed?;
             }
@@ -395,6 +444,9 @@ impl Invocation<'_, '_, '_> {
         // Same-plan liveness checks include exact loop seed/latch reads. Retire
         // only after all current reads; a fresh definition kills the old visit.
         for value in action.retire() {
+            self.state
+                .map_owners
+                .retire_borrowed_keys(&[value.get() as u64], &mut self.state.control.work)?;
             if !self.state.buffer_frames.retire(
                 &descriptor.metadata().frame_retirements,
                 value.get(),

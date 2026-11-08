@@ -11,22 +11,32 @@ use mech_engine::native_artifact::{NativeStringMatrixKeyLoan, NativeStringMatrix
 
 #[derive(Default)]
 pub(super) struct Lane {
-    handle: Option<NativeValueHandle>,
+    pub(super) view: Option<mech_engine::native_artifact::NativeBorrowedMapKeys>,
+    pub(super) view_handle: Option<NativeValueHandle>,
+    pub(super) handle: Option<NativeValueHandle>,
     loan: Option<NativeStringMatrixKeyLoan>,
-    pending: Option<NativeStringMatrixKeyOrdinal>,
+    pub(super) pending: Option<NativeStringMatrixKeyOrdinal>,
     declined: bool,
 }
 impl Lane {
     pub(super) fn ready(&self) -> bool {
-        !self.declined && self.handle.is_some() && self.loan.is_some()
+        self.view.is_some() || (!self.declined && self.handle.is_some() && self.loan.is_some())
     }
     pub(super) fn nodes(&self) -> u64 {
         self.loan
             .as_ref()
             .map_or(0, |loan| loan.retained_metadata_demand().retained_nodes)
+            + self
+                .view
+                .as_ref()
+                .map_or(0, |view| view.retained_metadata_demand().retained_nodes)
     }
     pub(super) fn clear(&mut self) {
+        let view = self.view.take();
+        let view_handle = self.view_handle;
         *self = Self::default();
+        self.view = view;
+        self.view_handle = view_handle;
     }
 }
 
@@ -67,6 +77,44 @@ impl State<'_> {
         let Some(geometry) = self.geometry(ctx, site)? else {
             return Ok(false);
         };
+        if self.matrix_keys[id].view.is_some() {
+            ctx.arena_check_virtual(
+                self.matrix_keys[id]
+                    .view_handle
+                    .ok_or_else(|| invalid("key view lost generation"))?,
+            )?;
+            let view = self.matrix_keys[id].view.as_mut().unwrap();
+            let memory = ctx.library().memory_budget();
+            let source_bytes = view
+                .snapshot()
+                .memory_budget_retained_bytes(&memory)
+                .ok_or_else(|| invalid("unadmitted key-view snapshot"))?;
+            let source_nodes = view
+                .snapshot()
+                .memory_budget_retained_nodes(&memory)
+                .ok_or_else(|| invalid("unadmitted key-view snapshot nodes"))?;
+            let held = view.retained_metadata_demand();
+            let coexistence = ResourceDemand {
+                turn_peak_bytes: geometry
+                    .live_bytes
+                    .checked_sub(add(source_bytes, held.turn_peak_bytes)?)
+                    .ok_or_else(|| invalid("key view exceeds caller bytes"))?,
+                retained_nodes: geometry
+                    .live_nodes
+                    .checked_sub(add(source_nodes, held.retained_nodes)?)
+                    .ok_or_else(|| invalid("key view exceeds caller nodes"))?,
+                ..ResourceDemand::default()
+            };
+            let ordinal = view
+                .admit_element(index, ctx.limits(), ctx.library(), coexistence)
+                .map_err(|error| Error::Library {
+                    origin: metadata.plan.blocks()[site].origin(),
+                    error,
+                })?;
+            self.matrix_keys[id].pending = Some(ordinal);
+            self.last_owned_visit = Some(ctx.control().visits);
+            return Ok(true);
+        }
         let handle = ctx.arena_current_handle(proof.source.get())?;
         let source = ctx.arena_get(handle)?.clone();
         let memory = ctx.library().memory_budget();
@@ -157,6 +205,40 @@ impl State<'_> {
         let Some(ordinal) = lane.pending.take() else {
             return Ok(None);
         };
+        if let Some(view) = &lane.view {
+            ctx.arena_check_virtual(
+                lane.view_handle
+                    .ok_or_else(|| invalid("key consumer lost virtual generation"))?,
+            )?;
+            let consumer = metadata.calls[site]
+                .as_ref()
+                .ok_or_else(|| invalid("map key view lost consumer"))?;
+            let binding = self.slots[proof.owner]
+                .binding
+                .as_mut()
+                .ok_or_else(|| invalid("map key view lost dictionary"))?;
+            return view
+                .with_element(consumer, &ordinal, ctx.library(), |text| {
+                    binding.insert(
+                        site,
+                        token,
+                        Key::MapCell {
+                            value: proof.output,
+                            owner: view.snapshot(),
+                            text,
+                        },
+                        value,
+                        geometry,
+                        ctx.limits(),
+                    )
+                })
+                .map_err(|error| Error::Library {
+                    origin: metadata.plan.blocks()[site].origin(),
+                    error,
+                })?
+                .map(Some)
+                .map_err(super::storage_error);
+        }
         let handle = lane
             .handle
             .ok_or_else(|| invalid("matrix key lost source generation"))?;

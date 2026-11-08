@@ -1316,6 +1316,7 @@ impl<'plan> CfgDefinition<'plan> {
                     plan,
                     error,
                     controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BorrowedMatrixMapKeys),
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BorrowedMapKeys),
                 )?;
             #[cfg(not(feature = "canonical-native-program"))]
             let owner_handled = false;

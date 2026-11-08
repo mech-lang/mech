@@ -28,6 +28,20 @@ pub(in crate::native_artifact) struct Layout {
     pub regions: Vec<Region>,
 }
 impl Layout {
+    pub fn producer(&self, site: usize) -> Option<&Region> {
+        self.regions.iter().find(|r| r.producer == site)
+    }
+    pub fn length(&self, site: usize) -> Option<&Region> {
+        self.regions.iter().find(|r| r.lengths.contains(&site))
+    }
+    pub fn frame(&self, site: usize) -> Option<(&Region, &PrivateFrameUse)> {
+        self.regions.iter().find_map(|r| {
+            r.private_frames
+                .iter()
+                .find(|f| f.pack == site)
+                .map(|f| (r, f))
+        })
+    }
     /// The caller must first validate the plan. Every use is freshly derived;
     /// there are no serialized frame paths, pointers or snapshot identities.
     pub fn derive(
@@ -151,7 +165,7 @@ impl Layout {
                     retires_snapshot_handle: action.retire().contains(&snapshot),
                 });
             }
-            if supported && !region.cells.is_empty() {
+            if supported && region.cells.len() == 1 {
                 layout.regions.push(region);
             }
         }

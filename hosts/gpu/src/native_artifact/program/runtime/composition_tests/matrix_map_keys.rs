@@ -123,7 +123,7 @@ unsafe extern "C" fn observed(
     }
     status
 }
-fn arguments(
+pub(super) fn arguments(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,
     keys: &[&str],
@@ -226,7 +226,12 @@ fn matrix_map_keys_execute_without_string_values_for_unicode_partial_and_fresh_i
     ] {
         for artifact in artifacts(&source) {
             let catalog = mech_stdlib::source_catalog();
-            let native = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let native = JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                OptimizationPass::BorrowedMapKeys,
+            )
+            .unwrap();
             let ordinary = JitProgramArtifact::compile_for_test(
                 &artifact,
                 &catalog,
@@ -289,7 +294,12 @@ fn matrix_map_keys_execute_without_string_values_for_unicode_partial_and_fresh_i
 #[test]
 fn matrix_map_keys_reject_stale_source_token_and_per_call_caps_and_retry_atomically() {
     for artifact in artifacts(SOURCE) {
-        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let jit = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            OptimizationPass::BorrowedMapKeys,
+        )
+        .unwrap();
         for restored in [false, true] {
             let memory = NativeProgramLimitMode::NoLimits.memory_budget();
             let args = arguments(&artifact, &memory, &["b", "a", "b"], 0, 2);
@@ -343,8 +353,12 @@ fn matrix_map_keys_finite_global_boundaries_preserve_publication_and_cleanup() {
 #[test]
 fn matrix_map_keys_decline_metadata_headroom_and_keep_canonical_fallback() {
     for artifact in artifacts(SOURCE) {
-        let native =
-            JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let native = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            OptimizationPass::BorrowedMapKeys,
+        )
+        .unwrap();
         let ordinary = JitProgramArtifact::compile_for_test(
             &artifact,
             &mech_stdlib::source_catalog(),
@@ -452,7 +466,12 @@ fn matrix_map_keys_ready_loans_enable_current_census_and_canonical_ablation_does
     use super::super::maps::owner::tests::take_geometry_counts;
     for artifact in artifacts(SOURCE) {
         let catalog = mech_stdlib::source_catalog();
-        let native = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let native = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::BorrowedMapKeys,
+        )
+        .unwrap();
         let ordinary = JitProgramArtifact::compile_for_test(
             &artifact,
             &catalog,

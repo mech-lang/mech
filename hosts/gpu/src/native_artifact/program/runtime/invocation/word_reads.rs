@@ -68,7 +68,7 @@ impl Invocation<'_, '_, '_> {
         self.matrix_length_call_impl::<true>(site, words)
     }
 
-    pub(super) fn matrix_length_call(
+    pub(in crate::native_artifact::program::runtime) fn matrix_length_call(
         &mut self,
         site: usize,
         words: &[u64],

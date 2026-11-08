@@ -17,6 +17,7 @@ pub(in crate::native_artifact::program::runtime) mod borrowed_records;
 mod caller_geometry;
 mod closed;
 pub(in crate::native_artifact::program::runtime) mod frozen;
+mod map_key_views;
 mod matrix_keys;
 mod spans;
 use crate::native_artifact::program::runtime::maps::owner::frozen::FrozenSlot;
@@ -420,6 +421,11 @@ impl<'plan> State<'plan> {
         site: usize,
     ) -> Result<Option<InitialWords>, Error> {
         self.guard(ctx, site)?;
+        #[cfg(test)]
+        if REFUSE_BORROWED_ENTRY.with(|v| v.get()) {
+            return Ok(None);
+        }
+
         let index = self
             .descriptor
             .metadata()
@@ -757,3 +763,10 @@ fn map_slot_consolidation_preserves_the_option_backing_layout() {
 
 #[path = "../../invocation/map_calls.rs"]
 mod map_calls;
+
+#[cfg(test)]
+thread_local! { static REFUSE_BORROWED_ENTRY:std::cell::Cell<bool>=const{std::cell::Cell::new(false)}; }
+#[cfg(test)]
+pub(in crate::native_artifact::program::runtime) fn set_borrowed_entry_refusal(value: bool) {
+    REFUSE_BORROWED_ENTRY.with(|v| v.set(value));
+}

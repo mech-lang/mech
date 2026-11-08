@@ -24,6 +24,11 @@ mod cache_capacity;
 mod headroom;
 #[path = "native_collection_prepared.rs"]
 mod prepared;
+#[cfg(feature = "sequence_buffers")]
+pub use prepared::{
+    NativeBorrowedMapKeys, NativeBorrowedMapKeysChoice, NativeStringMatrixKeyCell,
+    NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal, NativeStringMatrixKeyView,
+};
 pub use prepared::{
     NativeDescriptorTemplatePool, NativePreparedLibraryCall, NativePreparedLibraryCallCache,
     NativeSelectedStringSpanSelector, prepare_native_program_library_call,
@@ -34,11 +39,6 @@ pub use prepared::{
     NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts,
     NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
     NativeTextLineMatrixChoice, NativeTextLineWindow,
-};
-#[cfg(feature = "sequence_buffers")]
-pub use prepared::{
-    NativeBorrowedMapKeys, NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
-    NativeStringMatrixKeyView,
 };
 
 /// A constructor-private binding of one actual artifact call at its current

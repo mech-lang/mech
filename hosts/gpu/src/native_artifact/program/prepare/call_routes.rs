@@ -8,6 +8,8 @@ use mech_engine::native_artifact::{
 pub(in crate::native_artifact) enum LibraryCallRoute {
     Canonical,
     BufferFrame,
+    BorrowedMapKeysFrame,
+    BorrowedMapKeysLength,
     UnsignedBuffer,
     RecordScalarField,
     UnsignedMatrixLength,
@@ -22,6 +24,7 @@ pub(in crate::native_artifact) fn derive(
     frames: &NativeBufferFrames,
     buffers: &[Option<NativeUnsignedBufferCall>],
     calls: &[Option<NativePreparedLibraryCall>],
+    keys: &super::borrowed_map_keys::Layout,
 ) -> Box<[LibraryCallRoute]> {
     plan.blocks()
         .iter()
@@ -29,6 +32,12 @@ pub(in crate::native_artifact) fn derive(
         .map(|(site, block)| {
             if !matches!(block.action(), NativeIterationAction::LibraryCall { .. }) {
                 return LibraryCallRoute::Canonical;
+            }
+            if keys.frame(site).is_some() {
+                return LibraryCallRoute::BorrowedMapKeysFrame;
+            }
+            if keys.length(site).is_some() {
+                return LibraryCallRoute::BorrowedMapKeysLength;
             }
             // Preserve the established priority when a private frame projection
             // also has the selected record-field scalar strategy.
