@@ -20,7 +20,10 @@ walk(a<[u64]>, keys<[u64]>, i<u64>, end<u64>) => (out<state>) :=
   ~next := a
   next[1u64] = incoming
   out := ((i + 1u64 < end)? | true => walk(next, next-keys, i + 1u64, end) | false => (next, next-keys)).
-walk(values<[u64]>, sequence/with-capacity(0u64, 4u64), 0u64, count<u64>)
+built := walk(values<[u64]>, sequence/with-capacity(0u64, 4u64), 0u64, count<u64>)
+counts := built.1
+keys := built.2
+counts[1u64] + sequence/length(keys)
 "#;
 
 fn counts(artifact: &ProgramArtifact) -> (usize, usize) {
