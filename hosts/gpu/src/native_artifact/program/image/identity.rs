@@ -466,7 +466,9 @@ fn selected_template(
 // IR299 connects proved adjacent String matrix reads to retained Map insertion.
 // IR300 retains fresh borrowed-key facts but avoids duplicate global validity
 // traversal on the private checked-Object restoration route.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 300;
+// IR301 permits the existing caller census after all borrowed cell loans in
+// an otherwise wholly native map loop have actually been admitted.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 301;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -708,7 +710,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 300;
 // element kinds; unsigned routes retain their established prices and checks.
 // Work118 preserves each logical String selection's clone/output admission
 // through the existing matrix-key loan, with separately funded loan residency.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 118;
+// Work119 funds the additional deferred complete-use inventory and fresh
+// private-node accounting; refused loans keep the ordinary census path.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 119;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

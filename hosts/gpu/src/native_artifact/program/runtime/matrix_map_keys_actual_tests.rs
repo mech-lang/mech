@@ -40,8 +40,11 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
         }).collect();
         for restored in [false, true] {
             let mut output = vec![None; artifact.outputs().len()];
+            super::maps::owner::tests::take_geometry_counts();
             let (result, counts) = run(&native, &args, &mut output, &memory, restored, Fault::None);
             result.unwrap(); assert_eq!(counts, (28,28,0,28));
+            let (cached_census, full_census) = super::maps::owner::tests::take_geometry_counts();
+            assert!(cached_census >= 28, "actual dictionary must use the admitted caller census: {cached_census}/{full_census}");
             let ValueData::Matrix(matrix) = output.last().unwrap().as_ref().unwrap().data() else { panic!("result matrix"); };
             let mech_core::snapshot::SequenceView::U64(indices) = matrix.elements() else { panic!("U64 result"); };
             assert_eq!(indices.len(), 25000);
@@ -50,7 +53,7 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
                     assert_eq!(&posts[*index as usize], expected);
                 }
             }
-            println!("{}", serde_json::json!({"full_input_posts":posts.len(),"restored":restored,"producer_callbacks":counts.0,"borrowed_cells":counts.1,"canonical_string_values":counts.2,"retained_insertions":counts.3,"exact_related_posts":true,"timings_ineligible":true}));
+            println!("{}", serde_json::json!({"full_input_posts":posts.len(),"restored":restored,"producer_callbacks":counts.0,"borrowed_cells":counts.1,"canonical_string_values":counts.2,"retained_insertions":counts.3,"cached_census":cached_census,"full_census":full_census,"exact_related_posts":true,"timings_ineligible":true}));
         }
         drop(args); assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0,0));
     }).unwrap().join().unwrap();

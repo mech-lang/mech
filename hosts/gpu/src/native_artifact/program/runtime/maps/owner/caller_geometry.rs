@@ -19,9 +19,32 @@ impl State<'_> {
         ctx: &mut MapExecution<'_, '_, '_, '_>,
         owner: usize,
     ) -> Result<Option<Caller>, Error> {
+        let site = self.region(owner)?.tail().initialize() as usize;
+        self.capture_caller_at(ctx, owner, site)
+    }
+
+    pub(in crate::native_artifact::program::runtime::maps::owner) fn capture_caller_at(
+        &self,
+        ctx: &mut MapExecution<'_, '_, '_, '_>,
+        owner: usize,
+        current_site: usize,
+    ) -> Result<Option<Caller>, Error> {
         let layout = self.descriptor.metadata().map_owner_words.as_ref().unwrap();
         let iteration = layout.regions()[owner].iteration();
         let plan = &self.descriptor.metadata().plan;
+        if current_site != layout.regions()[owner].tail().initialize() as usize
+            && (ctx.control().current != Some(iteration)
+                || !self
+                    .descriptor
+                    .metadata()
+                    .matrix_map_keys
+                    .producer(current_site)
+                    .is_some_and(|(_, proof)| proof.owner == owner))
+        {
+            return Err(invalid(
+                "deferred caller census outside its selected producer",
+            ));
+        }
         ctx.work().charge(
             Phase::Setup,
             add(
@@ -42,7 +65,7 @@ impl State<'_> {
             if block.iteration() != Some(iteration) {
                 continue;
             }
-            let native = layout.action_region(site) == Some(owner)
+            let mut native = layout.action_region(site) == Some(owner)
                 || layout.call_region(site) == Some(owner)
                 || layout
                     .span_site(site)
@@ -53,6 +76,24 @@ impl State<'_> {
                 )
                 || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
                     if plan.values()[output.get() as usize].scalar_kind().is_some());
+            if !native && !self.matrix_keys.is_empty() {
+                ctx.work().charge(
+                    Phase::Setup,
+                    crate::native_artifact::program::runtime::amount(
+                        self.matrix_keys.len(),
+                        64,
+                        0,
+                    )?,
+                )?;
+                native = self
+                    .descriptor
+                    .metadata()
+                    .matrix_map_keys
+                    .producer(site)
+                    .is_some_and(|(id, proof)| {
+                        proof.owner == owner && self.matrix_keys[id].ready()
+                    });
+            }
             if !native || plan.activation_boundary() == Some(site as u32) {
                 return Ok(None);
             }
@@ -60,8 +101,7 @@ impl State<'_> {
         if self.caller.is_some() {
             return Err(invalid("overlapping closed map caller census"));
         }
-        let site = layout.regions()[owner].tail().initialize() as usize;
-        let Some(fixed_nodes) = ctx.retained_caller_fixed_geometry(site)? else {
+        let Some(fixed_nodes) = ctx.retained_caller_fixed_geometry(current_site)? else {
             return Ok(None);
         };
         Ok(Some(Caller {

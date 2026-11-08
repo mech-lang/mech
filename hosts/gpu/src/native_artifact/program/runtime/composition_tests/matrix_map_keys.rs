@@ -358,8 +358,14 @@ fn matrix_map_keys_decline_metadata_headroom_and_keep_canonical_fallback() {
             let args = arguments(&artifact, &memory, &keys, 0, 512);
             let mut a = vec![None; artifact.outputs().len()];
             let mut b = a.clone();
+            super::super::maps::owner::tests::take_geometry_counts();
             let (result, counts) = run(&native, &args, &mut a, &memory, restored, Fault::Headroom);
             result.unwrap();
+            assert_eq!(
+                super::super::maps::owner::tests::take_geometry_counts().0,
+                0,
+                "refused loans must retain the full caller census"
+            );
             run(&ordinary, &args, &mut b, &memory, restored, Fault::None)
                 .0
                 .unwrap();
@@ -438,5 +444,47 @@ fn matrix_map_keys_checked_loading_keeps_independent_validation_and_fresh_identi
             0,
             "changed bytes fail binding before derivation"
         );
+    }
+}
+
+#[test]
+fn matrix_map_keys_ready_loans_enable_current_census_and_canonical_ablation_does_not() {
+    use super::super::maps::owner::tests::take_geometry_counts;
+    for artifact in artifacts(SOURCE) {
+        let catalog = mech_stdlib::source_catalog();
+        let native = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::BorrowedMatrixMapKeys,
+        )
+        .unwrap();
+        for restored in [false, true] {
+            let memory = NativeProgramLimitMode::NoLimits.memory_budget();
+            let args = arguments(&artifact, &memory, &["a", "z", "é", "a\0b"], 0, 4);
+            let mut left = vec![None; artifact.outputs().len()];
+            let mut right = left.clone();
+            take_geometry_counts();
+            let (a, counts) = run(&native, &args, &mut left, &memory, restored, Fault::None);
+            a.unwrap();
+            let (cached, full) = take_geometry_counts();
+            assert_eq!(counts.1, 4);
+            assert!(
+                cached >= 4,
+                "must exercise cached census after loan setup: {cached}/{full}"
+            );
+            run(&ordinary, &args, &mut right, &memory, restored, Fault::None)
+                .0
+                .unwrap();
+            let (uncached, full) = take_geometry_counts();
+            assert_eq!(uncached, 0);
+            assert!(full > 0);
+            assert_eq!(drafts(&left), drafts(&right));
+            drop((args, left, right));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
     }
 }

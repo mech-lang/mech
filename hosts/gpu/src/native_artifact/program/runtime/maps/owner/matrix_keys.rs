@@ -17,6 +17,9 @@ pub(super) struct Lane {
     declined: bool,
 }
 impl Lane {
+    pub(super) fn ready(&self) -> bool {
+        !self.declined && self.handle.is_some() && self.loan.is_some()
+    }
     pub(super) fn nodes(&self) -> u64 {
         self.loan
             .as_ref()
@@ -96,6 +99,7 @@ impl State<'_> {
         let limits = ctx.limits();
         let origin = metadata.plan.blocks()[site].origin();
         let lane = &mut self.matrix_keys[id];
+        let newly_admitted = lane.loan.is_none();
         if let Some(pinned) = lane.handle {
             if pinned != handle {
                 return Err(invalid("matrix key source generation changed"));
@@ -118,6 +122,12 @@ impl State<'_> {
             .admit_element(&source, index, limits, ctx.library(), coexistence)
             .map_err(|error| Error::Library { origin, error })?;
         lane.pending = Some(ordinal);
+        // With every matrix producer admitted, this loop can no longer create
+        // canonical String roots. Reconsider the existing complete native-use
+        // census at this current visit, after optional loan refusal is settled.
+        if newly_admitted && self.caller.is_none() {
+            self.caller = self.capture_caller_at(ctx, proof.owner, site)?;
+        }
         self.last_owned_visit = Some(ctx.control().visits);
         Ok(true)
     }
