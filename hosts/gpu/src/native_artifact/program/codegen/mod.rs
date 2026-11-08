@@ -45,6 +45,8 @@ mod numeric_captured_reads;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_fuel;
 #[cfg(feature = "canonical-native-program")]
+mod numeric_append_guards;
+#[cfg(feature = "canonical-native-program")]
 mod numeric_read_packs;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_retirement;

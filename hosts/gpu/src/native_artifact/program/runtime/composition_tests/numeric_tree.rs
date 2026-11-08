@@ -2,6 +2,9 @@
 use super::*;
 use crate::native_artifact::codegen::options::OptimizationPass;
 
+#[path = "numeric_append_capacity_tests.rs"]
+mod append_capacity;
+
 const ZERO_APPEND_FRONTIER_SOURCE: &str = r#"+> sequence
 frontier-leaf(data<[u64]>, at<u64>, end<u64>, sum<u64>) => (out<u64>) :=
   more := at < end

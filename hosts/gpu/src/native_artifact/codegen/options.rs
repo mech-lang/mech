@@ -43,6 +43,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericCollections,
     /// Omit capacity guards at a proved frontier with no append operation.
     ZeroAppendFrontiers,
+    /// Refine a declined static capacity frontier using only a bounded pure
+    /// source prefix. No source operation, debit or mutation is performed.
+    RefinedAppendCapacity,
     SourceLiveness,
     PrivateLiveness,
     /// Omit repeated zero stores until a resumable helper can reify homes.

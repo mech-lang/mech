@@ -58,6 +58,7 @@ pub(in crate::native_artifact) struct Report {
     pub append_sites: Vec<(usize, u8)>,
     pub bulk_append_sites: Vec<usize>,
     pub capacity_guards: Vec<(usize, usize)>,
+    pub refined_capacity_guards: Vec<(usize, usize, usize)>,
     pub scalar_operations: usize,
     pub register_words: usize,
     pub fresh_traversal_words: usize,
@@ -533,6 +534,7 @@ pub(in crate::native_artifact) fn emit_entry(
         append_sites: Vec::new(),
         bulk_append_sites: Vec::new(),
         capacity_guards: Vec::new(),
+        refined_capacity_guards: Vec::new(),
         scalar_operations: 0,
         register_words,
         fresh_traversal_words: fresh.len(),
@@ -772,6 +774,8 @@ pub(in crate::native_artifact) fn emit_entry(
             );
             let mut enough = b.ins().band(a, c);
             enough = b.ins().band(enough, valid);
+            let mut unrefined_enough = enough;
+            let mut capacity_refinements = Vec::new();
             // Capacity is checked before ANY source operation in this visit.
             // A tree frontier ends at its next header check and includes any
             // ancestor continuation after a child returns. Leaves retain their
@@ -809,11 +813,43 @@ pub(in crate::native_artifact) fn emit_entry(
                     .ins()
                     .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, spare, count as i64);
                 let fits = b.ins().band(valid, fits);
+                if count != 0 && controls.enabled(OptimizationPass::RefinedAppendCapacity)
+                    && let Some(certificate) = super::numeric_append_guards::certificate(
+                        code, proof, shadow, &region.tail, region.numeric_tree.as_ref(), site, array, count,
+                    )
+                {
+                    capacity_refinements.push((certificate, fits, valid, spare));
+                    report.refined_capacity_guards.push((site, array, count));
+                } else {
+                    unrefined_enough = b.ins().band(unrefined_enough, fits);
+                }
                 enough = b.ins().band(enough, fits);
                 report.capacity_guards.push((array, count));
             }
             let funded = b.create_block();
-            b.ins().brif(enough, funded, &[], bailouts[&site], &[]);
+            if capacity_refinements.is_empty() {
+                b.ins().brif(enough, funded, &[], bailouts[&site], &[]);
+            } else {
+                // Keep the original single successful header branch. Only its
+                // cold capacity failure can enter the optional pure preview;
+                // failed funding/other guards go straight to the old fallback.
+                let cold = b.create_block();
+                let preview = b.create_block();
+                b.set_cold_block(cold);
+                b.set_cold_block(preview);
+                b.ins().brif(enough, funded, &[], cold, &[]);
+                b.switch_to_block(cold);
+                b.ins().brif(unrefined_enough, preview, &[], bailouts[&site], &[]);
+                b.switch_to_block(preview);
+                let mut refined_enough = b.ins().iconst(types::I8, 1);
+                for (certificate, fits, valid, spare) in capacity_refinements {
+                    let fits = super::numeric_append_guards::refine(
+                        b, &words, code, proof, shadow, &certificate, fits, valid, spare,
+                    )?;
+                    refined_enough = b.ins().band(refined_enough, fits);
+                }
+                b.ins().brif(refined_enough, funded, &[], bailouts[&site], &[]);
+            }
             b.switch_to_block(funded);
             let cost = b.ins().iconst(types::I64, compute_cost as i64);
             let compute = b.ins().isub(compute, cost);
