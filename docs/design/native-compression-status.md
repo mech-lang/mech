@@ -1,5 +1,13 @@
 # Native compression milestone
 
+## R202: matching-loop balance settlement rejected; complete compact baseline next
+
+Production remains **R199 / IR214**. The candidate settles admitted matching-loop balances at all normal/error/handoff exits and shortens the real matching edge **15→12 instructions**. It retains the per-header visit counter. The targeted complete timings do not improve: natural32 **3.333338×→3.339373× Roc**, repeated32 **2.877338×→2.883134×**, periodic33 **3.388472×→3.387324×**. All20 unchanged1.05 gates pass (12 lower/eight higher; geometric elapsed−0.045791%), but that tiny mixed aggregate is not the intended large-input win. The candidate is rejected without an unchanged favorable rerun.
+
+Ten instruction medians fall and ten rise. Repeated/periodic instructions fall4.09%/3.79%, natural32 rises0.49%; five cycle medians rise. All20 heap metrics remain equal. Candidate code+4,028B and stack−16B are not production changes.675 candidate native tests/all258 actual CI selections, unchanged236/eight/one qualification,15 architecture/catalog checks and132 workflow tests pass with seven inherited exclusions. The initial handoff regression is repaired; an inherited debug-profile accounting difference is separately reproduced and unassigned. Final restored-source four focused controls pass. Only expanded per-header arithmetic-error/settlement/retry controls are retained. [All20 results, failures, exact compiler pins and public replay](native-matching-exit-settlement.md).
+
+**Primary milestone:** finish the whole compact-native compressor from R193/R194, including real construction/reserve/growth/copies/append/clear/output, then measure its complete-call cost and restore each ordinary guarantee separately. Direct reduction completion into the parent is the next bounded production target. No complete host-removed compression result exists yet; neither this experiment nor the complete brief is marked finished. Existing draft #973 only.
+
 ## R201: optional backend comparison rejected; retained compiler unchanged
 
 The unchanged complete level-12 program runs correctly on all twenty inputs through the optional LLVM backend. The measured configuration uses O3 IR/machine emission with fast register allocation, peephole and machine LICM disabled. Against the matched experimental Cranelift control, seventeen elapsed medians and seventeen instruction medians rise; geometric elapsed is **77.109836% higher**, and only three original 1.05 gates pass. The ordinary optimized allocator remains unmeasured; this result does not establish its eventual performance.

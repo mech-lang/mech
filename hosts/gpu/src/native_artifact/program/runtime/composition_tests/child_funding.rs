@@ -302,20 +302,27 @@ fn bounded_child_funding_keeps_a_fallible_operation_inside_the_funded_visit() {
                 vec![None; artifact.outputs().len()],
                 vec![None; artifact.outputs().len()],
             ];
-            for bad in [false, true, false] {
+            // Fail at every reached chunk header, with a successful retry
+            // between failures. Deferred charges must settle even when the
+            // failing source operation precedes the latch and current update.
+            let cases = std::iter::once(None)
+                .chain((0..64).step_by(8).flat_map(|offset| [Some(offset), None]));
+            for mismatch in cases {
+                let bad = mismatch.is_some();
                 let mut bytes = vec![0; 256];
-                if bad {
-                    bytes[56..64].fill(255);
+                if let Some(offset) = mismatch {
+                    bytes[48 + offset..56 + offset].fill(255);
                 }
                 let args = arguments(&artifact, &memory, [1, 256], &bytes, [128, 48, 0, 64, 3]);
                 let aliases = args.clone();
                 let before = contents(&args);
                 let mut outcomes = Vec::new();
+                let mut settlements = Vec::new();
                 for side in 0..2 {
                     let prior = output[side].clone();
                     let held = (memory.used_bytes(), memory.retained_snapshot_nodes());
                     take_test_entries();
-                    let (result, _) = if restored {
+                    let (result, counts) = if restored {
                         observe::run_restored(
                             &pair[side],
                             &args,
@@ -332,6 +339,7 @@ fn bounded_child_funding_keeps_a_fallible_operation_inside_the_funded_visit() {
                             &memory,
                         )
                     };
+                    settlements.push(counts.phase_settlements);
                     let entered = take_test_entries();
                     if side == 1 {
                         assert!(entered > 0, "error must occur inside funded code");
@@ -357,6 +365,7 @@ fn bounded_child_funding_keeps_a_fallible_operation_inside_the_funded_visit() {
                     }
                 }
                 assert_eq!(outcomes[0], outcomes[1]);
+                assert_eq!(settlements[0], settlements[1], "{mismatch:?}");
                 assert_eq!(contents(&args), before);
                 assert_eq!(contents(&aliases), before);
             }
