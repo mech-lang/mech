@@ -464,7 +464,9 @@ fn selected_template(
 // IR294 preserves bytewise FNV with bounded native word loads and exact
 // halfword equality tails. Runtime hashing, fees and loan geometry are unchanged.
 // IR299 connects proved adjacent String matrix reads to retained Map insertion.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 299;
+// IR300 retains fresh borrowed-key facts but avoids duplicate global validity
+// traversal on the private checked-Object restoration route.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 300;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

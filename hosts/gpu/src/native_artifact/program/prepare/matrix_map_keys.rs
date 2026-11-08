@@ -23,6 +23,14 @@ pub(in crate::native_artifact) struct Region {
 pub(in crate::native_artifact) struct Layout {
     pub regions: Vec<Region>,
 }
+#[cfg(test)]
+thread_local! {
+    static PLAN_VALIDATIONS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+#[cfg(test)]
+pub(in crate::native_artifact) fn take_plan_validations() -> u64 {
+    PLAN_VALIDATIONS.with(|v| v.replace(0))
+}
 impl Layout {
     pub fn producer(&self, site: usize) -> Option<(usize, &Region)> {
         self.regions
@@ -37,10 +45,37 @@ impl Layout {
             .find(|(_, r)| r.consumer == site)
     }
     pub fn derive(plan: &Plan, owners: Option<&NativeMapOwnerWords>) -> Result<Self, &'static str> {
+        if owners.is_none_or(|o| o.regions().is_empty()) {
+            return Ok(Self::default());
+        }
+        #[cfg(test)]
+        PLAN_VALIDATIONS.with(|v| v.set(v.get() + 1));
+        plan.validate_current_visits()?;
+        Self::derive_validated(plan, owners)
+    }
+
+    /// Recompute all key-use facts for a genuine checked Object without
+    /// repeating whole-program validity checks. No cached key pointer or
+    /// image-supplied proof is accepted by this route.
+    ///
+    /// # Safety
+    /// The caller must hold the private same-Object image witness establishing
+    /// that this exact immutable plan was validated by the checked compiler.
+    /// Independent/untrusted reconstruction must use `derive` instead.
+    pub unsafe fn from_checked_object_plan(
+        plan: &Plan,
+        owners: Option<&NativeMapOwnerWords>,
+    ) -> Result<Self, &'static str> {
+        Self::derive_validated(plan, owners)
+    }
+
+    fn derive_validated(
+        plan: &Plan,
+        owners: Option<&NativeMapOwnerWords>,
+    ) -> Result<Self, &'static str> {
         let Some(owners) = owners.filter(|o| !o.regions().is_empty()) else {
             return Ok(Self::default());
         };
-        plan.validate_current_visits()?;
         if plan.blocks().len() > 16_384 || plan.values().len() > 65_536 {
             return Ok(Self::default());
         }

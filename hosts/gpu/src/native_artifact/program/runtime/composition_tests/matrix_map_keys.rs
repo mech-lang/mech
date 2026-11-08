@@ -373,3 +373,70 @@ fn matrix_map_keys_decline_metadata_headroom_and_keep_canonical_fallback() {
         }
     }
 }
+
+#[test]
+fn matrix_map_keys_checked_loading_keeps_independent_validation_and_fresh_identical_proofs() {
+    use crate::native_artifact::program::prepare::matrix_map_keys::take_plan_validations;
+    use crate::native_artifact::{NativeProgramDescriptor, emit_program_object};
+    for artifact in artifacts(SOURCE) {
+        let catalog = mech_stdlib::source_catalog();
+        take_plan_validations();
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        assert!(
+            take_plan_validations() > 0,
+            "checked source preparation validates the plan"
+        );
+        let expected = &object.descriptor().metadata().matrix_map_keys;
+        assert_eq!(expected.regions.len(), 1);
+        let image = object.native_metadata();
+        // SAFETY: exact checked image, deliberately use independent loading.
+        let independent =
+            unsafe { NativeProgramDescriptor::decode_build_owned_image(image, &catalog) }.unwrap();
+        assert!(
+            take_plan_validations() > 0,
+            "independent bytes retain global validation"
+        );
+        assert_eq!(&independent.metadata().matrix_map_keys, expected);
+        // SAFETY: genuine immutable metadata/identity/binding from this held
+        // compiler Object. No fabricated digest or foreign entry is accepted.
+        let bound = unsafe {
+            NativeProgramDescriptor::decode_object_bound_image(
+                image,
+                &catalog,
+                object.identity().bytes(),
+                object.native_metadata_binding().bytes(),
+            )
+        }
+        .unwrap();
+        assert_eq!(
+            take_plan_validations(),
+            0,
+            "same-Object provenance avoids repeated validation"
+        );
+        assert_eq!(&bound.metadata().matrix_map_keys, expected);
+        assert_eq!(
+            bound.typed_ir_sha256(),
+            object.descriptor().typed_ir_sha256()
+        );
+        let mut changed = image.to_vec();
+        let last = changed.last_mut().unwrap();
+        *last ^= 1;
+        // SAFETY: negative integrity-only check; never attach or execute.
+        assert!(
+            unsafe {
+                NativeProgramDescriptor::decode_object_bound_image(
+                    &changed,
+                    &catalog,
+                    object.identity().bytes(),
+                    object.native_metadata_binding().bytes(),
+                )
+            }
+            .is_err()
+        );
+        assert_eq!(
+            take_plan_validations(),
+            0,
+            "changed bytes fail binding before derivation"
+        );
+    }
+}

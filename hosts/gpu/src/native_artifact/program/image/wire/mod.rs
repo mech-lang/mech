@@ -497,9 +497,20 @@ fn decode_inner<
         derived
     };
     // This cache carries no wire authority, including on the same-Object path.
-    let matrix_map_keys =
+    let matrix_map_keys = if OBJECT_BOUND {
+        // SAFETY: only the private VerifiedObjectImage borrow selects this
+        // monomorph. Its exact checked compiler plan is already valid. Keep
+        // fresh complete-use derivation, without repeating global validation.
+        unsafe {
+            native::program::prepare::matrix_map_keys::Layout::from_checked_object_plan(
+                &plan,
+                map_owner_words.as_ref(),
+            )
+        }
+    } else {
         native::program::prepare::matrix_map_keys::Layout::derive(&plan, map_owner_words.as_ref())
-            .map_err(str::to_owned)?;
+    }
+    .map_err(str::to_owned)?;
     let utf8_reads = if frozen_layouts {
         w.utf8_reads
     } else {
