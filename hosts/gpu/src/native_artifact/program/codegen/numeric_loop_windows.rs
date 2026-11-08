@@ -12,6 +12,11 @@ use mech_engine::native_artifact::{
 use std::collections::BTreeMap;
 #[path = "numeric_capture_windows.rs"]
 mod captured;
+#[path = "numeric_geometry_windows.rs"]
+mod geometry;
+#[path = "numeric_read_addresses.rs"]
+mod read_addresses;
+use read_addresses::ReadAddress;
 
 pub(super) struct Version {
     pub initialize: usize,
@@ -19,6 +24,8 @@ pub(super) struct Version {
     pub sites: Vec<usize>,
     pub windows: Vec<Window>,
     pub captures: Vec<super::traversal_facts::CapturedWindow>,
+    pub geometry: Vec<usize>,
+    pub addresses: Vec<ReadAddress>,
     pub facts: Facts,
     pub blocks: BTreeMap<u32, Block>,
     pub prepaid: Option<super::numeric_loop_prepayment::Prepayment>,
@@ -33,7 +40,8 @@ pub(in crate::native_artifact) struct Report {
     pub views: Vec<usize>,
     pub source_successors: Vec<(usize, u32)>,
     pub read_sites: Vec<usize>,
-    pub count: usize,
+    pub count: Option<usize>,
+    pub geometry_views: Vec<usize>,
     captured_windows: Vec<super::traversal_facts::CapturedWindow>,
     pub prepaid: Option<serde_json::Value>,
     pub reduction: Option<serde_json::Value>,
@@ -174,6 +182,8 @@ pub(super) fn derive(
             sites: scope.sites,
             windows,
             captures: Vec::new(),
+            geometry: Vec::new(),
+            addresses: Vec::new(),
             facts: selected,
             prepaid,
             reduction,
@@ -182,6 +192,8 @@ pub(super) fn derive(
     }
     let captured = captured::derive(code, proof, shadow, b, packs, &versions, child_funding);
     versions.extend(captured);
+    let geometry = geometry::derive(code, proof, shadow, b, packs, &versions);
+    versions.extend(geometry);
     versions
 }
 
@@ -231,6 +243,7 @@ impl Version {
                 .iter()
                 .map(|w| w.array)
                 .chain(self.captures.iter().map(|w| w.array))
+                .chain(self.geometry.iter().copied())
                 .collect(),
             source_successors: self
                 .facts
@@ -251,7 +264,9 @@ impl Version {
             count: self
                 .windows
                 .first()
-                .map_or_else(|| self.captures[0].limit, |w| w.count),
+                .map(|w| w.count)
+                .or_else(|| self.captures.first().map(|w| w.limit)),
+            geometry_views: self.geometry.clone(),
             captured_windows: self.captures.clone(),
             prepaid: self
                 .prepaid
@@ -280,6 +295,10 @@ impl Version {
         state: usize,
         checked: Block,
     ) {
+        if !self.geometry.is_empty() {
+            geometry::gate(self, b, words, shadow, proof, checked);
+            return;
+        }
         if !self.captures.is_empty() {
             captured::gate(self, b, words, shadow, proof, facts, state, checked);
             return;

@@ -36,6 +36,7 @@ pub(super) fn derive(
         }
         let candidate = (|| {
             let scope = scope(code, proof, id as u32, tail)?;
+            scope.order(code)?;
             let reads = packs
                 .iter()
                 .filter(|pack| {
@@ -86,9 +87,14 @@ pub(super) fn derive(
             if facts.successors.len() < 2 {
                 return None;
             }
-            Some((scope, captures, facts))
+            let addresses = reads
+                .iter()
+                .zip(&captures)
+                .map(|(read, &window)| ReadAddress::new(b, read.site, window))
+                .collect();
+            Some((scope, captures, facts, addresses))
         })();
-        if let Some((scope, captures, facts)) = candidate {
+        if let Some((scope, captures, facts, addresses)) = candidate {
             let funding = child_funding
                 .then(|| {
                     super::super::numeric_child_funding::Funding::derive(
@@ -110,6 +116,8 @@ pub(super) fn derive(
                 sites: scope.sites,
                 windows: Vec::new(),
                 captures,
+                geometry: Vec::new(),
+                addresses,
                 facts,
                 prepaid: None,
                 reduction: None,
@@ -120,7 +128,7 @@ pub(super) fn derive(
     versions
 }
 
-fn scope(
+pub(super) fn scope(
     code: CodePlan<'_>,
     proof: &Proof,
     owner: u32,
@@ -166,7 +174,6 @@ fn scope(
         }
     }
     scope.sites.sort_unstable();
-    scope.order(code)?;
     Some(scope)
 }
 
@@ -180,6 +187,12 @@ pub(super) fn gate(
     state: usize,
     checked: Block,
 ) {
+    // Every entry copies this invocation's source captures first. These are
+    // wrapping machine addresses only; the existing gate still determines
+    // whether the flat, readable, currently funded version may dereference.
+    for address in &version.addresses {
+        address.stage(b, words, shadow, proof);
+    }
     let mut enough = b.ins().iconst(types::I8, 1);
     for window in &version.captures {
         let start = words.read(b, window.induction);

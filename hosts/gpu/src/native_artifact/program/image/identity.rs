@@ -452,7 +452,8 @@ fn selected_template(
 // IR278 composes compact plan-derived visit work and checked grouped-key native
 // metadata records. Private sequence readers retain every explicit field name.
 // IR279 revives conservative compiler-local scalar-home retirement masks.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 279;
+// IR280 integrates current immutable geometry/address staging and ordered cleanup inlining.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 280;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
