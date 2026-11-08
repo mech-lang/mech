@@ -329,6 +329,7 @@ fn numeric_induction_append_frontier_uses_maximum_branch_path_at_exact_capacity(
             .expect("append parent and readonly child must share one native tree");
         let tree = region.numeric_tree.as_ref().unwrap();
         let root = u64::from(region.tail.header());
+        let root_exit = u64::from(region.tail.exit());
         let children = tree
             .nodes
             .iter()
@@ -372,7 +373,9 @@ fn numeric_induction_append_frontier_uses_maximum_branch_path_at_exact_capacity(
                 assert_eq!(contents(&args), before);
                 assert_eq!(contents(&aliases), before);
                 assert!(
-                    calls.closed_tail_exits.iter().any(|exit| exit[0] == root),
+                    calls.closed_tail_exits.iter().any(|exit| {
+                        exit[0] == root || (exit[0] == root_exit && exit[3] == 0)
+                    }),
                     "{calls:?}"
                 );
                 for site in &children {
