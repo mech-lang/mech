@@ -41981,6 +41981,72 @@
       "ordinary_contract_restored": false,
       "new_branch_or_PR": false,
       "next": "Qualify one dense live interface inside ordinary numeric admission/ownership/funding; checked fallback and exact errors/publication/retry retained."
+    },
+    "213": {
+      "base": "bce717aa0e987da3b2f1e0f0f8403ba864af8568",
+      "production": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "retained_diagnostic": "efd9069b589512630891810191e7de35d57325d8",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": {
+        "qualified_inside_ordinary_entry": true,
+        "adopt_as_default": false,
+        "reason": "All677 maintained tests,52 actual linked original/decoded parent/candidate cases and all20 stream/gate/work checks pass. The current interface is0.354% slower geometrically,17 instruction medians rise, native stack footprint rises, and a concrete existing home-fact optimization was lost. Keep productionR199 and retained diagnosticR211 while fixing that representation regression in one controlled next round.",
+        "next_change": "Restore existing canonical-home memory flags alongside dense initial values in the existing SSA-word builder; preserve packet/canonical storage distinctions and optimizer-disabled controls.",
+        "owner_pool_and_payload_site_census": "not yet implemented; still separately bounded follow-ups"
+      },
+      "source_files": [],
+      "archived_changed_compiler_test_files": 6,
+      "archived_patch_files": [
+        "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_outlined.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_packet.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_snapshots.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+        "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_outlining.rs"
+      ],
+      "events": [
+        {
+          "event": "qualified-ordinary-phase-transport",
+          "asset": "r213-qualified-phase-0370c8008f06.tar.gz",
+          "sha256": "0370c8008f06943ec99fe5e7303b05f9505fb1284d9f918f9838c3591517ae85",
+          "bytes": 3805423,
+          "files": 655,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r213-qualified-phase-0370c8008f06.tar.gz"
+        }
+      ],
+      "observations": {
+        "primary_complete_calls": 11488,
+        "retained_primary_observations": 11328,
+        "primary_reference_compressions": 5120,
+        "separate_cpu_heap_mech_calls": 4160,
+        "elapsed_lower": 7,
+        "elapsed_higher": 13,
+        "geometric_elapsed_ratio_to_production": 1.0035391249261245,
+        "unchanged_1_05_gates": 20,
+        "instructions_lower": 3,
+        "instructions_higher": 17,
+        "cycles_lower": 17,
+        "cycles_higher": 3,
+        "heap_equal_cases": 20,
+        "wall_profile_complete_calls": 8136,
+        "pc_profile_complete_calls": 19505
+      },
+      "ordinary_contract_retained": true,
+      "candidate_default_adopted": false,
+      "maintained_test_counts": {
+        "passed": 677,
+        "failed": 0,
+        "inherited_exclusions": 7,
+        "linked_cases": 52,
+        "full_stream_smokes": 40
+      },
+      "new_branch_or_PR": false
     }
   },
   "repository": "mech-lang/mech",
