@@ -1,0 +1,10 @@
+{
+  "exact_outputs": 32,
+  "linked_audit_passed": true,
+  "same_Engine_and_runtime": true,
+  "only_lowering_emission_disabled": true,
+  "typed_IR": 305,
+  "code_bytes": 1031248,
+  "stack_bytes": 1584,
+  "qualification_timers_ineligible": true
+}

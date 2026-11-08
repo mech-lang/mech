@@ -1,0 +1,15 @@
+{
+  "IR304_receipt": "/private/tmp/mech-related-generic-native-dictionary-20261108/IR303-expanded-collections-parent.json",
+  "IR305_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/expanded-collections-current.json",
+  "passes": 62,
+  "preexisting_failures": 5,
+  "all_five_failure_names_identical": true,
+  "no_test_selection_disabled": true,
+  "open_failure_names": [
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::emitted_joined_string_map_reuses_backing_without_a_canonical_source_slot",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::observed_or_cold_source_consumers_retain_the_immutable_copy_path",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::owned_map_missing_key_is_atomic_and_releases_transferred_capacity",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::repeated_parent_visits_do_not_consume_a_lexically_single_use_source"
+  ]
+}

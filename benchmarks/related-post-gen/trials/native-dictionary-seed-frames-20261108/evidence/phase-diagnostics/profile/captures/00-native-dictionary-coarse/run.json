@@ -1,0 +1,27 @@
+{
+  "pair": 0,
+  "order": 4,
+  "variant": "native-dictionary-coarse",
+  "kind": "mech",
+  "diagnostic": true,
+  "command": [
+    "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/profile/hosts/native-dictionary/runner-profile",
+    "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/profile/hosts/native-dictionary/build/source.mec",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/profile/captures/00-native-dictionary-coarse/output.json",
+    "1"
+  ],
+  "cwd": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/profile/captures/00-native-dictionary-coarse",
+  "environment": {
+    "MECH_INTERVAL_COUNTERS": "1",
+    "MECH_INTERVAL_HELPERS": "0",
+    "MECH_PHASE_BOUNDARIES": "248,1013,1622",
+    "MECH_PHASE_TRACE": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/profile/captures/00-native-dictionary-coarse/trace.json"
+  },
+  "exit": 0,
+  "seconds": 0.05314537510275841,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.019014708,\"input_admission_seconds\":0.000167417,\"json_read_and_parse_seconds\":0.001783708,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":8,\"parallel_numeric_work\":24693650114,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":4,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.001927375,\"posts\":5000,\"processing_plus_admission_seconds\":0.001919625,\"retained_bytes\":956332,\"sample\":0,\"seconds\":0.001752208,\"work\":36970469365}\n",
+  "stderr": "",
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false
+}

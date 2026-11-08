@@ -1,0 +1,14 @@
+{
+  "manifest_files": 3176,
+  "all_file_hashes_exact": true,
+  "lossless_output_aliases_verified": 2374,
+  "source_inventory_unchanged": true,
+  "source_commit": "32eb7450d54f32de12a70cefba0eda2f1f279be6",
+  "goal_complete": false,
+  "raw_evidence_whitespace_note": "Production source passed git diff --check before its commit. Evidence check reports unchanged exact stderr/sample trailing blank lines and unified-diff context lines; those raw bytes are preserved.",
+  "raw_whitespace_paths": [
+    "builds/v2/mech_gpu.stderr.log",
+    "evidence/native-profile.sample.txt",
+    "evidence/phase-diagnostics/runtime-instrumentation.patch"
+  ]
+}

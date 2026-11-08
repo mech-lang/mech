@@ -1,0 +1,24 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/engine-tests-v2/engine-tests",
+    "archive_path": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/engine-tests-v2/engine-tests.gz",
+    "original_bytes": 64252816,
+    "compressed_bytes": 13833651,
+    "sha256": "06aa3ca05193f6e106dc1d1d477d975a16b5cdae22569593dcb31f46757d7164",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "restore": "gzip -dk; restore recorded executable mode",
+    "all_required_functional_runs_complete": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/native-tests-v1/gpu-native-tests",
+    "archive_path": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/native-tests-v1/gpu-native-tests.gz",
+    "original_bytes": 136578688,
+    "compressed_bytes": 23047456,
+    "sha256": "0d5f806078c6b78c90485cd49b9138ff2729f929bbeb1c90d0c944ec205aa417",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "restore": "gzip -dk; restore recorded executable mode",
+    "all_required_functional_runs_complete": true
+  }
+]

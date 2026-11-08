@@ -1,0 +1,17 @@
+from pathlib import Path
+import json,subprocess,time,os,importlib.util
+P=Path(__file__).parent;S=Path('/private/tmp/mech-related-native-dictionary-seed-frames-compiler-20261108');T=P/'native-tests-v1'
+read=lambda p:json.loads(Path(p).read_text())
+def run(c,n):
+ c=list(map(str,c));t=time.monotonic();r=subprocess.run(c,cwd=S,capture_output=True,text=True);(P/(n+'.json')).write_text(json.dumps(dict(command=c,exit=r.returncode,seconds=time.monotonic()-t,stdout=r.stdout,stderr=r.stderr,scope='IR305 integrated qualification only; timers ineligible'),indent=2)+'\n');print(n,r.returncode,flush=True)
+ if r.returncode:print(r.stdout[-7000:]+r.stderr[-7000:],flush=True)
+ assert r.returncode==0
+ return r
+spec=importlib.util.spec_from_file_location('h','/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-compiler.py');h=importlib.util.module_from_spec(spec);spec.loader.exec_module(h);files=h.source_inventory(S);assert files==read(P/'native-connection-source-inventory-v1.json')['files'];assert read(T/'generic-dictionary.json')['exit']==0;assert read(P/'actual-source-and-full-input-first.json')['exit']==0
+wf=(S/'.github/workflows/ci-full.yml').read_text().split('- name: Inventory and execute native composition contracts',1)[1].split('- name:',1)[0];selection=wf.split('--lib --',1)[1].split('--list',1)[0].replace('\\',' ').split();listed=run([T/'gpu-native-tests',*selection,'--list'],'integrated-ci-list');names={l.removesuffix(': test')for l in listed.stdout.splitlines()if l.endswith(': test')};parent=read(P/'ci-list.json')['stdout'];old={l.removesuffix(': test')for l in parent.splitlines()if l.endswith(': test')};assert len(old)==462 and old<=names;assert len(names)==466,len(names)
+r=run([T/'gpu-native-tests',*selection,'--test-threads=1'],'integrated-ci-execute');passed={l.removeprefix('test ').removesuffix(' ... ok')for l in r.stdout.splitlines()if l.startswith('test ')and l.endswith(' ... ok')};assert passed==names
+(P/'integrated-ci-inventory-audit.json').write_text(json.dumps(dict(expected=466,listed=len(names),executed_passed=len(passed),all_names_match=True,all462parent_names_retained=True,new_names=sorted(names-old)),indent=2)+'\n')
+run([T/'gpu-native-tests','program::runtime::maps::','--test-threads=1'],'all-retained-map-contracts')
+run([T/'gpu-native-tests','program::image::','caller_geometry::tests','--test-threads=1'],'image-and-caller-geometry-tests')
+run([T/'gpu-native-tests','native_string_classes','unsigned_guard_facts::','modular_ranges','codegen::utf8_lookup::','codegen::utf8_histogram::','compiled_histogram_tests','program::protocol::','--test-threads=1'],'classification-UTF8-range-and-protocol-required')
+assert files==h.source_inventory(S);(P/'qualified-source-inventory.json').write_text(json.dumps(dict(root=str(S),files=files),indent=2)+'\n');(P/'GPU-qualification-summary.json').write_text(json.dumps(dict(actual_CI_passed=466,all462parent_names_retained=True,source_unchanged=True,runtime_seed_contracts=4,actual_original_and_restored_outputs_exact=True,native_seed_frames=1,canonical_seed_tuples=0,native_seed_imports=1,late_seed_materializations=0,owned_key_views=1,borrowed_String_cells=28,canonical_key_matrices=0,canonical_String_values=0,native_dictionary_publications=1,canonical_dictionary_publications=0,frozen_dictionary_loans=1,actual_source_receipt=str(P/'actual-source-and-full-input-first.json')),indent=2)+'\n');print('IR305 required GPU qualification complete',flush=True)

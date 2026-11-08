@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "mech-ir305-native-dictionary-seed-frames-4",
+    "original_source": "/private/tmp/mech-related-native-dictionary-seed-frames-runners-20261108-v1/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/metrics/mech-ir305-native-dictionary-seed-frames-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "c05b8f3be5b937d95ebc059742325e11b1a5e4612165d7d621c50cb2960033b5",
+    "diagnostic_executable_sha256": "5fa55e0ca4ad0d39fb1b19e70c10f08b487bec0daabcaaa8fbabcd57ea2e8dae"
+  }
+]

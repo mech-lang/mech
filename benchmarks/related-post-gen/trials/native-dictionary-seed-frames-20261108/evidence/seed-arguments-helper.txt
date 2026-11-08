@@ -1,0 +1,34 @@
+fn arguments(
+    a: &mech_engine::ProgramArtifact,
+    m: &ManagedMemoryBudget,
+    tags: &[&str],
+    queries: &[&str],
+) -> Vec<Value> {
+    a.inputs()
+        .iter()
+        .map(|p| {
+            let name = mech_engine::decode_source_input_name(&p.name).unwrap();
+            let keys = match name.as_str() {
+                "tags" => tags,
+                "queries" => queries,
+                _ => panic!("input {name}"),
+            };
+            let shape = mech_core::shape_for_resolved_extents(
+                a.schemas().get(p.schema).unwrap(),
+                &[1, keys.len() as u64],
+            )
+            .unwrap();
+            let v = ValueDraft {
+                schema: p.schema,
+                shape_values: shape.parameter_values().into(),
+                data: Data::Matrix(keys.iter().map(|s| Data::String((*s).into())).collect()),
+            }
+            .finalize(&SnapshotValidationContext::new(a.schemas()))
+            .unwrap();
+            let mut r = m
+                .reserve_capacity(v.memory_budget_admission_bytes(m).unwrap())
+                .unwrap();
+            v.into_memory_budget(&mut r).unwrap()
+        })
+        .collect()
+}

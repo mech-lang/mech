@@ -1,0 +1,241 @@
+{
+  "diagnostic_only": true,
+  "not_additive_production_savings": true,
+  "all64outputs_exact": true,
+  "phase_comparisons": {
+    "preparation_interning_and_eligibility": {
+      "Mech_us": 743.9375,
+      "Rust_us": 607.229,
+      "canonical_control_us": 829.875,
+      "paired_Mech_minus_Rust_us": 132.1665,
+      "Mech_wins_vs_Rust": 1,
+      "pairs": 8,
+      "paired_Mech_minus_control_us": -87.7715,
+      "Mech_wins_vs_control": 8,
+      "Mech_processing_requests": 391.0,
+      "Rust_processing_requests": 38.0,
+      "control_requests": 788.0,
+      "Mech_instructions": 9233421.5,
+      "Rust_instructions": 7775431.0
+    },
+    "triple_index_and_coverage": {
+      "Mech_us": 350.979,
+      "Rust_us": 185.417,
+      "canonical_control_us": 348.9165,
+      "paired_Mech_minus_Rust_us": 162.25,
+      "Mech_wins_vs_Rust": 0,
+      "pairs": 8,
+      "paired_Mech_minus_control_us": 6.167,
+      "Mech_wins_vs_control": 3,
+      "Mech_processing_requests": 83.0,
+      "Rust_processing_requests": 7.0,
+      "control_requests": 83.0,
+      "Mech_instructions": 5607716.5,
+      "Rust_instructions": 2953893.0
+    },
+    "quartet_index_and_masks": {
+      "Mech_us": 265.0,
+      "Rust_us": 208.4375,
+      "canonical_control_us": 262.25,
+      "paired_Mech_minus_Rust_us": 58.583,
+      "Mech_wins_vs_Rust": 1,
+      "pairs": 8,
+      "paired_Mech_minus_control_us": 3.5625,
+      "Mech_wins_vs_control": 3,
+      "Mech_processing_requests": 83.0,
+      "Rust_processing_requests": 7.0,
+      "control_requests": 83.0,
+      "Mech_instructions": 4485210.0,
+      "Rust_instructions": 2752153.0
+    },
+    "queries_cleanup_and_materialization": {
+      "Mech_us": 486.375,
+      "Rust_us": 577.75,
+      "canonical_control_us": 481.875,
+      "paired_Mech_minus_Rust_us": -93.438,
+      "Mech_wins_vs_Rust": 8,
+      "pairs": 8,
+      "paired_Mech_minus_control_us": 4.5,
+      "Mech_wins_vs_control": 3,
+      "Mech_processing_requests": 196.0,
+      "Rust_processing_requests": 6.0,
+      "control_requests": 196.0,
+      "Mech_instructions": 14124309.5,
+      "Rust_instructions": 4238364.0
+    }
+  },
+  "seed_callbacks": {
+    "canonical-control-detail": {
+      "site": 44,
+      "operation": 0,
+      "source_operation": "core/composite-pack",
+      "callbacks": 1.0,
+      "elapsed_ns": 97625.5,
+      "instructions": 624302.0,
+      "requests": 406.0,
+      "requested_bytes": 74719.0
+    },
+    "native-dictionary-detail": {
+      "site": 44,
+      "operation": 18446744073709551565,
+      "source_operation": "core/composite-pack",
+      "callbacks": 1.0,
+      "elapsed_ns": 10208.0,
+      "instructions": 87667.0,
+      "requests": 9.0,
+      "requested_bytes": 1008.0
+    }
+  },
+  "import_callback": {
+    "site": 45,
+    "operation": 18446744073709551599,
+    "source_operation": null,
+    "callbacks": 1.0,
+    "elapsed_ns": 19270.5,
+    "instructions": 123624.5,
+    "requests": 37.0,
+    "requested_bytes": 1917.0
+  },
+  "main_detailed_partition_medians": {
+    "input_admission": {
+      "us": 159.3125,
+      "instructions": 2514128.0
+    },
+    "input_views": {
+      "us": 6.7915,
+      "instructions": 111683.0
+    },
+    "result_construction": {
+      "us": 10.25,
+      "instructions": 169234.0
+    },
+    "session_setup": {
+      "us": 27.9585,
+      "instructions": 207243.0
+    },
+    "worker_dispatch": {
+      "us": 454.021,
+      "instructions": 268548.0
+    },
+    "runtime_callbacks": {
+      "us": 621.9915,
+      "instructions": 5003569.5
+    },
+    "numeric_native": {
+      "us": 489.4585,
+      "instructions": 9817800.0
+    },
+    "other_generated_entry": {
+      "us": 337.7395,
+      "instructions": 5041957.0
+    },
+    "runtime_outside_entry": {
+      "us": 18.7905,
+      "instructions": 174147.5
+    },
+    "other_driver": {
+      "us": 10.355,
+      "instructions": 32482.0
+    }
+  },
+  "main_native_roots": [
+    {
+      "variant": "native-dictionary-detail",
+      "site": 795,
+      "operation": 18446744073709551608,
+      "elapsed_ns": 128478.5,
+      "instructions": 2226270.0,
+      "cycles": 485108.0
+    },
+    {
+      "variant": "native-dictionary-detail",
+      "site": 271,
+      "operation": 18446744073709551608,
+      "elapsed_ns": 115104.0,
+      "instructions": 2201156.5,
+      "cycles": 434449.5
+    },
+    {
+      "variant": "native-dictionary-detail",
+      "site": 1036,
+      "operation": 18446744073709551608,
+      "elapsed_ns": 90020.5,
+      "instructions": 1755797.0,
+      "cycles": 339694.5
+    },
+    {
+      "variant": "native-dictionary-detail",
+      "site": 105,
+      "operation": 18446744073709551608,
+      "elapsed_ns": 79750.0,
+      "instructions": 1533429.0,
+      "cycles": 300757.0
+    },
+    {
+      "variant": "native-dictionary-detail",
+      "site": 1529,
+      "operation": 18446744073709551608,
+      "elapsed_ns": 84875.5,
+      "instructions": 1279665.0,
+      "cycles": 320120.0
+    },
+    {
+      "variant": "native-dictionary-detail",
+      "site": 1462,
+      "operation": 18446744073709551608,
+      "elapsed_ns": 36625.0,
+      "instructions": 927627.0,
+      "cycles": 137926.0
+    },
+    {
+      "variant": "native-dictionary-detail",
+      "site": 894,
+      "operation": 18446744073709551608,
+      "elapsed_ns": 20791.5,
+      "instructions": 334895.0,
+      "cycles": 77906.0
+    },
+    {
+      "variant": "native-dictionary-detail",
+      "site": 728,
+      "operation": 18446744073709551608,
+      "elapsed_ns": 9625.0,
+      "instructions": 177755.0,
+      "cycles": 35735.5
+    },
+    {
+      "variant": "native-dictionary-detail",
+      "site": 198,
+      "operation": 18446744073709551588,
+      "elapsed_ns": 1396.0,
+      "instructions": 12318.5,
+      "cycles": 4688.0
+    },
+    {
+      "variant": "native-dictionary-detail",
+      "site": 108,
+      "operation": 18446744073709551588,
+      "elapsed_ns": 938.0,
+      "instructions": 5985.0,
+      "cycles": 2918.0
+    },
+    {
+      "variant": "native-dictionary-detail",
+      "site": 132,
+      "operation": 18446744073709551588,
+      "elapsed_ns": 666.5,
+      "instructions": 5902.0,
+      "cycles": 1975.5
+    }
+  ],
+  "prelude_requests": {
+    "canonical-control-detail": 443.0,
+    "native-dictionary-detail": 46.0
+  },
+  "next_targets": [
+    "Completed-producer key-range proof into posting scatter, separately attributable; numeric triple construction is now the largest aligned deficit.",
+    "Retain canonical-key snapshot plus compact current dictionary values, prove borrowed-cell key-set identity, eliminate repeated insert/read helper checks and copied seed import; preserve histogram counts independently.",
+    "Native histogram finish and input/session preparation remain materialization/admission targets.",
+    "Restoration proof rederivation cost remains open; whole-process regression is retained and is not a gate."
+  ]
+}

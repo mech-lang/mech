@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/engine-tests-v2/engine-tests",
+    "native_map_seed",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-native-dictionary-seed-frames-compiler-20261108/src/engine",
+    "CARGO_PKG_NAME": "mech-engine",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Retained program execution, reactive coordination, and bytecode integration for Mech."
+  },
+  "exit": 0,
+  "seconds": 0.8463825830258429,
+  "stdout": "\nrunning 3 tests\ntest resident::general::native_collection_calls::prepared::map_seed::tests::native_map_seed_enclosing_scope_keeps_immediate_canonical_path_and_logical_denials ... ok\ntest resident::general::native_collection_calls::prepared::map_seed::tests::native_map_seed_keeps_real_generic_children_exact_logical_footprint_and_original_factory ... ok\ntest resident::general::native_collection_calls::prepared::map_seed::tests::native_map_seed_late_fallback_preserves_exact_relative_prefix_and_global_intervening_work ... native-map-seed relative exact=22862024 global exact=22862061 intervening=37\nnative-map-seed relative exact=22862024 global exact=22862061 intervening=37\nok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1252 filtered out; finished in 0.07s\n\n",
+  "stderr": "",
+  "scope": "API contract qualification only; no performance claim"
+}

@@ -1,0 +1,19 @@
+{
+  "actual_CI_passed": 466,
+  "all462parent_names_retained": true,
+  "source_unchanged": true,
+  "runtime_seed_contracts": 4,
+  "actual_original_and_restored_outputs_exact": true,
+  "native_seed_frames": 1,
+  "canonical_seed_tuples": 0,
+  "native_seed_imports": 1,
+  "late_seed_materializations": 0,
+  "owned_key_views": 1,
+  "borrowed_String_cells": 28,
+  "canonical_key_matrices": 0,
+  "canonical_String_values": 0,
+  "native_dictionary_publications": 1,
+  "canonical_dictionary_publications": 0,
+  "frozen_dictionary_loans": 1,
+  "actual_source_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/actual-source-and-full-input-first.json"
+}

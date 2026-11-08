@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/native-tests-v1/gpu-native-tests",
+    "native_dictionary_seed",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-native-dictionary-seed-frames-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 0,
+  "seconds": 1.7869842078071088,
+  "stdout": "\nrunning 4 tests\ntest native_artifact::program::runtime::composition_tests::dictionary_seed_frames::native_dictionary_seed_finite_boundaries_preserve_source_checks_publication_and_retry ... {\"dimension\":\"control\",\"exact_selected_fragments\":0,\"minimum\":60129815,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"library\",\"exact_selected_fragments\":0,\"minimum\":16704192,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"comparison\",\"exact_selected_fragments\":0,\"minimum\":1772,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"memory\",\"exact_selected_fragments\":0,\"minimum\":1719349,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"nodes\",\"exact_selected_fragments\":0,\"minimum\":5025,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"transport\",\"exact_selected_fragments\":0,\"minimum\":6072,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"control\",\"exact_selected_fragments\":0,\"minimum\":60129815,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"library\",\"exact_selected_fragments\":0,\"minimum\":16704192,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"comparison\",\"exact_selected_fragments\":0,\"minimum\":1772,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"memory\",\"exact_selected_fragments\":0,\"minimum\":1719349,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"nodes\",\"exact_selected_fragments\":0,\"minimum\":5025,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"transport\",\"exact_selected_fragments\":0,\"minimum\":6072,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\nok\ntest native_artifact::program::runtime::composition_tests::dictionary_seed_frames::native_dictionary_seed_images_rederive_exact_adjacent_factory_and_parent_ownership ... ok\ntest native_artifact::program::runtime::composition_tests::dictionary_seed_frames::native_dictionary_seed_runs_without_aggregate_and_materializes_on_real_owner_refusal ... ok\ntest native_artifact::program::runtime::composition_tests::dictionary_seed_frames::native_dictionary_seed_stale_generation_malformed_words_and_clone_denial_are_atomic ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 978 filtered out; finished in 0.52s\n\n",
+  "stderr": "",
+  "scope": "IR304 production native connection and immutable dictionary contracts; functional/resource qualification only; no timing claim"
+}

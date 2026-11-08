@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/tests-v2/gpu-tests",
+    "dictionary_seed_frames_actual",
+    "--ignored",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-native-dictionary-seed-frames-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech.",
+    "MECH_MATRIX_KEY_BENCH_SOURCE": "/private/tmp/mech-related-native-string-classification-reuse-runners-20261108-v2/histogram-reuse/build/source.mec"
+  },
+  "exit": 0,
+  "seconds": 3.320743374992162,
+  "stdout": "\nrunning 1 test\ntest native_artifact::program::prepare::dictionary_seed_frames::tests::dictionary_seed_frames_actual_source_has_two_generic_nonempty_seed_packs ... native dictionary seed applicability: Layout {\n    regions: [\n        Region {\n            owner: 0,\n            producer: 44,\n            initialize: 45,\n            seed: NativeMatchValue(\n                72,\n            ),\n            operands: [\n                NativeMatchValue(\n                    69,\n                ),\n                NativeMatchValue(\n                    70,\n                ),\n                NativeMatchValue(\n                    71,\n                ),\n            ],\n            map_ordinal: 2,\n        },\n        Region {\n            owner: 1,\n            producer: 3400,\n            initialize: 3401,\n            seed: NativeMatchValue(\n                2134,\n            ),\n            operands: [\n                NativeMatchValue(\n                    2131,\n                ),\n                NativeMatchValue(\n                    2132,\n                ),\n                NativeMatchValue(\n                    2133,\n                ),\n            ],\n            map_ordinal: 2,\n        },\n    ],\n}\nok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 977 filtered out; finished in 3.31s\n\n",
+  "stderr": "",
+  "scope": "Applicability only; no native seed bypass or performance claim"
+}

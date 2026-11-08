@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/analyze-preparation.py"
+  ],
+  "exit": 0,
+  "seconds": 1.472535666078329,
+  "stdout": "canonical-control-detail\nbefore_histogram 242.729 us 3024299.5 instr 136.0 alloc\nhistogram_prepare 19.938 us 135613.5 instr 4.0 alloc\nhistogram_native 243.854 us 3032083.0 instr 0.0 alloc\nhistogram_finish 15.146 us 166586.5 instr 172.0 alloc\nbefore_keys 0.584 us 6884.0 instr 0.0 alloc\nkeys 13.979 us 123862.5 instr 6.0 alloc\ndictionary_and_lookup_prelude 242.875 us 2157471.0 instr 443.0 alloc\nlookup_prepare 18.25 us 239290.5 instr 5.0 alloc\nlookup_native 12.854 us 185871.0 instr 0.0 alloc\nlookup_finish 2.271 us 16527.0 instr 0.0 alloc\neligibility_and_prelude 131.438 us 1883988.0 instr 22.0 alloc\nnative-dictionary-detail\nbefore_histogram 224.75 us 3009069.0 instr 136.0 alloc\nhistogram_prepare 20.52 us 135553.0 instr 4.0 alloc\nhistogram_native 243.583 us 3032083.0 instr 0.0 alloc\nhistogram_finish 16.479 us 170586.0 instr 172.0 alloc\nbefore_keys 0.562 us 6884.0 instr 0.0 alloc\nkeys 14.979 us 122232.5 instr 6.0 alloc\ndictionary_and_lookup_prelude 155.917 us 1631566.5 instr 46.0 alloc\nlookup_prepare 17.605 us 235478.0 instr 5.0 alloc\nlookup_native 12.833 us 185871.0 instr 0.0 alloc\nlookup_finish 2.708 us 17340.0 instr 0.0 alloc\neligibility_and_prelude 130.917 us 1889379.5 instr 22.0 alloc\n",
+  "stderr": "",
+  "diagnostic_only": true
+}

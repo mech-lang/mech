@@ -1,0 +1,24 @@
+{
+  "parent": "IR304",
+  "candidate": "IR305",
+  "all_nontiming_fields_exact": true,
+  "including_allocation_bytes_and_work": true,
+  "rows": 133,
+  "cases": [
+    {
+      "kind": "scalar",
+      "rows": 128,
+      "all_nontiming_fields_exact": true,
+      "IR304_receipt": "/private/tmp/mech-related-generic-native-dictionary-regressions-20261108-v1/scalar-run.json",
+      "IR305_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-regressions-20261108-v1/scalar-run.json"
+    },
+    {
+      "kind": "one-kib",
+      "rows": 5,
+      "all_nontiming_fields_exact": true,
+      "IR304_receipt": "/private/tmp/mech-related-generic-native-dictionary-regressions-20261108-v1/one-kib-run.json",
+      "IR305_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-regressions-20261108-v1/one-kib-run.json"
+    }
+  ],
+  "timings_ineligible": true
+}

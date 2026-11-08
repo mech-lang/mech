@@ -1,0 +1,45 @@
+[
+  {
+    "name": "canonical-control",
+    "kind": "mech",
+    "executable": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/profile/hosts/canonical-control/runner-profile",
+    "source": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/profile/hosts/canonical-control/build/source.mec",
+    "phase_boundaries": [
+      248,
+      1013,
+      1622
+    ],
+    "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+    "Object_sha256": "0721329abdea399f55892b8df32eff4076636c9311142b397ddef962b0a86163",
+    "Object_text_exact_production": true,
+    "executable_sha256": "390e23c6534da23e55541d4f31ccaca967e27b437d0629cb9f884c1174dac42c"
+  },
+  {
+    "name": "native-dictionary",
+    "kind": "mech",
+    "executable": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/profile/hosts/native-dictionary/runner-profile",
+    "source": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/profile/hosts/native-dictionary/build/source.mec",
+    "phase_boundaries": [
+      248,
+      1013,
+      1622
+    ],
+    "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+    "Object_sha256": "a8190caa858b67cc6c8530727849d7f80c444a66339223376e8bc04fedbcfd5c",
+    "Object_text_exact_production": true,
+    "executable_sha256": "a4ff3283b28ac0e19e13186d83f54a15ede5d70c9271a04f6b4cbb0a5c9d31da"
+  },
+  {
+    "name": "rust-fastest",
+    "kind": "rust",
+    "executable": "/private/tmp/mech-related-aligned-constructor-diagnostics-20261108/rust/target/release/rust_mech",
+    "phase_boundaries": [
+      1,
+      2,
+      3
+    ],
+    "base_source": "/private/tmp/mech-related-constant-key-rust256-controls-20261107-v1/default/src/main.rs",
+    "algorithm_unchanged": true,
+    "executable_sha256": "e135b255d7cc5dc32712e4b2f92f34abf034e1ee29a6d8f9a7a46eae5b3b5cb9"
+  }
+]

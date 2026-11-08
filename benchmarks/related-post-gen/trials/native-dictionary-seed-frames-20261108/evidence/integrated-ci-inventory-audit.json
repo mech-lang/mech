@@ -1,0 +1,13 @@
+{
+  "expected": 466,
+  "listed": 466,
+  "executed_passed": 466,
+  "all_names_match": true,
+  "all462parent_names_retained": true,
+  "new_names": [
+    "native_artifact::program::runtime::composition_tests::dictionary_seed_frames::native_dictionary_seed_finite_boundaries_preserve_source_checks_publication_and_retry",
+    "native_artifact::program::runtime::composition_tests::dictionary_seed_frames::native_dictionary_seed_images_rederive_exact_adjacent_factory_and_parent_ownership",
+    "native_artifact::program::runtime::composition_tests::dictionary_seed_frames::native_dictionary_seed_runs_without_aggregate_and_materializes_on_real_owner_refusal",
+    "native_artifact::program::runtime::composition_tests::dictionary_seed_frames::native_dictionary_seed_stale_generation_malformed_words_and_clone_denial_are_atomic"
+  ]
+}

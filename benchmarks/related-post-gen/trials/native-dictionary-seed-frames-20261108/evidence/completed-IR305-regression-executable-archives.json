@@ -1,0 +1,22 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-native-dictionary-seed-frames-regressions-20261108-v1/scalar",
+    "archive_path": "/private/tmp/mech-related-native-dictionary-seed-frames-regressions-20261108-v1/scalar.gz",
+    "original_bytes": 109102752,
+    "compressed_bytes": 15173950,
+    "sha256": "4ab63d826772703485ac49735def7c1389ff7be49858fb354acec0647ca7097e",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "all_functional_runs_complete": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-native-dictionary-seed-frames-regressions-20261108-v1/one-kib",
+    "archive_path": "/private/tmp/mech-related-native-dictionary-seed-frames-regressions-20261108-v1/one-kib.gz",
+    "original_bytes": 105823176,
+    "compressed_bytes": 13373487,
+    "sha256": "d9ae0593f1fb0b39a3e2a8db91f41cbc63a0125ccffce0947c24a4e03b8be853",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "all_functional_runs_complete": true
+  }
+]

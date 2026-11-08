@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/phase-diagnostics/analyze-profile.py"
+  ],
+  "exit": 0,
+  "seconds": 0.8619176249485463,
+  "stdout": "rust-fastest-coarse post ms 1.573166 M instructions 17.718 alloc 58.0 bytes 6825713.0 native roots [0]\n phases [('preparation_interning_and_eligibility', 0.607229, 7775431.0, 38.0), ('triple_index_and_coverage', 0.185417, 2953893.0, 7.0), ('quartet_index_and_masks', 0.208437, 2752153.0, 7.0), ('queries_cleanup_and_materialization', 0.57775, 4238364.0, 6.0)]\ncanonical-control-coarse post ms 1.918646 M instructions 34.0183 alloc 1150.0 bytes 7818627.0 native roots [15]\n phases [('preparation_interning_and_eligibility', 0.829875, 9763576.0, 788.0), ('triple_index_and_coverage', 0.348917, 5598903.0, 83.0), ('quartet_index_and_masks', 0.26225, 4487535.0, 83.0), ('queries_cleanup_and_materialization', 0.481875, 14150063.5, 196.0)]\nnative-dictionary-coarse post ms 1.835021 M instructions 33.4527 alloc 753.0 bytes 7744916.0 native roots [15]\n phases [('preparation_interning_and_eligibility', 0.743938, 9233421.5, 391.0), ('triple_index_and_coverage', 0.350979, 5607716.5, 83.0), ('quartet_index_and_masks', 0.265, 4485210.0, 83.0), ('queries_cleanup_and_materialization', 0.486375, 14124309.5, 196.0)]\n",
+  "stderr": "",
+  "diagnostic_only": true
+}

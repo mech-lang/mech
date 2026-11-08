@@ -1,0 +1,142 @@
+[
+  {
+    "path": "/private/tmp/mech-related-native-fuel-derived-debits-regressions-20261106-v2/scalar",
+    "archive": "/private/tmp/mech-related-native-fuel-derived-debits-regressions-20261106-v2/scalar.qualified.gz",
+    "bytes": 107544608,
+    "archive_bytes": 14837467,
+    "mode": 493,
+    "sha256": "ea526f5821121915f819819f9a16a4445f4aa9f63964f7dbb39b89d64d044b90",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-metadata-records-regressions-20261104-v2/scalar",
+    "archive": "/private/tmp/mech-related-native-metadata-records-regressions-20261104-v2/scalar.qualified.gz",
+    "bytes": 96682608,
+    "archive_bytes": 13946587,
+    "mode": 493,
+    "sha256": "5107d05218e44a6584986bd9d86d134dc080bf76c0b1cab2377788d832ea91b4",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-numeric-collections-regressions-20261106-v5/scalar",
+    "archive": "/private/tmp/mech-related-native-numeric-collections-regressions-20261106-v5/scalar.qualified.gz",
+    "bytes": 107440800,
+    "archive_bytes": 14804025,
+    "mode": 493,
+    "sha256": "ab310266cbbc0714ec84f5cad555d34bccfc10e6d1254868f4fade36126a2d83",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-numeric-collections-regressions-20261106-v6/scalar",
+    "archive": "/private/tmp/mech-related-native-numeric-collections-regressions-20261106-v6/scalar.qualified.gz",
+    "bytes": 107440688,
+    "archive_bytes": 14797707,
+    "mode": 493,
+    "sha256": "041bd2f1df4014d69dd3fb716e8ddbf82f4f13e8750be57c2e0125f5b4f84472",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-packed-byte-arrays-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-packed-byte-arrays-regressions-20261105-v1/scalar.qualified.gz",
+    "bytes": 96747920,
+    "archive_bytes": 13950670,
+    "mode": 493,
+    "sha256": "ebaa368edab32fd7f0e2dc5ba67109ba56fe92abe5548614bfc8720b7986d519",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-shared-template-tables-regressions-20261106-v2/scalar",
+    "archive": "/private/tmp/mech-related-native-shared-template-tables-regressions-20261106-v2/scalar.qualified.gz",
+    "bytes": 107433728,
+    "archive_bytes": 14788903,
+    "mode": 493,
+    "sha256": "802a21d6b72e99946327364709957f27975cbf9a022b4fdd055aa9043c9afa11",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-shared-template-tables-regressions-20261106-v3/scalar",
+    "archive": "/private/tmp/mech-related-native-shared-template-tables-regressions-20261106-v3/scalar.qualified.gz",
+    "bytes": 107433728,
+    "archive_bytes": 14788561,
+    "mode": 493,
+    "sha256": "c5da7fcf7cf94a338c6d7897b52c0a3106ca1876be1c7acaf35d3b0626cf0f13",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-streaming-fields-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-streaming-fields-regressions-20261105-v1/scalar.qualified.gz",
+    "bytes": 96670896,
+    "archive_bytes": 13938327,
+    "mode": 493,
+    "sha256": "336affe8595f0cd46793117a092c2dc24021d9f0dce92454a96cbdb53f5beea2",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-u32-arithmetic-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-u32-arithmetic-regressions-20261106-v1/scalar.qualified.gz",
+    "bytes": 107400752,
+    "archive_bytes": 14785680,
+    "mode": 493,
+    "sha256": "682f64b4ec09966a2eeea5df87e8fffb53c091135fc9ca556b0e57482350128a",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-unsigned-guards-regressions-20261105-v4/scalar",
+    "archive": "/private/tmp/mech-related-native-unsigned-guards-regressions-20261105-v4/scalar.qualified.gz",
+    "bytes": 96675104,
+    "archive_bytes": 13943395,
+    "mode": 493,
+    "sha256": "e890efe66c8c95be82296421cfd486526ce34b371938e66608323296d2122b05",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-zero-append-frontiers-regressions-20261106-v3/scalar",
+    "archive": "/private/tmp/mech-related-native-zero-append-frontiers-regressions-20261106-v3/scalar.qualified.gz",
+    "bytes": 107441504,
+    "archive_bytes": 14805568,
+    "mode": 493,
+    "sha256": "be10526962a8931787884eae7eecbdb7bb4d240937ff6e86bf120aa07b3c6f18",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-numeric-invalidation-regressions-20261104-v1/scalar",
+    "archive": "/private/tmp/mech-related-numeric-invalidation-regressions-20261104-v1/scalar.qualified.gz",
+    "bytes": 96634160,
+    "archive_bytes": 13924835,
+    "mode": 493,
+    "sha256": "b392d44c8bb20c161e5cd58495f95629fcc2bc5f7d559a32e6187f1a89335bfd",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v19/scalar",
+    "archive": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v19/scalar.qualified.gz",
+    "bytes": 96648896,
+    "archive_bytes": 13928939,
+    "mode": 493,
+    "sha256": "0777ec066848d3740d58fb8ff7234b71e4512ce8323a87e26a22a1461acc6422",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v23/scalar",
+    "archive": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v23/scalar.qualified.gz",
+    "bytes": 96649520,
+    "archive_bytes": 13930564,
+    "mode": 493,
+    "sha256": "ae2f15f990f44986d99bb7c1242505f9ea8dda561fe4dd31c48b9be6f14c2d75",
+    "lossless_verified": true,
+    "measurement_runners_untouched": true
+  }
+]

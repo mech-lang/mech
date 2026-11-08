@@ -1,0 +1,13 @@
+error: variable does not need to be mutable
+   --> /private/tmp/mech-related-native-dictionary-seed-frames-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/owner/seed_frames.rs:106:13
+    |
+106 |         let mut state = self.state.map_owners.state.take().unwrap();
+    |             ----^^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `-D unused-mut` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_mut)]`
+
+error: aborting due to 1 previous error
+

@@ -1,0 +1,18 @@
+{
+  "scope": "New Engine-owned native Map seed frame with exact factory/account identity and original remaining call allowance for canonical fallback",
+  "all138_native_collection_contracts_passed": true,
+  "inherited135contracts_retained": true,
+  "new_seed_frame_contracts": 3,
+  "projection_frame_and_relative_budget_regressions_passed": 19,
+  "all_native_collection_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/all-native-collection-tests.json",
+  "projection_frame_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/projection-frame-relative-budget-regressions.json",
+  "normal_Engine_library": "/private/tmp/mech-related-native-dictionary-seed-frames-engine-20261108-v1/libmech_engine.rlib",
+  "normal_Engine_library_sha256": "e663a29ebecb449901f75dafdaba797ec1969283d85466766941cd03fe27e99e",
+  "Engine_source_unchanged_since_test_compile": true,
+  "production_source_inventory_exact": true,
+  "source_files_count": 2368,
+  "timing_eligible": false,
+  "Engine_source_prefix_exactly_matches_test_inventory": true,
+  "Engine_source_files_count": 405,
+  "Engine_test_inventory": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/engine-tests-v2/source-inventory.json"
+}
