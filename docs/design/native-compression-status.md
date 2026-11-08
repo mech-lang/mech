@@ -1,5 +1,14 @@
 # Native compression milestone
 
+
+## R203: complete typed native diagnostic exposes repeated buffer copying
+
+The entire unchanged level-12 computation now produces exact streams for all20 cases, with independent inflate, input/prepared-output aliases, capacities and zero residual private cleanup. **Production remains R199 / IR214.** This first diagnostic is not adoptable: natural32 is **151.134× Roc versus retained3.328×**, periodic33 **235.224× versus3.394×**, repeated32 **223.671× versus2.899×**. Eight literals improve **4.458×→2.440×**, but larger cases copy gigabytes; no new cost-of-guarantees floor is established.
+
+Natural32 makes515,206 full allocator requests versus6,449 retained, requests400.3GB capacity, and tracks16.4GB initialized COW copies with15.0MB peak private payload. These measures are distinct. Fresh exact profiles put90–91% of large-case weights below native entry, mostly memmove. The generic canonical dispatcher is removed, but whole-record liveness retains obsolete array fields and defeats private ownership reuse. Next: owner-field liveness with true-alias controls, then repeat this whole20-case witness. Exact resource/import/publication/error-recovery restoration and direct reduction completion remain unfinished.
+
+An isolated sparse-SSA frontend change unblocks full emission:11 upstream SSA controls and four identical-CLIF probes pass; full build278.878s /2.98GB peak. No root dependency or production code is changed.3,856 matched primary calls,1,440 separate CPU/heap calls and7,214 fresh profile calls are retained. [All20 timings, counters, build blocker, source patches, exclusions and public replay](native-whole-compact-baseline.md). Existing draft#973 only.
+
 ## R202: matching-loop balance settlement rejected; complete compact baseline next
 
 Production remains **R199 / IR214**. The candidate settles admitted matching-loop balances at all normal/error/handoff exits and shortens the real matching edge **15→12 instructions**. It retains the per-header visit counter. The targeted complete timings do not improve: natural32 **3.333338×→3.339373× Roc**, repeated32 **2.877338×→2.883134×**, periodic33 **3.388472×→3.387324×**. All20 unchanged1.05 gates pass (12 lower/eight higher; geometric elapsed−0.045791%), but that tiny mixed aggregate is not the intended large-input win. The candidate is rejected without an unchanged favorable rerun.

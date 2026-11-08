@@ -40961,6 +40961,121 @@
           }
         }
       ]
+    },
+    "203": {
+      "base": "5aef4af18e13318b3ea02ca1813d662485115fff",
+      "isolated_source_base": "8879d21bcde5828a4244a5b029e72cda5ead76dd",
+      "production_commit": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "decision": "Retain negative complete compact-native diagnostic evidence only. Whole computation is correct on all20 but repeated COW copies dominate larger inputs. No production or dependency adoption. Fix owner-field liveness before evaluating an efficient cost-of-contracts baseline. Full brief remains open.",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "source_files": [],
+      "candidate_source_files": [
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compiler.rs",
+          "bytes": 20196,
+          "sha256": "4efbc4e6f4913548d1c302457eec5e9b7e5c9b167ccc97044c4bc2f87e37e31b"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/mod.rs",
+          "bytes": 920,
+          "sha256": "4cec9a3b0851dc398db114f1729f7f28fd08ffee132a88220f81319e99cbe229"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/mod.rs",
+          "bytes": 6078,
+          "sha256": "35dc9336b2c9221d3faeaabae4df83c8da5d5e84f5150b54af26b5c488a1e139"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/codegen/common/aggregates/mod.rs",
+          "bytes": 9836,
+          "sha256": "b631a0b527020c94f27ec6a5c6b296675d7f7880ed2f02df049ffd091600ab98"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/arrays.rs",
+          "bytes": 24361,
+          "sha256": "cbff021820cbfe1d846f95c3240b01303d15e119690ff1e9ad05a8271ae1a0ab"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/collections.rs",
+          "bytes": 15129,
+          "sha256": "fa38d01d4bf2025f492f9204255a0533bc0a090278e3b86d8ce0f281c4f9fd67"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/constants.rs",
+          "bytes": 8549,
+          "sha256": "bc5feccd59575e9ebd32eaf596f31de759bed72c1341cda6eafd1b4c56e59fc5"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+          "bytes": 20829,
+          "sha256": "051de1b35e4fca5c88503f004b2cd1266e5431671d2d2e1e5469632e76df71eb"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/flow.rs",
+          "bytes": 12755,
+          "sha256": "c79ee91ae9770b9b99e7fc458b31181bf01e1244bad9c998b1e6fedb0038979e"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/layout.rs",
+          "bytes": 10537,
+          "sha256": "49cfa7426b936c39c789cb77b4d94549bd628180b14259b5c94852edf04c9974"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/mod.rs",
+          "bytes": 2877,
+          "sha256": "0dc877a850653c7c616e2e181bae26f6f9aaafe6fd64f942930bebe4896b81fa"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/packed.rs",
+          "bytes": 2915,
+          "sha256": "2d7be6896ddaf3c087d3b39ed7f8a1cf03aafe05c76d94da625dc3b91db72192"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/compact/recipes.rs",
+          "bytes": 10763,
+          "sha256": "b09d2b2d2e4032ff34bd2106b1cbaa6ac0402b674401f2de5f011f00ed9494ed"
+        }
+      ],
+      "events": [
+        {
+          "event": "whole-compact-native-copying-baseline",
+          "asset": "r203-whole-compact-copy-baseline-efaa95f3dcfe.tar.gz",
+          "sha256": "efaa95f3dcfec9c54e81dff28d8fd5e04af5222ba0e879063c24a032d997db62",
+          "bytes": 623136,
+          "files": 321,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "compressor_source_unchanged": true,
+          "retained_production_unchanged_from_R199": true,
+          "ordinary_contract_omitted": true,
+          "complete_smoke_cases": 20,
+          "primary_observations": 3776,
+          "total_complete_calls": 3856,
+          "separate_counter_calls": 1440,
+          "fresh_profile_calls": 7214,
+          "gates_1_05_pass": 10,
+          "compact_faster_medians": 10,
+          "code": {
+            "production_bytes": 8152436,
+            "compact_bytes": 10260180,
+            "production_stack_bytes": 16480,
+            "compact_stack_bytes": 83264,
+            "compact_static_calls_not_dynamic_calls": 70889
+          },
+          "full_image_build_seconds": 278.87832475011237,
+          "full_image_build_peak_rss": 2981756928,
+          "upstream_ssa_tests": 11,
+          "public_verification": {
+            "file_occurrences": 321,
+            "server_digests_match": true,
+            "numerical_replay_byte_identical": true
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
