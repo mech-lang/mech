@@ -1,0 +1,12 @@
+{
+  "listed": 462,
+  "all460IR304names_retained": true,
+  "new_tests": [
+    "native_artifact::program::prepare::dictionary_seed_frames::tests::dictionary_seed_frames_keep_public_map_alias_distinct_from_private_seed_frame",
+    "native_artifact::program::prepare::dictionary_seed_frames::tests::dictionary_seed_frames_prove_adjacent_private_generic_map_seed_and_decoded_plan"
+  ],
+  "fresh_tests_executed": 2,
+  "fresh_actual_source_tests_executed": 1,
+  "full462tests_not_reexecuted": true,
+  "reason": "Only two cfg(test) proof files and CI selection change; production runtime, APIs, emission and IR identity unchanged. Full460IR304 execution receipt remains inherited. Full current CI rerun required for runtime bridge."
+}

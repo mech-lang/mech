@@ -1,0 +1,11 @@
+# Native dictionary seed-frame applicability
+
+Production remains the measured IR304 build:1.885625ms/1.233241x fastest eligible Rust1.529ms. This packet adds only a cfg(test) applicability prototype; no native seed bypass, opcode, runtime change, new IR identity, or performance claim.
+
+Actual-source facts are proved for source44 -> initializer45 -> seed72 (operands69/70/71,Map ordinal2), and source3400 -> initializer3401 -> seed2134 (operands2131/2132/2133,Map ordinal2). The source aggregate is a closed flat U64/single generic String-U64 Map pack with one exact LoopSeed use, adjacent initializer, matching schema/parent and no activation handoff. Public aliases of the immutable input Map remain valid and distinct from a public alias of the aggregate itself. The prototype proves both original and decoded fixtures and finds both real benchmark candidates.
+
+The target comes from IR304's fresh profile: source44 composite-pack uses406 allocations/74719 requested bytes/~92.084us diagnostic time,406 of443 remaining dictionary-prelude requests. Source45 import adds37 requests/~18.625us. These envelopes include useful work and probes, not promised savings. The ownership-and-fallback-requirements file records the outstanding native factory, private frame transport, exact finite/logical accounting, original snapshot lifetime and one-shot canonical fallback work.
+
+Two fresh unit tests plus one actual-source test pass. CI inventories462 names and retains all460 IR304 names; the full462 suite was not rerun for this test-only prototype. The full460 production suite remains the inherited IR304 qualification and must be rerun after runtime integration. The first metadata-check rejection (attempted test-only Plan deserialization) remains in tests-v1; no deserializer or unsafe metadata authority was added. The corrected fixture uses genuine source/decoded artifacts with a public Map alias.
+
+The selected implementation and complete measurements/profiles remain in [the IR304 packet](https://github.com/mech-lang/mech/tree/c760c9740c697449747ef8f5c51b10e5dc34614d/benchmarks/related-post-gen/trials/generic-native-dictionary-20261108). This continuation is deliberately unselected and untimed. The Rust parity goal remains active.

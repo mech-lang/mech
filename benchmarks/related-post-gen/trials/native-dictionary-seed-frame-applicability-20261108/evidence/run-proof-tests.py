@@ -1,0 +1,11 @@
+from pathlib import Path
+import hashlib,importlib.util,json,subprocess,time,os,sys
+p=Path(__file__).parent;t=p/sys.argv[1];t.mkdir(exist_ok=False);s=Path('/private/tmp/mech-related-native-dictionary-seed-frames-compiler-20261108');old='/private/tmp/mech-related-generic-native-dictionary-compiler-20261108';b=json.loads(Path('/private/tmp/mech-related-generic-native-dictionary-opt-20261108-v6/build.json').read_text());stage=next(x for x in b['stages']if x['crate']=='mech_gpu');c=[x.replace(old,str(s))for x in stage['command']];c[c.index('--crate-type=rlib')]='--test';c[-1]=str(t/'gpu-tests');env={k:v.replace(old,str(s))for k,v in stage['environment'].items()}
+for i,a in enumerate(c):
+ if a.startswith('metadata='):c[i]='metadata=related_dictionary_seed_applicability_v1'
+spec=importlib.util.spec_from_file_location('h','/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-compiler.py');h=importlib.util.module_from_spec(spec);spec.loader.exec_module(h);files=h.source_inventory(s);(t/'source-inventory.json').write_text(json.dumps(dict(root=str(s),files=files,scope='Seed-frame applicability only, native seed bypass disabled; IR304 production'),indent=2)+'\n')
+def run(c,n,extra=None):
+ start=time.monotonic();r=subprocess.run(c,cwd=s,capture_output=True,text=True,env={**os.environ,**env,**(extra or{})});(t/(n+'.json')).write_text(json.dumps(dict(command=c,environment={**env,**(extra or{})},exit=r.returncode,seconds=time.monotonic()-start,stdout=r.stdout,stderr=r.stderr,scope='Applicability only; no native seed bypass or performance claim'),indent=2)+'\n');print(n,r.returncode,flush=True)
+ if r.returncode:print(r.stdout[-6000:]+r.stderr[-6000:],flush=True)
+ assert r.returncode==0
+check=c.copy();check[-1]=str(t/'gpu-check.rmeta');check+=['--emit=metadata'];run(check,'test-check');run(c,'test-build');run([str(t/'gpu-tests'),'dictionary_seed_frames','--test-threads=1','--nocapture'],'applicability');run([str(t/'gpu-tests'),'dictionary_seed_frames_actual','--ignored','--test-threads=1','--nocapture'],'actual-source-applicability',{'MECH_MATRIX_KEY_BENCH_SOURCE':'/private/tmp/mech-related-native-string-classification-reuse-runners-20261108-v2/histogram-reuse/build/source.mec'});assert files==h.source_inventory(s)

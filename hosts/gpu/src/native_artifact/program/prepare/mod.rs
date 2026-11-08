@@ -612,3 +612,6 @@ pub(in crate::native_artifact) mod utf8_reads;
 pub(in crate::native_artifact) mod borrowed_map_keys;
 
 pub(in crate::native_artifact) mod generic_dictionary;
+
+#[cfg(test)]
+mod dictionary_seed_frames;

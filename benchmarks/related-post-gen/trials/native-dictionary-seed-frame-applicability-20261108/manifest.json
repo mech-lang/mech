@@ -1,0 +1,64 @@
+{
+  "files": {
+    "README.md": {
+      "bytes": 2243,
+      "sha256": "ac10f9eb5e68aa7772686be78c94384ebe681f7e29527239403503a44cc5358c"
+    },
+    "evidence/ci-inventory-audit.json": {
+      "bytes": 727,
+      "sha256": "4f94ec40b803a6609f63754bb2ec3554f0620fd377f7c512cd0920d651d59ec3"
+    },
+    "evidence/first-test-api-refusal-note.txt": {
+      "bytes": 535,
+      "sha256": "aa4bf408f88f9ccab2cfb3074ee6c44f0251e830691eaf137faea95ddd75c375"
+    },
+    "evidence/ci-list.json": {
+      "bytes": 69311,
+      "sha256": "9ed8b92676e21ea9d3bddfe18c8fa6bb3cf1fe837b50e6a9edd7006ba98fc375"
+    },
+    "evidence/run-proof-tests.py": {
+      "bytes": 2247,
+      "sha256": "9bd2abdf5db3cba243efdcdf5a049119c71df05d3026dcad81516dd1ad065e57"
+    },
+    "evidence/ownership-and-fallback-requirements.txt": {
+      "bytes": 4022,
+      "sha256": "704de3b9af686135da271425157d023017f9db5f53214753c1a45515899d8355"
+    },
+    "evidence/qualified-source-inventory.json": {
+      "bytes": 300780,
+      "sha256": "5335e2aa10d568784b18f0bcab6cac8166a70d4442ab5fe0d4b74ff43276da3b"
+    },
+    "evidence/tests-v2/source-inventory.json": {
+      "bytes": 300780,
+      "sha256": "5335e2aa10d568784b18f0bcab6cac8166a70d4442ab5fe0d4b74ff43276da3b"
+    },
+    "evidence/tests-v2/applicability.json": {
+      "bytes": 1404,
+      "sha256": "6541b7576110c97d512d8b3f3692a8acca055059792bad713de64fb31a7f70b6"
+    },
+    "evidence/tests-v2/test-check.json": {
+      "bytes": 17569,
+      "sha256": "3a67f17da62ed0c17c93d8e4debfce54260faf542140cea35ac5acf6e7ce842d"
+    },
+    "evidence/tests-v2/actual-source-applicability.json": {
+      "bytes": 2282,
+      "sha256": "ae467f73324b4194463c6cbda31b7a49c3fd138f44ec2b26183c9f590349c7e5"
+    },
+    "evidence/tests-v2/test-build.json": {
+      "bytes": 17540,
+      "sha256": "3f4bc37c38b651408c61b8693afe2e71ccfa65b80cc100efb48a1d86e3087578"
+    },
+    "evidence/tests-v1/source-inventory.json": {
+      "bytes": 300780,
+      "sha256": "23e09fe2154b7cdfa76d6286e1d191a94a5a9c5db9dd42edabb88993e17edf72"
+    },
+    "evidence/tests-v1/test-check.json": {
+      "bytes": 19207,
+      "sha256": "66fa034205031f1dc51a854ab324fe2fd8598cacc0ad97947270cb13250f559d"
+    }
+  },
+  "native_seed_bypass_enabled": false,
+  "performance_measured": false,
+  "production_IR": 304,
+  "goal_complete": false
+}
