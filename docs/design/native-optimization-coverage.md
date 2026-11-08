@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R217
+# Production/diagnostic optimization coverage after R218
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -24,3 +24,5 @@ R215 adopts the qualified dense interface/home-fact combination in maintained no
 R216 completes the separate stable owner-record experiment and source-site payload census. All151 executed sites resolve across all20 cases; payload event sequences remain identical while natural32 owner requests fall2588→29. Eight unit/640 compiled original-decoded controls pass. The pool stays unretained because two unchanged elapsed gates fail; normalR215 and retained diagnosticR211 remain unchanged. This closes the brief’s requested experiments and one ordinary integration checkpoint, not parity or qualification of the full diagnostic. [Complete disposition](native-owner-pool-census.md).
 
 R217 uses existing current-path last-use proof to retire stale other owner homes before a changing indexed update.73 static sites;640 compiled controls/all20 outputs pass, with major copy/request reductions. The candidate stays unretained because empty misses the original elapsed gate. NormalR215 and retained diagnosticR211 remain unchanged; no additional source operation becomes native and ordinary contracts are not restored by this lifetime experiment. [Results and next simplification](native-indexed-owner-retirement.md).
+
+R218: one-file post-success source cleanup preserves R217 copy savings, but has instruction/latency tradeoffs. It remains a measured alternative; no normal code or new operation coverage changes. [Comparison](native-consumed-source-cleanup.md).

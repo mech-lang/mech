@@ -42385,6 +42385,62 @@
       "ordinary_contract_retained": false,
       "candidate_default_adopted": false,
       "new_branch_or_PR": false
+    },
+    "218": {
+      "base": "5846c50ccc12aa756ecf063da26c3cca1a2b7fb4",
+      "normal_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "versions": {
+        "ir": 215,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": {
+        "adopted_normal": false,
+        "replaces_R217": false,
+        "reason": "Preserve simpler source-consumption alternative; original primary19/20 point gates and per-case instruction/elapsed tradeoffs require separately recorded measurement qualification. Do not discard fasterR217."
+      },
+      "source_files": [],
+      "compiler_rust_files": 0,
+      "diagnostic_compiler_files": 1,
+      "events": [
+        {
+          "asset": "r218-r219-owner-timing-80d995f4da67.tar.gz",
+          "sha256": "80d995f4da6724048919dab20275431d07b9dbe7fa06e686a1f899770f9dbf22",
+          "bytes": 3230292,
+          "files": 877,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r218-r219-owner-timing-80d995f4da67.tar.gz",
+          "event": "consumed-source-cleanup-comparison"
+        }
+      ],
+      "observations": {
+        "primary_calls": 11488,
+        "primary_retained": 11328,
+        "separate_cpu_heap_calls": 4160,
+        "primary_reference_calls": 5120,
+        "full_smoke_calls": 40,
+        "compiled_regression_cases": 640,
+        "original_primary_point_gates": 19,
+        "initial_primary_geometric_ratio_R218": 0.9988887006933727,
+        "instructions_lower_R218_vs_R211": 12,
+        "instructions_higher_R218_vs_R211": 8,
+        "instructions_lower_R218_vs_R217": 1,
+        "cycles_lower_R218_vs_R211": 16,
+        "wall_profile_calls": 22464,
+        "pc_profile_calls": 65519,
+        "static_consumed_sources": 153,
+        "small_nonnull_source_retirements": 752
+      },
+      "code": {
+        "R211_bytes": 5597664,
+        "R217_bytes": 5608036,
+        "R218_bytes": 5589884,
+        "R211_root_stack": 61120,
+        "R217_root_stack": 61344,
+        "R218_root_stack": 61520
+      },
+      "new_branch_or_PR": false
     }
   },
   "repository": "mech-lang/mech",
