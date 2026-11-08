@@ -60,7 +60,7 @@ fn bounded_child_funding_uses_current_generic_recurrence_and_refuses_changed_cap
     }
 }
 
-fn pair(artifact: &ProgramArtifact) -> [JitProgramArtifact; 2] {
+pub(super) fn pair(artifact: &ProgramArtifact) -> [JitProgramArtifact; 2] {
     let catalog = mech_stdlib::source_catalog();
     [
         JitProgramArtifact::compile_for_test(artifact, &catalog, OptimizationPass::ChildFunding)

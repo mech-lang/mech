@@ -41401,6 +41401,110 @@
           }
         }
       ]
+    },
+    "206": {
+      "base": "71beaa5aafbb83c87a1a7b1112933852e04f7e30",
+      "production": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "decision": "The 15-to11 instruction edge and5.41%/5.01% repeated/periodic instruction reductions are real and retained as evidence. Complete elapsed remains flat/slightly adverse,10 medians rise,16 instruction medians rise including natural32+0.70%, and aggregate elapsed+0.13856%. Do not substitute a favorable unchanged rerun.",
+      "versions_candidate": {
+        "ir": 218,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "source_files": [
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/child_funding.rs",
+          "bytes": 15766,
+          "sha256": "fc2e11d1804123a1a4b8fdc5ceef878a49745ab7a9afeee85e52955af42aa376",
+          "git_blob": "c31a83fa19c18de2619e5e69d0eb3f91bb04e432"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/child_funding_strides.rs",
+          "bytes": 7217,
+          "sha256": "c179ba76eb8a1a1c400a195241bc15234269ee15911b88641ba1a9b33b0e44e7",
+          "git_blob": "deaa7aca3ce255cd80e5de1b928aeef649c7f986"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+          "bytes": 13223,
+          "sha256": "34cbed08d09ee87cb37511fac98f21e948bf010f4fb7984bda0423a5c578fa5a",
+          "git_blob": "8d86294bd58c11f7dafceabe80ef41dfc25a47c6"
+        }
+      ],
+      "candidate_source_patch_sha256": "de1869f8ef5f44c96f6ed881fdad2dad8c9f4fe52e5b6e91caa0e32d4811a109",
+      "replay": {
+        "archive_schema": "evidence/manifest.json; SHA256 file inventory",
+        "scripts": [
+          "heap-summary.py",
+          "analyze.py"
+        ],
+        "scope": "Numerical receipt replay without compiling or compressing"
+      },
+      "events": [
+        {
+          "event": "rejected-induction-derived-settlement-retained-stride-controls-and-fresh-reference-counters",
+          "asset": "r206-matching-visit-accounting-7fe9d934a38c.tar.gz",
+          "sha256": "7fe9d934a38cb77984c7154afdd1de2616e1b7fd1d9805cb1f153de80ced44b5",
+          "bytes": 3487108,
+          "files": 959,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r206-matching-visit-accounting-7fe9d934a38c.tar.gz",
+          "compressor_source_unchanged": true,
+          "candidate_compiler_rejected": true,
+          "retained_production_unchanged_from_R199": true,
+          "primary_observations": 3968,
+          "total_complete_calls": 4048,
+          "gates_1_05_pass": 20,
+          "elapsed_medians_lower": 10,
+          "elapsed_medians_higher": 10,
+          "geometric_elapsed_change_percent": 0.13856126792473056,
+          "lower_instruction_medians": 4,
+          "higher_instruction_medians": 16,
+          "higher_cycle_medians": 6,
+          "equal_heap_cases": 20,
+          "candidate_native_tests": 677,
+          "candidate_scheduled_tests_executed": 260,
+          "restored_native_tests": 677,
+          "restored_scheduled_tests_executed": 260,
+          "selected_candidate_focused_tests": 5,
+          "new_retained_test_names": 1,
+          "matched_contract_observations_each": 1998,
+          "native_contract_invocations_each": 4002,
+          "real_match_controls": 1724,
+          "resident_value_agreements": 1566,
+          "resident_default_cap_denials": 142,
+          "source_error_controls": 16,
+          "fresh_candidate_profile_calls": 6758,
+          "fresh_exact_pc_profile_calls": 6814,
+          "separate_cpu_heap_calls": 1440,
+          "fresh_reference_instruction_cohort": true,
+          "fresh_reference_cases": 20,
+          "fresh_reference_counter_observations": 1280,
+          "fresh_reference_verified_complete_calls": 10240,
+          "code_bytes_before": 8152436,
+          "code_bytes_candidate": 8150284,
+          "stack_bytes_before": 16480,
+          "stack_bytes_candidate": 16352,
+          "public_verification": {
+            "asset": "r206-matching-visit-accounting-7fe9d934a38c.tar.gz",
+            "bytes": 3487108,
+            "sha256": "7fe9d934a38cb77984c7154afdd1de2616e1b7fd1d9805cb1f153de80ced44b5",
+            "file_occurrences": 959,
+            "server_digests_match": true,
+            "download_sha256_match": true,
+            "numerical_replay_byte_identical": true,
+            "download_transport": "GitHub public release API fallback after direct unauthenticated URL returned gateway504; both receipts preserved",
+            "scope": "Archived numerical receipt replay only; no compiler or compressor executed."
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",

@@ -14,6 +14,7 @@ mod child_cleanup;
 mod child_entry_checks;
 mod child_fuel;
 mod child_funding;
+mod child_funding_strides;
 mod child_prepayment;
 mod cold_child;
 mod cold_intervals;

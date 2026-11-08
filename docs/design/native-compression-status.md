@@ -1,6 +1,17 @@
 # Native compression milestone
 
 
+## R206: exact exit visits shorten the real loop, but whole-call tradeoff is rejected
+
+**Production remains R199 / IR214.** The induction-derived candidate preserves current funded/checked behavior and removes the per-header counter as well as balance arithmetic. Actual admitted matching edge **15→11 instructions**, repeated/periodic whole-call instructions **−5.41%/−5.01%**. Yet natural32 instructions rise0.70%, sixteen of20 instruction medians rise, and complete elapsed is flat/slightly adverse (**+0.138561%** geometrically; ten lower/ten higher). All20 unchanged1.05 gates pass. This is a rejected mixed tradeoff, not a rejection of a demonstrated small win.
+
+Fresh retained/candidate elapsed multiples: natural32 **3.323912×/3.342472× Roc**, repeated32 **2.879536×/2.873670×**, periodic33 **3.392393×/3.390149×**, eight literals **4.428090×/4.407688×**. The candidate figures are not a new production checkpoint. All20 heap metrics stay equal. No unchanged favorable rerun replaces contrary evidence.
+
+The missing reference instruction/heap cohort is now complete for all20 cases:1,280 observations /10,240 verified compressions, exact recovered fourteen-file package and pinned compiler/allocator. Retained natural32 **4.382859× reference instructions**, repeated **3.495571×**, periodic **3.762729×**, eight **9.111289×**. These are fresh same-input raw window ratios, separate from elapsed. Natural32 allocation requests remain6,449 versus276 reference; eight3,354 versus95. Requested bytes, initialized-copy volume and peak heap remain distinct.
+
+Candidate and final restored compiler each pass **677 native tests /all260 actual CI selections**.1,998 matched policy observations and4,002 native invocations per side agree exactly; unchanged236/eight/one qualification,1,724 real matching controls,15 architecture checks and132 workflow tests pass. Retained stride8/12/16/24 controls cover changing starts, mismatch, original/decoded, resident/native, finite rejection, publication, cleanup and retry. Same seven inherited native exclusions;142 resident default-cap denials are disclosed without raising the cap.
+
+Fresh current profiles still identify phase15296 as natural text's main target. The next bounded step returns to the primary compact-native milestone: carry the already-qualified compact numeric phase and packed reads through complete emission. Ordinary guarantee restoration and the exclusive production host-family ledger remain open. [All20 results, exact patch, fresh reference counters, failures and verified review packet](native-matching-visit-accounting.md). Existing draft#973 only; no parity or full-brief completion claim.
 
 ## R205: direct return is correct but its emitted tradeoff is rejected
 
