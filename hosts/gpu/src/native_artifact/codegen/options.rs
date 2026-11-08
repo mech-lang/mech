@@ -65,6 +65,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Use an exact fixed matrix extent certified by this numeric loan's
     /// original selected factory. Growing views retain their current length.
     StaticNumericExtents,
+    /// Preserve bytewise FNV while loading bounded words and admitting exact
+    /// two-byte equality tails in native immutable UTF8 work.
+    Utf8WordChunks,
     /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
     DisjointState,

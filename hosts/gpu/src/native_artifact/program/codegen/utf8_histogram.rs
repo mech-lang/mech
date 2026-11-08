@@ -118,6 +118,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     symbol: &str,
     vectorized: bool,
     funding: Funding,
+    halfwords: bool,
 ) -> Result<(FuncId, u64, u64), NativeCompileError> {
     if module.target_config().pointer_type() != types::I64 {
         return Err(NativeCompileError::UnsupportedHost);
@@ -143,7 +144,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
         b.append_block_params_for_function_params(entry);
         b.switch_to_block(entry);
         let frame = b.block_params(entry)[0];
-        emit(&mut b, frame, vectorized, funding);
+        emit(&mut b, frame, vectorized, funding, halfwords);
         b.seal_all_blocks();
         b.finalize();
     }
@@ -169,7 +170,13 @@ pub(in crate::native_artifact) fn define<M: Module>(
     ))
 }
 
-fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool, funding: Funding) {
+fn emit(
+    b: &mut FunctionBuilder<'_>,
+    frame: Value,
+    vectorized: bool,
+    funding: Funding,
+    halfwords: bool,
+) {
     let complete = b.create_block();
     let cold = b.create_block();
     let full = b.create_block();
@@ -366,7 +373,9 @@ fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool, funding: Fu
     b.ins().brif(more, tail, &[], hit, &[]);
     b.switch_to_block(tail);
     let remaining = b.ins().isub(bytes, offset);
-    for width in if vectorized {
+    for width in if vectorized && halfwords {
+        &[16i64, 8, 4, 2, 1][..]
+    } else if vectorized {
         &[16i64, 8, 4, 1][..]
     } else {
         &[1i64][..]
@@ -386,6 +395,7 @@ fn emit(b: &mut FunctionBuilder<'_>, frame: Value, vectorized: bool, funding: Fu
             16 => types::I8X16,
             8 => types::I64,
             4 => types::I32,
+            2 => types::I16,
             _ => types::I8,
         };
         let left = b.ins().load(ty, MemFlags::new(), source, 0);

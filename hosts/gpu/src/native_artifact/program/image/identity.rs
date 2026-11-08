@@ -461,7 +461,9 @@ fn selected_template(
 // IR289 refines declined append guards with a bounded, read-only prefix.
 // IR293 imports only compiler-proved worker-local constants; immutable
 // captures already supply their current scalar words and canonical owners.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 293;
+// IR294 preserves bytewise FNV with bounded native word loads and exact
+// halfword equality tails. Runtime hashing, fees and loan geometry are unchanged.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 294;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

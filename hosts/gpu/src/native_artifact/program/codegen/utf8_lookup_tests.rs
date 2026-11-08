@@ -13,6 +13,14 @@ impl Kernel {
         Self::with_order(prepaid, vectorized, false)
     }
     fn with_order(prepaid: bool, vectorized: bool, physical_order: bool) -> Self {
+        Self::with_chunks(prepaid, vectorized, physical_order, true)
+    }
+    fn with_chunks(
+        prepaid: bool,
+        vectorized: bool,
+        physical_order: bool,
+        word_chunks: bool,
+    ) -> Self {
         let builder = cranelift_jit::JITBuilder::with_flags(
             &[("opt_level", "speed")],
             default_libcall_names(),
@@ -52,6 +60,7 @@ impl Kernel {
                 prepaid,
                 vectorized,
                 physical_order,
+                word_chunks,
             );
             for (block, status) in [(complete, COMPLETE), (cold, COLD), (missing, MISSING)] {
                 b.switch_to_block(block);
@@ -344,45 +353,88 @@ fn native_utf8_work_simd_tail_never_reads_past_an_admitted_key() {
             assert_eq!(unsafe { munmap(self.base, self.pages) }, 0);
         }
     }
-    let kernel = Kernel::new(true, true);
-    for len in [0, 1, 3, 4, 5, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65] {
-        let bytes = vec![b'a'; len];
-        let query = Guarded::new(&bytes);
-        let stored = Guarded::new(&bytes);
-        let mut slots = vec![Slot::default(); 4];
-        let hashed = hash(&bytes);
-        slots[hashed as usize & 3] = Slot {
-            address: stored.key as u64,
-            bytes: len as u64,
-            value: 731,
-            hash: hashed,
-            occupied: 1,
-        };
-        // Two identical queries also prove the completed cursor is per visit,
-        // rather than a reused key-owner result or one-shot producer permit.
-        let cell = Cell {
-            address: query.key as u64,
-            bytes: len as u64,
-        };
-        let cells = [cell, cell];
-        let mut output = [u64::MAX; 2];
-        let mut frame = Frame {
-            slots: slots.as_ptr() as u64,
-            capacity: 4,
-            cells: cells.as_ptr() as u64,
-            count: 2,
-            rows: 2,
-            columns: 1,
-            output: output.as_mut_ptr() as u64,
-            stored_bytes: len as u64,
-            fuel: 0,
-            comparison: 0,
-            epoch: 9,
-            issued: 9,
-            next: 0,
-        };
-        assert_eq!(kernel.run(&mut frame), COMPLETE);
-        assert_eq!(output, [731, 731]);
-        assert_eq!(frame.next, 2);
+    for chunks in [false, true] {
+        let kernel = Kernel::with_chunks(true, true, false, chunks);
+        for len in 0..=97 {
+            let bytes = vec![b'a'; len];
+            let query = Guarded::new(&bytes);
+            let stored = Guarded::new(&bytes);
+            let mut slots = vec![Slot::default(); 4];
+            let hashed = hash(&bytes);
+            slots[hashed as usize & 3] = Slot {
+                address: stored.key as u64,
+                bytes: len as u64,
+                value: 731,
+                hash: hashed,
+                occupied: 1,
+            };
+            // Two identical queries also prove the completed cursor is per visit,
+            // rather than a reused key-owner result or one-shot producer permit.
+            let cell = Cell {
+                address: query.key as u64,
+                bytes: len as u64,
+            };
+            let cells = [cell, cell];
+            let mut output = [u64::MAX; 2];
+            let mut frame = Frame {
+                slots: slots.as_ptr() as u64,
+                capacity: 4,
+                cells: cells.as_ptr() as u64,
+                count: 2,
+                rows: 2,
+                columns: 1,
+                output: output.as_mut_ptr() as u64,
+                stored_bytes: len as u64,
+                fuel: 0,
+                comparison: 0,
+                epoch: 9,
+                issued: 9,
+                next: 0,
+            };
+            assert_eq!(kernel.run(&mut frame), COMPLETE);
+            assert_eq!(output, [731, 731]);
+            assert_eq!(frame.next, 2);
+        }
+    }
+}
+
+#[test]
+fn native_utf8_word_chunks_keep_exact_fnv_hashes_and_collision_errors_for_all_tails() {
+    let mut names = vec![String::new(), "é東京\0👩‍🔬".into()];
+    names.extend(
+        (0..130).map(|n| format!("{}{}", "x".repeat(n), char::from(b'a' + (n % 23) as u8))),
+    );
+    for prepaid in [false, true] {
+        for vectorized in [false, true] {
+            for chunks in [false, true] {
+                let kernel = Kernel::with_chunks(prepaid, vectorized, true, chunks);
+                let mut data = fixture(names.clone(), names.clone(), 1, names.len() as u64);
+                assert_eq!(kernel.run(&mut data.frame), COMPLETE);
+                assert_eq!(
+                    data.output,
+                    (100..100 + names.len() as u64).collect::<Vec<_>>()
+                );
+                // Force equal full hashes and lengths for different UTF8 bytes.
+                // Equality must still reject every mismatching tail position.
+                for len in 1..=17 {
+                    for changed in 0..len {
+                        let query = "a".repeat(len);
+                        let mut stored = query.as_bytes().to_vec();
+                        stored[changed] = b'b';
+                        let stored = String::from_utf8(stored).unwrap();
+                        let mut data = fixture(vec![stored], vec![query.clone()], 1, 1);
+                        let index = data._slots.iter().position(|s| s.occupied != 0).unwrap();
+                        let mut slot = data._slots[index];
+                        data._slots[index] = Slot::default();
+                        slot.hash = hash(query.as_bytes());
+                        let destination = slot.hash as usize & (data._slots.len() - 1);
+                        data._slots[destination] = slot;
+                        assert_eq!(kernel.run(&mut data.frame), MISSING);
+                        assert_eq!(data.output, [u64::MAX]);
+                        assert_eq!(data.frame.next, 0);
+                    }
+                }
+            }
+        }
     }
 }

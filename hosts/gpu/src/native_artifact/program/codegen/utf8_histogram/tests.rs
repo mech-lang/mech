@@ -17,8 +17,14 @@ impl Kernel {
         )
         .unwrap();
         let mut module = cranelift_jit::JITModule::new(builder);
-        let (id, _, _) =
-            define(&mut module, "borrowed_utf8_histogram", vectorized, funding).unwrap();
+        let (id, _, _) = define(
+            &mut module,
+            "borrowed_utf8_histogram",
+            vectorized,
+            funding,
+            true,
+        )
+        .unwrap();
         module.finalize_definitions().unwrap();
         // SAFETY: the live module owns the complete one-pointer leaf ABI.
         let entry = unsafe {
@@ -90,6 +96,9 @@ fn generated_histogram_scalar_and_wide_reads_preserve_utf8_counts_and_every_tail
         "東京".into(),
         "é".into(),
     ];
+    // Exercise every short/tail byte length, including the new exact two-byte
+    // equality chunk. These lengths are independent of the benchmark fixture.
+    owned.extend((0..=97).map(|n| "a".repeat(n)));
     for n in 0..70 {
         owned.push(format!("{}é\0{}", "x".repeat(n), "y".repeat(70 - n)));
     }

@@ -293,26 +293,26 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let report = &mut self.report;
         #[cfg(feature = "canonical-native-program")]
-        let histogram_function =
-            if let plan::CodePlan::Program(program) = plan {
-                let metadata = program.metadata();
-                let sites = (0..metadata.plan.blocks().len())
-                    .filter(|&site| {
-                        crate::native_artifact::program::codegen::utf8_histogram::selected(
-                            metadata, site,
-                        )
-                    })
-                    .collect::<Vec<_>>();
-                if sites.is_empty() {
-                    None
-                } else {
-                    let symbol = format!("{entry_symbol}_utf8_histogram");
-                    let (id, stack, code) =
+        let histogram_function = if let plan::CodePlan::Program(program) = plan {
+            let metadata = program.metadata();
+            let sites = (0..metadata.plan.blocks().len())
+                .filter(|&site| {
+                    crate::native_artifact::program::codegen::utf8_histogram::selected(
+                        metadata, site,
+                    )
+                })
+                .collect::<Vec<_>>();
+            if sites.is_empty() {
+                None
+            } else {
+                let symbol = format!("{entry_symbol}_utf8_histogram");
+                let (id, stack, code) =
                     crate::native_artifact::program::codegen::utf8_histogram::define(
                         module, &symbol, true,
                         crate::native_artifact::program::codegen::utf8_histogram::Funding::Prepaid,
+                        controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks),
                     )?;
-                    report.utf8_histogram = Some(
+                report.utf8_histogram = Some(
                         crate::native_artifact::codegen::control::codegen_report::Utf8Histogram {
                             symbol,
                             stack_bytes: stack,
@@ -321,13 +321,14 @@ impl<'plan> CfgDefinition<'plan> {
                             funding: "complete_original_call_pass_prepayment",
                             hash: "bounded_word_mix",
                             bank: "adaptive_three_quarter_occupancy",
+                            halfword_equality: controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks),
                         },
                     );
-                    Some((id, stack, code))
-                }
-            } else {
-                None
-            };
+                Some((id, stack, code))
+            }
+        } else {
+            None
+        };
         #[cfg(feature = "canonical-native-program")]
         let window_functions =
             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(program) = plan
@@ -1109,7 +1110,15 @@ impl<'plan> CfgDefinition<'plan> {
                     plan.value_count() + iteration as usize,
                     blocks[exit as usize].expect("reachable native UTF8 collection exit"),
                     error,
+                    controls.enabled(
+                        crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks,
+                    ),
                 )?;
+                if controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks,
+                ) {
+                    report.utf8_word_chunk_sites.push(index);
+                }
             }
             #[cfg(feature = "canonical-native-program")]
             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =

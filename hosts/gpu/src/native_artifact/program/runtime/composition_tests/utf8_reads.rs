@@ -699,3 +699,122 @@ fn utf8_collection_images_reject_old_identity_forged_uses_and_unfunded_header() 
         }
     }
 }
+
+#[test]
+fn utf8_word_chunks_keep_original_decoded_restored_outputs_reports_and_atomic_retry() {
+    use crate::native_artifact::codegen::options::OptimizationPass;
+    let names = (0..=65)
+        .map(|n| "x".repeat(n))
+        .chain(["é東京\0👩‍🔬".into()])
+        .collect::<Vec<_>>();
+    let entries = names
+        .iter()
+        .enumerate()
+        .map(|(i, n)| (n.as_str(), i as u64))
+        .collect::<Vec<_>>();
+    let keys = names.iter().map(String::as_str).collect::<Vec<_>>();
+    for source in [DIRECT, RECORD] {
+        for artifact in artifacts(source) {
+            let catalog = mech_stdlib::source_catalog();
+            let native = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let legacy = JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                OptimizationPass::Utf8WordChunks,
+            )
+            .unwrap();
+            let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+            let old = crate::native_artifact::program::compiler::emit_program_object_for_test(
+                &artifact,
+                &catalog,
+                OptimizationPass::Utf8WordChunks,
+            )
+            .unwrap();
+            assert_eq!(
+                object.metadata()["compiled_utf8_word_chunk_sites"]
+                    .as_array()
+                    .unwrap()
+                    .len(),
+                1
+            );
+            assert!(
+                old.metadata()["compiled_utf8_word_chunk_sites"]
+                    .as_array()
+                    .unwrap()
+                    .is_empty()
+            );
+            for restored in [false, true] {
+                let mode = NativeProgramLimitMode::NoLimits;
+                let memory = mode.memory_budget();
+                let mut left = vec![None; artifact.outputs().len()];
+                let mut right = vec![None; artifact.outputs().len()];
+                for missing in [false, true, false] {
+                    let mut query = keys.clone();
+                    if missing {
+                        query.push("absent-tail");
+                    }
+                    let args =
+                        arguments(&artifact, &memory, &entries, &query, 1, query.len() as u64);
+                    let aliases = args.clone();
+                    let before = contents(&args);
+                    let prior = right.clone();
+                    let held = (
+                        memory.used_bytes(),
+                        memory.retained_nodes(),
+                        memory.retained_snapshot_nodes(),
+                    );
+                    let (a, ac) = run(
+                        &native,
+                        &args,
+                        &mut left,
+                        mode.execution(),
+                        &memory,
+                        restored,
+                        Flags::default(),
+                    );
+                    let (b, bc) = run(
+                        &legacy,
+                        &args,
+                        &mut right,
+                        mode.execution(),
+                        &memory,
+                        restored,
+                        Flags::default(),
+                    );
+                    if missing {
+                        assert_eq!(
+                            format!("{:?}", a.unwrap_err()),
+                            format!("{:?}", b.unwrap_err())
+                        );
+                        assert_prior(&right, &prior);
+                        assert_eq!(
+                            (
+                                memory.used_bytes(),
+                                memory.retained_nodes(),
+                                memory.retained_snapshot_nodes()
+                            ),
+                            held
+                        );
+                    } else {
+                        assert_eq!(format!("{:?}",a.unwrap()), format!("{:?}",b.unwrap()));
+                        assert_eq!(drafts(&left), drafts(&right));
+                        assert_eq!(
+                            (ac.selected, ac.complete, bc.selected, bc.complete),
+                            (1, 1, 1, 1)
+                        );
+                    }
+                    assert_eq!(contents(&aliases), before);
+                }
+                drop((left, right));
+                assert_eq!(
+                    (
+                        memory.used_bytes(),
+                        memory.retained_nodes(),
+                        memory.retained_snapshot_nodes()
+                    ),
+                    (0, 0, 0)
+                );
+            }
+        }
+    }
+}

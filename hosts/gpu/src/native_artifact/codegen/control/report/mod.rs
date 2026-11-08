@@ -16,6 +16,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub scalar_selects: usize,
     pub unsigned_guards: usize,
     pub utf8_histogram: Option<Utf8Histogram>,
+    pub utf8_word_chunk_sites: Vec<usize>,
     pub outlined_loops: Vec<OutlinedLoop>,
     pub numeric_functions:
         Vec<crate::native_artifact::program::codegen::readonly_numeric::outlined::OutlinedReport>,
@@ -708,4 +709,5 @@ pub(in crate::native_artifact) struct Utf8Histogram {
     pub funding: &'static str,
     pub hash: &'static str,
     pub bank: &'static str,
+    pub halfword_equality: bool,
 }

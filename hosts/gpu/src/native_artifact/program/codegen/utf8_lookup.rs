@@ -25,6 +25,7 @@ pub(in crate::native_artifact) fn emit_entry(
     counter_slot: usize,
     exit: Block,
     error: Block,
+    word_chunks: bool,
 ) -> Result<(), NativeCompileError> {
     let zero = b.ins().iconst(types::I64, 0);
     hooks.call(b, site, GlobalHelper::Utf8ReadPrepare, [zero; 3], error);
@@ -40,7 +41,17 @@ pub(in crate::native_artifact) fn emit_entry(
     b.append_block_param(settle, types::I64);
     // Prepare has paid the complete physical worst case before lending the
     // private bank. Logical body fees remain uncommitted until full success.
-    emit(b, frame, complete, declined, missing, true, true, true);
+    emit(
+        b,
+        frame,
+        complete,
+        declined,
+        missing,
+        true,
+        true,
+        true,
+        word_chunks,
+    );
     for (block, status) in [(complete, COMPLETE), (declined, COLD), (missing, MISSING)] {
         b.switch_to_block(block);
         let status = b.ins().iconst(types::I64, status as i64);
@@ -92,6 +103,48 @@ fn mul(b: &mut FunctionBuilder<'_>, left: Value, right: Value, cold: Block) -> V
     b.ins().imul(left, right)
 }
 
+// Bounds are established by the caller's remaining-length branch. The load
+// is unaligned and explicitly little-endian, preserving byte order on every
+// target. It replaces exactly `width` original byte loads and FNV steps.
+fn hash_chunk(
+    b: &mut FunctionBuilder<'_>,
+    address: cranelift_frontend::Variable,
+    cursor: cranelift_frontend::Variable,
+    hash: cranelift_frontend::Variable,
+    width: i64,
+) {
+    let start = b.use_var(address);
+    let at = b.use_var(cursor);
+    let pointer = b.ins().iadd(start, at);
+    let ty = match width {
+        8 => types::I64,
+        4 => types::I32,
+        2 => types::I16,
+        _ => unreachable!(),
+    };
+    let flags = MemFlags::new().with_endianness(cranelift_codegen::ir::Endianness::Little);
+    let word = b.ins().load(ty, flags, pointer, 0);
+    let word = if width == 8 {
+        word
+    } else {
+        b.ins().uextend(types::I64, word)
+    };
+    let mut current = b.use_var(hash);
+    for byte in 0..width {
+        let part = if byte == 0 {
+            word
+        } else {
+            b.ins().ushr_imm(word, byte * 8)
+        };
+        let part = b.ins().band_imm(part, 255);
+        let mixed = b.ins().bxor(current, part);
+        current = b.ins().imul_imm(mixed, HASH_PRIME as i64);
+    }
+    b.def_var(hash, current);
+    let next = b.ins().iadd_imm(at, width);
+    b.def_var(cursor, next);
+}
+
 /// Every pointer and extent must come from the caller's live checked loans.
 /// `prepaid` means the entire physical worst-case allowance was already paid;
 /// otherwise the finite physical allowance in frame.fuel/comparison is reduced
@@ -106,6 +159,7 @@ pub(in crate::native_artifact) fn emit(
     prepaid: bool,
     vectorized: bool,
     physical_order: bool,
+    word_chunks: bool,
 ) {
     let cold = b.create_block();
     let done = b.create_block();
@@ -235,6 +289,39 @@ pub(in crate::native_artifact) fn emit(
     b.switch_to_block(hash_head);
     let at = b.use_var(hash_at);
     let length = b.use_var(key_bytes);
+    if word_chunks {
+        // Keep exactly the original bytewise FNV recurrence. One bounded
+        // little-endian load supplies independent byte values; only pointer,
+        // load and loop-control work is shared. No payload byte is omitted.
+        let remaining = b.ins().isub(length, at);
+        let full = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 8);
+        let batch = b.create_block();
+        let tail = b.create_block();
+        b.ins().brif(full, batch, &[], tail, &[]);
+        b.switch_to_block(batch);
+        hash_chunk(b, key_address, hash_at, hash_word, 8);
+        b.ins().jump(hash_head, &[]);
+        b.switch_to_block(tail);
+        // Once fewer than eight bytes remain, take each exact tail width at
+        // most once. The final byte block therefore never re-enters the loop.
+        for width in [4, 2] {
+            let at = b.use_var(hash_at);
+            let remaining = b.ins().isub(length, at);
+            let full = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, width);
+            let batch = b.create_block();
+            let tail = b.create_block();
+            b.ins().brif(full, batch, &[], tail, &[]);
+            b.switch_to_block(batch);
+            hash_chunk(b, key_address, hash_at, hash_word, width);
+            b.ins().jump(tail, &[]);
+            b.switch_to_block(tail);
+        }
+    }
+    let at = b.use_var(hash_at);
     let more = b.ins().icmp(IntCC::UnsignedLessThan, at, length);
     b.ins().brif(more, hash_byte, &[], hash_done, &[]);
     b.switch_to_block(hash_byte);
@@ -249,7 +336,8 @@ pub(in crate::native_artifact) fn emit(
     b.def_var(hash_word, hash);
     let at = b.ins().iadd_imm(at, 1);
     b.def_var(hash_at, at);
-    b.ins().jump(hash_head, &[]);
+    b.ins()
+        .jump(if word_chunks { hash_done } else { hash_head }, &[]);
     b.switch_to_block(hash_done);
     let hash = b.use_var(hash_word);
     let at = b.ins().band(hash, mask);
@@ -315,7 +403,12 @@ pub(in crate::native_artifact) fn emit(
         // Short UTF8 keys and vector tails still admit bounded whole-word
         // equality. Unaligned loads are legal; neither string is read beyond
         // its proven equal byte extent. A mismatch advances the same probe.
-        for (width, ty) in [(8, types::I64), (4, types::I32)] {
+        let widths: &[(i64, cranelift_codegen::ir::Type)] = if word_chunks {
+            &[(8, types::I64), (4, types::I32), (2, types::I16)]
+        } else {
+            &[(8, types::I64), (4, types::I32)]
+        };
+        for &(width, ty) in widths {
             let at = b.use_var(equal_at);
             let remaining = b.ins().isub(length, at);
             let full = b
