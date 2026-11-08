@@ -10,6 +10,29 @@ use crate::native_artifact::program::runtime::maps::utf8_read::{
 use mech_core::snapshot::{MapValue, SequenceView};
 use mech_core::{ResourceDemand, SchemaBody};
 
+/// One invocation-scoped private classification, produced by native hashing.
+/// Source generation and exact producer are rechecked at the consumer. This
+/// carries no dictionary values, source visit, callback or publication permit.
+pub(in crate::native_artifact::program::runtime) struct ClassifiedSource {
+    pub source: Value,
+    pub handle: NativeValueHandle,
+    pub producer: usize,
+    pub representatives: Box<[u64]>,
+    pub first_rows: Box<[u64]>,
+    pub reservation: ManagedMemoryReservation,
+    pub _nodes: ManagedNodeReservation,
+}
+pub(super) enum Storage {
+    Classes(ClassifiedSource),
+    Loan(Loan),
+}
+pub(in crate::native_artifact::program::runtime) fn classification_bytes(
+    count: usize,
+) -> Option<u64> {
+    (count as u64)
+        .checked_mul(8)?
+        .checked_add(size_of::<Storage>() as u64)
+}
 pub(super) struct Loan {
     header: usize,
     collection: usize,
@@ -21,6 +44,7 @@ pub(super) struct Loan {
     slots: Box<[Slot]>,
     cells: Box<[Cell]>,
     output: Vec<u64>,
+    classes: Option<ClassifiedSource>,
     pub(super) frame: Box<Frame>,
     commit_compute: u64,
     commit_cloned: u64,
@@ -87,7 +111,7 @@ impl State {
         iteration: u32,
         progress: &[u64],
     ) -> bool {
-        self.native_read.is_none()
+        !self.has_utf8_read()
             && self.current == Some(collection)
             && self
                 .sources
@@ -101,15 +125,46 @@ impl State {
                 })
     }
     pub(in crate::native_artifact::program::runtime) fn has_utf8_read(&self) -> bool {
-        self.native_read.is_some()
+        matches!(self.native_read.as_deref(), Some(Storage::Loan(_)))
+    }
+    pub(in crate::native_artifact::program::runtime::collections) fn class_nodes(&self) -> u64 {
+        match self.native_read.as_deref() {
+            Some(Storage::Classes(_)) => 3,
+            Some(Storage::Loan(loan)) if loan.classes.is_some() => 3,
+            _ => 0,
+        }
+    }
+    pub(in crate::native_artifact::program::runtime) fn publish_classes(
+        &mut self,
+        cache: ClassifiedSource,
+    ) -> Result<(), Error> {
+        if self.has_utf8_read() {
+            return Err(invalid("histogram overlaps active String loan"));
+        }
+        if let Some(old) = self.native_read.take() {
+            let Storage::Classes(old) = *old else {
+                unreachable!()
+            };
+            self.live_bytes = self
+                .live_bytes
+                .checked_sub(old.reservation.capacity_bytes())
+                .ok_or_else(|| invalid("String classification retirement underflow"))?;
+        }
+        let bytes = cache.reservation.capacity_bytes();
+        if let Some(storage) = boxed(Storage::Classes(cache)) {
+            self.live_bytes = add(self.live_bytes, bytes)?;
+            self.native_read = Some(storage);
+        }
+        Ok(())
     }
     pub(in crate::native_artifact::program::runtime) fn prepare_utf8_read(
         &mut self,
         ctx: &mut CollectionExecution<'_, '_, '_, '_>,
         region: &Region,
         prior: ResourceDemand,
+        classified: bool,
     ) -> Result<Option<u64>, Error> {
-        if self.native_read.is_some() {
+        if self.has_utf8_read() {
             return Err(invalid("overlapping native String lookup collection"));
         }
         let descriptor = ctx.descriptor();
@@ -204,6 +259,20 @@ impl State {
             return Ok(None);
         };
         let count = strings.len();
+        let classes = match self.native_read.as_deref() {
+            Some(Storage::Classes(cache))
+                if classified
+                    && region.classification_site == Some(cache.producer as u32)
+                    && cache.handle == source_handle
+                    && cache.source.shares_frozen_storage(&source)
+                    && cache.representatives.len() == count =>
+            {
+                Some(cache)
+            }
+            _ => None,
+        };
+        let query_count = classes.map_or(count, |cache| cache.first_rows.len());
+        let use_classes = classes.is_some();
         let Some(capacity) = table
             .entries()
             .len()
@@ -218,7 +287,7 @@ impl State {
         let metadata_bytes = (capacity as u64)
             .checked_mul(size_of::<Slot>() as u64)
             .and_then(|n| n.checked_add((count as u64).checked_mul(ADMITTED_CELL_BYTES)?))
-            .and_then(|n| n.checked_add((size_of::<Loan>() + size_of::<Frame>()) as u64));
+            .and_then(|n| n.checked_add((size_of::<Storage>() + size_of::<Frame>()) as u64));
         let Some(metadata_bytes) = metadata_bytes else {
             return Ok(None);
         };
@@ -465,7 +534,7 @@ impl State {
         let Some(mut slots) = fixed(capacity, Slot::default()) else {
             return Ok(None);
         };
-        let Some(mut cells) = fixed(count, Cell::default()) else {
+        let Some(mut cells) = fixed(query_count, Cell::default()) else {
             return Ok(None);
         };
         let mut output = Vec::<u64>::new();
@@ -492,7 +561,15 @@ impl State {
                 occupied: 1,
             };
         }
-        for (cell, key) in cells.iter_mut().zip(strings) {
+        let classes = match self.native_read.as_deref() {
+            Some(Storage::Classes(cache)) if use_classes => Some(cache),
+            _ => None,
+        };
+        for (ordinal, cell) in cells.iter_mut().enumerate() {
+            let row = classes.map_or(ordinal as u64, |cache| cache.first_rows[ordinal]);
+            let Some(key) = strings.get(row as usize) else {
+                return Err(invalid("String class representative outside source"));
+            };
             *cell = Cell {
                 address: key.as_ptr() as u64,
                 bytes: key.len() as u64,
@@ -515,11 +592,11 @@ impl State {
             slots: slots.as_ptr() as u64,
             capacity: capacity as u64,
             cells: cells.as_ptr() as u64,
-            count: count as u64,
+            count: query_count as u64,
             // CollectionElement visits physical source order, unlike the
             // one-based column-major MatrixScalarAccess producer.
             rows: 1,
-            columns: count as u64,
+            columns: query_count as u64,
             output: output.as_mut_ptr() as u64,
             stored_bytes,
             fuel: preflight_compute,
@@ -527,11 +604,36 @@ impl State {
             epoch,
             issued: epoch,
             next: 0,
+            output_rows: classes.map_or(0, |cache| cache.first_rows.as_ptr() as u64),
+            representatives: classes.map_or(0, |cache| cache.representatives.as_ptr() as u64),
+            output_count: if classes.is_some() { count as u64 } else { 0 },
         }) else {
             return Ok(None);
         };
         let pointer = (&*frame as *const Frame) as u64;
-        let Some(loan) = boxed(Loan {
+        let used_classes = classes.is_some();
+        let classes = match self.native_read.take() {
+            Some(cache) => {
+                let Storage::Classes(cache) = *cache else {
+                    unreachable!()
+                };
+                if used_classes {
+                    Some(cache)
+                } else {
+                    self.live_bytes = self
+                        .live_bytes
+                        .checked_sub(cache.reservation.capacity_bytes())
+                        .ok_or_else(|| invalid("String classification retirement underflow"))?;
+                    None
+                }
+            }
+            None => None,
+        };
+        // The class claim moves into this loan; all pointers remain pinned.
+        let class_bytes = classes
+            .as_ref()
+            .map_or(0, |cache| cache.reservation.capacity_bytes());
+        let Some(loan) = boxed(Storage::Loan(Loan {
             header: region.header as usize,
             collection: id,
             iteration: region.iteration,
@@ -542,13 +644,18 @@ impl State {
             slots,
             cells,
             output,
+            classes,
             frame,
             commit_compute,
             commit_cloned,
             output_reservation,
             _metadata: metadata_reservation,
             _nodes: nodes,
-        }) else {
+        })) else {
+            self.live_bytes = self
+                .live_bytes
+                .checked_sub(class_bytes)
+                .ok_or_else(|| invalid("String classification allocation retirement underflow"))?;
             return Ok(None);
         };
         self.native_read = Some(loan);
@@ -565,6 +672,17 @@ impl State {
             .native_read
             .take()
             .ok_or_else(|| invalid("native String lookup completion has no loan"))?;
+        let Storage::Loan(loan) = *loan else {
+            return Err(invalid("String lookup finished an unused classification"));
+        };
+        // Retire the transferred cache from collection backing on every exit,
+        // including a native miss. The loan retains its real claims until drop.
+        if let Some(cache) = &loan.classes {
+            self.live_bytes = self
+                .live_bytes
+                .checked_sub(cache.reservation.capacity_bytes())
+                .ok_or_else(|| invalid("String classification retirement underflow"))?;
+        }
         if loan.header != site
             || pointer != (&*loan.frame as *const Frame) as u64
             || self.current != Some(loan.collection as u32)
@@ -589,7 +707,20 @@ impl State {
             return Ok(false);
         }
         if loan.frame.next != loan.frame.count
-            || loan.frame.count != loan.output.len() as u64
+            || loan.frame.count != loan.cells.len() as u64
+            || match &loan.classes {
+                Some(cache) => {
+                    loan.frame.output_count != loan.output.len() as u64
+                        || loan.frame.output_rows != cache.first_rows.as_ptr() as u64
+                        || loan.frame.representatives != cache.representatives.as_ptr() as u64
+                }
+                None => {
+                    loan.frame.count != loan.output.len() as u64
+                        || loan.frame.output_rows != 0
+                        || loan.frame.representatives != 0
+                        || loan.frame.output_count != 0
+                }
+            }
             || loan.frame.slots != loan.slots.as_ptr() as u64
             || loan.frame.cells != loan.cells.as_ptr() as u64
             || loan.frame.output != loan.output.as_ptr() as u64
@@ -607,7 +738,7 @@ impl State {
             output,
             output_reservation,
             ..
-        } = *loan;
+        } = loan;
         let bytes = output_reservation.capacity_bytes();
         let old = self.live_bytes;
         let builder = self.builder(collection as u32)?;

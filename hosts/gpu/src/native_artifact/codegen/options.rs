@@ -68,6 +68,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Preserve bytewise FNV while loading bounded words and admitting exact
     /// two-byte equality tails in native immutable UTF8 work.
     Utf8WordChunks,
+    /// Reuse native equality classes of an unchanged String matrix when a
+    /// later immutable dictionary lookup reads the same source.
+    ReuseStringClasses,
     /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
     DisjointState,

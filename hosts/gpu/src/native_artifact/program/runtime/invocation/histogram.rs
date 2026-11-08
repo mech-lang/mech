@@ -4,9 +4,12 @@
 use super::{Error, Invocation, invalid};
 use crate::native_artifact::NativeValueHandle;
 use crate::native_artifact::program::protocol::GlobalHelper;
+use crate::native_artifact::program::runtime::collections::utf8_read::{
+    ClassifiedSource, classification_bytes,
+};
 use crate::native_artifact::program::runtime::collections::{fixed_box, fixed_slice};
 use crate::native_artifact::program::runtime::maps::utf8_histogram::{
-    COLD, COMPLETE, FULL, INVALID, Frame, Slot, bank_limit, maximum_capacity, pass_work,
+    COLD, COMPLETE, FULL, Frame, INVALID, Slot, bank_limit, maximum_capacity, pass_work,
 };
 use crate::native_artifact::program::runtime::maps::utf8_read::Cell;
 use mech_core::snapshot::{
@@ -22,6 +25,7 @@ use std::mem::size_of;
 pub(in crate::native_artifact::program::runtime) struct Loan {
     // Owners are destroyed before their complete backing/node reservations.
     source: Value,
+    classes: Option<ClassifiedSource>,
     cells: Box<[Cell]>,
     slots: Box<[Slot]>,
     frame: Frame,
@@ -78,8 +82,19 @@ impl Invocation<'_, '_, '_> {
         let origin = metadata.plan.blocks()[site].origin();
         let library_error = |error| Error::Library { origin, error };
         if tag == GlobalHelper::HistogramPrepare {
-            if args != [0; 3] || self.histogram.is_some() {
+            if args[0] > 1 || args[1..] != [0; 2] || self.histogram.is_some() {
                 return Err(invalid("compiled histogram entry payload or replay"));
+            }
+            let classified = args[0] == 1;
+            if classified
+                && !metadata.utf8_reads.regions.iter().any(|region| {
+                    region.classification_site == Some(site as u32)
+                        && region.source == operands[0].get()
+                })
+            {
+                return Err(invalid(
+                    "compiled string classification lacks same-plan producer",
+                ));
             }
             if self.worker.is_some()
                 || self.has_uninventoried_private_owners()
@@ -155,6 +170,13 @@ impl Invocation<'_, '_, '_> {
                 return Ok(Some(0));
             };
             let capacity = maximum_capacity.min(64);
+            let Some(class_bytes) = (if classified {
+                classification_bytes(count)
+            } else {
+                Some(0)
+            }) else {
+                return Ok(Some(0));
+            };
             let Some(physical) = (count as u64)
                 .checked_mul(size_of::<Cell>() as u64)
                 .and_then(|n| {
@@ -164,20 +186,36 @@ impl Invocation<'_, '_, '_> {
             else {
                 return Ok(Some(0));
             };
-            let Some(prepare) = physical.checked_mul(8).and_then(|n| n.checked_add(4096)) else {
+            let Some(prepare) = physical
+                .checked_add(class_bytes)
+                .and_then(|n| n.checked_mul(8))
+                .and_then(|n| n.checked_add(4096))
+            else {
                 return Ok(Some(0));
             };
             let Some((fuel, comparison)) = pass_work(count as u64, source_bytes, capacity as u64)
             else {
                 return Ok(Some(0));
             };
+            let Some(fuel) = mul(count as u64, if classified { 8 } else { 0 })
+                .and_then(|extra| add(fuel, extra))
+            else {
+                return Ok(Some(0));
+            };
             let Some(compute) = setup.checked_add(prepare).and_then(|n| n.checked_add(fuel)) else {
                 return Ok(Some(0));
             };
-            let Some(peak) = prior.turn_peak_bytes.checked_add(physical) else {
+            let Some(peak) = prior
+                .turn_peak_bytes
+                .checked_add(physical)
+                .and_then(|n| n.checked_add(class_bytes))
+            else {
                 return Ok(Some(0));
             };
-            let Some(nodes) = prior.retained_nodes.checked_add(4) else {
+            let Some(nodes) = prior
+                .retained_nodes
+                .checked_add(if classified { 7 } else { 4 })
+            else {
                 return Ok(Some(0));
             };
             if !fits(peak, self.limits.max_temporary_bytes)
@@ -204,6 +242,28 @@ impl Invocation<'_, '_, '_> {
                 .library
                 .charge(prepare + fuel, comparison)
                 .map_err(|error| library_error(NativeCollectionInvocationError::Kernel(error)))?;
+            let mut classes = if classified {
+                let Ok(reservation) = memory.reserve_capacity(class_bytes) else {
+                    return Ok(Some(0));
+                };
+                let Ok(nodes) = memory.reserve_nodes(3) else {
+                    return Ok(Some(0));
+                };
+                let Some(representatives) = fixed_slice(count, 0u64) else {
+                    return Ok(Some(0));
+                };
+                Some(ClassifiedSource {
+                    source: source.clone(),
+                    handle,
+                    producer: site,
+                    representatives,
+                    first_rows: Box::default(),
+                    reservation,
+                    _nodes: nodes,
+                })
+            } else {
+                None
+            };
             let Some(mut cells) = fixed_slice(count, Cell::default()) else {
                 return Ok(Some(0));
             };
@@ -227,9 +287,13 @@ impl Invocation<'_, '_, '_> {
                 completed: 0,
                 distinct: 0,
                 payload: 0,
+                representatives: classes
+                    .as_mut()
+                    .map_or(0, |cache| cache.representatives.as_mut_ptr() as u64),
             };
             let Some(mut loan) = fixed_box(Loan {
                 source,
+                classes,
                 cells,
                 slots,
                 frame,
@@ -266,6 +330,11 @@ impl Invocation<'_, '_, '_> {
             || loan.frame.count != loan.cells.len() as u64
             || loan.frame.capacity != loan.slots.len() as u64
             || loan.frame.limit != bank_limit(loan.slots.len())
+            || loan.frame.representatives
+                != loan
+                    .classes
+                    .as_ref()
+                    .map_or(0, |cache| cache.representatives.as_ptr() as u64)
         {
             return Err(invalid("compiled histogram loan identity changed"));
         }
@@ -280,7 +349,9 @@ impl Invocation<'_, '_, '_> {
             return Ok(Some(0));
         }
         if args[1] == INVALID {
-            return Err(invalid("compiled histogram rejected its private bank header"));
+            return Err(invalid(
+                "compiled histogram rejected its private bank header",
+            ));
         }
         if args[1] == FULL {
             if loan.frame.distinct != loan.frame.limit || loan.frame.completed >= loan.frame.count {
@@ -304,10 +375,25 @@ impl Invocation<'_, '_, '_> {
             let Some(coexisting) = loan.original_bytes.checked_add(bank_bytes) else {
                 return Ok(Some(0));
             };
-            let Some(peak) = loan.prior.turn_peak_bytes.checked_add(coexisting) else {
+            let Some(peak) = loan
+                .prior
+                .turn_peak_bytes
+                .checked_add(coexisting)
+                .and_then(|n| {
+                    n.checked_add(
+                        loan.classes
+                            .as_ref()
+                            .map_or(0, |cache| cache.reservation.capacity_bytes()),
+                    )
+                })
+            else {
                 return Ok(Some(0));
             };
-            let Some(nodes) = loan.prior.retained_nodes.checked_add(5) else {
+            let Some(nodes) = loan
+                .prior
+                .retained_nodes
+                .checked_add(if loan.classes.is_some() { 8 } else { 5 })
+            else {
                 return Ok(Some(0));
             };
             let Some(prepare) = bank_bytes.checked_mul(8).and_then(|n| n.checked_add(4096)) else {
@@ -315,6 +401,11 @@ impl Invocation<'_, '_, '_> {
             };
             let Some((fuel, comparison)) =
                 pass_work(loan.frame.count, loan.source_bytes, capacity as u64)
+            else {
+                return Ok(Some(0));
+            };
+            let Some(fuel) = mul(loan.frame.count, if loan.classes.is_some() { 8 } else { 0 })
+                .and_then(|extra| add(fuel, extra))
             else {
                 return Ok(Some(0));
             };
@@ -405,11 +496,20 @@ impl Invocation<'_, '_, '_> {
         else {
             return Ok(Some(0));
         };
+        let class_finish_bytes = if loan.classes.is_some() {
+            mul(distinct, 8)
+        } else {
+            Some(0)
+        };
+        let Some(class_finish_bytes) = class_finish_bytes else {
+            return Ok(Some(0));
+        };
         let Some(envelope) = mul(drafts, 2)
             .and_then(|n| add(n, mul(payload, 4)?))
             .and_then(|n| add(n, mul(footprint.retained_bytes, 4)?))
             .and_then(|n| add(n, metadata.scalar_bytes))
             .and_then(|n| add(n, 4096))
+            .and_then(|n| add(n, class_finish_bytes))
         else {
             return Ok(Some(0));
         };
@@ -419,14 +519,22 @@ impl Invocation<'_, '_, '_> {
         else {
             return Ok(Some(0));
         };
-        let Some(peak) =
-            add(loan.prior.turn_peak_bytes, loan.original_bytes).and_then(|n| add(n, envelope))
+        let Some(peak) = add(loan.prior.turn_peak_bytes, loan.original_bytes)
+            .and_then(|n| add(n, envelope))
+            .and_then(|n| {
+                add(
+                    n,
+                    loan.classes
+                        .as_ref()
+                        .map_or(0, |cache| cache.reservation.capacity_bytes()),
+                )
+            })
         else {
             return Ok(Some(0));
         };
         let Some(nodes) = mul(footprint.node_count, 3)
             .and_then(|n| add(n, loan.prior.retained_nodes))
-            .and_then(|n| add(n, 8))
+            .and_then(|n| add(n, if loan.classes.is_some() { 11 } else { 8 }))
         else {
             return Ok(Some(0));
         };
@@ -470,6 +578,22 @@ impl Invocation<'_, '_, '_> {
         entries
             .try_reserve_exact(distinct as usize)
             .map_err(|_| invalid("compiled histogram draft allocation"))?;
+        if let Some(cache) = &mut loan.classes {
+            let Some(bytes) = cache
+                .reservation
+                .capacity_bytes()
+                .checked_add(class_finish_bytes)
+            else {
+                return Ok(Some(0));
+            };
+            if cache.reservation.resize_capacity(bytes).is_err() {
+                return Ok(Some(0));
+            }
+            let Some(rows) = fixed_slice(distinct as usize, 0u64) else {
+                return Ok(Some(0));
+            };
+            cache.first_rows = rows;
+        }
         let mut actual_payload = 0u64;
         let mut actual_count = 0u64;
         for slot in loan.slots.iter().filter(|slot| slot.row_plus_one != 0) {
@@ -489,6 +613,15 @@ impl Invocation<'_, '_, '_> {
             actual_payload = actual_payload
                 .checked_add(key.len() as u64)
                 .ok_or_else(|| invalid("compiled histogram payload overflow"))?;
+            if let Some(cache) = &mut loan.classes {
+                let ordinal = entries.len();
+                let Some(first) = cache.first_rows.get_mut(ordinal) else {
+                    return Err(invalid(
+                        "String class inventory exceeds native distinct count",
+                    ));
+                };
+                *first = index as u64;
+            }
             entries.push(MapEntryDraft {
                 items: Box::new([
                     ValueDataDraft::String(key.to_string()),
@@ -522,6 +655,11 @@ impl Invocation<'_, '_, '_> {
             .arena
             .put(output.get(), &result, &mut self.state.control.work)?;
         self.state.consumed = true;
+        if let Some(cache) = loan.classes.take()
+            && let Some(collections) = &mut self.state.collections
+        {
+            collections.publish_classes(cache)?;
+        }
         // The source, banks and reservations retire after canonical publication.
         drop(loan);
         Ok(Some(1))

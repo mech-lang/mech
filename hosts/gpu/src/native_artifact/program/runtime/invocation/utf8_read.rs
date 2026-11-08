@@ -61,11 +61,11 @@ impl Invocation<'_, '_, '_> {
             let mut ctx = CollectionExecution::new(self);
             match tag {
                 GlobalHelper::Utf8ReadPrepare => {
-                    if args != [0; 3] {
+                    if args[0] > 1 || args[1..] != [0; 2] {
                         return Err(invalid("native String lookup entry has payload"));
                     }
                     collections
-                        .prepare_utf8_read(&mut ctx, region, prior.unwrap())
+                        .prepare_utf8_read(&mut ctx, region, prior.unwrap(), args[0] == 1)
                         .map(|pointer| Some(pointer.unwrap_or(0)))
                 }
                 GlobalHelper::Utf8ReadFinish => {

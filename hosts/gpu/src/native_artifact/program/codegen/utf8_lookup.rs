@@ -26,9 +26,17 @@ pub(in crate::native_artifact) fn emit_entry(
     exit: Block,
     error: Block,
     word_chunks: bool,
+    classified: bool,
 ) -> Result<(), NativeCompileError> {
     let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(b, site, GlobalHelper::Utf8ReadPrepare, [zero; 3], error);
+    let classes = b.ins().iconst(types::I64, i64::from(classified));
+    hooks.call(
+        b,
+        site,
+        GlobalHelper::Utf8ReadPrepare,
+        [classes, zero, zero],
+        error,
+    );
     let frame = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     let selected = b.create_block();
     let ordinary = b.create_block();
@@ -51,6 +59,7 @@ pub(in crate::native_artifact) fn emit_entry(
         true,
         true,
         word_chunks,
+        classified,
     );
     for (block, status) in [(complete, COMPLETE), (declined, COLD), (missing, MISSING)] {
         b.switch_to_block(block);
@@ -160,6 +169,7 @@ pub(in crate::native_artifact) fn emit(
     vectorized: bool,
     physical_order: bool,
     word_chunks: bool,
+    classified: bool,
 ) {
     let cold = b.create_block();
     let done = b.create_block();
@@ -235,6 +245,9 @@ pub(in crate::native_artifact) fn emit(
     let slots = get(b, frame, offset_of!(Frame, slots));
     let output = get(b, frame, offset_of!(Frame, output));
     let stored = get(b, frame, offset_of!(Frame, stored_bytes));
+    let classes = classified.then(|| get(b, frame, offset_of!(Frame, representatives)));
+    let output_count = classified.then(|| get(b, frame, offset_of!(Frame, output_count)));
+    let output_rows = classified.then(|| get(b, frame, offset_of!(Frame, output_rows)));
     b.ins().jump(header, &[]);
     b.switch_to_block(header);
     let at = b.use_var(cursor);
@@ -481,7 +494,30 @@ pub(in crate::native_artifact) fn emit(
     let value = get(b, slot, offset_of!(Slot, value));
     let at = b.use_var(cursor);
     let offset = b.ins().imul_imm(at, 8);
-    let destination = b.ins().iadd(output, offset);
+    let destination = if let Some(classes) = classes {
+        let scatter = b.create_block();
+        let normal = b.create_block();
+        let joined = b.create_block();
+        b.append_block_param(joined, types::I64);
+        b.ins().brif(classes, scatter, &[], normal, &[]);
+        b.switch_to_block(scatter);
+        let pointer = b.ins().iadd(output_rows.unwrap(), offset);
+        let row = get(b, pointer, 0);
+        let valid = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThan, row, output_count.unwrap());
+        require(b, valid, cold);
+        let row_offset = b.ins().imul_imm(row, 8);
+        let pointer = b.ins().iadd(output, row_offset);
+        b.ins().jump(joined, &[pointer.into()]);
+        b.switch_to_block(normal);
+        let pointer = b.ins().iadd(output, offset);
+        b.ins().jump(joined, &[pointer.into()]);
+        b.switch_to_block(joined);
+        b.block_params(joined)[0]
+    } else {
+        b.ins().iadd(output, offset)
+    };
     put(b, destination, 0, value);
     b.ins().jump(commit, &[]);
     b.switch_to_block(commit);
@@ -489,7 +525,45 @@ pub(in crate::native_artifact) fn emit(
     let at = b.ins().iadd_imm(at, 1);
     b.def_var(cursor, at);
     b.ins().jump(header, &[]);
-    for (block, target) in [(done, complete), (cold, declined), (missing_key, missing)] {
+    // Each equality class points backwards to its first input row. Scatter
+    // has populated those slots with this dictionary's arbitrary U64 values.
+    // Expanding in reverse preserves every representative until its last use.
+    b.switch_to_block(done);
+    let expanded = b.create_block();
+    if let Some(classes) = classes {
+        let expand = b.create_block();
+        b.ins().brif(classes, expand, &[], expanded, &[]);
+        b.switch_to_block(expand);
+        let left = b.declare_var(types::I64);
+        b.def_var(left, output_count.unwrap());
+        let head = b.create_block();
+        let body = b.create_block();
+        b.ins().jump(head, &[]);
+        b.switch_to_block(head);
+        let remaining = b.use_var(left);
+        b.ins().brif(remaining, body, &[], expanded, &[]);
+        b.switch_to_block(body);
+        let row = b.ins().iadd_imm(remaining, -1);
+        let offset = b.ins().imul_imm(row, 8);
+        let pointer = b.ins().iadd(classes, offset);
+        let first = get(b, pointer, 0);
+        let valid = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, first, row);
+        require(b, valid, cold);
+        let first_offset = b.ins().imul_imm(first, 8);
+        let pointer = b.ins().iadd(output, first_offset);
+        let value = get(b, pointer, 0);
+        let destination = b.ins().iadd(output, offset);
+        put(b, destination, 0, value);
+        b.def_var(left, row);
+        b.ins().jump(head, &[]);
+    } else {
+        b.ins().jump(expanded, &[]);
+    }
+    for (block, target) in [
+        (expanded, complete),
+        (cold, declined),
+        (missing_key, missing),
+    ] {
         b.switch_to_block(block);
         let f = b.use_var(fuel);
         let c = b.use_var(comparison);

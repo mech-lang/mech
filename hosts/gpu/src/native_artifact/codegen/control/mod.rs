@@ -248,6 +248,8 @@ struct CfgDeclarations<'plan> {
     #[cfg(feature = "canonical-native-program")]
     histogram_function: Option<(FuncId, u64, u64)>,
     #[cfg(feature = "canonical-native-program")]
+    classified_histogram_function: Option<(FuncId, u64, u64)>,
+    #[cfg(feature = "canonical-native-program")]
     packed_functions: Vec<(usize, FuncId, u64, u64)>,
     #[cfg(feature = "canonical-native-program")]
     numeric_functions: Vec<(usize, FuncId, u64, u64)>,
@@ -305,15 +307,32 @@ impl<'plan> CfgDefinition<'plan> {
             if sites.is_empty() {
                 None
             } else {
+                // Emit only one leaf when every selected histogram records
+                // classes. An unreachable ordinary leaf must not inflate the
+                // Object or make its linked code inventory depend on stripping.
+                let shared_classified = controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::ReuseStringClasses,
+                ) && sites.iter().all(|&site| {
+                    metadata
+                        .utf8_reads
+                        .regions
+                        .iter()
+                        .any(|region| region.classification_site == Some(site as u32))
+                });
                 let symbol = format!("{entry_symbol}_utf8_histogram");
                 let (id, stack, code) =
                     crate::native_artifact::program::codegen::utf8_histogram::define(
                         module, &symbol, true,
                         crate::native_artifact::program::codegen::utf8_histogram::Funding::Prepaid,
                         controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks),
+                        shared_classified,
                     )?;
                 report.utf8_histogram = Some(
                         crate::native_artifact::codegen::control::codegen_report::Utf8Histogram {
+                            classified: shared_classified.then(|| crate::native_artifact::codegen::control::codegen_report::ClassifiedHistogram {
+                                symbol: symbol.clone(), stack_bytes: stack, code_bytes: code,
+                                sites: sites.clone(), shared_primary: true,
+                            }),
                             symbol,
                             stack_bytes: stack,
                             code_bytes: code,
@@ -324,6 +343,51 @@ impl<'plan> CfgDefinition<'plan> {
                             halfword_equality: controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks),
                         },
                     );
+                Some((id, stack, code))
+            }
+        } else {
+            None
+        };
+        #[cfg(feature = "canonical-native-program")]
+        let classified_histogram_function = if let plan::CodePlan::Program(program) = plan
+            && report
+                .utf8_histogram
+                .as_ref()
+                .is_some_and(|histogram| histogram.classified.is_none())
+            && controls.enabled(
+                crate::native_artifact::codegen::options::OptimizationPass::ReuseStringClasses,
+            ) {
+            let metadata = program.metadata();
+            let sites = metadata
+                .utf8_reads
+                .regions
+                .iter()
+                .filter_map(|region| region.classification_site)
+                .map(|site| site as usize)
+                .filter(|&site| {
+                    crate::native_artifact::program::codegen::utf8_histogram::selected(
+                        metadata, site,
+                    )
+                })
+                .collect::<std::collections::BTreeSet<_>>();
+            if sites.is_empty() {
+                None
+            } else {
+                let symbol = format!("{entry_symbol}_utf8_classified_histogram");
+                let (id, stack, code) = crate::native_artifact::program::codegen::utf8_histogram::define(
+                    module, &symbol, true,
+                    crate::native_artifact::program::codegen::utf8_histogram::Funding::Prepaid,
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks), true,
+                )?;
+                report.utf8_histogram.as_mut().unwrap().classified = Some(
+                    crate::native_artifact::codegen::control::codegen_report::ClassifiedHistogram {
+                        symbol,
+                        stack_bytes: stack,
+                        code_bytes: code,
+                        sites: sites.into_iter().collect(),
+                        shared_primary: false,
+                    },
+                );
                 Some((id, stack, code))
             }
         } else {
@@ -501,6 +565,7 @@ impl<'plan> CfgDefinition<'plan> {
             joined_maps,
             #[cfg(feature = "canonical-native-program")]
             histogram_function,
+            classified_histogram_function,
             #[cfg(feature = "canonical-native-program")]
             packed_functions,
             #[cfg(feature = "canonical-native-program")]
@@ -1113,6 +1178,8 @@ impl<'plan> CfgDefinition<'plan> {
                     controls.enabled(
                         crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks,
                     ),
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ReuseStringClasses)
+                        && prepared.metadata().utf8_reads.at_header(index).unwrap().classification_site.is_some(),
                 )?;
                 if controls.enabled(
                     crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks,
@@ -1384,25 +1451,38 @@ impl<'plan> CfgDefinition<'plan> {
                     #[cfg(not(feature = "canonical-native-program"))]
                     let operation = 0;
                     #[cfg(feature = "canonical-native-program")]
-                    let histogram_done =
-                        if let (Some((function, _, _)), plan::CodePlan::Program(program)) =
-                            (declarations.histogram_function, plan)
-                        {
-                            if crate::native_artifact::program::codegen::utf8_histogram::selected(
-                                program.metadata(),
-                                index,
-                            ) {
-                                Some(
-                                    crate::native_artifact::program::codegen::utf8_histogram::entry(
-                                        b, module, function, hooks, index, error,
-                                    ),
-                                )
+                    let histogram_done = if let (
+                        Some((function, _, _)),
+                        plan::CodePlan::Program(program),
+                    ) = (declarations.histogram_function, plan)
+                    {
+                        if crate::native_artifact::program::codegen::utf8_histogram::selected(
+                            program.metadata(),
+                            index,
+                        ) {
+                            let classified = controls.enabled(
+                                    crate::native_artifact::codegen::options::OptimizationPass::ReuseStringClasses,
+                                ) && program.metadata().utf8_reads.regions.iter().any(|region| {
+                                    region.classification_site == Some(index as u32)
+                                });
+                            let function = if classified {
+                                declarations
+                                    .classified_histogram_function
+                                    .map_or(function, |(id, _, _)| id)
                             } else {
-                                None
-                            }
+                                function
+                            };
+                            Some(
+                                crate::native_artifact::program::codegen::utf8_histogram::entry(
+                                    b, module, function, hooks, index, error, classified,
+                                ),
+                            )
                         } else {
                             None
-                        };
+                        }
+                    } else {
+                        None
+                    };
                     hooks.library_operation(
                         b,
                         index,
@@ -1872,6 +1952,8 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let histogram_function = declarations.histogram_function;
         #[cfg(feature = "canonical-native-program")]
+        let classified_histogram_function = declarations.classified_histogram_function;
+        #[cfg(feature = "canonical-native-program")]
         let map_functions = declarations.map_functions;
         #[cfg(feature = "canonical-native-program")]
         let word_functions = declarations.word_functions;
@@ -1938,6 +2020,11 @@ impl<'plan> CfgDefinition<'plan> {
                         .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack))
                         .chain(numeric_functions.iter().map(|(_, _, stack, _)| *stack))
                         .chain(histogram_function.iter().map(|(_, stack, _)| *stack))
+                        .chain(
+                            classified_histogram_function
+                                .iter()
+                                .map(|(_, stack, _)| *stack),
+                        )
                         .max()
                         .unwrap_or(0),
                 )
@@ -1951,6 +2038,11 @@ impl<'plan> CfgDefinition<'plan> {
                 .chain(packed_functions.iter().map(|(_, _, _, code)| *code))
                 .chain(numeric_functions.iter().map(|(_, _, _, code)| *code))
                 .chain(histogram_function.iter().map(|(_, _, code)| *code))
+                .chain(
+                    classified_histogram_function
+                        .iter()
+                        .map(|(_, _, code)| *code),
+                )
                 .try_fold(
                     code + bound_call_shim.map_or(0, |shim| shim.code),
                     |total, code| total.checked_add(code),

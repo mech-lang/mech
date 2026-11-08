@@ -11,6 +11,9 @@ impl Kernel {
         Self::funded(vectorized, Funding::Metered)
     }
     fn funded(vectorized: bool, funding: Funding) -> Self {
+        Self::classified(vectorized, funding, false)
+    }
+    fn classified(vectorized: bool, funding: Funding, classified: bool) -> Self {
         let builder = cranelift_jit::JITBuilder::with_flags(
             &[("opt_level", "speed")],
             default_libcall_names(),
@@ -23,6 +26,7 @@ impl Kernel {
             vectorized,
             funding,
             true,
+            classified,
         )
         .unwrap();
         module.finalize_definitions().unwrap();
@@ -72,6 +76,7 @@ fn frame(cells: &[Cell], slots: &mut [Slot]) -> Frame {
         completed: 0,
         distinct: 0,
         payload: 0,
+        representatives: 0,
     }
 }
 fn cells(texts: &[&str]) -> Vec<Cell> {
@@ -235,4 +240,43 @@ fn exact_pass_bound_covers_metered_work_and_prepaid_output_at_every_occupancy() 
     assert!(maximum_capacity(usize::MAX).is_none());
     assert!(pass_work(u64::MAX, 1, 4).is_none());
     assert!(pass_work(1, u64::MAX, 4).is_none());
+}
+
+#[test]
+fn native_string_classes_record_first_equal_rows_across_full_replay_unicode_and_empty_inputs() {
+    for funding in [Funding::Metered, Funding::Prepaid] {
+        let kernel = Kernel::classified(true, funding, true);
+        let names = (0..97)
+            .map(|n| format!("{}é\0東京", "x".repeat(n)))
+            .collect::<Vec<_>>();
+        for texts in [
+            vec![],
+            vec!["", "", "é", "", "é"],
+            names.iter().map(String::as_str).cycle().take(500).collect(),
+        ] {
+            let cells = cells(&texts);
+            let mut representatives = vec![u64::MAX; texts.len()];
+            let mut capacity = 4;
+            loop {
+                let mut slots = vec![Slot::default(); capacity];
+                let mut frame = frame(&cells, &mut slots);
+                frame.limit =
+                    crate::native_artifact::program::runtime::maps::utf8_histogram::bank_limit(
+                        capacity,
+                    );
+                frame.representatives = representatives.as_mut_ptr() as u64;
+                let status = unsafe { (kernel.entry)(&mut frame) };
+                verify(&frame, &slots, &texts);
+                for row in 0..frame.completed as usize {
+                    let first = texts.iter().position(|text| *text == texts[row]).unwrap();
+                    assert_eq!(representatives[row], first as u64);
+                }
+                if status == COMPLETE {
+                    break;
+                }
+                assert_eq!(status, FULL);
+                capacity *= 2;
+            }
+        }
+    }
 }

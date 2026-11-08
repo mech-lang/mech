@@ -26,6 +26,9 @@ pub(in crate::native_artifact) struct Frame {
     pub completed: u64,
     pub distinct: u64,
     pub payload: u64,
+    /// Optional private first-equal-row array, written only by the classified
+    /// leaf. Each completed row points to an equal row at or before itself.
+    pub representatives: u64,
 }
 
 /// Complete checked pass allowance, charged before a prepaid native entry.

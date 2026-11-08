@@ -31,7 +31,7 @@ mod data;
 pub(in crate::native_artifact) mod numeric_map;
 mod row_blocks;
 pub(in crate::native_artifact) mod uniform_words;
-mod utf8_read;
+pub(in crate::native_artifact::program::runtime) mod utf8_read;
 mod word_collections;
 pub(in crate::native_artifact::program::runtime) fn source_count(
     value: &Value,
@@ -118,7 +118,7 @@ pub(in crate::native_artifact::program::runtime) struct State {
     string_spans: Vec<Option<string_span::Lane>>,
     string_maps: Vec<Option<string_map_entry::Lane>>,
     current: Option<u32>,
-    native_read: Option<Box<utf8_read::Loan>>,
+    native_read: Option<Box<utf8_read::Storage>>,
     native_fill: Option<Box<uniform_words::Loan>>,
     native_map: Option<Box<numeric_map::Loan>>,
     live_bytes: u64,
@@ -345,7 +345,7 @@ impl State {
         }))
     }
     pub(in crate::native_artifact::program::runtime) fn is_complete(&self) -> bool {
-        if self.native_read.is_some() || self.native_fill.is_some() {
+        if self.has_utf8_read() || self.native_fill.is_some() {
             return false;
         }
         self.current.is_none()

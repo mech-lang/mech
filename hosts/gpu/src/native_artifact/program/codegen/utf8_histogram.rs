@@ -45,10 +45,18 @@ pub(in crate::native_artifact) fn entry<M: Module>(
     hooks: &crate::native_artifact::program::codegen::hooks::Hooks,
     site: usize,
     error: cranelift_codegen::ir::Block,
+    classified: bool,
 ) -> cranelift_codegen::ir::Block {
     use crate::native_artifact::program::protocol::GlobalHelper;
     let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(b, site, GlobalHelper::HistogramPrepare, [zero; 3], error);
+    let classes = b.ins().iconst(types::I64, i64::from(classified));
+    hooks.call(
+        b,
+        site,
+        GlobalHelper::HistogramPrepare,
+        [classes, zero, zero],
+        error,
+    );
     let frame = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     let native = b.create_block();
     b.append_block_param(native, types::I64);
@@ -119,6 +127,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     vectorized: bool,
     funding: Funding,
     halfwords: bool,
+    classified: bool,
 ) -> Result<(FuncId, u64, u64), NativeCompileError> {
     if module.target_config().pointer_type() != types::I64 {
         return Err(NativeCompileError::UnsupportedHost);
@@ -144,7 +153,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
         b.append_block_params_for_function_params(entry);
         b.switch_to_block(entry);
         let frame = b.block_params(entry)[0];
-        emit(&mut b, frame, vectorized, funding, halfwords);
+        emit(&mut b, frame, vectorized, funding, halfwords, classified);
         b.seal_all_blocks();
         b.finalize();
     }
@@ -176,6 +185,7 @@ fn emit(
     vectorized: bool,
     funding: Funding,
     halfwords: bool,
+    classified: bool,
 ) {
     let complete = b.create_block();
     let cold = b.create_block();
@@ -202,6 +212,14 @@ fn emit(
         b.def_var(variable, value);
     }
     let cells = get(b, frame, offset_of!(Frame, cells));
+    let representatives = classified.then(|| get(b, frame, offset_of!(Frame, representatives)));
+    if let Some(pointer) = representatives {
+        let nonzero = b.ins().icmp_imm(IntCC::NotEqual, pointer, 0);
+        let alignment = b.ins().band_imm(pointer, 7);
+        let aligned = b.ins().icmp_imm(IntCC::Equal, alignment, 0);
+        let valid = b.ins().band(nonzero, aligned);
+        require(b, valid, invalid);
+    }
     let count = get(b, frame, offset_of!(Frame, count));
     let slots = get(b, frame, offset_of!(Frame, slots));
     let capacity = get(b, frame, offset_of!(Frame, capacity));
@@ -277,7 +295,7 @@ fn emit(
     let more = b.ins().icmp(IntCC::UnsignedLessThan, at, count);
     b.ins().brif(more, query, &[], complete, &[]);
     b.switch_to_block(query);
-    spend(b, fuel, 16, cold, funding);
+    spend(b, fuel, if classified { 24 } else { 16 }, cold, funding);
     let offset = b.ins().imul_imm(at, size_of::<Cell>() as i64);
     let cell = b.ins().iadd(cells, offset);
     let address = get(b, cell, offset_of!(Cell, address));
@@ -451,6 +469,13 @@ fn emit(
     let next = b.ins().iadd_imm(old, 1);
     b.ins()
         .store(MemFlags::new(), next, slot, offset_of!(Slot, count) as i32);
+    if let Some(representatives) = representatives {
+        let first = get(b, slot, offset_of!(Slot, row_plus_one));
+        let first = b.ins().iadd_imm(first, -1);
+        let offset = b.ins().imul_imm(at, 8);
+        let destination = b.ins().iadd(representatives, offset);
+        b.ins().store(MemFlags::new(), first, destination, 0);
+    }
     b.ins().jump(commit, &[]);
     b.switch_to_block(insert);
     let current_distinct = b.use_var(distinct);
@@ -476,6 +501,11 @@ fn emit(
         slot,
         offset_of!(Slot, row_plus_one) as i32,
     );
+    if let Some(representatives) = representatives {
+        let offset = b.ins().imul_imm(at, 8);
+        let destination = b.ins().iadd(representatives, offset);
+        b.ins().store(MemFlags::new(), at, destination, 0);
+    }
     b.def_var(distinct, next_distinct);
     b.def_var(payload, next_payload);
     b.ins().jump(commit, &[]);

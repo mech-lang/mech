@@ -136,7 +136,7 @@ impl State {
     ) -> bool {
         self.native_map.is_none()
             && self.native_fill.is_none()
-            && self.native_read.is_none()
+            && !self.has_utf8_read()
             && self.current == Some(collection)
             && self
                 .sources

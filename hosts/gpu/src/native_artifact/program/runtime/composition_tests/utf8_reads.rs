@@ -30,6 +30,8 @@ struct Flags {
     ordinary: bool,
     miss_at_finish: bool,
     replace: u8,
+    stale_classes: bool,
+    decline_histogram: bool,
 }
 #[derive(Default, Debug)]
 struct Counts {
@@ -37,6 +39,7 @@ struct Counts {
     complete: u64,
     misses: u64,
     replacements: u64,
+    classified_queries: Vec<(u64, u64)>,
     helpers: BTreeMap<(u64, u64), u64>,
 }
 thread_local! {
@@ -55,6 +58,30 @@ unsafe extern "C" fn helper(
 ) -> u64 {
     COUNTS.with(|v| *v.borrow_mut().helpers.entry((site, op)).or_default() += 1);
     let flags = FLAGS.with(Cell::get);
+    if op == GlobalHelper::HistogramPrepare.raw() && flags.decline_histogram {
+        unsafe { *out = 0 };
+        return 0;
+    }
+    if op == GlobalHelper::Utf8ReadPrepare.raw() && flags.stale_classes {
+        let invocation = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        let source = invocation
+            .descriptor
+            .metadata()
+            .utf8_reads
+            .at_header(site as usize)
+            .unwrap()
+            .source;
+        let old = invocation
+            .state
+            .arena
+            .copy_current(source, &mut invocation.state.control.work)
+            .unwrap();
+        invocation
+            .state
+            .arena
+            .put(source, &old, &mut invocation.state.control.work)
+            .unwrap();
+    }
     if op == GlobalHelper::Utf8ReadPrepare.raw() && flags.ordinary {
         // SAFETY: return this optional helper's documented zero/declined result
         // without invoking a producer, reserving metadata or altering a Value.
@@ -111,6 +138,16 @@ unsafe extern "C" fn helper(
         let word = unsafe { *out };
         if op == GlobalHelper::Utf8ReadPrepare.raw() && word != 0 {
             COUNTS.with(|v| v.borrow_mut().selected += 1);
+            let frame = unsafe {
+                &*(word as *const crate::native_artifact::program::runtime::maps::utf8_read::Frame)
+            };
+            if frame.representatives != 0 {
+                COUNTS.with(|v| {
+                    v.borrow_mut()
+                        .classified_queries
+                        .push((frame.count, frame.output_count))
+                });
+            }
         }
         if op == GlobalHelper::Utf8ReadFinish.raw() && word == 1 {
             COUNTS.with(|v| v.borrow_mut().complete += 1);
@@ -817,4 +854,223 @@ fn utf8_word_chunks_keep_original_decoded_restored_outputs_reports_and_atomic_re
             }
         }
     }
+}
+
+#[test]
+fn native_string_classes_reuse_survives_images_arbitrary_maps_stale_handles_and_fallback() {
+    use crate::native_artifact::codegen::options::OptimizationPass;
+    for source in [
+        DIRECT.to_string(),
+        RECORD.to_string(),
+        DIRECT.replace(
+            "result :=",
+            "unrelated := map/histogram([\"other\"])\nresult :=",
+        ),
+    ] {
+        let source = source.replace("result :=", "classes := map/histogram(tags)\nresult :=");
+        for artifact in artifacts(&source) {
+            let catalog = mech_stdlib::source_catalog();
+            let native = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let legacy = JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                OptimizationPass::ReuseStringClasses,
+            )
+            .unwrap();
+            assert!(selected(&native).classification_site.is_some());
+            let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+            assert_eq!(
+                object.metadata()["compiled_utf8_histogram"]["classified"]["sites"]
+                    .as_array()
+                    .unwrap()
+                    .len(),
+                1
+            );
+            let names = (0..97)
+                .map(|i| format!("{}é\0東京", "x".repeat(i)))
+                .collect::<Vec<_>>();
+            let entries = names
+                .iter()
+                .enumerate()
+                .map(|(i, key)| (key.as_str(), 1000 + i as u64 * 13))
+                .collect::<Vec<_>>();
+            for restored in [false, true] {
+                let mode = NativeProgramLimitMode::NoLimits;
+                let memory = mode.memory_budget();
+                for keys in [
+                    vec![],
+                    vec![names[60].as_str(); 257],
+                    names.iter().map(String::as_str).cycle().take(300).collect(),
+                ] {
+                    let args = arguments(&artifact, &memory, &entries, &keys, 1, keys.len() as u64);
+                    let mut expected = vec![None; artifact.outputs().len()];
+                    run(
+                        &legacy,
+                        &args,
+                        &mut expected,
+                        mode.execution(),
+                        &memory,
+                        restored,
+                        Flags::default(),
+                    )
+                    .0
+                    .unwrap();
+                    for flags in [
+                        Flags::default(),
+                        Flags {
+                            ordinary: true,
+                            ..Flags::default()
+                        },
+                        Flags {
+                            stale_classes: true,
+                            ..Flags::default()
+                        },
+                        Flags {
+                            decline_histogram: true,
+                            ..Flags::default()
+                        },
+                        Flags {
+                            miss_at_finish: true,
+                            ..Flags::default()
+                        },
+                    ] {
+                        let mut out = vec![None; artifact.outputs().len()];
+                        let (result, counts) = run(
+                            &native,
+                            &args,
+                            &mut out,
+                            mode.execution(),
+                            &memory,
+                            restored,
+                            flags,
+                        );
+                        result.unwrap();
+                        assert_eq!(drafts(&out), drafts(&expected));
+                        if !flags.ordinary && !flags.stale_classes && !flags.decline_histogram {
+                            let distinct = keys
+                                .iter()
+                                .copied()
+                                .collect::<std::collections::BTreeSet<_>>()
+                                .len();
+                            assert_eq!(
+                                counts.classified_queries,
+                                [(distinct as u64, keys.len() as u64)],
+                                "{counts:?}"
+                            );
+                        } else {
+                            assert!(counts.classified_queries.is_empty());
+                        }
+                        drop(out);
+                    }
+                    drop((args, expected));
+                    assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+                }
+                // Multiple absent classes can appear in a different hash-bank
+                // order. Native fallback must preserve the original first error
+                // and the previous published output, including an exact retry.
+                let good = arguments(&artifact, &memory, &entries, &[names[3].as_str()], 1, 1);
+                let mut left = vec![None; artifact.outputs().len()];
+                let mut right = left.clone();
+                run(
+                    &native,
+                    &good,
+                    &mut left,
+                    mode.execution(),
+                    &memory,
+                    restored,
+                    Flags::default(),
+                )
+                .0
+                .unwrap();
+                run(
+                    &legacy,
+                    &good,
+                    &mut right,
+                    mode.execution(),
+                    &memory,
+                    restored,
+                    Flags::default(),
+                )
+                .0
+                .unwrap();
+                let before = left.clone();
+                let bad = arguments(
+                    &artifact,
+                    &memory,
+                    &entries,
+                    &[names[3].as_str(), "missing-z", "missing-a", "missing-z"],
+                    1,
+                    4,
+                );
+                let a = run(
+                    &native,
+                    &bad,
+                    &mut left,
+                    mode.execution(),
+                    &memory,
+                    restored,
+                    Flags::default(),
+                )
+                .0
+                .unwrap_err();
+                let b = run(
+                    &legacy,
+                    &bad,
+                    &mut right,
+                    mode.execution(),
+                    &memory,
+                    restored,
+                    Flags::default(),
+                )
+                .0
+                .unwrap_err();
+                assert_eq!(format!("{a:?}"), format!("{b:?}"));
+                assert_prior(&left, &before);
+                run(
+                    &native,
+                    &good,
+                    &mut left,
+                    mode.execution(),
+                    &memory,
+                    restored,
+                    Flags::default(),
+                )
+                .0
+                .unwrap();
+                assert_eq!(drafts(&left), drafts(&right));
+                drop((good, bad, left, right, before));
+                assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+            }
+            // Serialized hints are never independent proof authority.
+            let mut image: serde_json::Value =
+                serde_json::from_slice(&native.descriptor().encode_build_owned_image().unwrap())
+                    .unwrap();
+            image["descriptor"]["utf8_reads"]["regions"][0]["classification_site"] =
+                serde_json::json!(u32::MAX);
+            assert!(
+                unsafe {
+                    NativeProgramDescriptor::decode_build_owned_image(
+                        &serde_json::to_vec(&image).unwrap(),
+                        &catalog,
+                    )
+                }
+                .is_err()
+            );
+        }
+    }
+}
+
+#[test]
+fn native_string_classes_finite_caps_admit_private_backing_and_preserve_atomic_retry() {
+    let source = DIRECT.replace("result :=", "classes := map/histogram(tags)\nresult :=");
+    resources::finite_boundaries(&source, |artifact, memory| {
+        arguments(
+            artifact,
+            memory,
+            &[("old", 7)],
+            &["old", "old", "old"],
+            1,
+            3,
+        )
+    });
 }

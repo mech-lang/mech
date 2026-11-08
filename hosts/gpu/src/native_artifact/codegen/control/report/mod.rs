@@ -710,4 +710,16 @@ pub(in crate::native_artifact) struct Utf8Histogram {
     pub hash: &'static str,
     pub bank: &'static str,
     pub halfword_equality: bool,
+    pub classified: Option<ClassifiedHistogram>,
+}
+
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct ClassifiedHistogram {
+    /// This receipt describes the primary leaf when true; its bytes are
+    /// counted once. Mixed producer plans emit a separate classified leaf.
+    pub shared_primary: bool,
+    pub symbol: String,
+    pub stack_bytes: u64,
+    pub code_bytes: u64,
+    pub sites: Vec<usize>,
 }

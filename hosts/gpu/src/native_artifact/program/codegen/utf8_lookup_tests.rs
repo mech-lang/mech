@@ -61,6 +61,7 @@ impl Kernel {
                 vectorized,
                 physical_order,
                 word_chunks,
+                true,
             );
             for (block, status) in [(complete, COMPLETE), (cold, COLD), (missing, MISSING)] {
                 b.switch_to_block(block);
@@ -152,6 +153,9 @@ fn fixture(entries: Vec<String>, keys: Vec<String>, rows: u64, columns: u64) -> 
         epoch: 7,
         issued: 7,
         next: 0,
+        output_rows: 0,
+        representatives: 0,
+        output_count: 0,
     };
     Fixture {
         frame,
@@ -390,6 +394,9 @@ fn native_utf8_work_simd_tail_never_reads_past_an_admitted_key() {
                 epoch: 9,
                 issued: 9,
                 next: 0,
+                output_rows: 0,
+                representatives: 0,
+                output_count: 0,
             };
             assert_eq!(kernel.run(&mut frame), COMPLETE);
             assert_eq!(output, [731, 731]);
@@ -437,4 +444,47 @@ fn native_utf8_word_chunks_keep_exact_fnv_hashes_and_collision_errors_for_all_ta
             }
         }
     }
+}
+
+#[test]
+fn native_string_classes_scatter_arbitrary_values_and_expand_backwards_with_atomic_misses() {
+    let kernel = Kernel::with_order(true, true, true);
+    let names = ["", "a\0b", "é東京👩‍🔬", "x"].map(String::from).to_vec();
+    // Physical source order is unrelated to dictionary or hash-bank order.
+    let keys = ["é東京👩‍🔬", "é東京👩‍🔬", "", "a\0b", "", "x", "é東京👩‍🔬", "x"]
+        .map(String::from)
+        .to_vec();
+    let representatives = [0u64, 0, 2, 3, 2, 5, 0, 5];
+    let first_rows = [5u64, 2, 0, 3];
+    let mut f = fixture(names.clone(), keys.clone(), 1, keys.len() as u64);
+    let cells = first_rows
+        .iter()
+        .map(|&row| f._cells[row as usize])
+        .collect::<Vec<_>>();
+    f.frame.cells = cells.as_ptr() as u64;
+    f.frame.count = cells.len() as u64;
+    f.frame.rows = 1;
+    f.frame.columns = cells.len() as u64;
+    f.frame.output_rows = first_rows.as_ptr() as u64;
+    f.frame.representatives = representatives.as_ptr() as u64;
+    f.frame.output_count = keys.len() as u64;
+    assert_eq!(kernel.run(&mut f.frame), COMPLETE);
+    assert_eq!(f.output, [102, 102, 100, 101, 100, 103, 102, 103]);
+    assert_eq!(f.frame.next, 4);
+    let invalid = [0u64, 2, 2, 3, 2, 5, 0, 5];
+    f.frame.next = 0;
+    f.frame.representatives = invalid.as_ptr() as u64;
+    assert_eq!(kernel.run(&mut f.frame), COLD);
+    // A missing distinct query stops before expansion. The ordinary source
+    // body remains responsible for which first missing-row error is visible.
+    let missing = String::from("missing");
+    let cells = [Cell {
+        address: missing.as_ptr() as u64,
+        bytes: missing.len() as u64,
+    }];
+    f.frame.next = 0;
+    f.frame.count = 1;
+    f.frame.columns = 1;
+    f.frame.cells = cells.as_ptr() as u64;
+    assert_eq!(kernel.run(&mut f.frame), MISSING);
 }

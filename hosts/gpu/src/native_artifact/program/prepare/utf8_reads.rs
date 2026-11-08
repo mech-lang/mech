@@ -27,6 +27,10 @@ pub(in crate::native_artifact) struct Region {
     /// The ordinary header's completed-loop edge; finalization stays ordinary.
     pub exit: u32,
     pub source: u32,
+    /// Optional earlier histogram of this exact immutable source. This is a
+    /// same-plan scheduling hint; only a genuine successful native producer
+    /// and the still-current arena generation may supply runtime classes.
+    pub classification_site: Option<u32>,
     pub map_root: u32,
     pub map_ordinal: Option<usize>,
     pub element_site: u32,
@@ -354,6 +358,12 @@ fn derive_body(
         header: generator.header(),
         exit: generator.exit(),
         source: source.get(),
+        classification_site: classification_site(
+            facts,
+            source,
+            generator.header(),
+            generator.parent(),
+        )?,
         map_root: map_root.get(),
         map_ordinal,
         element_site,
@@ -362,4 +372,29 @@ fn derive_body(
         push_site: collection.push(),
         output: collection.output().get(),
     }))
+}
+
+fn classification_site(
+    facts: &Facts<'_>,
+    source: Value,
+    frontier: u32,
+    parent: Option<u32>,
+) -> Result<Option<u32>, &'static str> {
+    let mut selected = None;
+    for (site, block) in facts.plan().blocks().iter().enumerate() {
+        let site = site as u32;
+        if matches!(block.action(), Action::LibraryCall { template, operands, .. }
+            if template.primitive() == Primitive::StringHistogram && operands.as_ref() == [source])
+            && facts.lexical_ancestor(block.iteration(), parent)
+            && facts.strictly_dominates(site, frontier)?
+        {
+            if let Some(previous) = selected
+                && !facts.strictly_dominates(previous, site)?
+            {
+                continue;
+            }
+            selected = Some(site);
+        }
+    }
+    Ok(selected)
 }

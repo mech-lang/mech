@@ -48,6 +48,12 @@ pub(in crate::native_artifact) struct Frame {
     pub epoch: u64,
     pub issued: u64,
     pub next: u64,
+    /// Classified mode queries one representative per equality class, scatters
+    /// to its original row, then expands backwards in the private output.
+    /// All three fields are zero for an ordinary lookup loan.
+    pub output_rows: u64,
+    pub representatives: u64,
+    pub output_count: u64,
 }
 
 pub(in crate::native_artifact) const HASH_OFFSET: u64 = 0xcbf29ce484222325;
