@@ -42441,6 +42441,92 @@
         "R218_root_stack": 61520
       },
       "new_branch_or_PR": false
+    },
+    "219": {
+      "base": "bdf08563c3e04cbd369824ecb98c438b75db2aea",
+      "normal_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "versions": {
+        "ir": 215,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": {
+        "adopted_normal": false,
+        "retained_diagnostic": "R217 other-home retirement",
+        "retained_diagnostic_source_commit": "5846c50ccc12aa756ecf063da26c3cca1a2b7fb4",
+        "retained_diagnostic_Object_sha256": "90e6a726d58f8385345ba38e7d0c15491825dd534b22644e439a9c647860de99",
+        "retained_diagnostic_worker_sha256": "8de601689d1b7dd7217cb8b80e5a43efe10876a6a20b8d211fa93382ddc2ba0e",
+        "R218_alternative_preserved": true,
+        "reason": "Both pass the original1.05 median threshold on same-boundary revalidation. R217 is0.184% faster geometrically in the refined disjoint-case inventory and has periodic/repeated/eight advantages; do not discard it merely for a simpler patch. Normal entry remains R215; no parity claim.",
+        "parity_achieved": false
+      },
+      "source_files": [],
+      "compiler_rust_files": 0,
+      "measurement_protocol_changes": [
+        "Batch request delivery outside unchanged per-call timer",
+        "More samples whenever one platform tick exceeds5% of retained latency",
+        "Preserve original median/1.05 checks; block means and bootstrap intervals are supplementary"
+      ],
+      "events": [
+        {
+          "asset": "r218-r219-owner-timing-80d995f4da67.tar.gz",
+          "sha256": "80d995f4da6724048919dab20275431d07b9dbe7fa06e686a1f899770f9dbf22",
+          "bytes": 3230292,
+          "files": 877,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r218-r219-owner-timing-80d995f4da67.tar.gz",
+          "event": "timer-precision-qualification-and-retention"
+        }
+      ],
+      "observations": {
+        "primary_calls": 11488,
+        "primary_retained": 11328,
+        "precision_calls": 86752,
+        "stored_precision_calls": 147480,
+        "separate_cpu_heap_calls": 4160,
+        "primary_reference_calls": 5120,
+        "secondary_reference_calls": 5120,
+        "stored_reference_calls": 768,
+        "reference_counter_windows": 1280,
+        "reference_counter_compressions": 10240,
+        "full_smoke_calls": 40,
+        "compiled_regression_cases": 640,
+        "original_primary_point_gates": 19,
+        "revalidated_median_gates_R217": 20,
+        "revalidated_median_gates_R218": 20,
+        "refined_blockmean_gates_R217": 20,
+        "refined_blockmean_gates_R218": 20,
+        "initial_primary_geometric_ratio_R218": 0.9988887006933727,
+        "refined_inventory_geometric_ratios": {
+          "previous": 0.985482066947807,
+          "after": 0.9872984403421466
+        },
+        "R218_over_R217_refined_geometric_ratio": 1.0018431318592789,
+        "instructions_lower_R218_vs_R211": 12,
+        "instructions_higher_R218_vs_R211": 8,
+        "instructions_lower_R218_vs_R217": 1,
+        "cycles_lower_R218_vs_R211": 16,
+        "wall_profile_calls": 22464,
+        "pc_profile_calls": 65519,
+        "static_consumed_sources": 153,
+        "small_nonnull_source_retirements": 752
+      },
+      "retained_profiles": {
+        "actual_retained_R217_binary": true,
+        "binary_sha256": "8de601689d1b7dd7217cb8b80e5a43efe10876a6a20b8d211fa93382ddc2ba0e",
+        "Object_sha256": "90e6a726d58f8385345ba38e7d0c15491825dd534b22644e439a9c647860de99",
+        "wall_cases": 6,
+        "pc_cases": 6,
+        "wall_complete_calls": 22499,
+        "pc_complete_calls": 66742,
+        "all_outputs_exact": true,
+        "worker_and_private_cleanup_pass": true
+      },
+      "normal_rust_tests": "Historical678/seven exclusions; not rerun without normal code change",
+      "original_primary_result_preserved": true,
+      "threshold_increased": false,
+      "new_branch_or_PR": false
     }
   },
   "repository": "mech-lang/mech",

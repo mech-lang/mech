@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R218
+# Production/diagnostic optimization coverage after R219
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -26,3 +26,5 @@ R216 completes the separate stable owner-record experiment and source-site paylo
 R217 uses existing current-path last-use proof to retire stale other owner homes before a changing indexed update.73 static sites;640 compiled controls/all20 outputs pass, with major copy/request reductions. The candidate stays unretained because empty misses the original elapsed gate. NormalR215 and retained diagnosticR211 remain unchanged; no additional source operation becomes native and ordinary contracts are not restored by this lifetime experiment. [Results and next simplification](native-indexed-owner-retirement.md).
 
 R218: one-file post-success source cleanup preserves R217 copy savings, but has instruction/latency tradeoffs. It remains a measured alternative; no normal code or new operation coverage changes. [Comparison](native-consumed-source-cleanup.md).
+
+R219: precision-qualified original median gates and supplementary block means pass all20 cases for R217 and R218, with original failures retained. The faster R217 alternative is retained for experimental work; ordinary IR215 remains unchanged. New retained executable profiles are hashed and current. [Qualification and scope](native-timing-precision.md).
