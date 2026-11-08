@@ -25,7 +25,7 @@ mod boundary;
 #[path = "numeric_child_fuel.rs"]
 mod child_fuel;
 #[path = "numeric_snapshots.rs"]
-mod snapshots;
+pub(super) mod snapshots;
 
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct Report {
@@ -72,7 +72,7 @@ impl Report {
     }
 }
 
-fn slots(
+pub(super) fn slots(
     code: CodePlan<'_>,
     proof: &Proof,
     state: usize,
@@ -84,6 +84,34 @@ fn slots(
         &proof.actions,
         (state..state + 3).chain(shadow..shadow + proof.words),
     )
+}
+
+pub(super) fn fresh_words(
+    code: CodePlan<'_>,
+    proof: &Proof,
+    shadow: usize,
+    slots: &BTreeSet<usize>,
+) -> Result<BTreeSet<usize>, NativeCompileError> {
+    let CodePlan::Program(program) = code else {
+        return Err(backend("numeric fresh words lack managed program"));
+    };
+    let mut fresh = BTreeSet::new();
+    for &value in &proof.fresh_values {
+        if program.metadata().plan.values()[value as usize]
+            .scalar_kind()
+            .is_some()
+        {
+            fresh.insert(value as usize);
+        }
+        if let Some(fields) = proof.fields(value) {
+            fresh.extend(fields.iter().flatten().map(|field| shadow + field));
+        }
+        if let Some((base, count)) = program.metadata().scalar_aggregates.slot_at(value as usize) {
+            fresh.extend(base..base + count);
+        }
+    }
+    fresh.retain(|slot| slots.contains(slot));
+    Ok(fresh)
 }
 
 pub(in crate::native_artifact) fn emit_entry(
@@ -131,17 +159,31 @@ pub(in crate::native_artifact) fn emit_entry(
     b.switch_to_block(selected);
     if let super::numeric_outlined::Entry::Call(function) = outline {
         let gate_work = b.func.dfg.num_insts() - setup_start;
-        super::numeric_outlined::call(
-            b,
-            function,
-            frame,
-            locals,
-            hooks,
-            ordinary_blocks[region.tail.exit() as usize].unwrap(),
-            ordinary,
-            error,
-            gate_work,
-        )?;
+        if let Some(packet) = super::numeric_packet::Recipe::derive(code, region)? {
+            packet.call(
+                b,
+                function,
+                frame,
+                locals,
+                hooks,
+                ordinary_blocks[region.tail.exit() as usize].unwrap(),
+                ordinary,
+                error,
+                gate_work,
+            )?;
+        } else {
+            super::numeric_outlined::call(
+                b,
+                function,
+                frame,
+                locals,
+                hooks,
+                ordinary_blocks[region.tail.exit() as usize].unwrap(),
+                ordinary,
+                error,
+                gate_work,
+            )?;
+        }
         return Ok(true);
     }
     let shadow = region
@@ -163,23 +205,18 @@ pub(in crate::native_artifact) fn emit_entry(
         return Err(backend("numeric exit query omits a registered source word"));
     }
     let register_words = slots.len();
-    let mut fresh = BTreeSet::new();
-    for &value in &proof.fresh_values {
-        if program.metadata().plan.values()[value as usize]
-            .scalar_kind()
-            .is_some()
-        {
-            fresh.insert(value as usize);
-        }
-        if let Some(fields) = proof.fields(value) {
-            fresh.extend(fields.iter().flatten().map(|field| shadow + field));
-        }
-        if let Some((base, count)) = program.metadata().scalar_aggregates.slot_at(value as usize) {
-            fresh.extend(base..base + count);
-        }
-    }
-    fresh.retain(|slot| slots.contains(slot));
-    let words = Words::new_with_regions(b, locals, code, slots.clone(), |slot| {
+    let fresh = fresh_words(code, proof, shadow, &slots)?;
+    let packet = if matches!(outline, super::numeric_outlined::Entry::PacketBody { .. }) {
+        Some(
+            super::numeric_packet::Recipe::derive(code, region)?
+                .ok_or_else(|| backend("admitted numeric packet recipe differs"))?,
+        )
+    } else {
+        None
+    };
+    // These facts describe canonical homes, including cold spills and reloads.
+    // A packet initializer describes its distinct input storage independently.
+    let home_flags = |slot| {
         if (region.words..region.words + 3).contains(&slot)
             || (shadow..shadow + proof.words).contains(&slot)
         {
@@ -189,7 +226,14 @@ pub(in crate::native_artifact) fn emit_entry(
                 controls.options(),
             )
         }
-    })?;
+    };
+    let words = if let (Some(packet), super::numeric_outlined::Entry::PacketBody { input, .. }) =
+        (&packet, outline)
+    {
+        packet.words(b, locals, input, code, slots.clone(), home_flags)?
+    } else {
+        Words::new_with_regions(b, locals, code, slots.clone(), home_flags)?
+    };
     let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
     let bailout = b.create_block();
@@ -885,17 +929,23 @@ pub(in crate::native_artifact) fn emit_entry(
     )?;
     b.ins().jump(ordinary, &[]);
     b.switch_to_block(exit);
-    let count = snapshots::spill(
-        b,
-        &words,
-        locals,
-        code,
-        region,
-        0,
-        None,
-        &proof.boundary_values.exit,
-        &slots,
-    )?;
+    let count = if let (Some(packet), super::numeric_outlined::Entry::PacketBody { output, .. }) =
+        (&packet, outline)
+    {
+        packet.finish(b, &words, output)?
+    } else {
+        snapshots::spill(
+            b,
+            &words,
+            locals,
+            code,
+            region,
+            0,
+            None,
+            &proof.boundary_values.exit,
+            &slots,
+        )?
+    };
     report
         .boundary_spill_words
         .push(("exit", region.tail.exit() as usize, count));
@@ -910,12 +960,8 @@ pub(in crate::native_artifact) fn emit_entry(
         .boundary_spill_words
         .push(("failure", region.tail.header() as usize, count));
     b.ins().jump(error, &[status.into()]);
-    report.fixed_template_instructions = setup_work + b.func.dfg.num_insts() - boundary
-        + if matches!(outline, super::numeric_outlined::Entry::Body) {
-            super::numeric_outlined::ADDITIONAL_TEMPLATE_BOUND
-        } else {
-            0
-        };
+    report.fixed_template_instructions =
+        setup_work + b.func.dfg.num_insts() - boundary + outline.body_overhead().unwrap_or(0);
     if report.fixed_template_instructions
         > proof
             .phase
@@ -925,7 +971,7 @@ pub(in crate::native_artifact) fn emit_entry(
         // Outlining is optional. A body fitting the original envelope may
         // have insufficient headroom for the extra native call. Discard the
         // temporary definition and retain the maintained inline route.
-        if matches!(outline, super::numeric_outlined::Entry::Body) {
+        if outline.body_overhead().is_some() {
             b.switch_to_block(ordinary);
             return Ok(false);
         }

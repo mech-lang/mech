@@ -40,6 +40,20 @@ pub(super) fn spill(
     values: &[u32],
     registered: &BTreeSet<usize>,
 ) -> Result<usize, NativeCompileError> {
+    let live = live_words(code, region, mode, continuation, values, registered)?;
+    words.spill_live(b, locals, &live)?;
+    Ok(live.len())
+}
+
+/// Exact existing physical consumers, shared by canonical and dense exits.
+pub(in crate::native_artifact::program::codegen) fn live_words(
+    code: CodePlan<'_>,
+    region: &Region,
+    mode: i64,
+    continuation: Option<usize>,
+    values: &[u32],
+    registered: &BTreeSet<usize>,
+) -> Result<BTreeSet<usize>, NativeCompileError> {
     let proof = region
         .numeric
         .as_ref()
@@ -58,6 +72,5 @@ pub(super) fn spill(
     // Non-SSA values retain their ordinary canonical owner/home. Every
     // synchronization lane above is registered in this numeric word bank.
     live.retain(|word| registered.contains(word));
-    words.spill_live(b, locals, &live)?;
-    Ok(live.len())
+    Ok(live)
 }

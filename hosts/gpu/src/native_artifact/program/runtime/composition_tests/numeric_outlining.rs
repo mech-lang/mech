@@ -4,6 +4,40 @@ use super::*;
 const SOURCE: &str = include_str!("../../../../../tests/fixtures/native/numeric-nested-phase.mec");
 
 #[test]
+fn numeric_phase_packet_identity_rejects_the_preceding_transport_protocol() {
+    use crate::native_artifact::program::{image::identity, linked};
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(SOURCE) {
+        let object = crate::native_artifact::emit_program_object_with_limits(
+            &artifact,
+            &catalog,
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        assert!(
+            object.metadata()["compiled_numeric_outlines"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|row| row["compact_input_words"].as_u64().is_some_and(|n| n > 0))
+        );
+        let current = *object.identity().bytes();
+        let version = identity::NATIVE_PROGRAM_TYPED_IR_VERSION;
+        assert!(version >= 215);
+        assert_eq!(
+            u64::from_le_bytes(current[16..24].try_into().unwrap()),
+            version
+        );
+        assert!(linked::prepare_descriptor(&artifact, &catalog, &current).is_ok());
+        for other in [version - 1, version + 1] {
+            let mut changed = current;
+            changed[16..24].copy_from_slice(&other.to_le_bytes());
+            assert!(linked::prepare_descriptor(&artifact, &catalog, &changed).is_err());
+        }
+    }
+}
+
+#[test]
 fn numeric_phase_outlining_is_a_real_shared_native_definition() {
     for artifact in artifacts(SOURCE) {
         let object = crate::native_artifact::emit_program_object_with_limits(
@@ -22,6 +56,8 @@ fn numeric_phase_outlining_is_a_real_shared_native_definition() {
         );
         for row in outlines.unwrap() {
             assert!(row["code_bytes"].as_u64().unwrap() > 0);
+            assert!(row["compact_input_words"].as_u64().is_some_and(|n| n > 0));
+            assert!(row["compact_output_words"].as_u64().is_some_and(|n| n > 0));
             assert!(row["symbol"].as_str().unwrap().contains("_numeric_phase_"));
             let header = row["header"].as_u64().unwrap();
             let reports = metadata["compiled_numeric_write_loops"].as_array().unwrap();
@@ -49,8 +85,20 @@ fn numeric_phase_outlining_keeps_current_inputs_errors_publication_and_retry() {
         let outlined =
             JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
                 .unwrap();
+        let nondisjoint = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::DisjointState,
+        )
+        .unwrap();
+        let trapping = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::NontrappingHomes,
+        )
+        .unwrap();
         let mut baseline = None;
-        for jit in [&inline, &outlined] {
+        for jit in [&inline, &outlined, &nondisjoint, &trapping] {
             for restored in [false, true] {
                 let memory = mode.memory_budget();
                 let mut output = vec![None; artifact.outputs().len()];
