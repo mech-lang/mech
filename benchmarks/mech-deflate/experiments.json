@@ -40870,6 +40870,97 @@
           }
         }
       ]
+    },
+    "202": {
+      "base": "8879d21bcde5828a4244a5b029e72cda5ead76dd",
+      "decision": "Reject this balance-only exit-settlement candidate: targeted large-case elapsed does not improve despite a shorter matching edge. Keep all positive instruction observations and expanded error-visit controls. Production stays R199/IR214; proceed to the complete compact-native milestone and direct reduction completion.",
+      "versions_candidate": {
+        "ir": 216,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "source_files": [
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/child_funding.rs",
+          "sha256": "68e1bf4dcf98d0abe3b5437de0365798c6406f304e73dbdbea0f9d76928ba8d9",
+          "bytes": 15755
+        }
+      ],
+      "candidate_source_files": [
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_capture_windows.rs",
+          "sha256": "d376b4545ba3fc09baaef7c9b064457f55b0fa4b9f12ede33d5cda84535007ee",
+          "bytes": 9630
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_child_funding/mod.rs",
+          "sha256": "9e7fae0cd83e7b9a627ed75d8b1205000bb7bb7ed23dbeca8fe03daad51e300e",
+          "bytes": 6866
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+          "sha256": "bd7950d6a9157d29b8a478276a8234658fabcb94c4070d52c0e3d1d7c0d356eb",
+          "bytes": 41304
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/image/identity.rs",
+          "sha256": "8bf0074bc050a9031fb171baa13aebf956d4db946ce7970829672a97423fe443",
+          "bytes": 74156
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/child_funding.rs",
+          "sha256": "0a4a29517eb166758e7fea65d367a30fe3a6140607c46fb0ab89d7588475ed50",
+          "bytes": 15814
+        }
+      ],
+      "events": [
+        {
+          "event": "matching-loop-exit-balance-settlement-rejected",
+          "asset": "r202-matching-exit-settlement-1e832bf63e5f.tar.gz",
+          "sha256": "1e832bf63e5fbd3f3181c5fd6c0a91191bef360847c7dbaa743704108c1422e5",
+          "bytes": 3231067,
+          "files": 436,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "compressor_source_unchanged": true,
+          "retained_production_unchanged_from_R199": true,
+          "primary_observations": 3968,
+          "total_complete_calls": 4048,
+          "gates_1_05_pass": 20,
+          "elapsed_medians_lower": 12,
+          "elapsed_medians_higher": 8,
+          "geometric_elapsed_change_percent": -0.04579071155934589,
+          "lower_instruction_medians": 10,
+          "higher_instruction_medians": 10,
+          "higher_cycle_medians": 5,
+          "equal_heap_cases": 20,
+          "candidate_native_tests": 675,
+          "scheduled_tests_executed": 258,
+          "final_restored_focused_tests": 4,
+          "code_bytes_before": 8152436,
+          "code_bytes_candidate": 8156464,
+          "stack_bytes_before": 16480,
+          "stack_bytes_candidate": 16464,
+          "matching_edge_instructions": [
+            15,
+            12
+          ],
+          "fresh_candidate_profile_calls": 6681,
+          "fresh_retained_pc_profile_calls": 6780,
+          "baseline_stack_profile_reused": true,
+          "public_verification": {
+            "file_occurrences": 436,
+            "server_digests_match": true,
+            "numerical_replay_byte_identical": true
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
