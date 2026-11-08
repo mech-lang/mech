@@ -19,6 +19,13 @@ pub(in crate::native_artifact::program::codegen) enum Step<'a> {
         index: u32,
         output: usize,
     },
+    /// The numeric adapter supplies only U64 cells. The successful source
+    /// read/add must dominate this exact write before any intervening effect.
+    Write {
+        array: usize,
+        index: u32,
+        incoming: u32,
+    },
     /// Successful checked replacement preserves shape and immutable scalar
     /// snapshots. This domain exports no array-content equality facts. The
     /// write itself remains fallible and supplies no completion authority.
@@ -331,6 +338,7 @@ fn analyze<'a>(
             Step::Define(output) => {
                 let value = terms.intern(Expr::Definition(site, output))?;
                 for state in states.iter_mut().flatten() {
+                    state.checked_reads.clear();
                     state.words.insert(output, value);
                 }
             }
@@ -377,10 +385,36 @@ fn analyze<'a>(
                             },
                         );
                     }
+                    state.remember_read(array, state.read(index as usize)?, site, output, value)?;
                     state.words.insert(output, value);
                 }
             }
-            Step::Replace | Step::Keep => {}
+            Step::Write {
+                array,
+                index,
+                incoming,
+            } => {
+                let candidate = states
+                    .iter()
+                    .flatten()
+                    .next()
+                    .and_then(|state| state.checked_increment(&terms, array, index, incoming));
+                if let Some(candidate) = candidate
+                    && states.iter().flatten().all(|state| {
+                        state.checked_increment(&terms, array, index, incoming) == Some(candidate)
+                    })
+                {
+                    proof.increment_writes.insert(site, candidate);
+                }
+                for state in states.iter_mut().flatten() {
+                    state.checked_reads.clear();
+                }
+            }
+            Step::Replace | Step::Keep => {
+                for state in states.iter_mut().flatten() {
+                    state.checked_reads.clear();
+                }
+            }
         }
         // A child initialize action has just assigned its current arguments.
         // Query this visit's transferred state without admitting the child or

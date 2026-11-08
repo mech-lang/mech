@@ -150,6 +150,15 @@ fn analyze(
                 array: *array,
                 output: *output as usize,
             }),
+            Some(Operation::Write {
+                array,
+                index,
+                incoming,
+            }) if numeric.arrays[*array].width == 8 => Some(Step::Write {
+                array: *array,
+                index: *index,
+                incoming: *incoming,
+            }),
             Some(Operation::Write { .. }) => Some(Step::Replace),
             // Growth and unknown effects still need their original guards.
             Some(_) => None,

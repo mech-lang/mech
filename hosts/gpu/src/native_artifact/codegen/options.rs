@@ -53,6 +53,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     ScalarSelects,
     UnsignedGuardFacts,
     GuardedNumericLoads,
+    /// Reuse a surviving successful U64 cell read for an immediately proved
+    /// checked increment of the same current cell; retain ownership boundaries.
+    CheckedIncrementWrites,
     /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
     DisjointState,

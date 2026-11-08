@@ -455,7 +455,9 @@ fn selected_template(
 // IR280 integrates current immutable geometry/address staging and ordered cleanup inlining.
 // IR282 carries the compiled frame reader through parent pieces and retains
 // validated field counts without materializing compiler-only vectors.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 282;
+// IR284 reuses only a surviving successful current-cell read plus checked +1
+// when emitting the same U64 cell's replacement; ownership/first-change stays.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 284;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

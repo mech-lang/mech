@@ -18,6 +18,7 @@ mod loop_windows;
 mod operations;
 mod ranges;
 mod scope;
+mod updates;
 mod windows;
 pub(super) use captured_windows::CapturedWindow;
 pub(super) use checks::{Check, Operand, Queries};
@@ -114,6 +115,7 @@ struct State {
     successful: BTreeSet<(Arithmetic, Id, Id)>,
     windows: Vec<Window>,
     captures: Vec<CapturedWindow>,
+    checked_reads: BTreeMap<(usize, Id), updates::CheckedRead>,
 }
 impl State {
     fn assign(&mut self, moves: &[(usize, usize)], parallel: bool) -> Option<()> {
@@ -318,6 +320,8 @@ impl State {
         self.relations.retain(|fact| other.relations.contains(fact));
         self.successful
             .retain(|fact| other.successful.contains(fact));
+        self.checked_reads
+            .retain(|key, read| other.checked_reads.get(key) == Some(read));
         Some(())
     }
 }
@@ -327,6 +331,7 @@ pub(super) struct Proof {
     guards: BTreeSet<(usize, u32, usize, u32)>,
     arithmetic: BTreeMap<usize, (Op, Vec<NativeMatchValue>)>,
     reads: BTreeSet<(usize, usize, u32)>,
+    increment_writes: BTreeMap<usize, updates::CheckedUpdate>,
     pub(super) completed: Option<Completed>,
     pub(super) expressions: Option<Graph>,
     pub(super) windows: BTreeSet<Window>,
@@ -343,6 +348,7 @@ impl Proof {
         self.guards.extend(other.guards);
         self.arithmetic.extend(other.arithmetic);
         self.reads.extend(other.reads);
+        self.increment_writes.extend(other.increment_writes);
         self.windows.extend(other.windows);
         self.successors.extend(other.successors);
         self.predicates.extend(other.predicates);
@@ -369,6 +375,17 @@ impl Proof {
     }
     pub fn read(&self, site: usize, array: usize, index: u32) -> bool {
         self.reads.contains(&(site, array, index))
+    }
+    pub fn increment_write(
+        &self,
+        site: usize,
+        array: usize,
+        index: u32,
+        incoming: u32,
+    ) -> Option<&updates::CheckedUpdate> {
+        self.increment_writes.get(&site).filter(|update| {
+            update.array == array && update.index == index && update.incoming == incoming
+        })
     }
 }
 

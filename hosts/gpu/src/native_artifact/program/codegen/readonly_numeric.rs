@@ -46,6 +46,7 @@ pub(in crate::native_artifact) struct Report {
     pub proven_projection_guards: Vec<(usize, u32, usize, u32)>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
     pub proven_scalar_read_guards: Vec<(usize, usize, u32)>,
+    pub proven_checked_increment_writes: Vec<(usize, usize, usize, u32, u32)>,
     pub proven_scalar_arithmetic: Vec<usize>,
     pub guarded_loop_windows: Vec<super::numeric_loop_windows::Report>,
     pub version_entry_gates: Vec<(usize, usize, Option<usize>)>,
@@ -516,6 +517,7 @@ pub(in crate::native_artifact) fn emit_entry(
             .collect(),
         proven_projection_guards: Vec::new(),
         proven_scalar_read_guards: Vec::new(),
+        proven_checked_increment_writes: Vec::new(),
         proven_scalar_arithmetic: Vec::new(),
         guarded_loop_windows: versions.iter().map(|v| v.report(proof)).collect(),
         version_entry_gates: Vec::new(),
@@ -1046,6 +1048,16 @@ pub(in crate::native_artifact) fn emit_entry(
                 operation @ (Operation::Read { array, index, .. }
                 | Operation::Write { array, index, .. }),
             ) => {
+                let checked_increment = match operation {
+                    Operation::Write {
+                        array,
+                        index,
+                        incoming,
+                    } if controls.enabled(OptimizationPass::CheckedIncrementWrites) => traversal
+                        .increment_write(site, *array, *index, *incoming)
+                        .copied(),
+                    _ => None,
+                };
                 let view = shadow + proof.view(*array);
                 let index = words.read(b, *index as usize);
                 let length = words.read(b, view + 1);
@@ -1056,6 +1068,14 @@ pub(in crate::native_artifact) fn emit_entry(
                     report
                         .proven_scalar_read_guards
                         .push((site, *array, *index));
+                } else if let Some(update) = checked_increment {
+                    report.proven_checked_increment_writes.push((
+                        site,
+                        update.read_site,
+                        update.array,
+                        update.index,
+                        update.incoming,
+                    ));
                 } else {
                     let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, length);
                     let good = b.create_block();
@@ -1149,44 +1169,61 @@ pub(in crate::native_artifact) fn emit_entry(
                     )?;
                     (address, ty, None)
                 };
-                let value = b.ins().load(
-                    ty,
-                    if movable {
-                        super::numeric_captured_reads::flags()
-                    } else {
-                        super::numeric_words::guarded_load_flags(controls.options())
-                    },
-                    address,
-                    0,
-                );
-                if let Some(clamp) = clamp {
-                    let cranelift_codegen::ir::ValueDef::Result(load, 0) =
-                        b.func.dfg.value_def(value)
-                    else {
-                        unreachable!("physical capture load lost its instruction");
-                    };
-                    report
-                        .capture_read_candidates
-                        .push(super::numeric_captured_reads::Candidate {
-                            site,
-                            array: *array,
-                            load,
-                            ordinal,
-                            rows,
-                            clamp,
-                        });
-                }
-                let value = if width < 8 {
-                    b.ins().uextend(types::I64, value)
+                let value = if checked_increment.is_some() {
+                    None
                 } else {
-                    value
+                    let value = b.ins().load(
+                        ty,
+                        if movable {
+                            super::numeric_captured_reads::flags()
+                        } else {
+                            super::numeric_words::guarded_load_flags(controls.options())
+                        },
+                        address,
+                        0,
+                    );
+                    if let Some(clamp) = clamp {
+                        let cranelift_codegen::ir::ValueDef::Result(load, 0) =
+                            b.func.dfg.value_def(value)
+                        else {
+                            unreachable!("physical capture load lost its instruction");
+                        };
+                        report.capture_read_candidates.push(
+                            super::numeric_captured_reads::Candidate {
+                                site,
+                                array: *array,
+                                load,
+                                ordinal,
+                                rows,
+                                clamp,
+                            },
+                        );
+                    }
+                    let value = if width < 8 {
+                        b.ins().uextend(types::I64, value)
+                    } else {
+                        value
+                    };
+                    report.typed_loads.push((site, width));
+                    Some(value)
                 };
-                report.typed_loads.push((site, width));
                 match operation {
-                    Operation::Read { output, .. } => words.write(b, *output as usize, value),
+                    Operation::Read { output, .. } => words.write(
+                        b,
+                        *output as usize,
+                        value.expect("read retains its typed load"),
+                    ),
                     Operation::Write { incoming, .. } => {
                         let incoming = words.read(b, *incoming as usize);
-                        let changed = b.ins().icmp(IntCC::NotEqual, value, incoming);
+                        let changed = if checked_increment.is_some() {
+                            b.ins().iconst(types::I8, 1)
+                        } else {
+                            b.ins().icmp(
+                                IntCC::NotEqual,
+                                value.expect("ordinary write retains old cell"),
+                                incoming,
+                            )
+                        };
                         let update = b.create_block();
                         let done = b.create_block();
                         b.ins().brif(changed, update, &[], done, &[]);

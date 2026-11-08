@@ -1,6 +1,71 @@
 use super::*;
 
 #[test]
+fn checked_increment_requires_current_cell_surviving_read_and_successful_addition() {
+    let mut terms = Terms::default();
+    let index = terms.intern(Expr::Initial(0)).unwrap();
+    let other = terms.intern(Expr::Initial(1)).unwrap();
+    let old = terms.intern(Expr::Definition(10, 2)).unwrap();
+    let one = terms.constant(1).unwrap();
+    let added = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, old, one))
+        .unwrap();
+    let wrapped = terms
+        .intern(Expr::Wrapping(Arithmetic::Add, old, one))
+        .unwrap();
+    let mut state = State::default();
+    state
+        .words
+        .extend([(0, index), (1, other), (2, old), (3, index), (4, added)]);
+    state.remember_read(0, index, 10, 2, old).unwrap();
+    assert!(state.checked_increment(&terms, 0, 3, 4).is_none());
+    state.successful.insert((Arithmetic::Add, old, one));
+    assert_eq!(
+        state.checked_increment(&terms, 0, 3, 4).unwrap().read_site,
+        10
+    );
+    assert!(state.checked_increment(&terms, 1, 3, 4).is_none());
+    assert!(state.checked_increment(&terms, 0, 1, 4).is_none());
+    state.words.insert(4, wrapped);
+    assert!(state.checked_increment(&terms, 0, 3, 4).is_none());
+    state.words.insert(4, old);
+    assert!(state.checked_increment(&terms, 0, 3, 4).is_none());
+    state.words.insert(4, added);
+    state
+        .words
+        .insert(2, terms.intern(Expr::Definition(11, 2)).unwrap());
+    assert!(state.checked_increment(&terms, 0, 3, 4).is_none());
+}
+
+#[test]
+fn checked_increment_merges_require_the_same_checked_read_on_every_path() {
+    let mut terms = Terms::default();
+    let index = terms.intern(Expr::Initial(0)).unwrap();
+    let old = terms.intern(Expr::Definition(10, 1)).unwrap();
+    let one = terms.constant(1).unwrap();
+    let added = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, old, one))
+        .unwrap();
+    let mut initial = State::default();
+    initial.words.extend([(0, index), (1, old), (2, added)]);
+    initial.successful.insert((Arithmetic::Add, old, one));
+    initial.remember_read(0, index, 10, 1, old).unwrap();
+    let mut same = initial.clone();
+    same.merge(&initial, 20, &mut terms).unwrap();
+    assert!(same.checked_increment(&terms, 0, 0, 2).is_some());
+    for different_read in [false, true] {
+        let mut other = initial.clone();
+        other.checked_reads.clear();
+        if different_read {
+            other.remember_read(0, index, 12, 1, old).unwrap();
+        }
+        let mut joined = initial.clone();
+        joined.merge(&other, 20, &mut terms).unwrap();
+        assert!(joined.checked_increment(&terms, 0, 0, 2).is_none());
+    }
+}
+
+#[test]
 fn selected_normalized_booleans_retain_only_logically_forced_operands() {
     let mut terms = Terms::default();
     let a = terms.intern(Expr::Initial(0)).unwrap();
