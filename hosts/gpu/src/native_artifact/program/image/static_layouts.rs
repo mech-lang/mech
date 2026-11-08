@@ -33,14 +33,14 @@ impl<'a> From<&'a ProgramMetadata> for Borrowed<'a> {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.Owned")]
-pub(super) struct Owned {
+pub(super) struct Owned<Frame = super::super::prepare::readonly_numeric::FrameWords> {
     #[serde(deserialize_with = "buffers")]
     pub unsigned_buffer_calls: Box<[Option<NativeUnsignedBufferCall>]>,
     pub call_routes: Box<[LibraryCallRoute]>,
     pub call_cache: call_cache::Layout,
     pub frame_retirements: frame_retirement::FrameRetirements,
     pub cleanup_effects: cleanup_effects::Layout,
-    pub compositions: composition::image::Owned,
+    pub compositions: composition::image::Owned<Frame>,
     // Missing only in genuine V4/V5 images. A present field must contain an
     // array, including the empty inventory; null cannot impersonate absence.
     #[serde(default, deserialize_with = "uniform_collections")]

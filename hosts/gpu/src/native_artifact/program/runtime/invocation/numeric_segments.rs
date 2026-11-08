@@ -352,7 +352,7 @@ impl Invocation<'_, '_, '_> {
             if self
                 .limits
                 .max_output_elements
-                .is_some_and(|n| n < frame.fields.len() as u64)
+                .is_some_and(|n| n < frame.field_count() as u64)
                 || self
                     .limits
                     .max_output_bytes

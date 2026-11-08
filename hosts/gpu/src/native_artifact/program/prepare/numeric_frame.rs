@@ -58,6 +58,7 @@ impl CompilerData {
 #[derive(Clone, Debug)]
 pub(in crate::native_artifact) struct FrameWords {
     pub value: u32,
+    field_count: usize,
     // These are actual runtime consumers, including parent segment exports.
     pub arrays: Vec<Option<usize>>,
     pub array_bindings: Vec<(usize, usize)>,
@@ -69,6 +70,7 @@ impl From<OwnedFrameWords> for FrameWords {
     fn from(frame: OwnedFrameWords) -> Self {
         Self {
             value: frame.value,
+            field_count: frame.fields.len(),
             arrays: frame.arrays,
             array_bindings: frame.array_bindings,
             maximum_arity: frame.maximum_arity,
@@ -128,6 +130,9 @@ impl<'de> Deserialize<'de> for FrameWords {
     }
 }
 impl FrameWords {
+    pub fn field_count(&self) -> usize {
+        self.field_count
+    }
     pub fn scalar_nodes(&self) -> usize {
         self.scalar_node_count
     }
@@ -151,7 +156,7 @@ impl FrameWords {
 // Validate the exact existing sequence vocabulary without retaining a Vec.
 // This preserves eager rejection of malformed types/counts, including nested
 // path tuples. Only their heap construction is removed from module startup.
-struct CheckSequence<T>(PhantomData<T>);
+struct CheckSequence<T>(usize, PhantomData<T>);
 impl<'de, T: Deserialize<'de>> Deserialize<'de> for CheckSequence<T> {
     fn deserialize<D: Deserializer<'de>>(reader: D) -> Result<Self, D::Error> {
         struct Read<T>(PhantomData<T>);
@@ -164,8 +169,13 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for CheckSequence<T> {
                 self,
                 mut rows: A,
             ) -> Result<Self::Value, A::Error> {
-                while rows.next_element::<T>()?.is_some() {}
-                Ok(CheckSequence(PhantomData))
+                let mut count = 0usize;
+                while rows.next_element::<T>()?.is_some() {
+                    count = count
+                        .checked_add(1)
+                        .ok_or_else(|| serde::de::Error::custom("frame field count overflow"))?;
+                }
+                Ok(CheckSequence(count, PhantomData))
             }
         }
         reader.deserialize_seq(Read(PhantomData))
@@ -197,14 +207,17 @@ impl Deserialize<'static> for CompiledFrame {
             scalar_node_count: usize,
         }
         let wire: Wire<'static> = Wire::deserialize(reader)?;
-        wire.fields
+        let field_count = wire
+            .fields
             .decode::<CheckSequence<Option<usize>>>()
-            .map_err(serde::de::Error::custom)?;
+            .map_err(serde::de::Error::custom)?
+            .0;
         wire.scalar_paths
             .decode::<CheckSequence<(CheckSequence<usize>, usize)>>()
             .map_err(serde::de::Error::custom)?;
         Ok(Self(FrameWords {
             value: wire.value,
+            field_count,
             arrays: wire.arrays,
             array_bindings: wire.array_bindings,
             maximum_arity: wire.maximum_arity,
@@ -245,10 +258,32 @@ mod tests {
             assert!(frame.compiler_data_is_borrowed_and_unmaterialized());
             assert_eq!(frame.value, 17);
             assert_eq!(frame.maximum_arity, 3);
+            assert_eq!(frame.field_count(), 3);
             assert_eq!(frame.arrays, [Some(0), None, None]);
             assert_eq!(frame.array_bindings, [(3, 0)]);
             assert_eq!(frame.scalar_nodes(), 3);
             assert!(frame.compiler_data_is_borrowed_and_unmaterialized());
+        }
+    }
+    #[test]
+    fn borrowed_frame_metadata_field_count_uses_the_exact_validated_field_sequence() {
+        // Private data-reader fixtures only: no descriptor or native entry
+        // authority is constructed from these independent record bytes.
+        for count in [0, 1, 3, 17] {
+            let mut row: serde_json::Value = serde_json::from_str(FRAME).unwrap();
+            row["fields"] = serde_json::json!(vec![None::<usize>; count]);
+            row["arrays"] = serde_json::json!([]);
+            row["maximum_arity"] = serde_json::json!(99);
+            let text = row.to_string();
+            let owned: FrameWords = serde_json::from_str(&text).unwrap();
+            assert_eq!(owned.field_count(), count);
+            for native in [false, true] {
+                let frame = compiled(&text, native).unwrap();
+                assert_eq!(frame.field_count(), count);
+                assert!(frame.compiler_data_is_borrowed_and_unmaterialized());
+                assert_eq!(frame.field_count(), owned.fields.len());
+                assert_eq!(serde_json::to_value(&frame).unwrap(), row);
+            }
         }
     }
     #[test]
