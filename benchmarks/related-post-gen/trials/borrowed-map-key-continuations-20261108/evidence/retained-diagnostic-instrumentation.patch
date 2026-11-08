@@ -1,0 +1,145 @@
+diff --git a/hosts/gpu/src/native_artifact/mod.rs b/hosts/gpu/src/native_artifact/mod.rs
+index d2e85f3ff2..1b4e38aa62 100644
+--- a/hosts/gpu/src/native_artifact/mod.rs
++++ b/hosts/gpu/src/native_artifact/mod.rs
+@@ -90,6 +90,12 @@ mod iteration_runtime;
+ ))]
+ mod program;
+ 
++#[cfg(all(mech_native_entry_intervals, feature = "canonical-native-program-runtime"))]
++pub use program::runtime::diagnostic_intervals::{
++    DiagnosticIntervalScope, diagnostic_interval_scope,
++    diagnostic_intervals_begin, diagnostic_intervals_finish,
++};
++
+ #[cfg(feature = "canonical-native-program-runtime")]
+ pub use crate::native_artifact::program::compiled_module::NativeProgramModule;
+ #[cfg(feature = "canonical-native-program-runtime")]
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/hooks.rs b/hosts/gpu/src/native_artifact/program/runtime/hooks.rs
+index 8da96a7b71..4340b05476 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/hooks.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/hooks.rs
+@@ -51,6 +51,10 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn admit(
+     context: *mut c_void,
+     site: u64,
+ ) -> u64 {
++    #[cfg(mech_native_entry_intervals)]
++    super::diagnostic_intervals::coarse_checkpoint(site);
++    #[cfg(mech_native_entry_intervals)]
++    let _interval = super::diagnostic_intervals::diagnostic_interval_scope("admit", site, 0);
+     if context.is_null() {
+         return STATUS_ABI;
+     }
+@@ -71,6 +75,10 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
+     third: u64,
+     result: *mut u64,
+ ) -> u64 {
++    #[cfg(mech_native_entry_intervals)]
++    super::diagnostic_intervals::coarse_checkpoint(site);
++    #[cfg(mech_native_entry_intervals)]
++    let _interval = super::diagnostic_intervals::diagnostic_interval_scope("helper_ffi", site, operation);
+     if context.is_null() {
+         return STATUS_ABI;
+     }
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs b/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs
+index 607ab544a3..e62c44ea0f 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs
+@@ -479,6 +479,39 @@ impl Invocation<'_, '_, '_> {
+         site: u64,
+         operation: u64,
+         args: [u64; 3],
++    ) -> Result<Option<u64>, NativeProgramExecutionError> {
++        #[cfg(mech_native_entry_intervals)]
++        {
++            use super::diagnostic_intervals as intervals;
++            let tag = GlobalHelper::decode(operation);
++            if matches!(
++                tag,
++                GlobalHelper::ClosedTailEnd | GlobalHelper::NumericSegmentEnd
++            ) {
++                intervals::native_end(site);
++            }
++            let scope = intervals::diagnostic_interval_scope("helper", site, operation);
++            let result = self.helper_unprofiled(site, operation, args);
++            drop(scope);
++            if matches!(
++                tag,
++                GlobalHelper::ClosedTailBegin | GlobalHelper::NumericSegmentBegin
++            ) && matches!(&result, Ok(Some(1)))
++            {
++                intervals::native_begin(site, operation);
++            }
++            result
++        }
++        #[cfg(not(mech_native_entry_intervals))]
++        self.helper_unprofiled(site, operation, args)
++    }
++
++    #[inline(always)]
++    fn helper_unprofiled(
++        &mut self,
++        site: u64,
++        operation: u64,
++        args: [u64; 3],
+     ) -> Result<Option<u64>, NativeProgramExecutionError> {
+         let tag = GlobalHelper::decode(operation);
+         if self.histogram.is_some() && tag != GlobalHelper::HistogramFinish {
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/mod.rs b/hosts/gpu/src/native_artifact/program/runtime/mod.rs
+index 1fe0585c76..4b2c5e6ec0 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/mod.rs
+@@ -41,6 +41,8 @@ mod lines;
+ 
+ mod retirement;
+ mod session;
++#[cfg(mech_native_entry_intervals)]
++pub(in crate::native_artifact) mod diagnostic_intervals;
+ #[cfg(feature = "canonical-native-program-host-runtime")]
+ pub(in crate::native_artifact) use crate::native_artifact::program::runtime::session::CheckedEntry;
+ #[cfg(feature = "canonical-native-program-host-runtime")]
+@@ -283,6 +285,8 @@ fn execute_prepared<F: FnMut(*mut Frame) -> u64>(
+     memory: &ManagedMemoryBudget,
+ ) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
+     let mut prepared = session::Prepared::new(descriptor, limits, memory)?;
++    #[cfg(mech_native_entry_intervals)]
++    let _interval = diagnostic_intervals::diagnostic_interval_scope("execute_prepared_after_setup", 0, 0);
+     prepared.activate(&mut entry)?;
+     prepared.finish(&mut entry, inputs, observations, outputs)
+ }
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs b/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs
+index 3bebc3a457..5fb0ae91cb 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs
+@@ -587,6 +587,9 @@ impl<'a> Prepared<'a> {
+         worker_budget: Option<NativeLibraryWorkBudget>,
+         worker_constants: Option<&[u32]>,
+     ) -> Result<Self, NativeProgramExecutionError> {
++        #[cfg(mech_native_entry_intervals)]
++        let _interval = super::diagnostic_intervals::diagnostic_interval_scope(
++            "session_setup", 0, u64::from(worker_budget.is_some()));
+         let plan = &descriptor.metadata().plan;
+         if plan.activation_boundary().is_none() {
+             return Err(invalid(
+@@ -779,6 +782,9 @@ impl<'a> Prepared<'a> {
+         crate::native_artifact::program::runtime::invocation::parallel::Receipt,
+         NativeProgramExecutionError,
+     > {
++        #[cfg(mech_native_entry_intervals)]
++        let _interval = super::diagnostic_intervals::diagnostic_interval_scope(
++            "worker", worker.region as u64, worker.index as u64);
+         let region = descriptor
+             .metadata()
+             .parallel
+@@ -1346,7 +1352,11 @@ impl<'a> Prepared<'a> {
+             ),
+         };
+         let phase_words = (frame.resume_site, frame.available_lines, frame.input_eof);
++        #[cfg(mech_native_entry_intervals)]
++        let _entry_interval = super::diagnostic_intervals::diagnostic_interval_scope("generated_entry", frame.resume_site, 0);
+         let status = entry(&mut frame);
++        #[cfg(mech_native_entry_intervals)]
++        drop(_entry_interval);
+         if let Some(error) = context.error.take() {
+             return Err(error);
+         }

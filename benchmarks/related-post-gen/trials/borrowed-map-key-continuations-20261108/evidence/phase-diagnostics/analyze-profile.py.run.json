@@ -1,0 +1,5 @@
+{
+  "exit": 0,
+  "stdout": "rust-fastest-coarse post ms 1.582938 M instructions 17.7088 alloc 58.0 bytes 6825713.0 native roots [0]\n phases [('preparation_interning_and_eligibility', 0.616021, 7776707.0, 38.0), ('triple_index_and_coverage', 0.187188, 2953809.5, 7.0), ('quartet_index_and_masks', 0.199125, 2730184.0, 7.0), ('queries_cleanup_and_materialization', 0.583438, 4238343.0, 6.0)]\ncanonical-control-coarse post ms 2.023855 M instructions 34.6534 alloc 1755.0 bytes 7879767.0 native roots [15]\n phases [('preparation_interning_and_eligibility', 0.897437, 10400651.0, 1393.0), ('triple_index_and_coverage', 0.362625, 5617481.5, 83.0), ('quartet_index_and_masks', 0.268146, 4482965.0, 83.0), ('queries_cleanup_and_materialization', 0.486416, 14149383.0, 196.0)]\nborrowed-keys-coarse post ms 1.981979 M instructions 34.3321 alloc 1295.0 bytes 7825138.0 native roots [15]\n phases [('preparation_interning_and_eligibility', 0.874229, 10075393.5, 933.0), ('triple_index_and_coverage', 0.352708, 5596970.5, 83.0), ('quartet_index_and_masks', 0.266417, 4482234.0, 83.0), ('queries_cleanup_and_materialization', 0.485833, 14167060.0, 196.0)]\n",
+  "stderr": ""
+}

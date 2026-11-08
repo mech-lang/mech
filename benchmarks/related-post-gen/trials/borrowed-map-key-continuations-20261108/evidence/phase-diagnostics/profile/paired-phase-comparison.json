@@ -1,0 +1,163 @@
+{
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false,
+  "phase_medians_not_additive": true,
+  "comparisons": {
+    "borrowed-keys-coarse vs rust-fastest-coarse": {
+      "preparation_interning_and_eligibility": {
+        "candidate_median_ns": 874229.0,
+        "reference_median_ns": 616021.0,
+        "median_paired_difference_ns": 254875.0,
+        "candidate_favorable_pairs": 1,
+        "pairs": 8,
+        "candidate_allocations": 933.0,
+        "reference_allocations": 38.0,
+        "all_paired_differences_ns": [
+          -175250,
+          265333,
+          256542,
+          219917,
+          283583,
+          247000,
+          265999,
+          253208
+        ]
+      },
+      "triple_index_and_coverage": {
+        "candidate_median_ns": 352708.0,
+        "reference_median_ns": 187187.5,
+        "median_paired_difference_ns": 166729.5,
+        "candidate_favorable_pairs": 0,
+        "pairs": 8,
+        "candidate_allocations": 83.0,
+        "reference_allocations": 7.0,
+        "all_paired_differences_ns": [
+          24208,
+          171501,
+          166875,
+          155583,
+          167125,
+          165541,
+          178042,
+          166584
+        ]
+      },
+      "quartet_index_and_masks": {
+        "candidate_median_ns": 266417.0,
+        "reference_median_ns": 199125.0,
+        "median_paired_difference_ns": 66229.5,
+        "candidate_favorable_pairs": 1,
+        "pairs": 8,
+        "candidate_allocations": 83.0,
+        "reference_allocations": 7.0,
+        "all_paired_differences_ns": [
+          -74583,
+          67458,
+          66917,
+          58000,
+          79876,
+          68542,
+          65542,
+          65166
+        ]
+      },
+      "queries_cleanup_and_materialization": {
+        "candidate_median_ns": 485833.0,
+        "reference_median_ns": 583437.5,
+        "median_paired_difference_ns": -100583.5,
+        "candidate_favorable_pairs": 8,
+        "pairs": 8,
+        "candidate_allocations": 196.0,
+        "reference_allocations": 6.0,
+        "all_paired_differences_ns": [
+          -504708,
+          -84666,
+          -84459,
+          -124500,
+          -65209,
+          -102000,
+          -99167,
+          -116083
+        ]
+      }
+    },
+    "borrowed-keys-coarse vs canonical-control-coarse": {
+      "preparation_interning_and_eligibility": {
+        "candidate_median_ns": 874229.0,
+        "reference_median_ns": 897437.5,
+        "median_paired_difference_ns": -32854.0,
+        "candidate_favorable_pairs": 8,
+        "pairs": 8,
+        "candidate_allocations": 933.0,
+        "reference_allocations": 1393.0,
+        "all_paired_differences_ns": [
+          -66666,
+          -42750,
+          -45208,
+          -54875,
+          -6875,
+          -7833,
+          -20959,
+          -22958
+        ]
+      },
+      "triple_index_and_coverage": {
+        "candidate_median_ns": 352708.0,
+        "reference_median_ns": 362625.0,
+        "median_paired_difference_ns": -7416.0,
+        "candidate_favorable_pairs": 6,
+        "pairs": 8,
+        "candidate_allocations": 83.0,
+        "reference_allocations": 83.0,
+        "all_paired_differences_ns": [
+          -11875,
+          -4041,
+          -15584,
+          -15542,
+          -2083,
+          3749,
+          6667,
+          -10791
+        ]
+      },
+      "quartet_index_and_masks": {
+        "candidate_median_ns": 266417.0,
+        "reference_median_ns": 268146.0,
+        "median_paired_difference_ns": -3750.0,
+        "candidate_favorable_pairs": 5,
+        "pairs": 8,
+        "candidate_allocations": 83.0,
+        "reference_allocations": 83.0,
+        "all_paired_differences_ns": [
+          -13792,
+          958,
+          -5500,
+          -7292,
+          7667,
+          5459,
+          -2000,
+          -7500
+        ]
+      },
+      "queries_cleanup_and_materialization": {
+        "candidate_median_ns": 485833.0,
+        "reference_median_ns": 486416.5,
+        "median_paired_difference_ns": -4395.5,
+        "candidate_favorable_pairs": 5,
+        "pairs": 8,
+        "candidate_allocations": 196.0,
+        "reference_allocations": 196.0,
+        "all_paired_differences_ns": [
+          -10791,
+          -6874,
+          -1917,
+          -193916,
+          29750,
+          4124,
+          750,
+          -7084
+        ]
+      }
+    }
+  }
+}

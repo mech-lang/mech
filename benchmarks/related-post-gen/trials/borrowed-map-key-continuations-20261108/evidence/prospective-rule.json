@@ -1,0 +1,23 @@
+{
+  "scope": "IR303 one owned canonical-order Map-key view through native length, omitted private frame field and direct String-cell MapInsert; Cranelift; unchanged source; IR302 parent and IR295 selected control",
+  "candidate": "mech-ir303-borrowed-map-key-views-4",
+  "immediate_parent": "mech-ir302-private-write-first-4",
+  "selected_control": "mech-ir295-histogram-reuse-4",
+  "seed": 9903900,
+  "resource_seed": 99039001,
+  "confirmation_seed": 9903901,
+  "confirmation_resource_seed": 99039011,
+  "bootstrap_seed": 990390011,
+  "confirmation_bootstrap_seed": 990390111,
+  "bootstrap_resamples": 10000,
+  "samples": 31,
+  "resource_samples": 7,
+  "retain_first_and_adverse": true,
+  "whole_process_gate": false,
+  "promotion": "Independent confirmation of processing reduction; retain verified resource wins separately; no parity claim without same-cohort fastest eligible Rust",
+  "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+  "eligible_Rust_controls": 20,
+  "all_Rust_controls": 22,
+  "emission_control_pending": false,
+  "emission_control": "mech-ir303-canonical-map-key-control-4"
+}

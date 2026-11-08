@@ -1,0 +1,9 @@
+{
+  "kind": "inherited harness output path",
+  "compiler_output": "/private/tmp/mech-related-borrowed-map-key-views-20261108/engine-tests",
+  "test_entry_symlink": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/engine-tests",
+  "old_binary_preserved": "/private/tmp/mech-related-borrowed-map-key-views-20261108/engine-tests-qualified-v3-before-continuations",
+  "new_outputs_in": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108",
+  "source_mutated_while_compiling": false,
+  "normalization": "After current build completes, move new executable into this packet and correct output path for subsequent recipe runs"
+}

@@ -1,0 +1,55 @@
+error[E0624]: method `has_uninventoried_private_owners` is private
+  --> /private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/owner/map_key_views.rs:92:17
+   |
+92 |         if self.has_uninventoried_private_owners() {
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ private method
+   |
+  ::: /private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs:28:5
+   |
+28 |     pub(super) fn has_uninventoried_private_owners(&self) -> bool {
+   |     ------------------------------------------------------------- private method defined here
+
+error[E0624]: method `matrix_length_call` is private
+   --> /private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/owner/map_key_views.rs:267:25
+    |
+267 |               return self.matrix_length_call(site, words);
+    |                           ^^^^^^^^^^^^^^^^^^ private method
+    |
+   ::: /private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/invocation/word_reads.rs:71:5
+    |
+ 71 | /     pub(super) fn matrix_length_call(
+ 72 | |         &mut self,
+ 73 | |         site: usize,
+ 74 | |         words: &[u64],
+ 75 | |     ) -> Result<Option<u64>, Error> {
+    | |___________________________________- private method defined here
+
+error[E0624]: method `has_uninventoried_private_owners` is private
+   --> /private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/owner/map_key_views.rs:269:17
+    |
+269 |         if self.has_uninventoried_private_owners() {
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ private method
+    |
+   ::: /private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs:28:5
+    |
+ 28 |     pub(super) fn has_uninventoried_private_owners(&self) -> bool {
+    |     ------------------------------------------------------------- private method defined here
+
+error[E0624]: method `matrix_length_call` is private
+   --> /private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/owner/map_key_views.rs:271:25
+    |
+271 |               return self.matrix_length_call(site, words);
+    |                           ^^^^^^^^^^^^^^^^^^ private method
+    |
+   ::: /private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/invocation/word_reads.rs:71:5
+    |
+ 71 | /     pub(super) fn matrix_length_call(
+ 72 | |         &mut self,
+ 73 | |         site: usize,
+ 74 | |         words: &[u64],
+ 75 | |     ) -> Result<Option<u64>, Error> {
+    | |___________________________________- private method defined here
+
+error: aborting due to 4 previous errors
+
+For more information about this error, try `rustc --explain E0624`.

@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "mech-ir303-canonical-map-key-control-4",
+    "original_source": "/private/tmp/mech-related-borrowed-map-key-views-emission-control-20261108/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/metrics-control/mech-ir303-canonical-map-key-control-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "b218fc7ebdb5eccf9ee528f9c332cf8352c8ea3c2a2e97cb4fac285a8dc0569e",
+    "diagnostic_executable_sha256": "5ecb5fa37e65f7b6f3b5e7c0fca8ac0afd4efaf0df09c6f2ef2b4ceb59f6f3cc"
+  }
+]

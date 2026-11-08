@@ -1,0 +1,23 @@
+
+running 10 tests
+test native_artifact::program::prepare::matrix_map_keys::tests::matrix_map_keys_prove_generic_adjacent_insertions_and_preserve_decoded_proofs ... ok
+test native_artifact::program::prepare::matrix_map_keys::tests::matrix_map_keys_refuse_an_escaping_key_with_two_insertion_consumers ... ok
+test native_artifact::program::prepare::matrix_map_keys::tests::matrix_map_keys_selects_actual_current_related_post_source ... ignored, requires retained benchmark source explicitly supplied by caller
+test native_artifact::program::runtime::composition_tests::matrix_map_keys::matrix_map_keys_checked_loading_keeps_independent_validation_and_fresh_identical_proofs ... ok
+test native_artifact::program::runtime::composition_tests::matrix_map_keys::matrix_map_keys_decline_metadata_headroom_and_keep_canonical_fallback ... FAILED
+test native_artifact::program::runtime::composition_tests::matrix_map_keys::matrix_map_keys_execute_without_string_values_for_unicode_partial_and_fresh_insertions ... ok
+test native_artifact::program::runtime::composition_tests::matrix_map_keys::matrix_map_keys_finite_global_boundaries_preserve_publication_and_cleanup ... {"dimension":"control","exact_selected_fragments":0,"minimum":59605541,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":16704192,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":31041,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2379827,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3303,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":4072,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":0,"minimum":59605541,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":16704192,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":31041,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2379827,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3303,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":4072,"witness":"composition-finite-boundary","zero_spending":false}
+ok
+test native_artifact::program::runtime::composition_tests::matrix_map_keys::matrix_map_keys_ready_loans_enable_current_census_and_canonical_ablation_does_not ... ok
+test native_artifact::program::runtime::composition_tests::matrix_map_keys::matrix_map_keys_reject_stale_source_token_and_per_call_caps_and_retry_atomically ... 

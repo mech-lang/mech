@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "mech-ir303-borrowed-map-key-views-4",
+    "original_source": "/private/tmp/mech-related-borrowed-map-key-views-runners-20261108-v1/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/metrics/mech-ir303-borrowed-map-key-views-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "e664eb790d2ed277af9730091458f103864c8571c97da646afcbd440829414e4",
+    "diagnostic_executable_sha256": "e040e841016e343c265b17472f146086eb45ecca04ed2f862f952ea4a1ec3b5e"
+  }
+]

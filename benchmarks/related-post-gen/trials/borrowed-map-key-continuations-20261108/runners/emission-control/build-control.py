@@ -1,0 +1,4 @@
+from pathlib import Path
+import json,os,subprocess,time,hashlib,copy
+p=Path(__file__).parent;r=json.loads((p/'recipe.json').read_text());t=time.monotonic();c=r['command'];x=subprocess.run(c,cwd=p,env={**os.environ,**r['environment']},capture_output=True,text=True);(p/'gpu-build.json').write_text(json.dumps(dict(command=c,environment=r['environment'],exit=x.returncode,seconds=time.monotonic()-t,stdout=x.stdout,stderr=x.stderr),indent=2)+'\n');print('emission-only compiler GPU',x.returncode,flush=True);assert x.returncode==0,x.stderr
+b=json.loads(Path(r['base_build']).read_text());s=next(v for v in b['stages']if v['crate']=='mech_gpu');s.update(command=c,environment=r['environment'],library_sha256=hashlib.sha256(Path(c[-1]).read_bytes()).hexdigest(),emission_control=True);(p/'build.json').write_text(json.dumps(b,indent=2)+'\n')

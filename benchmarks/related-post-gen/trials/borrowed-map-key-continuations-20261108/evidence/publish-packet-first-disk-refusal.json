@@ -1,0 +1,7 @@
+{
+  "reason": "copyfile expanded original hardlinked duplicate result outputs",
+  "partial_duplicate_bytes_removed": 1052626348,
+  "original_evidence_untouched": true,
+  "correction": "Preserve exact output bytes once by SHA256 and explicit per-alias reference",
+  "timing_or_compiler_result_changed": false
+}

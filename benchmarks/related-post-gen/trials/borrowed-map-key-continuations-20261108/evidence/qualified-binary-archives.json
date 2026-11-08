@@ -1,0 +1,43 @@
+{
+  "before_free": 1030504448,
+  "after_free": 1373061120,
+  "items": [
+    {
+      "path": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/engine-tests",
+      "archive": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/engine-tests.gz",
+      "sha256": "d1b1c0f8c8f8a3fb327152f497fe42e84789d252c5173bd96a741d500e57b1ab",
+      "bytes": 63840656,
+      "archive_bytes": 15152948,
+      "mode": 493,
+      "lossless_verified": true
+    },
+    {
+      "path": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/expanded-tests/gpu-tests",
+      "archive": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/expanded-tests/gpu-tests.gz",
+      "sha256": "8fdb43c98e8a8fc6ac3d8eef37de0a12b31c81986556a1598d18622051096b6b",
+      "bytes": 136228152,
+      "archive_bytes": 25415129,
+      "mode": 493,
+      "lossless_verified": true
+    },
+    {
+      "path": "/private/tmp/mech-related-borrowed-map-key-views-runners-20261108-v1/compiler",
+      "archive": "/private/tmp/mech-related-borrowed-map-key-views-runners-20261108-v1/compiler.gz",
+      "sha256": "5f71c006485f6700e8f2106e4f02caa7c88abab91cc59296bd42b9eeeac49614",
+      "bytes": 107664928,
+      "archive_bytes": 16108138,
+      "mode": 493,
+      "lossless_verified": true
+    },
+    {
+      "path": "/private/tmp/mech-related-borrowed-map-key-views-emission-control-20261108/compiler",
+      "archive": "/private/tmp/mech-related-borrowed-map-key-views-emission-control-20261108/compiler.gz",
+      "sha256": "f2cdff043f489d3435c86e5a80ce46e7fd030da3fbfd8210bf374345a0a2e589",
+      "bytes": 107664960,
+      "archive_bytes": 16108568,
+      "mode": 493,
+      "lossless_verified": true
+    }
+  ],
+  "measurement_runners_untouched": true
+}

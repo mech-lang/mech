@@ -1,0 +1,6 @@
+{
+  "all135contracts_passed": true,
+  "all129parent_names_retained": true,
+  "Engine_all_sources_unchanged_since_test_compile": true,
+  "GPU_only_edits_independent_of_Engine_test_crate": true
+}

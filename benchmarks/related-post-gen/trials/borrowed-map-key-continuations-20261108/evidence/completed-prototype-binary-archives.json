@@ -1,0 +1,48 @@
+{
+  "lossless_verified": true,
+  "only_completed_test_inspection_binaries": true,
+  "measurement_executables_and_primary_outputs_unchanged": true,
+  "restore": "decompress to original_path, chmod mode, verify sha256",
+  "files": [
+    {
+      "original_path": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/engine-tests-first-fixture",
+      "gzip_path": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/engine-tests-first-fixture.qualified.gz",
+      "sha256": "4707d4e5f546b09ea2ee9c02479b210e76abcd02c6bce24772eb460d02573a13",
+      "mode": "0o755",
+      "original_bytes": 63840656,
+      "compressed_bytes": 15152384
+    },
+    {
+      "original_path": "/private/tmp/mech-related-borrowed-map-key-views-20261108/engine-tests-qualified-v2",
+      "gzip_path": "/private/tmp/mech-related-borrowed-map-key-views-20261108/engine-tests-qualified-v2.qualified.gz",
+      "sha256": "9ae2c893a259faf4f3e91d1ebf25e02c3f94ea934e88e0143d1520a331cfc2cc",
+      "mode": "0o755",
+      "original_bytes": 63919904,
+      "compressed_bytes": 15182140
+    },
+    {
+      "original_path": "/private/tmp/mech-related-borrowed-map-key-views-20261108/engine-tests-qualified-v3-before-continuations",
+      "gzip_path": "/private/tmp/mech-related-borrowed-map-key-views-20261108/engine-tests-qualified-v3-before-continuations.qualified.gz",
+      "sha256": "e2deebd1b99a319b27e4ebff6b6f98f868a7a22b68b9a1267e8be5f311264d33",
+      "mode": "0o755",
+      "original_bytes": 63751424,
+      "compressed_bytes": 15158218
+    },
+    {
+      "original_path": "/private/tmp/mech-related-borrowed-map-key-views-20261108/gpu-proof-tests",
+      "gzip_path": "/private/tmp/mech-related-borrowed-map-key-views-20261108/gpu-proof-tests.qualified.gz",
+      "sha256": "5dfa6e75eb80a425f29ab59d3556afee530efe4eface327fe81a778c4979a3b2",
+      "mode": "0o755",
+      "original_bytes": 136152768,
+      "compressed_bytes": 25369738
+    },
+    {
+      "original_path": "/private/tmp/mech-related-borrowed-map-key-views-20261108/inspect-escape",
+      "gzip_path": "/private/tmp/mech-related-borrowed-map-key-views-20261108/inspect-escape.qualified.gz",
+      "sha256": "9b7093043cb1c81841a7c65d6658609c35e977f7efdc6f52387559369b9e5615",
+      "mode": "0o755",
+      "original_bytes": 98700544,
+      "compressed_bytes": 12744250
+    }
+  ]
+}

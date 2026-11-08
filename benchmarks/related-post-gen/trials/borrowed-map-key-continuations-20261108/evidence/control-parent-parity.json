@@ -1,0 +1,7 @@
+{
+  "all_nontiming_fields_exact": true,
+  "parent": "IR297",
+  "scalar_rows": 128,
+  "DEFLATE_rows": 5,
+  "comparison_root": "/private/tmp/mech-related-borrowed-map-key-views-regressions-20261108-v1"
+}

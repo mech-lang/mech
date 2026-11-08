@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-borrowed-map-key-views-runners-20261108-v1/compiler",
+    "/private/tmp/mech-related-native-string-classification-reuse-runners-20261108-v2/histogram-reuse/build/source.mec",
+    "/private/tmp/mech-related-borrowed-map-key-views-runners-20261108-v1/histogram-reuse/build"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 6.873049374902621,
+  "stdout": "{\"code_bytes\":1031248,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1584}\n",
+  "stderr": ""
+}

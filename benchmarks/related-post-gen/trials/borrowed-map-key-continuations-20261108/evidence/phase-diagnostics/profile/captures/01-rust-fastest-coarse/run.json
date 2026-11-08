@@ -1,0 +1,23 @@
+{
+  "pair": 1,
+  "order": 5,
+  "variant": "rust-fastest-coarse",
+  "kind": "rust",
+  "diagnostic": true,
+  "command": [
+    "/private/tmp/mech-related-aligned-constructor-diagnostics-20261108/rust/target/release/rust_mech"
+  ],
+  "cwd": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/phase-diagnostics/profile/captures/01-rust-fastest-coarse/rust",
+  "environment": {
+    "MECH_INTERVAL_COUNTERS": "1",
+    "MECH_INTERVAL_HELPERS": "0",
+    "MECH_PHASE_BOUNDARIES": "1,2,3",
+    "MECH_PHASE_TRACE": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/phase-diagnostics/profile/captures/01-rust-fastest-coarse/trace.json"
+  },
+  "exit": 0,
+  "seconds": 0.026542958104982972,
+  "stdout": "Processing time (w/o IO): 1.590167ms\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"fully_covered\":true,\"interning_and_eligibility_seconds\":0.000549459,\"quartet_entries\":15152,\"quartet_index_and_masks_seconds\":0.000201,\"queries_and_index_export_seconds\":0.000563583,\"triple_entries\":35228,\"triple_index_and_coverage_seconds\":0.000188},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+  "stderr": "",
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false
+}

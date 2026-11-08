@@ -1,0 +1,10 @@
+
+thread 'native_artifact::program::runtime::composition_tests::matrix_map_keys::matrix_map_keys_decline_metadata_headroom_and_keep_canonical_fallback' (22659121) panicked at /private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/composition_tests/matrix_map_keys.rs:369:13:
+assertion `left == right` failed: refused loans must retain the full caller census
+  left: 1024
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native_artifact::program::runtime::composition_tests::matrix_map_keys::matrix_map_keys_reject_stale_source_token_and_per_call_caps_and_retry_atomically' (22659127) panicked at /private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/composition_tests/matrix_map_keys.rs:63:22:
+called `Result::unwrap()` on an `Err` value: StaleHandle
+fatal runtime error: failed to initiate panic, error 5, aborting

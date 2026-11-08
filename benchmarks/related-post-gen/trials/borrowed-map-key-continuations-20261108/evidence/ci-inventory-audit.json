@@ -1,0 +1,14 @@
+{
+  "expected": 451,
+  "listed": 451,
+  "executed_passed": 451,
+  "all_names_match": true,
+  "all446parent_names_retained": true,
+  "new_names": [
+    "native_artifact::program::prepare::borrowed_map_keys::tests::borrowed_map_keys_prove_dead_private_frame_field_and_refuse_escapes",
+    "native_artifact::program::runtime::composition_tests::borrowed_map_keys::borrowed_map_keys_errors_caps_and_fresh_invocations_preserve_publication_and_aliases",
+    "native_artifact::program::runtime::composition_tests::borrowed_map_keys::borrowed_map_keys_execute_and_materialize_after_later_owner_refusal",
+    "native_artifact::program::runtime::composition_tests::borrowed_map_keys::borrowed_map_keys_later_length_survives_insertion_owner_publication",
+    "native_artifact::values::tests::copy_tests::virtual_value_definitions_keep_current_generations_ledger_and_failure_atomicity"
+  ]
+}

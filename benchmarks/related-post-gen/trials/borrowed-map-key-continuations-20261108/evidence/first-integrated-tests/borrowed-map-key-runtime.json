@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/first-integrated-tests/gpu-tests",
+    "borrowed_map_keys",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-borrowed-map-key-views-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 0,
+  "seconds": 1.6412691250443459,
+  "scope": "Qualification only; concurrent timers ineligible"
+}

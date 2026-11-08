@@ -1,0 +1,6 @@
+{
+  "reason": "1GiBfree preflight gate",
+  "free_bytes": 1030504448,
+  "no_measurements_started": true,
+  "remediation": "lossless archive of completed compilers and Engine/GPU test executables; keep all linked latency/resource runners intact"
+}

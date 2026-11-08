@@ -1,0 +1,205 @@
+{
+  "scope": "IR303 same-Object repeated evaluate_into; inclusive overlapping stack entries only. These are not additive costs, CPU percentages, predicted removable time, or full-processing timings.",
+  "observations": {
+    "frame_admission": [
+      {
+        "inclusive_samples": 359,
+        "raw_stack_entry": "359       _RNvMs_NtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall24admit_buffer_frame_words  (in runner-native-profile) + 64  [0x102e550b4]"
+      },
+      {
+        "inclusive_samples": 359,
+        "raw_stack_entry": "359       _RNvMs_NtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall25admit_buffer_frame_inputs  (in runner-native-profile) + 264  [0x102e55218]"
+      },
+      {
+        "inclusive_samples": 232,
+        "raw_stack_entry": "232       _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB3M_8prepared13buffer_framesNtB5j_25NativePreparedLibraryCall25admit_buffer_frame_inputs0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 3480  [0x102da4828]"
+      },
+      {
+        "inclusive_samples": 66,
+        "raw_stack_entry": "66       _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB3M_8prepared13buffer_framesNtB5j_25NativePreparedLibraryCall25admit_buffer_frame_inputs0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 3816  [0x102da4978]"
+      },
+      {
+        "inclusive_samples": 31,
+        "raw_stack_entry": "31       _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB3M_8prepared13buffer_framesNtB5j_25NativePreparedLibraryCall25admit_buffer_frame_inputs0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 4680  [0x102da4cd8]"
+      },
+      {
+        "inclusive_samples": 15,
+        "raw_stack_entry": "+ !         : |   +     15 _RNvMs_NtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall36admit_buffer_frame_borrowed_map_keys  (in runner-native-profile) + 116  [0x102e55780]"
+      },
+      {
+        "inclusive_samples": 15,
+        "raw_stack_entry": "+ !         : |   +       15 _RNvMs_NtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall25admit_buffer_frame_inputs  (in runner-native-profile) + 264  [0x102e55218]"
+      },
+      {
+        "inclusive_samples": 13,
+        "raw_stack_entry": "+ !         : |   +         13 _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB3M_8prepared13buffer_framesNtB5j_25NativePreparedLibraryCall25admit_buffer_frame_inputs0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 3480  [0x102da4828]"
+      },
+      {
+        "inclusive_samples": 13,
+        "raw_stack_entry": "13       _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB3M_8prepared13buffer_framesNtB5j_25NativePreparedLibraryCall25admit_buffer_frame_inputs0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 0  [0x102da3a90]"
+      },
+      {
+        "inclusive_samples": 9,
+        "raw_stack_entry": "9       _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB3M_8prepared13buffer_framesNtB5j_25NativePreparedLibraryCall25admit_buffer_frame_inputs0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 2612  [0x102da44c4]"
+      },
+      {
+        "inclusive_samples": 7,
+        "raw_stack_entry": "7       _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB3M_8prepared13buffer_framesNtB5j_25NativePreparedLibraryCall25admit_buffer_frame_inputs0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 1476  [0x102da4054]"
+      },
+      {
+        "inclusive_samples": 7,
+        "raw_stack_entry": "7       _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB3M_8prepared13buffer_framesNtB5j_25NativePreparedLibraryCall25admit_buffer_frame_inputs0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 4240  [0x102da4b20]"
+      }
+    ],
+    "shape_and_footprint": [
+      {
+        "inclusive_samples": 138,
+        "raw_stack_entry": "138       _RNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget48measure_proven_borrowed_canonical_data_footprint  (in runner-native-profile) + 276  [0x102c8f8e8]"
+      },
+      {
+        "inclusive_samples": 81,
+        "raw_stack_entry": "81       _RINvNtNtCs7l2XwlXeEQs_9mech_core8snapshot8encoding16visit_work_chunkNtNtNtB6_8function8resident19ResidentKernelErrorNCNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget48measure_proven_borrowed_canonical_data_footprints_0EB1Y_  (in runner-native-profile) + 172  [0x102cdc7fc]"
+      },
+      {
+        "inclusive_samples": 66,
+        "raw_stack_entry": "66       _RINvNtNtCs7l2XwlXeEQs_9mech_core8snapshot8encoding16visit_work_chunkNtNtNtB6_8function8resident19ResidentKernelErrorNCNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget48measure_proven_borrowed_canonical_data_footprints_0EB1Y_  (in runner-native-profile) + 216  [0x102cdc828]"
+      },
+      {
+        "inclusive_samples": 50,
+        "raw_stack_entry": "50       _RINvNtNtCs7l2XwlXeEQs_9mech_core8snapshot8encoding15visit_data_workNtNtNtB6_8function8resident19ResidentKernelErrorNCNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget48measure_proven_borrowed_canonical_data_footprints_0EB1X_  (in runner-native-profile) + 448  [0x102cdaee0]"
+      },
+      {
+        "inclusive_samples": 28,
+        "raw_stack_entry": "+ !         : |   +   !       :   | + ! : | 28 _RNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget48measure_proven_borrowed_canonical_data_footprint  (in runner-native-profile) + 276  [0x102c8f8e8]"
+      },
+      {
+        "inclusive_samples": 23,
+        "raw_stack_entry": "23       _RNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget37measure_native_scalar_frame_footprint  (in runner-native-profile) + 484  [0x102c8ec08]"
+      },
+      {
+        "inclusive_samples": 19,
+        "raw_stack_entry": "19       _RNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget37measure_native_scalar_frame_footprint  (in runner-native-profile) + 380  [0x102c8eba0]"
+      },
+      {
+        "inclusive_samples": 14,
+        "raw_stack_entry": "+ !         : |   +   !       :   | + ! : |   14 _RINvNtNtCs7l2XwlXeEQs_9mech_core8snapshot8encoding15visit_data_workNtNtNtB6_8function8resident19ResidentKernelErrorNCNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget48measure_proven_borrowed_canonical_data_footprints_0EB1X_  (in runner-native-profile) + 1952  [0x102cdb4c0]"
+      },
+      {
+        "inclusive_samples": 12,
+        "raw_stack_entry": "+ !         : |   +   !       :   | + ! : |   12 _RINvNtNtCs7l2XwlXeEQs_9mech_core8snapshot8encoding15visit_data_workNtNtNtB6_8function8resident19ResidentKernelErrorNCNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget48measure_proven_borrowed_canonical_data_footprints_0EB1X_  (in runner-native-profile) + 1912  [0x102cdb498]"
+      },
+      {
+        "inclusive_samples": 11,
+        "raw_stack_entry": "+ !         : |   +         ! : 11 _RNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget48measure_proven_borrowed_canonical_data_footprint  (in runner-native-profile) + 276  [0x102c8f8e8]"
+      },
+      {
+        "inclusive_samples": 10,
+        "raw_stack_entry": "10       _RNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget37measure_native_scalar_frame_footprint  (in runner-native-profile) + 412  [0x102c8ebc0]"
+      },
+      {
+        "inclusive_samples": 10,
+        "raw_stack_entry": "10       _RNvNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget37measure_native_scalar_frame_footprint  (in runner-native-profile) + 448  [0x102c8ebe4]"
+      }
+    ],
+    "dictionary_publication": [
+      {
+        "inclusive_samples": 63,
+        "raw_stack_entry": "+ !         : |   +       !   : 63 _RNvMNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps6string11publicationNtB4_14OwnedStringMap14publish_resultBe_  (in runner-native-profile) + 124  [0x102b6c934]"
+      },
+      {
+        "inclusive_samples": 26,
+        "raw_stack_entry": "+ !         : |   +       !   :   26 _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultNtNtNtCs7l2XwlXeEQs_9mech_core8snapshot10validation5ValueNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps9admission5ErrorENCNvMNtNtB4G_6string11publicationNtB6b_14OwnedStringMap14publish_result0E0IB36_B35_NtNtNtB3N_8function8resident19ResidentKernelErrorEEB4O_  (in runner-native-profile) + 548  [0x102ba2bac]"
+      },
+      {
+        "inclusive_samples": 26,
+        "raw_stack_entry": "+ !         : |   +       !   :   | 26 _RNvMNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps6string11publicationNtB4_14OwnedStringMap23publication_plan_resultBe_  (in runner-native-profile) + 364  [0x102b6cb44]"
+      },
+      {
+        "inclusive_samples": 17,
+        "raw_stack_entry": "+ !         : |   +       !   :   |   17 _RINvMs0_NtNtCs7l2XwlXeEQs_9mech_core6schema5tableNtB6_11SchemaTable43clone_allocation_bound_bytes_with_prechargeNtNtNtBa_8function8resident19ResidentKernelErrorNCNvMNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps6string11publicationNtB2F_14OwnedStringMap23publication_plan_result0EB2P_  (in runner-native-profile) + 376  [0x102bbf13c]"
+      },
+      {
+        "inclusive_samples": 16,
+        "raw_stack_entry": "+ !         : |   +       !   :   16 _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultNtNtNtCs7l2XwlXeEQs_9mech_core8snapshot10validation5ValueNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps9admission5ErrorENCNvMNtNtB4G_6string11publicationNtB6b_14OwnedStringMap14publish_result0E0IB36_B35_NtNtNtB3N_8function8resident19ResidentKernelErrorEEB4O_  (in runner-native-profile) + 900  [0x102ba2d0c]"
+      },
+      {
+        "inclusive_samples": 16,
+        "raw_stack_entry": "+ !         : |   +       !   :   | 16 _RNvNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps6string11publication4sort  (in runner-native-profile) + 32  [0x102bbe140]"
+      },
+      {
+        "inclusive_samples": 16,
+        "raw_stack_entry": "+ !         : |   +       !   :   |   16 _RINvMs1_NtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget7workers11debit_batchNtBa_23NativeLibraryWorkBudget16with_debit_batchINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps9admission5ErrorENCNvNtNtB2J_6string11publication4sort0EB2R_  (in runner-native-profile) + 392  [0x102b78520]"
+      },
+      {
+        "inclusive_samples": 14,
+        "raw_stack_entry": "+ !         : |   +       !   :   |   + 14 _RINvNtNtCs7l2XwlXeEQs_9mech_core6schema5table26body_clone_heap_bytes_withNCINvMs0_B2_NtB2_11SchemaTable43clone_allocation_bound_bytes_with_prechargeNtNtNtB6_8function8resident19ResidentKernelErrorNCNvMNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps6string11publicationNtB3f_14OwnedStringMap23publication_plan_result0E0EB3p_  (in runner-native-profile) + 364  [0x102bc53f8]"
+      },
+      {
+        "inclusive_samples": 10,
+        "raw_stack_entry": "+ !         : |   +       !   :   |     10 _RINvNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps6string11publication16sort_with_debitsNCNCNvB2_4sort00EBe_  (in runner-native-profile) + 236  [0x102bb3fc4]"
+      },
+      {
+        "inclusive_samples": 10,
+        "raw_stack_entry": "+ !         : |   +       !   :   10 _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultNtNtNtCs7l2XwlXeEQs_9mech_core8snapshot10validation5ValueNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps9admission5ErrorENCNvMNtNtB4G_6string11publicationNtB6b_14OwnedStringMap14publish_result0E0IB36_B35_NtNtNtB3N_8function8resident19ResidentKernelErrorEEB4O_  (in runner-native-profile) + 2128  [0x102ba31d8]"
+      },
+      {
+        "inclusive_samples": 5,
+        "raw_stack_entry": "+ !         : |   +       !   :   |   + ! 5 _RINvNtNtCs7l2XwlXeEQs_9mech_core6schema5table26body_clone_heap_bytes_withNCINvMs0_B2_NtB2_11SchemaTable43clone_allocation_bound_bytes_with_prechargeNtNtNtB6_8function8resident19ResidentKernelErrorNCNvMNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps6string11publicationNtB3f_14OwnedStringMap23publication_plan_result0E0EB3p_  (in runner-native-profile) + 540  [0x102bc54a8]"
+      },
+      {
+        "inclusive_samples": 4,
+        "raw_stack_entry": "+ !         : |   +       !   :   |   + ! 4 _RINvNtNtCs7l2XwlXeEQs_9mech_core6schema5table26body_clone_heap_bytes_withNCINvMs0_B2_NtB2_11SchemaTable43clone_allocation_bound_bytes_with_prechargeNtNtNtB6_8function8resident19ResidentKernelErrorNCNvMNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps6string11publicationNtB3f_14OwnedStringMap23publication_plan_result0E0EB3p_  (in runner-native-profile) + 564,336,...  [0x102bc54c0,0x102bc53dc,...]"
+      }
+    ],
+    "lookup_preparation": [
+      {
+        "inclusive_samples": 62,
+        "raw_stack_entry": "+ !         : |   +   !   62 _RNvMNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read  (in runner-native-profile) + 3244,3444,...  [0x102c346d8,0x102c347a0,...]"
+      },
+      {
+        "inclusive_samples": 22,
+        "raw_stack_entry": "+ !         : |   + ! : | 22 _RNvMs1_NtNtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared17string_matrix_key8map_keysNtB5_21NativeBorrowedMapKeys13admit_element  (in runner-native-profile) + 124  [0x102cb7ff4]"
+      },
+      {
+        "inclusive_samples": 17,
+        "raw_stack_entry": "+ !         : |   + !   : |   17 _RINvMs_NtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared17string_matrix_keyNtB5_25NativeStringMatrixKeyLoan12with_elementINtNtCsgDHHaSskbIF_4core6result6ResultyNtNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime4maps9admission5ErrorENCNvMs_NtNtB3f_5owner11matrix_keysNtB4M_5State17insert_matrix_keys1_0EB3n_  (in runner-native-profile) + 544  [0x102baccb4]"
+      },
+      {
+        "inclusive_samples": 17,
+        "raw_stack_entry": "+ !         : |   +   ! 17 _RNvMs_NtNtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared17string_matrix_key8map_keysNtB8_25NativePreparedLibraryCall30borrowed_map_keys_or_canonical  (in runner-native-profile) + 428  [0x102e578f4]"
+      },
+      {
+        "inclusive_samples": 17,
+        "raw_stack_entry": "+ !         : |   +   !   17 _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultNtNtNtNtNtNtBY_7general23native_collection_calls8prepared17string_matrix_key8map_keys27NativeBorrowedMapKeysChoiceNtNtB3P_10invocation31NativeCollectionInvocationErrorENCNvMs_B3J_NtB3N_25NativePreparedLibraryCall30borrowed_map_keys_or_canonical0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 884  [0x102d9a3b8]"
+      },
+      {
+        "inclusive_samples": 17,
+        "raw_stack_entry": "+ !         : |   +   !     17 _RNvMNtNtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared17string_matrix_key8map_keysNtB6_25NativePreparedLibraryCall29try_borrowed_map_keys_in_call  (in runner-native-profile) + 500  [0x102e4ea5c]"
+      },
+      {
+        "inclusive_samples": 13,
+        "raw_stack_entry": "+ !         : |   +   !   13 _RNvMNtNtNtNtNtCseDjyp2Hi3J4_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read  (in runner-native-profile) + 4940  [0x102c34d78]"
+      },
+      {
+        "inclusive_samples": 8,
+        "raw_stack_entry": "+ !         : |   +   !       8 _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultINtNtB3a_6option6OptionNtNtNtNtNtNtBY_7general23native_collection_calls8prepared17string_matrix_key8map_keys21NativeBorrowedMapKeysENtNtB4c_10invocation31NativeCollectionInvocationErrorENCNvMB46_NtB4a_25NativePreparedLibraryCall29try_borrowed_map_keys_in_call0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 2712  [0x102d8f2f8]"
+      },
+      {
+        "inclusive_samples": 5,
+        "raw_stack_entry": "+ !         : |   + ! : | + 5 _RNvMs_NtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared17string_matrix_keyNtB4_25NativeStringMatrixKeyLoan13admit_element  (in runner-native-profile) + 404,432,...  [0x102db59d0,0x102db59ec,...]"
+      },
+      {
+        "inclusive_samples": 5,
+        "raw_stack_entry": "+ !         : |   +   !       5 _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsbE3qqTtWxRd_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultINtNtB3a_6option6OptionNtNtNtNtNtNtBY_7general23native_collection_calls8prepared17string_matrix_key8map_keys21NativeBorrowedMapKeysENtNtB4c_10invocation31NativeCollectionInvocationErrorENCNvMB46_NtB4a_25NativePreparedLibraryCall29try_borrowed_map_keys_in_call0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 3864  [0x102d8f778]"
+      },
+      {
+        "inclusive_samples": 4,
+        "raw_stack_entry": "+ !         : |   + ! : | + 4 _RNvMs_NtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared17string_matrix_keyNtB4_25NativeStringMatrixKeyLoan13admit_element  (in runner-native-profile) + 2496  [0x102db61fc]"
+      },
+      {
+        "inclusive_samples": 3,
+        "raw_stack_entry": "+ !         : |   + ! : | + 3 _RNvMs_NtNtNtNtNtCsbE3qqTtWxRd_11mech_engine8resident7general23native_collection_calls8prepared17string_matrix_keyNtB4_25NativeStringMatrixKeyLoan13admit_element  (in runner-native-profile) + 152  [0x102db58d4]"
+      }
+    ]
+  }
+}

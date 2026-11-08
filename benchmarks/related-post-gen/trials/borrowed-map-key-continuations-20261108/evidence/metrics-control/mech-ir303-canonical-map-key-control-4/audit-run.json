@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-borrowed-map-key-views-emission-control-20261108/histogram-reuse/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/metrics-control/mech-ir303-canonical-map-key-control-4/runner-metrics",
+    "--output",
+    "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/metrics-control/mech-ir303-canonical-map-key-control-4/native-link-audit.json"
+  ],
+  "cwd": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen",
+  "exit": 0,
+  "seconds": 0.07812354201450944,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 51, \"normalized_text_sha256\": \"c64eefc970f75fabe72fa08915b0b84095ed95dec872bdf0b5c3a0091e016b86\"}\n",
+  "stderr": "",
+  "rustflags": null
+}

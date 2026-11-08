@@ -1,0 +1,21 @@
+{
+  "working_baseline": "IR303",
+  "selected_processing_control": "IR295 retained for subsequent cohorts",
+  "immediate_parent": "IR302 retained as control",
+  "retain_native_lowering": true,
+  "lowering_effect_independently_confirmed_against_same_Engine_runtime_emission_control": true,
+  "first_vs_parent_and_IR295_processing_intervals_cross_zero": true,
+  "confirmation_vs_parent_and_IR295_processing_intervals_strictly_negative": true,
+  "whole_process_gate": false,
+  "source_branch": "codex/related-borrowed-map-key-views-20261108",
+  "source_commit": "61c5a6e0a5008fbecbab31ddcb84bab96afad7ba",
+  "current_processing_seconds": 0.001878375,
+  "fastest_eligible_Rust_seconds": 0.001558125,
+  "times_fastest_Rust": 1.2055354993983152,
+  "remaining_gap_seconds": 0.00032025,
+  "reduction_of_current_time_needed_for_parity": 0.17049311239768417,
+  "reason": "Both processing medians improve and both independently randomized emission-control intervals exclude zero; keep the large deterministic allocation reduction. First cross-version intervals remain uncertain and are not discarded. Original IR295/IR302 controls remain in the next cohort.",
+  "restoration_regression_retained": true,
+  "unselected_emission_ablation": true,
+  "goal_complete": false
+}
