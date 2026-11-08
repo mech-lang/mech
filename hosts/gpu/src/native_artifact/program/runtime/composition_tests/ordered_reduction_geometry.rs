@@ -97,9 +97,25 @@ pub(super) fn check_current_windows() {
                                 ((i as u64 * 29 + 1) << 32) | u64::from(u32::MAX - (i * 41) as u32)
                             })
                             .collect::<Vec<_>>();
-                        for (start, stop) in
-                            [(0, 0), (0, 1), (1, 16), (1, 17), (1, 18), (9, 28), (33, 32)]
-                        {
+                        for (start, stop) in [
+                            (0, 0),
+                            (0, 1),
+                            (1, 4),
+                            (1, 5),
+                            (1, 6),
+                            (1, 7),
+                            (1, 8),
+                            (1, 9),
+                            (1, 16),
+                            (1, 17),
+                            (1, 18),
+                            (9, 28),
+                            (33, 32),
+                            (
+                                size as u64 - delta as u64 - 3,
+                                size as u64 - delta as u64 + 1,
+                            ),
+                        ] {
                             for seed in [2, u32::MAX] {
                                 let args = inputs(
                                     &artifact,

@@ -40709,6 +40709,106 @@
           }
         }
       ]
+    },
+    "200": {
+      "base": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "decision": "Reject the four-candidate cutoff for its adverse complete-program result; keep sixteen lower instruction medians as separate evidence and retain expanded independent-oracle controls. Production remains R199/IR214.",
+      "versions_candidate": {
+        "ir": 215,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "source_files": [
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_reduction.rs",
+          "bytes": 10840,
+          "sha256": "cb90ecc360ea1c871b23abc2816562d34199d3a19c6c7e6b1f32f4803349d6d5",
+          "git_blob": "271ea59b412345889d58203cec470fc50ba59328"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_reduction_geometry.rs",
+          "bytes": 8458,
+          "sha256": "620cbe44c0c363699f8828809d552ddee48c799ed12a3d9b2884a7e84361c9e1",
+          "git_blob": "c84502d4de93a09efdae09c9ea0546f8056f3523"
+        }
+      ],
+      "candidate_source_files": [
+        {
+          "path": "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs",
+          "bytes": 9808,
+          "sha256": "cc42e1c67af77cc62cb976f89ef9011fa066af00f4f37c15f9a21fc5dec74b5f",
+          "git_blob": "d370151e05bcf3ca62e73f11518650a235badfae"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/image/identity.rs",
+          "bytes": 74150,
+          "sha256": "55d379014303544f8dca02831e205fa645fe842f968cf8cc4eca68c95639477c",
+          "git_blob": "ffc9f6b5f14191fea80d62cb05738caf0f6ec6d6"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_reduction.rs",
+          "bytes": 10840,
+          "sha256": "cb90ecc360ea1c871b23abc2816562d34199d3a19c6c7e6b1f32f4803349d6d5",
+          "git_blob": "271ea59b412345889d58203cec470fc50ba59328"
+        },
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_reduction_geometry.rs",
+          "bytes": 8458,
+          "sha256": "620cbe44c0c363699f8828809d552ddee48c799ed12a3d9b2884a7e84361c9e1",
+          "git_blob": "c84502d4de93a09efdae09c9ea0546f8056f3523"
+        }
+      ],
+      "events": [
+        {
+          "event": "rejected-four-candidate-vector-cutoff-retained-oracle-controls",
+          "asset": "r200-short-reduction-cutoff-014ddff45193.tar.gz",
+          "sha256": "014ddff4519347f727664c6b5b6f2aece97be07fc3d35ca2fc3a9767c5ec5c03",
+          "bytes": 3501725,
+          "files": 387,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "compressor_source_unchanged": true,
+          "candidate_compiler_rejected": true,
+          "retained_production_unchanged_from_R199": true,
+          "primary_observations": 3968,
+          "total_complete_calls": 4048,
+          "gates_1_05_pass": 20,
+          "elapsed_medians_lower": 9,
+          "elapsed_medians_higher": 11,
+          "geometric_elapsed_change_percent": 0.06672379545364926,
+          "lower_instruction_medians": 16,
+          "higher_instruction_medians": 4,
+          "higher_cycle_medians": 4,
+          "equal_heap_cases": 20,
+          "candidate_native_tests": 675,
+          "selected_final_focused_tests": 14,
+          "scheduled_tests_executed": 258,
+          "new_test_names": 0,
+          "expanded_oracle_comparisons": [
+            6384,
+            2688
+          ],
+          "changed_machine_instruction_words": 4,
+          "code_bytes_before": 8152436,
+          "code_bytes_after": 8152436,
+          "stack_bytes_before": 16480,
+          "stack_bytes_after": 16480,
+          "fresh_candidate_profile_calls": 6673,
+          "fresh_baseline_pc_profile_calls": 832,
+          "baseline_stack_profile_reused": true,
+          "public_verification": {
+            "file_occurrences": 387,
+            "server_digests_match": true,
+            "numerical_replay_byte_identical": true
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",

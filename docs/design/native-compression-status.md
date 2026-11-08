@@ -1,5 +1,13 @@
 # Native compression milestone
 
+## R200: short reduction cutoff rejected; tests retained
+
+**Production remains R199 / IR214.** The candidate changes the four complete-group comparisons from sixteen to four, with no generated code-size or stack change. All20 original gates pass, but eleven elapsed medians rise and geometric elapsed worsens **0.066724%**. Natural32 **3.347987×→3.373958× Roc**, natural16 **4.047769×→4.081688×**, repeated32 **2.870054×→2.886755×**, and periodic33 **3.359533×→3.373970×** are adverse. These are paired candidate/control readings, not new retained-compiler gains or between-cohort regressions.
+
+Sixteen instruction medians improve, including natural32/16 about0.66%/0.67%; preserve those positive results separately. Four instruction and four cycle medians rise. All20 heap request/byte/reallocation/incremental-peak medians remain equal. The complete-program timing objective is unmet; no favorable unchanged rerun is substituted.
+
+Two existing independent-oracle controls are expanded to all short lengths, nonzero starts, width pairs, high halves, ties, tails and physical reverse-window endings. The candidate passes675 native tests and all258 actual CI selections; unchanged236/eight/one qualification, current generic state controls, architecture/catalog/workflow/runtime-only checks pass with the same seven inherited exclusions. After restoring both compiler files, the final test root freshly passes all14 focused controls. Fresh candidate profiles retain6,673 correct calls; a fresh exact-baseline PC profile completes832. [All twenty rows, counter evidence, source pins, limitations and replay](native-short-reduction-experiment.md). LLVM comparison requested next; no LLVM implementation or dependency is adopted here. #973 stays draft.
+
 ## R199: ordered retirement visible at native boundaries
 
 A generic inline hint keeps the existing ordered cleanup loop visible to its sole production caller. Its function body, finite charges, errors, aliases and recovery remain unchanged. The independently rebuilt native image is byte-identical in all five files; IR/work/ABI/MBC remain **214/107/39/14**. The state-machine source stays experimental and the existing faster source remains retained.
