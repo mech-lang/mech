@@ -344,6 +344,9 @@ pub(super) struct Proof {
     unchanged_at_latch: BTreeSet<usize>,
 }
 impl Proof {
+    pub(super) fn extend_increment_writes(&mut self, other: Self) {
+        self.increment_writes.extend(other.increment_writes);
+    }
     pub(super) fn extend(&mut self, other: Self) {
         self.guards.extend(other.guards);
         self.arithmetic.extend(other.arithmetic);

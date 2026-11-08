@@ -11,6 +11,17 @@ const SOURCE: &str = r#"walk(a<[u64]>, i<u64>, end<u64>) => (out<[u64]>) :=
 walk(values<[u64]>, 0u64, count<u64>)
 "#;
 
+const APPEND_SOURCE: &str = r#"<state> := <([u64],[u64])>
+walk(a<[u64]>, keys<[u64]>, i<u64>, end<u64>) => (out<state>) :=
+  next-keys := sequence/append(keys, i)
+  old := a[1u64]
+  incoming := old + 1u64
+  ~next := a
+  next[1u64] = incoming
+  out := ((i + 1u64 < end)? | true => walk(next, next-keys, i + 1u64, end) | false => (next, next-keys)).
+walk(values<[u64]>, sequence/with-capacity(0u64, 4u64), 0u64, count<u64>)
+"#;
+
 fn counts(artifact: &ProgramArtifact) -> (usize, usize) {
     let object = crate::native_artifact::emit_program_object_with_limits(
         artifact,
@@ -40,7 +51,7 @@ fn counts(artifact: &ProgramArtifact) -> (usize, usize) {
 #[test]
 fn checked_increment_writes_preserve_aliases_overflow_bounds_publication_and_retry() {
     let mode = NativeProgramLimitMode::NoLimits;
-    for artifact in artifacts(SOURCE) {
+    for artifact in [SOURCE, APPEND_SOURCE].into_iter().flat_map(artifacts) {
         assert!(
             counts(&artifact).0 > 0,
             "fixture must select the actual optimization"
@@ -65,6 +76,7 @@ fn checked_increment_writes_preserve_aliases_overflow_bounds_publication_and_ret
             for (values, count) in [
                 (vec![1, 2, 3], 3),
                 (vec![1, u64::MAX, 3], 3),
+                (vec![u64::MAX, 2, 3], 3),
                 (vec![4, 5, 6], 4),
                 (vec![7, 8, 9], 3),
             ] {

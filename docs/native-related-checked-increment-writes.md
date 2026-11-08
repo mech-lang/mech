@@ -28,3 +28,10 @@ overflow, bounds failures, publication, work accounting and retry. Benchmark
 results must separately establish machine-code removal, instructions, elapsed
 time, allocations and artifact sizes; the estimated saving is not a timing
 claim.
+
+Fused generators can append before reading a count. Independently fresh local
+scopes cover at most 32 consecutive source sites and 256 writes per numeric
+region, reusing the same transfer engine. They stop at branches, joins,
+mutations, array copies, loops and callbacks; no pre-boundary fact is imported.
+Only checked-update facts escape these scopes. Existing loop-prefix proofs and
+their allowances remain unchanged.

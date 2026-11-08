@@ -10,6 +10,8 @@ use mech_engine::native_artifact::{
     NativeControlLoop, NativeIterationAction as Action, NativeMatchValue,
 };
 use std::collections::BTreeSet;
+#[path = "numeric_checked_updates.rs"]
+mod checked_updates;
 
 pub(super) fn derive(
     code: CodePlan<'_>,
@@ -47,6 +49,10 @@ pub(super) fn derive(
             facts.extend(proof);
         }
     }
+    // A loop-wide supported prefix intentionally ends at appends and opaque
+    // children. Fresh short chains may independently prove a later local
+    // read/add/write without carrying any fact through that boundary.
+    facts.extend_increment_writes(checked_updates::derive(code, numeric, shadow));
     facts
 }
 
