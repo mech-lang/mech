@@ -1,5 +1,13 @@
 # Native compression milestone
 
+## R218: simpler source cleanup measured; precision issue isolated
+
+One diagnostic emitter file ends a guarded consumed source AFTER the checked indexed update succeeds, including unchanged results. The first real two-store sequence already has the required existing proof. No new family analysis/runtime/source algorithm changes. All640 new original/decoded controls and40 full-stream smokes pass; all20 payload/copy/zero/peak counts match R217, including natural32 requests5184→608.
+
+The original four-way cohort passes19/20 point gates; one-stored250→291ns fails, but its means283.625→285.391ns differ0.623%. The measured platform clock tick is41.667ns. A separate precision qualification follows; the original result is preserved.12 instruction medians fall/eight rise vs R211; R218 has higher instruction counts than R217 on17 inputs, two equal, one lower. Smaller code5589884B accompanies a larger61520B root stack.
+
+NormalR215/IR215 remains unchanged. This simpler variant is an alternative; its smaller patch does not justify losing the earlier strategy’s measured speed. [Compiler patch, all20 original results, controls and profiles](native-consumed-source-cleanup.md).
+
 ## R217: retire proved-unused aliases before indexed changes; one gate remains
 
 The compiler already grants consume permission at every observed indexed copy, but two current references force copying. The new home/proof census identifies older array homes that the EXISTING current-path proof already marks dead. The candidate retires those homes only after bounds/value/unchanged checks, then keeps the original uniqueness/capacity gate. Source/algorithms, runtime, allocator, allocation sites and real capacities stay unchanged.
