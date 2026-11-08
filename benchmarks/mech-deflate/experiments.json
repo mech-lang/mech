@@ -41923,6 +41923,64 @@
       "ordinary_contract_restored": false,
       "new_brief_acceptance": "Explicit parallel-copy controls, phase-boundary transport, then one compact phase in qualified production; no indefinite whole-diagnostic prerequisite.",
       "new_branch_or_PR": false
+    },
+    "212": {
+      "base": "efd9069b589512630891810191e7de35d57325d8",
+      "production": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": {
+        "retain_as_default": false,
+        "retained_diagnostic": "R211 / efd9069b589512630891810191e7de35d57325d8",
+        "production": "R199 / 7748204bd12e57a20369ce7970f31f8d15c3901f",
+        "reason": "R212 lowers large-case instructions/cycles and all20 diagnostic heap measurements remain equal, but primary elapsed periodic and repeated regress6.0676% and6.0780%; only18/20 unchanged1.05 gates pass against R211. Preserve contrary cohorts and archive the complete experiment. No primary observation replaced.",
+        "ordinary_contract_restored": false
+      },
+      "source_files": [],
+      "archived_changed_compiler_files": 30,
+      "delta_from_R211": [
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_minimal.rs",
+        "hosts/gpu/src/native_artifact/program/compact/owner_flow/transfers.rs",
+        "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+      ],
+      "events": [
+        {
+          "event": "effect-aware-phase-result-transport",
+          "asset": "r212-phase-transport-13b85fe8dad1.tar.gz",
+          "sha256": "13b85fe8dad147ff9e75a7c7d99262f39c8a92f2d662a9ce81e7f9b67d315374",
+          "bytes": 6472632,
+          "files": 3020,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r212-phase-transport-13b85fe8dad1.tar.gz"
+        }
+      ],
+      "observations": {
+        "primary_complete_calls": 11488,
+        "primary_observations": 11328,
+        "primary_reference_compressions": 5120,
+        "separate_mech_cpu_heap_calls": 4160,
+        "elapsed_lower_vs_previous": 15,
+        "elapsed_higher_vs_previous": 4,
+        "elapsed_equal_vs_previous": 1,
+        "geometric_elapsed_ratio_to_previous": 0.9925984967899899,
+        "original_1_05_gate_vs_retained_pass": 20,
+        "original_1_05_gate_vs_previous_pass": 18,
+        "instruction_medians_lower_vs_previous": 10,
+        "instruction_medians_higher_vs_previous": 10,
+        "cycle_medians_lower_vs_previous": 16,
+        "cycle_medians_higher_vs_previous": 4,
+        "equal_diagnostic_heap_cases": 20,
+        "wall_stack_profile_complete_calls": 22310,
+        "exact_pc_profile_complete_calls": 65215
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "next": "Qualify one dense live interface inside ordinary numeric admission/ownership/funding; checked fallback and exact errors/publication/retry retained."
     }
   },
   "repository": "mech-lang/mech",

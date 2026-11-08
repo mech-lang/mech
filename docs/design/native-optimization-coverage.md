@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R211
+# Production/diagnostic optimization coverage after R212
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Production remains R199. This table is source/metadata inventory, not a new production timing claim.
 
@@ -10,4 +10,6 @@ Counts describe different representation boundaries and are not interchangeable 
 | Scalar-result leaves | Efficient Bool/U64/I64/F64 direct checked entry and private scalar-aggregate support;117 unboxed aggregate values in retained metadata | Primitive scalar and aggregate operations emitted directly into the typed root/shared phases; no separate ordinary canonical leaf boundary | A flattened diagnostic result is not an ordinary admitted leaf; scalar/map ordinary Objects/metadata/descriptors remain byte-identical |
 | Aggregate owner transfers | Existing canonical private-frame ownership/retirement authorities; no diagnostic raw-Heap token-transfer plan adopted | Existing owner-copy graph now drives8236 eligible lane transfers at5515 static sites | Different ownership representation; current diagnostic references cannot be substituted for canonical authority without qualification |
 
-The next production checkpoint qualifies one compact phase inside ordinary admission/ownership/funding, retaining checked fallback and exact errors/publication/retry. It does not wait for an indefinitely improving whole diagnostic. Explicit self/swap/overlap/metadata-only/predicate-redefinition witnesses precede further transfer expansion. Fixed-buffer phase result transport is the next measured experiment; stable owner pooling and source-site allocation census follow separately.
+R212 measured fixed-descriptor/scalar-only phase results and transfers using the SAME owner-copy/liveness selector. It is archived rather than adopted: two prior-version elapsed gates fail despite lower large-case instruction/cycle medians. The retained diagnostic remains R211. Explicit self/swap/fanout/overlap/metadata/predicate and shared-readonly controls now pass.
+
+The next production checkpoint qualifies one compact phase inside ordinary admission/ownership/funding, retaining checked fallback and exact errors/publication/retry. It does not wait for an indefinitely improving whole diagnostic. The ordinary adapter must retain canonical ownership and current funding; raw diagnostic Heap authority is not an admission proof. Stable owner pooling and source-site allocation census follow separately.
