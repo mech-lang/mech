@@ -41,6 +41,7 @@ pub(super) mod observe;
 mod ordered_reduction;
 mod ordered_reduction_exhaustion;
 mod ordered_reduction_geometry;
+mod ordered_reduction_return;
 mod pack;
 mod phase_descendants;
 mod physical_exits;
