@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R219
+# Production/diagnostic optimization coverage after R220
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -28,3 +28,5 @@ R217 uses existing current-path last-use proof to retire stale other owner homes
 R218: one-file post-success source cleanup preserves R217 copy savings, but has instruction/latency tradeoffs. It remains a measured alternative; no normal code or new operation coverage changes. [Comparison](native-consumed-source-cleanup.md).
 
 R219: precision-qualified original median gates and supplementary block means pass all20 cases for R217 and R218, with original failures retained. The faster R217 alternative is retained for experimental work; ordinary IR215 remains unchanged. New retained executable profiles are hashed and current. [Qualification and scope](native-timing-precision.md).
+
+R220 retains unused copied-owner omission experimentally, over R217. Existing copy/liveness/post-use facts remove73 additional-reference lanes while preserving scalar metadata and transferred tokens. All20 gates pass and2560 controls execute; cycles improve on18 inputs while instructions rise on18. Allocation/copy counts are equal. The mapped baseline Object is byte-identical; unknown backend PCs remain unassigned. The full observer reaches only13 nonnull omissions on natural32, identifying successful buffer-result token handoff as a stronger next target. NormalIR215 operation coverage and ordinary contracts stay unchanged. [Scope, all20 and tradeoffs](native-unused-copy-owners.md).

@@ -42527,6 +42527,83 @@
       "original_primary_result_preserved": true,
       "threshold_increased": false,
       "new_branch_or_PR": false
+    },
+    "220": {
+      "base": "8791df325cb2ba766e8c580c794ece8e8651c37c",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "versions_retained": {
+        "ir": 215,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "source_files": [],
+      "archived_compiler_delta": [
+        "hosts/gpu/src/native_artifact/program/compact/owner_flow.rs",
+        "hosts/gpu/src/native_artifact/program/compact/emit.rs"
+      ],
+      "decision": {
+        "retained_experiment": "R220 unused copied owner fields",
+        "ordinary_default": "R215/IR215",
+        "ordinary_source_unchanged": true,
+        "original_1_05_gates": 20,
+        "blockmean_1_05_gates": 20,
+        "geometric_blockmean_ratio": 0.9897810390474232,
+        "instructions_lower_higher_equal": [
+          1,
+          18,
+          1
+        ],
+        "cycles_lower_higher": [
+          18,
+          2
+        ],
+        "preserve_R217": true,
+        "ordinary_contract_restored": false,
+        "parity_achieved": false,
+        "next": "Ownership-preserving successful consuming-buffer result handoff, after reached-site census and minimal acceptance witness."
+      },
+      "events": [
+        {
+          "event": "unused-copied-owner-omission-and-source-PC-mapping",
+          "asset": "r220-unused-copy-owners-a59448bfff37.tar.gz",
+          "sha256": "a59448bfff370e3183db32c0c365cd08be678f58591e88546011bab8f9d410ec",
+          "bytes": 5528718,
+          "files": 1159,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r220-unused-copy-owners-a59448bfff37.tar.gz"
+        }
+      ],
+      "observations": {
+        "primary_complete_calls": 161832,
+        "retained_primary_observations": 161712,
+        "primary_reference_compressions": 5120,
+        "separate_mech_cpu_heap_calls": 3120,
+        "reference_counter_windows": 1280,
+        "reference_counter_compressions": 10240,
+        "compiled_control_cases": 2560,
+        "original_1_05_gates_pass": 20,
+        "blockmean_1_05_gates_pass": 20,
+        "elapsed_medians_lower": 15,
+        "elapsed_medians_higher": 3,
+        "elapsed_medians_equal": 2,
+        "instructions_lower": 1,
+        "instructions_higher": 18,
+        "instructions_equal": 1,
+        "cycles_lower": 18,
+        "cycles_higher": 2,
+        "geometric_elapsed_ratio": 0.9742924132892168,
+        "geometric_blockmean_ratio": 0.9897810390474232,
+        "wall_profile_calls": 22487,
+        "pc_profile_calls": 67010,
+        "static_omitted_copy_owner_lanes": 73,
+        "small_observed_nonnull_owner_omissions": 1664,
+        "full_observer_calls": 40
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "next": "Count reached consuming buffer results, reproduce their redundant ownership transport minimally, then preserve one source token through successful updates with exact aliases/errors/cleanup and all20 acceptance."
     }
   },
   "repository": "mech-lang/mech",
