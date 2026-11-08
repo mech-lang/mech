@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-recovered-scalar-homes-regressions-20261108-v1/run.py"
+  ],
+  "exit": 0,
+  "seconds": 139.70849533285946,
+  "stdout": "{\"kind\": \"scalar\", \"executed\": true}\n{\"kind\": \"one-kib\", \"executed\": true}\n{\"rows\": 128, \"all_nontiming_fields_equal_IR240\": true, \"all_semantic_nontiming_fields_equal_IR240\": true, \"allocation_requests_never_regress\": true, \"requested_bytes_never_regress\": true}\n{\"rows\": 5, \"all_nontiming_fields_equal_IR240\": true, \"all_semantic_nontiming_fields_equal_IR240\": true, \"allocation_requests_never_regress\": true, \"requested_bytes_never_regress\": true}\n",
+  "stderr": ""
+}

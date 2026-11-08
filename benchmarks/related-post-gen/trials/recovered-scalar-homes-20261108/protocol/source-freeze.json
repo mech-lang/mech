@@ -1,0 +1,8 @@
+{
+  "source": "/private/tmp/mech-related-recovered-scalar-homes-compiler-20261108",
+  "build": "/private/tmp/mech-related-recovered-scalar-homes-opt-20261108-v1",
+  "source_inventory_exact": true,
+  "commit": "3ad8bb9210d322124eb5df913f5652c10336cb4c",
+  "predeclared_rule_sha256": "187f6469ea0f21a254259d110e230046e46b1e313116d7607689c70430600089",
+  "no_prior_cohort": true
+}

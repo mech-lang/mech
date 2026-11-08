@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-recovered-scalar-homes-tests-20261108-v1/after-focus.py"
+  ],
+  "exit": 0,
+  "seconds": 222.026405334007,
+  "stdout": "ci-list 0\nci-execute 0\nimage-and-caller-geometry-tests 0\noptional-llvm-regressions 0\n",
+  "stderr": ""
+}

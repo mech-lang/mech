@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "mech-ir279-scalar-home-masks-4",
+    "original_source": "/private/tmp/mech-related-recovered-scalar-homes-runners-20261108-v1/plain/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-recovered-scalar-homes-metrics-20261108-v1/mech-ir279-scalar-home-masks-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "5779e150103bf99c54a035c66d9ea0943e71b01123f62595d12d5e7b11f3ced9",
+    "diagnostic_executable_sha256": "c41741a87b4a1fc380d835a8d03f8d5d7dcf8f6ac2bfef351b2c5c9061e6b13c"
+  }
+]

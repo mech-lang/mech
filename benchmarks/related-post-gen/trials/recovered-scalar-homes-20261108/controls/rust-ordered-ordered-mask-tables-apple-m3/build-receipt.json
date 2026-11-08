@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline"
+  ],
+  "cwd": "/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/rust-ordered-ordered-mask-tables-apple-m3",
+  "environment": {
+    "RUSTC": "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "RUSTFLAGS": "-C target-cpu=apple-m3",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/target"
+  },
+  "exit": 0,
+  "seconds": 0.022019749972969294,
+  "stdout": "",
+  "stderr": "    Finished `release` profile [optimized] target(s) in 0.01s\n"
+}

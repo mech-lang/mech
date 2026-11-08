@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline"
+  ],
+  "cwd": "/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered",
+  "exit": 0,
+  "seconds": 3.1153329159133136,
+  "stdout": "",
+  "stderr": "   Compiling rust_mech v0.1.0 (/private/tmp/mech-related-ordered-rust-controls-20261107-v1/ordered)\n    Finished `release` profile [optimized] target(s) in 3.10s\n"
+}

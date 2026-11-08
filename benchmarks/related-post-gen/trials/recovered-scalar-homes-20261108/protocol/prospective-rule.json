@@ -1,0 +1,38 @@
+{
+  "schema": "mech.related-post-gen.recovered-scalar-homes.prospective-rule.v1",
+  "declared_utc": "2026-11-08T02:39:01.740613+00:00",
+  "declared_before_timing": true,
+  "source_commit": "3ad8bb9210d322124eb5df913f5652c10336cb4c",
+  "identity": "IR279/work116/ABI41/image11",
+  "candidates": [
+    "mech-ir279-scalar-home-masks-4"
+  ],
+  "matched_parent": "mech-ir278-grouped-metadata-4",
+  "fixed_reference": "mech-ir242-reuse-4",
+  "primary_references": {
+    "mech-ir279-scalar-home-masks-4": [
+      "mech-ir278-grouped-metadata-4",
+      "mech-ir277-packed-row-4",
+      "mech-ir242-reuse-4"
+    ]
+  },
+  "samples": 31,
+  "seed": 990291,
+  "resource_samples": 7,
+  "resource_seed": 9902917,
+  "bootstrap": {
+    "resamples": 20000,
+    "seed": 99029199
+  },
+  "processing": "Measure paired medians, wins and95% intervals against each control; distinguish an established latency improvement from useful instruction/size gains. No change to the Mech algorithm.",
+  "whole_process": "Report all whole-process results; no mandatory whole-process acceptance gate, per explicit user instruction.",
+  "instructions": "Report native code/stack, retired instructions/cycles and their changes against identical-baseline controls. Lower instruction counts alone do not prove lower latency.",
+  "memory": "Require exact scalar/DEFLATE semantic/allocation rows; report full heap, allocations, RSS/footprint and size.",
+  "correctness": "All408 actual native contract names,3 recovered execution/finite/retry checks,35 output fixtures and133 scalar/DEFLATE rows.",
+  "all_first_and_adverse_results_retained": true,
+  "no_unchanged_favorable_retry": true,
+  "latency_implementations": 29,
+  "resource_implementations": 30,
+  "retained_Rust_controls": 22,
+  "goal_complete": false
+}

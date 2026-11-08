@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-recovered-scalar-homes-opt-20261108-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-recovered-scalar-homes-runners-20261108-v1/compiler-facts.rs",
+    "--out",
+    "/private/tmp/mech-related-recovered-scalar-homes-runners-20261108-v1/compiler"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 2.554802834056318,
+  "stdout": "{\"seconds\": 1.939947291975841, \"exit\": 0}\n",
+  "stderr": ""
+}

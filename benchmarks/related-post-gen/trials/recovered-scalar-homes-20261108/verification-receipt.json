@@ -1,0 +1,13 @@
+{
+  "records": 298,
+  "cohort_outputs_exact": 1109,
+  "qualification_outputs_exact": 35,
+  "bootstrap_rederived": true,
+  "fastest_Rust_rederived": true,
+  "native_text_changed": true,
+  "native_CI_names_executed": 408,
+  "scalar_DEFLATE_rows_exact": 133,
+  "first_failures_retained": true,
+  "selected": false,
+  "goal_complete": false
+}

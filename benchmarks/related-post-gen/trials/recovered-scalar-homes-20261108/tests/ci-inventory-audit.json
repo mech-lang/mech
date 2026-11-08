@@ -1,0 +1,15 @@
+{
+  "expected": 408,
+  "listed": 408,
+  "executed_passed": 408,
+  "all_names_match": true,
+  "old_names_retained": true,
+  "new_names": [
+    "native_artifact::program::codegen::numeric_retirement::tests::scalar_home_masks_preserve_dirty_entry_repeated_exits_and_helper_reentry",
+    "native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_keeps_all_scalar_kinds_unicode_empty_shapes_and_exact_prices",
+    "native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_preserves_large_borrowed_rows_shapes_unvisited_errors_and_aliases",
+    "native_artifact::program::runtime::collections::row_blocks::tests::packed_row_payload_retains_finite_denials_atomic_publication_and_recovery",
+    "native_artifact::program::runtime::composition_tests::numeric_tree::numeric_tree_scalar_home_retirement_keeps_cold_writes_reports_errors_and_retry",
+    "native_artifact::program::runtime::composition_tests::numeric_tree::numeric_tree_scalar_home_retirement_keeps_finite_fuel_publication_and_reentry"
+  ]
+}

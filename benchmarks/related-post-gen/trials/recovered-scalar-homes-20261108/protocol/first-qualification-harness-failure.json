@@ -1,0 +1,6 @@
+{
+  "error": "Expected407 native names, actual408: two end-to-end checks plus one native-mask execution check. All405 prior names retained and all3 focused cases pass.",
+  "production_failure": false,
+  "Rust_sources_changed": false,
+  "CI_workflow_count_corrected_to": 408
+}
