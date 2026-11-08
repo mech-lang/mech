@@ -1,0 +1,8 @@
+{
+  "all_Engine_runtime_stdlib_dependencies_current": true,
+  "normal_GPU_ignored_cfg_test_descendant_only": [
+    "hosts/gpu/src/native_artifact/program/runtime/maps/string/frozen/tests.rs"
+  ],
+  "tests_compile_current_complete_GPU_source": true,
+  "native_selection_enabled": false
+}

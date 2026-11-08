@@ -1,0 +1,9 @@
+{
+  "path": "/private/tmp/mech-related-generic-native-dictionary-20261108/gpu-proof-tests",
+  "archive": "/private/tmp/mech-related-generic-native-dictionary-20261108/gpu-proof-tests-qualified-v3.gz",
+  "sha256": "af319e1dd24365b9bd74a9b6a9a7306ddf4ec9408e3f4508759cf93c4a37f745",
+  "bytes": 136231024,
+  "mode": 493,
+  "lossless_verified": true,
+  "all_qualified_source_and_run_receipts_retained": true
+}

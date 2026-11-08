@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-generic-native-dictionary-emission-control-20261108/compiler",
+    "/private/tmp/mech-related-generic-native-dictionary-runners-20261108-v1/histogram-reuse/build/source.mec",
+    "/private/tmp/mech-related-generic-native-dictionary-emission-control-20261108/histogram-reuse/build"
+  ],
+  "exit": 0,
+  "seconds": 6.751445750007406,
+  "stdout": "{\"code_bytes\":1031248,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1584}\n",
+  "stderr": ""
+}

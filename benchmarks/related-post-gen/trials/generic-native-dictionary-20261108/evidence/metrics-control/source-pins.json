@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "mech-ir304-canonical-dictionary-control-4",
+    "original_source": "/private/tmp/mech-related-generic-native-dictionary-emission-control-20261108/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-generic-native-dictionary-20261108/metrics-control/mech-ir304-canonical-dictionary-control-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "0bab0171800a43b25e13890fbd28c7d8ba2578852936684140c5b83696b08512",
+    "diagnostic_executable_sha256": "98e5be59f09306c439686e52d92925eb2eef37e6ae4981cd33c71b7e3a07bbc8"
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-generic-native-dictionary-20261108/gpu-proof-tests",
+    "generic_dictionary",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 101,
+  "seconds": 1.4180346669163555,
+  "stdout": "\nrunning 3 tests\ntest native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_actual_source_has_two_generic_nonempty_seed_candidates ... ignored, requires retained benchmark source explicitly supplied by caller\ntest native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_proves_direct_completed_owner_into_nested_native_lookup ... FAILED\ntest native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_rejects_public_and_multiple_native_consumer_escapes ... FAILED\n\nfailures:\n\nfailures:\n    native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_proves_direct_completed_owner_into_nested_native_lookup\n    native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_rejects_public_and_multiple_native_consumer_escapes\n\ntest result: FAILED. 0 passed; 2 failed; 1 ignored; 0 measured; 965 filtered out; finished in 0.17s\n\n",
+  "stderr": "\nthread 'native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_proves_direct_completed_owner_into_nested_native_lookup' (22744886) panicked at /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/prepare/generic_dictionary.rs:150:9:\nassertion `left == right` failed: Layout { regions: [] }\n  left: 0\n right: 1\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\nthread 'native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_rejects_public_and_multiple_native_consumer_escapes' (22744888) panicked at /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/prepare/generic_dictionary.rs:157:9:\nassertion `left == right` failed\n  left: 0\n right: 1\n",
+  "scope": "Applicability only; unchanged qualified IR303 Engine/runtime dependencies; native routing disabled"
+}

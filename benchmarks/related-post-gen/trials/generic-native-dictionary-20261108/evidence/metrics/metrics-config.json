@@ -1,0 +1,42 @@
+{
+  "machine": "Apple M3 Mac15,13 macOS26.2; four performance plus four efficiency cores; no builds, tests, profiles or archives during either cohort",
+  "reference": "rust",
+  "latency_qualification": false,
+  "authoritative_latency_comparison": "comparison-generic-native-dictionary-20261108-5000-m3.json",
+  "timing_boundaries": {
+    "upstream": "Original upstream timer, with global pool preinitialized, retained only as a labeled historical reference.",
+    "matched_worker_lifecycle": "Both implementations create, run and join workers inside processing; JSON decoding excluded. Mech admission is additional and separately reported.",
+    "whole_process": "Parent monotonic clock around fresh subprocess launch through exit, including JSON IO, artifact restoration, admission, computation and teardown. OS file cache is not flushed.",
+    "post_json": "One continuous interval includes input preparation and allocations plus computation and worker create/run/join. Mech supplies post_json_seconds; Rust supplies its documented processing timer. JSON IO and Mech artifact restoration are included in the separate complete-process measurement."
+  },
+  "resource_reference": "rust-ordered-mask-tables256-instrumented",
+  "whole_process_resource_reference": "rust-mech-control-u32-casts-instrumented",
+  "measurement_source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/measurement.rs",
+  "measurement_source_sha256": "c94bf3d9f289ad48cbf2187a94dc7f2ed386dc933ee540b8d0c2b52a00571c79",
+  "implementations": [
+    {
+      "name": "rust",
+      "kind": "upstream",
+      "category": "single_core_standard",
+      "executable": "/private/tmp/mech-related-post-rust-local-20261102/rust/target/release/rust",
+      "output": "related_posts_rust.json",
+      "executable_sha256": "d7d8edc63938fa5bad4391dee162cb3eb668f10c9e81565170935e48c5d95a6c",
+      "source": "/private/tmp/mech-related-post-rust-local-20261102/rust/src/main.rs",
+      "processing_boundary": "JSON decoding outside timer; tag-index and counter allocations, computation and result materialization inside timer; serial implementation.",
+      "calculation_boundary": "post_json_including_setup",
+      "source_sha256": "a6322258aedc8562593332afa33bc59e0454d13b2f82849cf400cba12af4e5e4",
+      "executable_file_bytes": 385360
+    },
+    {
+      "name": "mech-ir304-generic-native-dictionary-4-instrumented",
+      "kind": "mech",
+      "category": "generic_UTF8_nonempty_seed_dictionary_native_through_lookup_instrumented",
+      "executable": "/private/tmp/mech-related-generic-native-dictionary-20261108/metrics/mech-ir304-generic-native-dictionary-4/runner-metrics",
+      "source": "/private/tmp/mech-related-generic-native-dictionary-runners-20261108-v1/histogram-reuse/build/source.mec",
+      "receipt": "/private/tmp/mech-related-generic-native-dictionary-20261108/metrics/mech-ir304-generic-native-dictionary-4/runner-metrics.build.json",
+      "processing_boundary": "Separate legacy processing timer; authoritative post_json_seconds is one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and result materialization. One invocation per fresh process; complete-process time includes restoration, JSON IO and final destruction. Native port adapter reads input/output metadata from the restored checked native descriptor, avoiding a redundant full source-artifact decode. All remaining setup stays inside the complete-process clock.",
+      "calculation_boundary": "post_json_including_setup",
+      "measurement_boundary": "post_json_including_setup"
+    }
+  ]
+}

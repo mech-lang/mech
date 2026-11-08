@@ -1,0 +1,13 @@
+{
+  "scope": "Inherited IR303 Engine contracts; only visibility of existing native account query widened. New GPU storage/runtime tests exercise the now-public API under unchanged semantics.",
+  "all135contracts_passed_in_IR303": true,
+  "IR303_receipt": "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/Engine-component-qualification.json",
+  "Engine_method_body_byte_identical": true,
+  "only_visibility_changed": true,
+  "before": "pub(in crate::resident) fn has_active_call_limit",
+  "after": "pub fn has_active_call_limit",
+  "new_storage_API_tests": 3,
+  "new_native_runtime_tests": 4,
+  "Engine_source_path": "src/engine/src/resident/budget.rs",
+  "Engine_source_sha256": "2ccef7c48733904be223aff247235d682e9d1aae9876869a69bc1b6b9bfb8910"
+}

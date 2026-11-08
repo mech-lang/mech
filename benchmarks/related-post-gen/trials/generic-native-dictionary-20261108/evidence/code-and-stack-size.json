@@ -1,0 +1,39 @@
+{
+  "scope": "Original latency binaries and generated native program, code sizes are distinct from whole-executable/runtime deployment size",
+  "implementations": [
+    {
+      "name": "mech-ir304-generic-native-dictionary-4",
+      "executable": "/private/tmp/mech-related-generic-native-dictionary-runners-20261108-v1/histogram-reuse/runner-aot",
+      "sha256": "cec7710979d05328050aa01c3076c629f46c7fa3bbda10c35ba2ff688d50f81d",
+      "executable_file_bytes": 17127024,
+      "code_bytes": 1031248,
+      "object_bytes": 5780944,
+      "stack_bytes": 1584,
+      "numeric_function_stack_max_bytes": 944,
+      "typed_ir": 304,
+      "work_policy": 121,
+      "native_descriptor": 11,
+      "object_file_bytes": 5780944,
+      "native_image_bytes": 4741260,
+      "load_commands_sha256": "b07286863dad00ff03d2e2ff287005b6db0fe27894f662d841884366fce791ea",
+      "LLVM_size_tool_used": false
+    },
+    {
+      "name": "mech-ir304-canonical-dictionary-control-4",
+      "executable": "/private/tmp/mech-related-generic-native-dictionary-emission-control-20261108/histogram-reuse/runner-aot",
+      "sha256": "0bab0171800a43b25e13890fbd28c7d8ba2578852936684140c5b83696b08512",
+      "executable_file_bytes": 17127024,
+      "code_bytes": 1031248,
+      "object_bytes": 5780944,
+      "stack_bytes": 1584,
+      "numeric_function_stack_max_bytes": 944,
+      "typed_ir": 304,
+      "work_policy": 121,
+      "native_descriptor": 11,
+      "object_file_bytes": 5780944,
+      "native_image_bytes": 4741260,
+      "load_commands_sha256": "559c2010404d3d4935c745445cf26b3471b4eeab94b84b441d139e48786b5f48",
+      "LLVM_size_tool_used": false
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "mech-ir304-generic-native-dictionary-4",
+    "original_source": "/private/tmp/mech-related-generic-native-dictionary-runners-20261108-v1/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-generic-native-dictionary-20261108/metrics/mech-ir304-generic-native-dictionary-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "cec7710979d05328050aa01c3076c629f46c7fa3bbda10c35ba2ff688d50f81d",
+    "diagnostic_executable_sha256": "5434c50a366a29eeb24f75ade554df8c83d96df37fa0571e636e89d7dc56862a"
+  }
+]

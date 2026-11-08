@@ -1,0 +1,29 @@
+{
+  "production_source": "/private/tmp/mech-related-generic-native-dictionary-compiler-20261108",
+  "diagnostic_source": "/private/tmp/mech-related-ir304-native-string-profile-compiler-20261108",
+  "unchanged_production_Engine": true,
+  "production_native_Objects_unchanged": true,
+  "applied": [
+    {
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/retained-diagnostic-instrumentation.patch"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "apply",
+        "/private/tmp/mech-related-borrowed-map-key-continuations-20261108/retained-diagnostic-instrumentation.patch"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

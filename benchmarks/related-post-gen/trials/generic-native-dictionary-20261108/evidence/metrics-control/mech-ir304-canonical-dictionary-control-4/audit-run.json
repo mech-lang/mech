@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-generic-native-dictionary-emission-control-20261108/histogram-reuse/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-generic-native-dictionary-20261108/metrics-control/mech-ir304-canonical-dictionary-control-4/runner-metrics",
+    "--output",
+    "/private/tmp/mech-related-generic-native-dictionary-20261108/metrics-control/mech-ir304-canonical-dictionary-control-4/native-link-audit.json"
+  ],
+  "cwd": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen",
+  "exit": 0,
+  "seconds": 0.08554095798172057,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 51, \"normalized_text_sha256\": \"a9adeff2f079d7b48e59716022643b09845be1cf230ad064243e006b85d403c0\"}\n",
+  "stderr": "",
+  "rustflags": null
+}

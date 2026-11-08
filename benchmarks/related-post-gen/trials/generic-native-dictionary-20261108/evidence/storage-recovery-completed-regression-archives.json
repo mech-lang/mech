@@ -1,0 +1,322 @@
+[
+  {
+    "path": "/private/tmp/mech-related-borrowed-matrix-map-keys-executable-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-borrowed-matrix-map-keys-executable-regressions-20261105-v1/scalar.qualified.gz",
+    "sha256": "ab97b8ed6cc139529d8472f8a675809cd4ea72a215cae65543e2fbefc33234fa",
+    "bytes": 96815072,
+    "archive_bytes": 13984332,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-borrowed-matrix-map-keys-executable-regressions-20261105-v2/scalar",
+    "archive": "/private/tmp/mech-related-borrowed-matrix-map-keys-executable-regressions-20261105-v2/scalar.qualified.gz",
+    "sha256": "f2390ba8eea9042dd9e1d8b198d8e544999be05140a409ab0a4319ecc3541952",
+    "bytes": 96798432,
+    "archive_bytes": 13982047,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-borrowed-matrix-map-keys-executable-regressions-20261105-v3/scalar",
+    "archive": "/private/tmp/mech-related-borrowed-matrix-map-keys-executable-regressions-20261105-v3/scalar.qualified.gz",
+    "sha256": "6a514d0ec324b9433a03d5bf0b74d51fb5931bd30ee5e91a7cf8ffd9a9881184",
+    "bytes": 96798608,
+    "archive_bytes": 13980810,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-bound-call-image-regressions-20261104-v1/scalar",
+    "archive": "/private/tmp/mech-related-bound-call-image-regressions-20261104-v1/scalar.qualified.gz",
+    "sha256": "50fbe1ed17fa1a02008dc241ad0c7f852ab18c66c278ca9689b9f17bd28bbfbd",
+    "bytes": 96643664,
+    "archive_bytes": 13935689,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-canonical-prepared-keys-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-canonical-prepared-keys-regressions-20261105-v1/scalar.qualified.gz",
+    "sha256": "67bb900f53c5134cce70451345dafa19235631f8a6cc847305e614267d1bc3ec",
+    "bytes": 96705264,
+    "archive_bytes": 13955243,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-canonical-schema-image-regressions-20261104-v1/scalar",
+    "archive": "/private/tmp/mech-related-canonical-schema-image-regressions-20261104-v1/scalar.qualified.gz",
+    "sha256": "c32129821f87dede3ddb11f1fc3ff5baf63f38c885b6d5ec8c3c983a8bc335dd",
+    "bytes": 96690256,
+    "archive_bytes": 13954913,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-compact-borrowed-utf8-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-compact-borrowed-utf8-regressions-20261105-v1/scalar.qualified.gz",
+    "sha256": "f6cdb70b64d61ef65fb3e9d8dee6e834298b9e05169162124e741b234d8eb4b7",
+    "bytes": 96756848,
+    "archive_bytes": 13960513,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-compact-freshness-regressions-20261104-v1/scalar",
+    "archive": "/private/tmp/mech-related-compact-freshness-regressions-20261104-v1/scalar.qualified.gz",
+    "sha256": "1cd78f3430c31f9c58ab0e0149104b36c7915b527994029a5e07a1815d503103",
+    "bytes": 96675120,
+    "archive_bytes": 13935265,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-compact-native-tables-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-compact-native-tables-regressions-20261105-v1/scalar.qualified.gz",
+    "sha256": "f66e27630a5a2a70962bf20b7544ebd969a2b6b7f48340249de048ffdcc9625a",
+    "bytes": 96679808,
+    "archive_bytes": 13952159,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-compact-native-tables-regressions-20261105-v2/scalar",
+    "archive": "/private/tmp/mech-related-compact-native-tables-regressions-20261105-v2/scalar.qualified.gz",
+    "sha256": "70eaf774889cf8e3207ef82b129d3fdb4516e21975c85c5fab0faf7105a605c3",
+    "bytes": 96679712,
+    "archive_bytes": 13951390,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-compiled-worker-state-regressions-20261105-v2/scalar",
+    "archive": "/private/tmp/mech-related-compiled-worker-state-regressions-20261105-v2/scalar.qualified.gz",
+    "sha256": "5d270d7964447c4d73d3874e0b90a3df6f5180a0e2fadf9024a4b27f9d0bb89e",
+    "bytes": 96744752,
+    "archive_bytes": 13946764,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-deflate-reduction-integration-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-deflate-reduction-integration-regressions-20261106-v1/scalar.qualified.gz",
+    "sha256": "434ce43260a3cb9bc73099db530a7a02f20de9c4fe5f23262041312369d756d6",
+    "bytes": 108562704,
+    "archive_bytes": 15190898,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-direct-native-image-regressions-20261104-v1/scalar",
+    "archive": "/private/tmp/mech-related-direct-native-image-regressions-20261104-v1/scalar.qualified.gz",
+    "sha256": "5971c2e2157df90b9a83a9fb54aaa2eb55dfe5859c3f86954afb373f7fa1d9ca",
+    "bytes": 96645856,
+    "archive_bytes": 13947335,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-frozen-native-composition-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-frozen-native-composition-regressions-20261105-v1/scalar.qualified.gz",
+    "sha256": "ccd8724469e7b3f9c96c0b2d43741d39d86c8d728294cdb83ab95197eefd6056",
+    "bytes": 96655328,
+    "archive_bytes": 13943022,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-frozen-native-layout-regressions-20261104-v1/scalar",
+    "archive": "/private/tmp/mech-related-frozen-native-layout-regressions-20261104-v1/scalar.qualified.gz",
+    "sha256": "8a899645b451691b144f658cc61ca9a0c2eddcc9c22b721dbf629df14a114999",
+    "bytes": 96712144,
+    "archive_bytes": 13964530,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-latest-deflate-integration-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-latest-deflate-integration-regressions-20261106-v1/scalar.qualified.gz",
+    "sha256": "ca749e362073f43fe68e424898a7c826b8ec11e02fc066276d862343f60282db",
+    "bytes": 108548832,
+    "archive_bytes": 15179950,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-latest-deflate-integration-regressions-20261106-v2/scalar",
+    "archive": "/private/tmp/mech-related-latest-deflate-integration-regressions-20261106-v2/scalar.qualified.gz",
+    "sha256": "32a360ec3396a029306dd0cc5dfd630bdefafec8bcc755ee125400fb2558c03b",
+    "bytes": 108567328,
+    "archive_bytes": 15191734,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-latest-deflate-integration-regressions-20261106-v3/scalar",
+    "archive": "/private/tmp/mech-related-latest-deflate-integration-regressions-20261106-v3/scalar.qualified.gz",
+    "sha256": "9533f287ae79acf69c06a8709dd4ebf729777d3c3d007b049d4350e57a21e8f3",
+    "bytes": 108567360,
+    "archive_bytes": 15191307,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-map-invariant-arguments-regressions-20261104-v1/scalar",
+    "archive": "/private/tmp/mech-related-map-invariant-arguments-regressions-20261104-v1/scalar.qualified.gz",
+    "sha256": "cf20106c9b2e8ca4923eabbbd08b96cd548960cb52be4e4ccd94bb7d072f2538",
+    "bytes": 96580656,
+    "archive_bytes": 13915294,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-map-invariant-arguments-regressions-20261104-v2/scalar",
+    "archive": "/private/tmp/mech-related-map-invariant-arguments-regressions-20261104-v2/scalar.qualified.gz",
+    "sha256": "cc116f66ad5873d0f47c37711511488887962408f84b61e11a44934c08cc0726",
+    "bytes": 96580624,
+    "archive_bytes": 13914722,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-adaptive-prepaid-histogram-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-adaptive-prepaid-histogram-regressions-20261105-v1/scalar.qualified.gz",
+    "sha256": "f0f7876d3249e33cd19b30961c609e9ac0ca2dfb5b2a5695a549caef60c85bfb",
+    "bytes": 107434048,
+    "archive_bytes": 14781409,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-array-extent-ranges-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-array-extent-ranges-regressions-20261105-v1/scalar.qualified.gz",
+    "sha256": "7d25f830d3f1545457a2ce43fabe831ebf330c07f96e8a713aa3eaeb619c8920",
+    "bytes": 96758944,
+    "archive_bytes": 13959396,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-boolean-bit-tests-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-boolean-bit-tests-regressions-20261106-v1/scalar.qualified.gz",
+    "sha256": "8ba47b5cbad12c6059dc98b3278df5b7af0ab0390fe6c0fcfc9d54f8b358282e",
+    "bytes": 107544336,
+    "archive_bytes": 14835659,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-boolean-conditions-regressions-20261106-v3/scalar",
+    "archive": "/private/tmp/mech-related-native-boolean-conditions-regressions-20261106-v3/scalar.qualified.gz",
+    "sha256": "d2ada90bd81e35f7032c2b28cdd1d593db5d01c7ebdec0ad24467d3b4023174f",
+    "bytes": 107543488,
+    "archive_bytes": 14835589,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-boolean-implication-freshness-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-boolean-implication-freshness-regressions-20261106-v1/scalar.qualified.gz",
+    "sha256": "394b88faa8875a4cb29d20a76dccb4db97b1bb9869091a90bf2ce1c86ac32d7e",
+    "bytes": 108561936,
+    "archive_bytes": 15190232,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-borrowed-frame-metadata-regressions-20261106-v2/scalar",
+    "archive": "/private/tmp/mech-related-native-borrowed-frame-metadata-regressions-20261106-v2/scalar.qualified.gz",
+    "sha256": "4f9f5e5ddf4a48b647979f8a69170e87655f5e45c1a1e6860b76f24ca7bc9184",
+    "bytes": 107542400,
+    "archive_bytes": 14828195,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-borrowed-frame-metadata-regressions-20261106-v3/scalar",
+    "archive": "/private/tmp/mech-related-native-borrowed-frame-metadata-regressions-20261106-v3/scalar.qualified.gz",
+    "sha256": "a5e44822207eef01d2f84d7f9b5f2cfc1652ca752c66274742042d5e114c3ea9",
+    "bytes": 107542400,
+    "archive_bytes": 14827754,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-dominated-guards-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-dominated-guards-regressions-20261105-v1/scalar.qualified.gz",
+    "sha256": "40b4d7e29a84eb5225c604d7b42c9b0e0bfba1ec44b29baf8bbc98d765a22d8d",
+    "bytes": 96754288,
+    "archive_bytes": 13958443,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-fixed-frame-arenas-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-fixed-frame-arenas-regressions-20261106-v1/scalar.qualified.gz",
+    "sha256": "b0bfacae62e410a31f56882f79cf253e84f38fa221080e35f641b4f01d8993d7",
+    "bytes": 107542272,
+    "archive_bytes": 14836306,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-fixed-frame-arenas-regressions-20261106-v2/scalar",
+    "archive": "/private/tmp/mech-related-native-fixed-frame-arenas-regressions-20261106-v2/scalar.qualified.gz",
+    "sha256": "e7a26738d8e2b8ee9a0c7822c3337cb74f34c4c8326a39d95c29ad44a7cad572",
+    "bytes": 107542080,
+    "archive_bytes": 14835286,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-frozen-uniform-layouts-regressions-20261106-v2/scalar",
+    "archive": "/private/tmp/mech-related-native-frozen-uniform-layouts-regressions-20261106-v2/scalar.qualified.gz",
+    "sha256": "c73f961c68442fdfa94318fed1406b70fbdc23e18b683a052b1e8e9b0c849970",
+    "bytes": 107432720,
+    "archive_bytes": 14782631,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  },
+  {
+    "path": "/private/tmp/mech-related-native-fuel-derived-debits-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-fuel-derived-debits-regressions-20261106-v1/scalar.qualified.gz",
+    "sha256": "e7f13d5b8a4d1d700626debdb4aaf679aeaabef7f1816d3024dfe0e243ab3cf0",
+    "bytes": 107561936,
+    "archive_bytes": 14836451,
+    "mode": 493,
+    "losslessly_verified": true,
+    "measurement_runners_untouched": true
+  }
+]

@@ -1,0 +1,96 @@
+{
+  "scope": "IR304 same production Object, repeated fresh evaluate_into, inclusive overlapping physical stacks only. No additive cost or CPU percentage claim; sample includes process startup and all thread lifecycle activity.",
+  "observations": {
+    "private_frame_admission": [
+      {
+        "inclusive_samples": 9,
+        "symbol": "_RNvMs_NtNtNtNtNtCsjZYdWEEZuuD_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall25admit_buffer_frame_inputs",
+        "raw_stack_entry": "+ !         : | + !   :   9 _RNvMs_NtNtNtNtNtCsjZYdWEEZuuD_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall25admit_buffer_frame_inputs  (in runner-native-profile) + 264  [0x100f2c350]"
+      },
+      {
+        "inclusive_samples": 8,
+        "symbol": "_RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsjZYdWEEZuuD_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB3M_8prepared13buffer_framesNtB5j_25NativePreparedLibraryCall25admit_buffer_frame_inputs0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+        "raw_stack_entry": "+ !         : | + !   :   | 8 _RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsjZYdWEEZuuD_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB3M_8prepared13buffer_framesNtB5j_25NativePreparedLibraryCall25admit_buffer_frame_inputs0E0IB36_B35_NtNtNtCs7l2XwlXeEQs_9mech_core8function8resident19ResidentKernelErrorEEB10_  (in runner-native-profile) + 3480  [0x100e7b960]"
+      },
+      {
+        "inclusive_samples": 4,
+        "symbol": "_RNvMs_NtNtNtNtNtCsjZYdWEEZuuD_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall24admit_buffer_frame_words",
+        "raw_stack_entry": "+ !         : | + !     4 _RNvMs_NtNtNtNtNtCsjZYdWEEZuuD_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall24admit_buffer_frame_words  (in runner-native-profile) + 64  [0x100f2c1ec]"
+      },
+      {
+        "inclusive_samples": 4,
+        "symbol": "_RNvMs_NtNtNtNtNtCsjZYdWEEZuuD_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall25admit_buffer_frame_inputs",
+        "raw_stack_entry": "+ !         : | + !       4 _RNvMs_NtNtNtNtNtCsjZYdWEEZuuD_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall25admit_buffer_frame_inputs  (in runner-native-profile) + 264  [0x100f2c350]"
+      },
+      {
+        "inclusive_samples": 4,
+        "symbol": "_RNvMs_NtNtNtNtNtCsjZYdWEEZuuD_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall24admit_buffer_frame_words",
+        "raw_stack_entry": "+ !   :     | + !     4 _RNvMs_NtNtNtNtNtCsjZYdWEEZuuD_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall24admit_buffer_frame_words  (in runner-native-profile) + 64  [0x100f2c1ec]"
+      }
+    ],
+    "lookup_preparation": [
+      {
+        "inclusive_samples": 61,
+        "symbol": "_RNvMs_NtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB6_5State17prepare_utf8_read",
+        "raw_stack_entry": "+ !         : | + !       61 _RNvMs_NtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB6_5State17prepare_utf8_read  (in runner-native-profile) + 3560,4104,...  [0x100cda254,0x100cda474,...]"
+      },
+      {
+        "inclusive_samples": 9,
+        "symbol": "_RNvMs_NtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB6_5State17prepare_utf8_read",
+        "raw_stack_entry": "+ !         : | + !       9 _RNvMs_NtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB6_5State17prepare_utf8_read  (in runner-native-profile) + 5600  [0x100cdaa4c]"
+      },
+      {
+        "inclusive_samples": 2,
+        "symbol": "_RNvMs_NtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB6_5State17prepare_utf8_read",
+        "raw_stack_entry": "+ !         : | + !       2 _RNvMs_NtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB6_5State17prepare_utf8_read  (in runner-native-profile) + 5544  [0x100cdaa14]"
+      },
+      {
+        "inclusive_samples": 1,
+        "symbol": "_RNvMs_NtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB6_5State17prepare_utf8_read",
+        "raw_stack_entry": "+ !         : | + !       1 _RNvMs_NtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB6_5State17prepare_utf8_read  (in runner-native-profile) + 756  [0x100cd9760]"
+      },
+      {
+        "inclusive_samples": 1,
+        "symbol": "_RNvMs_NtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB6_5State17prepare_utf8_read",
+        "raw_stack_entry": "+ !         : | + !       1 _RNvMs_NtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB6_5State17prepare_utf8_read  (in runner-native-profile) + 3080  [0x100cda074]"
+      }
+    ],
+    "caller_geometry": [
+      {
+        "inclusive_samples": 30,
+        "symbol": "_RNvMNtNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime4maps5owner15caller_geometryNtB4_5State17capture_caller_at",
+        "raw_stack_entry": "+ !         : | + !     : 30 _RNvMNtNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime4maps5owner15caller_geometryNtB4_5State17capture_caller_at  (in runner-native-profile) + 664,688,...  [0x100d3d060,0x100d3d078,...]"
+      },
+      {
+        "inclusive_samples": 2,
+        "symbol": "_RNvMNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime10invocation15caller_geometryNtB4_10Invocation29retained_caller_dynamic_nodes",
+        "raw_stack_entry": "+ !         : | + ! : | + ! 2 _RNvMNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime10invocation15caller_geometryNtB4_10Invocation29retained_caller_dynamic_nodes  (in runner-native-profile) + 112  [0x100c652e4]"
+      },
+      {
+        "inclusive_samples": 1,
+        "symbol": "_RNvMNtNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime4maps5owner15caller_geometryNtB4_5State17capture_caller_at",
+        "raw_stack_entry": "+ !         : | + !     : 1 _RNvMNtNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime4maps5owner15caller_geometryNtB4_5State17capture_caller_at  (in runner-native-profile) + 964  [0x100d3d18c]"
+      },
+      {
+        "inclusive_samples": 1,
+        "symbol": "_RNvMNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime10invocation15caller_geometryNtB4_10Invocation29retained_caller_dynamic_nodes",
+        "raw_stack_entry": "+ !         : | + ! : | + ! 1 _RNvMNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime10invocation15caller_geometryNtB4_10Invocation29retained_caller_dynamic_nodes  (in runner-native-profile) + 52  [0x100c652a8]"
+      },
+      {
+        "inclusive_samples": 1,
+        "symbol": "_RNvMNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime10invocation15caller_geometryNtB4_10Invocation29retained_caller_dynamic_nodes",
+        "raw_stack_entry": "+ !         : | + ! : | + ! 1 _RNvMNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime10invocation15caller_geometryNtB4_10Invocation29retained_caller_dynamic_nodes  (in runner-native-profile) + 80  [0x100c652c4]"
+      }
+    ],
+    "generic_dictionary_freeze": [
+      {
+        "inclusive_samples": 1,
+        "symbol": "_RNvMNtNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime4maps6string6frozenNtB4_14OwnedStringMap25freeze_or_publish_in_callBe_",
+        "raw_stack_entry": "+ !         : | + !     : |     1 _RNvMNtNtNtNtNtNtCskkcVHXUkUR0_8mech_gpu15native_artifact7program7runtime4maps6string6frozenNtB4_14OwnedStringMap25freeze_or_publish_in_callBe_  (in runner-native-profile) + 1900  [0x100d3fdbc]"
+      }
+    ],
+    "histogram": []
+  },
+  "same_Object_audit_passed": true,
+  "exact_final5000_output": true
+}

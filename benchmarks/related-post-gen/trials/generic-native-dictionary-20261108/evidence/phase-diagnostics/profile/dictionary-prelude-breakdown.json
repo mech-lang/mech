@@ -1,0 +1,340 @@
+{
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false,
+  "callbacks_disjoint_per_capture": true,
+  "medians_not_additive": true,
+  "variants": {
+    "canonical-control-detail": {
+      "top_callbacks": [
+        {
+          "site": 44,
+          "operation": 0,
+          "source_operation": "core/composite-pack",
+          "callbacks": 1.0,
+          "elapsed_ns": 97270.5,
+          "instructions": 614243.5,
+          "requests": 406.0,
+          "requested_bytes": 74719.0
+        },
+        {
+          "site": 62,
+          "operation": 18446744073709551598,
+          "source_operation": "map/insert",
+          "callbacks": 28.0,
+          "elapsed_ns": 29792.5,
+          "instructions": 313712.5,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 61,
+          "operation": 18446744073709551568,
+          "source_operation": "access/scalar",
+          "callbacks": 28.0,
+          "elapsed_ns": 26442.0,
+          "instructions": 272900.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 78,
+          "operation": 18446744073709551597,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 20167.0,
+          "instructions": 282329.0,
+          "requests": 147.0,
+          "requested_bytes": 9311.0
+        },
+        {
+          "site": 45,
+          "operation": 18446744073709551599,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 18729.0,
+          "instructions": 118948.5,
+          "requests": 37.0,
+          "requested_bytes": 1917.0
+        },
+        {
+          "site": 40,
+          "operation": 0,
+          "source_operation": "core/composite-pack",
+          "callbacks": 1.0,
+          "elapsed_ns": 6937.0,
+          "instructions": 64860.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 82,
+          "operation": 2,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 3270.5,
+          "instructions": 18247.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 79,
+          "operation": 2,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 3000.0,
+          "instructions": 12737.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 39,
+          "operation": 0,
+          "source_operation": "sequence/length",
+          "callbacks": 1.0,
+          "elapsed_ns": 2187.0,
+          "instructions": 7799.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 41,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 1187.5,
+          "instructions": 6929.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 43,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 959.0,
+          "instructions": 7936.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 42,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 750.0,
+          "instructions": 6929.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        }
+      ],
+      "runs": [
+        {
+          "pair": 0,
+          "callbacks": 66,
+          "requests": 590
+        },
+        {
+          "pair": 1,
+          "callbacks": 66,
+          "requests": 590
+        },
+        {
+          "pair": 2,
+          "callbacks": 66,
+          "requests": 590
+        },
+        {
+          "pair": 3,
+          "callbacks": 66,
+          "requests": 590
+        },
+        {
+          "pair": 4,
+          "callbacks": 66,
+          "requests": 590
+        },
+        {
+          "pair": 5,
+          "callbacks": 66,
+          "requests": 590
+        },
+        {
+          "pair": 6,
+          "callbacks": 66,
+          "requests": 590
+        },
+        {
+          "pair": 7,
+          "callbacks": 66,
+          "requests": 590
+        }
+      ]
+    },
+    "native-dictionary-detail": {
+      "top_callbacks": [
+        {
+          "site": 44,
+          "operation": 0,
+          "source_operation": "core/composite-pack",
+          "callbacks": 1.0,
+          "elapsed_ns": 92083.5,
+          "instructions": 608875.5,
+          "requests": 406.0,
+          "requested_bytes": 74719.0
+        },
+        {
+          "site": 62,
+          "operation": 18446744073709551598,
+          "source_operation": "map/insert",
+          "callbacks": 28.0,
+          "elapsed_ns": 29752.0,
+          "instructions": 313728.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 61,
+          "operation": 18446744073709551568,
+          "source_operation": "access/scalar",
+          "callbacks": 28.0,
+          "elapsed_ns": 26542.0,
+          "instructions": 272900.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 45,
+          "operation": 18446744073709551599,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 18625.0,
+          "instructions": 119027.0,
+          "requests": 37.0,
+          "requested_bytes": 1917.0
+        },
+        {
+          "site": 40,
+          "operation": 0,
+          "source_operation": "core/composite-pack",
+          "callbacks": 1.0,
+          "elapsed_ns": 6625.0,
+          "instructions": 64860.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 82,
+          "operation": 2,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 3125.0,
+          "instructions": 18247.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 78,
+          "operation": 18446744073709551566,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 3083.5,
+          "instructions": 11563.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 79,
+          "operation": 2,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 2812.5,
+          "instructions": 12737.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 39,
+          "operation": 0,
+          "source_operation": "sequence/length",
+          "callbacks": 1.0,
+          "elapsed_ns": 2146.0,
+          "instructions": 7799.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 41,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 1208.0,
+          "instructions": 6929.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 43,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 917.0,
+          "instructions": 7936.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 42,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 750.0,
+          "instructions": 6929.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        }
+      ],
+      "runs": [
+        {
+          "pair": 0,
+          "callbacks": 66,
+          "requests": 443
+        },
+        {
+          "pair": 1,
+          "callbacks": 66,
+          "requests": 443
+        },
+        {
+          "pair": 2,
+          "callbacks": 66,
+          "requests": 443
+        },
+        {
+          "pair": 3,
+          "callbacks": 66,
+          "requests": 443
+        },
+        {
+          "pair": 4,
+          "callbacks": 66,
+          "requests": 443
+        },
+        {
+          "pair": 5,
+          "callbacks": 66,
+          "requests": 443
+        },
+        {
+          "pair": 6,
+          "callbacks": 66,
+          "requests": 443
+        },
+        {
+          "pair": 7,
+          "callbacks": 66,
+          "requests": 443
+        }
+      ]
+    }
+  }
+}

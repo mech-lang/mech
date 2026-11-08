@@ -1,0 +1,143 @@
+{
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false,
+  "medians_not_additive": true,
+  "phases": {
+    "preparation_interning_and_eligibility": {
+      "rust-fastest-coarse": {
+        "median_paired_difference_us": 215.354,
+        "favorable_pairs": 0,
+        "pairs": 8,
+        "all_differences_ns": [
+          246709,
+          217500,
+          183833,
+          220667,
+          201251,
+          242709,
+          213208,
+          207999
+        ]
+      },
+      "canonical-control-coarse": {
+        "median_paired_difference_us": -20.688,
+        "favorable_pairs": 5,
+        "pairs": 8,
+        "all_differences_ns": [
+          12793,
+          -45708,
+          -48084,
+          17042,
+          -31958,
+          2000,
+          -39209,
+          -9418
+        ]
+      },
+      "native_median_us": 801.666,
+      "Rust_median_us": 592.896
+    },
+    "triple_index_and_coverage": {
+      "rust-fastest-coarse": {
+        "median_paired_difference_us": 172.333,
+        "favorable_pairs": 0,
+        "pairs": 8,
+        "all_differences_ns": [
+          173958,
+          139501,
+          145209,
+          175292,
+          162875,
+          177958,
+          170708,
+          175543
+        ]
+      },
+      "canonical-control-coarse": {
+        "median_paired_difference_us": 11.042,
+        "favorable_pairs": 3,
+        "pairs": 8,
+        "all_differences_ns": [
+          19583,
+          -12250,
+          -2541,
+          37792,
+          24750,
+          28250,
+          -6250,
+          2501
+        ]
+      },
+      "native_median_us": 353.5625,
+      "Rust_median_us": 181.9785
+    },
+    "quartet_index_and_masks": {
+      "rust-fastest-coarse": {
+        "median_paired_difference_us": 68.937,
+        "favorable_pairs": 0,
+        "pairs": 8,
+        "all_differences_ns": [
+          66375,
+          43833,
+          54167,
+          66458,
+          71416,
+          81375,
+          85792,
+          73957
+        ]
+      },
+      "canonical-control-coarse": {
+        "median_paired_difference_us": 11.333,
+        "favorable_pairs": 2,
+        "pairs": 8,
+        "all_differences_ns": [
+          10125,
+          -13042,
+          -2750,
+          18708,
+          13916,
+          26750,
+          4458,
+          12541
+        ]
+      },
+      "native_median_us": 263.812,
+      "Rust_median_us": 196.3335
+    },
+    "queries_cleanup_and_materialization": {
+      "rust-fastest-coarse": {
+        "median_paired_difference_us": -78.7705,
+        "favorable_pairs": 7,
+        "pairs": 8,
+        "all_differences_ns": [
+          -71250,
+          -84251,
+          -97125,
+          -74125,
+          -99166,
+          112500,
+          -83416,
+          -59541
+        ]
+      },
+      "canonical-control-coarse": {
+        "median_paired_difference_us": 3.437,
+        "favorable_pairs": 3,
+        "pairs": 8,
+        "all_differences_ns": [
+          18166,
+          -17459,
+          3458,
+          3416,
+          -7916,
+          196166,
+          -9791,
+          23792
+        ]
+      },
+      "native_median_us": 478.5205,
+      "Rust_median_us": 561.416
+    }
+  }
+}

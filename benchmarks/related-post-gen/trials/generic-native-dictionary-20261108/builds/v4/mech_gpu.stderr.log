@@ -1,0 +1,126 @@
+error[E0599]: no method named `publish` found for struct `maps::string::OwnedStringMap<S>` in the current scope
+   --> /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/frozen.rs:71:18
+    |
+ 70 |               return self
+    |  ____________________-
+ 71 | |                 .publish(schemas, schema, geometry, limits)
+    | |_________________-^^^^^^^
+    |
+   ::: /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/mod.rs:37:1
+    |
+ 37 |   pub(in crate::native_artifact) struct OwnedStringMap<S = DefaultHashBuilder> {
+    |   ---------------------------------------------------------------------------- method `publish` not found for this struct
+    |
+help: there is a method `publish_result` with a similar name, but with different arguments
+   --> /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/publication/mod.rs:237:5
+    |
+237 | /     pub(in crate::native_artifact) fn publish_result(
+238 | |         &self,
+239 | |         schemas: &Arc<SchemaTable>,
+240 | |         schema: SchemaId,
+...   |
+243 | |         limits: MemoryBudgetLimits,
+244 | |     ) -> Result<Value, Error> {
+    | |_____________________________^
+
+error[E0599]: no method named `publish` found for struct `maps::string::OwnedStringMap<S>` in the current scope
+   --> /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/frozen.rs:93:18
+    |
+ 92 |               return self
+    |  ____________________-
+ 93 | |                 .publish(schemas, schema, geometry, limits)
+    | |_________________-^^^^^^^
+    |
+   ::: /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/mod.rs:37:1
+    |
+ 37 |   pub(in crate::native_artifact) struct OwnedStringMap<S = DefaultHashBuilder> {
+    |   ---------------------------------------------------------------------------- method `publish` not found for this struct
+    |
+help: there is a method `publish_result` with a similar name, but with different arguments
+   --> /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/publication/mod.rs:237:5
+    |
+237 | /     pub(in crate::native_artifact) fn publish_result(
+238 | |         &self,
+239 | |         schemas: &Arc<SchemaTable>,
+240 | |         schema: SchemaId,
+...   |
+243 | |         limits: MemoryBudgetLimits,
+244 | |     ) -> Result<Value, Error> {
+    | |_____________________________^
+
+error[E0599]: no method named `publish` found for struct `maps::string::OwnedStringMap<S>` in the current scope
+   --> /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/frozen.rs:104:22
+    |
+103 |                   return self
+    |  ________________________-
+104 | |                     .publish(schemas, schema, geometry, limits)
+    | |_____________________-^^^^^^^
+    |
+   ::: /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/mod.rs:37:1
+    |
+ 37 |   pub(in crate::native_artifact) struct OwnedStringMap<S = DefaultHashBuilder> {
+    |   ---------------------------------------------------------------------------- method `publish` not found for this struct
+    |
+help: there is a method `publish_result` with a similar name, but with different arguments
+   --> /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/publication/mod.rs:237:5
+    |
+237 | /     pub(in crate::native_artifact) fn publish_result(
+238 | |         &self,
+239 | |         schemas: &Arc<SchemaTable>,
+240 | |         schema: SchemaId,
+...   |
+243 | |         limits: MemoryBudgetLimits,
+244 | |     ) -> Result<Value, Error> {
+    | |_____________________________^
+
+error[E0599]: no method named `publish` found for struct `maps::string::OwnedStringMap<S>` in the current scope
+   --> /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/frozen.rs:113:22
+    |
+112 |                   return self
+    |  ________________________-
+113 | |                     .publish(schemas, schema, geometry, limits)
+    | |_____________________-^^^^^^^
+    |
+   ::: /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/mod.rs:37:1
+    |
+ 37 |   pub(in crate::native_artifact) struct OwnedStringMap<S = DefaultHashBuilder> {
+    |   ---------------------------------------------------------------------------- method `publish` not found for this struct
+    |
+help: there is a method `publish_result` with a similar name, but with different arguments
+   --> /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/publication/mod.rs:237:5
+    |
+237 | /     pub(in crate::native_artifact) fn publish_result(
+238 | |         &self,
+239 | |         schemas: &Arc<SchemaTable>,
+240 | |         schema: SchemaId,
+...   |
+243 | |         limits: MemoryBudgetLimits,
+244 | |     ) -> Result<Value, Error> {
+    | |_____________________________^
+
+error[E0599]: no method named `publish` found for struct `maps::string::OwnedStringMap<S>` in the current scope
+   --> /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/frozen.rs:211:15
+    |
+211 |         owner.publish(&schemas, schema, geometry, remaining)
+    |               ^^^^^^^
+    |
+   ::: /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/mod.rs:37:1
+    |
+ 37 | pub(in crate::native_artifact) struct OwnedStringMap<S = DefaultHashBuilder> {
+    | ---------------------------------------------------------------------------- method `publish` not found for this struct
+    |
+help: there is a method `publish_result` with a similar name, but with different arguments
+   --> /private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/string/publication/mod.rs:237:5
+    |
+237 | /     pub(in crate::native_artifact) fn publish_result(
+238 | |         &self,
+239 | |         schemas: &Arc<SchemaTable>,
+240 | |         schema: SchemaId,
+...   |
+243 | |         limits: MemoryBudgetLimits,
+244 | |     ) -> Result<Value, Error> {
+    | |_____________________________^
+
+error: aborting due to 5 previous errors
+
+For more information about this error, try `rustc --explain E0599`.

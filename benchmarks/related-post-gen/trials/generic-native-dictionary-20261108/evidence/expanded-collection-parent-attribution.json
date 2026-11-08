@@ -1,0 +1,15 @@
+{
+  "parent": "IR303",
+  "candidate": "IR304",
+  "same_five_failures": true,
+  "failed_tests": [
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::emitted_joined_string_map_reuses_backing_without_a_canonical_source_slot",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::observed_or_cold_source_consumers_retain_the_immutable_copy_path",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::owned_map_missing_key_is_atomic_and_releases_transferred_capacity",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::repeated_parent_visits_do_not_consume_a_lexically_single_use_source"
+  ],
+  "parent_stdout": "/private/tmp/mech-related-generic-native-dictionary-20261108/IR303-expanded-collections-parent.json",
+  "candidate_stdout": "/private/tmp/mech-related-generic-native-dictionary-20261108/classification-UTF8-range-and-protocol-regressions.json",
+  "status": "Preexisting: four StaleHandle errors in ASCII joined-string map tests and one unavailable stats-module import in minimal dependency build. Retained openly; no selection disabled or semantic test weakened to obtain timings."
+}

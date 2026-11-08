@@ -1,0 +1,26 @@
+{
+  "all_output_and_nonresource_fields_exact": true,
+  "all_nontiming_fields_exact": true,
+  "parent": "IR303",
+  "scalar_rows": 128,
+  "DEFLATE_rows": 5,
+  "comparison_root": "/private/tmp/mech-related-generic-native-dictionary-regressions-20261108-v1",
+  "resource_changes": [
+    {
+      "kind": "scalar",
+      "rows": 128,
+      "changed_rows": 0,
+      "all_output_and_nonresource_fields_exact": true,
+      "all_allocations_nonincreasing": true,
+      "all_report_counters_nonincreasing": true
+    },
+    {
+      "kind": "one-kib",
+      "rows": 5,
+      "changed_rows": 0,
+      "all_output_and_nonresource_fields_exact": true,
+      "all_allocations_nonincreasing": true,
+      "all_report_counters_nonincreasing": true
+    }
+  ]
+}

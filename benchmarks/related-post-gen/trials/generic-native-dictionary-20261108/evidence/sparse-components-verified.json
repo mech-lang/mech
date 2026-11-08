@@ -1,0 +1,18 @@
+{
+  "all_recorded_compiler_components_materialized": true,
+  "components": [
+    "src/core",
+    "src/syntax",
+    "src/bytecode",
+    "src/engine",
+    "src/compute",
+    "machines/math",
+    "machines/compare",
+    "machines/logic",
+    "machines/range",
+    "src/stdlib",
+    "src/runtime",
+    "hosts/gpu"
+  ],
+  "first_missing_fixture_and_component_failures_retained": true
+}

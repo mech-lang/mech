@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/private/tmp/mech-related-generic-native-dictionary-20261108/native-tests-v3/gpu-native-tests",
+    "generic_dictionary_actual",
+    "borrowed_map_keys_actual",
+    "matrix_map_keys_selects_actual",
+    "--ignored",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "MECH_MATRIX_KEY_BENCH_SOURCE": "/private/tmp/mech-related-native-string-classification-reuse-runners-20261108-v2/histogram-reuse/build/source.mec",
+    "MECH_MATRIX_KEY_BENCH_INPUT": "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "MECH_MATRIX_KEY_BENCH_ORACLE": "/private/tmp/mech-related-frozen-native-composition-latency-20261105-v1/related_posts_rust.json"
+  },
+  "exit": 0,
+  "seconds": 9.951007334049791,
+  "stdout": "\nrunning 3 tests\ntest native_artifact::program::prepare::borrowed_map_keys::tests::borrowed_map_keys_actual_source_pins_snapshot_across_original_handle_retirement ... Layout { regions: [Region { producer: 38, snapshot: NativeMatchValue(65), output: NativeMatchValue(66), lengths: [39], cells: [61], private_frames: [PrivateFrameUse { pack: 40, output: NativeMatchValue(68), field: 0, retires_snapshot_handle: true }] }, Region { producer: 3394, snapshot: NativeMatchValue(2127), output: NativeMatchValue(2128), lengths: [3395], cells: [3417], private_frames: [PrivateFrameUse { pack: 3396, output: NativeMatchValue(2130), field: 0, retires_snapshot_handle: false }] }] }\nok\ntest native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_actual_source_has_two_generic_nonempty_seed_candidates ... generic dictionary applicability: Layout {\n    regions: [\n        Region {\n            owner: 0,\n            seed: NativeMatchValue(\n                72,\n            ),\n            result: NativeMatchValue(\n                73,\n            ),\n            exit: 78,\n            lookup_collection: 1,\n            lookup_header: 83,\n            lookup_read: 87,\n            lookup_exit: 89,\n        },\n        Region {\n            owner: 1,\n            seed: NativeMatchValue(\n                2134,\n            ),\n            result: NativeMatchValue(\n                2135,\n            ),\n            exit: 3434,\n            lookup_collection: 12,\n            lookup_header: 3439,\n            lookup_read: 3443,\n            lookup_exit: 3445,\n        },\n    ],\n}\nok\ntest native_artifact::program::prepare::matrix_map_keys::tests::matrix_map_keys_selects_actual_current_related_post_source ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 972 filtered out; finished in 9.94s\n\n",
+  "stderr": "",
+  "scope": "Qualification only; timers ineligible"
+}

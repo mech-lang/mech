@@ -1,0 +1,18 @@
+{
+  "expected": 460,
+  "listed": 460,
+  "executed_passed": 460,
+  "all_names_match": true,
+  "all451IR303names_retained": true,
+  "new_names": [
+    "native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_proves_direct_completed_owner_into_nested_native_lookup",
+    "native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_rejects_public_and_multiple_native_consumer_escapes",
+    "native_artifact::program::runtime::composition_tests::generic_dictionary::generic_dictionary_finite_boundaries_keep_publication_cleanup_and_recovery",
+    "native_artifact::program::runtime::composition_tests::generic_dictionary::generic_dictionary_images_rederive_exact_native_sources_and_public_escapes_stay_canonical",
+    "native_artifact::program::runtime::composition_tests::generic_dictionary::generic_dictionary_preserves_missing_key_errors_stale_generation_outputs_and_retry",
+    "native_artifact::program::runtime::composition_tests::generic_dictionary::generic_dictionary_runs_native_and_returns_owner_on_prepare_and_loop_refusal",
+    "native_artifact::program::runtime::maps::string::frozen::tests::frozen_generic_dictionary_late_publication_keeps_spent_prefix_relative_cap_and_intervening_global_work",
+    "native_artifact::program::runtime::maps::string::frozen::tests::frozen_generic_dictionary_moves_all_utf8_keys_and_preserves_values_and_late_canonical_order",
+    "native_artifact::program::runtime::maps::string::frozen::tests::frozen_generic_dictionary_nested_call_keeps_immediate_canonical_path_and_logical_caps"
+  ]
+}

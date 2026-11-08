@@ -1,0 +1,112 @@
+[
+  {
+    "original": "/private/tmp/mech-related-compact-native-fact-rows-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-compact-native-fact-rows-regressions-20261105-v1/scalar.qualified.gz",
+    "original_bytes": 107514272,
+    "archive_bytes": 14634003,
+    "mode": 493,
+    "sha256": "9255ecde738e8c2f8b6e0e31208786dad5200a6fbf0932b6f661f4b4fd55f5cc",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-regressions-20261105-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-regressions-20261105-v1/scalar.qualified.gz",
+    "original_bytes": 107491984,
+    "archive_bytes": 14629797,
+    "mode": 493,
+    "sha256": "60cc9123b690e47b51b7ea24b4163e92d205f87b1500a2f48350a89b3f9df96b",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-regressions-20261105-v2/scalar",
+    "archive": "/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-regressions-20261105-v2/scalar.qualified.gz",
+    "original_bytes": 107492304,
+    "archive_bytes": 14629077,
+    "mode": 493,
+    "sha256": "24a4a25acdbc0d9e5cf0193518cbf692be9d5a115fc2bf670b032d5b568ccc8f",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-frozen-type-descriptors-regressions-20261106-v2/scalar",
+    "archive": "/private/tmp/mech-related-native-frozen-type-descriptors-regressions-20261106-v2/scalar.qualified.gz",
+    "original_bytes": 107512432,
+    "archive_bytes": 14655958,
+    "mode": 493,
+    "sha256": "80302b3511f2a35e8e38b266934240d39a53f6e88ebd27500ead5eb7dd121f98",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-immutable-view-homes-regressions-20261106-v2/scalar",
+    "archive": "/private/tmp/mech-related-native-immutable-view-homes-regressions-20261106-v2/scalar.qualified.gz",
+    "original_bytes": 107482160,
+    "archive_bytes": 14628293,
+    "mode": 493,
+    "sha256": "d176aa4eb2b1cdafb228663f6f6f3afee805241b5915a73915f7a5bacde372c9",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-vector-fuel-debits-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-vector-fuel-debits-regressions-20261106-v1/scalar.qualified.gz",
+    "original_bytes": 107477584,
+    "archive_bytes": 14633855,
+    "mode": 493,
+    "sha256": "42623a5bc26d67a3bdf047e3937cad57f836c97a5f852d780cc09b47711d9372",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-vector-ledger-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-vector-ledger-regressions-20261106-v1/scalar.qualified.gz",
+    "original_bytes": 107463792,
+    "archive_bytes": 14633894,
+    "mode": 493,
+    "sha256": "09f7d37e28a203876c96fb8ed1ae4e693d10b0ad485249e1f7d0604967ac14d7",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-projected-debits-regressions-20261106-v4/scalar",
+    "archive": "/private/tmp/mech-related-native-projected-debits-regressions-20261106-v4/scalar.qualified.gz",
+    "original_bytes": 107461072,
+    "archive_bytes": 14631355,
+    "mode": 493,
+    "sha256": "e848bc06a14f8f8d59445833cde65dee0579a9b62eb8ef7b2102e24f54784d93",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-arithmetic-ranges-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-arithmetic-ranges-regressions-20261106-v1/scalar.qualified.gz",
+    "original_bytes": 107459248,
+    "archive_bytes": 14628442,
+    "mode": 493,
+    "sha256": "1cc8c26a07d2905ec5e2479533547f6fee807f78617a3690c438fff77de89f9c",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-constant-conditions-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-constant-conditions-regressions-20261106-v1/scalar.qualified.gz",
+    "original_bytes": 107458864,
+    "archive_bytes": 14626814,
+    "mode": 493,
+    "sha256": "15bd5ee6dd9712ca430ceaec5c50aa705a2e3c9789ed498d6443862322bdd0fe",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-early-identities-regressions-20261106-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-early-identities-regressions-20261106-v1/scalar.qualified.gz",
+    "original_bytes": 107442768,
+    "archive_bytes": 14627993,
+    "mode": 493,
+    "sha256": "88f7019cced307d8dccc626228bb843f562690228f77f226341148e4aecf8a62",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "actual_CI_passed": 460,
+  "all451IR303names_retained": true,
+  "new_contracts": 9,
+  "retained_map_tests": 173,
+  "image_and_caller_tests": 29,
+  "all_parent_required_UTF8_classification_protocol_tests_passed": true,
+  "actual_original_and_restored_outputs_exact": true,
+  "native_dictionary_publications": 1,
+  "canonical_dictionary_publications": 0,
+  "frozen_dictionary_loans": 1,
+  "fallback_materializations": 0,
+  "source_inventory_unchanged": true,
+  "expanded_collection_suite_passed": 62,
+  "expanded_collection_suite_preexisting_failures": 5,
+  "preexisting_attribution": "/private/tmp/mech-related-generic-native-dictionary-20261108/expanded-collection-parent-attribution.json",
+  "scalar_DEFLATE_nontiming_cases_exact": 133,
+  "timers_ineligible": true
+}

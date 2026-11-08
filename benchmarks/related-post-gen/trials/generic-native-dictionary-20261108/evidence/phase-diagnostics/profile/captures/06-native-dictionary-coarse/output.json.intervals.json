@@ -1,0 +1,1912 @@
+{
+  "capture": {
+    "calling_thread_counters": true,
+    "coarse_checkpoints": 3,
+    "counter_errors": 0,
+    "diagnostic_only": true,
+    "dropped": 0,
+    "events": [
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 47545,
+          "global_requested_bytes": 17888500,
+          "global_requests": 111,
+          "thread_freed_bytes": 47545,
+          "thread_requested_bytes": 17887776,
+          "thread_requests": 105
+        },
+        "end_counters": {
+          "cycles": 290857,
+          "instructions": 571705
+        },
+        "end_ns": 55375,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "catalog_construction",
+        "start_allocations": {
+          "global_freed_bytes": 47545,
+          "global_requested_bytes": 17883232,
+          "global_requests": 22,
+          "thread_freed_bytes": 47545,
+          "thread_requested_bytes": 17882508,
+          "thread_requests": 16
+        },
+        "start_counters": {
+          "cycles": 230632,
+          "instructions": 443074
+        },
+        "start_ns": 39917,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 54951206,
+          "global_requested_bytes": 79705214,
+          "global_requests": 76985,
+          "thread_freed_bytes": 54951206,
+          "thread_requested_bytes": 79704490,
+          "thread_requests": 76979
+        },
+        "end_counters": {
+          "cycles": 46994036,
+          "instructions": 192799717
+        },
+        "end_ns": 12187125,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "restoration",
+        "start_allocations": {
+          "global_freed_bytes": 47545,
+          "global_requested_bytes": 17888500,
+          "global_requests": 111,
+          "thread_freed_bytes": 47545,
+          "thread_requested_bytes": 17887776,
+          "thread_requests": 105
+        },
+        "start_counters": {
+          "cycles": 301639,
+          "instructions": 587972
+        },
+        "start_ns": 57917,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 56816463,
+          "global_requested_bytes": 82995406,
+          "global_requests": 117074,
+          "thread_freed_bytes": 56816463,
+          "thread_requested_bytes": 82994682,
+          "thread_requests": 117068
+        },
+        "end_counters": {
+          "cycles": 53121465,
+          "instructions": 223305892
+        },
+        "end_ns": 13808000,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "json_decode",
+        "start_allocations": {
+          "global_freed_bytes": 54951206,
+          "global_requested_bytes": 79705214,
+          "global_requests": 76985,
+          "thread_freed_bytes": 54951206,
+          "thread_requested_bytes": 79704490,
+          "thread_requests": 76979
+        },
+        "start_counters": {
+          "cycles": 46996174,
+          "instructions": 192801929
+        },
+        "start_ns": 12187333,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57299151,
+          "global_requested_bytes": 83397486,
+          "global_requests": 117098,
+          "thread_freed_bytes": 57299151,
+          "thread_requested_bytes": 83396762,
+          "thread_requests": 117092
+        },
+        "end_counters": {
+          "cycles": 53736868,
+          "instructions": 225837078
+        },
+        "end_ns": 13970792,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "input_admission",
+        "start_allocations": {
+          "global_freed_bytes": 56816463,
+          "global_requested_bytes": 82995406,
+          "global_requests": 117074,
+          "thread_freed_bytes": 56816463,
+          "thread_requested_bytes": 82994682,
+          "thread_requests": 117068
+        },
+        "start_counters": {
+          "cycles": 53137167,
+          "instructions": 223328926
+        },
+        "start_ns": 13811958,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57299175,
+          "global_requested_bytes": 83637510,
+          "global_requests": 117102,
+          "thread_freed_bytes": 57299175,
+          "thread_requested_bytes": 83636786,
+          "thread_requests": 117096
+        },
+        "end_counters": {
+          "cycles": 53762699,
+          "instructions": 225951183
+        },
+        "end_ns": 13977625,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "post_views",
+        "start_allocations": {
+          "global_freed_bytes": 57299151,
+          "global_requested_bytes": 83397486,
+          "global_requests": 117098,
+          "thread_freed_bytes": 57299151,
+          "thread_requested_bytes": 83396762,
+          "thread_requests": 117092
+        },
+        "start_counters": {
+          "cycles": 53737873,
+          "instructions": 225839500
+        },
+        "start_ns": 13970875,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57299175,
+          "global_requested_bytes": 84052422,
+          "global_requests": 117210,
+          "thread_freed_bytes": 57299175,
+          "thread_requested_bytes": 84051698,
+          "thread_requests": 117204
+        },
+        "end_counters": {
+          "cycles": 53886817,
+          "instructions": 226202501
+        },
+        "end_ns": 14010500,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "session_setup",
+        "start_allocations": {
+          "global_freed_bytes": 57299175,
+          "global_requested_bytes": 83637574,
+          "global_requests": 117103,
+          "thread_freed_bytes": 57299175,
+          "thread_requested_bytes": 83636850,
+          "thread_requests": 117097
+        },
+        "start_counters": {
+          "cycles": 53769221,
+          "instructions": 225961451
+        },
+        "start_ns": 13979167,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57299175,
+          "global_requested_bytes": 84052422,
+          "global_requests": 117210,
+          "thread_freed_bytes": 57299175,
+          "thread_requested_bytes": 84051698,
+          "thread_requests": 117204
+        },
+        "end_counters": {
+          "cycles": 53920874,
+          "instructions": 226260388
+        },
+        "end_ns": 14019500,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "generated_entry",
+        "start_allocations": {
+          "global_freed_bytes": 57299175,
+          "global_requested_bytes": 84052422,
+          "global_requests": 117210,
+          "thread_freed_bytes": 57299175,
+          "thread_requested_bytes": 84051698,
+          "thread_requests": 117204
+        },
+        "start_counters": {
+          "cycles": 53892318,
+          "instructions": 226213127
+        },
+        "start_ns": 14011750,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": 106,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57926708,
+          "global_requested_bytes": 84915945,
+          "global_requests": 117861,
+          "thread_freed_bytes": 57926708,
+          "thread_requested_bytes": 84915221,
+          "thread_requests": 117855
+        },
+        "end_counters": {
+          "cycles": 56104573,
+          "instructions": 232993386
+        },
+        "end_ns": 14597208,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 105,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57926292,
+          "global_requested_bytes": 84915529,
+          "global_requests": 117856,
+          "thread_freed_bytes": 57926292,
+          "thread_requested_bytes": 84914805,
+          "thread_requests": 117850
+        },
+        "start_counters": {
+          "cycles": 55805153,
+          "instructions": 231465949
+        },
+        "start_ns": 14517667,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": 194,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57928052,
+          "global_requested_bytes": 84915945,
+          "global_requests": 117861,
+          "thread_freed_bytes": 57928052,
+          "thread_requested_bytes": 84915221,
+          "thread_requests": 117855
+        },
+        "end_counters": {
+          "cycles": 56122307,
+          "instructions": 233012735
+        },
+        "end_ns": 14601833,
+        "end_process_counters": null,
+        "operation": 18446744073709551588,
+        "site": 108,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57928052,
+          "global_requested_bytes": 84915945,
+          "global_requests": 117861,
+          "thread_freed_bytes": 57928052,
+          "thread_requested_bytes": 84915221,
+          "thread_requests": 117855
+        },
+        "start_counters": {
+          "cycles": 56118074,
+          "instructions": 233004978
+        },
+        "start_ns": 14600583,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": 205,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57928052,
+          "global_requested_bytes": 84915945,
+          "global_requests": 117861,
+          "thread_freed_bytes": 57928052,
+          "thread_requested_bytes": 84915221,
+          "thread_requests": 117855
+        },
+        "end_counters": {
+          "cycles": 56128318,
+          "instructions": 233020704
+        },
+        "end_ns": 14603417,
+        "end_process_counters": null,
+        "operation": 18446744073709551588,
+        "site": 132,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57928052,
+          "global_requested_bytes": 84915945,
+          "global_requests": 117861,
+          "thread_freed_bytes": 57928052,
+          "thread_requested_bytes": 84915221,
+          "thread_requests": 117855
+        },
+        "start_counters": {
+          "cycles": 56127060,
+          "instructions": 233018614
+        },
+        "start_ns": 14602917,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": 228,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57928052,
+          "global_requested_bytes": 84915945,
+          "global_requests": 117861,
+          "thread_freed_bytes": 57928052,
+          "thread_requested_bytes": 84915221,
+          "thread_requests": 117855
+        },
+        "end_counters": {
+          "cycles": 56135290,
+          "instructions": 233032583
+        },
+        "end_ns": 14605292,
+        "end_process_counters": null,
+        "operation": 18446744073709551588,
+        "site": 198,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57928052,
+          "global_requested_bytes": 84915945,
+          "global_requests": 117861,
+          "thread_freed_bytes": 57928052,
+          "thread_requested_bytes": 84915221,
+          "thread_requests": 117855
+        },
+        "start_counters": {
+          "cycles": 56134199,
+          "instructions": 233030474
+        },
+        "start_ns": 14604833,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57928052,
+          "global_requested_bytes": 84915945,
+          "global_requests": 117861,
+          "thread_freed_bytes": 57928052,
+          "thread_requested_bytes": 84915221,
+          "thread_requests": 117855
+        },
+        "end_counters": {
+          "cycles": 56148990,
+          "instructions": 233058175
+        },
+        "end_ns": 14608708,
+        "end_process_counters": {
+          "cycles": 62312223,
+          "instructions": 248615213
+        },
+        "operation": 1,
+        "site": 248,
+        "stage": "coarse_checkpoint",
+        "start_allocations": {
+          "global_freed_bytes": 57928052,
+          "global_requested_bytes": 84915945,
+          "global_requests": 117861,
+          "thread_freed_bytes": 57928052,
+          "thread_requested_bytes": 84915221,
+          "thread_requests": 117855
+        },
+        "start_counters": {
+          "cycles": 56148990,
+          "instructions": 233058175
+        },
+        "start_ns": 14608708,
+        "start_process_counters": {
+          "cycles": 62312223,
+          "instructions": 248615213
+        },
+        "thread": 1
+      },
+      {
+        "close_site": 272,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57929932,
+          "global_requested_bytes": 86249649,
+          "global_requests": 117907,
+          "thread_freed_bytes": 57929932,
+          "thread_requested_bytes": 86248925,
+          "thread_requests": 117901
+        },
+        "end_counters": {
+          "cycles": 56666282,
+          "instructions": 235411168
+        },
+        "end_ns": 14745833,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 271,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57928724,
+          "global_requested_bytes": 86248441,
+          "global_requests": 117894,
+          "thread_freed_bytes": 57928724,
+          "thread_requested_bytes": 86247717,
+          "thread_requests": 117888
+        },
+        "start_counters": {
+          "cycles": 56243465,
+          "instructions": 233240627
+        },
+        "start_ns": 14633667,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": 763,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57932996,
+          "global_requested_bytes": 86277905,
+          "global_requests": 117927,
+          "thread_freed_bytes": 57932996,
+          "thread_requested_bytes": 86277181,
+          "thread_requests": 117921
+        },
+        "end_counters": {
+          "cycles": 56754166,
+          "instructions": 235714931
+        },
+        "end_ns": 14769042,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 728,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57932580,
+          "global_requested_bytes": 86277489,
+          "global_requests": 117922,
+          "thread_freed_bytes": 57932580,
+          "thread_requested_bytes": 86276765,
+          "thread_requests": 117916
+        },
+        "start_counters": {
+          "cycles": 56722035,
+          "instructions": 235549594
+        },
+        "start_ns": 14760250,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": 887,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57934044,
+          "global_requested_bytes": 86870249,
+          "global_requests": 117944,
+          "thread_freed_bytes": 57934044,
+          "thread_requested_bytes": 86869525,
+          "thread_requests": 117938
+        },
+        "end_counters": {
+          "cycles": 57363058,
+          "instructions": 238256469
+        },
+        "end_ns": 14930125,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 795,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57934044,
+          "global_requested_bytes": 86561457,
+          "global_requests": 117936,
+          "thread_freed_bytes": 57934044,
+          "thread_requested_bytes": 86560733,
+          "thread_requests": 117930
+        },
+        "start_counters": {
+          "cycles": 56880826,
+          "instructions": 236059939
+        },
+        "start_ns": 14802333,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": 982,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57961692,
+          "global_requested_bytes": 86870249,
+          "global_requests": 117944,
+          "thread_freed_bytes": 57961692,
+          "thread_requested_bytes": 86869525,
+          "thread_requests": 117938
+        },
+        "end_counters": {
+          "cycles": 57455718,
+          "instructions": 238622837
+        },
+        "end_ns": 14954667,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 894,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57961692,
+          "global_requested_bytes": 86870249,
+          "global_requests": 117944,
+          "thread_freed_bytes": 57961692,
+          "thread_requested_bytes": 86869525,
+          "thread_requests": 117938
+        },
+        "start_counters": {
+          "cycles": 57381277,
+          "instructions": 238291753
+        },
+        "start_ns": 14934708,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57961692,
+          "global_requested_bytes": 86870249,
+          "global_requests": 117944,
+          "thread_freed_bytes": 57961692,
+          "thread_requested_bytes": 86869525,
+          "thread_requests": 117938
+        },
+        "end_counters": {
+          "cycles": 57468523,
+          "instructions": 238646730
+        },
+        "end_ns": 14957833,
+        "end_process_counters": {
+          "cycles": 63631711,
+          "instructions": 254203768
+        },
+        "operation": 2,
+        "site": 1013,
+        "stage": "coarse_checkpoint",
+        "start_allocations": {
+          "global_freed_bytes": 57961692,
+          "global_requested_bytes": 86870249,
+          "global_requests": 117944,
+          "thread_freed_bytes": 57961692,
+          "thread_requested_bytes": 86869525,
+          "thread_requests": 117938
+        },
+        "start_counters": {
+          "cycles": 57468523,
+          "instructions": 238646730
+        },
+        "start_ns": 14957833,
+        "start_process_counters": {
+          "cycles": 63631711,
+          "instructions": 254203768
+        },
+        "thread": 1
+      },
+      {
+        "close_site": 1037,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57963572,
+          "global_requested_bytes": 87643113,
+          "global_requests": 117990,
+          "thread_freed_bytes": 57963572,
+          "thread_requested_bytes": 87642389,
+          "thread_requests": 117984
+        },
+        "end_counters": {
+          "cycles": 57880476,
+          "instructions": 240604823
+        },
+        "end_ns": 15067000,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 1036,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57962364,
+          "global_requested_bytes": 87641905,
+          "global_requests": 117977,
+          "thread_freed_bytes": 57962364,
+          "thread_requested_bytes": 87641181,
+          "thread_requests": 117971
+        },
+        "start_counters": {
+          "cycles": 57544110,
+          "instructions": 238870199
+        },
+        "start_ns": 14977792,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": 1497,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57966684,
+          "global_requested_bytes": 87808961,
+          "global_requests": 118010,
+          "thread_freed_bytes": 57966684,
+          "thread_requested_bytes": 87808237,
+          "thread_requests": 118004
+        },
+        "end_counters": {
+          "cycles": 58069045,
+          "instructions": 241654986
+        },
+        "end_ns": 15116917,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 1462,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57966268,
+          "global_requested_bytes": 87808545,
+          "global_requests": 118005,
+          "thread_freed_bytes": 57966268,
+          "thread_requested_bytes": 87807821,
+          "thread_requests": 117999
+        },
+        "start_counters": {
+          "cycles": 57931003,
+          "instructions": 240738773
+        },
+        "start_ns": 15080125,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": 1621,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 57967732,
+          "global_requested_bytes": 88217681,
+          "global_requests": 118027,
+          "thread_freed_bytes": 57967732,
+          "thread_requested_bytes": 88216957,
+          "thread_requests": 118021
+        },
+        "end_counters": {
+          "cycles": 58490710,
+          "instructions": 243148167
+        },
+        "end_ns": 15228542,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 1529,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 57967732,
+          "global_requested_bytes": 87931905,
+          "global_requests": 118019,
+          "thread_freed_bytes": 57967732,
+          "thread_requested_bytes": 87931181,
+          "thread_requests": 118013
+        },
+        "start_counters": {
+          "cycles": 58151680,
+          "instructions": 241855388
+        },
+        "start_ns": 15135333,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58132972,
+          "global_requested_bytes": 88217681,
+          "global_requests": 118027,
+          "thread_freed_bytes": 58132972,
+          "thread_requested_bytes": 88216957,
+          "thread_requests": 118021
+        },
+        "end_counters": {
+          "cycles": 58498960,
+          "instructions": 243163576
+        },
+        "end_ns": 15230458,
+        "end_process_counters": {
+          "cycles": 64662132,
+          "instructions": 258720613
+        },
+        "operation": 3,
+        "site": 1622,
+        "stage": "coarse_checkpoint",
+        "start_allocations": {
+          "global_freed_bytes": 58132972,
+          "global_requested_bytes": 88217681,
+          "global_requests": 118027,
+          "thread_freed_bytes": 58132972,
+          "thread_requested_bytes": 88216957,
+          "thread_requests": 118021
+        },
+        "start_counters": {
+          "cycles": 58498960,
+          "instructions": 243163576
+        },
+        "start_ns": 15230458,
+        "start_process_counters": {
+          "cycles": 64662132,
+          "instructions": 258720613
+        },
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58133676,
+          "global_requested_bytes": 89302241,
+          "global_requests": 118091,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 406728,
+          "thread_requests": 20
+        },
+        "end_counters": {
+          "cycles": 140588,
+          "instructions": 177528
+        },
+        "end_ns": 15305583,
+        "end_process_counters": null,
+        "operation": 1,
+        "site": 0,
+        "stage": "session_setup",
+        "start_allocations": {
+          "global_freed_bytes": 58132996,
+          "global_requested_bytes": 88237777,
+          "global_requests": 118057,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 200,
+          "thread_requests": 1
+        },
+        "start_counters": {
+          "cycles": 35993,
+          "instructions": 38845
+        },
+        "start_ns": 15274292,
+        "start_process_counters": null,
+        "thread": 2
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58135548,
+          "global_requested_bytes": 89803337,
+          "global_requests": 118136,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 406728,
+          "thread_requests": 20
+        },
+        "end_counters": {
+          "cycles": 209312,
+          "instructions": 269435
+        },
+        "end_ns": 15340417,
+        "end_process_counters": null,
+        "operation": 1,
+        "site": 0,
+        "stage": "session_setup",
+        "start_allocations": {
+          "global_freed_bytes": 58133676,
+          "global_requested_bytes": 88808089,
+          "global_requests": 118074,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 200,
+          "thread_requests": 1
+        },
+        "start_counters": {
+          "cycles": 31977,
+          "instructions": 39356
+        },
+        "start_ns": 15291417,
+        "start_process_counters": null,
+        "thread": 5
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58137420,
+          "global_requested_bytes": 89878385,
+          "global_requests": 118146,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 406728,
+          "thread_requests": 20
+        },
+        "end_counters": {
+          "cycles": 256587,
+          "instructions": 259449
+        },
+        "end_ns": 15343042,
+        "end_process_counters": null,
+        "operation": 1,
+        "site": 0,
+        "stage": "session_setup",
+        "start_allocations": {
+          "global_freed_bytes": 58133652,
+          "global_requested_bytes": 88477113,
+          "global_requests": 118064,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 200,
+          "thread_requests": 1
+        },
+        "start_counters": {
+          "cycles": 35154,
+          "instructions": 45944
+        },
+        "start_ns": 15280417,
+        "start_process_counters": null,
+        "thread": 3
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58139708,
+          "global_requested_bytes": 89974977,
+          "global_requests": 118164,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 406728,
+          "thread_requests": 20
+        },
+        "end_counters": {
+          "cycles": 267871,
+          "instructions": 266620
+        },
+        "end_ns": 15351417,
+        "end_process_counters": null,
+        "operation": 1,
+        "site": 0,
+        "stage": "session_setup",
+        "start_allocations": {
+          "global_freed_bytes": 58133676,
+          "global_requested_bytes": 88588777,
+          "global_requests": 118069,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 200,
+          "thread_requests": 1
+        },
+        "start_counters": {
+          "cycles": 28764,
+          "instructions": 38634
+        },
+        "start_ns": 15284375,
+        "start_process_counters": null,
+        "thread": 4
+      },
+      {
+        "close_site": 2128,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58142828,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 2312,
+          "thread_requested_bytes": 466320,
+          "thread_requests": 40
+        },
+        "end_counters": {
+          "cycles": 1109966,
+          "instructions": 3191190
+        },
+        "end_ns": 15572083,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 1645,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 58135548,
+          "global_requested_bytes": 89728761,
+          "global_requests": 118128,
+          "thread_freed_bytes": 1896,
+          "thread_requested_bytes": 465856,
+          "thread_requests": 34
+        },
+        "start_counters": {
+          "cycles": 252783,
+          "instructions": 411623
+        },
+        "start_ns": 15336042,
+        "start_process_counters": null,
+        "thread": 2
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58146948,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 6432,
+          "thread_requested_bytes": 466320,
+          "thread_requests": 40
+        },
+        "end_counters": {
+          "cycles": 1129352,
+          "instructions": 3252660
+        },
+        "end_ns": 15577375,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 1622,
+        "stage": "generated_entry",
+        "start_allocations": {
+          "global_freed_bytes": 58135548,
+          "global_requested_bytes": 89302481,
+          "global_requests": 118092,
+          "thread_freed_bytes": 1896,
+          "thread_requested_bytes": 406968,
+          "thread_requests": 21
+        },
+        "start_counters": {
+          "cycles": 149376,
+          "instructions": 190907
+        },
+        "start_ns": 15307708,
+        "start_process_counters": null,
+        "thread": 2
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58553916,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 413400,
+          "thread_requested_bytes": 466320,
+          "thread_requests": 40
+        },
+        "end_counters": {
+          "cycles": 1155032,
+          "instructions": 3306201
+        },
+        "end_ns": 15584458,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "worker",
+        "start_allocations": {
+          "global_freed_bytes": 58132996,
+          "global_requested_bytes": 88237777,
+          "global_requests": 118057,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 200,
+          "thread_requests": 1
+        },
+        "start_counters": {
+          "cycles": 29952,
+          "instructions": 21823
+        },
+        "start_ns": 15272375,
+        "start_process_counters": null,
+        "thread": 2
+      },
+      {
+        "close_site": 2128,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58558948,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 2312,
+          "thread_requested_bytes": 466272,
+          "thread_requests": 39
+        },
+        "end_counters": {
+          "cycles": 1215598,
+          "instructions": 3146491
+        },
+        "end_ns": 15607000,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 1645,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 58141580,
+          "global_requested_bytes": 90084521,
+          "global_requests": 118184,
+          "thread_freed_bytes": 1896,
+          "thread_requested_bytes": 465856,
+          "thread_requests": 34
+        },
+        "start_counters": {
+          "cycles": 392116,
+          "instructions": 483583
+        },
+        "start_ns": 15380000,
+        "start_process_counters": null,
+        "thread": 3
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58563068,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 6432,
+          "thread_requested_bytes": 466272,
+          "thread_requests": 39
+        },
+        "end_counters": {
+          "cycles": 1234222,
+          "instructions": 3207956
+        },
+        "end_ns": 15611875,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 1622,
+        "stage": "generated_entry",
+        "start_allocations": {
+          "global_freed_bytes": 58139708,
+          "global_requested_bytes": 89878937,
+          "global_requests": 118151,
+          "thread_freed_bytes": 1896,
+          "thread_requested_bytes": 406968,
+          "thread_requests": 21
+        },
+        "start_counters": {
+          "cycles": 266175,
+          "instructions": 272975
+        },
+        "start_ns": 15345458,
+        "start_process_counters": null,
+        "thread": 3
+      },
+      {
+        "close_site": 2128,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58675964,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 2312,
+          "thread_requested_bytes": 466272,
+          "thread_requests": 39
+        },
+        "end_counters": {
+          "cycles": 1226555,
+          "instructions": 3202561
+        },
+        "end_ns": 15615083,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 1645,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 58141996,
+          "global_requested_bytes": 90093409,
+          "global_requests": 118196,
+          "thread_freed_bytes": 1896,
+          "thread_requested_bytes": 465856,
+          "thread_requests": 34
+        },
+        "start_counters": {
+          "cycles": 393346,
+          "instructions": 490565
+        },
+        "start_ns": 15385667,
+        "start_process_counters": null,
+        "thread": 4
+      },
+      {
+        "close_site": 2128,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58914236,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 2312,
+          "thread_requested_bytes": 466272,
+          "thread_requests": 39
+        },
+        "end_counters": {
+          "cycles": 1223851,
+          "instructions": 3118685
+        },
+        "end_ns": 15619458,
+        "end_process_counters": null,
+        "operation": 18446744073709551608,
+        "site": 1645,
+        "stage": "native_body",
+        "start_allocations": {
+          "global_freed_bytes": 58142412,
+          "global_requested_bytes": 90102297,
+          "global_requests": 118208,
+          "thread_freed_bytes": 1896,
+          "thread_requested_bytes": 465856,
+          "thread_requests": 34
+        },
+        "start_counters": {
+          "cycles": 422964,
+          "instructions": 510019
+        },
+        "start_ns": 15398917,
+        "start_process_counters": null,
+        "thread": 5
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58918356,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 6432,
+          "thread_requested_bytes": 466272,
+          "thread_requests": 39
+        },
+        "end_counters": {
+          "cycles": 1247689,
+          "instructions": 3264069
+        },
+        "end_ns": 15620875,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 1622,
+        "stage": "generated_entry",
+        "start_allocations": {
+          "global_freed_bytes": 58141580,
+          "global_requested_bytes": 89975217,
+          "global_requests": 118165,
+          "thread_freed_bytes": 1896,
+          "thread_requested_bytes": 406968,
+          "thread_requests": 21
+        },
+        "start_counters": {
+          "cycles": 280539,
+          "instructions": 280443
+        },
+        "start_ns": 15354708,
+        "start_process_counters": null,
+        "thread": 4
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 58991524,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 413400,
+          "thread_requested_bytes": 466272,
+          "thread_requests": 39
+        },
+        "end_counters": {
+          "cycles": 1269647,
+          "instructions": 3260250
+        },
+        "end_ns": 15621625,
+        "end_process_counters": null,
+        "operation": 1,
+        "site": 0,
+        "stage": "worker",
+        "start_allocations": {
+          "global_freed_bytes": 58133044,
+          "global_requested_bytes": 88457089,
+          "global_requests": 118062,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 200,
+          "thread_requests": 1
+        },
+        "start_counters": {
+          "cycles": 28820,
+          "instructions": 28922
+        },
+        "start_ns": 15278375,
+        "start_process_counters": null,
+        "thread": 3
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 59095964,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 6432,
+          "thread_requested_bytes": 466272,
+          "thread_requests": 39
+        },
+        "end_counters": {
+          "cycles": 1239574,
+          "instructions": 3180316
+        },
+        "end_ns": 15623750,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 1622,
+        "stage": "generated_entry",
+        "start_allocations": {
+          "global_freed_bytes": 58137420,
+          "global_requested_bytes": 89878385,
+          "global_requests": 118146,
+          "thread_freed_bytes": 1896,
+          "thread_requested_bytes": 406968,
+          "thread_requests": 21
+        },
+        "start_counters": {
+          "cycles": 216298,
+          "instructions": 282835
+        },
+        "start_ns": 15342125,
+        "start_process_counters": null,
+        "thread": 5
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 59682588,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 413400,
+          "thread_requested_bytes": 466272,
+          "thread_requests": 39
+        },
+        "end_counters": {
+          "cycles": 1281261,
+          "instructions": 3323533
+        },
+        "end_ns": 15630125,
+        "end_process_counters": null,
+        "operation": 2,
+        "site": 0,
+        "stage": "worker",
+        "start_allocations": {
+          "global_freed_bytes": 58133652,
+          "global_requested_bytes": 88536793,
+          "global_requests": 118067,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 200,
+          "thread_requests": 1
+        },
+        "start_counters": {
+          "cycles": 21960,
+          "instructions": 21612
+        },
+        "start_ns": 15282208,
+        "start_process_counters": null,
+        "thread": 4
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 59801796,
+          "global_requested_bytes": 90102713,
+          "global_requests": 118213,
+          "thread_freed_bytes": 413400,
+          "thread_requested_bytes": 466272,
+          "thread_requests": 39
+        },
+        "end_counters": {
+          "cycles": 1271864,
+          "instructions": 3243297
+        },
+        "end_ns": 15632625,
+        "end_process_counters": null,
+        "operation": 3,
+        "site": 0,
+        "stage": "worker",
+        "start_allocations": {
+          "global_freed_bytes": 58133676,
+          "global_requested_bytes": 88648457,
+          "global_requests": 118072,
+          "thread_freed_bytes": 24,
+          "thread_requested_bytes": 200,
+          "thread_requests": 1
+        },
+        "start_counters": {
+          "cycles": 25328,
+          "instructions": 22334
+        },
+        "start_ns": 15289333,
+        "start_process_counters": null,
+        "thread": 5
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 60168092,
+          "global_requested_bytes": 90453217,
+          "global_requests": 118222,
+          "thread_freed_bytes": 58495324,
+          "thread_requested_bytes": 88587357,
+          "thread_requests": 118059
+        },
+        "end_counters": {
+          "cycles": 58835033,
+          "instructions": 243644428
+        },
+        "end_ns": 15662208,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "generated_entry",
+        "start_allocations": {
+          "global_freed_bytes": 57299175,
+          "global_requested_bytes": 84052422,
+          "global_requests": 117210,
+          "thread_freed_bytes": 57299175,
+          "thread_requested_bytes": 84051698,
+          "thread_requests": 117204
+        },
+        "start_counters": {
+          "cycles": 53927234,
+          "instructions": 226267100
+        },
+        "start_ns": 14021000,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 63912482,
+          "global_requested_bytes": 90453217,
+          "global_requests": 118222,
+          "thread_freed_bytes": 62239714,
+          "thread_requested_bytes": 88587357,
+          "thread_requests": 118059
+        },
+        "end_counters": {
+          "cycles": 58894964,
+          "instructions": 243805190
+        },
+        "end_ns": 15678333,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "execute_prepared_after_setup",
+        "start_allocations": {
+          "global_freed_bytes": 57299175,
+          "global_requested_bytes": 84052422,
+          "global_requests": 117210,
+          "thread_freed_bytes": 57299175,
+          "thread_requested_bytes": 84051698,
+          "thread_requests": 117204
+        },
+        "start_counters": {
+          "cycles": 53888118,
+          "instructions": 226205069
+        },
+        "start_ns": 14010667,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 63912482,
+          "global_requested_bytes": 90453217,
+          "global_requests": 118222,
+          "thread_freed_bytes": 62239714,
+          "thread_requested_bytes": 88587357,
+          "thread_requests": 118059
+        },
+        "end_counters": {
+          "cycles": 58896144,
+          "instructions": 243807277
+        },
+        "end_ns": 15678667,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "evaluate",
+        "start_allocations": {
+          "global_freed_bytes": 57299175,
+          "global_requested_bytes": 83637574,
+          "global_requests": 117103,
+          "thread_freed_bytes": 57299175,
+          "thread_requested_bytes": 83636850,
+          "thread_requests": 117097
+        },
+        "start_counters": {
+          "cycles": 53764899,
+          "instructions": 225953895
+        },
+        "start_ns": 13978042,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 63912482,
+          "global_requested_bytes": 90813217,
+          "global_requests": 118223,
+          "thread_freed_bytes": 62239714,
+          "thread_requested_bytes": 88947357,
+          "thread_requests": 118060
+        },
+        "end_counters": {
+          "cycles": 58935126,
+          "instructions": 243978723
+        },
+        "end_ns": 15689042,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "result_construction",
+        "start_allocations": {
+          "global_freed_bytes": 63912482,
+          "global_requested_bytes": 90453217,
+          "global_requests": 118222,
+          "thread_freed_bytes": 62239714,
+          "thread_requested_bytes": 88587357,
+          "thread_requests": 118059
+        },
+        "start_counters": {
+          "cycles": 58896925,
+          "instructions": 243809490
+        },
+        "start_ns": 15678708,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 63912482,
+          "global_requested_bytes": 90813217,
+          "global_requests": 118223,
+          "thread_freed_bytes": 62239714,
+          "thread_requested_bytes": 88947357,
+          "thread_requests": 118060
+        },
+        "end_counters": {
+          "cycles": 58936327,
+          "instructions": 243981195
+        },
+        "end_ns": 15693167,
+        "end_process_counters": {
+          "cycles": 70215093,
+          "instructions": 272862220
+        },
+        "operation": 0,
+        "site": 0,
+        "stage": "post_JSON",
+        "start_allocations": {
+          "global_freed_bytes": 56816463,
+          "global_requested_bytes": 82995406,
+          "global_requests": 117074,
+          "thread_freed_bytes": 56816463,
+          "thread_requested_bytes": 82994682,
+          "thread_requests": 117068
+        },
+        "start_counters": {
+          "cycles": 53122465,
+          "instructions": 223308105
+        },
+        "start_ns": 13808042,
+        "start_process_counters": {
+          "cycles": 59286216,
+          "instructions": 238865157
+        },
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 63915231,
+          "global_requested_bytes": 90817054,
+          "global_requests": 118249,
+          "thread_freed_bytes": 62242463,
+          "thread_requested_bytes": 88951194,
+          "thread_requests": 118086
+        },
+        "end_counters": {
+          "cycles": 59023618,
+          "instructions": 244091995
+        },
+        "end_ns": 15712917,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "stdout_report",
+        "start_allocations": {
+          "global_freed_bytes": 63912482,
+          "global_requested_bytes": 90813217,
+          "global_requests": 118223,
+          "thread_freed_bytes": 62239714,
+          "thread_requested_bytes": 88947357,
+          "thread_requests": 118060
+        },
+        "start_counters": {
+          "cycles": 58951733,
+          "instructions": 244002139
+        },
+        "start_ns": 15693208,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 63923423,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 62250655,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "end_counters": {
+          "cycles": 88304094,
+          "instructions": 351689055
+        },
+        "end_ns": 23033042,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "json_output",
+        "start_allocations": {
+          "global_freed_bytes": 63915231,
+          "global_requested_bytes": 90817054,
+          "global_requests": 118249,
+          "thread_freed_bytes": 62242463,
+          "thread_requested_bytes": 88951194,
+          "thread_requests": 118086
+        },
+        "start_counters": {
+          "cycles": 59024531,
+          "instructions": 244094207
+        },
+        "start_ns": 15712958,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 64483903,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 62811135,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "end_counters": {
+          "cycles": 88312520,
+          "instructions": 351701956
+        },
+        "end_ns": 23034917,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "output_teardown",
+        "start_allocations": {
+          "global_freed_bytes": 63923423,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 62250655,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "start_counters": {
+          "cycles": 88306273,
+          "instructions": 351691267
+        },
+        "start_ns": 23033208,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 64723903,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 63051135,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "end_counters": {
+          "cycles": 88315304,
+          "instructions": 351709529
+        },
+        "end_ns": 23035583,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "view_teardown",
+        "start_allocations": {
+          "global_freed_bytes": 64483903,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 62811135,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "start_counters": {
+          "cycles": 88313290,
+          "instructions": 351704168
+        },
+        "start_ns": 23034958,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 65259809,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 63587041,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "end_counters": {
+          "cycles": 88997620,
+          "instructions": 356355564
+        },
+        "end_ns": 23206375,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "input_teardown",
+        "start_allocations": {
+          "global_freed_bytes": 64723903,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 63051135,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "start_counters": {
+          "cycles": 88316047,
+          "instructions": 351711741
+        },
+        "start_ns": 23035625,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 72174718,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 70501950,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "end_counters": {
+          "cycles": 90484803,
+          "instructions": 361204618
+        },
+        "end_ns": 23581917,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "program_teardown",
+        "start_allocations": {
+          "global_freed_bytes": 65259809,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 63587041,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "start_counters": {
+          "cycles": 88998387,
+          "instructions": 356357776
+        },
+        "start_ns": 23206417,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 72179986,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 70507218,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "end_counters": {
+          "cycles": 90501068,
+          "instructions": 361244279
+        },
+        "end_ns": 23586042,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "catalog_teardown",
+        "start_allocations": {
+          "global_freed_bytes": 72174718,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 70501950,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "start_counters": {
+          "cycles": 90485648,
+          "instructions": 361206830
+        },
+        "start_ns": 23581958,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 72988351,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 71315583,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "end_counters": {
+          "cycles": 90948845,
+          "instructions": 363439949
+        },
+        "end_ns": 23699083,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "posts_teardown",
+        "start_allocations": {
+          "global_freed_bytes": 72179986,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 70507218,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "start_counters": {
+          "cycles": 90501821,
+          "instructions": 361246491
+        },
+        "start_ns": 23586042,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 72988407,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 71315639,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "end_counters": {
+          "cycles": 90950471,
+          "instructions": 363444224
+        },
+        "end_ns": 23699500,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "memory_teardown",
+        "start_allocations": {
+          "global_freed_bytes": 72988351,
+          "global_requested_bytes": 90825246,
+          "global_requests": 118250,
+          "thread_freed_bytes": 71315583,
+          "thread_requested_bytes": 88959386,
+          "thread_requests": 118087
+        },
+        "start_counters": {
+          "cycles": 90949606,
+          "instructions": 363442162
+        },
+        "start_ns": 23699125,
+        "start_process_counters": null,
+        "thread": 1
+      },
+      {
+        "close_site": null,
+        "closed": true,
+        "end_allocations": {
+          "global_freed_bytes": 72988969,
+          "global_requested_bytes": 90825651,
+          "global_requests": 118252,
+          "thread_freed_bytes": 71316201,
+          "thread_requested_bytes": 88959791,
+          "thread_requests": 118089
+        },
+        "end_counters": {
+          "cycles": 90955303,
+          "instructions": 363450658
+        },
+        "end_ns": 23700708,
+        "end_process_counters": null,
+        "operation": 0,
+        "site": 0,
+        "stage": "driver_total",
+        "start_allocations": {
+          "global_freed_bytes": 71,
+          "global_requested_bytes": 17835331,
+          "global_requests": 14,
+          "thread_freed_bytes": 71,
+          "thread_requested_bytes": 17834607,
+          "thread_requests": 8
+        },
+        "start_counters": {
+          "cycles": 76635,
+          "instructions": 118403
+        },
+        "start_ns": 833,
+        "start_process_counters": null,
+        "thread": 1
+      }
+    ],
+    "helper_detail": false,
+    "promotion_timing_eligible": false,
+    "scope": "Elapsed intervals include scheduling and diagnostic overhead. Optional hardware deltas count only each calling thread, including diagnostic probes; different thread instruction totals may be added but overlapping elapsed durations may not. Native-body intervals span successful loan-open return through loan-close entry, including the unchanged generated dispatcher. Helpers may include worker waits. Nested intervals require union/subtraction before attribution.",
+    "unmatched_ends": 0
+  },
+  "main_thread": 1
+}

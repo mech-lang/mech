@@ -1,0 +1,10 @@
+{
+  "original": "/private/tmp/mech-related-generic-native-dictionary-20261108/native-tests-v2/gpu-native-tests",
+  "archive": "/private/tmp/mech-related-generic-native-dictionary-20261108/native-tests-v2/gpu-native-tests.qualified.gz",
+  "original_sha256": "0bb00f0188362c373a6c670441c25745d7f6e7afff91e8805e81cfd898986f08",
+  "original_bytes": 136438240,
+  "mode": 33261,
+  "verified_lossless": true,
+  "tests": "9 native dictionary/storage/proof + 3 actual-source/full-input tests; all passed",
+  "measurement_runner": false
+}

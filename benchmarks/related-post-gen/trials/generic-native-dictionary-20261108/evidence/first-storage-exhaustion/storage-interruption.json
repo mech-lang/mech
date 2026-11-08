@@ -1,0 +1,8 @@
+{
+  "reason": "Storage exhaustion interrupted first latency cohort; incomplete and ineligible for promotion. All549 partial rows retained; no full benchmark statistic or selected-speed claim.",
+  "samples": 549,
+  "complete_31_sample_cohort": false,
+  "recorded_utc": "2026-11-08T20:52:45.709124+00:00",
+  "source_and_protocol_unchanged": true,
+  "retry_seeds_unchanged": true
+}

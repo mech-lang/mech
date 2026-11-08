@@ -1,0 +1,62 @@
+[
+  {
+    "original": "/private/tmp/mech-related-borrowed-map-key-views-regressions-20261108-v1/scalar",
+    "archive": "/private/tmp/mech-related-borrowed-map-key-views-regressions-20261108-v1/scalar.qualified.gz",
+    "original_bytes": 109033056,
+    "archive_bytes": 15147009,
+    "mode": 493,
+    "sha256": "1f4979d0042c5c43fd0c22a096260d129f166d926edfb56d28cb5fc48a746184",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-borrowed-matrix-map-keys-regressions-20261108-v2/scalar",
+    "archive": "/private/tmp/mech-related-borrowed-matrix-map-keys-regressions-20261108-v2/scalar.qualified.gz",
+    "original_bytes": 108938144,
+    "archive_bytes": 15112400,
+    "mode": 493,
+    "sha256": "ec1166a36f6f72338f7db53d47f21a7f1f7fa9d32f3d059c92519ee5cfb8f753",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-borrowed-matrix-map-keys-regressions-20261108-v1/scalar",
+    "archive": "/private/tmp/mech-related-borrowed-matrix-map-keys-regressions-20261108-v1/scalar.qualified.gz",
+    "original_bytes": 108937168,
+    "archive_bytes": 15111912,
+    "mode": 493,
+    "sha256": "db913688903770b2ddaeec74ddd4da1b0f76e02f730c8c25217ef63e40cde25a",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-native-string-classification-reuse-regressions-20261108-v1/scalar",
+    "archive": "/private/tmp/mech-related-native-string-classification-reuse-regressions-20261108-v1/scalar.qualified.gz",
+    "original_bytes": 108914192,
+    "archive_bytes": 15105364,
+    "mode": 493,
+    "sha256": "78b3f8a8703f1b05fe0c6d503a3d57b7f705a7d072cee87e115acc593119e46b",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-modular-unsigned-ranges-regressions-20261108-v1/scalar",
+    "archive": "/private/tmp/mech-related-modular-unsigned-ranges-regressions-20261108-v1/scalar.qualified.gz",
+    "original_bytes": 108897680,
+    "archive_bytes": 15103555,
+    "mode": 493,
+    "sha256": "d46b3ee2aba7b8933442186f6d3acac519161c36fc28176005146d067e1a676b",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  },
+  {
+    "original": "/private/tmp/mech-related-closed-composite-constructors-regressions-20261108-v1/scalar",
+    "archive": "/private/tmp/mech-related-closed-composite-constructors-regressions-20261108-v1/scalar.qualified.gz",
+    "original_bytes": 108892400,
+    "archive_bytes": 15105625,
+    "mode": 493,
+    "sha256": "1d04806348868aea5b3d4de0577f21091ad6bd0787be8f044724f1014186b712",
+    "losslessly_verified": true,
+    "scope": "Completed scalar/DEFLATE functional-regression executable; primary latency/resource runners untouched"
+  }
+]

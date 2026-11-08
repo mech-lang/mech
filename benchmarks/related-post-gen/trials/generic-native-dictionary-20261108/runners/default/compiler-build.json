@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-generic-native-dictionary-opt-20261108-v6/build.json",
+    "--source",
+    "/private/tmp/mech-related-generic-native-dictionary-runners-20261108-v1/compiler-facts.rs",
+    "--out",
+    "/private/tmp/mech-related-generic-native-dictionary-runners-20261108-v1/compiler"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 2.4393222499638796,
+  "stdout": "{\"seconds\": 1.878086500102654, \"exit\": 0}\n",
+  "stderr": ""
+}

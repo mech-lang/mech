@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-generic-native-dictionary-20261108/gpu-storage-tests",
+    "frozen_generic_dictionary",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 0,
+  "seconds": 1.273186500184238,
+  "stdout": "\nrunning 3 tests\ntest native_artifact::program::runtime::maps::string::frozen::tests::frozen_generic_dictionary_late_publication_keeps_spent_prefix_relative_cap_and_intervening_global_work ... ok\ntest native_artifact::program::runtime::maps::string::frozen::tests::frozen_generic_dictionary_moves_all_utf8_keys_and_preserves_values_and_late_canonical_order ... ok\ntest native_artifact::program::runtime::maps::string::frozen::tests::frozen_generic_dictionary_nested_call_keeps_immediate_canonical_path_and_logical_caps ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 968 filtered out; finished in 0.00s\n\n",
+  "stderr": "",
+  "scope": "Storage/API contracts only; native selection disabled; no timing claim"
+}

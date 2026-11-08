@@ -1,0 +1,14 @@
+from pathlib import Path
+import importlib.util,json,os,subprocess,time
+p=Path(__file__).parent;s=Path('/private/tmp/mech-related-generic-native-dictionary-compiler-20261108');t=p/'native-tests-v3'
+def read(x):return json.loads(Path(x).read_text())
+assert read(p/'expanded-collection-parent-attribution.json')['same_five_failures']
+cmd=[str(t/'gpu-native-tests'),'native_string_classes','unsigned_guard_facts::','modular_ranges','codegen::utf8_lookup::','codegen::utf8_histogram::','compiled_histogram_tests','program::protocol::','--test-threads=1']
+started=time.monotonic();r=subprocess.run(cmd,capture_output=True,text=True);(p/'classification-UTF8-range-and-protocol-required.json').write_text(json.dumps(dict(command=cmd,exit=r.returncode,seconds=time.monotonic()-started,stdout=r.stdout,stderr=r.stderr,scope='Parent-required classification/UTF8/protocol selection, expanded67-test suite and its five identically failing IR303 tests retained separately'),indent=2)+'\n');assert r.returncode==0,r.stdout+r.stderr
+spec=importlib.util.spec_from_file_location('h','/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-compiler.py');h=importlib.util.module_from_spec(spec);spec.loader.exec_module(h);files=h.source_inventory(s)
+for f in [p/'native-connection-source-inventory-v3.json',Path('/private/tmp/mech-related-generic-native-dictionary-opt-20261108-v6/source-inventory.json'),Path('/private/tmp/mech-related-generic-native-dictionary-runners-20261108-v1/runtime/source-inventory.json')]:assert read(f)['files']==files,str(f)
+ci=read(p/'ci-inventory-audit.json');assert ci['executed_passed']==460 and ci['all451IR303names_retained']
+for f in ['actual-source-proofs','actual-full-input-path','all-retained-map-contracts','image-and-caller-geometry-tests']:assert read(p/(f+'.json'))['exit']==0
+assert read(p/'control-parent-parity.json')['all_nontiming_fields_exact']
+(p/'qualified-source-inventory.json').write_text(json.dumps(dict(root=str(s),files=files),indent=2)+'\n')
+(p/'GPU-qualification-summary.json').write_text(json.dumps(dict(actual_CI_passed=460,all451IR303names_retained=True,new_contracts=9,retained_map_tests=173,image_and_caller_tests=29,all_parent_required_UTF8_classification_protocol_tests_passed=True,actual_original_and_restored_outputs_exact=True,native_dictionary_publications=1,canonical_dictionary_publications=0,frozen_dictionary_loans=1,fallback_materializations=0,source_inventory_unchanged=True,expanded_collection_suite_passed=62,expanded_collection_suite_preexisting_failures=5,preexisting_attribution=str(p/'expanded-collection-parent-attribution.json'),scalar_DEFLATE_nontiming_cases_exact=133,timers_ineligible=True),indent=2)+'\n');print('IR304 qualified:460 required,173 Map,29 image/caller,9 new contracts;133 scalar/DEFLATE exact;5 identical parent expanded-collection failures retained')

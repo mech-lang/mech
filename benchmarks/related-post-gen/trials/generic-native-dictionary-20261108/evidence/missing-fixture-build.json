@@ -1,0 +1,6 @@
+{
+  "failed_build": "/private/tmp/mech-related-generic-native-dictionary-opt-20261108-v1/build.json",
+  "fixture": "/private/tmp/mech-related-generic-native-dictionary-compiler-20261108/tests/fixtures/resident-ekf/ekf-input-v1.bin",
+  "sha256": "ab901e1d115aa92166dc2a6d45a28732e6a548363b829997aa410ae4c2d77c8b",
+  "correction": "Materialize tracked tests/fixtures in sparse checkout; compiler source unchanged"
+}

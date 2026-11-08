@@ -1,0 +1,38 @@
+{
+  "items": [
+    {
+      "path": "/private/tmp/mech-related-generic-native-dictionary-20261108/native-tests-v3/gpu-native-tests",
+      "archive": "/private/tmp/mech-related-generic-native-dictionary-20261108/native-tests-v3/gpu-native-tests.qualified.gz",
+      "sha256": "a0df7e60dbc7c72d482a7ba98dee837959b333350055da3b6c56d5924ad4b297",
+      "bytes": 136474384,
+      "archive_bytes": 23054892,
+      "mode": 493,
+      "losslessly_verified": true,
+      "scope": "Completed qualification/compiler tool; all actual measurement runners remain raw",
+      "known_expanded_collection_parent_failures": 5
+    },
+    {
+      "path": "/private/tmp/mech-related-generic-native-dictionary-runners-20261108-v1/compiler",
+      "archive": "/private/tmp/mech-related-generic-native-dictionary-runners-20261108-v1/compiler.qualified.gz",
+      "sha256": "2b97c0494ab5dac0f47ee2a49088f5dc030a8f7d8339ba255da55c772cb51132",
+      "bytes": 107672128,
+      "archive_bytes": 14442032,
+      "mode": 493,
+      "losslessly_verified": true,
+      "scope": "Completed qualification/compiler tool; all actual measurement runners remain raw",
+      "known_expanded_collection_parent_failures": null
+    },
+    {
+      "path": "/private/tmp/mech-related-generic-native-dictionary-emission-control-20261108/compiler",
+      "archive": "/private/tmp/mech-related-generic-native-dictionary-emission-control-20261108/compiler.qualified.gz",
+      "sha256": "19265af0e10e67d9cef1715861a9c8693c1d217523a99c8fc2dc95138c2447cf",
+      "bytes": 107672160,
+      "archive_bytes": 14443342,
+      "mode": 493,
+      "losslessly_verified": true,
+      "scope": "Completed qualification/compiler tool; all actual measurement runners remain raw",
+      "known_expanded_collection_parent_failures": null
+    }
+  ],
+  "measurement_runners_untouched": true
+}
