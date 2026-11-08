@@ -1,5 +1,18 @@
 # Native compression milestone
 
+## R207: shared phase and packed-read lowering cuts the complete diagnostic
+
+**Production remains R199 / IR214.** The complete diagnostic now keeps existing numeric proofs/emitters through four typed private-array phases and27 shared word-pack sites, including real reached append growth and current-owner fallback. Natural32 falls **14.451672×→7.053131× Roc**, periodic33 **24.794258×→12.563796×**, repeated32 **23.096531×→11.709860×**. This is an experimental-path improvement, not a new production checkpoint: fresh retained results are **3.359605× /3.554625× /3.055192×** respectively. Eight literals is adverse **2.169183×→2.193750×**, +1.13%, while retained is4.489941×.
+
+All 20 exact streams pass in original/decoded linked images. Seventeen diagnostic medians fall/three rise, geometric−22.164358%; all 20 unchanged 1.05 gates pass against the previous diagnostic, only 14/20 against production. Separate instructions fall45.39% natural /55.03% periodic /54.56% repeated; eight rises5.19%. All 20 diagnostic heap-request/byte/reallocation/incremental-peak medians stay equal. Generated text grows8.316→8.907MB and static native stack envelope78.160→80.000KB. Contrary observations and source/bytecode pins are retained.
+
+8,616 primary complete calls,2,400 separate Mech CPU/heap calls, fresh same-input reference counters across all 20 cases (1,280 events /10,240 verified compressions),8,669 wall-profile calls and20,790 exact-PC calls finish correctly. New diagnostic qualification passes48 real-growth/alias/error/retry controls,1,724 matching controls,40 original/decoded builder cases and 120 complete original/decoded/observed smoke calls.142 inherited resident default-cap denials and the standalone no-pack fallback are explicit; no limits/expected values change. Original/decoded Objects agree exactly. A formatter-only correction reproduces the exact timed Object byte-for-byte.
+
+Large-input diagnostic profiles are98.73–99.21% native-exclusive, yet repeated geometry loads, owner increments/decrements and hot error-origin stack writes survive in its much larger root. This is still slower than retained production on six cases and **not a cost-of-contract floor**. Ordinary exact accounting, precise canonical recovery/publication and external admission restoration remain unfinished, as do the production exclusive-host family ledger and complete initialized-copy census. R205/R206 production experiments stay rejected. No fresh production677-test/260-selection claim is made for this docs-only round; those R206 receipts remain historical.
+
+Next is one bounded current-assembly target: retain a proven last-use owner move or cold error-origin materialization in the diagnostic root, then repeat the same20-case witness before restoring contracts. The compiler source/evidence is archived externally; no production dependency or compiler change is adopted. [All 20 timings, counters, code, failures, skipped coverage, exact patch and verified public replay](native-compact-specializations.md). Existing draft #973 only; ordinary exact-head CI cancelled and automated review requested.
+
+
 
 ## R206: exact exit visits shorten the real loop, but whole-call tradeoff is rejected
 
