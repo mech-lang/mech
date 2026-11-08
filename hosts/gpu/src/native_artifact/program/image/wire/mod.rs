@@ -529,6 +529,14 @@ fn decode_inner<
         }
         derived
     };
+    let generic_dictionary = map_owner_words
+        .as_ref()
+        .map(|owners| {
+            native::program::prepare::generic_dictionary::Layout::derive(&plan, owners, &utf8_reads)
+        })
+        .transpose()
+        .map_err(str::to_owned)?
+        .unwrap_or_default();
     if (image.version >= 7) != w.numeric_maps.is_some() {
         return Err("native descriptor version differs from numeric map inventory".into());
     }
@@ -830,6 +838,7 @@ fn decode_inner<
             borrowed_record_maps,
             matrix_map_keys,
             borrowed_map_keys,
+            generic_dictionary,
             utf8_reads,
             numeric_maps,
             frozen_maps,

@@ -4,6 +4,8 @@
 //! transfers the already filled U64 allocation to the maintained builder.
 use super::*;
 use crate::native_artifact::program::prepare::utf8_reads::Region;
+use crate::native_artifact::program::runtime::maps::owner::generic_dictionary::Dictionary;
+use crate::native_artifact::program::runtime::maps::string::frozen::FrozenStringMap;
 use crate::native_artifact::program::runtime::maps::utf8_read::{
     ADMITTED_CELL_BYTES, Cell, Frame, HASH_OFFSET, HASH_PRIME, Slot,
 };
@@ -38,7 +40,7 @@ pub(super) struct Loan {
     collection: usize,
     iteration: u32,
     source: Value,
-    map_root: Value,
+    map_root: Option<MapBacking>,
     source_handle: NativeValueHandle,
     map_handle: NativeValueHandle,
     slots: Box<[Slot]>,
@@ -51,6 +53,55 @@ pub(super) struct Loan {
     output_reservation: ManagedMemoryReservation,
     _metadata: ManagedMemoryReservation,
     _nodes: ManagedNodeReservation,
+}
+enum MapBacking {
+    Canonical(Value),
+    Frozen(Dictionary),
+}
+enum Table<'a> {
+    Canonical(&'a MapValue),
+    Frozen(&'a FrozenStringMap),
+}
+impl Table<'_> {
+    fn len(&self) -> usize {
+        match self {
+            Self::Canonical(v) => v.entries().len(),
+            Self::Frozen(v) => v.len(),
+        }
+    }
+    fn key_bytes(&self) -> Option<u64> {
+        match self {
+            Self::Canonical(v) => v.entries().iter().try_fold(0u64, |n, e| {
+                let (ValueData::String(k), ValueData::U64(_)) = (e.key().data(), e.value()) else {
+                    return None;
+                };
+                n.checked_add(k.len() as u64)
+            }),
+            Self::Frozen(v) => Some(v.key_bytes()),
+        }
+    }
+    fn each(&self, mut visit: impl FnMut(&str, u64)) -> Result<bool, Error> {
+        match self {
+            Self::Canonical(v) => {
+                for e in v.entries() {
+                    let (ValueData::String(k), ValueData::U64(v)) = (e.key().data(), e.value())
+                    else {
+                        return Ok(false);
+                    };
+                    visit(k, *v)
+                }
+            }
+            Self::Frozen(v) => {
+                for (k, value) in v
+                    .entries()
+                    .map_err(super::super::maps::owner::storage_error)?
+                {
+                    visit(k, value)
+                }
+            }
+        }
+        Ok(true)
+    }
 }
 fn fits(need: u64, cap: Option<u64>) -> bool {
     cap.is_some_and(|cap| need <= cap)
@@ -163,7 +214,12 @@ impl State {
         region: &Region,
         prior: ResourceDemand,
         classified: bool,
+        dictionary: &mut Option<Dictionary>,
     ) -> Result<Option<u64>, Error> {
+        #[cfg(test)]
+        if FORCE_REFUSAL.with(|v| v.get()) {
+            return Ok(None);
+        }
         if self.has_utf8_read() {
             return Err(invalid("overlapping native String lookup collection"));
         }
@@ -213,7 +269,7 @@ impl State {
             return Ok(None);
         }
         if !ctx.arena_entry_is_current(region.source)?
-            || !ctx.arena_entry_is_current(region.map_root)?
+            || (dictionary.is_none() && !ctx.arena_entry_is_current(region.map_root)?)
         {
             return Ok(None);
         }
@@ -226,37 +282,91 @@ impl State {
         {
             return Ok(None);
         }
-        let map_root = ctx.arena_copy_current(region.map_root)?;
-        let map_handle = ctx.arena_current_handle(region.map_root)?;
+        let map_root = if dictionary.is_none() {
+            Some(ctx.arena_copy_current(region.map_root)?)
+        } else {
+            None
+        };
+        let map_handle = if let Some(owner) = dictionary.as_ref() {
+            if owner.value != region.map_root || owner.header != region.header as usize {
+                return Err(invalid("native dictionary differs from lookup source"));
+            }
+            owner
+                .map
+                .check_account(ctx.library())
+                .map_err(super::super::maps::owner::storage_error)?;
+            ctx.arena_check_virtual(owner.handle)?;
+            owner.handle
+        } else {
+            ctx.arena_current_handle(region.map_root)?
+        };
         let source_type = &metadata.types[region.source as usize];
         let map_type = &metadata.types[region.map_root as usize];
         if source.schema() != source_type.schema
             || source.schema_key() != source_type.key
-            || map_root.schema() != map_type.schema
-            || map_root.schema_key() != map_type.key
+            || map_root
+                .as_ref()
+                .is_some_and(|v| v.schema() != map_type.schema || v.schema_key() != map_type.key)
+            || dictionary
+                .as_ref()
+                .is_some_and(|v| v.map.schema() != map_type.schema)
         {
             return Ok(None);
         }
         if source.validate_against(&metadata.schemas).is_err()
-            || map_root.validate_against(&metadata.schemas).is_err()
+            || map_root
+                .as_ref()
+                .is_some_and(|v| v.validate_against(&metadata.schemas).is_err())
         {
             return Ok(None);
         }
-        let Some(table) = map(&map_root, region.map_ordinal) else {
-            return Ok(None);
+        let table = if let Some(owner) = dictionary.as_ref() {
+            Table::Frozen(&owner.map)
+        } else {
+            let Some(table) = map(
+                map_root
+                    .as_ref()
+                    .ok_or_else(|| invalid("lookup lost canonical owner"))?,
+                region.map_ordinal,
+            ) else {
+                return Ok(None);
+            };
+            Table::Canonical(table)
         };
         let memory = ctx.library().memory_budget();
         let Some(source_bytes) = source.memory_budget_retained_bytes(&memory) else {
             return Ok(None);
         };
-        let Some(map_bytes) = map_root.memory_budget_retained_bytes(&memory) else {
-            return Ok(None);
+        let map_bytes = if let Some(owner) = dictionary.as_ref() {
+            owner
+                .map
+                .retained_bytes()
+                .map_err(super::super::maps::owner::storage_error)?
+        } else {
+            let Some(n) = map_root
+                .as_ref()
+                .and_then(|v| v.memory_budget_retained_bytes(&memory))
+            else {
+                return Ok(None);
+            };
+            n
         };
+        let map_logical_bytes = dictionary
+            .as_ref()
+            .map_or(map_bytes, |v| v.map.logical_bytes().max(map_bytes));
         let Some(source_nodes) = source.memory_budget_retained_nodes(&memory) else {
             return Ok(None);
         };
-        let Some(map_nodes) = map_root.memory_budget_retained_nodes(&memory) else {
-            return Ok(None);
+        let map_nodes = if let Some(owner) = dictionary.as_ref() {
+            owner.map.retained_nodes()
+        } else {
+            let Some(n) = map_root
+                .as_ref()
+                .and_then(|v| v.memory_budget_retained_nodes(&memory))
+            else {
+                return Ok(None);
+            };
+            n
         };
         let count = strings.len();
         let classes = match self.native_read.as_deref() {
@@ -274,7 +384,6 @@ impl State {
         let query_count = classes.map_or(count, |cache| cache.first_rows.len());
         let use_classes = classes.is_some();
         let Some(capacity) = table
-            .entries()
             .len()
             .checked_mul(2)
             .and_then(|n| n.max(4).checked_next_power_of_two())
@@ -297,7 +406,7 @@ impl State {
             .and_then(|n| n.checked_add(metadata_bytes.checked_add(output_bytes)?.checked_mul(16)?))
             .and_then(|n| {
                 n.checked_add(
-                    (table.entries().len() as u64)
+                    (table.len() as u64)
                         .checked_mul(capacity as u64)?
                         .checked_mul(64)?,
                 )
@@ -355,13 +464,7 @@ impl State {
         if rows.checked_mul(columns) != Some(source_count) {
             return Ok(None);
         }
-        let Some(stored_bytes) = table.entries().iter().try_fold(0u64, |sum, entry| {
-            let (ValueData::String(key), ValueData::U64(_)) = (entry.key().data(), entry.value())
-            else {
-                return None;
-            };
-            sum.checked_add(key.len() as u64)
-        }) else {
+        let Some(stored_bytes) = table.key_bytes() else {
             return Ok(None);
         };
         let Some(key_bytes) = strings
@@ -479,7 +582,7 @@ impl State {
         else {
             return Ok(None);
         };
-        let Some(max_call_clone) = map_bytes.checked_add(maximum_key) else {
+        let Some(max_call_clone) = map_logical_bytes.checked_add(maximum_key) else {
             return Ok(None);
         };
         let limits = ctx.limits();
@@ -487,7 +590,7 @@ impl State {
             || !fits(compute, limits.max_compute_work)
             || !fits(max_map_compute, limits.max_compute_work)
             || !fits(cloned.max(max_call_clone), limits.max_cloned_bytes)
-            || !fits(output_bound.max(map_bytes), limits.max_output_bytes)
+            || !fits(output_bound.max(map_logical_bytes), limits.max_output_bytes)
             || !fits(temp, limits.max_temporary_bytes)
             || !fits(nodes, limits.max_retained_nodes)
             || !fits(preflight_compare, limits.max_comparison_work)
@@ -542,12 +645,7 @@ impl State {
             return Ok(None);
         };
         output.resize(count, 0);
-        for entry in table.entries() {
-            let (ValueData::String(key), ValueData::U64(value)) =
-                (entry.key().data(), entry.value())
-            else {
-                return Ok(None);
-            };
+        if !table.each(|key, value| {
             let code = hash(key.as_bytes());
             let mut at = code as usize & (capacity - 1);
             while slots[at].occupied != 0 {
@@ -556,10 +654,12 @@ impl State {
             slots[at] = Slot {
                 address: key.as_ptr() as u64,
                 bytes: key.len() as u64,
-                value: *value,
+                value,
                 hash: code,
                 occupied: 1,
             };
+        })? {
+            return Ok(None);
         }
         let classes = match self.native_read.as_deref() {
             Some(Storage::Classes(cache)) if use_classes => Some(cache),
@@ -633,12 +733,12 @@ impl State {
         let class_bytes = classes
             .as_ref()
             .map_or(0, |cache| cache.reservation.capacity_bytes());
-        let Some(loan) = boxed(Storage::Loan(Loan {
+        let Some(mut loan) = boxed(Storage::Loan(Loan {
             header: region.header as usize,
             collection: id,
             iteration: region.iteration,
             source,
-            map_root,
+            map_root: None,
             source_handle,
             map_handle,
             slots,
@@ -658,6 +758,15 @@ impl State {
                 .ok_or_else(|| invalid("String classification allocation retirement underflow"))?;
             return Ok(None);
         };
+        let Storage::Loan(inner) = loan.as_mut() else {
+            unreachable!()
+        };
+        inner.map_root = Some(match dictionary.take() {
+            Some(owner) => MapBacking::Frozen(owner),
+            None => {
+                MapBacking::Canonical(map_root.ok_or_else(|| invalid("lookup lost admitted map"))?)
+            }
+        });
         self.native_read = Some(loan);
         Ok(Some(pointer))
     }
@@ -667,12 +776,13 @@ impl State {
         site: usize,
         pointer: u64,
         status: u64,
+        returned: &mut Option<Dictionary>,
     ) -> Result<bool, Error> {
         let loan = self
             .native_read
             .take()
             .ok_or_else(|| invalid("native String lookup completion has no loan"))?;
-        let Storage::Loan(loan) = *loan else {
+        let Storage::Loan(mut loan) = *loan else {
             return Err(invalid("String lookup finished an unused classification"));
         };
         // Retire the transferred cache from collection backing on every exit,
@@ -697,13 +807,34 @@ impl State {
         if !ctx
             .arena_get(loan.source_handle)?
             .shares_frozen_storage(&loan.source)
-            || !ctx
-                .arena_get(loan.map_handle)?
-                .shares_frozen_storage(&loan.map_root)
         {
             return Err(invalid("native String lookup source generation changed"));
         }
+        match loan
+            .map_root
+            .as_ref()
+            .ok_or_else(|| invalid("lookup loan lacks dictionary owner"))?
+        {
+            MapBacking::Canonical(value) => {
+                if !ctx.arena_get(loan.map_handle)?.shares_frozen_storage(value) {
+                    return Err(invalid("native lookup map generation changed"));
+                }
+            }
+            MapBacking::Frozen(owner) => {
+                if owner.handle != loan.map_handle {
+                    return Err(invalid("dictionary handle changed"));
+                }
+                ctx.arena_check_virtual(loan.map_handle)?;
+            }
+        }
         if status != 0 {
+            let backing = loan.map_root.take();
+            // All generated pointers, temporary output and its claims retire
+            // before the caller can materialize a returned dictionary owner.
+            drop(loan);
+            if let Some(MapBacking::Frozen(owner)) = backing {
+                *returned = Some(owner)
+            }
             return Ok(false);
         }
         if loan.frame.next != loan.frame.count
@@ -753,5 +884,18 @@ impl State {
         builder.payload_bytes = bytes;
         self.live_bytes = add(old, bytes)?;
         Ok(true)
+    }
+}
+
+#[cfg(test)]
+thread_local! {static FORCE_REFUSAL:std::cell::Cell<bool>=const{std::cell::Cell::new(false)};}
+#[cfg(test)]
+pub(in crate::native_artifact::program::runtime) fn force_dictionary_refusal(value: bool) {
+    FORCE_REFUSAL.with(|v| v.set(value));
+}
+#[cfg(test)]
+impl State {
+    pub(in crate::native_artifact::program::runtime) fn has_frozen_dictionary_loan(&self) -> bool {
+        matches!(self.native_read.as_deref(),Some(Storage::Loan(loan)) if matches!(loan.map_root.as_ref(),Some(MapBacking::Frozen(_))))
     }
 }

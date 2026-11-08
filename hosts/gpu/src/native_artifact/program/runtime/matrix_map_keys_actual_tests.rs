@@ -53,6 +53,16 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
                 viewed.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>());
             drop(viewed);
 
+            let mut dictionary_output = vec![None; artifact.outputs().len()];
+            let (result, dictionaries) = super::composition_tests::generic_dictionary::run(
+                &native, &args, &mut dictionary_output, &memory, restored,
+                super::composition_tests::generic_dictionary::Fault::None);
+            result.unwrap();
+            assert_eq!(dictionaries, [1,0,1,0]);
+            assert_eq!(output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>(),
+                dictionary_output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>());
+            drop(dictionary_output);
+
             let (cached_census, full_census) = super::maps::owner::tests::take_geometry_counts();
             assert!(cached_census >= 28, "actual dictionary must use the admitted caller census: {cached_census}/{full_census}");
             let ValueData::Matrix(matrix) = output.last().unwrap().as_ref().unwrap().data() else { panic!("result matrix"); };
@@ -63,8 +73,8 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
                     assert_eq!(&posts[*index as usize], expected);
                 }
             }
-            println!("{}", serde_json::json!({"full_input_posts":posts.len(),"restored":restored,"producer_callbacks":counts.0,"borrowed_cells":counts.1,"canonical_string_values":counts.2,"retained_insertions":counts.3,"cached_census":cached_census,"full_census":full_census,"owned_key_views":views[0],"canonical_key_matrices":views[1],"retired_histogram_handles":views[3],"exact_related_posts":true,"timings_ineligible":true}));
+            println!("{}", serde_json::json!({"full_input_posts":posts.len(),"restored":restored,"producer_callbacks":counts.0,"borrowed_cells":counts.1,"canonical_string_values":counts.2,"retained_insertions":counts.3,"cached_census":cached_census,"full_census":full_census,"owned_key_views":views[0],"canonical_key_matrices":views[1],"retired_histogram_handles":views[3],"native_dictionary_publications":dictionaries[0],"canonical_dictionaries_at_publication":dictionaries[1],"frozen_dictionary_loans":dictionaries[2],"fallback_materializations":dictionaries[3],"exact_related_posts":true,"timings_ineligible":true}));
         }
-        drop(args); assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0,0));
+        drop(args); assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0,0));
     }).unwrap().join().unwrap();
 }

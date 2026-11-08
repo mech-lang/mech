@@ -96,6 +96,7 @@ pub(in crate::native_artifact) fn emit(
     error: Block,
     matrix_keys: bool,
     key_views: bool,
+    dictionary_views: bool,
 ) -> Result<(Option<Block>, bool), NativeCompileError> {
     let Some(owner) = owner else {
         return Ok((None, false));
@@ -418,7 +419,13 @@ pub(in crate::native_artifact) fn emit(
             let count = b.ins().iconst(types::I64, count as i64);
             [token, hooks.arguments, count]
         };
-        hooks.call(b, site, GlobalHelper::MapOwnerEnd, args, error);
+        let operation =
+            if dictionary_views && program.metadata().generic_dictionary.exit(site).is_some() {
+                GlobalHelper::MapDictionaryEnd
+            } else {
+                GlobalHelper::MapOwnerEnd
+            };
+        hooks.call(b, site, operation, args, error);
         let token = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, flag, token)?;
         // Canonical publication returns zero; private publication returns the

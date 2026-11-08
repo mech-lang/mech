@@ -17,6 +17,7 @@ pub(in crate::native_artifact::program::runtime) mod borrowed_records;
 mod caller_geometry;
 mod closed;
 pub(in crate::native_artifact::program::runtime) mod frozen;
+pub(in crate::native_artifact::program::runtime) mod generic_dictionary;
 mod map_key_views;
 mod matrix_keys;
 mod spans;
@@ -25,6 +26,7 @@ use crate::native_artifact::program::runtime::maps::owner::frozen::FrozenSlot;
 pub(in crate::native_artifact::program::runtime) enum Publication {
     Canonical(Value),
     Frozen(u64),
+    Dictionary(super::string::frozen::FrozenStringMap),
 }
 
 /// Lazy owning-session lane. No table metadata is allocated merely because a
@@ -208,6 +210,7 @@ pub(in crate::native_artifact::program::runtime) struct State<'plan> {
     slots: Box<[Slot<'plan>]>,
     spans: Box<[Option<spans::Lane>]>,
     matrix_keys: Box<[matrix_keys::Lane]>,
+    dictionaries: Box<[Option<generic_dictionary::Dictionary>]>,
     descriptor: &'plan NativeProgramDescriptor,
     work_identity: u64,
     active_tables: u64,
@@ -218,7 +221,7 @@ pub(in crate::native_artifact::program::runtime) struct State<'plan> {
     borrowed_records: borrowed_records::Lanes,
 }
 
-fn storage_error(error: StorageError) -> Error {
+pub(in crate::native_artifact::program::runtime) fn storage_error(error: StorageError) -> Error {
     match error {
         StorageError::Memory(error) => NativeExecutionError::Memory { error }.into(),
         StorageError::Work(error) => NativeExecutionError::LibraryWork {
@@ -290,6 +293,15 @@ impl<'plan> State<'plan> {
                 0,
             )?,
         )?;
+        let dictionary_count = descriptor.metadata().generic_dictionary.regions.len();
+        let bytes = add(
+            bytes,
+            amount(
+                dictionary_count,
+                (2 * core::mem::size_of::<Option<generic_dictionary::Dictionary>>()) as u64,
+                0,
+            )?,
+        )?;
         if bytes > limit {
             return Ok(None);
         }
@@ -299,6 +311,7 @@ impl<'plan> State<'plan> {
                 count
                     .checked_add(span_count)
                     .and_then(|n| n.checked_add(matrix_key_count))
+                    .and_then(|n| n.checked_add(dictionary_count))
                     .ok_or_else(|| invalid("map lane count overflow"))?,
                 512,
                 512,
@@ -327,10 +340,18 @@ impl<'plan> State<'plan> {
             return Ok(None);
         }
         matrix_keys.resize_with(matrix_key_count, matrix_keys::Lane::default);
+        let mut dictionaries = Vec::new();
+        if dictionaries.try_reserve_exact(dictionary_count).is_err()
+            || dictionaries.capacity() != dictionary_count
+        {
+            return Ok(None);
+        }
+        dictionaries.resize_with(dictionary_count, || None);
         Ok(Some(Self {
             slots: slots.into_boxed_slice(),
             spans: spans.into_boxed_slice(),
             matrix_keys: matrix_keys.into_boxed_slice(),
+            dictionaries: dictionaries.into_boxed_slice(),
             descriptor,
             work_identity: work.identity(),
             active_tables: 0,
@@ -387,7 +408,10 @@ impl<'plan> State<'plan> {
                 amount(self.slots.len(), 128, 128)?,
                 add(
                     amount(self.spans.len(), 64, 64)?,
-                    amount(self.matrix_keys.len(), 64, 0)?,
+                    add(
+                        amount(self.matrix_keys.len(), 64, 0)?,
+                        amount(self.dictionaries.len(), 64, 0)?,
+                    )?,
                 )?,
             )?,
         )?;
@@ -402,6 +426,9 @@ impl<'plan> State<'plan> {
                     binding.retained_nodes().map_err(storage_error)?,
                 )?;
             }
+        }
+        for dictionary in self.dictionaries.iter().flatten() {
+            geometry.live_nodes = add(geometry.live_nodes, dictionary.map.retained_nodes())?;
         }
         for span in &self.spans {
             if matches!(span, Some(spans::Lane::Span { .. })) {
@@ -655,6 +682,17 @@ impl<'plan> State<'plan> {
         token: u64,
         words: &[u64],
     ) -> Result<Publication, Error> {
+        self.publish_retained_choice(ctx, site, token, words, false)
+    }
+
+    pub(in crate::native_artifact::program::runtime) fn publish_retained_choice(
+        &mut self,
+        ctx: &mut MapExecution<'_, '_, '_, '_>,
+        site: usize,
+        token: u64,
+        words: &[u64],
+        dictionary: bool,
+    ) -> Result<Publication, Error> {
         self.guard(ctx, site)?;
         let index = self
             .descriptor
@@ -698,6 +736,33 @@ impl<'plan> State<'plan> {
             slot.mark_frozen_published(token);
             ctx.stats().frozen_map_regions = add(ctx.stats().frozen_map_regions, 1)?;
             Publication::Frozen(token)
+        } else if dictionary && ctx.private_dictionary_eligible() {
+            let proof = self
+                .descriptor
+                .metadata()
+                .generic_dictionary
+                .exit(site)
+                .ok_or_else(|| invalid("dictionary publication lost complete uses"))?;
+            if proof.owner != index {
+                return Err(invalid("dictionary publication owner differs"));
+            }
+            match binding
+                .finish_words_choice(
+                    site,
+                    token,
+                    words,
+                    &self.descriptor.metadata().schemas,
+                    geometry,
+                    ctx.limits(),
+                    true,
+                )
+                .map_err(storage_error)?
+            {
+                super::string::frozen::FreezeChoice::Frozen(map) => Publication::Dictionary(map),
+                super::string::frozen::FreezeChoice::Canonical(value) => {
+                    Publication::Canonical(value)
+                }
+            }
         } else {
             Publication::Canonical(
                 binding

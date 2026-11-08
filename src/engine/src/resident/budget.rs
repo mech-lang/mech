@@ -625,7 +625,7 @@ impl NativeLibraryWorkBudget {
     /// relative cap cannot be exported past its guard, so such producers keep
     /// their ordinary immediate canonical route. This observes no new credit.
     #[cfg(feature = "sequence_buffers")]
-    pub(in crate::resident) fn has_active_call_limit(&self) -> Result<bool, ResidentKernelError> {
+    pub fn has_active_call_limit(&self) -> Result<bool, ResidentKernelError> {
         CONTROL_WORK_CONTEXT.with(|context| {
             if context
                 .active

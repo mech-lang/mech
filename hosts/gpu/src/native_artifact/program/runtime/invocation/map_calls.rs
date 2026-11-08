@@ -219,6 +219,7 @@ impl Invocation<'_, '_, '_> {
         site: usize,
         token: u64,
         words: &[u64],
+        dictionary: bool,
     ) -> Result<Publication, Error> {
         let mut state = self
             .state
@@ -226,7 +227,11 @@ impl Invocation<'_, '_, '_> {
             .state
             .take()
             .ok_or_else(|| invalid("retained map session publication before admitted entry"))?;
-        let result = state.publish_retained(&mut MapExecution::new(self), site, token, words);
+        let result = if dictionary {
+            state.publish_retained_choice(&mut MapExecution::new(self), site, token, words, true)
+        } else {
+            state.publish_retained(&mut MapExecution::new(self), site, token, words)
+        };
         self.state.map_owners.state = Some(state);
         result
     }
@@ -348,7 +353,10 @@ impl Invocation<'_, '_, '_> {
             let result = self.call_retained_map(site, &words[..count])?;
             self.state.consumed = true;
             Ok(Some(result))
-        } else if operation == MAP_OWNER_END {
+        } else if operation == MAP_OWNER_END
+            || operation
+                == crate::native_artifact::program::protocol::GlobalHelper::MapDictionaryEnd.raw()
+        {
             let Action::Scalar(mech_engine::native_artifact::NativeMatchAction::Copy {
                 output,
                 ..
@@ -388,7 +396,14 @@ impl Invocation<'_, '_, '_> {
                 words[..count]
                     .copy_from_slice(unsafe { core::slice::from_raw_parts(self.arguments, count) });
             }
-            let token = match self.finish_retained_map(site, args[0], &words[..count])? {
+            let token = match self.finish_retained_map(
+                site,
+                args[0],
+                &words[..count],
+                operation
+                    == crate::native_artifact::program::protocol::GlobalHelper::MapDictionaryEnd
+                        .raw(),
+            )? {
                 Publication::Canonical(value) => {
                     self.state
                         .arena
@@ -421,6 +436,10 @@ impl Invocation<'_, '_, '_> {
                     0
                 }
                 Publication::Frozen(token) => token,
+                Publication::Dictionary(map) => {
+                    self.install_dictionary(site, map)?;
+                    0
+                }
             };
             self.state.consumed = true;
             Ok(Some(token))

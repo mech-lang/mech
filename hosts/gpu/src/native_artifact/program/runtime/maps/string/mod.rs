@@ -269,3 +269,5 @@ impl<S: BuildHasher> OwnedStringMap<S> {
 mod tests;
 #[cfg(test)]
 pub(in crate::native_artifact) use tests::with_fixed_publication_hash_seed;
+
+pub(in crate::native_artifact) mod frozen;

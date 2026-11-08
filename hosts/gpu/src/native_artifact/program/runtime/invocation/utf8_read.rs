@@ -26,9 +26,17 @@ impl Invocation<'_, '_, '_> {
                 "native String lookup outside original checked header visit",
             ));
         }
+        let mut dictionary = if tag == GlobalHelper::Utf8ReadPrepare {
+            self.take_dictionary(site)?
+        } else {
+            None
+        };
         if tag == GlobalHelper::Utf8ReadPrepare
             && (self.worker.is_some() || self.has_uninventoried_private_owners())
         {
+            if let Some(owner) = dictionary.take() {
+                self.materialize_dictionary(site, owner)?;
+            }
             return Ok(Some(0));
         }
         if tag == GlobalHelper::Utf8ReadPrepare
@@ -36,16 +44,25 @@ impl Invocation<'_, '_, '_> {
                 !collections.fresh_utf8_header(region.collection, region.iteration, self.progress)
             })
         {
+            if let Some(owner) = dictionary.take() {
+                self.materialize_dictionary(site, owner)?;
+            }
             return Ok(Some(0));
         }
         let prior = if tag == GlobalHelper::Utf8ReadPrepare {
             {
                 let Some(geometry) = self.retained_caller_geometry(site)? else {
+                    if let Some(owner) = dictionary.take() {
+                        self.materialize_dictionary(site, owner)?;
+                    }
                     return Ok(Some(0));
                 };
                 Some(mech_core::ResourceDemand {
                     turn_peak_bytes: geometry.live_bytes,
-                    retained_nodes: geometry.live_nodes,
+                    retained_nodes: geometry
+                        .live_nodes
+                        .checked_add(dictionary.as_ref().map_or(0, |d| d.map.retained_nodes()))
+                        .ok_or_else(|| invalid("dictionary caller nodes overflow"))?,
                     ..Default::default()
                 })
             }
@@ -65,7 +82,13 @@ impl Invocation<'_, '_, '_> {
                         return Err(invalid("native String lookup entry has payload"));
                     }
                     collections
-                        .prepare_utf8_read(&mut ctx, region, prior.unwrap(), args[0] == 1)
+                        .prepare_utf8_read(
+                            &mut ctx,
+                            region,
+                            prior.unwrap(),
+                            args[0] == 1,
+                            &mut dictionary,
+                        )
                         .map(|pointer| Some(pointer.unwrap_or(0)))
                 }
                 GlobalHelper::Utf8ReadFinish => {
@@ -73,7 +96,7 @@ impl Invocation<'_, '_, '_> {
                         return Err(invalid("native String lookup finish has malformed status"));
                     }
                     collections
-                        .finish_utf8_read(&mut ctx, site, args[0], args[1])
+                        .finish_utf8_read(&mut ctx, site, args[0], args[1], &mut dictionary)
                         .map(|done| Some(u64::from(done)))
                 }
                 _ => Err(invalid("unknown native String lookup helper")),
@@ -81,6 +104,12 @@ impl Invocation<'_, '_, '_> {
         })();
         self.state.collections = Some(collections);
         let result = result?;
+        if let Some(owner) = dictionary.take() {
+            if !matches!(result, Some(0)) {
+                return Err(invalid("successful lookup failed to consume dictionary"));
+            }
+            self.materialize_dictionary(site, owner)?;
+        }
         if tag == GlobalHelper::Utf8ReadFinish && result == Some(1) {
             self.progress[region.iteration as usize * 2] = 0;
         }

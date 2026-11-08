@@ -118,6 +118,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) borrowed_record_maps: borrowed_record_map::Layout,
     pub(in crate::native_artifact) matrix_map_keys: matrix_map_keys::Layout,
     pub(in crate::native_artifact) borrowed_map_keys: borrowed_map_keys::Layout,
+    pub(in crate::native_artifact) generic_dictionary: generic_dictionary::Layout,
     pub(in crate::native_artifact) map_admission: native::program::prepare::map_admission::Layout,
     pub(in crate::native_artifact) parallel: native::program::prepare::parallel::Layout,
     pub(in crate::native_artifact) borrowed_strings: native::program::prepare::borrowed::Layout,
@@ -415,6 +416,12 @@ impl PreparedNativeProgram {
         let borrowed_map_keys =
             borrowed_map_keys::Layout::derive(&plan, &buffer_frames, &matrix_map_keys)
                 .map_err(str::to_owned)?;
+        let generic_dictionary = map_owner_words
+            .as_ref()
+            .map(|owners| generic_dictionary::Layout::derive(&plan, owners, &utf8_reads))
+            .transpose()
+            .map_err(str::to_owned)?
+            .unwrap_or_default();
         let call_routes = call_routes::derive(
             &plan,
             &buffer_frames,
@@ -456,6 +463,7 @@ impl PreparedNativeProgram {
             borrowed_record_maps,
             matrix_map_keys,
             borrowed_map_keys,
+            generic_dictionary,
             map_admission,
             parallel,
             borrowed_strings,
@@ -603,5 +611,4 @@ pub(in crate::native_artifact) mod utf8_reads;
 
 pub(in crate::native_artifact) mod borrowed_map_keys;
 
-#[cfg(all(test, feature = "canonical-native-program"))]
-mod generic_dictionary;
+pub(in crate::native_artifact) mod generic_dictionary;

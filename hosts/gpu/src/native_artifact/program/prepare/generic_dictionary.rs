@@ -24,6 +24,14 @@ pub(in crate::native_artifact) struct Layout {
     pub regions: Vec<Region>,
 }
 impl Layout {
+    pub fn exit(&self, site: usize) -> Option<&Region> {
+        self.regions.iter().find(|r| r.exit as usize == site)
+    }
+    pub fn header(&self, site: usize) -> Option<&Region> {
+        self.regions
+            .iter()
+            .find(|r| r.lookup_header as usize == site)
+    }
     pub fn derive(
         plan: &Plan,
         owners: &NativeMapOwnerWords,
@@ -93,6 +101,7 @@ impl Layout {
                 || read.project_site.is_some()
                 || !facts.strictly_dominates(exit, generator.initialize())?
                 || !facts.strictly_dominates(exit, read.header)?
+                || !linear_gap(plan, exit, read)?
                 || plan.activation_boundary() == Some(exit)
                 || plan.activation_boundary() == Some(read.header)
                 || plan.activation_boundary() == Some(read.read_site)
@@ -118,6 +127,37 @@ impl Layout {
         }
         Ok(result)
     }
+}
+
+fn linear_gap(plan: &Plan, exit: u32, read: &utf8_reads::Region) -> Result<bool, &'static str> {
+    use mech_engine::native_artifact::{
+        NativeIterationTerminator as T, NativeMatchTerminator as S,
+    };
+    let T::Scalar(S::Jump(mut at)) = plan.blocks()[exit as usize].terminator() else {
+        return Ok(false);
+    };
+    for _ in 0..plan.blocks().len() {
+        if at == read.header {
+            return Ok(true);
+        }
+        let Some(block) = plan.blocks().get(at as usize) else {
+            return Err("dictionary gap outside plan");
+        };
+        if plan.activation_boundary() == Some(at) {
+            return Ok(false);
+        }
+        match block.action() {
+            Action::Scalar(Scalar::None | Scalar::Copy { .. }) => {}
+            Action::CollectionBegin { collection } if *collection == read.collection => {}
+            Action::Initialize { iteration } if *iteration == read.iteration => {}
+            _ => return Ok(false),
+        }
+        let T::Scalar(S::Jump(next)) = block.terminator() else {
+            return Ok(false);
+        };
+        at = next;
+    }
+    Ok(false)
 }
 
 #[cfg(test)]

@@ -774,11 +774,30 @@ impl<'plan> Binding<'plan> {
         geometry: Geometry,
         limits: MemoryBudgetLimits,
     ) -> Result<Value, Error> {
+        match self.finish_words_choice(site, token, words, schemas, geometry, limits, false)? {
+            super::string::frozen::FreezeChoice::Canonical(value) => Ok(value),
+            super::string::frozen::FreezeChoice::Frozen(_) => {
+                Err(Error::Binding("unexpected private canonical publication"))
+            }
+        }
+    }
+    pub(in crate::native_artifact) fn finish_words_choice(
+        &mut self,
+        site: usize,
+        token: u64,
+        words: &[u64],
+        schemas: &Arc<SchemaTable>,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+        may_freeze: bool,
+    ) -> Result<super::string::frozen::FreezeChoice, Error> {
         self.current(token)?;
         if site != self.region.tail().exit() as usize {
             return Err(Error::Binding("unselected owner exit"));
         }
         let work = self.work.clone();
+        let enclosing = work.has_active_call_limit()?;
+        let started = work.used();
         work.with_call_limits(
             cap(limits.max_compute_work)?,
             cap(limits.max_comparison_work)?,
@@ -813,7 +832,31 @@ impl<'plan> Binding<'plan> {
                     map.key_bytes(),
                     map.key_bytes(),
                 )?;
-                let value = map.publish_result(schemas, ty.schema(), words, geometry, limits)?;
+                let value = if may_freeze
+                    && !enclosing
+                    && matches!(ty.definition().body(), SchemaBody::Map { .. })
+                {
+                    let map = self
+                        .map
+                        .take()
+                        .ok_or(Error::Binding("closed dictionary owner"))?;
+                    map.freeze_or_publish_in_call(
+                        schemas,
+                        ty.schema(),
+                        geometry,
+                        limits,
+                        started,
+                        true,
+                    )?
+                } else {
+                    super::string::frozen::FreezeChoice::Canonical(map.publish_result(
+                        schemas,
+                        ty.schema(),
+                        words,
+                        geometry,
+                        limits,
+                    )?)
+                };
                 self.token = 0;
                 drop(self.map.take());
                 Ok(value)

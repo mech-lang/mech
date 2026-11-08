@@ -36,6 +36,10 @@ pub(in crate::native_artifact::program::runtime) struct MapExecution<'borrow, 's
     invocation: &'borrow mut Invocation<'state, 'visit, 'plan>,
 }
 impl<'borrow, 'state, 'visit, 'plan> MapExecution<'borrow, 'state, 'visit, 'plan> {
+    pub(in crate::native_artifact::program::runtime) fn private_dictionary_eligible(&self) -> bool {
+        self.invocation.worker.is_none() && !self.invocation.has_uninventoried_private_owners()
+    }
+
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn new(
         invocation: &'borrow mut Invocation<'state, 'visit, 'plan>,
@@ -622,6 +626,7 @@ impl Invocation<'_, '_, '_> {
             GlobalHelper::MapOwnerBegin
                 | GlobalHelper::MapOwnerCall
                 | GlobalHelper::MapOwnerEnd
+                | GlobalHelper::MapDictionaryEnd
                 | GlobalHelper::MapOwnerSpan
         ) {
             return self.retained_map_helper(site, operation, args);
@@ -1187,6 +1192,14 @@ pub(in crate::native_artifact::program::runtime) struct CollectionExecution<
     invocation: &'borrow mut Invocation<'state, 'visit, 'plan>,
 }
 impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit, 'plan> {
+    pub(in crate::native_artifact::program::runtime) fn arena_check_virtual(
+        &mut self,
+        handle: NativeValueHandle,
+    ) -> Result<(), Error> {
+        let state = &mut *self.invocation.state;
+        Ok(state.arena.check_virtual(handle, &mut state.control.work)?)
+    }
+
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn new(
         invocation: &'borrow mut Invocation<'state, 'visit, 'plan>,
