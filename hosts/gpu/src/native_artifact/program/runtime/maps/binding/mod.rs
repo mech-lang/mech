@@ -30,6 +30,11 @@ pub(in crate::native_artifact) enum Key<'a> {
         owner: &'a Value,
         bytes: &'a core::ops::Range<usize>,
     },
+    MatrixCell {
+        value: mech_engine::native_artifact::NativeMatchValue,
+        owner: &'a Value,
+        text: &'a str,
+    },
 }
 impl<'a> From<&'a Value> for Key<'a> {
     fn from(value: &'a Value) -> Self {
@@ -415,6 +420,26 @@ impl<'plan> Binding<'plan> {
         geometry: Geometry,
     ) -> Result<&'a str, Error> {
         let ty = &self.plan.values()[operand.get() as usize];
+        if let Key::MatrixCell { value, owner, text } = key {
+            if value != operand
+                || ty.definition().body() != &SchemaBody::String
+                || !ty.definition().dimension_parameters().is_empty()
+                || !matches!(owner.data(), ValueData::Matrix(matrix)
+                    if matches!(matrix.elements(), mech_core::snapshot::SequenceView::String(_)))
+            {
+                return Err(Error::Binding("wrong borrowed matrix key"));
+            }
+            let retained = owner
+                .memory_budget_retained_bytes(&self.work.memory_budget())
+                .ok_or(Error::Binding("unadmitted matrix key source"))?;
+            let map = self.map.as_ref().ok_or(Error::Binding("closed owner"))?;
+            if geometry.live_bytes < add(self.retained_bytes()?, retained)?
+                || geometry.live_nodes < add(map.len() as u64, 5)?
+            {
+                return Err(Error::Binding("incomplete matrix key geometry"));
+            }
+            return Ok(text);
+        }
         let (owner, bytes) = match key {
             Key::Canonical(key) => {
                 if key.schema() != ty.schema() || key.schema_key() != ty.schema_key() {
@@ -435,6 +460,7 @@ impl<'plan> Binding<'plan> {
                 }
                 (owner, Some(bytes))
             }
+            Key::MatrixCell { .. } => unreachable!("handled above"),
         };
         let ValueData::String(text) = owner.data() else {
             return Err(Error::Binding("key kind"));

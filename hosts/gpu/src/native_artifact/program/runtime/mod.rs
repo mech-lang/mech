@@ -310,6 +310,8 @@ mod structural_projection_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod composition_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod matrix_map_keys_actual_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod numeric_shadow_tests;

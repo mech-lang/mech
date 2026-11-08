@@ -17,6 +17,7 @@ pub(in crate::native_artifact::program::runtime) mod borrowed_records;
 mod caller_geometry;
 mod closed;
 pub(in crate::native_artifact::program::runtime) mod frozen;
+mod matrix_keys;
 mod spans;
 use crate::native_artifact::program::runtime::maps::owner::frozen::FrozenSlot;
 
@@ -171,6 +172,26 @@ impl Slot<'_> {
         }
     }
 }
+impl Session<'_> {
+    pub(in crate::native_artifact::program::runtime) fn matrix_key_retained_nodes(
+        &self,
+        work: &mut NativeWorkMeter,
+    ) -> Result<u64, Error> {
+        self.state.as_ref().map_or(Ok(0), |state| {
+            if !state.matrix_keys.is_empty() {
+                work.charge(Phase::Setup, amount(state.matrix_keys.len(), 64, 0)?)?;
+            }
+            add(
+                state.matrix_key_nodes()?,
+                amount(
+                    state.matrix_keys.len(),
+                    (2 * core::mem::size_of::<matrix_keys::Lane>()) as u64,
+                    0,
+                )?,
+            )
+        })
+    }
+}
 #[cfg(test)]
 impl Session<'_> {
     pub(in crate::native_artifact::program::runtime) fn slot_phase(
@@ -185,6 +206,7 @@ pub(in crate::native_artifact::program::runtime) struct State<'plan> {
     // Tables/keys retire before the enclosing admitted fixed lane.
     slots: Box<[Slot<'plan>]>,
     spans: Box<[Option<spans::Lane>]>,
+    matrix_keys: Box<[matrix_keys::Lane]>,
     descriptor: &'plan NativeProgramDescriptor,
     work_identity: u64,
     active_tables: u64,
@@ -258,6 +280,15 @@ impl<'plan> State<'plan> {
                 0,
             )?,
         )?;
+        let matrix_key_count = descriptor.metadata().matrix_map_keys.regions.len();
+        let bytes = add(
+            bytes,
+            amount(
+                matrix_key_count,
+                (2 * core::mem::size_of::<matrix_keys::Lane>()) as u64,
+                0,
+            )?,
+        )?;
         if bytes > limit {
             return Ok(None);
         }
@@ -266,6 +297,7 @@ impl<'plan> State<'plan> {
             amount(
                 count
                     .checked_add(span_count)
+                    .and_then(|n| n.checked_add(matrix_key_count))
                     .ok_or_else(|| invalid("map lane count overflow"))?,
                 512,
                 512,
@@ -287,9 +319,17 @@ impl<'plan> State<'plan> {
             return Ok(None);
         }
         spans.resize_with(span_count, || None);
+        let mut matrix_keys = Vec::new();
+        if matrix_keys.try_reserve_exact(matrix_key_count).is_err()
+            || matrix_keys.capacity() != matrix_key_count
+        {
+            return Ok(None);
+        }
+        matrix_keys.resize_with(matrix_key_count, matrix_keys::Lane::default);
         Ok(Some(Self {
             slots: slots.into_boxed_slice(),
             spans: spans.into_boxed_slice(),
+            matrix_keys: matrix_keys.into_boxed_slice(),
             descriptor,
             work_identity: work.identity(),
             active_tables: 0,
@@ -344,7 +384,10 @@ impl<'plan> State<'plan> {
             Phase::Setup,
             add(
                 amount(self.slots.len(), 128, 128)?,
-                amount(self.spans.len(), 64, 64)?,
+                add(
+                    amount(self.spans.len(), 64, 64)?,
+                    amount(self.matrix_keys.len(), 64, 0)?,
+                )?,
             )?,
         )?;
         geometry.live_nodes = add(geometry.live_nodes, self.reservation.capacity_bytes())?;
@@ -364,6 +407,7 @@ impl<'plan> State<'plan> {
                 geometry.live_nodes = add(geometry.live_nodes, 2)?;
             }
         }
+        geometry.live_nodes = add(geometry.live_nodes, self.matrix_key_nodes()?)?;
         // Every table/key/lane reservation shares this exact account. Snapshot
         // nodes come from the base view; private table nodes are added above.
         geometry.live_bytes = ctx.library().memory_budget().used_bytes();
@@ -508,6 +552,16 @@ impl<'plan> State<'plan> {
         let geometry = self
             .geometry(ctx, site)?
             .ok_or_else(|| invalid("retained map call lost caller geometry"))?;
+        let matrix_result = if write && words.len() == 3 {
+            self.insert_matrix_key(ctx, site, words[0], words[2], geometry)?
+        } else {
+            None
+        };
+        if let Some(result) = matrix_result {
+            ctx.stats().hash_table_updates = add(ctx.stats().hash_table_updates, 1)?;
+            self.last_owned_visit = Some(ctx.control().visits);
+            return Ok(result);
+        }
         let canonical;
         let key = if let Some(span) = layout.call_span(site) {
             let proof = &layout.spans()[span];
@@ -670,6 +724,22 @@ impl<'plan> State<'plan> {
         for (id, span) in layout.spans().iter().enumerate() {
             if span.region() == index {
                 drop(self.spans[id].take());
+            }
+        }
+        if !self.matrix_keys.is_empty() {
+            ctx.work()
+                .charge(Phase::Setup, amount(self.matrix_keys.len(), 128, 0)?)?;
+        }
+        for (id, proof) in self
+            .descriptor
+            .metadata()
+            .matrix_map_keys
+            .regions
+            .iter()
+            .enumerate()
+        {
+            if proof.owner == index {
+                self.matrix_keys[id].clear();
             }
         }
         self.last_owned_visit = Some(ctx.control().visits);

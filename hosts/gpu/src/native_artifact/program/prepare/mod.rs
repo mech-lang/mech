@@ -116,6 +116,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
         Option<mech_engine::native_artifact::NativeMapOwnerWords>,
     pub(in crate::native_artifact) frozen_maps: native::program::prepare::frozen_map::Layout,
     pub(in crate::native_artifact) borrowed_record_maps: borrowed_record_map::Layout,
+    pub(in crate::native_artifact) matrix_map_keys: matrix_map_keys::Layout,
     pub(in crate::native_artifact) map_admission: native::program::prepare::map_admission::Layout,
     pub(in crate::native_artifact) parallel: native::program::prepare::parallel::Layout,
     pub(in crate::native_artifact) borrowed_strings: native::program::prepare::borrowed::Layout,
@@ -408,6 +409,8 @@ impl PreparedNativeProgram {
             .transpose()
             .map_err(str::to_owned)?
             .unwrap_or_default();
+        let matrix_map_keys = matrix_map_keys::Layout::derive(&plan, map_owner_words.as_ref())
+            .map_err(str::to_owned)?;
         let call_routes =
             call_routes::derive(&plan, &buffer_frames, &unsigned_buffer_calls, &calls);
         let call_cache = call_cache::Layout::derive(&plan, &calls)?;
@@ -442,6 +445,7 @@ impl PreparedNativeProgram {
             map_owner_words,
             frozen_maps,
             borrowed_record_maps,
+            matrix_map_keys,
             map_admission,
             parallel,
             borrowed_strings,
@@ -574,6 +578,7 @@ pub(in crate::native_artifact) mod frozen_map;
 pub(in crate::native_artifact) mod line_matrix;
 pub(in crate::native_artifact) mod map_admission;
 pub(in crate::native_artifact) mod map_owner;
+pub(in crate::native_artifact) mod matrix_map_keys;
 pub(in crate::native_artifact) mod packed_map;
 pub(in crate::native_artifact) mod parallel;
 pub(in crate::native_artifact) mod prefix;

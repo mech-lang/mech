@@ -35,6 +35,7 @@ mod invariant_numeric;
 mod local_effects;
 mod managed_carriers;
 mod managed_projections;
+pub(super) mod matrix_map_keys;
 mod mixed_string_map;
 mod multiple_children;
 mod mutable_children;
@@ -123,9 +124,9 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                116
+                118
             );
-            // Policy116 adds general matrix length; this fixture keeps its exact work.
+            // Policy118 adds matrix-key loans; this fixture has none and keeps exact work.
             // Policies107/108/110/111 add fills, recursive frames, worker
             // transport and selected String-matrix scalar projections.
             // This fixture has none, so the policy105 decomposition below
@@ -596,11 +597,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                116
+                118
             );
             assert_eq!(
                 report.work, 41_515_826,
-                "policy116 retains policy115 child fallback banks (+296 setup work) and exact source prices"
+                "policy118 retains policy115 child fallback banks (+296 setup work) and exact source prices"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

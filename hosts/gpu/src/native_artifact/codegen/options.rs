@@ -74,6 +74,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Reuse native equality classes of an unchanged String matrix when a
     /// later immutable dictionary lookup reads the same source.
     ReuseStringClasses,
+    /// Borrow a selected String-matrix cell only for its adjacent retained
+    /// insertion. Ablation keeps the original canonical String construction.
+    BorrowedMatrixMapKeys,
     /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
     DisjointState,

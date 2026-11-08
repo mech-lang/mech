@@ -463,7 +463,8 @@ fn selected_template(
 // captures already supply their current scalar words and canonical owners.
 // IR294 preserves bytewise FNV with bounded native word loads and exact
 // halfword equality tails. Runtime hashing, fees and loan geometry are unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 297;
+// IR299 connects proved adjacent String matrix reads to retained Map insertion.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 299;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -703,7 +704,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 297;
 // and typed collection envelopes; neither branch can authenticate old Objects.
 // Work116 admits the fixed native matrix-header kernel for all selected matrix
 // element kinds; unsigned routes retain their established prices and checks.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 116;
+// Work118 preserves each logical String selection's clone/output admission
+// through the existing matrix-key loan, with separately funded loan residency.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 118;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

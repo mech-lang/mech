@@ -114,6 +114,12 @@ impl Invocation<'_, '_, '_> {
         // payload backing, so a long String is never priced as one node/byte.
         let mut nodes = fixed_nodes()?;
         nodes = add(nodes, self.state.buffer_frames.retained_nodes())?;
+        nodes = add(
+            nodes,
+            self.state
+                .map_owners
+                .matrix_key_retained_nodes(&mut self.state.control.work)?,
+        )?;
         if let Some(collections) = &self.state.collections {
             nodes = add(
                 nodes,

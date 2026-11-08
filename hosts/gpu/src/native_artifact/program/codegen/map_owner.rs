@@ -94,6 +94,7 @@ pub(in crate::native_artifact) fn emit(
     hooks: Option<&Hooks>,
     code: CodePlan<'_>,
     error: Block,
+    matrix_keys: bool,
 ) -> Result<(Option<Block>, bool), NativeCompileError> {
     let Some(owner) = owner else {
         return Ok((None, false));
@@ -106,11 +107,20 @@ pub(in crate::native_artifact) fn emit(
     let call = layout::call_region(owner, site);
     let action = layout::action_region(owner, site);
     let span = owner.span_site(site).map(|index| &owner.spans()[index]);
+    let matrix_key = match code {
+        CodePlan::Program(program) if matrix_keys => program
+            .metadata()
+            .matrix_map_keys
+            .producer(site)
+            .map(|(_, r)| r),
+        _ => None,
+    };
     let Some(index) = entry
         .or(exit)
         .or(call)
         .or(action)
         .or(span.map(|span| span.region()))
+        .or(matrix_key.map(|key| key.owner))
         .or(frozen_id.map(|id| frozen.regions[id].owner))
     else {
         return Ok((None, false));
@@ -158,6 +168,24 @@ pub(in crate::native_artifact) fn emit(
     let active = b.ins().icmp_imm(IntCC::NotEqual, active, 0);
     b.ins().brif(active, native, &[], ordinary, &[]);
     b.switch_to_block(native);
+    if matrix_key.is_some() {
+        let NativeIterationAction::LibraryCall { operands, .. } = code.blocks()[site].action()
+        else {
+            return Err(backend("borrowed matrix key is not a selected call"));
+        };
+        hooks.library_operation(
+            b,
+            site,
+            GlobalHelper::MapMatrixKey.raw(),
+            operands,
+            locals,
+            |value| code.kind(value).is_some(),
+            error,
+        )?;
+        b.ins().jump(joined, &[]);
+        b.switch_to_block(ordinary);
+        return Ok((Some(joined), false));
+    }
     if let Some(id) = frozen_id {
         let proof = &frozen.regions[id];
         let (source, output, operation) = match code.blocks()[site].action() {

@@ -549,6 +549,9 @@ impl Invocation<'_, '_, '_> {
             return Err(invalid("helper outside exact admitted visit"));
         }
         let site = site as usize;
+        if tag == GlobalHelper::MapMatrixKey {
+            return self.matrix_map_key_call(site, args);
+        }
         if matches!(
             tag,
             GlobalHelper::HistogramPrepare | GlobalHelper::HistogramFinish

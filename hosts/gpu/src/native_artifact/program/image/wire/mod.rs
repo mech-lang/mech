@@ -496,6 +496,10 @@ fn decode_inner<
         }
         derived
     };
+    // This cache carries no wire authority, including on the same-Object path.
+    let matrix_map_keys =
+        native::program::prepare::matrix_map_keys::Layout::derive(&plan, map_owner_words.as_ref())
+            .map_err(str::to_owned)?;
     let utf8_reads = if frozen_layouts {
         w.utf8_reads
     } else {
@@ -806,6 +810,7 @@ fn decode_inner<
             scalar_aggregates: w.scalar_aggregates,
             map_owner_words,
             borrowed_record_maps,
+            matrix_map_keys,
             utf8_reads,
             numeric_maps,
             frozen_maps,

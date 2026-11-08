@@ -1,6 +1,52 @@
 //! Synchronous invocation orchestration for this owner.
 use super::*;
+use crate::native_artifact::program::protocol::GlobalHelper;
 impl Invocation<'_, '_, '_> {
+    pub(in crate::native_artifact::program::runtime) fn matrix_map_key_call(
+        &mut self,
+        site: usize,
+        args: [u64; 3],
+    ) -> Result<Option<u64>, Error> {
+        if self.state.consumed
+            || args != [self.arguments as u64, 2, 0]
+            || self.argument_capacity < 2
+        {
+            return Err(invalid(
+                "matrix key helper outside exact retained visit/lane",
+            ));
+        }
+        let metadata = self.descriptor.metadata();
+        self.state.control.work.charge(
+            Phase::Setup,
+            amount(metadata.matrix_map_keys.regions.len(), 64, 0)?,
+        )?;
+        let (_, proof) = metadata
+            .matrix_map_keys
+            .producer(site)
+            .ok_or_else(|| invalid("matrix key helper outside producer proof"))?;
+        if !self.state.map_owners.has_retained_binding(proof.owner) {
+            return Err(invalid("matrix key helper has no active retained owner"));
+        }
+        // SAFETY: exact invocation-owned pointer and capacity checked above;
+        // generated execution is suspended during this synchronous callback.
+        let words = unsafe { core::slice::from_raw_parts(self.arguments, 2) };
+        if words[0] != 0 {
+            return Err(invalid("matrix key source transported as scalar"));
+        }
+        let index = words[1];
+        let mut state = self.state.map_owners.state.take().unwrap();
+        let result = state.project_matrix_key(&mut MapExecution::new(self), site, index);
+        self.state.map_owners.state = Some(state);
+        if result? {
+            self.state.consumed = true;
+            Ok(None)
+        } else {
+            // Optional table/headroom refusal preserves the ordinary selected
+            // String producer at this SAME visit and on the SAME accounts.
+            self.helper(site as u64, GlobalHelper::Library.raw(), args)
+        }
+    }
+
     pub(in crate::native_artifact::program::runtime) fn retained_constructor_check(
         &mut self,
         site: usize,
