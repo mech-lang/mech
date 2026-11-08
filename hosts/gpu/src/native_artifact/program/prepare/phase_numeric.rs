@@ -177,19 +177,41 @@ pub(in crate::native_artifact) fn derive(
         Coverage::Complete,
     )
     .or_else(|reason| {
-        derive_with_children(
-            plan,
-            tail,
-            frames,
-            aggregates,
-            calls,
-            visits,
-            Coverage::ScalarCold,
-        )
-        .or_else(|_| derive_fueled(plan, tail, frames, aggregates, calls, visits))
-        .or_else(|_| derive_hybrid(plan, tail, frames, aggregates, calls, visits))
-        .or_else(|_| derive_interval(plan, tail, frames, aggregates, calls, visits))
-        .map_err(|_| reason)
+        let cold = || {
+            derive_with_children(
+                plan,
+                tail,
+                frames,
+                aggregates,
+                calls,
+                visits,
+                Coverage::ScalarCold,
+            )
+        };
+        let fueled = || derive_fueled(plan, tail, frames, aggregates, calls, visits);
+        // A scalar enum state carries no buffer owner for a standalone numeric
+        // leaf. Keep its captured reads in the enclosing phase when exact
+        // per-visit funding can replace a missing static trip envelope. Other
+        // ordinary child boundaries retain their existing selection priority.
+        let scalar_state_child = plan.blocks()[tail.header() as usize]
+            .iteration()
+            .is_some_and(|root| {
+                plan.iterations().iter().any(|child| {
+                    matches!(child, NativeControlLoop::Tail(child)
+                        if child.parent() == Some(root)
+                            && aggregates.slot(child.carrier()).is_some()
+                            && matches!(plan.values()[child.carrier().get() as usize].definition().body(), SchemaBody::Enum { .. }))
+                })
+            });
+        let selected = if scalar_state_child {
+            fueled().or_else(|_| cold())
+        } else {
+            cold().or_else(|_| fueled())
+        };
+        selected
+            .or_else(|_| derive_hybrid(plan, tail, frames, aggregates, calls, visits))
+            .or_else(|_| derive_interval(plan, tail, frames, aggregates, calls, visits))
+            .map_err(|_| reason)
     })
 }
 
@@ -620,7 +642,15 @@ fn derive_with_children(
     {
         return Err("acyclic interval retains the ordinary parent pieces");
     }
-    let exits = exits::derive(plan, tail, frames, &forest, &mut provenance, &arrays)?;
+    let exits = exits::derive(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        &forest,
+        &mut provenance,
+        &arrays,
+    )?;
     versions::validate(
         plan,
         tail,
