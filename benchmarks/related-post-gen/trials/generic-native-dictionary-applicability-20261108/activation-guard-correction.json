@@ -1,0 +1,7 @@
+{
+  "first_guard_rejected_valid_entry_markers": true,
+  "failed_fixture_count": 2,
+  "no_production_selection": true,
+  "corrected_rule": "Native activation must equal or strictly dominate owner initialization; it may not cross the private owner lifetime",
+  "first_failure_retained": "/private/tmp/mech-related-generic-native-dictionary-20261108/activation-guard-too-broad"
+}

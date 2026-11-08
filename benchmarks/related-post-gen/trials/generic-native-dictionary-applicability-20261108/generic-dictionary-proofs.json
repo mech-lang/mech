@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-generic-native-dictionary-20261108/gpu-proof-tests",
+    "generic_dictionary",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-generic-native-dictionary-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 0,
+  "seconds": 1.5036953329108655,
+  "stdout": "\nrunning 3 tests\ntest native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_actual_source_has_two_generic_nonempty_seed_candidates ... ignored, requires retained benchmark source explicitly supplied by caller\ntest native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_proves_direct_completed_owner_into_nested_native_lookup ... ok\ntest native_artifact::program::prepare::generic_dictionary::tests::generic_dictionary_rejects_public_and_multiple_native_consumer_escapes ... ok\n\ntest result: ok. 2 passed; 0 failed; 1 ignored; 0 measured; 965 filtered out; finished in 0.25s\n\n",
+  "stderr": "",
+  "scope": "Applicability only; unchanged qualified IR303 Engine/runtime dependencies; native routing disabled"
+}

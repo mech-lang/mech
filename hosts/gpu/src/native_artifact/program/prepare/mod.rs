@@ -602,3 +602,6 @@ pub(in crate::native_artifact) mod query_stages;
 pub(in crate::native_artifact) mod utf8_reads;
 
 pub(in crate::native_artifact) mod borrowed_map_keys;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod generic_dictionary;

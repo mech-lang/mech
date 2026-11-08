@@ -1,0 +1,194 @@
+//! Applicability only for a completed generic String/U64 owner consumed by one
+//! already-proved native UTF8 comprehension. No storage or runtime authority.
+use super::utf8_reads;
+use mech_core::{IntegerWidth, SchemaBody};
+use mech_engine::native_artifact::{
+    NativeControlLoop as Loop, NativeIterationAction as Action, NativeIterationValueScope as Scope,
+    NativeMapOwnerWords, NativeMatchAction as Scalar, NativeMatchValue as Value,
+    NativeProgramArtifactPlan as Plan, NativeProgramReadRole as Read,
+};
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(in crate::native_artifact) struct Region {
+    pub owner: usize,
+    pub seed: Value,
+    pub result: Value,
+    pub exit: u32,
+    pub lookup_collection: u32,
+    pub lookup_header: u32,
+    pub lookup_read: u32,
+    pub lookup_exit: u32,
+}
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub(in crate::native_artifact) struct Layout {
+    pub regions: Vec<Region>,
+}
+impl Layout {
+    pub fn derive(
+        plan: &Plan,
+        owners: &NativeMapOwnerWords,
+        reads: &utf8_reads::Layout,
+    ) -> Result<Self, &'static str> {
+        if owners.regions().is_empty()
+            || reads.regions.is_empty()
+            || plan.blocks().len() > 16_384
+            || plan.values().len() > 65_536
+        {
+            return Ok(Self::default());
+        }
+        plan.validate_current_visits()?;
+        let facts = plan.facts();
+        let mut result = Self::default();
+        for (owner, owned) in owners.regions().iter().enumerate() {
+            let tail = owned.tail();
+            let value = tail.result();
+            let parent = tail.parent();
+            let exit = tail.exit();
+            // Entry into native execution may precede the producer. A boundary
+            // after initialization cannot transport a live private owner.
+            if let Some(boundary) = plan.activation_boundary()
+                && boundary != tail.initialize()
+                && !facts.strictly_dominates(boundary, tail.initialize())?
+            {
+                continue;
+            }
+            let ty = &plan.values()[value.get() as usize];
+            if !ty.definition().dimension_parameters().is_empty()
+                || !matches!(ty.definition().body(),SchemaBody::Map{key,value,..}
+                    if key.as_ref()==&SchemaBody::String && value.as_ref()==&SchemaBody::UnsignedInteger(IntegerWidth::W64))
+                || plan.value_scopes()[value.get() as usize]
+                    != (Scope::Immutable { iteration: parent })
+                || owners.exit(exit as usize) != Some(owner)
+                || plan.blocks()[exit as usize].iteration() != parent
+                || !matches!(plan.blocks()[exit as usize].action(),Action::Scalar(Scalar::Copy{source,output})
+                    if *source==tail.returned() && *output==value)
+            {
+                continue;
+            }
+            let [definition] = facts.definition_sites(value.get())? else {
+                continue;
+            };
+            if definition.site() != Some(exit) {
+                continue;
+            }
+            // The single action role excludes public/structural/frame escapes,
+            // effects, captures by other loops, and repeated native consumers.
+            let [Read::Action(read_site)] = facts.read_roles(value)? else {
+                continue;
+            };
+            let mut consumers = reads.regions.iter().filter(|r| {
+                r.map_root == value.get() && r.map_ordinal.is_none() && r.read_site == *read_site
+            });
+            let Some(read) = consumers.next() else {
+                continue;
+            };
+            if consumers.next().is_some() {
+                continue;
+            }
+            let Some(Loop::Collection(generator)) = plan.iterations().get(read.iteration as usize)
+            else {
+                continue;
+            };
+            if generator.parent() != parent
+                || read.project_site.is_some()
+                || !facts.strictly_dominates(exit, generator.initialize())?
+                || !facts.strictly_dominates(exit, read.header)?
+                || plan.activation_boundary() == Some(exit)
+                || plan.activation_boundary() == Some(read.header)
+                || plan.activation_boundary() == Some(read.read_site)
+            {
+                continue;
+            }
+            // utf8_reads already proves the complete body, immutable Map
+            // capture, exact selected read and ordinary fallback. Do not turn
+            // its virtual consumer into an unrelated per-key read hook.
+            result.regions.push(Region {
+                owner,
+                seed: tail.seed(),
+                result: value,
+                exit,
+                lookup_collection: read.collection,
+                lookup_header: read.header,
+                lookup_read: read.read_site,
+                lookup_exit: read.exit,
+            });
+            if result.regions.len() == 256 {
+                break;
+            }
+        }
+        Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::native_artifact::program::prepare::matrix_map_keys::tests::artifact;
+    fn source() -> String {
+        let declarations = super::super::matrix_map_keys::tests::source(
+            "at + 1u64",
+            "at",
+            "at + 1u64",
+            "histogram",
+        );
+        let declarations = declarations.split("\nbuild(").next().unwrap();
+        format!(
+            "{declarations}\ntags := tags<[string]>\nhistogram := map/histogram(tags)\nkeys := map/keys(histogram)\nend := sequence/length(keys)\nindex := renumber(keys,0u64,end,histogram)\nids := [index{{tag}} | tag <- tags]\nids\n"
+        )
+    }
+    fn derive(a: &mech_engine::ProgramArtifact) -> Layout {
+        let plan = mech_engine::native_artifact::lower_native_program_artifact(
+            a,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap();
+        let (_, owners) = plan.facts().buffer_frame_owner_layouts().unwrap();
+        let reads = utf8_reads::Layout::derive(&plan).unwrap();
+        Layout::derive(&plan, &owners, &reads).unwrap()
+    }
+    #[test]
+    fn generic_dictionary_proves_direct_completed_owner_into_nested_native_lookup() {
+        let a = artifact(&source());
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&a).unwrap(),
+        )
+        .unwrap();
+        let proof = derive(&a);
+        assert_eq!(proof.regions.len(), 1, "{proof:?}");
+        assert_eq!(proof, derive(&decoded));
+        assert!(proof.regions[0].exit < proof.regions[0].lookup_header);
+    }
+    #[test]
+    fn generic_dictionary_rejects_public_and_multiple_native_consumer_escapes() {
+        let positive = source();
+        assert_eq!(derive(&artifact(&positive)).regions.len(), 1);
+        let declarations = positive.strip_suffix("ids\n").unwrap();
+        let escaping = format!("{declarations}(ids,index)\n");
+        assert!(derive(&artifact(&escaping)).regions.is_empty());
+        let twice = format!(
+            "{declarations}other := other<[string]>\nsecond := [index{{tag}} | tag <- other]\n(ids,second)\n"
+        );
+        assert!(derive(&artifact(&twice)).regions.is_empty());
+    }
+    #[test]
+    #[ignore = "requires retained benchmark source explicitly supplied by caller"]
+    fn generic_dictionary_actual_source_has_two_generic_nonempty_seed_candidates() {
+        let s = std::fs::read_to_string(std::env::var("MECH_MATRIX_KEY_BENCH_SOURCE").unwrap())
+            .unwrap();
+        let proof = derive(&artifact(&s));
+        assert_eq!(proof.regions.len(), 2, "{proof:?}");
+        let first = proof.regions.iter().find(|p| p.result.get() == 73).unwrap();
+        assert_eq!(
+            (
+                first.owner,
+                first.exit,
+                first.lookup_collection,
+                first.lookup_header,
+                first.lookup_read,
+                first.lookup_exit
+            ),
+            (0, 78, 1, 83, 87, 89)
+        );
+        println!("generic dictionary applicability: {proof:#?}");
+    }
+}

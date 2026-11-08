@@ -1,0 +1,121 @@
+{
+  "files": {
+    "generic-dictionary-proofs.json": {
+      "bytes": 1419,
+      "sha256": "ae67f06ec5beaca1a396a81ae64a2f742e794ac17c8214158538f16a1486b42b"
+    },
+    "gpu-proof-recipe.json": {
+      "bytes": 17091,
+      "sha256": "b3366e8b945e16c140f71b7af29f8ee47eb0a388fb990b4c3bdc5e4fab968689"
+    },
+    "first-proof-binary-archive.json": {
+      "bytes": 347,
+      "sha256": "851b1a7679c013099d8ce54d7632fe3660ea48b8c76eddfe23dfd0d45c331ee5"
+    },
+    "proof-source-inventory-v1.json": {
+      "bytes": 278139,
+      "sha256": "ad4cd34e2333541cb0a5a2445b0753cee9b8c3263e68f2302ba59fda863da8e2"
+    },
+    "run-proofs.py": {
+      "bytes": 1111,
+      "sha256": "fa83700f0fe9370967c93494a190552d393b51686c8efe6d19afa7d4c5d0e39e"
+    },
+    "proof-check.json": {
+      "bytes": 17191,
+      "sha256": "c58af5f7e24b2f24b3501e91bb1118be46574670e831d283d01696a9d42ccd6d"
+    },
+    "proof-build.json": {
+      "bytes": 17168,
+      "sha256": "fd2e0ce8e4bf92ee73b2fbcca163e51b161c269573d7641f79cfd2ade02909bc"
+    },
+    "implementation-notes.txt": {
+      "bytes": 3508,
+      "sha256": "0fc684a4fac38c3f01b5a8f9a217635d9906daaa70d78e9d4dbc6470d79ab646"
+    },
+    "actual-dictionary-proof.json": {
+      "bytes": 2018,
+      "sha256": "302d40bed726e1a092781fe13eac510706cff7f50b3abe807f986e0b5a09826d"
+    },
+    "README.md": {
+      "bytes": 3048,
+      "sha256": "38e5f612e7f0f7d6d44b0d69604088ecb6f881c796b3d4bb3a1bfa5bf10be7a6"
+    },
+    "qualified-proof-source-inventory.json": {
+      "bytes": 278139,
+      "sha256": "b3a79bf54cdf4bdb5052334583abcce0522b5612dc2c11bb2737461781e74f5d"
+    },
+    "ownership-and-fallback-requirements.txt": {
+      "bytes": 2137,
+      "sha256": "7be462b7757d9f458b09068cb875218240a3ac6b1064db11856eabed74126d4f"
+    },
+    "proof-source-inventory-v2.json": {
+      "bytes": 278139,
+      "sha256": "7c014b8e9c4a7322fca4c00b5400b0ee0f2707774ab96711cf2fdc5af90b919d"
+    },
+    "ci-inventory.json": {
+      "bytes": 68324,
+      "sha256": "7e2ed5f3d1e1799dcf8216dcbe7bb730c6107e556e2c509ec03d7d54862224dc"
+    },
+    "proof-source-inventory-v3.json": {
+      "bytes": 278139,
+      "sha256": "b3a79bf54cdf4bdb5052334583abcce0522b5612dc2c11bb2737461781e74f5d"
+    },
+    "activation-guard-correction.json": {
+      "bytes": 377,
+      "sha256": "9af445396ba11fdbc8ba1f46c71ca45c94cc9e6153aae90bfd2eb4b450ee0b18"
+    },
+    "first-proof/generic-dictionary-proofs.json": {
+      "bytes": 1419,
+      "sha256": "125fc15fbcc25890af5e2f5fa490a6079fd7cb2a0a7fe77c596124bf957c399c"
+    },
+    "first-proof/gpu-proof-recipe.json": {
+      "bytes": 17091,
+      "sha256": "b3366e8b945e16c140f71b7af29f8ee47eb0a388fb990b4c3bdc5e4fab968689"
+    },
+    "first-proof/proof-source-inventory-v1.json": {
+      "bytes": 278139,
+      "sha256": "ad4cd34e2333541cb0a5a2445b0753cee9b8c3263e68f2302ba59fda863da8e2"
+    },
+    "first-proof/proof-check.json": {
+      "bytes": 17190,
+      "sha256": "9ee5fbff7a480ee04d3b2a87c60552d2a0312755bc8ccf4a6288789a7b2d77ac"
+    },
+    "first-proof/proof-build.json": {
+      "bytes": 17169,
+      "sha256": "3367bbed3221182fa03d64bfc7d58f132e07d9c04da9046342f01f236048c87d"
+    },
+    "first-proof/actual-dictionary-proof.json": {
+      "bytes": 2018,
+      "sha256": "ccf0b3ea931db79a88e564a08dceaa1db05b586b4d8b5a6dcfc80878919b1a3f"
+    },
+    "first-proof/generic_dictionary.rs.txt": {
+      "bytes": 7750,
+      "sha256": "04c33a6d2446f3f7962ca68ef1827705c1d8528ec72911e8b52a8be3a5cb04fa"
+    },
+    "first-proof/ci-inventory.json": {
+      "bytes": 68264,
+      "sha256": "b7e317f49c7bff9527d5db0e8871f277c6b13bc266b437d8cea98978b8343572"
+    },
+    "activation-guard-too-broad/generic-dictionary-proofs.json": {
+      "bytes": 2584,
+      "sha256": "df393aaff490ac8faacf8e6bbb2251998597f7703feeac59a29ec52106e67d10"
+    },
+    "activation-guard-too-broad/proof-check.json": {
+      "bytes": 17191,
+      "sha256": "a8433bc16c2327483263c3f1545ed05e8afa13592bd384503bce6d9b0ab58652"
+    },
+    "activation-guard-too-broad/proof-build.json": {
+      "bytes": 17167,
+      "sha256": "802eb19cac34fe632686868ec54de8b02851e3179a01c45331d0a9a5888391e3"
+    },
+    "activation-guard-too-broad/proof-source-inventory-v2.json": {
+      "bytes": 278139,
+      "sha256": "7c014b8e9c4a7322fca4c00b5400b0ee0f2707774ab96711cf2fdc5af90b919d"
+    },
+    "activation-guard-too-broad/generic_dictionary.rs.txt": {
+      "bytes": 7802,
+      "sha256": "b2b1b6634f63be2495f2e9b82d04d0e23b2873ec28e36bdd70af6b6f4a207ef3"
+    }
+  },
+  "scope": "Applicability only; native routing disabled; no new timing"
+}
