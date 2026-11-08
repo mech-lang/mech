@@ -1,0 +1,57 @@
+{
+  "files": {
+    "README.md": {
+      "bytes": 1056,
+      "sha256": "43d64545c8feb84431c7b3602b13be793bf26a5421a2531654f2894e2ac8b99b"
+    },
+    "run-proof-tests.py": {
+      "bytes": 2208,
+      "sha256": "dbcdc68dfafd7fe4100061d62fbabafd1ac932a84196dab69a4f176413764659"
+    },
+    "applicability-report.json": {
+      "bytes": 2204,
+      "sha256": "e69f3c0ea597ed8af613773f28357ae82a446c8daea8ed3eec49d1d34a865d07"
+    },
+    "producer-tests-v1/source-inventory.json": {
+      "bytes": 301694,
+      "sha256": "5e27b505e8bf4200db6d03350aff8c524ab4a06fa322084d3361b58a607010c4"
+    },
+    "producer-tests-v1/contracts.json": {
+      "bytes": 1968,
+      "sha256": "4ccd6199bc94987e1de292719793c5e968b48c39a16b9ef99e569ce3db2177a5"
+    },
+    "producer-tests-v1/actual-source.json": {
+      "bytes": 1810,
+      "sha256": "557e694124414c7e349a6da7e158186724bb766e947eac5b5edb275cecacc946"
+    },
+    "producer-tests-v1/test-check.json": {
+      "bytes": 18229,
+      "sha256": "db13694d377bbc12dd57a898cc007aaa71f2aa2203a3441c51efac262442c09e"
+    },
+    "producer-tests-v1/test-build.json": {
+      "bytes": 18202,
+      "sha256": "cd6938622934d31c02c1d26a15631ec5db2cf3fa5f69f5b4b69a72da42e62cb3"
+    },
+    "producer-tests-v2/source-inventory.json": {
+      "bytes": 301694,
+      "sha256": "3d77eb2ff9590a1fdbcee92ed4fe1ed65217831419322d03c01b40f45c927ae5"
+    },
+    "producer-tests-v2/contracts.json": {
+      "bytes": 1012,
+      "sha256": "f08c51434b59123c23e86b2755b0c57480930ff1a59ff7ab6136fb65cfe157f6"
+    },
+    "producer-tests-v2/actual-source.json": {
+      "bytes": 2172,
+      "sha256": "dcb65bb1c667319d8e93999c98a74d7166dc871a891c30fd4be16ad910a00004"
+    },
+    "producer-tests-v2/test-check.json": {
+      "bytes": 18230,
+      "sha256": "7db2b07916cbb46dcdd836e8c4f42ebfb42d6e02be70901ba7ecb5ca6868f7a1"
+    },
+    "producer-tests-v2/test-build.json": {
+      "bytes": 18201,
+      "sha256": "1c752d059c3cb0adfdd50201c7ee510fb3c48715b01b459f72f5d8c7fe347e27"
+    }
+  },
+  "goal_complete": false
+}

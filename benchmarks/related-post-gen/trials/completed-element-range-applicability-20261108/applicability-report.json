@@ -1,0 +1,121 @@
+{
+  "scope": "Test-only successful-producer element-range applicability; no consumer check removal or new timing",
+  "facts": [
+    {
+      "array": 1,
+      "bound": 2,
+      "checked_appends": [
+        [
+          333,
+          338
+        ],
+        [
+          345,
+          350
+        ],
+        [
+          357,
+          362
+        ],
+        [
+          369,
+          374
+        ],
+        [
+          423,
+          428
+        ],
+        [
+          435,
+          440
+        ],
+        [
+          447,
+          452
+        ],
+        [
+          459,
+          464
+        ],
+        [
+          471,
+          476
+        ],
+        [
+          483,
+          488
+        ],
+        [
+          495,
+          500
+        ],
+        [
+          507,
+          512
+        ],
+        [
+          519,
+          524
+        ],
+        [
+          531,
+          536
+        ],
+        [
+          630,
+          635
+        ]
+      ],
+      "producer": 272
+    },
+    {
+      "array": 1,
+      "bound": 2,
+      "checked_appends": [
+        [
+          1098,
+          1103
+        ],
+        [
+          1159,
+          1164
+        ],
+        [
+          1172,
+          1177
+        ],
+        [
+          1185,
+          1190
+        ],
+        [
+          1198,
+          1203
+        ],
+        [
+          1211,
+          1216
+        ],
+        [
+          1348,
+          1353
+        ]
+      ],
+      "producer": 1037
+    }
+  ],
+  "original_and_decoded_proofs_equal": true,
+  "contract_cases": "one test, four original+decoded fixtures: checked/empty positive; nonempty seed, different checked key, unchecked append negatives",
+  "contract_passed": true,
+  "actual_source_passed": true,
+  "all_new_code_cfg_test_only": true,
+  "production_identity": "IR305/work122/ABI41/image11 unchanged",
+  "emission_unchanged": true,
+  "runtime_unchanged": true,
+  "prefix_length_relation_not_implemented": true,
+  "consumer_range_substitutions_not_implemented": true,
+  "first_fixture_syntax_failure_retained": true,
+  "selected_baseline": "IR3051.768708ms/1.151190074xRust",
+  "primary_work_now": "borrowed dictionary current-value bank, per user steering",
+  "goal_complete": false
+}

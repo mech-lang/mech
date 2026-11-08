@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-completed-element-ranges-20261108/producer-tests-v1/gpu-tests",
+    "completed_element_ranges_require",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-completed-element-ranges-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 101,
+  "seconds": 1.3539593750610948,
+  "stdout": "\nrunning 1 test\ntest native_artifact::program::prepare::readonly_numeric::completed_element_ranges::tests::completed_element_ranges_require_every_append_checked_and_an_empty_seed ... FAILED\n\nfailures:\n\nfailures:\n    native_artifact::program::prepare::readonly_numeric::completed_element_ranges::tests::completed_element_ranges_require_every_append_checked_and_an_empty_seed\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 983 filtered out; finished in 0.10s\n\n",
+  "stderr": "\nthread 'native_artifact::program::prepare::readonly_numeric::completed_element_ranges::tests::completed_element_ranges_require_every_append_checked_and_an_empty_seed' (22966983) panicked at /private/tmp/mech-related-completed-element-ranges-compiler-20261108/hosts/gpu/src/native_artifact/program/prepare/matrix_map_keys/tests.rs:36:10:\ncalled `Result::unwrap()` on an `Err` value: SourceSemanticError { code: \"source-semantics/recovered-syntax\", message: \"source semantics require a complete canonical syntax tree\", anchor: SourceSemanticAnchor { document: DocumentId(1330791501), revision: Revision(1), range: TextRange { start: TextSize(53), end: TextSize(750) } } }\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+  "timing_eligible": false
+}

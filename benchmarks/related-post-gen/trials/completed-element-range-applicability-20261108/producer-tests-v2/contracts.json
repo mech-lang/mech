@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-completed-element-ranges-20261108/producer-tests-v2/gpu-tests",
+    "completed_element_ranges_require",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-completed-element-ranges-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 0,
+  "seconds": 1.6336521250195801,
+  "stdout": "\nrunning 1 test\ntest native_artifact::program::prepare::readonly_numeric::completed_element_ranges::tests::completed_element_ranges_require_every_append_checked_and_an_empty_seed ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 983 filtered out; finished in 0.34s\n\n",
+  "stderr": "",
+  "timing_eligible": false
+}

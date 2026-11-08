@@ -19,6 +19,9 @@ pub(super) mod numeric_fields;
 mod results;
 #[path = "numeric_versions.rs"]
 mod versions;
+#[cfg(test)]
+#[path = "completed_element_ranges.rs"]
+pub(in crate::native_artifact) mod completed_element_ranges;
 pub(in crate::native_artifact) use results::ResultRecipe;
 pub(super) use results::scalar_aggregate;
 

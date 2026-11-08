@@ -1,0 +1,11 @@
+from pathlib import Path
+import json,os,subprocess,sys,time,importlib.util
+P=Path(__file__).parent;T=P/sys.argv[1];T.mkdir(exist_ok=False);S=Path('/private/tmp/mech-related-completed-element-ranges-compiler-20261108');old='/private/tmp/mech-related-native-dictionary-seed-frames-compiler-20261108';b=json.loads(Path('/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v4/build.json').read_text());st=next(x for x in b['stages']if x['crate']=='mech_gpu');c=[a.replace(old,str(S))for a in st['command']];c[c.index('--crate-type=rlib')]='--test';c[-1]=str(T/'gpu-tests');env={k:v.replace(old,str(S))for k,v in st['environment'].items()}
+for i,a in enumerate(c):
+ if a.startswith('metadata='):c[i]='metadata=related_completed_elements_applicability_v1'
+spec=importlib.util.spec_from_file_location('h','/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-compiler.py');h=importlib.util.module_from_spec(spec);spec.loader.exec_module(h);files=h.source_inventory(S);(T/'source-inventory.json').write_text(json.dumps(dict(root=str(S),files=files,scope='test-only completed producer element-range applicability, IR305 identity/emission/runtime unchanged'),indent=2)+'\n')
+def run(cmd,name,extra=None):
+ t=time.monotonic();r=subprocess.run(cmd,cwd=S,capture_output=True,text=True,env={**os.environ,**env,**(extra or{})});(T/(name+'.json')).write_text(json.dumps(dict(command=cmd,environment={**env,**(extra or{})},exit=r.returncode,seconds=time.monotonic()-t,stdout=r.stdout,stderr=r.stderr,timing_eligible=False),indent=2)+'\n');print(name,r.returncode,flush=True)
+ if r.returncode:print(r.stdout[-5000:]+r.stderr[-8000:],flush=True)
+ assert r.returncode==0
+check=c.copy();check[-1]=str(T/'gpu-check.rmeta');check+=['--emit=metadata'];run(check,'test-check');run(c,'test-build');run([str(T/'gpu-tests'),'completed_element_ranges_require','--test-threads=1','--nocapture'],'contracts');run([str(T/'gpu-tests'),'completed_element_ranges_actual','--ignored','--test-threads=1','--nocapture'],'actual-source',{'MECH_COMPLETED_ELEMENTS_SOURCE':'/private/tmp/mech-related-native-dictionary-seed-frames-runners-20261108-v1/histogram-reuse/build/source.mec'});assert files==h.source_inventory(S)
