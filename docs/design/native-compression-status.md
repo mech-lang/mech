@@ -2,6 +2,16 @@
 
 
 
+## R205: direct return is correct but its emitted tradeoff is rejected
+
+**Production remains R199 / IR214.** The direct reduction-to-parent candidate preserves the exercised semantics and exact reports, but complete elapsed is effectively flat: all20 gates pass,12 medians lower/eight higher, geometric−0.021549%. Natural32 **3.315320×→3.305045× Roc** is a small mixed-pair improvement; repeated32 **2.923119×→2.939770×**, periodic33 **3.431179×→3.494012×** and random32 **4.720156×→4.773982×** worsen. These are matched current-cohort readings, not compounded changes across rounds. No favorable unchanged rerun is substituted.
+
+Every larger-case instruction median rises. The actual inspected phase grows4,016→4,208B /368→400B stack, with static SP access sites29→47. All20 allocation/requested-byte/reallocation/incremental-peak medians stay equal. The experiment is rejected for the combined tradeoff; small measured wins remain eligible for retention.
+
+3,968 primary observations /4,048 complete calls,1,440 separate CPU/heap calls and6,677 fresh profile calls retain exact bytes, independent inflate, logical work, aliases, capacities and cleanup0. Candidate678 native tests/all261 actual CI selections,592 matched resource-policy observations per side, unchanged236/eight/one component qualification,15 architecture checks and132 workflow tests pass. The restored source freshly passes676 native tests/all259 actual CI selections and15 focused controls; independent terminal-result coverage is retained. Same seven inherited exclusions. [All20 results, exact patch, failure dispositions and verified external review packet](native-direct-reduction-return.md).
+
+Direct completion needs a solution to its parent-join/register-state cost before adoption. Next is induction-derived actual visits and exact exit accounting in the existing funded matching loop; R202's balance-only and R200's cutoff variants stay rejected. The compact diagnostic still needs retained numeric specialization and measured restoration of ordinary guarantees. The host-family ledger and fresh same-boundary reference instruction denominator remain open. No parity or full-brief completion claim; existing draft#973 only.
+
 ## R204: whole diagnostic ownership improved; retained numeric lowering still missing
 
 **Production remains R199 / IR214.** The improved complete diagnostic produces the exact20 streams through original and independently decoded, separately linked images. The three-way matched natural32 result is retained **3.342× Roc**, R203 diagnostic **149.617×**, new diagnostic **14.445×**. Periodic33 is **3.519× /235.408× /24.942×**; repeated32 **3.019× /225.168× /23.178×**; eight literals **4.439× /2.400× /2.187×**. This is a large diagnostic improvement, still a large-input regression versus production. No adoption or parity claim.
