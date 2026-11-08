@@ -1,5 +1,15 @@
 # Native compression milestone
 
+## R215: qualified ordinary integration is now maintained
+
+**The normal compiler now uses IR215 and the qualified R214 dense phase/home-fact combination.** Public ABI39, work107 and MBC14 remain. The exact generated ARM64 text is byte-identical to R214; current image binding rejects an actual old IR214 Object. Metadata-only restoration remains compatible and grants no entry authority. No compressor source, algorithm, tables, allocation sites, buffer sizes, search/EOF limits or timing boundaries changed.
+
+Fresh integrated results: natural32 **3.486334× Roc**, periodic33 **3.813050×**, repeated32 **3.303768×**, random32 **5.270833×**, distribution16 **6.968631×**, eight literals **4.621795×**. These are normal-runtime results; retained R211 whole-native diagnostic remains separate. Geometric elapsed is0.469% lower vs R199 and0.496% higher vs frozen R214. All20 unchanged gates pass vs both. This is versioned integration, not a new speedup claim. All20 instruction medians remain higher than R199;11 cycle medians fall/nine rise; heap metrics match and native stack retains the disclosed4080B increase.
+
+All678 maintained tests, six focused checks,52 actual linked original/decoded before/after controls,40 full-stream smokes,15 architecture/catalog checks and132 workflow checks pass. Same seven inherited exclusions. Clean-parent CI inventory drift251→260 is repaired separately in `4d20781d403156b81b2fa7656d54e860523db01f`; integration adds one test and the exact261 guard. All790 clean-parent GPU source blobs are verified. Initial wrong-layer metadata probe, invalid manually reduced feature profile and missing Object linker argument are resolved harness errors retained in evidence; no production workaround was added.
+
+**The full brief remains unfinished.** Root transfers/transport experiments and ordinary phase integration are established; stable owner pooling and payload-site allocation census remain. Next finish that bounded allocation follow-up, preserving final-output payload layout, aliases, cleanup and retry. Duplicate canonical/packet transport remains a later ordinary instruction target. [Full source/revisions/results/profiles and verified public replay](native-integrated-phase-packets.md).
+
 ## R214: combined ordinary interface and home facts; measured gain retained
 
 The R213 dense initializer now retains the existing canonical-home flags through the SAME SSA builder. Each full-compressor phase removes 242 loads (predicted 288; discrepancy preserved), and code shrinks 6128/6848→3888/3920 B. Packet storage retains its own default flags. Full source/resource/ownership/error/recovery contracts remain.

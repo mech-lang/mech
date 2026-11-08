@@ -20,6 +20,24 @@ pub(in crate::native_artifact) enum Entry {
     Inline,
     Call(FuncRef),
     Body,
+    PacketBody {
+        input: Value,
+        output: Value,
+        additional_template_bound: usize,
+    },
+}
+
+impl Entry {
+    pub(super) fn body_overhead(self) -> Option<usize> {
+        match self {
+            Self::Body => Some(ADDITIONAL_TEMPLATE_BOUND),
+            Self::PacketBody {
+                additional_template_bound,
+                ..
+            } => Some(additional_template_bound),
+            _ => None,
+        }
+    }
 }
 
 #[derive(serde::Serialize)]
@@ -29,6 +47,8 @@ pub(in crate::native_artifact) struct Report {
     stack_bytes: u64,
     code_bytes: u64,
     additional_template_bound: usize,
+    compact_input_words: Option<usize>,
+    compact_output_words: Option<usize>,
     cleanup: CfgCleanup,
 }
 
@@ -63,9 +83,10 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
         if closed.sites[site] != Some(id) || region.cold_resume().is_some() {
             continue;
         }
+        let packet = super::numeric_packet::Recipe::derive(code, region)?;
         let symbol = format!("{entry_symbol}_numeric_phase_{site}");
         let mut signature = module.make_signature();
-        signature.params = vec![AbiParam::new(types::I64); 7];
+        signature.params = vec![AbiParam::new(types::I64); if packet.is_some() { 9 } else { 7 }];
         // Original status and whether the existing source exit was reached.
         signature.returns = vec![AbiParam::new(types::I64); 2];
         let mut context = module.make_context();
@@ -77,7 +98,17 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             let entry = b.create_block();
             b.append_block_params_for_function_params(entry);
             b.switch_to_block(entry);
-            let args: [Value; 7] = b.block_params(entry).try_into().unwrap();
+            let parameters = b.block_params(entry).to_vec();
+            let args: [Value; 7] = parameters[..7].try_into().unwrap();
+            let contract = if let Some(packet) = &packet {
+                Entry::PacketBody {
+                    input: parameters[7],
+                    output: parameters[8],
+                    additional_template_bound: packet.additional_template_bound(),
+                }
+            } else {
+                Entry::Body
+            };
             let zero = b.ins().iconst(types::I64, 0);
             let error = b.create_block();
             b.append_block_param(error, types::I64);
@@ -90,18 +121,8 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             // the original emitter and use the original current arguments.
             ordinary[region.tail.exit() as usize] = Some(done);
             emitted = readonly_numeric::emit_entry(
-                controls,
-                &mut b,
-                args[0],
-                args[1],
-                code,
-                closed,
-                site,
-                &hooks,
-                &ordinary,
-                error,
-                Entry::Body,
-                report,
+                controls, &mut b, args[0], args[1], code, closed, site, &hooks, &ordinary, error,
+                contract, report,
             )?;
             b.ins().return_(&[zero, zero]);
             b.switch_to_block(done);
@@ -137,7 +158,11 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             symbol,
             stack_bytes: stack,
             code_bytes: bytes,
-            additional_template_bound: ADDITIONAL_TEMPLATE_BOUND,
+            additional_template_bound: packet
+                .as_ref()
+                .map_or(ADDITIONAL_TEMPLATE_BOUND, |p| p.additional_template_bound()),
+            compact_input_words: packet.as_ref().map(|p| p.input_words()),
+            compact_output_words: packet.as_ref().map(|p| p.output_words()),
             cleanup,
         });
         functions.push((site, function, stack, bytes));

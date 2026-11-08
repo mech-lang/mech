@@ -362,7 +362,9 @@ fn selected_template(
 // IR211 gives complete primary numeric phases an invocation-owned native call.
 // IR212 admits nullary scalar states and preserves their exact child-fuel exits.
 // IR214 stages captured packed-read addresses at each current child entry.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 214;
+// IR215 gives complete nested append phases a dense private interface while
+// preserving canonical-home memory facts and exact cold synchronization.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 215;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

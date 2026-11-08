@@ -35,7 +35,7 @@ impl Words {
             usize,
         ) -> Result<Option<Value>, NativeCompileError>,
     ) -> Result<Self, NativeCompileError> {
-        Self::build(b, locals, code, slots, initial, |_| MemFlags::new())
+        Self::new_with_regions_and_initial(b, locals, code, slots, initial, |_| MemFlags::new())
     }
     /// A physical home keeps one alias region across entry, spills, and reloads.
     /// Tail/borrowed synchronization accesses these same private homes directly.
@@ -46,9 +46,11 @@ impl Words {
         slots: BTreeSet<usize>,
         flags: impl FnMut(usize) -> MemFlags,
     ) -> Result<Self, NativeCompileError> {
-        Self::build(b, locals, code, slots, |_, _| Ok(None), flags)
+        Self::new_with_regions_and_initial(b, locals, code, slots, |_, _| Ok(None), flags)
     }
-    fn build(
+    /// Keep canonical home flags even when the initial SSA value comes from a
+    /// distinct private interface. The initializer supplies its own load flags.
+    pub(in crate::native_artifact) fn new_with_regions_and_initial(
         b: &mut FunctionBuilder<'_>,
         locals: Value,
         code: CodePlan<'_>,
