@@ -10,7 +10,7 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
-fn catalog() -> mech_core::FunctionCatalog {
+pub(super) fn catalog() -> mech_core::FunctionCatalog {
     let mut b = mech_core::FunctionCatalogBuilder::new();
     crate::install_intrinsic_runtime(&mut b).unwrap();
     crate::install_intrinsic_compiler_runtime(&mut b).unwrap();
@@ -24,7 +24,7 @@ fn variants(shape: &str) -> [ProgramArtifact; 2] {
     );
     artifacts(&source)
 }
-fn artifacts(source: &str) -> [ProgramArtifact; 2] {
+pub(super) fn artifacts(source: &str) -> [ProgramArtifact; 2] {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x534d4b59), Revision(0), source).unwrap(),
         ParseConfig::default(),
@@ -94,7 +94,7 @@ fn prepared(artifact: &ProgramArtifact) -> Vec<NativePreparedLibraryCall> {
         })
         .collect()
 }
-fn limits() -> MemoryBudgetLimits {
+pub(super) fn limits() -> MemoryBudgetLimits {
     let mut l = mech_core::TargetMemoryProfile::current_resident_cpu()
         .unwrap()
         .limits;
@@ -107,7 +107,7 @@ fn limits() -> MemoryBudgetLimits {
     l.max_cloned_bytes = Some(u64::MAX);
     l
 }
-fn value(
+pub(super) fn value(
     artifact: &ProgramArtifact,
     id: SchemaId,
     shape: Box<[u64]>,

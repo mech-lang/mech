@@ -148,6 +148,71 @@ fn cap_error(
     Ok(())
 }
 
+fn packed_key_cell(
+    values: SequenceView<'_>,
+    ordinal: usize,
+    text: &str,
+    selector_footprint: ValueFootprint,
+    selector_cost: budget::KernelCostEstimate,
+) -> Result<NativeStringMatrixKeyCell, InvokeError> {
+    let mut meter = ResidentBudgetMeter::for_closed_analysis(u64::MAX, u64::MAX);
+    let mut footprint = ValueFootprint::default();
+    let mut finalization = 0;
+    crate::resident::numeric::selected_sequence_footprint_with_finalization(
+        &mut footprint,
+        &mut finalization,
+        &mut meter,
+        &SchemaBody::String,
+        values,
+        ordinal,
+    )?;
+    let output = budget::projected_canonical_value_footprint(footprint, 0)?;
+    let cost = meter.estimate();
+    let logical_extra_nodes = add(
+        add(
+            selector_footprint
+                .node_count
+                .checked_mul(2)
+                .ok_or(InvokeError::InvalidInput)?,
+            footprint.node_count,
+        )?,
+        output
+            .node_count
+            .checked_mul(2)
+            .ok_or(InvokeError::InvalidInput)?,
+    )?;
+    let containers = add(
+        core::mem::size_of::<mech_core::ValueDataDraft>() as u64,
+        core::mem::size_of::<Value>() as u64,
+    )?;
+    let logical_temporary_bytes = add(
+        add(
+            add(
+                output
+                    .retained_bytes
+                    .checked_mul(2)
+                    .ok_or(InvokeError::InvalidInput)?,
+                containers,
+            )?,
+            selector_footprint.retained_bytes,
+        )?,
+        add(
+            add(selector_cost.temporary_bytes(), cost.temporary_bytes())?,
+            core::mem::size_of::<usize>() as u64,
+        )?,
+    )?;
+    Ok(NativeStringMatrixKeyCell {
+        address: text.as_ptr() as u64,
+        bytes: text.len() as u64,
+        logical_output_bytes: output.retained_bytes,
+        logical_cloned_bytes: add(selector_footprint.retained_bytes, footprint.retained_bytes)?,
+        selection_compute_work: add(add(cost.compute_work(), finalization)?, 2)?,
+        selection_comparison_work: add(cost.comparison_work(), finalization)?,
+        logical_temporary_bytes,
+        logical_extra_nodes,
+    })
+}
+
 impl NativePreparedLibraryCall {
     /// The constructor-private selected factory/template is resolved again on
     /// image restoration; a lookalike contract or cache headroom is no witness.
@@ -289,73 +354,13 @@ impl NativePreparedLibraryCall {
                     return Ok(None);
                 };
                 for (ordinal, text) in strings.iter().enumerate() {
-                    // Only packed SequenceView::String reaches this loop. The
-                    // maintained element-footprint arm reads get(index)/len and
-                    // performs fixed arithmetic; it does not scan UTF-8 bytes.
-                    // The finalization walker is exclusive to SequenceView::Values
-                    // and is therefore unreachable. The analysis meter computes a
-                    // pricing record, not credit/permission; this O(1) metadata work
-                    // is prepaid above and its stored logical costs are charged
-                    // again, to the real account, at every selected source visit.
-                    let mut meter = ResidentBudgetMeter::for_closed_analysis(u64::MAX, u64::MAX);
-                    let mut footprint = ValueFootprint::default();
-                    let mut finalization = 0;
-                    crate::resident::numeric::selected_sequence_footprint_with_finalization(
-                        &mut footprint,
-                        &mut finalization,
-                        &mut meter,
-                        &SchemaBody::String,
+                    cells[ordinal].write(packed_key_cell(
                         matrix.elements(),
                         ordinal,
-                    )?;
-                    let output = budget::projected_canonical_value_footprint(footprint, 0)?;
-                    let cost = meter.estimate();
-                    let logical_extra_nodes = add(
-                        add(
-                            selector_footprint
-                                .node_count
-                                .checked_mul(2)
-                                .ok_or(InvokeError::InvalidInput)?,
-                            footprint.node_count,
-                        )?,
-                        output
-                            .node_count
-                            .checked_mul(2)
-                            .ok_or(InvokeError::InvalidInput)?,
-                    )?;
-                    let containers = add(
-                        core::mem::size_of::<mech_core::ValueDataDraft>() as u64,
-                        core::mem::size_of::<Value>() as u64,
-                    )?;
-                    let logical_temporary_bytes = add(
-                        add(
-                            add(
-                                output
-                                    .retained_bytes
-                                    .checked_mul(2)
-                                    .ok_or(InvokeError::InvalidInput)?,
-                                containers,
-                            )?,
-                            selector_footprint.retained_bytes,
-                        )?,
-                        add(
-                            add(selector_cost.temporary_bytes(), cost.temporary_bytes())?,
-                            core::mem::size_of::<usize>() as u64,
-                        )?,
-                    )?;
-                    cells[ordinal].write(NativeStringMatrixKeyCell {
-                        address: text.as_ptr() as u64,
-                        bytes: text.len() as u64,
-                        logical_output_bytes: output.retained_bytes,
-                        logical_cloned_bytes: add(
-                            selector_footprint.retained_bytes,
-                            footprint.retained_bytes,
-                        )?,
-                        selection_compute_work: add(add(cost.compute_work(), finalization)?, 2)?,
-                        selection_comparison_work: add(cost.comparison_work(), finalization)?,
-                        logical_temporary_bytes,
-                        logical_extra_nodes,
-                    });
+                        text,
+                        selector_footprint,
+                        selector_cost,
+                    )?);
                 }
                 // SAFETY: exactly one write occurred for every source ordinal
                 // in 0..strings.len(), which is the fixed allocation's length.
@@ -546,15 +551,26 @@ impl NativeStringMatrixKeyLoan {
         {
             return Err(InvokeError::InvalidInput);
         }
-        let ValueData::Matrix(matrix) = self.owner.data() else {
-            return Err(InvokeError::InvalidInput);
-        };
-        let SequenceView::String(strings) = matrix.elements() else {
-            return Err(InvokeError::InvalidInput);
-        };
-        let text = strings
-            .get(selected.ordinal)
-            .ok_or(InvokeError::InvalidInput)?;
+        let text = match self.owner.data() {
+            ValueData::Matrix(matrix) => {
+                let SequenceView::String(strings) = matrix.elements() else {
+                    return Err(InvokeError::InvalidInput);
+                };
+                strings.get(selected.ordinal).map(AsRef::as_ref)
+            }
+            ValueData::Map(map) => {
+                match map.entries().get(selected.ordinal).map(|e| e.key().data()) {
+                    Some(ValueData::String(text)) => Some(text.as_ref()),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+        .ok_or(InvokeError::InvalidInput)?;
         Ok(use_key(text))
     }
 }
+
+#[path = "native_collection_borrowed_map_keys.rs"]
+mod map_keys;
+pub use map_keys::NativeBorrowedMapKeys;

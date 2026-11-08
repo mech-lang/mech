@@ -418,7 +418,7 @@ mod borrowed_record_map;
 mod string_matrix_key;
 #[cfg(feature = "sequence_buffers")]
 pub use string_matrix_key::{
-    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeBorrowedMapKeys, NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
     NativeStringMatrixKeyView,
 };
 #[cfg(feature = "sequence_buffers")]

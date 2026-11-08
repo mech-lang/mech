@@ -151,7 +151,7 @@ pub use crate::resident::general::native_collection_calls::{
 };
 #[cfg(feature = "sequence_buffers")]
 pub use crate::resident::general::native_collection_calls::{
-    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeBorrowedMapKeys, NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
     NativeStringMatrixKeyView,
 };
 #[cfg(feature = "pure_text")]

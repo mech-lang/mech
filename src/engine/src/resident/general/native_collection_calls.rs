@@ -37,7 +37,7 @@ pub use prepared::{
 };
 #[cfg(feature = "sequence_buffers")]
 pub use prepared::{
-    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeBorrowedMapKeys, NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
     NativeStringMatrixKeyView,
 };
 
