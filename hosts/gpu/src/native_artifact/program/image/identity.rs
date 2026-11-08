@@ -459,7 +459,9 @@ fn selected_template(
 // when emitting the same U64 cell's replacement; ownership/first-change stays.
 // IR285 composes shared immutable call metadata with same-cell checked updates.
 // IR289 refines declined append guards with a bounded, read-only prefix.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 292;
+// IR293 imports only compiler-proved worker-local constants; immutable
+// captures already supply their current scalar words and canonical owners.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 293;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

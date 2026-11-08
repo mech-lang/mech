@@ -38,6 +38,8 @@ mod matrix_length_lowering_tests;
 mod prefix_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod prefix_window_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod worker_constant_owners;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod output_retirement_tests;
@@ -575,7 +577,7 @@ impl<'a> Prepared<'a> {
         limits: NativeProgramExecutionLimits,
         memory: &ManagedMemoryBudget,
     ) -> Result<Self, NativeProgramExecutionError> {
-        Self::new_with_budget(descriptor, limits, memory, None)
+        Self::new_with_budget(descriptor, limits, memory, None, None)
     }
 
     fn new_with_budget(
@@ -583,6 +585,7 @@ impl<'a> Prepared<'a> {
         limits: NativeProgramExecutionLimits,
         memory: &ManagedMemoryBudget,
         worker_budget: Option<NativeLibraryWorkBudget>,
+        worker_constants: Option<&[u32]>,
     ) -> Result<Self, NativeProgramExecutionError> {
         let plan = &descriptor.metadata().plan;
         if plan.activation_boundary().is_none() {
@@ -685,11 +688,18 @@ impl<'a> Prepared<'a> {
         )?;
         // Constants and their retirement are funded only once, before any
         // generated activation. No fresh Values or observations are touched.
-        for (constant, &bound) in plan
-            .constants()
-            .iter()
-            .zip(&descriptor.metadata().constant_bytes)
-        {
+        // Worker entries execute only their outlined CFG, with immutable root
+        // values supplied by its checked capture plan. The compiler's ordered
+        // import recipe excludes both unread globals and those captured owners.
+        // Parent activation retains the complete existing constant inventory.
+        let constant_count = worker_constants.map_or(plan.constants().len(), <[u32]>::len);
+        for ordinal in 0..constant_count {
+            let index = worker_constants.map_or(ordinal, |indices| indices[ordinal] as usize);
+            let constant = plan
+                .constants()
+                .get(index)
+                .ok_or_else(|| invalid("worker constant recipe outside plan"))?;
+            let bound = descriptor.metadata().constant_bytes[index];
             if bound == 0 {
                 continue;
             }
@@ -790,13 +800,20 @@ impl<'a> Prepared<'a> {
         {
             return Err(invalid("worker constructor capture/count mismatch"));
         }
-        let mut prepared = Self::new_with_budget(descriptor, limits, memory, Some(library))?;
+        let mut prepared = Self::new_with_budget(
+            descriptor,
+            limits,
+            memory,
+            Some(library),
+            Some(&region.owned_constants),
+        )?;
         let locals_start = descriptor.metadata().plan.transport_input_count();
         let state = prepared.state.as_mut().unwrap();
-        // A worker skips whole-program activation, but retains the SAME
-        // immutable constants. Its private local lanes receive their original
-        // words; no source computation or observation is rerun here.
-        for constant in descriptor.metadata().plan.constants() {
+        // Captured scalar words are installed below from their current parent
+        // homes. Only a constant not covered by those captures needs an initial
+        // word here; no full-plan scan or temporary owner is necessary.
+        for &index in &region.owned_constants {
+            let constant = &descriptor.metadata().plan.constants()[index as usize];
             if let Some(kind) =
                 descriptor.metadata().plan.values()[constant.value().get() as usize].scalar_kind()
             {

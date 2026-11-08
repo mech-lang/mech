@@ -22,6 +22,10 @@ pub(in crate::native_artifact) struct Region {
     pub output: u32,
     pub source: u32,
     pub captures: Box<[u32]>,
+    /// Plan-constant indices read by this entire worker CFG but not supplied
+    /// by immutable captures. Unread globals and already captured owners need
+    /// no independent worker import. Original constant order is retained.
+    pub owned_constants: Box<[u32]>,
     pub sites: Box<[u32]>,
     pub group: Box<[u32]>,
 }
@@ -148,7 +152,9 @@ impl Layout {
             // read. Worker-local carrier/immutable slots must belong to this
             // exact outer generator or one of its descendants.
             let mut captures = BTreeSet::new();
+            let mut reads = BTreeSet::new();
             let mut capture = |value: Value| -> Result<(), &'static str> {
+                reads.insert(value.get());
                 let scope = *plan
                     .value_scopes()
                     .get(value.get() as usize)
@@ -234,6 +240,16 @@ impl Layout {
                 push: collection.push(),
                 output: output.get(),
                 source: generator.source().semantic_value().get(),
+                owned_constants: plan
+                    .constants()
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, constant)| {
+                        reads.contains(&constant.value().get())
+                            && !captures.contains(&constant.value().get())
+                    })
+                    .map(|(index, _)| index as u32)
+                    .collect(),
                 captures: captures.into_iter().collect(),
                 sites: sites.into_iter().collect(),
                 group: Box::new([]),

@@ -763,6 +763,18 @@ fn decode_inner<
     if max_call_values > w.max_library_inputs {
         return Err("restored canonical arguments exceed admitted backing".into());
     }
+    // Independent images cannot invent or suppress a worker import. This also
+    // rechecks all region sites/captures, including branches and cold exits.
+    if !OBJECT_BOUND {
+        let derived =
+            native::program::prepare::parallel::Layout::derive(&plan.facts(), &w.scalar_aggregates)
+                .map_err(str::to_owned)?;
+        if serde_json::to_value(&derived).map_err(|e| e.to_string())?
+            != serde_json::to_value(&w.parallel).map_err(|e| e.to_string())?
+        {
+            return Err("worker import recipe differs from source capture proof".into());
+        }
+    }
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
