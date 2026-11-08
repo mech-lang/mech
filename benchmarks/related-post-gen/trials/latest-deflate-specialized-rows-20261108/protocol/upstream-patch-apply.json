@@ -1,0 +1,19 @@
+{
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Applied patch to 'hosts/gpu/src/native_artifact/program/codegen/numeric_capture_windows.rs' cleanly.\nFalling back to direct application...\nApplied patch to 'hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs' with conflicts.\nFalling back to direct application...\nApplied patch to 'hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs' cleanly.\nApplied patch to 'hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs' cleanly.\nFalling back to direct application...\nApplied patch to 'hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs' with conflicts.\nApplied patch to 'hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_reduction.rs' cleanly.\nApplied patch to 'hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_reduction_geometry.rs' cleanly.\nFalling back to direct application...\nApplied patch to 'hosts/gpu/src/native_artifact/program/runtime/retirement.rs' cleanly.\nU hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs\nU hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs\nRecorded preimage for 'hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs'\nRecorded preimage for 'hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs'\n",
+  "source_files": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_capture_windows.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_geometry_windows.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_addresses.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/captured_read_addresses.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_reduction.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_reduction_geometry.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/state_read_packs.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/retirement.rs"
+  ]
+}

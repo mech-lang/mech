@@ -1,0 +1,6 @@
+{
+  "source_commit": "ccfadbdf0af69f741237f5d1099a3c3eef79386a",
+  "identity": "IR280/work116/ABI41/image11",
+  "upstream_nullary_semantics_ported_to": "canonical phase_numeric.rs; independent readonly route retained",
+  "failure_explained": "Earlier audit left nullary-state packing unmerged because current hot source has no empty states. The geometry witness depends on this native foundation. Port its phase selection and scalar-only exits into the canonical implementation instead of weakening the witness."
+}

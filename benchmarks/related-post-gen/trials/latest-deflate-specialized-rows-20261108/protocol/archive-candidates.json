@@ -1,0 +1,162 @@
+[
+  {
+    "bytes": 108754112,
+    "path": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v8/scalar"
+  },
+  {
+    "bytes": 108754112,
+    "path": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v7/scalar"
+  },
+  {
+    "bytes": 108742400,
+    "path": "/private/tmp/mech-related-compact-managed-slots-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108732784,
+    "path": "/private/tmp/mech-related-recovered-scalar-homes-regressions-20261108-v1/scalar"
+  },
+  {
+    "bytes": 108730656,
+    "path": "/private/tmp/mech-related-compact-visit-work-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108728816,
+    "path": "/private/tmp/mech-related-packed-row-payload-regressions-20261107-v2/scalar"
+  },
+  {
+    "bytes": 108728576,
+    "path": "/private/tmp/mech-related-matrix-length-lowering-regressions-20261107-v2/scalar"
+  },
+  {
+    "bytes": 108725072,
+    "path": "/private/tmp/mech-related-grouped-metadata-regressions-20261108-v1/scalar"
+  },
+  {
+    "bytes": 108724976,
+    "path": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v2/scalar"
+  },
+  {
+    "bytes": 108709088,
+    "path": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v5/scalar"
+  },
+  {
+    "bytes": 108708912,
+    "path": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v4/scalar"
+  },
+  {
+    "bytes": 108708720,
+    "path": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v3/scalar"
+  },
+  {
+    "bytes": 108698688,
+    "path": "/private/tmp/mech-related-selected-range-integration-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108694736,
+    "path": "/private/tmp/mech-related-boolean-chain-branches-regressions-20261107-v3/scalar"
+  },
+  {
+    "bytes": 108694544,
+    "path": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v3/scalar"
+  },
+  {
+    "bytes": 108694544,
+    "path": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v2/scalar"
+  },
+  {
+    "bytes": 108694304,
+    "path": "/private/tmp/mech-related-forward-child-funding-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108694288,
+    "path": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108694272,
+    "path": "/private/tmp/mech-related-forward-child-funding-regressions-20261107-v2/scalar"
+  },
+  {
+    "bytes": 108692176,
+    "path": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108690816,
+    "path": "/private/tmp/mech-related-positional-metadata-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108690528,
+    "path": "/private/tmp/mech-related-transported-unsigned-facts-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108689328,
+    "path": "/private/tmp/mech-related-llvm-native-image-regressions-20261107-v4/scalar"
+  },
+  {
+    "bytes": 108688944,
+    "path": "/private/tmp/mech-related-conjunctive-unsigned-facts-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108686416,
+    "path": "/private/tmp/mech-related-parent-frame-runtime-counts-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108683936,
+    "path": "/private/tmp/mech-related-paired-scalar-selects-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108683472,
+    "path": "/private/tmp/mech-related-wide-retirement-stores-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108683360,
+    "path": "/private/tmp/mech-related-borrowed-parent-frame-metadata-regressions-20261107-v2/scalar"
+  },
+  {
+    "bytes": 108683344,
+    "path": "/private/tmp/mech-related-borrowed-parent-frame-metadata-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108682624,
+    "path": "/private/tmp/mech-related-native-vector-shape-identities-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108682496,
+    "path": "/private/tmp/mech-related-native-vector-shape-identities-regressions-20261107-v3/scalar"
+  },
+  {
+    "bytes": 108674208,
+    "path": "/private/tmp/mech-related-native-zero-branches-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108658976,
+    "path": "/private/tmp/mech-related-immutable-capture-views-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108655488,
+    "path": "/private/tmp/mech-related-movable-capture-reads-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108637264,
+    "path": "/private/tmp/mech-related-invariant-capture-hoisting-regressions-20261107-v2/scalar"
+  },
+  {
+    "bytes": 108635152,
+    "path": "/private/tmp/mech-related-native-guarded-load-demand-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108635008,
+    "path": "/private/tmp/mech-related-invariant-capture-integration-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108634368,
+    "path": "/private/tmp/mech-related-shared-call-certificates-regressions-20261107-v1/scalar"
+  },
+  {
+    "bytes": 108632336,
+    "path": "/private/tmp/mech-related-movable-capture-reads-regressions-20261107-v3/scalar"
+  },
+  {
+    "bytes": 108632320,
+    "path": "/private/tmp/mech-related-movable-capture-reads-regressions-20261107-v2/scalar"
+  }
+]

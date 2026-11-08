@@ -1,0 +1,5 @@
+{
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Applied patch to 'hosts/gpu/src/native_artifact/program/prepare/numeric_exits.rs' cleanly.\nApplied patch to 'hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs' with conflicts.\nApplied patch to 'hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs' with conflicts.\nFalling back to direct application...\nFalling back to direct application...\nApplied patch to 'src/engine/src/native_artifact/scalar_aggregates.rs' cleanly.\nU hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs\nU hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs\nRecorded preimage for 'hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs'\nRecorded preimage for 'hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs'\n"
+}

@@ -1,7 +1,7 @@
 {
   "schema": "mech.related-post-gen.optimization-recovery-audit.v1",
   "updated_utc": "2026-11-08T02:48:49.935831+00:00",
-  "current_baseline": "IR278/source7e2b75c5b0317f610af2a83e46dc0a4deccb67c6",
+  "current_baseline": "IR280/sourceccfadbdf0af69f741237f5d1099a3c3eef79386a; specialized4/5row source97fc6c5a448aee096d19eb89839512974c724fee5efae5653ca88bed51b9c00a",
   "reports_inventoried": 120,
   "prioritized_entries": [
     {
@@ -9,10 +9,10 @@
       "feature": "Conservative scalar-home retirement masks",
       "report": "compiler-native-scalar-home-and-root-phases-20261107.json",
       "rule_casualty": true,
-      "current": "Recovered and fully qualified as IR279; retained for composition, not a proven timing promotion",
+      "current": "Recovered asIR279 and inherited in independently confirmed IR280 working compiler/source",
       "gain": "Fresh same-cohort processing instructions 51147313->49520546 (-3.18055%). Processing 2.912833->2.881333ms,20/31 paired wins;95% paired change[-1.38028%,+0.24786%],so elapsed superiority is inconclusive.",
       "action": "Keep recovered native masks available for composition;408 actual native CI checks,35 related outputs and133 exact scalar/DEFLATE allocation rows pass. No mandatory whole-process gate.",
-      "double_count": false,
+      "double_count": true,
       "report_sha256": "c387eeded93736d1f9b903aa9a21f94e7c828208c3f76ddef392c14c76550fd8",
       "historical_gain": "Reuse-source processing instructions54824599->53544125(-2.34%);23/31 processing wins vs IR240 reuse; original-source22/31 processing but14/31 whole vs then-selectedIR238.",
       "current_report": "compiler-native-recovered-scalar-homes-20261108.json"
@@ -90,7 +90,7 @@
       "rule_casualty": true,
       "current": "inherited in current source history",
       "gain": "Processing improves against pre-integration controls; whole-process regression blocked promotion.",
-      "action": "Audit newest PR973 a7c2168 changes separately; latest captured geometry/address staging was not in the frozen IR278 cohort.",
+      "action": "NewestPR973a7c2168 plus previously unmerged nullary-state dependency now integrated and qualified asIR280. Original-source arithmetic text is exactIR279; no processing gain established for compiler-only integration. Source simplifications separately confirmed.",
       "double_count": true,
       "report_sha256": "decdc9e5b4a9ab31f52f67a3d4ab414926033cf1cfde4c014a7384f0800adf35"
     },
@@ -942,5 +942,13 @@
     "next": "Assess paired wide clears with masks, compact-visit/grouped-reader ablation and newest PR973 native geometry/address staging; keep adverse standalone results."
   },
   "goal_complete": false,
-  "prioritized_count": 18
+  "prioritized_count": 18,
+  "latest_measured_recovery": {
+    "report": "compiler-native-latest-deflate-integration-20261108.json",
+    "source_combination_processing_paired_gain_vs_parent": 0.09527966142919686,
+    "source_combination_processing_instruction_gain": 0.1747139788810128,
+    "whole_paired_regression_vs_previous_working": 0.04424350700404833,
+    "adopted_under_user_policy": true,
+    "not_counted_as_new_compiler_only_speedup": true
+  }
 }

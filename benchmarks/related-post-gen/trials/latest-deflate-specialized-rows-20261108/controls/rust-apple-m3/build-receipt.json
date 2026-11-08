@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline"
+  ],
+  "cwd": "/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/rust-apple-m3",
+  "environment": {
+    "RUSTC": "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "RUSTFLAGS": "-C target-cpu=apple-m3",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/target"
+  },
+  "exit": 0,
+  "seconds": 7.20101008284837,
+  "stdout": "",
+  "stderr": "   Compiling proc-macro2 v1.0.76\n   Compiling unicode-ident v1.0.12\n   Compiling version_check v0.9.4\n   Compiling serde v1.0.195\n   Compiling cfg-if v1.0.0\n   Compiling once_cell v1.19.0\n   Compiling zerocopy v0.7.32\n   Compiling serde_json v1.0.111\n   Compiling allocator-api2 v0.2.16\n   Compiling ryu v1.0.16\n   Compiling itoa v1.0.10\n   Compiling ahash v0.8.7\n   Compiling aligned-vec v0.5.0\n   Compiling quote v1.0.35\n   Compiling syn v2.0.48\n   Compiling hashbrown v0.14.3\n   Compiling serde_derive v1.0.195\n   Compiling rust v0.1.0 (/private/tmp/mech-related-apple-m3-rust-controls-20261107-v1/rust-apple-m3)\n    Finished `release` profile [optimized] target(s) in 7.03s\n"
+}

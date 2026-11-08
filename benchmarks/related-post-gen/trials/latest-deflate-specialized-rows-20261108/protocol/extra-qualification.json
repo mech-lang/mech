@@ -1,0 +1,13 @@
+{
+  "extra_edge_outputs_exact": 3,
+  "prior_qualification_outputs_exact": 32,
+  "variants": [
+    "mech-ir280-latest-deflate-4",
+    "mech-ir280-triple-rows-4",
+    "mech-ir280-quartet-rows-4",
+    "mech-ir280-both-rows-4"
+  ],
+  "total_extra_outputs_exact": 12,
+  "total_qualification_outputs_exact": 140,
+  "timing_claim": false
+}

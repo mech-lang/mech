@@ -1,0 +1,10 @@
+{
+  "exact_outputs": 48,
+  "instrumented_captures": 32,
+  "exact_binary_lifecycle_captures": 0,
+  "ordinary_controls": 16,
+  "all_5_thread_profiles": true,
+  "no_counter_or_loan_errors": true,
+  "all_executable_hashes_unchanged": true,
+  "diagnostic_only": true
+}

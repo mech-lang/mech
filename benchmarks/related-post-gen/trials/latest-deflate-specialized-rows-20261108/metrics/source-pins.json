@@ -1,0 +1,42 @@
+[
+  {
+    "variant": "mech-ir280-latest-deflate-4",
+    "original_source": "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/plain/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-latest-deflate-metrics-20261108-v1/mech-ir280-latest-deflate-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "b082469ee449d4f0b052c6f0960fc999c95c3471a5f78678fb9a76651306edbb",
+    "diagnostic_executable_sha256": "ec8149553481ac48fac36180918e251d917265a53350f06884638b8943058a88"
+  },
+  {
+    "variant": "mech-ir280-triple-rows-4",
+    "original_source": "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/triple-rows/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-latest-deflate-metrics-20261108-v1/mech-ir280-triple-rows-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "e83a7173e3b3dea5f9e23d2141c0d454d1b5dadad2600514cb0057b958f20771",
+    "diagnostic_executable_sha256": "d12d3475cea674ad0a860b5db71236f3f41651a4d34973b081a43c914ebcd492"
+  },
+  {
+    "variant": "mech-ir280-quartet-rows-4",
+    "original_source": "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/quartet-rows/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-latest-deflate-metrics-20261108-v1/mech-ir280-quartet-rows-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "4ef70c0078cbf55a6ee22b251c7eca9ea54a1e69ebeb5d82c58ccf5116d1c2d8",
+    "diagnostic_executable_sha256": "175997b18b6ff4df8988cf7291bd2a16069db063c9b0c79ab6b515940be7184d"
+  },
+  {
+    "variant": "mech-ir280-both-rows-4",
+    "original_source": "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/both-rows/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-latest-deflate-metrics-20261108-v1/mech-ir280-both-rows-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "85784e3d6b631f99a451a7fc45b3ee7f72635d3c09a45c21c19127ee7e9a0c3e",
+    "diagnostic_executable_sha256": "d65e77a1f414dc941238c3e0f8a35d03d20aba593262536cc2896e9322430c1e"
+  }
+]

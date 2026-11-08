@@ -1,0 +1,5 @@
+{
+  "cause": "Copied harness retained402/408 count instead of408/413 because a script-path condition did not match. All current413 names were listed; old focus checks passed. Corrected harness only and resumed the identical compiled test binary with5 upstream checks.",
+  "production_failure": false,
+  "timing_discarded": false
+}

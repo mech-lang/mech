@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/plain/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-latest-deflate-metrics-20261108-v1/mech-ir280-latest-deflate-4/runner-metrics",
+    "--output",
+    "/private/tmp/mech-related-latest-deflate-metrics-20261108-v1/mech-ir280-latest-deflate-4/native-link-audit.json"
+  ],
+  "cwd": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen",
+  "exit": 0,
+  "seconds": 0.08088816679082811,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 53, \"normalized_text_sha256\": \"fd33588597e17028d3c45709626a771545e246cc48e1a05453645a8eeb5f3960\"}\n",
+  "stderr": "",
+  "rustflags": null
+}

@@ -6161,8 +6161,8 @@
       "PR990_updated_at": "2026-11-07T18:34:42Z"
     }
   },
-  "latest_performance_cohort": "comparison-native-packed-row-payload-20261107-5000-m3.json",
-  "latest_resource_cohort": "comparison-native-packed-row-payload-resources-20261107-5000-m3.json",
+  "latest_performance_cohort": "comparison-native-grouped-metadata-20261108-5000-m3.json",
+  "latest_resource_cohort": "comparison-native-grouped-metadata-resources-20261108-5000-m3.json",
   "latest_measured_selected_speed": {
     "post_json_seconds": 0.002806917,
     "wall_seconds": 0.037387208081781864,
@@ -6172,7 +6172,7 @@
   },
   "latest_fastest_processing_Rust": {
     "variant": "rust-ordered-mask-tables256",
-    "median_seconds": 0.001509209,
+    "median_seconds": 0.001549083,
     "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
     "eligible_variants": [
       "rust",
@@ -6198,8 +6198,8 @@
     ]
   },
   "latest_fastest_whole_Rust": {
-    "variant": "rust-mech-control-u32-casts",
-    "median_seconds": 0.025048624956980348,
+    "variant": "rust-ordered-ordered",
+    "median_seconds": 0.019551208009943366,
     "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
   },
   "latest_measurement_is_not_a_new_selected_compiler": true,
@@ -12125,18 +12125,41 @@
   },
   "latest_packed_row_payload_report": "compiler-native-packed-row-payload-20261107.json",
   "current_working_baseline": {
-    "compiler_source": "80c91ec89ec0b57ddc1820a57fec4063c920de06",
-    "evidence": "a47330b5eb96904ef0d5fd4f79bd7895a6f6ded7",
-    "identity": "IR277/work116/ABI41/image9",
-    "runner": "/private/tmp/mech-related-packed-row-payload-runners-20261107-v2/plain/runner-aot",
-    "post_json_ms": 2.626209,
-    "times_fastest_processing_Rust": 1.740122806052707,
-    "whole_ms": 37.61445777490735,
-    "times_fastest_whole_Rust": 1.5016575895686146,
-    "cohort": "comparison-native-packed-row-payload-20261107-5000-m3.json",
-    "processing_gate_passed_against_all_three_controls": true,
-    "original_whole_gate_failed": true,
-    "unchanged_favorable_retry": false
+    "compiler_source": "ccfadbdf0af69f741237f5d1099a3c3eef79386a",
+    "identity": "IR280/work116/ABI41/image11",
+    "source_variant": "Checked4/5tag-row triple and quartet specialization, cached choose terms; original other-width loops",
+    "benchmark_source": "experiments/subset3-specialized-rows4-5-native-4.mec",
+    "benchmark_source_sha256": "97fc6c5a448aee096d19eb89839512974c724fee5efae5653ca88bed51b9c00a",
+    "workers": 4,
+    "runner": "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/both-rows/runner-aot",
+    "post_json_ms": 2.3588329999999997,
+    "times_fastest_processing_Rust": 1.554335413614939,
+    "whole_ms": 36.62362485192716,
+    "times_fastest_whole_Rust": 1.5196603649904947,
+    "cohort": "comparison-native-specialized-rows-confirmation-20261108-5000-m3.json",
+    "selection_reason": {
+      "adopted": true,
+      "scope": "Working benchmark compiler and Mech source, independently confirmed; historical selectedIR242 and every raw trial decision remain unchanged.",
+      "reason": "Two independent cohorts each31/31 faster processing pairs versus the identical current compiler/source control;17.47% fewer processing instructions in confirmation. Per user instruction, retain the measured whole-process/restoration/memory/code costs without a mandatory whole-process gate.",
+      "source_change": true,
+      "compiler_integration_alone_has_no_established_processing_gain": true,
+      "whole_process_paired_change_vs_IR278": 0.04424350700404833,
+      "whole_process_paired_95_interval_vs_IR278": [
+        0.005905048033880922,
+        0.08289072923239726
+      ],
+      "original_frozen_raw_decisions_preserved": true,
+      "no_unchanged_failed_candidate_retry": true
+    }
   },
-  "working_baseline_policy": "compiler-working-baseline-policy-20261108.json"
+  "working_baseline_policy": "compiler-working-baseline-policy-20261108.json",
+  "grouped_metadata_20261108": {
+    "source_commit": "7e2b75c5b0317f610af2a83e46dc0a4deccb67c6",
+    "identity": "IR278/work116/ABI41/image11",
+    "report": "compiler-native-grouped-metadata-20261108.json",
+    "selected_as_working_baseline": true
+  },
+  "latest_report": "compiler-native-latest-deflate-integration-20261108.json",
+  "latest_verified_source_confirmation": "comparison-native-specialized-rows-confirmation-20261108-5000-m3.json",
+  "latest_source_compiler_gain_scope": "Working source/compiler adoption; historical IR242 selection unchanged; whole-process regression retained"
 }

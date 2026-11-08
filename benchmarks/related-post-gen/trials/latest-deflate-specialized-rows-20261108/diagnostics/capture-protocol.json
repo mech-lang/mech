@@ -1,0 +1,57 @@
+{
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false,
+  "seed": 99029410,
+  "rounds": 8,
+  "variants": [
+    {
+      "name": "ordinary-plain",
+      "kind": "ordinary",
+      "executable": "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/plain/runner-aot",
+      "source": "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/plain/build/source.mec"
+    },
+    {
+      "name": "profile-plain-native",
+      "kind": "profile",
+      "executable": "/private/tmp/mech-related-specialized-rows-profile-20261108/plain/runner-profile",
+      "source": "/private/tmp/mech-related-specialized-rows-profile-20261108/plain/build/source.mec",
+      "helpers": false
+    },
+    {
+      "name": "profile-plain-callbacks",
+      "kind": "profile",
+      "executable": "/private/tmp/mech-related-specialized-rows-profile-20261108/plain/runner-profile",
+      "source": "/private/tmp/mech-related-specialized-rows-profile-20261108/plain/build/source.mec",
+      "helpers": true
+    },
+    {
+      "name": "ordinary-both-rows",
+      "kind": "ordinary",
+      "executable": "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/both-rows/runner-aot",
+      "source": "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/both-rows/build/source.mec"
+    },
+    {
+      "name": "profile-both-rows-native",
+      "kind": "profile",
+      "executable": "/private/tmp/mech-related-specialized-rows-profile-20261108/both-rows/runner-profile",
+      "source": "/private/tmp/mech-related-specialized-rows-profile-20261108/both-rows/build/source.mec",
+      "helpers": false
+    },
+    {
+      "name": "profile-both-rows-callbacks",
+      "kind": "profile",
+      "executable": "/private/tmp/mech-related-specialized-rows-profile-20261108/both-rows/runner-profile",
+      "source": "/private/tmp/mech-related-specialized-rows-profile-20261108/both-rows/build/source.mec",
+      "helpers": true
+    }
+  ],
+  "executable_pins": {
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/plain/runner-aot": "b082469ee449d4f0b052c6f0960fc999c95c3471a5f78678fb9a76651306edbb",
+    "/private/tmp/mech-related-specialized-rows-profile-20261108/plain/runner-profile": "6ea4dc8854c5c190e929b122ee1c7dfb122d0181e23a7dd0cf3a3a191d995c64",
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/both-rows/runner-aot": "85784e3d6b631f99a451a7fc45b3ee7f72635d3c09a45c21c19127ee7e9a0c3e",
+    "/private/tmp/mech-related-specialized-rows-profile-20261108/both-rows/runner-profile": "2cf9be801f8a9565a7074dcae86fd71f6e1e94ab3bdbe1fdc43155885ad889f8"
+  },
+  "input_sha256": "500530b81cb81c5b1a5e48aa30de6a89ba0a350460ad826c4c7bb023e6e46cb8",
+  "all_first_and_adverse_samples_retained": true,
+  "method": "Calling-thread snapshots for instrumented runtime with ordinary production controls; identical instrumented runtime for both unchanged native Objects. No source algorithm change."
+}

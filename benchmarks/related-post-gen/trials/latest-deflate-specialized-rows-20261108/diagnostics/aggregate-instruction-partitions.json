@@ -1,0 +1,60 @@
+{
+  "diagnostic_only": true,
+  "method": "Sum disjoint calling-thread instruction partitions per capture, then median; shares derive per capture, never by adding wall time or category medians.",
+  "variants": {
+    "profile-plain-callbacks": {
+      "instructions": {
+        "input_admission": 2281339.0,
+        "input_views": 116833.0,
+        "numeric_native": 31299774.5,
+        "other_driver": 11460.0,
+        "other_generated_entry": 8722061.5,
+        "result_construction": 168860.0,
+        "runtime_callbacks": 8762392.0,
+        "runtime_outside_entry": 698297.0,
+        "session_setup": 1425851.0,
+        "worker_dispatch": 261692.0
+      },
+      "total_instructions": 53763654.5,
+      "median_instruction_shares": {
+        "input_admission": 0.042453256561600906,
+        "input_views": 0.0021730852332980735,
+        "numeric_native": 0.5821994481174277,
+        "other_driver": 0.00021315515970313117,
+        "other_generated_entry": 0.16219871440977013,
+        "result_construction": 0.003140783618452943,
+        "runtime_callbacks": 0.16288662515902208,
+        "runtime_outside_entry": 0.012991875652047626,
+        "session_setup": 0.02649327861172357,
+        "worker_dispatch": 0.004857914429459697
+      }
+    },
+    "profile-both-rows-callbacks": {
+      "instructions": {
+        "input_admission": 2301372.5,
+        "input_views": 117005.0,
+        "numeric_native": 22511699.0,
+        "other_driver": 11474.0,
+        "other_generated_entry": 8776171.5,
+        "result_construction": 169083.0,
+        "runtime_callbacks": 8839256.0,
+        "runtime_outside_entry": 713085.0,
+        "session_setup": 1450286.0,
+        "worker_dispatch": 248218.5
+      },
+      "total_instructions": 45148679.0,
+      "median_instruction_shares": {
+        "input_admission": 0.05098191112416427,
+        "input_views": 0.002591548715528003,
+        "numeric_native": 0.4986930172732555,
+        "other_driver": 0.0002541381134307791,
+        "other_generated_entry": 0.19446758082366003,
+        "result_construction": 0.0037450265498707004,
+        "runtime_callbacks": 0.1957174110088986,
+        "runtime_outside_entry": 0.01579415025012794,
+        "session_setup": 0.03212900647529032,
+        "worker_dispatch": 0.0055001596435696395
+      }
+    }
+  }
+}

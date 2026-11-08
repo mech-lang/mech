@@ -1,0 +1,35 @@
+[
+  {
+    "path": "/private/tmp/mech-related-grouped-metadata-tests-20261108-v1/gpu-tests",
+    "archive": "/private/tmp/mech-related-grouped-metadata-tests-20261108-v1/gpu-tests.retained.gz",
+    "sha256": "563ff7734045c26db68f6d8f1fdb9a10d9a1b690e6cffd57e53785fa0beb2965",
+    "original_bytes": 135211976,
+    "compressed_bytes": 22543201,
+    "decoded_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-packed-row-payload-tests-20261107-v5/gpu-tests",
+    "archive": "/private/tmp/mech-related-packed-row-payload-tests-20261107-v5/gpu-tests.retained.gz",
+    "sha256": "9611ad714ff23349d6c1c4cafe3956f043092b5a763093260d1c427a726d1706",
+    "original_bytes": 134557592,
+    "compressed_bytes": 22399134,
+    "decoded_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-recovered-scalar-homes-tests-20261108-v1/gpu-tests",
+    "archive": "/private/tmp/mech-related-recovered-scalar-homes-tests-20261108-v1/gpu-tests.retained.gz",
+    "sha256": "043fe34a01dddb335c6169a7aacc62b35da60cb6de3284048a4beb25ba273074",
+    "original_bytes": 135204440,
+    "compressed_bytes": 22537474,
+    "decoded_verified": true
+  },
+  {
+    "path": "/private/tmp/mech-related-latest-deflate-tests-20261108-v1/gpu-tests",
+    "archive": "/private/tmp/mech-related-latest-deflate-tests-20261108-v1/gpu-tests.retained.gz",
+    "sha256": "cc9f31cf9cc0af8ad58237f1598352e3f36a24a7c5714521059dd45145ff38c0",
+    "original_bytes": 135228904,
+    "compressed_bytes": 22571540,
+    "decoded_verified": true,
+    "qualification": "First IR280 dependency-selection failure; binary and failure retained losslessly"
+  }
+]

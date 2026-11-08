@@ -1,0 +1,24 @@
+{
+  "pair": 0,
+  "order": 3,
+  "variant": "profile-plain-native",
+  "kind": "profile",
+  "command": [
+    "/private/tmp/mech-related-specialized-rows-profile-20261108/plain/runner-profile",
+    "/private/tmp/mech-related-specialized-rows-profile-20261108/plain/build/source.mec",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "/private/tmp/mech-related-specialized-rows-profile-20261108/captures/00-profile-plain-native/output.json",
+    "1"
+  ],
+  "cwd": "/private/tmp/mech-related-specialized-rows-profile-20261108/captures/00-profile-plain-native",
+  "environment": {
+    "MECH_INTERVAL_COUNTERS": "1",
+    "MECH_INTERVAL_HELPERS": "0"
+  },
+  "exit": 0,
+  "seconds": 0.03274516714736819,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.007179792,\"input_admission_seconds\":0.000145375,\"json_read_and_parse_seconds\":0.001584125,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":8,\"parallel_numeric_work\":24693182666,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":4,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.002541167,\"posts\":5000,\"processing_plus_admission_seconds\":0.00253325,\"retained_bytes\":929689,\"sample\":0,\"seconds\":0.002387875,\"work\":47515244661}\n",
+  "stderr": "",
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false
+}

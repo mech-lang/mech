@@ -1,0 +1,242 @@
+[
+  {
+    "original": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v8/scalar",
+    "archive": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v8/scalar.retained.gz",
+    "original_bytes": 108754112,
+    "archive_bytes": 14981622,
+    "original_sha256": "0cd248b523076e5a50f1e357820289724bf85d2a74b56f8cb6a3711bd7ca6989",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v7/scalar",
+    "archive": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v7/scalar.retained.gz",
+    "original_bytes": 108754112,
+    "archive_bytes": 14981504,
+    "original_sha256": "6fde99b99e52ea7ea26cc32922729e3cb7b42b87567b99ac52370ac88d85b90b",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-compact-managed-slots-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-compact-managed-slots-regressions-20261107-v1/scalar.retained.gz",
+    "original_bytes": 108742400,
+    "archive_bytes": 14952277,
+    "original_sha256": "c03c5e2b3dd290ded6957504730b2791f5cc8f69bf95d1aea3cb23543db45af5",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-recovered-scalar-homes-regressions-20261108-v1/scalar",
+    "archive": "/private/tmp/mech-related-recovered-scalar-homes-regressions-20261108-v1/scalar.retained.gz",
+    "original_bytes": 108732784,
+    "archive_bytes": 14951036,
+    "original_sha256": "ea9d23daba3ff53495d79541fcdaec3c032ce65b41dd3280501f82610c33d744",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-compact-visit-work-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-compact-visit-work-regressions-20261107-v1/scalar.retained.gz",
+    "original_bytes": 108730656,
+    "archive_bytes": 14943688,
+    "original_sha256": "18b3672cc453b51c9dbcb6a7f379f5294e1e2a3159e6e51076fb2f0e5be1b8fe",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-packed-row-payload-regressions-20261107-v2/scalar",
+    "archive": "/private/tmp/mech-related-packed-row-payload-regressions-20261107-v2/scalar.retained.gz",
+    "original_bytes": 108728816,
+    "archive_bytes": 14955449,
+    "original_sha256": "8ff77184c0aba1a8c717f86d017f510e5442854f3df2fad2b8e206df9a857303",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-matrix-length-lowering-regressions-20261107-v2/scalar",
+    "archive": "/private/tmp/mech-related-matrix-length-lowering-regressions-20261107-v2/scalar.retained.gz",
+    "original_bytes": 108728576,
+    "archive_bytes": 14953156,
+    "original_sha256": "614166e8a5201c8d3b3e37a58c7f0e377677e7a689c1d4dd685146fc55d9db7b",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-grouped-metadata-regressions-20261108-v1/scalar",
+    "archive": "/private/tmp/mech-related-grouped-metadata-regressions-20261108-v1/scalar.retained.gz",
+    "original_bytes": 108725072,
+    "archive_bytes": 14949069,
+    "original_sha256": "26791332a7bdd434e7461f24417a39012a568fc30255eb62d41e9523769b0825",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v2/scalar",
+    "archive": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v2/scalar.retained.gz",
+    "original_bytes": 108724976,
+    "archive_bytes": 14977460,
+    "original_sha256": "bff04bd894edacf4fa3275eb6c266ff781fe94ab23408ecfe00eda48d5e55998",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v5/scalar",
+    "archive": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v5/scalar.retained.gz",
+    "original_bytes": 108709088,
+    "archive_bytes": 14973731,
+    "original_sha256": "d56719a1609dc49cddc1bde0efd96563d09b98a8fae15975af794605cbf59d0a",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v4/scalar",
+    "archive": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v4/scalar.retained.gz",
+    "original_bytes": 108708912,
+    "archive_bytes": 14970051,
+    "original_sha256": "1719ef6fe7496d3bbcd76f6f9d1e0377fb765bbfeba5aac3a19eff42895f8f95",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v3/scalar",
+    "archive": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v3/scalar.retained.gz",
+    "original_bytes": 108708720,
+    "archive_bytes": 14966299,
+    "original_sha256": "5a186a0ae126235197481bfb58966e1e72101b7d573b37b850b6eac3adf87aa0",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-selected-range-integration-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-selected-range-integration-regressions-20261107-v1/scalar.retained.gz",
+    "original_bytes": 108698688,
+    "archive_bytes": 14962278,
+    "original_sha256": "1f2df541abd449ea0a453fc8cd5f68e4effde2f4d480be363225fed2f257eb6d",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-boolean-chain-branches-regressions-20261107-v3/scalar",
+    "archive": "/private/tmp/mech-related-boolean-chain-branches-regressions-20261107-v3/scalar.retained.gz",
+    "original_bytes": 108694736,
+    "archive_bytes": 14954573,
+    "original_sha256": "620ea59455feec656c1d12edc8e988646ef2fe0425863a7679c9d980d00f6c1d",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v3/scalar",
+    "archive": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v3/scalar.retained.gz",
+    "original_bytes": 108694544,
+    "archive_bytes": 14964455,
+    "original_sha256": "346e42ae0f68f59a1615b69d7c4473699f2595a3ea3eb7d8d3d3961ae937186d",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v2/scalar",
+    "archive": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v2/scalar.retained.gz",
+    "original_bytes": 108694544,
+    "archive_bytes": 14962895,
+    "original_sha256": "c506042edaf65753e4d10869cd53989c99e1e6796f2b2b9e922370843b581f13",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-forward-child-funding-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-forward-child-funding-regressions-20261107-v1/scalar.retained.gz",
+    "original_bytes": 108694304,
+    "archive_bytes": 14953427,
+    "original_sha256": "14654fb2052d96003847212cd427d12bf1fb81d6066764099cea3228ded5516c",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-boolean-loop-integration-regressions-20261107-v1/scalar.retained.gz",
+    "original_bytes": 108694288,
+    "archive_bytes": 14963598,
+    "original_sha256": "aaba09e405332f37cececca9407627e1952aba7931a2c8220d0d20bba9d8f17f",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-forward-child-funding-regressions-20261107-v2/scalar",
+    "archive": "/private/tmp/mech-related-forward-child-funding-regressions-20261107-v2/scalar.retained.gz",
+    "original_bytes": 108694272,
+    "archive_bytes": 14953967,
+    "original_sha256": "ff5d5b7640b014cd538bdc2c09b9616350e7e72ce14026dc3727a6b2d807959b",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-forward-read-windows-regressions-20261107-v1/scalar.retained.gz",
+    "original_bytes": 108692176,
+    "archive_bytes": 14962828,
+    "original_sha256": "4be9fddefcc7cbc9346a186ed046f79d240f8eb18942844533a08fb03c1a2781",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-positional-metadata-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-positional-metadata-regressions-20261107-v1/scalar.retained.gz",
+    "original_bytes": 108690816,
+    "archive_bytes": 14943494,
+    "original_sha256": "6cd90256ebf324a2ddb34b11f02f71e3c1997cf22b48b64e073295f7d78e295d",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-transported-unsigned-facts-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-transported-unsigned-facts-regressions-20261107-v1/scalar.retained.gz",
+    "original_bytes": 108690528,
+    "archive_bytes": 14957219,
+    "original_sha256": "587d3a9242de5851c4cf94c8aed4625ac26dfe9598b304f98235642c13306ed0",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-llvm-native-image-regressions-20261107-v4/scalar",
+    "archive": "/private/tmp/mech-related-llvm-native-image-regressions-20261107-v4/scalar.retained.gz",
+    "original_bytes": 108689328,
+    "archive_bytes": 14953462,
+    "original_sha256": "468e01dd446aa40e3604f0247df461e846781cb3a61ada8e21df92a418fccbc3",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  },
+  {
+    "original": "/private/tmp/mech-related-conjunctive-unsigned-facts-regressions-20261107-v1/scalar",
+    "archive": "/private/tmp/mech-related-conjunctive-unsigned-facts-regressions-20261107-v1/scalar.retained.gz",
+    "original_bytes": 108688944,
+    "archive_bytes": 14956215,
+    "original_sha256": "3159875d5f9f3e5d8f20ebe57aacc4680949b588e884576ac608fa8423eb98b7",
+    "decoded_verified": true,
+    "original_mode": 33261,
+    "restoration": "gzip-decode to original path, restore recorded mode; all receipts remain"
+  }
+]

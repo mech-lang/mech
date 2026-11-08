@@ -1,0 +1,5 @@
+{
+  "exit": 0,
+  "stdout": "",
+  "stderr": "Applied patch to 'hosts/gpu/src/native_artifact/mod.rs' cleanly.\nFalling back to direct application...\nApplied patch to 'hosts/gpu/src/native_artifact/program/runtime/hooks.rs' cleanly.\nApplied patch to 'hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs' cleanly.\nApplied patch to 'hosts/gpu/src/native_artifact/program/runtime/mod.rs' cleanly.\nApplied patch to 'hosts/gpu/src/native_artifact/program/runtime/session/mod.rs' cleanly.\n"
+}

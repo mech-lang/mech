@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-latest-deflate-20261108/latency-config.json",
+    "--out",
+    "/private/tmp/mech-related-latest-deflate-metrics-20261108-v1",
+    "--variant",
+    "mech-ir280-latest-deflate-4",
+    "--variant",
+    "mech-ir280-triple-rows-4",
+    "--variant",
+    "mech-ir280-quartet-rows-4",
+    "--variant",
+    "mech-ir280-both-rows-4"
+  ],
+  "exit": 0,
+  "stdout": "{\"variant\": \"mech-ir280-latest-deflate-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-ir280-triple-rows-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-ir280-quartet-rows-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-ir280-both-rows-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n",
+  "stderr": ""
+}

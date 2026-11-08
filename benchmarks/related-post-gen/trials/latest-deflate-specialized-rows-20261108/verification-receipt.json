@@ -1,0 +1,14 @@
+{
+  "records": 538,
+  "cohort_outputs_exact": 2332,
+  "qualification_outputs_exact": 140,
+  "native_CI_names_executed": 415,
+  "scalar_DEFLATE_rows_exact": 133,
+  "bootstrap_and_fastest_Rust_rederived": true,
+  "native_Object_identity_checked": true,
+  "profile_outputs_exact": 48,
+  "profile_captures_partitions_rederived": 32,
+  "first_failures_retained": true,
+  "working_baseline_adopted": true,
+  "goal_complete": false
+}

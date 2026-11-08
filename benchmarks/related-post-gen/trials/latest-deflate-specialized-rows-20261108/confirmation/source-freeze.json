@@ -1,0 +1,8 @@
+{
+  "source": "/private/tmp/mech-related-latest-deflate-compiler-20261108",
+  "build": "/private/tmp/mech-related-latest-deflate-opt-20261108-v2",
+  "source_inventory_exact": true,
+  "commit": "ccfadbdf0af69f741237f5d1099a3c3eef79386a",
+  "predeclared_rule_sha256": "3fab0291262b3989187ef6fde6d132f296073a2b3dd636dba752695be2807977",
+  "no_prior_cohort": true
+}

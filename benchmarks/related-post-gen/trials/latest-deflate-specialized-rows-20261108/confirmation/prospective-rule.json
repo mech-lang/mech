@@ -1,0 +1,48 @@
+{
+  "schema": "mech.related-post-gen.specialized-rows-confirmation.prospective-rule.v1",
+  "declared_utc": "2026-11-08T03:19:54.950578+00:00",
+  "declared_before_timing": true,
+  "source_commit": "ccfadbdf0af69f741237f5d1099a3c3eef79386a",
+  "identity": "IR280/work116/ABI41/image11",
+  "candidates": [
+    "mech-ir280-both-rows-4"
+  ],
+  "matched_parent": "mech-ir280-latest-deflate-4",
+  "fixed_reference": "mech-ir242-reuse-4",
+  "primary_references": {
+    "mech-ir280-both-rows-4": [
+      "mech-ir280-latest-deflate-4",
+      "mech-ir279-scalar-home-masks-4",
+      "mech-ir278-grouped-metadata-4",
+      "mech-ir242-reuse-4",
+      "mech-llvm-reuse-4"
+    ]
+  },
+  "samples": 31,
+  "seed": 990293,
+  "resource_samples": 7,
+  "resource_seed": 9902937,
+  "bootstrap": {
+    "resamples": 20000,
+    "seed": 99029399
+  },
+  "processing": "Measure paired medians, wins and95% intervals against each control; distinguish an established latency improvement from useful instruction/size gains. No change to the Mech algorithm.",
+  "whole_process": "Report all whole-process results; no mandatory whole-process acceptance gate, per explicit user instruction.",
+  "instructions": "Report native code/stack, retired instructions/cycles and their changes against identical-baseline controls. Lower instruction counts alone do not prove lower latency.",
+  "memory": "Require exact scalar/DEFLATE semantic/allocation rows; report full heap, allocations, RSS/footprint and size.",
+  "correctness": "All415 actual native contract names,7 new upstream native checks,3 retained mask checks,35 related output fixtures and133 exact scalar/DEFLATE rows.",
+  "all_first_and_adverse_results_retained": true,
+  "no_unchanged_favorable_retry": true,
+  "latency_implementations": 28,
+  "resource_implementations": 29,
+  "retained_Rust_controls": 22,
+  "goal_complete": false,
+  "source_experiments": "Three source variants specialize checked four/five-tag rows for triple generation, quartet generation, and their combination. Original loops retained for every other width. No change to JSON input, scoring or Rust oracle.",
+  "confirmation": "A promising source winner requires an independent frozen comparison; retain every initial and contrary source result. No unchanged retry for a failed candidate.",
+  "per_candidate_matched_parents": {
+    "mech-ir280-both-rows-4": "mech-ir280-latest-deflate-4"
+  },
+  "confirmation_run": true,
+  "initial_analysis": "/private/tmp/mech-related-latest-deflate-20261108/paired-analysis.json",
+  "selection": "Confirm same-source/compiler unchanged-parent processing superiority; preserve whole-process/memory/size costs. Do not rerun a failed source winner unchanged."
+}

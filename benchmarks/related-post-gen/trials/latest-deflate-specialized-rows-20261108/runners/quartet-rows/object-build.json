@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/compiler",
+    "/private/tmp/mech-related-latest-deflate-20261108/source-variants/quartet-rows.mec",
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/quartet-rows/build"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 5.0347301659639925,
+  "stdout": "{\"code_bytes\":991344,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":2144}\n",
+  "stderr": ""
+}

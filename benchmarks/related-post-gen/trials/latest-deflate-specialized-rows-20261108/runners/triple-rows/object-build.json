@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/compiler",
+    "/private/tmp/mech-related-latest-deflate-20261108/source-variants/triple-rows.mec",
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/triple-rows/build"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 5.108415958005935,
+  "stdout": "{\"code_bytes\":977120,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1920}\n",
+  "stderr": ""
+}

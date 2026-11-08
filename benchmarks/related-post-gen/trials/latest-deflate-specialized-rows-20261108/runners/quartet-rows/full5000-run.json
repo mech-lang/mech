@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/quartet-rows/runner-aot",
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/quartet-rows/build/source.mec",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/quartet-rows/output.json",
+    "1"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.5968164999503642,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.028124209,\"input_admission_seconds\":0.000444958,\"json_read_and_parse_seconds\":0.003904125,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":8,\"parallel_numeric_work\":24693182666,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":4,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.006652,\"posts\":5000,\"processing_plus_admission_seconds\":0.006596833,\"retained_bytes\":929689,\"sample\":0,\"seconds\":0.006151875,\"work\":43426085733}\n",
+  "stderr": ""
+}

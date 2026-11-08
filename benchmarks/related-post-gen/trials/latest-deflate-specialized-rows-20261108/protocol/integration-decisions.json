@@ -1,0 +1,11 @@
+{
+  "upstream": "a7c216810387b049516078478165564a8c29cb56",
+  "base": "0e1c6adb1565f0a1c3f55a38479a28af12b41efa",
+  "identity": "IR280/work116/ABI41/image11",
+  "conflicts": [
+    "Keep current selected traversal facts alongside new geometry/address fields",
+    "Retain every old composition module plus both upstream modules"
+  ],
+  "latest_related_source_has_packed_byte_reads": false,
+  "no_new_native_arithmetic_gain_claim": true
+}

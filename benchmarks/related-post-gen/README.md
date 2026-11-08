@@ -1,156 +1,55 @@
-# Related-post native compiler review
+# Related-post generation: Rust and Mech
 
-Current integration: [related-post compiler plus latest pinned #973](integration/README.md), **IR240 / work115 / ABI41 / image9**. Selected speed checkpoint: **IR238 original/four**, **2.934250ms /1.828289× fastest matched Rust**, **36.674708ms /1.490249× fastest full-process Rust**. Current integration has its own fully qualified source pin and cohort. The schema change reduces restoration allocations; native query instructions remain the main processing gap. Mask reuse, Rust-style insertion and IR239 Boolean lowering remain unselected. Parity is unmet; two inherited GPU failures remain; draft and no merge requested.
+The working benchmark is **IR280 with the specialized four/five-tag-row Mech source and four native query workers**. Cranelift remains the production backend; LLVM is an optional comparison. Rust parity remains unmet.
 
+The compiler integrates the current DEFLATE work from PR #973 at `a7c216810387b049516078478165564a8c29cb56`, including the previously unmerged nullary-state foundation. Compiler source: `ccfadbdf0af69f741237f5d1099a3c3eef79386a`. The [maintained Mech source](experiments/subset3-specialized-rows4-5-native-4.mec) specializes triple/quartet generation for checked four/five-tag rows, caches shared choose terms, and keeps the original loops for all other widths. Input, scoring, tie order and Rust oracle are unchanged.
 
-This branch contains the accepted compiler optimization series for
-[zupat/related_post_gen](https://github.com/zupat/related_post_gen), starting from
-the DEFLATE compiler. The review targets the branch behind
-[PR #973](https://github.com/mech-lang/mech/pull/973):
-`codex/level12-compression-consolidated`.
+## Latest independent confirmation
 
-The measured compiler is **5925a2b3a4fd4dfcca7ada541e37a69d514171f8**
-(IR223, work114, ABI40, image8). The selected overall speed checkpoint remains
-**c3a6925108ad3523f4e29022b66f1c17b92c9878** (IR208). Neither meets the goal of
-matching the fastest eligible Rust implementation in both processing and
-complete fresh-process time.
+Apple M3, 5,000 posts, 31 randomized fresh-process repetitions per implementation, 22 retained Rust controls. Each boundary has its own fastest eligible measured Rust denominator.
 
-## Retained IR223 measurements
+| Implementation | Continuous post-JSON | Times fastest Rust | Launch through exit | Times fastest Rust |
+|---|---:|---:|---:|---:|
+| Fastest eligible measured Rust | 1.517583 ms | 1.000000x | 24.099875 ms | 1.000000x |
+| IR280 specialized rows, working source | **2.358833 ms** | **1.554335x** | 36.623625 ms | 1.519660x |
+| IR280 original source, matched compiler | 2.606666 ms | 1.717643x | 36.353000 ms | 1.508431x |
+| IR278 previous working baseline | 2.633834 ms | 1.735545x | 35.412666 ms | 1.469413x |
+| Optional LLVM, unchanged original-source executable | 2.379541 ms | 1.567981x | 36.562042 ms | 1.517105x |
 
-These are the retained 15-round confirmation medians on the same Apple M3 and
-the same 5,000-post input. The continuous post-JSON timer includes input
-preparation/admission, allocations, worker creation/run/join, and result
-materialization. Complete time covers launch through exit, including JSON IO.
+The combined source change wins **31/31 processing pairs in both initial and independent confirmation cohorts**. Confirmation paired processing improves **9.528%**, 95% interval **[8.948%, 10.115%]**, versus the identical IR280 compiler with original source. Processing instructions fall **49,401,422 -> 40,770,303 (-17.471%)**. Relative to IR278, paired processing improves **10.773%**.
 
-| Implementation | Post-JSON | Complete process |
-| --- | ---: | ---: |
-| IR222 parent, original source, 4 workers | 3.209042 ms | 36.319916 ms |
-| IR223 candidate, original source, 4 workers | **3.140833 ms** | **36.801792 ms** |
-| Fastest matched Rust: checked U8 IDs / U32 ranks | **1.651875 ms** | 23.899291 ms |
-| Fastest complete-process Rust: streaming histogram | 1.657375 ms | **22.249042 ms** |
+The compiler integration alone leaves original-source native arithmetic byte-exact to IR279 and does not establish a processing speedup. The new native state support is qualified independently; no speed gain from it is invented.
 
-The candidate takes **1.9014x** the fastest matched Rust processing time and
-**1.6541x** the fastest complete-process Rust time. Those references differ;
-they are identified explicitly in the reports. The calculation-only Mech
-median is 2.977084 ms, but it excludes preparation/admission and is not the
-matched headline comparison. Separate interval medians must not be added or
-subtracted as an exact phase decomposition.
+Costs are retained: restoration rises **7.239709 -> 7.538334 ms** versus matched compiler. Whole-process paired change versus IR278 is **+4.424%**, 95% **[+0.591%, +8.289%]**. The user's policy permits verified phase improvements while measuring and reporting whole-process regressions. This source is adopted under that policy; the original raw trial decisions and historical IR242 selection remain unchanged.
 
-IR223 improves post-JSON time by 2.13% in confirmation and 2.63% in the initial
-cohort. Complete time regresses against IR222: only 3/15 paired confirmation
-wins, with a 1.113 ms median paired regression. It is therefore not selected as
-the overall speed winner. There are no discarded latency samples. Resource
-and diagnostic-profile runs are separate from the latency cohorts.
+| Confirmation resource | Original source | Specialized source |
+|---|---:|---:|
+| Processing allocation requests | 2,945 | 2,945 |
+| Processing requested bytes | 7,919,355 | 8,006,235 |
+| Processing peak additional requested heap | 5,566,127 B | 5,653,007 B |
+| Restore allocation requests | 26,837 | 27,302 |
+| Restore requested bytes | 12,830,999 | 13,193,328 |
+| Native code | 889,768 B | 1,077,480 B |
+| Cumulative native stack | 1,552 B | 2,144 B |
+| Native metadata | 4,335,172 B | 4,532,218 B |
+| Executable | 16,463,856 B | 16,843,648 B |
+| Peak RSS | 26,329,088 B | 27,197,440 B |
+| Peak physical footprint | 16,089,448 B | 16,531,816 B |
 
-| Post-JSON resource, separate 7-round cohort | IR222 | IR223 | Fastest matched Rust |
-| --- | ---: | ---: | ---: |
-| Allocation requests | 4,848 | **3,858** | **58** |
-| Requested allocation bytes | 8,384,366 | **8,043,926** | 6,825,713 |
-| Retired instructions, all participating threads | 65,390,240 | **64,443,191** | **19,234,550** |
+RSS and footprint are observed process metrics, not complete causal attribution to code or metadata growth.
 
-The candidate still executes **3.35x** the instructions of the matched Rust
-control. Allocation requests are 66.52x Rust, but requested bytes are only
-1.18x. This points to repeated small control/metadata work as well as generated
-query inefficiency; it does not establish a CPU percentage for either.
+## What is measured
 
-## Why the full boundary is still above 3 ms
+This workload ports [zupat/related_post_gen](https://github.com/zupat/related_post_gen/tree/fc2982b0c929b1b701209d401a1dc30c773ef4ab): select five related posts by shared tags with exact stable ties. The optimized Mech source interns tags, builds triple/quartet posting indexes, scores candidates with word masks, and runs four emitted native numeric workers. The host adapts JSON and native snapshots; the algorithm stays in Mech.
 
-All 53 numeric functions, including the numeric workers, emit native machine
-code. The latest storage change leaves all 212 numeric functions across the
-four tested variants, and their four complete native text sections, byte
-identical to IR222. It replaces general allocation planning for fixed native
-frame storage; it does not improve the main query's generated instructions.
+The primary comparison is one continuous post-JSON interval including input preparation/admission, setup, allocation, worker creation/run/join, native execution, internal cleanup and result materialization. Prepared-input and preinitialized-worker timers are ineligible for that comparison. Separate launch-through-exit timing includes restoration, JSON IO, computation and destruction. Cross-cohort clock changes in unchanged controls are not new compiler gains. Standard Rust remains the exact output oracle; the fastest eligible measured Rust is the performance reference.
 
-The fresh allocation profile attributes all 3,858 requests. Worker setup falls
-from 1,215 requests to 424, while root canonical library-call handling still
-accounts for 2,303 requests. General type/schema copying, call planning,
-snapshot ownership, and remaining worker setup are concrete targets.
+## Evidence and current work
 
-The native query remains the leading sampled application-code hotspot. It has
-a 688-byte stack frame and 7,299 static instructions, with repeated checks,
-stack accesses, register copies, and ranking/selection code. Static instruction
-counts and sampled positions are not dynamic instruction counts or CPU-time
-shares; the profiles do not justify assigning all remaining time to the host.
+[Implementation and both analyses](results/compiler-native-latest-deflate-integration-20261108.json), [working-baseline policy](results/compiler-working-baseline-policy-20261108.json), [recovery audit](results/optimization-recovery-audit-20261108.json), [initial cohort](results/comparison-native-latest-deflate-integration-20261108-5000-m3.json), [independent confirmation](results/comparison-native-specialized-rows-confirmation-20261108-5000-m3.json).
 
-Compiler follow-ups to review include proving canonical Boolean values to
-remove redundant normalization, propagating immutable producer-derived array
-element ranges to remove repeated bounds/overflow checks, and proving funded
-inner-loop bounds to avoid repeated funding tests while retaining exact
-debits/errors. These are proposals, not implemented gains. Source-level
-subset/histogram and compact-ID variants are included, with corresponding
-checked Rust controls; no further SIMD or parallel speedup is assumed.
+Qualification: **415 actual native CI names**, seven new upstream state/address/geometry checks, three retained mask checks, eight row/route tests, 27 image/caller tests, four explicitly executed optional LLVM checks, **133 exact scalar/DEFLATE non-timing/allocation rows**, **140 related output fixtures**, and **2,332 exact benchmark outputs** across both latency/resource cohorts. Native link audits bind every executable to its actual Object. First setup failures, the missing-dependency witness failure and disk-exhausted link are retained. No full hosted-CI-green claim.
 
-## Review scope and qualification
+A new diagnostic profile compares the final original and specialized Objects with the same instrumented runtime and calling-thread counters. It is separate from all promotion timings. Further work targets the remaining native instruction and runtime costs; the goal remains to meet or beat the fastest eligible Rust.
 
-The full series lowers numeric loops, collections, popcount and workers;
-specializes native frame/state layouts; simplifies proven control flow and
-unsigned checks; preserves exact work accounting; and reduces metadata and
-allocation setup. Review the compiler commits in order. The latest fixed-arena
-change is separately available in
-[latest-fixed-arena-change.patch](review/latest-fixed-arena-change.patch).
-
-The latest change introduces a closed typed `FixedHostArenaPlan` with one exact
-backing allocation and one private owner. It preserves the full existing
-shared-budget admission envelope, initialized element destruction, fresh
-opaque identities, generation/type checks, and zero-length behavior. It does
-not replace the efficient scalar native entry, weaken finite accounting, or
-move processing work outside the timer.
-
-Accepted qualification records 391 Core tests, 289 relevant Engine tests,
-689 GPU tests, 434 loader/fixture checks, 16 forged-frontier rejections,
-21 rejected old Objects, runtime-only and Managed application checks, and
-1,437 exact cohort outputs. The 133 scalar/DEFLATE controls preserve every
-nonallocation, nontiming field; allocation requests/bytes never regress. Two
-pre-existing GPU test failures remain explicit:
-
-- `batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable`
-- `native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map`
-
-These historical results qualify the pinned IR223 compiler. The current
-IR227 integration is qualified separately in the guide linked above. No
-green hosted-CI result is claimed.
-
-The publication merge preview against #973 head `dcc09ee9e75...` identifies
-36 conflicting compiler files. Their exact names and compared revisions are
-recorded in [the integration preview](review/pr973-integration-preview.json).
-That preview predates the now-qualified IR227 integration. PR990 remains
-a draft for review; its current guide and receipts are linked above.
-
-## Evidence and reproduction
-
-- [Candidate report](results/compiler-native-fixed-frame-arenas-candidate-20261106.json)
-- [All confirmation samples](results/comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json)
-- [Resource samples](results/comparison-native-fixed-frame-arenas-resources-20261106-5000-m3.json)
-- [Allocation stacks summary](results/profile-native-fixed-frame-arenas-post-json-allocations-20261106.json)
-- [Native worker instruction profile](results/profile-native-fixed-frame-arenas-worker-instructions-20261106.json)
-- [Complete-process phase diagnostic](results/profile-native-fixed-frame-arenas-complete-process-phases-20261106.json)
-- [File hashes and compiler-source hashes](review/manifest.json)
-- [Recorded build/qualification recipes](review/recorded-recipes)
-- [Test and compatibility receipts](review/qualification)
-
-Run `python3 benchmarks/related-post-gen/verify-review.py` from a checkout to
-verify the published evidence and unchanged measured compiler files. It does
-not execute the benchmark or re-run qualification.
-
-`sources/` contains the four actual original/compact, four/eight-worker Mech
-sources; `hosts/` contains their exact adapters. `rust-controls/` contains the
-standard and fastest checked Rust sources with their lockfiles. The shared
-input is `fixtures/posts-5000.json`, SHA256
-`500530b81cb81c5b1a5e48aa30de6a89ba0a350460ad826c4c7bb023e6e46cb8`.
-Rust controls were built using nightly-2026-03-03, with the flags in each
-manifest and recorded receipt. The checked U8/U32 control includes overflow
-checks. Mech retains its checked source semantics and unwind/error behavior.
-
-The recorded native recipes retain their original absolute paths and pinned
-library hashes. They require the original retained dependency closure or a
-separately reconstructed matching build; they are not advertised as a portable
-one-command build. Native binaries/Objects, dependency libraries, and raw
-sampler traces are not uploaded in this packet. Their separately retained
-local archive is identified by `review/local-archive-index.json`; this is an
-archive inventory, not a remote download link.
-
-The original snapshot `2fdacb1b2...` omitted 36 ignored lockfiles/test fixtures
-from DEFLATE commit `fa65038fce...`. Publication restores those exact files and
-connects that real ancestor to the snapshot history. All existing measured
-compiler files stay unchanged. This establishes a meaningful comparison with
-the branch behind #973 while retaining the original measured commit hashes.
+[PR #990](https://github.com/mech-lang/mech/pull/990) targets PR #973's branch. The integrated PR head and separately published working benchmark source are identified explicitly in its description. Earlier reports retain their original selection rules and measurements in [the historical record](HISTORY-through-20261108.md).

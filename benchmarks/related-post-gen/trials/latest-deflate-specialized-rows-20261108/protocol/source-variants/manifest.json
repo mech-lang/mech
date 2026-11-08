@@ -1,0 +1,23 @@
+[
+  {
+    "name": "triple-rows",
+    "source": "/private/tmp/mech-related-latest-deflate-20261108/source-variants/triple-rows.mec",
+    "sha256": "f84614e9fdb5efc7a78f76e2cf1cfe0177130807848370894814022293f13c17",
+    "specialization": "Exact combinations for4/5tag rows, identical lexicographic combination order; cached choose terms; original loops for all other widths",
+    "host_algorithm_changed": false
+  },
+  {
+    "name": "quartet-rows",
+    "source": "/private/tmp/mech-related-latest-deflate-20261108/source-variants/quartet-rows.mec",
+    "sha256": "aa77dbee6faca3f0e0c61945b6e5616d4875ea4f60e4b4e1c4c7da68c771cf1c",
+    "specialization": "Exact combinations for4/5tag rows, identical lexicographic combination order; cached choose terms; original loops for all other widths",
+    "host_algorithm_changed": false
+  },
+  {
+    "name": "both-rows",
+    "source": "/private/tmp/mech-related-latest-deflate-20261108/source-variants/both-rows.mec",
+    "sha256": "97fc6c5a448aee096d19eb89839512974c724fee5efae5653ca88bed51b9c00a",
+    "specialization": "Exact combinations for4/5tag rows, identical lexicographic combination order; cached choose terms; original loops for all other widths",
+    "host_algorithm_changed": false
+  }
+]

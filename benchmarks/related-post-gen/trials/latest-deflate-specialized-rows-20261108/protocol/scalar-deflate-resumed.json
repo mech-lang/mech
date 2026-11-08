@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "scalar_rows": 128,
+  "one_kib_rows": 5,
+  "all_nontiming_fields_equal_IR240": true
+}

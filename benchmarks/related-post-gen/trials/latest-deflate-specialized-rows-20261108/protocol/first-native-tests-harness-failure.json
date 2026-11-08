@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-latest-deflate-tests-20261108-v1/run.py"
+  ],
+  "exit": 1,
+  "seconds": 65.69305424997583,
+  "stdout": "test-build 0\npacked-row-and-route-tests 0\nrecovered-scalar-home-tests 0\nci-list 0\n",
+  "stderr": "Traceback (most recent call last):\n  File \"/private/tmp/mech-related-latest-deflate-tests-20261108-v1/run.py\", line 27, in <module>\n    assert set(old)<=set(names);assert len(old)==402 and len(names)==408\n                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+}

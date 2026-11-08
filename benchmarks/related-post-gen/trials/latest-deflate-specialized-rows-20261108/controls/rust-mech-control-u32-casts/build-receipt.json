@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline"
+  ],
+  "cwd": "/private/tmp/mech-related-u32-rank-rust-control-20261106-v1",
+  "exit": 0,
+  "seconds": 7.562081167008728,
+  "stdout": "",
+  "stderr": "   Compiling proc-macro2 v1.0.76\n   Compiling unicode-ident v1.0.12\n   Compiling version_check v0.9.4\n   Compiling serde v1.0.195\n   Compiling zerocopy v0.7.32\n   Compiling once_cell v1.19.0\n   Compiling cfg-if v1.0.0\n   Compiling serde_json v1.0.111\n   Compiling itoa v1.0.10\n   Compiling allocator-api2 v0.2.16\n   Compiling ryu v1.0.16\n   Compiling ahash v0.8.7\n   Compiling quote v1.0.35\n   Compiling hashbrown v0.14.3\n   Compiling syn v2.0.48\n   Compiling serde_derive v1.0.195\n   Compiling rust_mech v0.1.0 (/private/tmp/mech-related-u32-rank-rust-control-20261106-v1)\n    Finished `release` profile [optimized] target(s) in 7.32s\n",
+  "source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/experiments/rust-mech-control-u32-combinadic-casts.rs",
+  "source_sha256": "6f1be962064929907491ad593a1cfd304bcfc08f1b728201a0bbd5bcc531b926",
+  "cargo_toml_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+  "cargo_lock_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+  "rustc": "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+  "rustflags": [],
+  "calculation_boundary": "post_json_including_setup",
+  "checked_release_arithmetic": true,
+  "mech_resource_accounting": false,
+  "algorithm_change": "same checked byte-bounded U32 rank arithmetic as the Mech source experiment",
+  "executable": "/private/tmp/mech-related-u32-rank-rust-control-20261106-v1/target/release/rust_mech",
+  "executable_sha256": "89d3f3eb18f08a6ceacaafeb7b05853f5d89ccf67ff5aae8aa84ecd27a337074"
+}

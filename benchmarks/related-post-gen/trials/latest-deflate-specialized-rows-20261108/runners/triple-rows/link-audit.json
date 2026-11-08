@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/triple-rows/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/triple-rows/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-latest-deflate-runners-20261108-v1/triple-rows/native-link-proof.json"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.07710024993866682,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 53, \"normalized_text_sha256\": \"dd88e2ef073862ff0cba563d888d2036b4923175b65ca4384b374167a64533e0\"}\n",
+  "stderr": ""
+}

@@ -1,0 +1,16 @@
+{
+  "expected": 415,
+  "listed": 415,
+  "executed_passed": 415,
+  "all_names_match": true,
+  "old_names_retained": true,
+  "new_names": [
+    "native_artifact::program::runtime::composition_tests::captured_read_addresses::captured_read_addresses_refresh_between_calls_and_shape_changes",
+    "native_artifact::program::runtime::composition_tests::captured_read_addresses::captured_read_addresses_use_current_native_bases",
+    "native_artifact::program::runtime::composition_tests::nullary_phases::nullary_multistate_child_stays_native_and_recovers_current_arguments",
+    "native_artifact::program::runtime::composition_tests::nullary_phases::nullary_states_pack_only_the_tag_and_keep_nonzero_terminal_tags",
+    "native_artifact::program::runtime::composition_tests::state_read_packs::multistate_captured_packs_hoist_only_current_geometry",
+    "native_artifact::program::runtime::composition_tests::state_read_packs::multistate_packs_keep_finite_boundaries",
+    "native_artifact::program::runtime::composition_tests::state_read_packs::multistate_packs_keep_geometry_current_errors_publication_and_retry"
+  ]
+}
