@@ -1,0 +1,22 @@
+[
+  {
+    "variant": "mech-ir306-borrowed-dictionary-values-4",
+    "original_source": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/metrics/mech-ir306-borrowed-dictionary-values-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "7be1a02bd702c4b13b60d752bb523578075b855a886b8cf4a8572d704eed4b51",
+    "diagnostic_executable_sha256": "b06de1c4d1e1a2fa44776569dc26cfdd59725f52d953fa4b7e3c787b0a2a7848"
+  },
+  {
+    "variant": "mech-ir306-owned-dictionary-values-control-4",
+    "original_source": "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108-v3/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/metrics/mech-ir306-owned-dictionary-values-control-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "303eed9b7eac885b888e74213c7e823ec872ef6d746d86725f718a4cf59c3aff",
+    "diagnostic_executable_sha256": "a1c687f2643be42bce0c56a33680d0942106e6241aad9aeada10bd03b14fc995"
+  }
+]

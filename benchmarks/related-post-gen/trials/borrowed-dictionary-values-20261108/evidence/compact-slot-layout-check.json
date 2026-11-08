@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/private/tmp/mech-related-borrowed-dictionary-values-20261108/connected-tests-v6/gpu-tests",
+    "map_slot_consolidation",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.006408875109627843,
+  "stdout": "\nrunning 1 test\ntest native_artifact::program::runtime::maps::owner::map_slot_consolidation_preserves_the_option_backing_layout ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 990 filtered out; finished in 0.00s\n\n",
+  "stderr": "",
+  "IR305_slot_bytes": 968,
+  "inline_prototype_slot_bytes": 1160,
+  "compact_slot_bytes": 976,
+  "extra_slot_bytes": 8,
+  "option_backing_geometry_preserved": true
+}

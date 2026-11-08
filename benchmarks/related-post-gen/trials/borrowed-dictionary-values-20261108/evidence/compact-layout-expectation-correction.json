@@ -1,0 +1,10 @@
+{
+  "observed_slot_bytes": 976,
+  "IR305_slot_bytes": 968,
+  "extra_slot_bytes": 8,
+  "prior_estimate_bytes": 984,
+  "only_change": "cfg(test) layout assertion expected literal; first sum-of-Option-fields assertion already passed",
+  "before_source_sha256": "655fe9bf62ff7bb1b21419423c9005994b30b4a0ec88f5de85cb9609afe8bf58",
+  "after_source_sha256": "e20787bd7f81b5d39be443ed8a1cd26eddd48626eeaf6f3646cac6197cd8ff0b",
+  "production_code_changed": false
+}

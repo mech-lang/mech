@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v5/build.json",
+    "--source",
+    "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/compiler-facts.rs",
+    "--out",
+    "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/compiler"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 6.402456665877253,
+  "stdout": "{\"seconds\": 4.741745957871899, \"exit\": 0}\n",
+  "stderr": ""
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/connected-tests-v4/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/connected-tests-v4/gpu-tests.gz",
+    "original_bytes": 136632760,
+    "compressed_bytes": 23098548,
+    "sha256": "9540103747c134226ce5e29ff57ba0bcaae2ac2af1ef552edd928cf7b3bde786",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "status": "superseded inline GPU qualification retains its layout failure; Engine and regression runs completed",
+    "no_further_execution_planned": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/engine-tests-v2/engine-tests",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/engine-tests-v2/engine-tests.gz",
+    "original_bytes": 64067088,
+    "compressed_bytes": 13843165,
+    "sha256": "06c85947f36f8e63ef268c865719548940eed13a77ddd07b91e4eca85827161b",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "status": "superseded inline GPU qualification retains its layout failure; Engine and regression runs completed",
+    "no_further_execution_planned": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-regressions-20261108-v1/scalar",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-regressions-20261108-v1/scalar.gz",
+    "original_bytes": 109132800,
+    "compressed_bytes": 15183285,
+    "sha256": "4718e30541b2754a46252d71b401df18e60f851cb11c0e1ba00832b25dba81de",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "status": "superseded inline GPU qualification retains its layout failure; Engine and regression runs completed",
+    "no_further_execution_planned": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-regressions-20261108-v1/one-kib",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-regressions-20261108-v1/one-kib.gz",
+    "original_bytes": 105835320,
+    "compressed_bytes": 13388635,
+    "sha256": "58f1bf158b2f7dc8d5a9aa5e9c76a23ce8428991b45714f8aeddc5a5731c4f38",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "status": "superseded inline GPU qualification retains its layout failure; Engine and regression runs completed",
+    "no_further_execution_planned": true
+  }
+]

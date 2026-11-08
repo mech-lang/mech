@@ -1,0 +1,21 @@
+{
+  "all19prior_test_names_retained": true,
+  "extra_selection_passes": 24,
+  "remaining_prior_names": [
+    "resident::budget::native_compute_debit_tests::compute_debit_preserves_nested_observations_and_live_relative_caps",
+    "resident::budget::native_projection_meter_tests::denied_native_projection_preflight_keeps_spent_comparisons_on_retry",
+    "resident::budget::native_projection_meter_tests::native_projection_meter_checks_current_node_and_byte_limits",
+    "resident::budget::native_projection_meter_tests::native_projection_meter_debits_the_existing_ledger_and_tighter_call_caps",
+    "resident::budget::native_projection_meter_tests::native_projection_meter_keeps_policy_order_after_enclosing_funding",
+    "resident::budget::native_projection_meter_tests::native_projection_meter_preview_and_charge_keep_compute_node_overflow_atomic",
+    "resident::budget::native_projection_meter_tests::native_projection_meter_requires_its_live_work_scope",
+    "resident::budget::native_projection_meter_tests::native_projection_whole_metadata_preview_uses_its_scope_without_spending",
+    "resident::budget::native_projection_meter_tests::native_schema_precharge_keeps_shared_workers_incremental",
+    "resident::budget::native_projection_meter_tests::native_schema_precharge_matches_ordered_visitor_at_every_denial_boundary",
+    "resident::budget::native_projection_meter_tests::resident_schema_precharge_does_not_preview_without_a_turn",
+    "resident::budget::native_projection_meter_tests::resident_schema_precharge_keeps_shared_workers_incremental",
+    "resident::budget::native_projection_meter_tests::resident_schema_precharge_matches_ordered_visitor_at_every_denial_boundary"
+  ],
+  "API_native_collection_count": 138,
+  "old_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-20261108/projection-frame-relative-budget-regressions.json"
+}

@@ -1,0 +1,1288 @@
+{
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false,
+  "all_intervals_disjoint_and_telescope": true,
+  "medians_not_additive": true,
+  "summaries": {
+    "canonical-control-detail": {
+      "parts": {
+        "before_histogram": {
+          "elapsed_ns": 241208.0,
+          "instructions": 3007665.0,
+          "requests": 136.0,
+          "requested_bytes": 1057016.0
+        },
+        "histogram_prepare": {
+          "elapsed_ns": 19896.0,
+          "instructions": 129957.0,
+          "requests": 4.0,
+          "requested_bytes": 543072.0
+        },
+        "histogram_native": {
+          "elapsed_ns": 244833.0,
+          "instructions": 3032083.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        "histogram_finish": {
+          "elapsed_ns": 16021.0,
+          "instructions": 171549.0,
+          "requests": 172.0,
+          "requested_bytes": 10095.0
+        },
+        "before_keys": {
+          "elapsed_ns": 583.0,
+          "instructions": 6884.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        "keys": {
+          "elapsed_ns": 15646.0,
+          "instructions": 133149.5,
+          "requests": 6.0,
+          "requested_bytes": 7512.0
+        },
+        "dictionary_and_lookup_prelude": {
+          "elapsed_ns": 159166.5,
+          "instructions": 1650704.0,
+          "requests": 46.0,
+          "requested_bytes": 2925.0
+        },
+        "lookup_prepare": {
+          "elapsed_ns": 19354.0,
+          "instructions": 247054.5,
+          "requests": 5.0,
+          "requested_bytes": 184480.0
+        },
+        "lookup_native": {
+          "elapsed_ns": 12833.5,
+          "instructions": 185871.5,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        "lookup_finish": {
+          "elapsed_ns": 2666.5,
+          "instructions": 17064.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        "eligibility_and_prelude": {
+          "elapsed_ns": 130438.0,
+          "instructions": 1873340.0,
+          "requests": 22.0,
+          "requested_bytes": 42592.0
+        }
+      },
+      "runs": [
+        {
+          "pair": 0,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 262250,
+              "instructions": 3020279,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 22083,
+              "instructions": 129943,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 248208,
+              "instructions": 3036395,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 20459,
+              "instructions": 171786,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 625,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 18875,
+              "instructions": 133550,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 171000,
+              "instructions": 1650589,
+              "requests": 46,
+              "requested_bytes": 2925
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 20041,
+              "instructions": 247119,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12917,
+              "instructions": 185871,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 3042,
+              "instructions": 17065,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 143625,
+              "instructions": 1877649,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 1,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 252667,
+              "instructions": 3009456,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 20541,
+              "instructions": 129943,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 245542,
+              "instructions": 3032084,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 16917,
+              "instructions": 171581,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 541,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 17167,
+              "instructions": 133398,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 163375,
+              "instructions": 1650819,
+              "requests": 46,
+              "requested_bytes": 2925
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 20542,
+              "instructions": 247080,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12875,
+              "instructions": 185872,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 3083,
+              "instructions": 17064,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 134542,
+              "instructions": 1873511,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 2,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 242541,
+              "instructions": 3019399,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 20000,
+              "instructions": 129957,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 243500,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 14417,
+              "instructions": 163658,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 667,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 15208,
+              "instructions": 125738,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 159833,
+              "instructions": 1657391,
+              "requests": 46,
+              "requested_bytes": 2925
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 19167,
+              "instructions": 246733,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12750,
+              "instructions": 185871,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2708,
+              "instructions": 16935,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 130000,
+              "instructions": 1872747,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 3,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 222667,
+              "instructions": 2985730,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 19375,
+              "instructions": 129957,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 243250,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 15958,
+              "instructions": 178587,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 583,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 15625,
+              "instructions": 133243,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 158084,
+              "instructions": 1650711,
+              "requests": 46,
+              "requested_bytes": 2925
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 19125,
+              "instructions": 246877,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12958,
+              "instructions": 185872,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2417,
+              "instructions": 17064,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 126833,
+              "instructions": 1873169,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 4,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 250333,
+              "instructions": 3033601,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 20125,
+              "instructions": 129943,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 244625,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 16292,
+              "instructions": 178662,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 583,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 15917,
+              "instructions": 133201,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 158625,
+              "instructions": 1650697,
+              "requests": 46,
+              "requested_bytes": 2925
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 19250,
+              "instructions": 246891,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12791,
+              "instructions": 185871,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2625,
+              "instructions": 17065,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 130334,
+              "instructions": 1873528,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 5,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 224709,
+              "instructions": 2993666,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 19541,
+              "instructions": 129957,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 245459,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 15791,
+              "instructions": 163832,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 584,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 15541,
+              "instructions": 125738,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 157917,
+              "instructions": 1649915,
+              "requests": 46,
+              "requested_bytes": 2925
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 19375,
+              "instructions": 247057,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12792,
+              "instructions": 185871,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2833,
+              "instructions": 17065,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 128958,
+              "instructions": 1872739,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 6,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 223500,
+              "instructions": 2993309,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 19792,
+              "instructions": 129957,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 245041,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 16084,
+              "instructions": 171258,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 583,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 15667,
+              "instructions": 133098,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 158666,
+              "instructions": 1650950,
+              "requests": 46,
+              "requested_bytes": 2925
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 20084,
+              "instructions": 247052,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12958,
+              "instructions": 185872,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2583,
+              "instructions": 17064,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 130584,
+              "instructions": 1872725,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 7,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 239875,
+              "instructions": 3005874,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 19625,
+              "instructions": 129957,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 244125,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 15334,
+              "instructions": 171517,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 583,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 15125,
+              "instructions": 125738,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 159667,
+              "instructions": 1650259,
+              "requests": 46,
+              "requested_bytes": 2925
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 19333,
+              "instructions": 247099,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12708,
+              "instructions": 185872,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2292,
+              "instructions": 16939,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 130542,
+              "instructions": 1880495,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        }
+      ]
+    },
+    "native-dictionary-detail": {
+      "parts": {
+        "before_histogram": {
+          "elapsed_ns": 222521.0,
+          "instructions": 2979205.5,
+          "requests": 136.0,
+          "requested_bytes": 1057016.0
+        },
+        "histogram_prepare": {
+          "elapsed_ns": 20187.5,
+          "instructions": 130076.0,
+          "requests": 4.0,
+          "requested_bytes": 543072.0
+        },
+        "histogram_native": {
+          "elapsed_ns": 242375.0,
+          "instructions": 3032083.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        "histogram_finish": {
+          "elapsed_ns": 15438.0,
+          "instructions": 156899.0,
+          "requests": 172.0,
+          "requested_bytes": 10095.0
+        },
+        "before_keys": {
+          "elapsed_ns": 541.0,
+          "instructions": 6884.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        "keys": {
+          "elapsed_ns": 16917.0,
+          "instructions": 135083.5,
+          "requests": 6.0,
+          "requested_bytes": 7512.0
+        },
+        "dictionary_and_lookup_prelude": {
+          "elapsed_ns": 157250.0,
+          "instructions": 1606352.0,
+          "requests": 17.0,
+          "requested_bytes": 1750.0
+        },
+        "lookup_prepare": {
+          "elapsed_ns": 19604.5,
+          "instructions": 246958.0,
+          "requests": 5.0,
+          "requested_bytes": 184480.0
+        },
+        "lookup_native": {
+          "elapsed_ns": 12833.0,
+          "instructions": 185871.5,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        "lookup_finish": {
+          "elapsed_ns": 2333.5,
+          "instructions": 11389.5,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        "eligibility_and_prelude": {
+          "elapsed_ns": 131249.5,
+          "instructions": 1872417.5,
+          "requests": 22.0,
+          "requested_bytes": 42592.0
+        }
+      },
+      "runs": [
+        {
+          "pair": 0,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 600666,
+              "instructions": 3982950,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 81584,
+              "instructions": 337843,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 359083,
+              "instructions": 3035327,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 33833,
+              "instructions": 199877,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 834,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 101375,
+              "instructions": 435094,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 377875,
+              "instructions": 2225557,
+              "requests": 17,
+              "requested_bytes": 1750
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 61000,
+              "instructions": 378707,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 22833,
+              "instructions": 189115,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2792,
+              "instructions": 11450,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 225458,
+              "instructions": 2038342,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 1,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 228875,
+              "instructions": 2971614,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 20125,
+              "instructions": 130076,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 244250,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 15708,
+              "instructions": 157056,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 584,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 16750,
+              "instructions": 125586,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 159375,
+              "instructions": 1606447,
+              "requests": 17,
+              "requested_bytes": 1750
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 20458,
+              "instructions": 246711,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12792,
+              "instructions": 185871,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2333,
+              "instructions": 11329,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 133375,
+              "instructions": 1873081,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 2,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 217125,
+              "instructions": 2994895,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 18875,
+              "instructions": 129971,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 242042,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 14542,
+              "instructions": 157248,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 541,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 16000,
+              "instructions": 144308,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 151584,
+              "instructions": 1602631,
+              "requests": 17,
+              "requested_bytes": 1750
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 19458,
+              "instructions": 254145,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12667,
+              "instructions": 185871,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2041,
+              "instructions": 11459,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 128792,
+              "instructions": 1872052,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 3,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 222708,
+              "instructions": 2966572,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 20208,
+              "instructions": 129971,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 242084,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 16708,
+              "instructions": 164326,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 583,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 17084,
+              "instructions": 133165,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 158458,
+              "instructions": 1606427,
+              "requests": 17,
+              "requested_bytes": 1750
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 19500,
+              "instructions": 247035,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12792,
+              "instructions": 185872,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2708,
+              "instructions": 11458,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 132375,
+              "instructions": 1872415,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 4,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 220625,
+              "instructions": 2972623,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 20167,
+              "instructions": 130336,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 241791,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 15334,
+              "instructions": 156716,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 500,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 15041,
+              "instructions": 125950,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 154875,
+              "instructions": 1607057,
+              "requests": 17,
+              "requested_bytes": 1750
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 19292,
+              "instructions": 246881,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 13125,
+              "instructions": 185872,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2125,
+              "instructions": 11328,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 130500,
+              "instructions": 1872628,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 5,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 230250,
+              "instructions": 2985788,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 20417,
+              "instructions": 130134,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 242208,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 15542,
+              "instructions": 154397,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 500,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 17250,
+              "instructions": 137002,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 156666,
+              "instructions": 1603870,
+              "requests": 17,
+              "requested_bytes": 1750
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 19709,
+              "instructions": 246711,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 13208,
+              "instructions": 185871,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2667,
+              "instructions": 11329,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 131541,
+              "instructions": 1871954,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 6,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 222334,
+              "instructions": 2994926,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 20416,
+              "instructions": 129971,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 242542,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 14167,
+              "instructions": 156742,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 500,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 17416,
+              "instructions": 144036,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 157834,
+              "instructions": 1602645,
+              "requests": 17,
+              "requested_bytes": 1750
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 20458,
+              "instructions": 253965,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12833,
+              "instructions": 185871,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2334,
+              "instructions": 11459,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 130958,
+              "instructions": 1872052,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        },
+        {
+          "pair": 7,
+          "parts": {
+            "before_histogram": {
+              "elapsed_ns": 216416,
+              "instructions": 2971842,
+              "requests": 136,
+              "requested_bytes": 1057016
+            },
+            "histogram_prepare": {
+              "elapsed_ns": 19500,
+              "instructions": 130076,
+              "requests": 4,
+              "requested_bytes": 543072
+            },
+            "histogram_native": {
+              "elapsed_ns": 242917,
+              "instructions": 3032083,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "histogram_finish": {
+              "elapsed_ns": 14792,
+              "instructions": 156669,
+              "requests": 172,
+              "requested_bytes": 10095
+            },
+            "before_keys": {
+              "elapsed_ns": 541,
+              "instructions": 6884,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "keys": {
+              "elapsed_ns": 14500,
+              "instructions": 125586,
+              "requests": 6,
+              "requested_bytes": 7512
+            },
+            "dictionary_and_lookup_prelude": {
+              "elapsed_ns": 149542,
+              "instructions": 1606277,
+              "requests": 17,
+              "requested_bytes": 1750
+            },
+            "lookup_prepare": {
+              "elapsed_ns": 18542,
+              "instructions": 246725,
+              "requests": 5,
+              "requested_bytes": 184480
+            },
+            "lookup_native": {
+              "elapsed_ns": 12833,
+              "instructions": 185872,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "lookup_finish": {
+              "elapsed_ns": 2000,
+              "instructions": 11328,
+              "requests": 0,
+              "requested_bytes": 0
+            },
+            "eligibility_and_prelude": {
+              "elapsed_ns": 127042,
+              "instructions": 1872420,
+              "requests": 22,
+              "requested_bytes": 42592
+            }
+          }
+        }
+      ]
+    }
+  }
+}

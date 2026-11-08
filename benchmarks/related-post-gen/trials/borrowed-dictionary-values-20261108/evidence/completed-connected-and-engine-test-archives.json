@@ -1,0 +1,22 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/connected-tests-v3/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/connected-tests-v3/gpu-tests.gz",
+    "original_bytes": 136704616,
+    "compressed_bytes": 23114207,
+    "sha256": "7e1ef8a290197241aef4070cb834a6844897dc6ffd92aaa20d993fec9f3c98b5",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "all_required_functional_runs_complete": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/engine-tests-v1/engine-tests",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/engine-tests-v1/engine-tests.gz",
+    "original_bytes": 64067088,
+    "compressed_bytes": 13843159,
+    "sha256": "e6c4166ff4452e76453f0b0d59d834bb974d0c8a10d5489b7d79b05e3ad4a1b1",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "all_required_functional_runs_complete": true
+  }
+]

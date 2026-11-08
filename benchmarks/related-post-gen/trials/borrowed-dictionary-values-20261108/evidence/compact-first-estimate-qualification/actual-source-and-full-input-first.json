@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/private/tmp/mech-related-borrowed-dictionary-values-20261108/connected-tests-v5/gpu-tests",
+    "matrix_map_keys_full_input_selects_28",
+    "--ignored",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "MECH_MATRIX_KEY_BENCH_SOURCE": "/private/tmp/mech-related-native-string-classification-reuse-runners-20261108-v2/histogram-reuse/build/source.mec",
+    "MECH_MATRIX_KEY_BENCH_INPUT": "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "MECH_MATRIX_KEY_BENCH_ORACLE": "/private/tmp/mech-related-frozen-native-composition-latency-20261105-v1/related_posts_rust.json"
+  },
+  "exit": 0,
+  "seconds": 7.809668208006769,
+  "stdout": "\nrunning 1 test\ntest native_artifact::program::runtime::matrix_map_keys_actual_tests::matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results ... {\"borrowed_bank_entry_helpers\":1,\"borrowed_cells\":28,\"borrowed_value_banks\":1,\"cached_census\":280,\"canonical_dictionaries_at_publication\":0,\"canonical_key_matrices\":0,\"canonical_seed_tuples\":0,\"canonical_string_values\":0,\"exact_related_posts\":true,\"fallback_materializations\":0,\"frozen_dictionary_loans\":1,\"full_census\":15,\"full_input_posts\":5000,\"late_seed_materializations\":0,\"native_dictionary_publications\":1,\"native_seed_frames\":1,\"native_seed_imports\":1,\"owned_key_views\":1,\"owned_seed_imports\":0,\"producer_callbacks\":28,\"restored\":false,\"retained_insertions\":28,\"retired_histogram_handles\":1,\"timings_ineligible\":true}\n{\"borrowed_bank_entry_helpers\":1,\"borrowed_cells\":28,\"borrowed_value_banks\":1,\"cached_census\":280,\"canonical_dictionaries_at_publication\":0,\"canonical_key_matrices\":0,\"canonical_seed_tuples\":0,\"canonical_string_values\":0,\"exact_related_posts\":true,\"fallback_materializations\":0,\"frozen_dictionary_loans\":1,\"full_census\":15,\"full_input_posts\":5000,\"late_seed_materializations\":0,\"native_dictionary_publications\":1,\"native_seed_frames\":1,\"native_seed_imports\":1,\"owned_key_views\":1,\"owned_seed_imports\":0,\"producer_callbacks\":28,\"restored\":true,\"retained_insertions\":28,\"retired_histogram_handles\":1,\"timings_ineligible\":true}\nok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 990 filtered out; finished in 7.79s\n\n",
+  "stderr": "",
+  "scope": "IR306 borrowed keys and independent current value storage; qualification only, timers ineligible"
+}

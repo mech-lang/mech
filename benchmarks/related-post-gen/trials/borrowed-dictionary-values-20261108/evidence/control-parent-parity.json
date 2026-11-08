@@ -1,0 +1,28 @@
+{
+  "parent": "IR305",
+  "candidate": "IR306",
+  "all_nontiming_fields_exact": true,
+  "including_allocation_bytes_and_work": true,
+  "rows": 133,
+  "cases": [
+    {
+      "kind": "scalar",
+      "rows": 128,
+      "all_nontiming_fields_exact": true,
+      "IR305_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-regressions-20261108-v1/scalar-run.json",
+      "IR306_receipt": "/private/tmp/mech-related-borrowed-dictionary-values-regressions-20261108-v2/scalar-run.json"
+    },
+    {
+      "kind": "one-kib",
+      "rows": 5,
+      "all_nontiming_fields_exact": true,
+      "IR305_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-regressions-20261108-v1/one-kib-run.json",
+      "IR306_receipt": "/private/tmp/mech-related-borrowed-dictionary-values-regressions-20261108-v2/one-kib-run.json"
+    }
+  ],
+  "controls_compiler_build": "compact bank O4",
+  "current_production_build": "O5",
+  "only_O4_to_O5_change": "cfg(test) historical Slot size expectation corrected from estimated984 to measured976; no production code change",
+  "change_receipt": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/compact-layout-expectation-correction.json",
+  "timings_ineligible": true
+}

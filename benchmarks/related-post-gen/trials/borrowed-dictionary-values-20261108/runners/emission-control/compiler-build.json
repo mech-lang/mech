@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108-v3/build.json",
+    "--source",
+    "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/compiler-facts.rs",
+    "--out",
+    "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108-v3/compiler"
+  ],
+  "exit": 0,
+  "seconds": 3.056495583150536,
+  "stdout": "{\"seconds\": 2.425337415887043, \"exit\": 0}\n",
+  "stderr": ""
+}

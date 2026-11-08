@@ -1,0 +1,178 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-map-invariant-arguments-regressions-20261104-v1/one-kib",
+    "archive_path": "/private/tmp/mech-related-map-invariant-arguments-regressions-20261104-v1/one-kib.gz",
+    "original_bytes": 93179848,
+    "compressed_bytes": 11989901,
+    "sha256": "771296846a2db02052e8b6c6e075c8f02a111c0607577185c22839afa767ac68",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-map-invariant-arguments-regressions-20261104-v1/one-kib-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-map-invariant-arguments-regressions-20261104-v2/one-kib",
+    "archive_path": "/private/tmp/mech-related-map-invariant-arguments-regressions-20261104-v2/one-kib.gz",
+    "original_bytes": 93179800,
+    "compressed_bytes": 11990476,
+    "sha256": "6eea21bd8cbe4da1b8e5d2df261c454f78f150cda4b2730695a4f64d16dfbdc8",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-map-invariant-arguments-regressions-20261104-v2/one-kib-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v19/one-kib",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v19/one-kib.gz",
+    "original_bytes": 93273672,
+    "compressed_bytes": 12010512,
+    "sha256": "24c7b1d67d8682121979de36cd63f9f155ba94e0316a04318cb75d8677a44267",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v19/one-kib-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v23/one-kib",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v23/one-kib.gz",
+    "original_bytes": 93274136,
+    "compressed_bytes": 12010494,
+    "sha256": "daea5710e4590f7a321c73210e2a2805c8944f17da5b9fbbcacb439ea67f2cce",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v23/one-kib-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v26/scalar",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v26/scalar.gz",
+    "original_bytes": 96651184,
+    "compressed_bytes": 13763822,
+    "sha256": "4e33704866d40cc7ce95c191a881df6a07e0c190b30c557bab994d8fc2c6fc39",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v26/scalar-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v26/one-kib",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v26/one-kib.gz",
+    "original_bytes": 93276664,
+    "compressed_bytes": 12010933,
+    "sha256": "083546c20a56af39df7b39a20fcff78dc9bd6e595f9b5feaa4bbca09f26c8768",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v26/one-kib-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v28/scalar",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v28/scalar.gz",
+    "original_bytes": 96652144,
+    "compressed_bytes": 13762502,
+    "sha256": "39833426e42cc426ef63638e0ca6878ba91c15ffc313bf12162a07d165608373",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v28/scalar-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v28/one-kib",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v28/one-kib.gz",
+    "original_bytes": 93277608,
+    "compressed_bytes": 12009098,
+    "sha256": "2fc1be924414e3886dcfd8736c4d10b176bdff55a29fc1b6537316ca130e851d",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-invariant-arguments-regressions-20261104-v28/one-kib-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-proof-worklist-regressions-20261104-v1/scalar",
+    "archive_path": "/private/tmp/mech-related-numeric-proof-worklist-regressions-20261104-v1/scalar.gz",
+    "original_bytes": 96650048,
+    "compressed_bytes": 13764705,
+    "sha256": "4500ef4aa844fc63b51cb5e6669de9f6d6ee9317efc9416d06e5b84ba4522fa0",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-proof-worklist-regressions-20261104-v1/scalar-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-proof-worklist-regressions-20261104-v1/one-kib",
+    "archive_path": "/private/tmp/mech-related-numeric-proof-worklist-regressions-20261104-v1/one-kib.gz",
+    "original_bytes": 93274568,
+    "compressed_bytes": 12008227,
+    "sha256": "b4a7be6fdad3caf7575fa3a4a67eab981026537f4d3fb2efce44c3b60b2da674",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-proof-worklist-regressions-20261104-v1/one-kib-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-structure-regressions-20261104-v1/scalar",
+    "archive_path": "/private/tmp/mech-related-numeric-structure-regressions-20261104-v1/scalar.gz",
+    "original_bytes": 96677744,
+    "compressed_bytes": 13775078,
+    "sha256": "7d10e3cc95013627ba1f3c696ff21dcbc71550ef80f1a32265ae27e58003f464",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-structure-regressions-20261104-v1/scalar-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-structure-regressions-20261104-v1/one-kib",
+    "archive_path": "/private/tmp/mech-related-numeric-structure-regressions-20261104-v1/one-kib.gz",
+    "original_bytes": 93305704,
+    "compressed_bytes": 12022745,
+    "sha256": "987638521353e87ec5582a269cd80b1a9fece3a966c92b707fb82417063265f6",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-structure-regressions-20261104-v1/one-kib-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-state-storage-regressions-20261104-v1/scalar",
+    "archive_path": "/private/tmp/mech-related-numeric-state-storage-regressions-20261104-v1/scalar.gz",
+    "original_bytes": 96693568,
+    "compressed_bytes": 13775448,
+    "sha256": "2ba01810bb32c65e3797bd7104c4e8e341f19abdfd85f395a8e00fc4eb7fb78e",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-state-storage-regressions-20261104-v1/scalar-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-state-storage-regressions-20261104-v1/one-kib",
+    "archive_path": "/private/tmp/mech-related-numeric-state-storage-regressions-20261104-v1/one-kib.gz",
+    "original_bytes": 93321512,
+    "compressed_bytes": 12024764,
+    "sha256": "fbe30431de3279a4c2bb85e32a67002d7a808f1cd7c0b1cf3714657244a7a4e8",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-numeric-state-storage-regressions-20261104-v1/one-kib-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-string-projection-regressions-20261104-v2/scalar",
+    "archive_path": "/private/tmp/mech-related-string-projection-regressions-20261104-v2/scalar.gz",
+    "original_bytes": 96634032,
+    "compressed_bytes": 13759846,
+    "sha256": "448174ebea0056ea020bd2cbe4eae2a37705957b6553903308ce7787a0512586",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-string-projection-regressions-20261104-v2/scalar-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-string-projection-regressions-20261104-v2/one-kib",
+    "archive_path": "/private/tmp/mech-related-string-projection-regressions-20261104-v2/one-kib.gz",
+    "original_bytes": 93231416,
+    "compressed_bytes": 11995804,
+    "sha256": "b353d4d361b08a73a8b9797c41b75e3a38dde7da5afcb860a30058117e927bae",
+    "mode": 33261,
+    "successful_completion_receipt": "/private/tmp/mech-related-string-projection-regressions-20261104-v2/one-kib-run.json",
+    "not_live_at_archive": true,
+    "lossless_readback_verified": true
+  }
+]

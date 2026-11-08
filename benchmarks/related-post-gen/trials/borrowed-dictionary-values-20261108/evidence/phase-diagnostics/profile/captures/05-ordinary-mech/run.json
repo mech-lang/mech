@@ -1,0 +1,22 @@
+{
+  "pair": 5,
+  "order": 3,
+  "variant": "ordinary-mech",
+  "kind": "mech",
+  "diagnostic": false,
+  "command": [
+    "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108-v3/histogram-reuse/runner-aot",
+    "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108-v3/histogram-reuse/build/source.mec",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "/private/tmp/mech-related-borrowed-dictionary-values-20261108/phase-diagnostics/profile/captures/05-ordinary-mech/output.json",
+    "1"
+  ],
+  "cwd": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/phase-diagnostics/profile/captures/05-ordinary-mech",
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.05092758289538324,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.018860833,\"input_admission_seconds\":0.000152584,\"json_read_and_parse_seconds\":0.001613667,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":8,\"parallel_numeric_work\":24693650114,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":4,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.001818791,\"posts\":5000,\"processing_plus_admission_seconds\":0.001810918,\"retained_bytes\":956332,\"sample\":0,\"seconds\":0.001658334,\"work\":36970470133}\n",
+  "stderr": "",
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false
+}

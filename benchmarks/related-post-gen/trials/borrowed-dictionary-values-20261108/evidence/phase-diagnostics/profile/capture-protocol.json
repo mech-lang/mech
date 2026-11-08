@@ -1,0 +1,135 @@
+{
+  "rounds": 8,
+  "seed": 99042021,
+  "variants": [
+    {
+      "name": "canonical-control",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/phase-diagnostics/profile/hosts/canonical-control/runner-profile",
+      "source": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/phase-diagnostics/profile/hosts/canonical-control/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "b9a6c3cd9d7be7e766aef779c6ca24af1182f6963aa67fcc448ec2f60f8a1247",
+      "Object_text_exact_production": true,
+      "executable_sha256": "8e8fd2ef480e5fbb4021f6080b36f801ea573b2d5ceb598086f266277a4ffffd",
+      "variant": "canonical-control-coarse",
+      "helpers": false,
+      "diagnostic": true
+    },
+    {
+      "name": "canonical-control",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/phase-diagnostics/profile/hosts/canonical-control/runner-profile",
+      "source": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/phase-diagnostics/profile/hosts/canonical-control/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "b9a6c3cd9d7be7e766aef779c6ca24af1182f6963aa67fcc448ec2f60f8a1247",
+      "Object_text_exact_production": true,
+      "executable_sha256": "8e8fd2ef480e5fbb4021f6080b36f801ea573b2d5ceb598086f266277a4ffffd",
+      "variant": "canonical-control-detail",
+      "helpers": true,
+      "diagnostic": true
+    },
+    {
+      "name": "native-dictionary",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/phase-diagnostics/profile/hosts/native-dictionary/runner-profile",
+      "source": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/phase-diagnostics/profile/hosts/native-dictionary/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "a34a6e5c8b6042eb620ede69af66656f92134a7159c8691a70868a07d8e28b85",
+      "Object_text_exact_production": true,
+      "executable_sha256": "576a31ce906165a914b7b49e046a43050ae95ba58a480007e779f17c8026e92c",
+      "variant": "native-dictionary-coarse",
+      "helpers": false,
+      "diagnostic": true
+    },
+    {
+      "name": "native-dictionary",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/phase-diagnostics/profile/hosts/native-dictionary/runner-profile",
+      "source": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/phase-diagnostics/profile/hosts/native-dictionary/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "a34a6e5c8b6042eb620ede69af66656f92134a7159c8691a70868a07d8e28b85",
+      "Object_text_exact_production": true,
+      "executable_sha256": "576a31ce906165a914b7b49e046a43050ae95ba58a480007e779f17c8026e92c",
+      "variant": "native-dictionary-detail",
+      "helpers": true,
+      "diagnostic": true
+    },
+    {
+      "name": "rust-fastest",
+      "kind": "rust",
+      "executable": "/private/tmp/mech-related-aligned-constructor-diagnostics-20261108/rust/target/release/rust_mech",
+      "phase_boundaries": [
+        1,
+        2,
+        3
+      ],
+      "base_source": "/private/tmp/mech-related-constant-key-rust256-controls-20261107-v1/default/src/main.rs",
+      "algorithm_unchanged": true,
+      "executable_sha256": "e135b255d7cc5dc32712e4b2f92f34abf034e1ee29a6d8f9a7a46eae5b3b5cb9",
+      "variant": "rust-fastest-coarse",
+      "helpers": false,
+      "diagnostic": true
+    },
+    {
+      "name": "ordinary-mech",
+      "variant": "ordinary-mech",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108-v3/histogram-reuse/runner-aot",
+      "source": "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108-v3/histogram-reuse/build/source.mec",
+      "diagnostic": false,
+      "executable_sha256": "303eed9b7eac885b888e74213c7e823ec872ef6d746d86725f718a4cf59c3aff"
+    },
+    {
+      "name": "ordinary-histogram",
+      "variant": "ordinary-histogram",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/histogram-reuse/runner-aot",
+      "source": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/histogram-reuse/build/source.mec",
+      "diagnostic": false,
+      "executable_sha256": "7be1a02bd702c4b13b60d752bb523578075b855a886b8cf4a8572d704eed4b51"
+    },
+    {
+      "name": "ordinary-rust",
+      "variant": "ordinary-rust",
+      "kind": "rust",
+      "executable": "/private/tmp/mech-related-constant-key-rust256-controls-20261107-v1/default/target/release/rust_mech",
+      "source": null,
+      "diagnostic": false,
+      "executable_sha256": "ffb04744df3c79df5b4b985969ad1a805062d49b224d657e85022e635fce90b5"
+    }
+  ],
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false,
+  "input_sha256": "500530b81cb81c5b1a5e48aa30de6a89ba0a350460ad826c4c7bb023e6e46cb8",
+  "coarse_phases": [
+    "preparation_interning_and_eligibility",
+    "triple_index_and_coverage",
+    "quartet_index_and_masks",
+    "queries_cleanup_and_materialization"
+  ],
+  "process_instructions_all_workers": true,
+  "calling_thread_counters_for_nested_scopes": true,
+  "thread_and_global_allocator_counters": true,
+  "all_first_and_adverse_captures_retained": true,
+  "unchanged_native_Objects": true
+}

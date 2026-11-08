@@ -1,0 +1,80 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v1/libmech_engine.rlib",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v1/libmech_engine.rlib.gz",
+    "original_bytes": 343651032,
+    "compressed_bytes": 38446266,
+    "sha256": "e8051ce434d8cbb496fa52341dacbc3615c3814372f46b75bd4e3210cc5d79ab",
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "not_referenced_by_current_production_closure": true,
+    "no_active_command_references": true,
+    "receipt": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v1/mech_engine.build.json",
+    "restore": "gzip -dk archive; restore recorded mode"
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v13/libmech_engine.rlib",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v13/libmech_engine.rlib.gz",
+    "original_bytes": 343696272,
+    "compressed_bytes": 38450847,
+    "sha256": "6d10aafd7ec620a54822c5dca40419f1d0e6ffb8400a7dde763f9bb1ebfdfa42",
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "not_referenced_by_current_production_closure": true,
+    "no_active_command_references": true,
+    "receipt": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v13/mech_engine.build.json",
+    "restore": "gzip -dk archive; restore recorded mode"
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v14/libmech_engine.rlib",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v14/libmech_engine.rlib.gz",
+    "original_bytes": 343679208,
+    "compressed_bytes": 38450025,
+    "sha256": "54fa93a038b580dbb79213ed76d0fd6946f99120ef5dd2f118529e4024eef663",
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "not_referenced_by_current_production_closure": true,
+    "no_active_command_references": true,
+    "receipt": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v14/mech_engine.build.json",
+    "restore": "gzip -dk archive; restore recorded mode"
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v16/libmech_engine.rlib",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v16/libmech_engine.rlib.gz",
+    "original_bytes": 343674752,
+    "compressed_bytes": 38451880,
+    "sha256": "d181b5e029f0b76628d93e759fef683a7bf5a3684a7c5feb4fbffb94eae7f324",
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "not_referenced_by_current_production_closure": true,
+    "no_active_command_references": true,
+    "receipt": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v16/mech_engine.build.json",
+    "restore": "gzip -dk archive; restore recorded mode"
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v2/libmech_engine.rlib",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v2/libmech_engine.rlib.gz",
+    "original_bytes": 343690648,
+    "compressed_bytes": 38469869,
+    "sha256": "e1e7df11b2bcd8477560b03c7ec0e6f6cf031a90651cf6241365c8acb0d56945",
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "not_referenced_by_current_production_closure": true,
+    "no_active_command_references": true,
+    "receipt": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v2/mech_engine.build.json",
+    "restore": "gzip -dk archive; restore recorded mode"
+  },
+  {
+    "original_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v9/libmech_engine.rlib",
+    "archive_path": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v9/libmech_engine.rlib.gz",
+    "original_bytes": 343676144,
+    "compressed_bytes": 38463161,
+    "sha256": "ee3f9611c3f6a7d774245cecd75bba2ee1034475b008620d8ff0081d78e91098",
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "not_referenced_by_current_production_closure": true,
+    "no_active_command_references": true,
+    "receipt": "/private/tmp/mech-related-numeric-invariant-arguments-dev-20261104-v9/mech_engine.build.json",
+    "restore": "gzip -dk archive; restore recorded mode"
+  }
+]

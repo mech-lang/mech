@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/private/tmp/mech-related-borrowed-dictionary-values-20261108/connected-tests-v5/gpu-tests",
+    "map_slot_consolidation",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 0.014075333019718528,
+  "stdout": "\nrunning 1 test\ntest native_artifact::program::runtime::maps::owner::map_slot_consolidation_preserves_the_option_backing_layout ... FAILED\n\nfailures:\n\n---- native_artifact::program::runtime::maps::owner::map_slot_consolidation_preserves_the_option_backing_layout stdout ----\n\nthread 'native_artifact::program::runtime::maps::owner::map_slot_consolidation_preserves_the_option_backing_layout' (23000728) panicked at /private/tmp/mech-related-borrowed-dictionary-values-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/owner/mod.rs:954:5:\nassertion `left == right` failed\n  left: 976\n right: 984\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\n\nfailures:\n    native_artifact::program::runtime::maps::owner::map_slot_consolidation_preserves_the_option_backing_layout\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 990 filtered out; finished in 0.00s\n\n",
+  "stderr": "",
+  "IR305_slot_bytes": 968,
+  "inline_prototype_slot_bytes": 1160,
+  "compact_slot_bytes": 984,
+  "option_backing_geometry_preserved": true
+}

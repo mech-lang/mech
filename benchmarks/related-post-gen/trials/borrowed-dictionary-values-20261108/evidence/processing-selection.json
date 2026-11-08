@@ -1,0 +1,215 @@
+{
+  "selected_processing_baseline": "IR305",
+  "IR306_selected_for_processing": false,
+  "reason": "No confirmed processing reduction: candidate slower in both cohorts, despite29 fewer allocations and about100k fewer instructions",
+  "all_first_and_adverse_samples_retained": true,
+  "goal_complete": false,
+  "cohorts": {
+    "first": {
+      "fastest_Rust": {
+        "variant": "rust-ordered-mask-tables256",
+        "median_seconds": 0.0015527919999999999,
+        "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+        "eligible_variants": [
+          "rust",
+          "rust-mech-control-streaming",
+          "rust-mech-control-u32-casts",
+          "rust-mech-control-u8-ids-u32",
+          "rust-ordered-scan-only",
+          "rust-ordered-ordered",
+          "rust-ordered-mask-reuse",
+          "rust-ordered-ordered-mask",
+          "rust-ordered-ordered-mask-tables",
+          "rust-apple-m3",
+          "rust-mech-control-streaming-apple-m3",
+          "rust-mech-control-u32-casts-apple-m3",
+          "rust-mech-control-u8-ids-u32-apple-m3",
+          "rust-ordered-scan-only-apple-m3",
+          "rust-ordered-ordered-apple-m3",
+          "rust-ordered-mask-reuse-apple-m3",
+          "rust-ordered-ordered-mask-apple-m3",
+          "rust-ordered-ordered-mask-tables-apple-m3",
+          "rust-ordered-mask-tables256",
+          "rust-ordered-mask-tables256-apple-m3"
+        ]
+      },
+      "medians": {
+        "mech-ir305-native-dictionary-seed-frames-4": {
+          "post_json_seconds": 0.001785375,
+          "wall_seconds": 0.04593058302998543,
+          "compile_or_restore_seconds": 0.01575475,
+          "times_fastest_processing_Rust": 1.1497837443778691,
+          "times_fastest_whole_Rust": 1.9306777810036697
+        },
+        "mech-ir305-canonical-seed-control-4": {
+          "post_json_seconds": 0.001860959,
+          "wall_seconds": 0.04698595800437033,
+          "compile_or_restore_seconds": 0.015738083,
+          "times_fastest_processing_Rust": 1.198459935393794,
+          "times_fastest_whole_Rust": 1.9750401400083883
+        },
+        "mech-ir306-borrowed-dictionary-values-4": {
+          "post_json_seconds": 0.001798084,
+          "wall_seconds": 0.0491347499191761,
+          "compile_or_restore_seconds": 0.018789042,
+          "times_fastest_processing_Rust": 1.1579683563542316,
+          "times_fastest_whole_Rust": 2.0653639402355144
+        },
+        "mech-ir306-owned-dictionary-values-control-4": {
+          "post_json_seconds": 0.001785834,
+          "wall_seconds": 0.049600958125665784,
+          "compile_or_restore_seconds": 0.018783,
+          "times_fastest_processing_Rust": 1.1500793409548737,
+          "times_fastest_whole_Rust": 2.084960857283216
+        }
+      },
+      "candidate_parent_pair": {
+        "candidate": "mech-ir306-borrowed-dictionary-values-4",
+        "baseline": "mech-ir305-native-dictionary-seed-frames-4",
+        "wins": 9,
+        "pairs": 31,
+        "median_paired_relative_change": 0.009739120443253535,
+        "two_sided_95_interval": [
+          0.0024810550634699613,
+          0.017198580553584142
+        ],
+        "all_pair_changes": [
+          0.12909923664122136,
+          -0.02670011760094082,
+          0.02013053864124048,
+          0.012206905885189911,
+          -0.008907793479781656,
+          -0.036596727622714154,
+          0.0020396777676234823,
+          0.038219830028328516,
+          0.01299852440873872,
+          0.0268742617234754,
+          0.0024810550634699613,
+          0.144071432202872,
+          0.007118392494573911,
+          0.0856537828482451,
+          0.006055122494432075,
+          0.019199424640414575,
+          0.02078619909502266,
+          0.0149580516003045,
+          0.009739120443253535,
+          -0.09135915765069558,
+          0.03567473216391903,
+          0.017198580553584142,
+          0.00678265561800373,
+          -0.038017868403548594,
+          0.010123644692075162,
+          -0.3228703694829156,
+          -0.1143145741415692,
+          -0.012174524943167175,
+          0.036443849767545444,
+          -0.11995987828068577,
+          0.008872906961571614
+        ]
+      }
+    },
+    "confirmation": {
+      "fastest_Rust": {
+        "variant": "rust-ordered-mask-tables256",
+        "median_seconds": 0.0015493330000000002,
+        "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+        "eligible_variants": [
+          "rust",
+          "rust-mech-control-streaming",
+          "rust-mech-control-u32-casts",
+          "rust-mech-control-u8-ids-u32",
+          "rust-ordered-scan-only",
+          "rust-ordered-ordered",
+          "rust-ordered-mask-reuse",
+          "rust-ordered-ordered-mask",
+          "rust-ordered-ordered-mask-tables",
+          "rust-apple-m3",
+          "rust-mech-control-streaming-apple-m3",
+          "rust-mech-control-u32-casts-apple-m3",
+          "rust-mech-control-u8-ids-u32-apple-m3",
+          "rust-ordered-scan-only-apple-m3",
+          "rust-ordered-ordered-apple-m3",
+          "rust-ordered-mask-reuse-apple-m3",
+          "rust-ordered-ordered-mask-apple-m3",
+          "rust-ordered-ordered-mask-tables-apple-m3",
+          "rust-ordered-mask-tables256",
+          "rust-ordered-mask-tables256-apple-m3"
+        ]
+      },
+      "medians": {
+        "mech-ir305-native-dictionary-seed-frames-4": {
+          "post_json_seconds": 0.001782541,
+          "wall_seconds": 0.04587437491863966,
+          "compile_or_restore_seconds": 0.015755125,
+          "times_fastest_processing_Rust": 1.150521547014102,
+          "times_fastest_whole_Rust": 1.8822058730851834
+        },
+        "mech-ir305-canonical-seed-control-4": {
+          "post_json_seconds": 0.001863541,
+          "wall_seconds": 0.04672662494704127,
+          "compile_or_restore_seconds": 0.015748,
+          "times_fastest_processing_Rust": 1.2028021090365981,
+          "times_fastest_whole_Rust": 1.9171733252115502
+        },
+        "mech-ir306-borrowed-dictionary-values-4": {
+          "post_json_seconds": 0.001789417,
+          "wall_seconds": 0.04841641685925424,
+          "compile_or_restore_seconds": 0.018784875,
+          "times_fastest_processing_Rust": 1.1549595858346784,
+          "times_fastest_whole_Rust": 1.9865047606174804
+        },
+        "mech-ir306-owned-dictionary-values-control-4": {
+          "post_json_seconds": 0.001786708,
+          "wall_seconds": 0.04972770786844194,
+          "compile_or_restore_seconds": 0.018774792,
+          "times_fastest_processing_Rust": 1.1532110914825926,
+          "times_fastest_whole_Rust": 2.0403064667593998
+        }
+      },
+      "candidate_parent_pair": {
+        "candidate": "mech-ir306-borrowed-dictionary-values-4",
+        "baseline": "mech-ir305-native-dictionary-seed-frames-4",
+        "wins": 11,
+        "pairs": 31,
+        "median_paired_relative_change": 0.0035092644581695698,
+        "two_sided_95_interval": [
+          -0.00018763252960296573,
+          0.011107942609244414
+        ],
+        "all_pair_changes": [
+          0.013773903182365821,
+          -0.003808419455461065,
+          -0.0004195725276646689,
+          0.022563624831971163,
+          -0.0012737001016244198,
+          0.030244668356730786,
+          -0.00018763252960296573,
+          -0.005785213467546013,
+          -0.018906098746905853,
+          -0.027920128302985625,
+          0.002310546398012203,
+          0.023467277381173712,
+          0.00907594686480273,
+          0.1271633424928893,
+          -0.09459650483241044,
+          0.04657482308903349,
+          -0.12066550458343372,
+          0.0020486973958089294,
+          0.0035092644581695698,
+          0.01839066652992738,
+          0.0035854947756606137,
+          0.002113190624892569,
+          0.011107942609244414,
+          0.01375762116343937,
+          0.006099554830651055,
+          -0.008445952548331359,
+          0.013449757059362133,
+          -0.00983031196354578,
+          0.013277674959510044,
+          0.008769232418512685,
+          0.003376159921943067
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/prototype-tests-v2/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/prototype-tests-v2/gpu-tests.gz",
+    "original_bytes": 136593960,
+    "compressed_bytes": 23073359,
+    "sha256": "e6d2a26f37ad4e1d8e548cd646385d1c7b413cbf604e5c6f3de52cfcda30df4d",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "all_required_functional_runs_complete": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/prototype-tests-v3/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/prototype-tests-v3/gpu-tests.gz",
+    "original_bytes": 136593432,
+    "compressed_bytes": 23073362,
+    "sha256": "580e34320f843ae2b775f0e0ee507eb476b4b0fb9d31198b62a561275f921e15",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "all_required_functional_runs_complete": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/prototype-tests-v4/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/prototype-tests-v4/gpu-tests.gz",
+    "original_bytes": 136554776,
+    "compressed_bytes": 23056737,
+    "sha256": "d264ed408a2edbebe73334f6309baa08558f31e06f552f76776c2c7cc37c66d0",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "all_required_functional_runs_complete": true
+  }
+]

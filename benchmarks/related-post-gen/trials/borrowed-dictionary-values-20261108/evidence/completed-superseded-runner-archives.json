@@ -1,0 +1,68 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v1/compiler",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v1/compiler.gz",
+    "original_bytes": 107680352,
+    "compressed_bytes": 14442931,
+    "sha256": "5395fd6502b4f9423216e9130ea258813a2dc6749b0dce63a78c8b861211fe57",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "unmeasured_superseded_candidate": true,
+    "all32_qualification_outputs_exact": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v1/histogram-reuse/runner-aot",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v1/histogram-reuse/runner-aot.gz",
+    "original_bytes": 17149776,
+    "compressed_bytes": 4382119,
+    "sha256": "dd5ddd30016b605d1a38cee4c076a8543356958a9aec6caee8d6c69ce7106dba",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "unmeasured_superseded_candidate": true,
+    "all32_qualification_outputs_exact": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v2/compiler",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v2/compiler.gz",
+    "original_bytes": 107689520,
+    "compressed_bytes": 14447644,
+    "sha256": "a19c34694d5c1a74060415510de4ecbb99d48d484ec3350bb71a7eac939e6edd",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "unmeasured_superseded_candidate": true,
+    "all32_qualification_outputs_exact": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v2/histogram-reuse/runner-aot",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v2/histogram-reuse/runner-aot.gz",
+    "original_bytes": 17147792,
+    "compressed_bytes": 4379950,
+    "sha256": "8bd5265b218a229ff23021a4abbdaa4c39d2d72c14ed4626c83c8a9a267e78b0",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "unmeasured_superseded_candidate": true,
+    "all32_qualification_outputs_exact": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108/compiler",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108/compiler.gz",
+    "original_bytes": 107680704,
+    "compressed_bytes": 14445892,
+    "sha256": "b85776e3866df9387e89e3e8bb01dae9536808bcb3ac30aace8f00660587f876",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "unmeasured_superseded_candidate": true,
+    "all32_qualification_outputs_exact": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108/histogram-reuse/runner-aot",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108/histogram-reuse/runner-aot.gz",
+    "original_bytes": 17149776,
+    "compressed_bytes": 4382144,
+    "sha256": "1eebcd148a7be5719fa64695d61b329912442d013b3a6f6d44367a94d4805759",
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "unmeasured_superseded_candidate": true,
+    "all32_qualification_outputs_exact": true
+  }
+]

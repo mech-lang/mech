@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-borrowed-dictionary-values-20261108/connected-tests-v6/gpu-tests",
+    "borrowed_dictionary_values",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-borrowed-dictionary-values-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 0,
+  "seconds": 6.066556583857164,
+  "stdout": "\nrunning 9 tests\ntest native_artifact::program::prepare::borrowed_dictionary_values::tests::borrowed_dictionary_values_actual_source_selects_two_generic_seed_key_sets ... ignored, requires caller-pinned full source\ntest native_artifact::program::prepare::borrowed_dictionary_values::tests::borrowed_dictionary_values_require_one_borrowed_key_writer_and_native_result_use ... ok\ntest native_artifact::program::runtime::composition_tests::borrowed_dictionary_values::borrowed_dictionary_values_execute_original_restored_empty_unicode_long_and_aliases ... ok\ntest native_artifact::program::runtime::composition_tests::borrowed_dictionary_values::borrowed_dictionary_values_images_rederive_and_public_dictionary_escapes_decline ... ok\ntest native_artifact::program::runtime::composition_tests::borrowed_dictionary_values::borrowed_dictionary_values_late_canonical_fallback_keeps_utf8_payload_and_cleanup ... ok\ntest native_artifact::program::runtime::composition_tests::borrowed_dictionary_values::borrowed_dictionary_values_preserve_distinct_seed_values_and_decline_different_key_sets ... ok\ntest native_artifact::program::runtime::maps::string::borrowed_values::tests::borrowed_dictionary_values_deny_unadmitted_and_finite_capacity_without_leaking ... ok\ntest native_artifact::program::runtime::maps::string::borrowed_values::tests::borrowed_dictionary_values_equal_keys_do_not_reuse_old_histogram_values ... ok\ntest native_artifact::program::runtime::maps::string::borrowed_values::tests::borrowed_dictionary_values_pin_utf8_keys_but_keep_histogram_counts_independent ... ok\n\ntest result: ok. 8 passed; 0 failed; 1 ignored; 0 measured; 982 filtered out; finished in 3.99s\n\n",
+  "stderr": "",
+  "timing_eligible": false
+}

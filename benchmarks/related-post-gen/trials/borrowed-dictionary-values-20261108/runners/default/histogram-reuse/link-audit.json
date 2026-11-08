@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/histogram-reuse/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/histogram-reuse/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/histogram-reuse/native-link-proof.json"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.1064949999563396,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 51, \"normalized_text_sha256\": \"11391b9fb572b20eb8491469226f55aa9c797e256f76624aff5855f63f5d6f5c\"}\n",
+  "stderr": ""
+}

@@ -1,0 +1,71 @@
+{
+  "rows": 5,
+  "all_output_and_nonresource_fields_equal_IR305": true,
+  "all_allocation_counts_and_requested_bytes_nonincreasing": true,
+  "allowed_changed_report_fields": [
+    "work",
+    "visits"
+  ],
+  "report_work_and_visits_only_decrease": true,
+  "changes": [
+    {
+      "row": 0,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 1,
+      "physical": {
+        "requested_bytes": {
+          "before": 23960034,
+          "after": 23960034,
+          "delta": 0
+        },
+        "allocation_requests": {
+          "before": 3172,
+          "after": 3172,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 2,
+      "physical": {
+        "requested_bytes": {
+          "before": 23947682,
+          "after": 23947682,
+          "delta": 0
+        },
+        "allocation_requests": {
+          "before": 2979,
+          "after": 2979,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 3,
+      "physical": {
+        "requested_bytes": {
+          "before": 23947682,
+          "after": 23947682,
+          "delta": 0
+        },
+        "allocation_requests": {
+          "before": 2979,
+          "after": 2979,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 4,
+      "physical": {},
+      "report_resource_changes": {}
+    }
+  ],
+  "pricing_note": "IR306 adds borrowed keys and independent numeric cells with complete original admission. All output and nonresource fields must match IR305. Every physical allocation/requested-byte and work/visit difference remains explicit; no resource improvement is assumed. Descriptor prices and finite execution contracts are checked separately."
+}

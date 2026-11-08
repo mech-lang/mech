@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-borrowed-dictionary-values-20261108/engine-tests-v1/engine-tests",
+    "borrowed_map_keys",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-borrowed-dictionary-values-compiler-20261108/src/engine",
+    "CARGO_PKG_NAME": "mech-engine",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Retained program execution, reactive coordination, and bytecode integration for Mech."
+  },
+  "exit": 0,
+  "seconds": 0.9188193751033396,
+  "stdout": "\nrunning 6 tests\ntest resident::general::native_collection_calls::prepared::string_matrix_key::map_keys::tests::borrowed_map_keys_decline_headroom_preserve_empty_bounds_and_reject_replayed_selection ... ok\ntest resident::general::native_collection_calls::prepared::string_matrix_key::map_keys::tests::borrowed_map_keys_deferred_materialization_preserves_caps_and_paid_prefix ... ok\ntest resident::general::native_collection_calls::prepared::string_matrix_key::map_keys::tests::borrowed_map_keys_frame_admission_accepts_sealed_shape_and_preserves_output_limit ... ok\ntest resident::general::native_collection_calls::prepared::string_matrix_key::map_keys::tests::borrowed_map_keys_nested_and_immediate_refusal_keep_original_canonical_scope ... ok\ntest resident::general::native_collection_calls::prepared::string_matrix_key::map_keys::tests::borrowed_map_keys_pin_generic_snapshot_and_match_real_matrix_cells_and_logical_caps ... ok\ntest resident::general::native_collection_calls::prepared::string_matrix_key::map_keys::tests::borrowed_map_keys_publication_rejects_foreign_factory_and_account_and_keeps_later_reads ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 1249 filtered out; finished in 0.17s\n\n",
+  "stderr": "",
+  "scope": "API contract qualification only; no performance claim"
+}

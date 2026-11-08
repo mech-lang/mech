@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/private/tmp/mech-related-borrowed-dictionary-values-20261108/prototype-tests-v3/gpu-tests",
+    "borrowed_dictionary_values_actual",
+    "--ignored",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-borrowed-dictionary-values-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech.",
+    "MECH_BORROWED_DICTIONARY_SOURCE": "/private/tmp/mech-related-native-dictionary-seed-frames-runners-20261108-v1/histogram-reuse/build/source.mec"
+  },
+  "exit": 0,
+  "seconds": 4.0169587498530746,
+  "stdout": "\nrunning 1 test\ntest native_artifact::program::prepare::borrowed_dictionary_values::tests::borrowed_dictionary_values_actual_source_selects_two_generic_seed_key_sets ... {\"borrowed_dictionary_value_candidates\":{\"regions\":[{\"cell\":61,\"initialize\":45,\"insert\":62,\"key_source\":66,\"map_ordinal\":2,\"owner\":0,\"snapshot\":65},{\"cell\":3417,\"initialize\":3401,\"insert\":3418,\"key_source\":2128,\"map_ordinal\":2,\"owner\":1,\"snapshot\":2127}]},\"runtime_connected\":false,\"timing_eligible\":false}\nok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 985 filtered out; finished in 4.00s\n\n",
+  "stderr": "",
+  "timing_eligible": false
+}

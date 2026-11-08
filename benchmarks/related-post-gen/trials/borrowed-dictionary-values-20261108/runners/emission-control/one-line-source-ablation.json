@@ -1,0 +1,8 @@
+{
+  "changed": [
+    "src/native_artifact/codegen/control/mod.rs"
+  ],
+  "default": "5d4d3f8494395d5e4abc0443e4ab10ab711ccf42d332b951988d3cd98e194043",
+  "control": "12ef7ced372cacefceeb56bf37033d204a04f7ef0a0d4698567e191e6d7ea254",
+  "same_Engine_and_runtime": true
+}

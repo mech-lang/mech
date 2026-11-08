@@ -1,0 +1,8 @@
+{
+  "schema": "mech.lossless.output-alias.v1",
+  "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/first/latency/rust-ordered-ordered-18.json",
+  "alias_relative_to_packet": "evidence/first/latency/rust-ordered-ordered-18.json",
+  "blob_relative_to_packet": "evidence/output-objects/470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc.json",
+  "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+  "bytes": 3328279
+}
