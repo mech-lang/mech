@@ -62,6 +62,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Preserve a checked cell across a replacement of a proved independent
     /// logical carrier value, including its original copy-on-write boundary.
     IndependentViewUpdates,
+    /// Use an exact fixed matrix extent certified by this numeric loan's
+    /// original selected factory. Growing views retain their current length.
+    StaticNumericExtents,
     /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
     DisjointState,

@@ -4,7 +4,7 @@ use crate::native_artifact::codegen::common::{aggregates, ssa_words::Words};
 use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::codegen::options::{OptimizationOptions, OptimizationPass};
 use crate::native_artifact::compiler::backend;
-use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation};
+use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation, Proof};
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
@@ -14,6 +14,29 @@ use mech_engine::native_artifact::{
     NativeMatchTerminator as Branch,
 };
 use std::collections::BTreeSet;
+
+/// The entry witness validates these exact dimensions before lending a view.
+/// Replacements preserve its shape; an append changes its logical length and
+/// must never use this certificate, even if an earlier schema was fixed.
+pub(super) fn fixed_length(code: CodePlan<'_>, proof: &Proof, array: usize) -> Option<u64> {
+    let array = proof.arrays.get(array)?;
+    if array.appends {
+        return None;
+    }
+    let Action::LibraryCall { template, .. } = code.blocks().get(array.witness)?.action() else {
+        return None;
+    };
+    let mech_core::SchemaBody::Matrix { dimensions, .. } = template.inputs().first()?.body() else {
+        return None;
+    };
+    if dimensions.len() != 2 {
+        return None;
+    }
+    dimensions.iter().try_fold(1u64, |size, dimension| {
+        let mech_core::DimensionExpr::Constant(value) = dimension else { return None; };
+        size.checked_mul(*value)
+    })
+}
 
 /// Only for a packed cell load AFTER the original logical bounds check (or
 /// its current-window proof) and the row-major address translation. Entry

@@ -963,7 +963,7 @@ fn demand_liveness_keeps_each_finite_source_boundary_and_retry() {
     check_numeric_tree_finite_fuel(Some(OptimizationPass::DemandLiveness));
 }
 
-fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {
+pub(super) fn check_numeric_tree_finite_fuel(pass: Option<OptimizationPass>) {
     let projected = matches!(
         pass,
         Some(OptimizationPass::ProjectedNumericDebits | OptimizationPass::FuelDerivedNumericDebits)

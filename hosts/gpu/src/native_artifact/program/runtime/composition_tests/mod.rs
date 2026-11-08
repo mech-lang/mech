@@ -66,6 +66,7 @@ mod scalar_child;
 mod scalar_selects;
 mod schema_key;
 mod state_read_packs;
+mod static_extents;
 mod tagged_map_carrier;
 mod tuple_capture;
 mod utf8_reads;

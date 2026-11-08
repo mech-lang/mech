@@ -56,6 +56,7 @@ pub(in crate::native_artifact) struct Report {
     pub first_change_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
     pub length_sites: Vec<usize>,
+    pub static_array_extents: Vec<(usize, usize, u64)>,
     pub append_sites: Vec<(usize, u8)>,
     pub bulk_append_sites: Vec<usize>,
     pub capacity_guards: Vec<(usize, usize)>,
@@ -533,6 +534,7 @@ pub(in crate::native_artifact) fn emit_entry(
             .map(|exit| (exit.from, exit.to))
             .collect(),
         length_sites: Vec::new(),
+        static_array_extents: Vec::new(),
         append_sites: Vec::new(),
         bulk_append_sites: Vec::new(),
         capacity_guards: Vec::new(),
@@ -945,7 +947,14 @@ pub(in crate::native_artifact) fn emit_entry(
             }
             Some(Operation::ArrayCopy) => {}
             Some(Operation::Length { array, output }) => {
-                let length = words.read(b, shadow + proof.view(*array) + 1);
+                let fixed = controls.enabled(OptimizationPass::StaticNumericExtents)
+                    .then(|| super::numeric_words::fixed_length(code, proof, *array)).flatten();
+                let length = if let Some(length) = fixed {
+                    report.static_array_extents.push((site, *array, length));
+                    b.ins().iconst(types::I64, length as i64)
+                } else {
+                    words.read(b, shadow + proof.view(*array) + 1)
+                };
                 words.write(b, *output as usize, length);
                 report.length_sites.push(site);
             }
@@ -1100,7 +1109,14 @@ pub(in crate::native_artifact) fn emit_entry(
                 };
                 let view = shadow + proof.view(*array);
                 let index = words.read(b, *index as usize);
-                let length = words.read(b, view + 1);
+                let fixed = controls.enabled(OptimizationPass::StaticNumericExtents)
+                    .then(|| super::numeric_words::fixed_length(code, proof, *array)).flatten();
+                let length = if let Some(length) = fixed {
+                    report.static_array_extents.push((site, *array, length));
+                    b.ins().iconst(types::I64, length as i64)
+                } else {
+                    words.read(b, view + 1)
+                };
                 let ordinal = b.ins().iadd_imm(index, -1);
                 if let Operation::Read { array, index, .. } = operation
                     && traversal.read(site, *array, *index)
