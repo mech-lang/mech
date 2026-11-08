@@ -1,5 +1,16 @@
 # Native compression milestone
 
+## R221: hand ownership through successful buffer updates
+
+The existing held/dead source proof now permits one owned reference to move into a successful same-owner buffer result. All original checks, actual mutation uniqueness/capacity, fresh fallback, genuine aliases and old destination cleanup stay. Two archived compiler files change; source/runtime/allocator stay pinned.562 source sites qualify. Separate real-buffer census observes357738 handoffs per natural32 and440192 per random32, including shared backing. The change bypasses result-retain/source-retire memory updates rather than imposing uniqueness on reference moves.
+
+All20 original1.05 and supplementary block-mean gates pass; balanced block means improve **6.899%**. Experimental natural32 **2.744180×→2.648136× Roc**, periodic **2.618478×→2.412664×**, repeated **2.423684×→2.234148×**, random **4.461423×→3.976770×**, distribution16 **4.119779×→3.725016×**, eight literals **0.805750×→0.753081×**.18 medians fall/two equal. No threshold, expected bytes, real capacities or timer endpoints change.
+
+Instructions fall on19 cases/rise on one; cycles fall on17/rise on three stored-only short cases. All20 heap/copy/zero/peak measurements match R220. Root code grows7364B and stack256B. Fresh2560 ownership controls,48 unchanged buffer-family controls,38 original/decoded image pairs and40 full-stream smokes pass. Bool/U64/I64/F64 scalar Objects and all seven numeric-phase bodies are byte-identical to R220.161832 primary calls,3120 independent CPU/heap calls,80 before/after observed calls,23052 wall/72088 PC-profile calls verify actual output and cleanup.
+
+NormalR215/IR215 remains unchanged and qualified separately; diagnostic ordinary admission/accounting/publication/recovery is still omitted. No normal-performance or parity claim. The new profile remains94.29–97.16% generated code on large inputs. Existing prepared proofs expose a further bounded gap: hot root updates12928/15815 have complete non-appending single-loop numeric proofs, while compact selection currently requires nested phases. Next test their existing proof/emitter adapter with real selection, aliases, exact checks/fallback and all20 cases; do not infer all184 shallow proofs qualify. [Full results, source, tradeoffs and verified public evidence](native-buffer-result-handoff.md).
+
+
 ## R220: omit unused copied owner references; small measured latency gain
 
 The existing field proof now omits an additional retain when a pure copied destination owner is never read. Scalar metadata and checked aggregate/error order remain. The complete experiment keeps the R217 owner-retirement work and omits73 static lanes. Fresh2560 original/decoded controls pass, including aliases, self/swap/overlap/fanout, metadata-only reads, predicate redefinition, errors/cleanup/retry. All20 exact streams/inflate and unchanged1.05 elapsed gates pass.
