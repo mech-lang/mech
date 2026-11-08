@@ -1,5 +1,17 @@
 # Native compression milestone
 
+## R219: timing precision qualified; faster owner retirement retained
+
+**The earlier R217 owner-retirement strategy is now the retained experimental native baseline after precision qualification. Normal compilation remains R215/IR215.** The simpler R218 variant stays available as an alternative. Its code is smaller but its instruction counts are higher on17 inputs, equal on two and lower on one; the refined geometric elapsed point is0.184% higher than R217. All tradeoffs remain visible.
+
+The platform tick is125/3ns. A per-call median can jump a full tick across a5% bound even when the true change is near1%; a deterministic synthetic test reproduces that false failure and still rejects a genuine20% slowdown. Another complete20-case comparison batches requests OUTSIDE the unchanged per-call timer. A general tick/latency rule refines the three clock-limited cases with12288 retained calls per side. All20 original per-call-median1.05 checks pass on revalidation for BOTH variants, and all20 descriptive block-mean checks pass. All three short-case uncertainty intervals stay below1.05. No threshold, expected bytes, compiler work or timer endpoints change. The original19/20 point result is retained.
+
+The refined disjoint-case inventory gives R217/R211 geometric point0.985482 and R218/R2110.987298. Retained R217’s ordinary per-call reference multiples in the complete secondary cohort are natural32 **2.739571× Roc**, periodic33 **2.593667×**, repeated32 **2.392971×**, random32 **4.464336×**, distribution16 **4.164293×**, eight literals **0.799986×**. Normal R215 is separately **3.463383×/3.710663×/3.168207×/5.159893×/6.786630×/4.391781×**; diagnostic contracts remain different and no ordinary speedup is claimed. Zero-rounded reference cases still have unresolved multiples.
+
+Primary11488, secondary86752 and targeted147480 complete calls retain exact output/inflate. The640 R218 compiled controls pass; R217’s prior640 source controls remain historical, with its actual current executable exercised in all measurement cohorts. Both candidates have the same copy/request reductions. New retained-binary wall22499/PC66742 calls verify current hashes and cleanup. A copied descriptive profile label is corrected separately by actual binary/Object identity; no raw data is rewritten.
+
+The benchmark source/algorithm/real capacities/allocator stay pinned. Ordinary exact accounting/admission/recovery restoration and parity remain open. Next map the hottest retained native PCs to exact current Plan operations, with byte-identical text for debug-only mapping, before selecting another instruction/transport change. [Precision evidence, all20 inventory, original failures and retention decision](native-timing-precision.md).
+
 ## R218: simpler source cleanup measured; precision issue isolated
 
 One diagnostic emitter file ends a guarded consumed source AFTER the checked indexed update succeeds, including unchanged results. The first real two-store sequence already has the required existing proof. No new family analysis/runtime/source algorithm changes. All640 new original/decoded controls and40 full-stream smokes pass; all20 payload/copy/zero/peak counts match R217, including natural32 requests5184→608.
