@@ -41593,6 +41593,96 @@
           }
         }
       ]
+    },
+    "208": {
+      "base": "03cea977b903fb8d32a1fbf035196dc19e4d77f5",
+      "production": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Retain the current diagnostic and exact evidence externally: sixteen elapsed medians improve, three worsen and one is equal; generated text and compilation observation improve, stack grows. No production adoption: six production gates still fail and ordinary contracts remain omitted. Preserve every adverse observation; no favorable unchanged rerun.",
+      "source_files": [],
+      "archived_changed_compiler_files": 27,
+      "changed_from_R207": [
+        "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+        "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+      ],
+      "candidate_source_patch_sha256": "f16d41be74a1fec7c10f3abf086680437a7c36d6a42d0402041cd8eaec2aa0be",
+      "two_file_delta_patch_sha256": "8cc0b12001e41a198f480ee8704037fed312f22f54be8e0e77a1fc61479f20d6",
+      "timed_object_sha256": "72631f01f3ab0bf19df7bf0fd148c7c36290d3f3c4bb8e1f551a0e473fa905bf",
+      "replay": {
+        "archive_schema": "evidence/manifest.json; SHA256 inventory",
+        "scripts": [
+          "heap-summary.py",
+          "analyze.py"
+        ],
+        "scope": "Numerical archived-observation replay without compiler/compressor execution"
+      },
+      "events": [
+        {
+          "event": "retained-diagnostic-cold-source-error-origins-unadopted-in-production",
+          "asset": "r208-cold-source-origins-e8bfdc9c407f.tar.gz",
+          "sha256": "e8bfdc9c407fac154fdeabb5d7a1a70234edad10250288b75ce2620b6c88399f",
+          "bytes": 2563638,
+          "files": 759,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r208-cold-source-origins-e8bfdc9c407f.tar.gz",
+          "retained_production_unchanged_from_R199": true,
+          "diagnostic_retained": true,
+          "ordinary_contract_restored": false,
+          "compressor_source_unchanged": true,
+          "totals": {
+            "primary_complete_calls": 8616,
+            "primary_observations": 8496,
+            "primary_reference_compressions": 5120,
+            "separate_mech_cpu_heap_calls": 2400,
+            "elapsed_lower_vs_previous": 16,
+            "elapsed_higher_vs_previous": 3,
+            "elapsed_equal_vs_previous": 1,
+            "geometric_elapsed_ratio_to_previous": 0.9696061542279206,
+            "original_1_05_gate_vs_retained_pass": 14,
+            "original_1_05_gate_vs_previous_pass": 20,
+            "instruction_medians_lower_vs_previous": 17,
+            "instruction_medians_higher_vs_previous": 3,
+            "cycle_medians_lower_vs_previous": 14,
+            "cycle_medians_higher_vs_previous": 6,
+            "equal_diagnostic_heap_cases": 20,
+            "wall_stack_profile_complete_calls": 8729,
+            "exact_pc_profile_complete_calls": 20937
+          },
+          "reference_counter_observations": 1280,
+          "reference_verified_complete_calls": 10240,
+          "unretained_empty_reference_setup_calls": 256,
+          "exact_origin_controls": 192,
+          "focused_phase_cases": 48,
+          "real_match_controls": 1724,
+          "resident_value_agreements": 1566,
+          "resident_default_cap_denials": 142,
+          "ordered_matching_source_errors": 16,
+          "generic_builder_cases": 40,
+          "complete_smoke_calls": 80,
+          "original_decoded_image_pairs": 9,
+          "code_bytes_previous_including_phases": 8906516,
+          "code_bytes_including_phases": 7534880,
+          "stack_root_plus_phase_bytes": 84048,
+          "fresh_production_native_suite": false,
+          "historical_R206_native_tests": 677,
+          "historical_R206_scheduled_selections": 260,
+          "public_verification": {
+            "asset": "r208-cold-source-origins-e8bfdc9c407f.tar.gz",
+            "bytes": 2563638,
+            "sha256": "e8bfdc9c407fac154fdeabb5d7a1a70234edad10250288b75ce2620b6c88399f",
+            "file_occurrences": 759,
+            "server_digests_match": true,
+            "download_sha256_match": true,
+            "numerical_replay_byte_identical": true,
+            "scope": "Archived observation replay only; no compiler or compressor executed."
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",

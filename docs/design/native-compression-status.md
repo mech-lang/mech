@@ -1,5 +1,16 @@
 # Native compression milestone
 
+## R208: cold error origins give a small complete diagnostic win
+
+**Production remains R199 / IR214.** The diagnostic removes its shared mutable source-origin home and materializes exact locations on cold failure paths; outlined errors return the callee location directly. Natural32 **7.057284×→6.995653× Roc**, periodic33 **12.498903×→12.300961×**, repeated32 **11.721204×→11.469044×**, eight literals **2.265164×→2.235719×**. Fresh unchanged production is **3.393281× /3.513269× /3.021483× /4.616164×** respectively. This is an experimental-path gain, not a production speedup or a cost-of-contract floor.
+
+Sixteen elapsed medians fall, three rise and one is equal; equal-case-weight geometric elapsed **−3.039385%**. All 20 unchanged 1.05 gates pass against R207; only 14 pass against production. Separate natural/periodic/repeated instructions fall **2.85%/5.28%/5.71%**; random32 and distribution instructions rise **1.73%/3.09%** and their elapsed worsens. All 20 diagnostic heap-request/byte/reallocation/incremental-peak medians stay equal. Generated text falls **8,906,516→7,534,880 B**, static root-plus-phase stack grows **80,000→84,048 B**. Generation 86.95s versus recorded 199.90s is an unmatched build observation.
+
+192 new exact status/origin/resident/recovery controls, fresh48 phase cases,1,724 matching cases,40 builder cases and80 full original/decoded smoke calls pass. Nine original/decoded image pairs match exactly. The same142 resident default-cap denials, standalone no-pack fallback and seven inherited exclusions are explicit.8,616 primary complete calls,2,400 separate Mech CPU/heap calls, fresh reference1,280 events/10,240 compressions,8,729 wall-profile calls and20,937 exact-PC calls retain source/table/capacity/timing pins. Three harness staging failures are resolved and archived; successful Mech/primary cohorts were not repeated. No fresh production native-suite claim.
+
+Current large-input diagnostic profiles remain about99% native-exclusive, mostly in raw root code. An audit now pinpoints a larger candidate: the six-loop matching region2624 is hidden by declined parent837, and its fixed writable U16 tree lacks the append-capacity field required by the current diagnostic gate. Qualify nested selection and real fixed-buffer ownership/liveouts with a minimal witness before changing either gate. Ordinary guarantee restoration and production host-family/copy census remain unfinished. [All20 results, exact revisions, source delta, failures and verified public evidence](native-cold-error-origins.md). Existing draft#973 only; ordinary exact-head CI cancelled and review requested.
+
+
 ## R207: shared phase and packed-read lowering cuts the complete diagnostic
 
 **Production remains R199 / IR214.** The complete diagnostic now keeps existing numeric proofs/emitters through four typed private-array phases and27 shared word-pack sites, including real reached append growth and current-owner fallback. Natural32 falls **14.451672×→7.053131× Roc**, periodic33 **24.794258×→12.563796×**, repeated32 **23.096531×→11.709860×**. This is an experimental-path improvement, not a new production checkpoint: fresh retained results are **3.359605× /3.554625× /3.055192×** respectively. Eight literals is adverse **2.169183×→2.193750×**, +1.13%, while retained is4.489941×.
