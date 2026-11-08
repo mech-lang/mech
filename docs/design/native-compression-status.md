@@ -1,5 +1,15 @@
 # Native compression milestone
 
+## R199: ordered retirement visible at native boundaries
+
+A generic inline hint keeps the existing ordered cleanup loop visible to its sole production caller. Its function body, finite charges, errors, aliases and recovery remain unchanged. The independently rebuilt native image is byte-identical in all five files; IR/work/ABI/MBC remain **214/107/39/14**. The state-machine source stays experimental and the existing faster source remains retained.
+
+All 20 original gates pass: **17 lower / three higher elapsed medians**, geometric elapsed −0.531319%. Matched reference ratios include natural 32 KB **3.334151×→3.317883× Roc**, distribution change **6.286899×→6.179520×**, repeated **2.923528×→2.891057×**, and periodic **3.394935×→3.368267×**. Eight literals rise **4.512777×→4.535279×** (+0.50%); the two other adverse small cases remain explicit. Independent rounds are not compounded.
+
+**All 20 instruction medians fall**; eight literals decrease 1.40%, while natural 32 KB has the sole adverse cycle median (+0.11%). Heap requests/bytes/reallocations/incremental usable peaks are unchanged. Actual host disassembly removes the separate cleanup call; harness text shrinks 4,936 bytes. Generated code and reported stack stay unchanged. Capacity-level output reuse is checked; physical backing differs from the still-live borrowed argument on both sides and no zero-allocation reuse is claimed.
+
+675 native tests, 258 actually executed CI selections, eighteen cleanup controls within that suite, unchanged 236 components/eight compositions/one real-capacity control, generic original/decoded state recovery, fifteen architecture checks and 132 workflow tests pass. Same seven inherited exclusions. The 1,724 native match controls are explicitly reused from R198; no fresh execution is claimed. Fresh after profiles complete 6,274 correct calls; the exact baseline profile is reused. [Design, all twenty rows, counters, limitations and immutable evidence](native-retirement-inlining.md). Existing draft #973 only; parity remains incomplete.
+
 ## R198: invariant addresses in captured native reads
 
 The retained compressor source now runs faster on repeated 32 KB (**3.197971×→2.923528× Roc**, −8.58%) and periodic 33 KB (**3.743487×→3.579081×**, −4.39%). The compiler stages current buffer/base addresses once per captured child activation. Its hot matching loop falls **19→15 instructions** and three stack reloads→zero; source checks, finite debits and recovery remain. IR/work/ABI/MBC: **214/107/39/14**. No source rewrite is adopted.

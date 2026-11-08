@@ -40649,6 +40649,66 @@
           "superseded_reason": "Include emitted word-collection helpers in native profile totals; no raw measurements repeated or changed."
         }
       ]
+    },
+    "199": {
+      "base": "4656d37d2bc4bdb2e1880a302af4a5cc29a8ae0a",
+      "decision": "Retain the generic host inlining hint: 17 lower elapsed medians, all 20 gates pass and all 20 instruction medians lower. Preserve three adverse primary medians and one adverse cycle median. Generated code and allocations are unchanged.",
+      "versions": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "source_files": [
+        {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/retirement.rs",
+          "bytes": 5490,
+          "sha256": "09439b9e3bead9aac4c66d4210285f0969a5375e573685c8b6debc1fd90ca877",
+          "git_blob": "0d04a61690d65d5a57df52d17584c18bd8770304"
+        }
+      ],
+      "events": [
+        {
+          "event": "qualified-ordered-retirement-inlining",
+          "asset": "r199-retirement-inlining-78830c5bcfa8.tar.gz",
+          "sha256": "78830c5bcfa865211212c19eea2f0e0ae48c61250bf59e812a78323a9734cc83",
+          "bytes": 2347634,
+          "files": 364,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "source_unchanged": true,
+          "source_adopted": false,
+          "all_five_native_image_files_identical": true,
+          "primary_observations": 3968,
+          "total_complete_calls": 4048,
+          "gates_1_05_pass": 20,
+          "elapsed_medians_lower": 17,
+          "elapsed_medians_higher": 3,
+          "geometric_elapsed_change_percent": -0.5313188624647136,
+          "lower_instruction_medians": 20,
+          "higher_instruction_medians": 0,
+          "higher_cycle_medians": 1,
+          "equal_heap_cases": 20,
+          "native_tests": 675,
+          "new_tests": 0,
+          "scheduled_tests_executed": 258,
+          "cleanup_controls_in_native_suite": 18,
+          "native_match_controls_reused_from_R198": 1724,
+          "native_match_controls_fresh": 0,
+          "code_bytes_before": 8152436,
+          "code_bytes_after": 8152436,
+          "stack_bytes_before": 16480,
+          "stack_bytes_after": 16480,
+          "host_harness_text_bytes_before": 57980740,
+          "host_harness_text_bytes_after": 57975804,
+          "fresh_after_profile_calls": 6274,
+          "reused_baseline_profile_calls": 6472,
+          "public_verification": {
+            "file_occurrences": 364,
+            "server_digests_match": true,
+            "numerical_replay_byte_identical": true
+          }
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",

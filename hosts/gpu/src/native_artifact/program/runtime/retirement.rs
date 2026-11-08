@@ -3,6 +3,8 @@ use super::*;
 use crate::native_artifact::program::prepare::cleanup_effects::Boundary;
 use crate::native_artifact::program::prepare::frame_retirement::FrameRetirements;
 
+// Keep current recipes and paid cleanup state visible to the boundary caller.
+#[inline]
 pub(super) fn run(
     slots: &[u64],
     recipes: &FrameRetirements,
