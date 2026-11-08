@@ -11,7 +11,8 @@ const SOURCE: &str = r#"walk(a<[u64]>, i<u64>, end<u64>) => (out<[u64]>) :=
 walk(values<[u64]>, 0u64, count<u64>)
 "#;
 
-const APPEND_SOURCE: &str = r#"<state> := <([u64],[u64])>
+const APPEND_SOURCE: &str = r#"+> sequence
+<state> := <([u64],[u64])>
 walk(a<[u64]>, keys<[u64]>, i<u64>, end<u64>) => (out<state>) :=
   next-keys := sequence/append(keys, i)
   old := a[1u64]
