@@ -302,3 +302,87 @@ fn narrow_wrapping_arithmetic_does_not_supply_a_false_nonzero_proof() {
         }
     }
 }
+
+#[test]
+fn canonicalized_negative_immediate_keeps_only_dominating_unsigned_product_proofs() {
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut entries = Vec::new();
+    for mode in [1, 2, 3] {
+        for enabled in [false, true] {
+            let mut c = product_function(mode);
+            let mut replacements = Vec::new();
+            for block in c.func.layout.blocks() {
+                for inst in c.func.layout.block_insts(block) {
+                    if let D::Binary {
+                        opcode: O::Isub,
+                        args,
+                    } = c.func.dfg.insts[inst]
+                    {
+                        if constant(&c.func, args[1]) == Some(3) {
+                            replacements.push((inst, args[0]));
+                        }
+                    }
+                }
+            }
+            for (inst, arg) in replacements {
+                c.func.dfg.replace(inst).iadd_imm(arg, -3);
+            }
+            assert_eq!(
+                optimize_with_options(&mut c, &[], enabled),
+                usize::from(mode == 1 && enabled)
+            );
+            c.verify(module.isa()).unwrap();
+            let id = module
+                .declare_function(
+                    &format!("negative_imm_{mode}_{enabled}"),
+                    Linkage::Local,
+                    &c.func.signature,
+                )
+                .unwrap();
+            module.define_function(id, &mut c).unwrap();
+            entries.push((mode, enabled, id));
+        }
+    }
+    module.finalize_definitions().unwrap();
+    for (mode, enabled, id) in entries {
+        let run: unsafe extern "C" fn(u64, u64, u64, u64) -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+        for x in [0, 1, 2, 3, 4, 127, 255, 256, u64::MAX] {
+            for y in [0, 1, 7, 255, u64::MAX] {
+                for bypass in [0, 1] {
+                    let a = x & 255;
+                    let admitted = (mode == 3 && bypass != 0) || a >= 3;
+                    let product = a.wrapping_sub(3).wrapping_mul(y & 255);
+                    let expected = if !admitted {
+                        u64::MAX
+                    } else if product > u32::MAX as u64 {
+                        u64::MAX - 1
+                    } else {
+                        product
+                    };
+                    let mut effects = [0xfeed; 3];
+                    let result = unsafe { run(x, y, bypass, effects.as_mut_ptr() as u64) };
+                    assert_eq!(
+                        result, expected,
+                        "mode={mode} enabled={enabled} x={x} y={y} bypass={bypass}"
+                    );
+                    assert_eq!(
+                        effects,
+                        [
+                            x,
+                            if admitted { y } else { 0xfeed },
+                            if admitted && product <= u32::MAX as u64 {
+                                product
+                            } else {
+                                0xfeed
+                            }
+                        ]
+                    );
+                }
+            }
+        }
+    }
+}

@@ -174,3 +174,148 @@ fn scalar_select_source_keeps_finite_boundaries_and_atomic_publication() {
         arguments(artifact, memory, &[0, u64::MAX, 1 << 63, 42], 42, 4)
     });
 }
+
+const MODULAR_SOURCE: &str = r#"+> sequence
++> bits
+step(data<[u8]>, at<u64>, output<[u64]>) => (out<[u64]>) :=
+  a<u64> := data[at + 1u64]
+  d := a - 3u64
+  b := bits/wrapping-add(a, 18446744073709551615u64)
+  c := bits/wrapping-add(a, 18446744073709551614u64)
+  rank := a * b * c * d / 24u64
+  out := sequence/append(output, rank).
+walk(data<[u8]>, at<u64>, end<u64>, output<[u64]>) => (out<[u64]>) :=
+  more := at < end
+  next := (more? | true => step(data, at, output) | false => output)
+  out := (more? | true => walk(data, at + 1u64, end, next) | false => output).
+selected := walk(bytes<[u8]>, 0u64, count<u64>, sequence/with-capacity(0u64, count))
+selected
+"#;
+
+#[test]
+fn modular_ranges_keep_actual_narrow_source_outputs_reports_first_failures_and_retry() {
+    for artifact in artifacts(MODULAR_SOURCE) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let catalog = mech_stdlib::source_catalog();
+        let native =
+            JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+                .unwrap();
+        let old = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::ModularUnsignedRanges,
+        )
+        .unwrap();
+        assert!(
+            native.test_emissions().unsigned_guards > old.test_emissions().unsigned_guards,
+            "source must remove extra guards with the independent modular transfer"
+        );
+        for restored in [false, true] {
+            let memory = mode.memory_budget();
+            let mut left = vec![None; artifact.outputs().len()];
+            let mut right = left.clone();
+            for (data, count) in [
+                (vec![3, 4, 17, 255], 4),
+                (vec![], 0),
+                (vec![3, 0, 255], 3),
+                (vec![3, 2, 255], 3),
+                (vec![255], 2),
+                (vec![3, 4, 255], 3),
+            ] {
+                let args = inputs(
+                    &artifact,
+                    &[
+                        (
+                            "bytes",
+                            Data::Matrix(data.iter().copied().map(Data::U8).collect()),
+                        ),
+                        ("count", Data::U64(count)),
+                    ],
+                    &memory,
+                );
+                let aliases = args.clone();
+                let before = contents(&args);
+                let prior_left = left.clone();
+                let prior_right = right.clone();
+                let held = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                let evaluate = |jit: &JitProgramArtifact, out: &mut [Option<Value>]| {
+                    if restored {
+                        observe::run_restored(jit, &args, out, mode.execution(), &memory).0
+                    } else {
+                        observe::run(jit, &args, out, mode.execution(), &memory).0
+                    }
+                };
+                let a = evaluate(&native, &mut left);
+                let b = evaluate(&old, &mut right);
+                if count > data.len() as u64 || data.iter().take(count as usize).any(|&n| n < 3) {
+                    assert_eq!(
+                        format!("{:?}", a.unwrap_err()),
+                        format!("{:?}", b.unwrap_err())
+                    );
+                    for (now, prior) in [(&left, &prior_left), (&right, &prior_right)] {
+                        assert!(now.iter().zip(prior).all(|(a, b)| match (a, b) {
+                            (Some(a), Some(b)) => a.shares_frozen_storage(b),
+                            (None, None) => true,
+                            _ => false,
+                        }));
+                    }
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        held
+                    );
+                } else {
+                    assert_eq!(format!("{:?}", a.unwrap()), format!("{:?}", b.unwrap()));
+                    let expected = Data::Matrix(
+                        data.iter()
+                            .take(count as usize)
+                            .map(|&a| {
+                                let a = u64::from(a);
+                                Data::U64(a * (a - 1) * (a - 2) * (a - 3) / 24)
+                            })
+                            .collect(),
+                    );
+                    assert_eq!(
+                        left.last()
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        expected
+                    );
+                    assert_eq!(
+                        right
+                            .last()
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        expected
+                    );
+                }
+                assert_eq!(contents(&args), before);
+                assert_eq!(contents(&aliases), before);
+            }
+            drop((left, right));
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+        }
+    }
+}
+
+#[test]
+fn modular_ranges_keep_finite_native_work_and_atomic_publication_boundaries() {
+    resources::finite_boundaries(MODULAR_SOURCE, |artifact, memory| {
+        inputs(
+            artifact,
+            &[
+                (
+                    "bytes",
+                    Data::Matrix(vec![Data::U8(3), Data::U8(255)].into()),
+                ),
+                ("count", Data::U64(2)),
+            ],
+            memory,
+        )
+    });
+}

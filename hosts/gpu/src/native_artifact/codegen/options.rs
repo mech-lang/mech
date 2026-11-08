@@ -55,6 +55,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     BitCounts,
     ScalarSelects,
     UnsignedGuardFacts,
+    /// Preserve a convex unsigned range through one common modular addition
+    /// wrap, including canonicalized subtraction by a negative immediate.
+    ModularUnsignedRanges,
     GuardedNumericLoads,
     /// Reuse a surviving successful U64 cell read for an immediately proved
     /// checked increment of the same current cell; retain ownership boundaries.

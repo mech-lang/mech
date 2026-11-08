@@ -32,6 +32,7 @@ pub(super) struct Query<'a> {
     pub upper: &'a Facts,
     pub lower: &'a Facts,
     pub at: Block,
+    pub modular_addition: bool,
 }
 impl Query<'_> {
     pub fn operand(&self, operand: Operand) -> Range {
@@ -75,12 +76,18 @@ impl Query<'_> {
                 let inferred = match *data {
                     D::BinaryImm64 { opcode, arg, imm } => {
                         let a = self.value(arg, depth - 1, steps);
-                        Self::binary(opcode, a, Range::exact(imm.bits() as u64 & mask), bits)
+                        Self::binary(
+                            opcode,
+                            a,
+                            Range::exact(imm.bits() as u64 & mask),
+                            bits,
+                            self.modular_addition,
+                        )
                     }
                     D::Binary { opcode, .. } => {
                         let a = get(0);
                         let b = get(1);
-                        Self::binary(opcode, a, b, bits)
+                        Self::binary(opcode, a, b, bits, self.modular_addition)
                     }
                     D::Unary {
                         opcode: O::Uextend, ..
@@ -131,7 +138,7 @@ impl Query<'_> {
         }
     }
 
-    fn binary(opcode: O, a: Range, b: Range, bits: u32) -> Option<Range> {
+    fn binary(opcode: O, a: Range, b: Range, bits: u32, modular_addition: bool) -> Option<Range> {
         let mask = if bits == 64 {
             u64::MAX
         } else {
@@ -145,6 +152,19 @@ impl Query<'_> {
             }
         };
         let (low, high) = match opcode {
+            O::Iadd | O::IaddImm if modular_addition => {
+                // Both inputs are ranges of actual unsigned bit patterns. The
+                // mathematical sum occupies [low, high]. Modulo reduction is
+                // monotone precisely when that whole interval has one wrap
+                // count. A split interval stays unknown. This includes the
+                // subtraction form IaddImm(-k) after a dominating a>=k guard.
+                let low = u128::from(a.low) + u128::from(b.low);
+                let high = u128::from(a.high) + u128::from(b.high);
+                if (low >> bits) != (high >> bits) {
+                    return None;
+                }
+                ((low as u64) & mask, (high as u64) & mask)
+            }
             O::Iadd | O::IaddImm => (a.low.checked_add(b.low)?, a.high.checked_add(b.high)?),
             O::Imul | O::ImulImm => (a.low.checked_mul(b.low)?, a.high.checked_mul(b.high)?),
             O::Umulhi => (
@@ -186,5 +206,66 @@ pub(super) fn decide(cond: IntCC, a: Range, b: Range) -> Option<bool> {
         Some(false)
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn modular_sum_intervals_enclose_every_small_width_result_and_reject_split_wraps() {
+        // Exhaust every pair of intervals over a four-bit domain. Smaller
+        // domains exercise the same u128 carry proof used for all64bits.
+        for low_a in 0..16 {
+            for high_a in low_a..16 {
+                for low_b in 0..16 {
+                    for high_b in low_b..16 {
+                        let a = Range {
+                            low: low_a,
+                            high: high_a,
+                        };
+                        let b = Range {
+                            low: low_b,
+                            high: high_b,
+                        };
+                        let got = Query::binary(O::Iadd, a, b, 4, true);
+                        if (low_a + low_b) / 16 != (high_a + high_b) / 16 {
+                            assert!(got.is_none());
+                        } else {
+                            let got = got.unwrap();
+                            for x in low_a..=high_a {
+                                for y in low_b..=high_b {
+                                    let result = (x + y) & 15;
+                                    assert!(got.low <= result && result <= got.high);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for bits in [8, 16, 32, 64] {
+            let mask = if bits == 64 {
+                u64::MAX
+            } else {
+                (1u64 << bits) - 1
+            };
+            for k in [1, 2, 3, 7] {
+                let b = Range::exact(mask - k + 1);
+                let a = Range { low: k, high: 127 };
+                assert_eq!(
+                    Query::binary(O::IaddImm, a, b, bits, true),
+                    Some(Range {
+                        low: 0,
+                        high: 127 - k
+                    })
+                );
+                assert_eq!(Query::binary(O::IaddImm, a, b, bits, false), None);
+                assert_eq!(
+                    Query::binary(O::IaddImm, Range { low: 0, high: 127 }, b, bits, true),
+                    None
+                );
+            }
+        }
     }
 }

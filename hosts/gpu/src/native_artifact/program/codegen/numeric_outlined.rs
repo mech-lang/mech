@@ -183,9 +183,10 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
                 .chain(&local.readonly_numeric_loops)
                 .flat_map(|r| r.native_extent_bounds.iter().copied())
                 .collect::<Vec<_>>();
-            crate::native_artifact::codegen::common::unsigned_guard_facts::optimize_with_bounds(
+            crate::native_artifact::codegen::common::unsigned_guard_facts::optimize_with_options(
                 &mut context,
                 &bounds,
+                controls.enabled(OptimizationPass::ModularUnsignedRanges),
             )
         } else {
             0

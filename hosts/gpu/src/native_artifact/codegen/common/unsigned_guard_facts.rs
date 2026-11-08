@@ -310,9 +310,20 @@ fn insert_lower(
 
 /// `known` is emitted only from validated packed numeric extent recipes;
 /// no serialized field or caller-supplied array payload grants a range fact.
+#[cfg(test)]
 pub(in crate::native_artifact) fn optimize_with_bounds(
     context: &mut Context,
     known: &[(Value, u64)],
+) -> usize {
+    optimize_with_options(context, known, true)
+}
+
+/// The optional modular transfer handles a whole convex sum interval with a
+/// common wrap count. It never changes source arithmetic or executes a guard.
+pub(in crate::native_artifact) fn optimize_with_options(
+    context: &mut Context,
+    known: &[(Value, u64)],
+    modular_addition: bool,
 ) -> usize {
     context.compute_cfg();
     context.compute_domtree();
@@ -351,6 +362,7 @@ pub(in crate::native_artifact) fn optimize_with_bounds(
             upper,
             lower,
             at,
+            modular_addition,
         }
         .operand(operand)
     };
