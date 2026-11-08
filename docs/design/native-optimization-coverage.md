@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R212
+# Production/diagnostic optimization coverage after R213
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Production remains R199. This table is source/metadata inventory, not a new production timing claim.
 
@@ -13,3 +13,6 @@ Counts describe different representation boundaries and are not interchangeable 
 R212 measured fixed-descriptor/scalar-only phase results and transfers using the SAME owner-copy/liveness selector. It is archived rather than adopted: two prior-version elapsed gates fail despite lower large-case instruction/cycle medians. The retained diagnostic remains R211. Explicit self/swap/fanout/overlap/metadata/predicate and shared-readonly controls now pass.
 
 The next production checkpoint qualifies one compact phase inside ordinary admission/ownership/funding, retaining checked fallback and exact errors/publication/retry. It does not wait for an indefinitely improving whole diagnostic. The ordinary adapter must retain canonical ownership and current funding; raw diagnostic Heap authority is not an admission proof. Stable owner pooling and source-site allocation census follow separately.
+
+
+R213 qualifies one existing nested append/direct-array computation class through the ordinary entry using dense inputs and exact existing exit words. Canonical owners, current funding, source/error-prefix and publication/retry remain. Four full-compressor instances and the maintained small witness execute;677 tests and52 real linked original/decoded parent/candidate cases pass. The candidate remains archived: all20 elapsed gates pass, but elapsed rises0.354% geometrically and17 instruction medians rise. ProductionR199 and diagnosticR211 remain unchanged. The dense initializer currently drops existing canonical-home flags, losing288 load eliminations; restoring those facts is the next controlled experiment. No additional source operations are claimed newly native merely because their transport changed.

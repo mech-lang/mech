@@ -1,5 +1,11 @@
 # Native compression milestone
 
+## R213: ordinary dense-interface qualification complete; default unchanged
+
+One generic existing nested numeric append class now has a dense internal input/result interface under ordinary ownership/admission/funding.677 maintained tests and52 real linked parent/candidate original/decoded cases pass; all20 full streams match bytes/inflate and exact production logical work, with all20 unchanged elapsed gates. The candidate is0.354% slower geometrically and17 instruction medians rise, so production remains R199 and diagnosticR211 remains retained. Native heap metrics match production; native stack rises16480→20560B. [Exact qualified checkpoint, evidence and profiles](native-managed-phase-packets.md).
+
+The current adapter loses the old nontrapping/disjoint private-home flags:288 load eliminations disappear. Restore those existing facts alongside dense initial values in the same SSA builder and measure that one controlled change next. Allocation pooling and payload-site census remain separately bounded follow-ups. This is qualification, not a production speedup or a completed full brief.
+
 ## R212: effect-aware phase transport measured, R211 retained
 
 The candidate keeps fixed descriptors with the caller and uses the existing owner-transfer proof at phase returns. All20 exact outputs and semantic controls pass, but two unchanged elapsed gates fail: periodic and repeated regress about6.1%. Geometric elapsed improves0.74%; large-case separate instructions/cycles fall and all20 heap cohorts match R211. Preserve both contrary cohorts; do not adopt R212 as the default. Production remains R199 and the retained diagnostic remains R211. [Full four-variant results, controls and current profiles](native-compact-phase-transport.md).
