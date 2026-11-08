@@ -48,8 +48,10 @@ unsafe extern "C" fn observed(
     let metadata = ctx.descriptor.metadata();
     let proof = &metadata.borrowed_map_keys.regions[0];
     let (_, cell) = metadata.matrix_map_keys.producer(proof.cells[0]).unwrap();
-    let refuse = op == GlobalHelper::MapOwnerBegin.raw()
-        && matches!(FAULT.with(Cell::get), Fault::RefuseOwner);
+    let refuse = matches!(
+        GlobalHelper::decode(op),
+        GlobalHelper::MapOwnerBegin | GlobalHelper::MapOwnerBeginBorrowedValues
+    ) && matches!(FAULT.with(Cell::get), Fault::RefuseOwner);
     if refuse {
         super::super::maps::owner::set_borrowed_entry_refusal(true);
     }

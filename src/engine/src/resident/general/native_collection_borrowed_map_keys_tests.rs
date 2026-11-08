@@ -142,6 +142,14 @@ fn borrowed_map_keys_pin_generic_snapshot_and_match_real_matrix_cells_and_logica
                     .unwrap(),
                 *text
             );
+            assert_eq!(
+                view.with_element_index(insert, &ordinal, &w, |index, text| (
+                    index,
+                    text.to_owned()
+                ))
+                .unwrap(),
+                (i, text.clone())
+            );
             matrix
                 .admit_element(
                     &canonical,

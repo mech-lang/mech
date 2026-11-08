@@ -23,6 +23,7 @@ static TOKENS: AtomicU64 = AtomicU64::new(0);
 
 /// A span is constructed only by the selected current-visit projection. Its
 /// complete admitted owner stays pinned; the projected key is never a Value.
+#[derive(Clone, Copy)]
 pub(in crate::native_artifact) enum Key<'a> {
     Canonical(&'a Value),
     Span {
@@ -30,10 +31,11 @@ pub(in crate::native_artifact) enum Key<'a> {
         owner: &'a Value,
         bytes: &'a core::ops::Range<usize>,
     },
-    MapCell {
+    MapOrdinal {
         value: mech_engine::native_artifact::NativeMatchValue,
         owner: &'a Value,
         text: &'a str,
+        ordinal: usize,
     },
     MatrixCell {
         value: mech_engine::native_artifact::NativeMatchValue,
@@ -292,6 +294,7 @@ impl<'plan> Binding<'plan> {
             region,
             schemas,
             SeedSource::Canonical(source),
+            None,
             work,
             geometry,
             limits,
@@ -311,16 +314,45 @@ impl<'plan> Binding<'plan> {
             region,
             schemas,
             SeedSource::Frame(frame),
+            None,
             work,
             geometry,
             limits,
         )
+    }
+    pub(in crate::native_artifact) fn import_frame_with_keys(
+        plan: &'plan Plan,
+        region: &'plan NativeMapOwnerRegion,
+        schemas: &Arc<SchemaTable>,
+        frame: &mech_engine::native_artifact::NativeMapSeedFrame,
+        keys: &Value,
+        work: NativeLibraryWorkBudget,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<(Self, InitialWords), Error> {
+        Self::import_source(
+            plan,
+            region,
+            schemas,
+            SeedSource::Frame(frame),
+            Some(keys),
+            work,
+            geometry,
+            limits,
+        )
+    }
+    #[cfg(test)]
+    pub(in crate::native_artifact) fn has_borrowed_keys(&self) -> bool {
+        self.map
+            .as_ref()
+            .is_some_and(OwnedStringMap::has_borrowed_keys)
     }
     fn import_source(
         plan: &'plan Plan,
         region: &'plan NativeMapOwnerRegion,
         schemas: &Arc<SchemaTable>,
         source: SeedSource<'_>,
+        borrowed_keys: Option<&Value>,
         work: NativeLibraryWorkBudget,
         geometry: Geometry,
         limits: MemoryBudgetLimits,
@@ -427,23 +459,60 @@ impl<'plan> Binding<'plan> {
                 let remaining = cap(limits.max_temporary_bytes)?
                     .checked_sub(outside)
                     .ok_or(Error::Overflow)?;
-                let mut map = OwnedStringMap::new_with_memory(
-                    work.clone(),
-                    Limits {
-                        entries: source_map.entries().len() as u64,
-                        retained_bytes: remaining,
-                        temporary_bytes: remaining,
-                    },
-                    memory.clone(),
-                )?;
-                for entry in source_map.entries() {
-                    let (ValueData::String(key), ValueData::U64(value)) =
-                        (entry.key().data(), entry.value())
-                    else {
-                        return Err(Error::Binding("seed map key/value kind"));
+                let storage = Limits {
+                    entries: source_map.entries().len() as u64,
+                    retained_bytes: remaining,
+                    temporary_bytes: remaining,
+                };
+                let borrowed =
+                    if let (SeedSource::Frame(frame), Some(keys)) = (&source, borrowed_keys) {
+                        let child = frame
+                            .children()
+                            .get(map_word)
+                            .and_then(Option::as_ref)
+                            .ok_or(Error::Binding("private seed lost borrowed map child"))?;
+                        match OwnedStringMap::try_with_borrowed_keys(
+                            child,
+                            keys,
+                            schemas,
+                            work.clone(),
+                            storage,
+                            memory.clone(),
+                        ) {
+                            Ok(owner) => owner,
+                            // Keep all failed admission work on this original call.
+                            // Ordinary import receives no renewed relative allowance.
+                            Err(
+                                Error::Memory(_)
+                                | Error::Work(_)
+                                | Error::Limit { .. }
+                                | Error::Allocation,
+                            ) => None,
+                            Err(error) => return Err(error),
+                        }
+                    } else {
+                        None
                     };
-                    map.insert(key, *value)?;
-                }
+                let map = if let Some(map) = borrowed {
+                    map
+                } else {
+                    let mut map =
+                        OwnedStringMap::new_with_memory(work.clone(), storage, memory.clone())?;
+                    for entry in source_map.entries() {
+                        let (ValueData::String(key), ValueData::U64(value)) =
+                            (entry.key().data(), entry.value())
+                        else {
+                            return Err(Error::Binding("seed map key/value kind"));
+                        };
+                        map.insert(key, *value)?;
+                    }
+                    map
+                };
+                check(
+                    add(geometry.live_nodes, add(map.retained_nodes(), 2)?)?,
+                    cap(limits.max_retained_nodes)?,
+                    "retained nodes",
+                )?;
                 let token = token_from(&TOKENS, &work)?;
                 initial.words[map_word] = token;
                 Ok((
@@ -501,7 +570,7 @@ impl<'plan> Binding<'plan> {
     pub(in crate::native_artifact) fn retained_nodes(&self) -> Result<u64, Error> {
         self.map
             .as_ref()
-            .map_or(Ok(1), |map| add(map.len() as u64, 3))
+            .map_or(Ok(1), |map| add(map.retained_nodes(), 2))
     }
     fn site(
         &self,
@@ -545,7 +614,10 @@ impl<'plan> Binding<'plan> {
         geometry: Geometry,
     ) -> Result<&'a str, Error> {
         let ty = &self.plan.values()[operand.get() as usize];
-        if let Key::MapCell { value, owner, text } = key {
+        if let Key::MapOrdinal {
+            value, owner, text, ..
+        } = key
+        {
             if value != operand
                 || ty.definition().body() != &SchemaBody::String
                 || !ty.definition().dimension_parameters().is_empty()
@@ -558,7 +630,8 @@ impl<'plan> Binding<'plan> {
                 .ok_or(Error::Binding("unadmitted Map key snapshot"))?;
             let map = self.map.as_ref().ok_or(Error::Binding("closed owner"))?;
             if geometry.live_bytes < add(self.retained_bytes()?, retained)?
-                || geometry.live_nodes < add(map.len() as u64, 5)?
+                || geometry.live_nodes
+                    < add(map.len() as u64, 5)?.max(add(map.retained_nodes(), 4)?)
             {
                 return Err(Error::Binding("incomplete Map key geometry"));
             }
@@ -604,7 +677,7 @@ impl<'plan> Binding<'plan> {
                 }
                 (owner, Some(bytes))
             }
-            Key::MatrixCell { .. } | Key::MapCell { .. } => unreachable!("handled above"),
+            Key::MatrixCell { .. } | Key::MapOrdinal { .. } => unreachable!("handled above"),
         };
         let ValueData::String(text) = owner.data() else {
             return Err(Error::Binding("key kind"));
@@ -637,7 +710,7 @@ impl<'plan> Binding<'plan> {
         finite(limits, cap)?;
         let map = self.current(token)?;
         if geometry.live_bytes < self.retained_bytes()?
-            || geometry.live_nodes < add(map.len() as u64, 3)?
+            || geometry.live_nodes < add(map.len() as u64, 3)?.max(add(map.retained_nodes(), 2)?)
         {
             return Err(Error::Binding("incomplete owner geometry"));
         }
@@ -717,7 +790,17 @@ impl<'plan> Binding<'plan> {
     ) -> Result<u64, Error> {
         self.current(token)?;
         let (operands, _) = self.site(site, true)?;
-        let key = self.key(operands[1], key.into(), geometry)?;
+        let key = key.into();
+        let ordinal = match key {
+            Key::MapOrdinal {
+                owner,
+                ordinal,
+                text,
+                ..
+            } => Some((owner, ordinal, text)),
+            _ => None,
+        };
+        let key = self.key(operands[1], key, geometry)?;
         let work = self.work.clone();
         work.with_call_limits(
             cap(limits.max_compute_work)?,
@@ -725,7 +808,15 @@ impl<'plan> Binding<'plan> {
             || {
                 work.charge(256, 0)?;
                 let map = self.current(token)?;
-                let fresh = map.get(key)?.is_none();
+                let borrowed = map.has_borrowed_keys();
+                if borrowed && ordinal.is_none() {
+                    return Err(Error::Binding("borrowed dictionary write lost ordinal"));
+                }
+                let fresh = if borrowed {
+                    false
+                } else {
+                    map.get(key)?.is_none()
+                };
                 let count = add(map.len() as u64, u64::from(fresh))?;
                 let cloned = if fresh { key.len() as u64 } else { 0 };
                 let payload = add(map.key_bytes(), cloned)?;
@@ -735,7 +826,12 @@ impl<'plan> Binding<'plan> {
                 let next = token_from(&TOKENS, &work)?;
                 let map = self.map.as_mut().ok_or(Error::Binding("closed owner"))?;
                 map.set_limits(storage);
-                map.insert(key, value)?;
+                if borrowed {
+                    let (source, index, text) = ordinal.unwrap();
+                    map.replace_borrowed(source, index, text, value)?;
+                } else {
+                    map.insert(key, value)?;
+                }
                 self.token = next;
                 Ok(next)
             },

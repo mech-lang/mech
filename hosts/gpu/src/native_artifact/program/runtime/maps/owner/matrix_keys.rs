@@ -218,14 +218,15 @@ impl State<'_> {
                 .as_mut()
                 .ok_or_else(|| invalid("map key view lost dictionary"))?;
             return view
-                .with_element(consumer, &ordinal, ctx.library(), |text| {
+                .with_element_index(consumer, &ordinal, ctx.library(), |ordinal, text| {
                     binding.insert(
                         site,
                         token,
-                        Key::MapCell {
+                        Key::MapOrdinal {
                             value: proof.output,
                             owner: view.snapshot(),
                             text,
+                            ordinal,
                         },
                         value,
                         geometry,

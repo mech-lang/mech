@@ -143,7 +143,11 @@ unsafe extern "C" fn helper(
     let status =
         unsafe { ORIGINAL_HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
     if status == 0 {
-        if op == GlobalHelper::MapOwnerBegin.raw() && unsafe { *out } != 0 {
+        if matches!(
+            GlobalHelper::decode(op),
+            GlobalHelper::MapOwnerBegin | GlobalHelper::MapOwnerBeginBorrowedValues
+        ) && unsafe { *out } != 0
+        {
             OWNER_COUNTS.with(|v| {
                 let (a, b) = v.get();
                 v.set((a + 1, b))

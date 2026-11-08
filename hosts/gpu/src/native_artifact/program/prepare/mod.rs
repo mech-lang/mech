@@ -12,6 +12,7 @@ use mech_engine::native_artifact::{
 };
 use std::sync::Arc;
 
+pub(in crate::native_artifact) mod borrowed_dictionary_values;
 pub(in crate::native_artifact) mod call_cache;
 pub(in crate::native_artifact) mod call_routes;
 pub(in crate::native_artifact) mod cleanup_effects;
@@ -120,6 +121,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) borrowed_map_keys: borrowed_map_keys::Layout,
     pub(in crate::native_artifact) generic_dictionary: generic_dictionary::Layout,
     pub(in crate::native_artifact) dictionary_seed_frames: dictionary_seed_frames::Layout,
+    pub(in crate::native_artifact) borrowed_dictionary_values: borrowed_dictionary_values::Layout,
     pub(in crate::native_artifact) map_admission: native::program::prepare::map_admission::Layout,
     pub(in crate::native_artifact) parallel: native::program::prepare::parallel::Layout,
     pub(in crate::native_artifact) borrowed_strings: native::program::prepare::borrowed::Layout,
@@ -429,6 +431,15 @@ impl PreparedNativeProgram {
             .transpose()
             .map_err(str::to_owned)?
             .unwrap_or_default();
+        let borrowed_dictionary_values = borrowed_dictionary_values::Layout::derive(
+            &plan,
+            map_owner_words.as_ref(),
+            &borrowed_map_keys,
+            &matrix_map_keys,
+            &dictionary_seed_frames,
+            &generic_dictionary,
+        )
+        .map_err(str::to_owned)?;
         let call_routes = call_routes::derive(
             &plan,
             &buffer_frames,
@@ -472,6 +483,7 @@ impl PreparedNativeProgram {
             borrowed_map_keys,
             generic_dictionary,
             dictionary_seed_frames,
+            borrowed_dictionary_values,
             map_admission,
             parallel,
             borrowed_strings,

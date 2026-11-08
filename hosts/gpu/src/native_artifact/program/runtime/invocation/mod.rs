@@ -627,6 +627,7 @@ impl Invocation<'_, '_, '_> {
         if matches!(
             tag,
             GlobalHelper::MapOwnerBegin
+                | GlobalHelper::MapOwnerBeginBorrowedValues
                 | GlobalHelper::MapOwnerCall
                 | GlobalHelper::MapOwnerEnd
                 | GlobalHelper::MapDictionaryEnd

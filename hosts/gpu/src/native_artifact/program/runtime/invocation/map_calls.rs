@@ -130,6 +130,13 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         site: usize,
     ) -> Result<Option<InitialWords>, Error> {
+        self.begin_retained_map_with_keys(site, false)
+    }
+    fn begin_retained_map_with_keys(
+        &mut self,
+        site: usize,
+        prefer_borrowed: bool,
+    ) -> Result<Option<InitialWords>, Error> {
         // Check authority before lazy allocation, including refused-entry replay.
         if !core::ptr::eq(self.state.map_owners.descriptor, self.descriptor)
             || self.state.control.previous != u32::try_from(site).ok()
@@ -175,7 +182,12 @@ impl Invocation<'_, '_, '_> {
         let mut seed = self.take_seed(site)?;
         let mut state = self.state.map_owners.state.take().unwrap();
         let result = if let Some(seed) = seed.as_ref() {
-            state.try_begin_retained_seed(&mut MapExecution::new(self), site, Some(&seed.frame))
+            state.try_begin_retained_seed_with_keys(
+                &mut MapExecution::new(self),
+                site,
+                Some(&seed.frame),
+                prefer_borrowed,
+            )
         } else {
             state.try_begin_retained(&mut MapExecution::new(self), site)
         };
@@ -301,11 +313,18 @@ impl Invocation<'_, '_, '_> {
         if self.state.consumed {
             return Err(invalid("duplicate retained map helper"));
         }
-        if operation == MAP_OWNER_BEGIN {
+        let borrowed = operation
+            == crate::native_artifact::program::protocol::GlobalHelper::MapOwnerBeginBorrowedValues
+                .raw();
+        if operation == MAP_OWNER_BEGIN || borrowed {
             if args != [0; 3] {
                 return Err(invalid("malformed retained map entry"));
             }
-            if let Some(words) = self.begin_retained_map(site)? {
+            if let Some(words) = if borrowed {
+                self.begin_retained_map_with_keys(site, true)?
+            } else {
+                self.begin_retained_map(site)?
+            } {
                 let layout = self.descriptor.metadata().map_owner_words.as_ref().unwrap();
                 let index = layout.initializer(site).unwrap();
                 let count = layout

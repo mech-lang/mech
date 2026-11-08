@@ -60,6 +60,7 @@ pub(in crate::native_artifact) enum GlobalHelper {
     MapKeys,
     MapDictionaryEnd,
     MapSeedFrame,
+    MapOwnerBeginBorrowedValues,
 }
 impl GlobalHelper {
     // Decoding classifies only. Site, phase, lane, admission and cursor checks
@@ -117,6 +118,7 @@ impl GlobalHelper {
             value if value == u64::MAX - 48 => Self::MapKeys,
             value if value == u64::MAX - 49 => Self::MapDictionaryEnd,
             value if value == u64::MAX - 50 => Self::MapSeedFrame,
+            value if value == u64::MAX - 51 => Self::MapOwnerBeginBorrowedValues,
             value => Self::Output(OutputIndex(value - 3)),
         }
     }
@@ -174,6 +176,7 @@ impl GlobalHelper {
             Self::MapKeys => u64::MAX - 48,
             Self::MapDictionaryEnd => u64::MAX - 49,
             Self::MapSeedFrame => u64::MAX - 50,
+            Self::MapOwnerBeginBorrowedValues => u64::MAX - 51,
         }
     }
     #[cfg(feature = "canonical-native-program")]
@@ -203,6 +206,7 @@ fn collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space() {
         GlobalHelper::MapKeys,
         GlobalHelper::MapDictionaryEnd,
         GlobalHelper::MapSeedFrame,
+        GlobalHelper::MapOwnerBeginBorrowedValues,
     ];
     let mut codes = std::collections::BTreeSet::new();
     for tag in tags {

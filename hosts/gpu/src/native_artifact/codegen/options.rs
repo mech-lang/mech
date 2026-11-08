@@ -83,6 +83,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     GenericDictionary,
     /// Omit a complete-use initial Map-state aggregate, retaining its real children.
     DictionarySeedFrames,
+    /// Keep admitted immutable Map keys and independent current native U64 cells.
+    BorrowedDictionaryValues,
     /// Test private ownership before loading/comparing an old write target.
     PrivateWritesFirst,
     /// Stronger immutable-cell facts require the guarded-load optimization.

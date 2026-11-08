@@ -425,6 +425,20 @@ impl NativeBorrowedMapKeys {
         self.loan
             .with_element(consumer, &self.loan.owner, selected, work, use_key)
     }
+    /// Observe the canonical key ordinal only after the same current-loan,
+    /// source-account and selected-consumer checks as the borrowed text.
+    /// The ordinal is descriptive; it grants no mutation or call allowance.
+    pub fn with_element_index<T>(
+        &self,
+        consumer: &NativePreparedLibraryCall,
+        selected: &NativeStringMatrixKeyOrdinal,
+        work: &NativeLibraryWorkBudget,
+        use_key: impl FnOnce(usize, &str) -> T,
+    ) -> Result<T, InvokeError> {
+        self.with_element(consumer, selected, work, |text| {
+            use_key(selected.ordinal, text)
+        })
+    }
     pub(in crate::resident) fn validate_frame_child(
         &self,
         call: &NativePreparedLibraryCall,

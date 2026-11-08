@@ -12,8 +12,8 @@ pub(in crate::native_artifact) enum FreezeChoice<S = DefaultHashBuilder> {
 }
 
 pub(in crate::native_artifact) struct FrozenStringMap<S = DefaultHashBuilder> {
-    // Actual backing retires before its reservations. The table's Box<str>
-    // keys remain at stable addresses when this owner moves into a lookup loan.
+    // Actual backing retires before its reservations. Both owned strings and
+    // pinned immutable Map keys stay stable when this owner enters a lookup loan.
     owner: OwnedStringMap<S>,
     schemas: Arc<SchemaTable>,
     schema: SchemaId,
@@ -73,7 +73,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         }
         finite(limits, cap)?;
         let retained = self.retained_bytes()?;
-        if geometry.live_bytes < retained || geometry.live_nodes < self.nodes.nodes() {
+        if geometry.live_bytes < retained || geometry.live_nodes < self.retained_nodes() {
             return Err(Error::Publication(
                 "frozen caller geometry omits retained owner",
             ));
@@ -148,7 +148,7 @@ impl<S: BuildHasher> FrozenStringMap<S> {
         add(self.owner.retained_bytes()?, self.metadata.capacity_bytes())
     }
     pub(in crate::native_artifact) fn retained_nodes(&self) -> u64 {
-        self.owner.nodes.nodes() + self.nodes.nodes()
+        self.owner.retained_nodes() + self.nodes.nodes()
     }
     pub(in crate::native_artifact) fn check_account(
         &self,

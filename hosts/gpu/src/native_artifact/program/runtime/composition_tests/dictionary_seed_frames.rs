@@ -20,7 +20,7 @@ end := sequence/length(keys)
 index := renumber(keys,0u64,end,histogram)
 ids := [index{tag} | tag <- tags]
 "#;
-fn source(alias: bool) -> String {
+pub(super) fn source(alias: bool) -> String {
     format!(
         "{DECLARATIONS}{}\n",
         if alias { "(histogram,ids)" } else { "ids" }
@@ -54,7 +54,11 @@ unsafe extern "C" fn observed(
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     let proof = ctx.descriptor.metadata().dictionary_seed_frames.regions[0].clone();
     let producer = site == proof.producer as u64 && op == GlobalHelper::MapSeedFrame.raw();
-    let initialize = site == proof.initialize as u64 && op == GlobalHelper::MapOwnerBegin.raw();
+    let initialize = site == proof.initialize as u64
+        && matches!(
+            GlobalHelper::decode(op),
+            GlobalHelper::MapOwnerBegin | GlobalHelper::MapOwnerBeginBorrowedValues
+        );
     let before = initialize && ctx.state.map_owners.has_seed(proof.seed.get());
     let fault = FAULT.with(Cell::get);
     if initialize && matches!(fault, Fault::StaleSeed) {
@@ -116,7 +120,7 @@ unsafe extern "C" fn observed(
     }
     status
 }
-fn arguments(
+pub(super) fn arguments(
     a: &mech_engine::ProgramArtifact,
     m: &ManagedMemoryBudget,
     tags: &[&str],
@@ -185,7 +189,7 @@ pub(in crate::native_artifact::program::runtime) fn run(
     FAULT.with(|v| v.set(Fault::None));
     (result, COUNTS.with(Cell::get))
 }
-fn data(v: &[Option<Value>]) -> Vec<Option<Data>> {
+pub(super) fn data(v: &[Option<Value>]) -> Vec<Option<Data>> {
     v.iter()
         .map(|v| v.as_ref().map(|v| v.canonical_data_draft().unwrap()))
         .collect()

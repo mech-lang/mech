@@ -98,6 +98,7 @@ pub(in crate::native_artifact) fn emit(
     key_views: bool,
     dictionary_views: bool,
     seed_frames: bool,
+    borrowed_values: bool,
 ) -> Result<(Option<Block>, bool), NativeCompileError> {
     let Some(owner) = owner else {
         return Ok((None, false));
@@ -179,7 +180,18 @@ pub(in crate::native_artifact) fn emit(
     let ordinary = b.create_block();
     let joined = b.create_block();
     if entry.is_some() {
-        hooks.call(b, site, GlobalHelper::MapOwnerBegin, [zero; 3], error);
+        let operation = if borrowed_values
+            && seed_frames
+            && matrix_keys
+            && key_views
+            && dictionary_views
+            && matches!(code, CodePlan::Program(program) if program.metadata().borrowed_dictionary_values.initializer(site).is_some())
+        {
+            GlobalHelper::MapOwnerBeginBorrowedValues
+        } else {
+            GlobalHelper::MapOwnerBegin
+        };
+        hooks.call(b, site, operation, [zero; 3], error);
         let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, flag, ready)?;
         let selected = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);

@@ -147,7 +147,9 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         }
         let retained = self.retained_bytes()?;
         let count = self.len() as u64;
-        if geometry.live_bytes < retained || geometry.live_nodes < add(count, 1)? {
+        if geometry.live_bytes < retained
+            || geometry.live_nodes < add(count, 1)?.max(self.retained_nodes())
+        {
             return Err(Error::Publication("caller geometry omits retained owner"));
         }
         self.work.charge(128, 0)?;
@@ -159,7 +161,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
                 mech_core::SchemaAllocationBoundError::Precharge(error) => Error::Work(error),
                 mech_core::SchemaAllocationBoundError::ArithmeticOverflow => Error::Overflow,
             })?;
-        let payload = self.keys.capacity_bytes();
+        let payload = self.key_bytes();
         // Exact narrow canonical layout, matching Value::retained_footprint:
         // Value + root ValueData + MapEntryValue + two child ValueDatas/key.
         let published = add(

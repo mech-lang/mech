@@ -177,6 +177,16 @@ impl Slot<'_> {
     }
 }
 impl Session<'_> {
+    #[cfg(test)]
+    pub(in crate::native_artifact::program::runtime) fn has_borrowed_dictionary(
+        &self,
+        index: usize,
+    ) -> bool {
+        self.state
+            .as_ref()
+            .is_some_and(|state| state.has_borrowed_dictionary(index))
+    }
+
     pub(in crate::native_artifact::program::runtime) fn matrix_key_retained_nodes(
         &self,
         work: &mut NativeWorkMeter,
@@ -468,6 +478,16 @@ impl<'plan> State<'plan> {
         Ok(Some(geometry))
     }
 
+    #[cfg(test)]
+    pub(in crate::native_artifact::program::runtime) fn has_borrowed_dictionary(
+        &self,
+        index: usize,
+    ) -> bool {
+        self.slots
+            .get(index)
+            .and_then(|slot| slot.binding.as_ref())
+            .is_some_and(Binding::has_borrowed_keys)
+    }
     pub(in crate::native_artifact::program::runtime) fn try_begin_retained(
         &mut self,
         ctx: &mut MapExecution<'_, '_, '_, '_>,
@@ -480,6 +500,15 @@ impl<'plan> State<'plan> {
         ctx: &mut MapExecution<'_, '_, '_, '_>,
         site: usize,
         seed: Option<&mech_engine::native_artifact::NativeMapSeedFrame>,
+    ) -> Result<Option<InitialWords>, Error> {
+        self.try_begin_retained_seed_with_keys(ctx, site, seed, false)
+    }
+    pub(in crate::native_artifact::program::runtime) fn try_begin_retained_seed_with_keys(
+        &mut self,
+        ctx: &mut MapExecution<'_, '_, '_, '_>,
+        site: usize,
+        seed: Option<&mech_engine::native_artifact::NativeMapSeedFrame>,
+        prefer_borrowed: bool,
     ) -> Result<Option<InitialWords>, Error> {
         self.guard(ctx, site)?;
         #[cfg(test)]
@@ -501,6 +530,39 @@ impl<'plan> State<'plan> {
         {
             return Err(invalid("retained map entry overlaps another live owner"));
         }
+        let keys = if prefer_borrowed {
+            let metadata = self.descriptor.metadata();
+            ctx.work().charge(
+                Phase::Setup,
+                amount(metadata.borrowed_dictionary_values.regions.len(), 64, 128)?,
+            )?;
+            let proof = metadata
+                .borrowed_dictionary_values
+                .initializer(site)
+                .ok_or_else(|| invalid("borrowed dictionary outside complete key-set proof"))?;
+            if proof.owner != index {
+                return Err(invalid("borrowed dictionary owner differs"));
+            }
+            let (lane_id, cell) = metadata
+                .matrix_map_keys
+                .consumer(proof.insert)
+                .ok_or_else(|| invalid("borrowed dictionary lost key producer"))?;
+            if cell.source != proof.key_source {
+                return Err(invalid("borrowed dictionary key source differs"));
+            }
+            let lane = &self.matrix_keys[lane_id];
+            if let Some(view) = &lane.view {
+                ctx.arena_check_virtual(
+                    lane.view_handle
+                        .ok_or_else(|| invalid("borrowed dictionary lost key generation"))?,
+                )?;
+                Some(view.snapshot().clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         // Refuse optional ownership before any private mutation if a later
         // selected constructor's fixed arity cannot fit. The canonical path
         // then preserves that constructor's original denial and origin.
@@ -533,15 +595,28 @@ impl<'plan> State<'plan> {
         };
         let imported = if let Some(seed) = seed {
             geometry.live_nodes = add(geometry.live_nodes, seed.metadata_demand().retained_nodes)?;
-            Binding::import_frame(
-                &self.descriptor.metadata().plan,
-                region,
-                &self.descriptor.metadata().schemas,
-                seed,
-                ctx.library().clone(),
-                geometry,
-                ctx.limits(),
-            )
+            if let Some(keys) = keys.as_ref() {
+                Binding::import_frame_with_keys(
+                    &self.descriptor.metadata().plan,
+                    region,
+                    &self.descriptor.metadata().schemas,
+                    seed,
+                    keys,
+                    ctx.library().clone(),
+                    geometry,
+                    ctx.limits(),
+                )
+            } else {
+                Binding::import_frame(
+                    &self.descriptor.metadata().plan,
+                    region,
+                    &self.descriptor.metadata().schemas,
+                    seed,
+                    ctx.library().clone(),
+                    geometry,
+                    ctx.limits(),
+                )
+            }
         } else {
             let source = ctx.arena_copy_current(region.tail().seed().get())?;
             Binding::import(
@@ -870,7 +945,13 @@ pub(in crate::native_artifact::program::runtime) mod tests;
 
 #[test]
 fn map_slot_consolidation_preserves_the_option_backing_layout() {
-    assert_eq!(core::mem::size_of::<Slot<'_>>(), 968);
+    // The three Option lanes remain the whole backing. Two map owners now
+    // each carry one optional pointer to a separately funded value bank.
+    let fields = core::mem::size_of::<Option<Binding<'_>>>()
+        + core::mem::size_of::<Option<Box<closed::Owner<'_>>>>()
+        + core::mem::size_of::<Option<FrozenSlot>>();
+    assert_eq!(core::mem::size_of::<Slot<'_>>(), fields);
+    assert_eq!(fields, 976); // IR305: 968; first inline prototype: 1160.
 }
 
 #[path = "../../invocation/map_calls.rs"]
