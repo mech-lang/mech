@@ -1,0 +1,152 @@
+{
+  "traces": [
+    {
+      "pair": 0,
+      "variant": "rust-fastest-coarse",
+      "sha256": "9597adaf4692476027fa34c06a48ef75964b6626d310f54c620d71aad0a1b383",
+      "packet": "captures/00-rust-fastest-coarse/trace.json.gz"
+    },
+    {
+      "pair": 0,
+      "variant": "histogram-reuse-coarse",
+      "sha256": "df8576610cd996727e27f9354e1d8f7f5392ff3fbb8dc8dda6a5d52ffa07394b",
+      "packet": "captures/00-histogram-reuse-coarse/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 0,
+      "variant": "histogram-reuse-detail",
+      "sha256": "1e1923ea4b3c23f9bf94a00f210127385e926f5543b739dec50300a23d2b3596",
+      "packet": "captures/00-histogram-reuse-detail/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 1,
+      "variant": "histogram-reuse-coarse",
+      "sha256": "b54a3cdf80b3404fd7b6a431ecfc6db822cbaf71501165aa5f06dc6e71a592db",
+      "packet": "captures/01-histogram-reuse-coarse/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 1,
+      "variant": "rust-fastest-coarse",
+      "sha256": "927d795d943125047ec752bdd841895935f8907143737015214660b6387346e4",
+      "packet": "captures/01-rust-fastest-coarse/trace.json.gz"
+    },
+    {
+      "pair": 1,
+      "variant": "histogram-reuse-detail",
+      "sha256": "ae1292c625ba23cf38826ca1cd405fea1165e6d686e0814de4a35acac7b30294",
+      "packet": "captures/01-histogram-reuse-detail/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 2,
+      "variant": "rust-fastest-coarse",
+      "sha256": "bdf6c6a7a1ce88034e98193aea703fbd1e58dcdace71af61d47034778c6306c9",
+      "packet": "captures/02-rust-fastest-coarse/trace.json.gz"
+    },
+    {
+      "pair": 2,
+      "variant": "histogram-reuse-coarse",
+      "sha256": "8e3408f1f0048845769ff4fc23985f9ef80c08f8e889b1bdcd7d26dd84a40c7a",
+      "packet": "captures/02-histogram-reuse-coarse/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 2,
+      "variant": "histogram-reuse-detail",
+      "sha256": "8eb93acf70dc5ae7ec14f346cd89d30b87ee0411d98ad317687b43e2fa638bb1",
+      "packet": "captures/02-histogram-reuse-detail/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 3,
+      "variant": "histogram-reuse-coarse",
+      "sha256": "b495e4d0201d6701ed32ff2a46dfac3ad962d0c6a72ae5e8d00a25d2a4eec14f",
+      "packet": "captures/03-histogram-reuse-coarse/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 3,
+      "variant": "histogram-reuse-detail",
+      "sha256": "e7061d0a24cc2c64ced82f80858337f8400b703172546e001b3cd9133e3d4eac",
+      "packet": "captures/03-histogram-reuse-detail/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 3,
+      "variant": "rust-fastest-coarse",
+      "sha256": "9591ec4fb24febc80a6c09ca6a969eff4f54110550867fb918dee7b138474023",
+      "packet": "captures/03-rust-fastest-coarse/trace.json.gz"
+    },
+    {
+      "pair": 4,
+      "variant": "histogram-reuse-coarse",
+      "sha256": "ae626396ac138d11be67ff21003a667e25596e29100607952e2959e1271b39d4",
+      "packet": "captures/04-histogram-reuse-coarse/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 4,
+      "variant": "rust-fastest-coarse",
+      "sha256": "bb9e4479ae498334d7fb96e13e190df17125ca0630bb5ee2e265d6e190b55671",
+      "packet": "captures/04-rust-fastest-coarse/trace.json.gz"
+    },
+    {
+      "pair": 4,
+      "variant": "histogram-reuse-detail",
+      "sha256": "342d27db0c97a98dca1d237c988e371c1c58eef4067e810c15edf475b24d721f",
+      "packet": "captures/04-histogram-reuse-detail/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 5,
+      "variant": "histogram-reuse-coarse",
+      "sha256": "d38bf8ba62c7c65e94d2116073ff833a420e5010f399e44131f39830efdc3ae9",
+      "packet": "captures/05-histogram-reuse-coarse/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 5,
+      "variant": "rust-fastest-coarse",
+      "sha256": "53ede1144c12f66cb09d61db3f891125830fe1c4b232fda8d1dc660bb36cfa3e",
+      "packet": "captures/05-rust-fastest-coarse/trace.json.gz"
+    },
+    {
+      "pair": 5,
+      "variant": "histogram-reuse-detail",
+      "sha256": "ef12aea1b7ba9d3eb71e19e65ec54c90689ae2e065c68c4286ad2bf67eb73681",
+      "packet": "captures/05-histogram-reuse-detail/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 6,
+      "variant": "histogram-reuse-detail",
+      "sha256": "cfc3f8b2e92e998f981c505555a5fa13b899ec552e95a9495ac0e48d2012d3b4",
+      "packet": "captures/06-histogram-reuse-detail/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 6,
+      "variant": "histogram-reuse-coarse",
+      "sha256": "d015e3c2866da750514b6f7b9c1f93e2023bee383e429ded093c809c584dfbab",
+      "packet": "captures/06-histogram-reuse-coarse/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 6,
+      "variant": "rust-fastest-coarse",
+      "sha256": "dc748009c05cf6db35dc9de8fe629c2ae7af3f74e3092cd5c78d3a2de08fc93d",
+      "packet": "captures/06-rust-fastest-coarse/trace.json.gz"
+    },
+    {
+      "pair": 7,
+      "variant": "histogram-reuse-detail",
+      "sha256": "f089a3098753fb8dafcacd1753d2dd536c1533b346923c7ffa1eef1f1fb6ea31",
+      "packet": "captures/07-histogram-reuse-detail/output.json.intervals.json.gz"
+    },
+    {
+      "pair": 7,
+      "variant": "rust-fastest-coarse",
+      "sha256": "ada8c4693800ac2bb2544c68c01cd77d71f9e966e34c003a6cbdd9a9ecea11ff",
+      "packet": "captures/07-rust-fastest-coarse/trace.json.gz"
+    },
+    {
+      "pair": 7,
+      "variant": "histogram-reuse-coarse",
+      "sha256": "3491433c9279f268182a573b0d5ab2c3a72025cbca4a566fc3387d10d6863df9",
+      "packet": "captures/07-histogram-reuse-coarse/output.json.intervals.json.gz"
+    }
+  ],
+  "diagnostic_captures": 24,
+  "all40outputs_exact": true,
+  "unchanged_production_Object": true,
+  "scope": "Current selected IR295;Engine/GPUconditionalprobesonly. No diagnostic timing is eligible for promotion."
+}
