@@ -13,6 +13,7 @@ pub(super) fn control(
     shadow: usize,
     tree: &Proof,
     site: usize,
+    retirement: Option<&super::numeric_retirement::ScalarHomes>,
 ) -> Result<(), NativeCompileError> {
     for (index, node) in tree.nodes.iter().enumerate() {
         let zero = b.ins().iconst(types::I64, 0);
@@ -28,21 +29,29 @@ pub(super) fn control(
             // A cold first change may have reified this activation's scalar
             // carrier. Retire exactly those homes at its source return edge.
             if !node.scalar_bindings.is_empty() {
-                let bank = words.read(b, shadow + tree.bank());
-                for binding in &node.scalar_bindings {
-                    let at = binding
-                        .physical
-                        .checked_mul(2)
-                        .ok_or_else(|| backend("numeric tree retirement offset overflows"))?;
-                    b.ins().store(MemFlags::new(), zero, bank, offset(at)?);
-                    b.ins().store(
-                        MemFlags::new(),
-                        zero,
-                        bank,
-                        offset(at.checked_add(1).ok_or_else(|| {
-                            backend("numeric tree retirement validity offset overflows")
-                        })?)?,
-                    );
+                let clear = |b: &mut FunctionBuilder<'_>| {
+                    let bank = words.read(b, shadow + tree.bank());
+                    for binding in &node.scalar_bindings {
+                        let at = binding
+                            .physical
+                            .checked_mul(2)
+                            .ok_or_else(|| backend("numeric tree retirement offset overflows"))?;
+                        b.ins().store(MemFlags::new(), zero, bank, offset(at)?);
+                        b.ins().store(
+                            MemFlags::new(),
+                            zero,
+                            bank,
+                            offset(at.checked_add(1).ok_or_else(|| {
+                                backend("numeric tree retirement validity offset overflows")
+                            })?)?,
+                        );
+                    }
+                    Ok(())
+                };
+                if let Some(retirement) = retirement {
+                    retirement.retire(b, index, clear)?;
+                } else {
+                    clear(b)?;
                 }
             }
             words.write(b, shadow + tree.active(index), zero);

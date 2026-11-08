@@ -47,6 +47,8 @@ mod numeric_fuel;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_read_packs;
 #[cfg(feature = "canonical-native-program")]
+mod numeric_retirement;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_segments;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_tree;

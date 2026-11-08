@@ -1,9 +1,31 @@
 {
   "schema": "mech.related-post-gen.user-directed-working-baseline.v1",
-  "updated_utc": "2026-11-08T02:00:13.828930+00:00",
+  "updated_utc": "2026-11-08T02:29:36.921523+00:00",
   "user_instruction": "it's okay to fail the whole process acceptance check taht's too strict like we need to keep getting better",
   "decision": "Advance verified processing improvements as the working baseline; whole-process timing remains measured and reported but noninferiority is not a required gate for progress. Original cohort acceptance decisions remain immutable.",
   "working_baseline": {
+    "compiler_source": "7e2b75c5b0317f610af2a83e46dc0a4deccb67c6",
+    "identity": "IR278/work116/ABI41/image11",
+    "runner": "/private/tmp/mech-related-grouped-metadata-runners-20261108-v1/plain/runner-aot",
+    "post_json_ms": 2.63925,
+    "times_fastest_processing_Rust": 1.7037498959061588,
+    "whole_ms": 30.96829098649323,
+    "times_fastest_whole_Rust": 1.5839579309239284,
+    "cohort": "comparison-native-grouped-metadata-20261108-5000-m3.json",
+    "selection_reason": {
+      "adopted": true,
+      "reason": "Useful verified restoration/whole-process gain with preserved processing and exact semantic/resource checks, following explicit user instruction to keep advancing improvements. The prospective10% restoration target narrowly misses at9.9614%; this miss remains recorded and is not converted into a frozen-rule pass.",
+      "processing_superiority_vs_IR277_established": false,
+      "original_prospective_target_passed": false,
+      "whole_process_not_a_required_gate": true,
+      "all_first_and_adverse_results_retained": true,
+      "no_unchanged_favorable_retry": true
+    }
+  },
+  "historical_selected_IR242_record_preserved": true,
+  "goal_active": true,
+  "goal_complete": false,
+  "previous_working_baseline": {
     "compiler_source": "80c91ec89ec0b57ddc1820a57fec4063c920de06",
     "evidence": "a47330b5eb96904ef0d5fd4f79bd7895a6f6ded7",
     "identity": "IR277/work116/ABI41/image9",
@@ -16,8 +38,5 @@
     "processing_gate_passed_against_all_three_controls": true,
     "original_whole_gate_failed": true,
     "unchanged_favorable_retry": false
-  },
-  "historical_selected_IR242_record_preserved": true,
-  "goal_active": true,
-  "goal_complete": false
+  }
 }

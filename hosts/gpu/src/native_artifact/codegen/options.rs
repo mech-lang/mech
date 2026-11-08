@@ -45,6 +45,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     ZeroAppendFrontiers,
     SourceLiveness,
     PrivateLiveness,
+    /// Omit repeated zero stores until a resumable helper can reify homes.
+    ScalarHomeRetirement,
     NumericOutlining,
     BooleanBranches,
     BitCounts,

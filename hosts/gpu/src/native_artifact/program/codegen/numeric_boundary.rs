@@ -78,6 +78,7 @@ pub(super) fn materialize(
     hooks: &Hooks,
     error: Block,
     fuel_debits: Option<&super::super::numeric_fuel_debits::Anchors>,
+    retirement: Option<&super::super::numeric_retirement::ScalarHomes>,
 ) -> Result<(), NativeCompileError> {
     let options = controls.options();
     if let Some(anchors) = fuel_debits {
@@ -239,6 +240,9 @@ pub(super) fn materialize(
     );
     if let Some(anchors) = fuel_debits {
         anchors.refresh(b, words);
+    }
+    if let Some(retirement) = retirement {
+        retirement.materialized(b);
     }
     Ok(())
 }

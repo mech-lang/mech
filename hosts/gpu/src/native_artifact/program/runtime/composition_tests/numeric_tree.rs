@@ -376,6 +376,11 @@ fn numeric_tree_private_liveness_ablation_keeps_outputs_errors_and_retry() {
 }
 
 #[test]
+fn numeric_tree_scalar_home_retirement_keeps_cold_writes_reports_errors_and_retry() {
+    check_emission_ablation(OptimizationPass::ScalarHomeRetirement);
+}
+
+#[test]
 fn numeric_tree_outlining_ablation_keeps_outputs_errors_and_retry() {
     check_emission_ablation(OptimizationPass::NumericOutlining);
 }
@@ -610,6 +615,33 @@ fn check_emission_ablation_source(pass: OptimizationPass, source: &str) {
                 native.descriptor().code_bytes() < conservative.descriptor().code_bytes(),
                 "native-produced Boolean branches must remove emitted comparisons"
             );
+        }
+        if pass == OptimizationPass::ScalarHomeRetirement {
+            let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+            let old = crate::native_artifact::program::compiler::emit_program_object_for_test(
+                &artifact, &catalog, pass,
+            )
+            .unwrap();
+            let guarded = |metadata: &serde_json::Value| {
+                [
+                    "compiled_numeric_write_loops",
+                    "compiled_readonly_numeric_loops",
+                ]
+                .into_iter()
+                .flat_map(|key| metadata[key].as_array().unwrap())
+                .map(|row| {
+                    row["guarded_scalar_retirement_nodes"]
+                        .as_array()
+                        .unwrap()
+                        .len()
+                })
+                .sum::<usize>()
+            };
+            assert!(
+                guarded(&object.metadata()) > 0,
+                "exercise real scalar retirement guards"
+            );
+            assert_eq!(guarded(&old.metadata()), 0);
         }
         for restored in [false, true] {
             let memory = mode.memory_budget();
@@ -891,6 +923,11 @@ fn numeric_tree_finite_fuel_reconstructs_each_live_loop_before_continuing() {
 #[test]
 fn numeric_tree_private_liveness_finite_fuel_matches_conservative_reconciliation() {
     check_numeric_tree_finite_fuel(Some(OptimizationPass::PrivateLiveness));
+}
+
+#[test]
+fn numeric_tree_scalar_home_retirement_keeps_finite_fuel_publication_and_reentry() {
+    check_numeric_tree_finite_fuel(Some(OptimizationPass::ScalarHomeRetirement));
 }
 
 #[test]

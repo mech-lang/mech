@@ -1,0 +1,27 @@
+{
+  "schema": "mech.related-post-gen.recovered-scalar-home-progress.v1",
+  "identity": "IR279/work116/ABI41/image11",
+  "branch": "codex/related-recovered-scalar-homes-20261108",
+  "source": "/private/tmp/mech-related-recovered-scalar-homes-compiler-20261108",
+  "base": "7e2b75c5b0317f610af2a83e46dc0a4deccb67c6",
+  "recovered_source": "8f6516cd93410c75df18648ed10b9d335ca5311b",
+  "mechanism": "Compiler-local SSA dirty masks skip only physical scalar-home clearing already performed since the last resumable helper. Entry and every helper reset all bits conservatively. This is emitted native code, with no runtime mask state, new per-op allocation, source change, price or permission bypass.",
+  "production_build_passed": true,
+  "focused_native_and_finite_ablation_checks_passed": 3,
+  "old_native_CI_names_retained": 405,
+  "new_native_CI_names_listed": 408,
+  "full_CI_and_remaining_qualification": "running handle80640",
+  "performance_measured": false,
+  "selected": false,
+  "goal_complete": false,
+  "build": "/private/tmp/mech-related-recovered-scalar-homes-opt-20261108-v1",
+  "pipeline": "/private/tmp/mech-related-recovered-scalar-homes-20261108/run-checks.py",
+  "historical_gain_only": {
+    "processing_instructions_before": 54824599,
+    "processing_instructions_after": 53544125,
+    "processing_paired_wins": 23,
+    "samples": 31,
+    "not_a_current_speed_claim": true
+  },
+  "first_harness_failure": "Expected407 names; actual408 retained all405 and added3 passing checks. Corrected workflow count, reused identical Rust-source executable and resumed after focus; no production failure or timing discarded."
+}
