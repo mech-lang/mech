@@ -41871,6 +41871,58 @@
           }
         }
       ]
+    },
+    "211": {
+      "base": "2b5049786feb3dfece5b7c743dc45a0ff352009f",
+      "production": "7748204bd12e57a20369ce7970f31f8d15c3901f",
+      "versions_retained": {
+        "ir": 214,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "decision": "Preserve the R211 complete diagnostic improvement and all measurements: 19 lower elapsed medians/one equal, geometric elapsed -57.017303%, all20 gates against previous and production, all20 instruction/cycle medians lower. Retained production remains R199 until ordinary guarantees are restored; no parity or completed-brief claim.",
+      "source_files": [],
+      "archived_changed_compiler_files": 30,
+      "delta_from_R210": [
+        "hosts/gpu/src/native_artifact/program/compact/owner_flow.rs",
+        "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+        "hosts/gpu/src/native_artifact/program/compact/owner_flow/transfers.rs"
+      ],
+      "events": [
+        {
+          "event": "dead-source-owner-transfer-diagnostic",
+          "asset": "r211-owner-transfers-0c1694e4a6e1.tar.gz",
+          "sha256": "0c1694e4a6e1f5876109a99405b25a765fbc717fc9a8abc69f64107cb914fe55",
+          "bytes": 5321428,
+          "files": 1560,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r211-owner-transfers-0c1694e4a6e1.tar.gz"
+        }
+      ],
+      "observations": {
+        "primary_complete_calls": 8616,
+        "primary_observations": 8496,
+        "primary_reference_compressions": 5120,
+        "separate_mech_cpu_heap_calls": 2400,
+        "elapsed_lower_vs_previous": 19,
+        "elapsed_higher_vs_previous": 0,
+        "elapsed_equal_vs_previous": 1,
+        "geometric_elapsed_ratio_to_previous": 0.42982697090994837,
+        "original_1_05_gate_vs_retained_pass": 20,
+        "original_1_05_gate_vs_previous_pass": 20,
+        "instruction_medians_lower_vs_previous": 20,
+        "instruction_medians_higher_vs_previous": 0,
+        "cycle_medians_lower_vs_previous": 20,
+        "cycle_medians_higher_vs_previous": 0,
+        "equal_diagnostic_heap_cases": 3,
+        "wall_stack_profile_complete_calls": 22415,
+        "exact_pc_profile_complete_calls": 64815
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_brief_acceptance": "Explicit parallel-copy controls, phase-boundary transport, then one compact phase in qualified production; no indefinite whole-diagnostic prerequisite.",
+      "new_branch_or_PR": false
     }
   },
   "repository": "mech-lang/mech",

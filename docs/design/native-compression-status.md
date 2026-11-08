@@ -1,5 +1,22 @@
 # Native compression milestone
 
+## R211: dead-source ownership transfers in the complete diagnostic
+
+**Production remains R199 /IR214.** Existing field liveness and current-predicate facts now transfer one dead source reference into one aggregate destination after shared emission succeeds. Real aliases, additional duplicate destinations, previous target release, post-action outputs, errors and current mutation exclusivity remain. Three compiler files change from R210; the complete archived diagnostic has30 changed compiler files.
+
+Matched diagnostic natural32 **4.951098×→2.688841× Roc**, periodic33 **5.312800×→2.529616×**, repeated32 **5.117834×→2.462476×**, random32 **17.381165×→4.574694×**, distribution-change16 **15.416745×→4.178916×**, eight literals **2.214912×→0.836039×**. These use one current denominator per input. Fresh unchanged production is3.375661×/3.508200×/3.206685×/5.168768×/6.916824×/4.501242× respectively. Historical unmatched values are not substituted.
+
+Nineteen elapsed medians fall/one equals; geometric elapsed−57.017303%. All20 unchanged1.05 gates pass against both R210 and production. All20 separate instruction/cycle medians fall. Natural instructions−37.60%, random−64.59%, eight−61.09%. Natural allocator requests9192→5184, eight498→368;17 cases remove requests/bytes with15 equal incremental usable peaks and5 lower ones. Real live aliases continue to force copying. Tracked COW bytes are not all memory traffic. Generated text7,669,096→5,637,108B; static root-plus-largest-kernel stack85,056→61,504B.
+
+The timed hot ownership sequence is mapped to literal-observation pack2338 and copies2339/2340. Their three old cold owner-release error origins disappear from the actual new Object. An independent observer counts actual non-null transfers, with numeric/map/pack activations unchanged across all20. Fresh640 observation-record controls,1480 map,320 fixed-buffer,192 origin,48 phase,1724 matching,40 builder and120 complete smokes pass;41 original/decoded image pairs match. Same inherited resident caps/exclusions remain. Ordinary scalar/map Objects/metadata/descriptors match byte-for-byte; no fresh production-suite claim.
+
+8,616 primary complete calls,2,400 separate CPU/heap calls, fresh all20 reference counters,22,415 wall-profile calls and64,815 exact-PC calls preserve every source/table/buffer/timing pin. Profiles now expose native matching and selection plus remaining root transport. Full contract restoration and parity remain unachieved; eight below1× is a diagnostic result with the disclosed omissions.
+
+The newly received brief sets the next order: finish explicit self/swap/overlap/metadata-only/predicate-redefinition witnesses, measure fixed-buffer phase-boundary transport, then qualify one compact phase through ordinary admission/ownership/funding with fallback. Same-site overlap currently declines transfer. Do not wait for the entire diagnostic to win everywhere before that bounded production checkpoint. Stable owner pooling and payload-site census follow separately. [Optimization coverage](native-optimization-coverage.md) and [complete report/evidence](native-compact-owner-transfers.md).
+
+Keep every round on existing draft#973’s branch, one commit per measured round; no new branches or PRs. Cleanup removed90 surplus remote and54 local branches while preserving #990 separately, prerequisite PRs and unrelated/uncommitted work. Ordinary exact-head CI cancellation is requested under the standing instruction; review remains enabled and no green-CI/clean-review claim is made.
+
+
 ## R210: existing total word collections retained in the diagnostic
 
 **Production remains R199 / IR214.** Two existing total pointwise proofs now use the same scalar/vector emitter with four dense current capture words and a fresh private sink. Result capacity/shape and checked fallback remain. No compressor algorithm, scratch capacity, allowance or timing boundary changes. The compiler folds physical collection growth into the single allocation already used by ordinary admitted maps; this is an external diagnostic prototype, not production adoption.
