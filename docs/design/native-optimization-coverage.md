@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R224
+# Production/diagnostic optimization coverage after R225
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -38,3 +38,5 @@ R222 admits the existing complete non-appending single-loop write class through 
 R223 fixes the inherited compact root matrix fallback by sharing the numeric ordinal translation, keeping packing separate from address selection.480 changing-shape read/write/alias/error/retry controls pass; all134 numeric and2 map bodies remain identical. No new phase class is selected; maintained normalIR215 remains unchanged. The required repair costs1.004% in balanced block means, with all20 gates passing. The next assignment is a matched fixed-level/runtime-input comparison, then cache-read/source control and phase proof reuse, without requiring ordinary resource-contract restoration first. [Evidence and updated plan](native-canonical-matrix-fallback.md).
 
 R224 confirms the standalone comparison with fixed-level12/runtime inputs,both live borrowed outputs,equal200ms warmup,the same Rust clock/miniz validation and balanced ordering. The compression Object stays byte-identical to R223; no new operation class is lowered. All20 original plus five held-out cases through131073 bytes agree exactly. Eight-byte median0.528194×/block mean0.542406× reference; ten original block-mean wins and a borderline natural1024 case. Historical denominators stay explicit. Extra ordinary resource restoration is not a prerequisite. Next measure the two cache-word bindings source control,then phase proof reuse. [Protocol and scope](native-matched-compression-comparison.md).
+
+R225 measures only two immutable packed-cache bindings in source; no compiler/runtime or operation-coverage change. All 25 streams and unchanged gates pass, with a 0.538% geometric block-mean gain and explicit periodic/repeated regressions. Original source remains the separate baseline for the next phase-proof compiler experiment. [Evidence and scope](native-cache-word-source-control.md).

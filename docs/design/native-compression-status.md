@@ -1,5 +1,14 @@
 # Native compression milestone
 
+## R225: two immutable cache-word bindings measured separately
+
+Retain the isolated source variant: natural32 improves **2.291%** (2.475034×→2.418329× reference); periodic/repeated regress **2.097%/1.981%**. The 25-case geometric block-mean gain is **0.538%**, with all unchanged gates passing. Eight literals are 0.543362× by point median, but block means rise 0.663%, so no new tiny-case win is claimed.
+
+162222 primary calls, 3900 separate CPU/heap calls and fresh wall/current-PC profiles cover all 20 original plus five held-out cases through131073 bytes. Natural32 removes 3.95 million instructions; all 25 before/after allocator and payload fields match. Four path bodies each lose two U32 loads/two conditional branches; matching bodies stay identical. Root text−26660B,stack +16 B. All 396 downloaded evidence hashes and numerical replay verify.
+
+An actual disk-full interruption after 19 cases is preserved; only six missing cases resume, with the 19 originals hash-identical. A missing usage-reader link in the memory probe is recorded and corrected. Maintained normal IR215 and experimental compiler remain unchanged. Next: phase-level range/shape proof reuse on the original source, then combine separately qualified ideas. [All 25 results, tradeoffs, pins and failures](native-cache-word-source-control.md).
+
+
 ## R224: fixed-level runtime-input comparison confirmed
 
 The reference now has level12 fixed at compile time and receives runtime input,matching Mech. Both workers persist, use the same pinned Rust Instant and miniz validation, warm up for200ms per case and alternate in24 balanced blocks. Both hold actual input and prepared-output aliases; original prefixes/capacities and distinct returned backing are checked. Complete scratch construction/compression/cleanup stay timed. Historical runtime-level/embedded-input/consumed-output reference denominators remain separately published. No compiler or algorithm change is included.
