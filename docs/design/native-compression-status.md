@@ -1,5 +1,28 @@
 # Native compression milestone
 
+## R237: current-value loop dispatch threading retained
+
+The generic nine-file experiment over R236 shortens proved terminal routes
+through pure scalar dispatch and repairs current SSA arguments without cloning.
+Nine root/twelve phase edges qualify; four path bodies shrink 64 B each, with
+132 other routines byte-identical. Root text grows 1432 B; root stack falls 16 B.
+No compressor source, algorithm, allocations, limits or timing boundary changes.
+
+Both predeclared full cohorts and pooled 48 pass all 25 unchanged point/block
+1.05 gates. Pooled geometric elapsed improves **1.2134%**. Natural32 is
+**2.247351×→2.136610×** reference (−4.9276%); periodic **1.724336×**, repeated
+**1.633949×**, random32 **2.831896×**. Eight literals regresses
+**0.497427×→0.504507×** (+1.0590%). Preserve all ten adverse elapsed rows.
+Instructions/cycles fall on 22 inputs and rise on 3; heap/copy fields match.
+
+703 maintained tests, 10,680 native source controls and 1,183 fresh resident calls
+pass with the same profile, warnings denied and seven exclusions. All 25 exact
+streams independently inflate. Fresh 25,353 wall/104,361 PC calls finish; natural
+wall samples are 98.1206% generated/.5245% host. All 2,674 public hashes/replay verify.
+Normal R215 and omitted ordinary contracts remain. Next reproduce the verified
+paired compare/select in the current path before a generic flags/condition rule.
+[All 25, exact patch, measured tradeoffs and historical cutoffs](native-threaded-loop-dispatch.md).
+
 ## R236: demanded low-word arithmetic, with mixed timing tradeoffs
 
 Retain the generic five-file experiment over R234 under the predeclared gates.

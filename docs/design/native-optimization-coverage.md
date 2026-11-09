@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R236
+# Production/diagnostic optimization coverage after R237
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -154,3 +154,5 @@ All heap/copy fields agree; current 25,270 wall / 106,514 PC calls are pinned.
 Normal IR215/ordinary contracts stay unchanged; R235/R225 stay uncombined.
 Next establish a minimal current-SSA witness for path-scan completion checks;
 no new control-threading gain is claimed. [Evidence](native-low-word-arithmetic.md).
+
+R237 retains generic current-edge threading through pure loop dispatch. It repairs current visit values explicitly; no new source operation becomes native. Nine root/twelve phase edges qualify, four path bodies shrink 64 B each and 132 routines remain identical. All 25 unchanged gates pass in both cohorts; pooled elapsed improves 1.2134%, with ten adverse cases retained. Natural32 is 2.136610× reference; eight regresses 1.0590%. 703 maintained tests / 10,680 native source controls / 1,183 fresh resident calls pass; all 2,674 public hashes and replay verify. Ordinary R215 and the experimental omitted-contract boundary remain. The next bounded witness is the verified duplicate compare/select in the current path, not a new operation class. [Evidence and complete disposition](native-threaded-loop-dispatch.md).
