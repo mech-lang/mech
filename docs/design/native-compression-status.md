@@ -1,5 +1,12 @@
 # Native compression milestone
 
+## R227: current-element modular writes
+
+The original-source compiler experiment proves 51 writes must change their exact current element, retaining bounds, canonical matrix translation and shared first-change behavior. All 25 timing gates pass; geometric block means improve **1.085%**. Random32 improves **3.059630×→3.000583×** reference (−1.930%); distribution16 **2.975706×→2.941638×** (−1.145%); natural32 **2.361706×→2.346531×** (−0.643%); eight **0.529005×→0.519218×** (−1.317%). Keep three adverse small-case block means and five adverse cycle observations.
+
+Random32 removes **1.295m instructions (2.016%)**; 22 instruction medians fall/three tie. Allocation and payload fields match on all25 cases. The histogram body shrinks 812→704B, branches16→13; root text/stack stay equal. 684 maintained tests, 2304 compiled and 864 ordinary runtime controls pass, including finite clone denial/publication/aliases/retry. All1771 downloaded evidence hashes and numerical replay verify. A typed-input test-client lifetime failure and profiler/ENOSPC recovery are recorded; no primary/counter observation changed. Normal IR215 remains unchanged; R225 is not combined. Broader private writes, phase storage and wider matching remain separate. [Design, exact pins, all25 results and failures](native-current-element-write-proofs.md).
+
+
 ## R226: retain guarded phase-level window facts
 
 On the original source, the compiler now carries checked match-count ranges into a generic current-phase length/geometry guard. Refusal retains checked execution; growing node buffers retain a lower bound while pointers refresh. The four path bodies shrink 2208→2096 B. No additional phase class or source algorithm is introduced; R225 bindings remain separate and normal IR215 remains unchanged.

@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R226
+# Production/diagnostic optimization coverage after R227
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -42,3 +42,5 @@ R224 confirms the standalone comparison with fixed-level12/runtime inputs,both l
 R225 measures only two immutable packed-cache bindings in source; no compiler/runtime or operation-coverage change. All 25 streams and unchanged gates pass, with a 0.538% geometric block-mean gain and explicit periodic/repeated regressions. Original source remains the separate baseline for the next phase-proof compiler experiment. [Evidence and scope](native-cache-word-source-control.md).
 
 R226 improves range inference and current-phase guard reuse on existing reduction windows. The same 134 numeric phases/two maps remain; only four path bodies change and 132 other special routines keep identical actual code. No new source operation is counted as newly native. Normal IR215 and its additional contract remain unchanged. All 25 gates, 679 maintained tests and 640 linked path/matrix controls pass, with inherited exclusions/denials explicit. [Scope and evidence](native-phase-window-facts.md).
+
+R227 reuses the same current-traversal engine to prove 51 same-address nonzero modular updates across45 existing numeric routines. It removes only redundant old-value loads/comparisons; no additional source operation or phase class becomes native. Normal IR215 is unchanged. All25 gates/684 maintained tests/2304 compiled controls/864 ordinary controls pass. Instructions fall on22 cases/tie onthree, allocations stay equal, and contrary elapsed/cycle observations remain. [Source, proof, measurements and limits](native-current-element-write-proofs.md).
