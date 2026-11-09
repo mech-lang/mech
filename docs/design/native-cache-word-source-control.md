@@ -118,3 +118,9 @@ all file hashes and byte-identical numerical replay. `REPORT.md`, `source.patch`
 clients/build specifications, all 25 raw structured observations, independent
 counter/profile cohorts and failure/recovery receipts are archived. Native
 binaries, bytecode, full executable metadata and raw traces are excluded.
+
+The original packet retained the complete delta but its extension filter omitted
+the full Mech source. The [exact measured source](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r225-cache-word-source-138f42708c3d.mec) and its companion hash receipt are now supplied separately
+and verified on the server and after download. Existing archives and results are
+unchanged. R226 explicitly checks inclusion of all candidate Rust and measured
+Mech source files.

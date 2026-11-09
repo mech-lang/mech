@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R225
+# Production/diagnostic optimization coverage after R226
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -40,3 +40,5 @@ R223 fixes the inherited compact root matrix fallback by sharing the numeric ord
 R224 confirms the standalone comparison with fixed-level12/runtime inputs,both live borrowed outputs,equal200ms warmup,the same Rust clock/miniz validation and balanced ordering. The compression Object stays byte-identical to R223; no new operation class is lowered. All20 original plus five held-out cases through131073 bytes agree exactly. Eight-byte median0.528194×/block mean0.542406× reference; ten original block-mean wins and a borderline natural1024 case. Historical denominators stay explicit. Extra ordinary resource restoration is not a prerequisite. Next measure the two cache-word bindings source control,then phase proof reuse. [Protocol and scope](native-matched-compression-comparison.md).
 
 R225 measures only two immutable packed-cache bindings in source; no compiler/runtime or operation-coverage change. All 25 streams and unchanged gates pass, with a 0.538% geometric block-mean gain and explicit periodic/repeated regressions. Original source remains the separate baseline for the next phase-proof compiler experiment. [Evidence and scope](native-cache-word-source-control.md).
+
+R226 improves range inference and current-phase guard reuse on existing reduction windows. The same 134 numeric phases/two maps remain; only four path bodies change and 132 other special routines keep identical actual code. No new source operation is counted as newly native. Normal IR215 and its additional contract remain unchanged. All 25 gates, 679 maintained tests and 640 linked path/matrix controls pass, with inherited exclusions/denials explicit. [Scope and evidence](native-phase-window-facts.md).
