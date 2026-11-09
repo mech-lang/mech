@@ -1,4 +1,15 @@
-# Production/diagnostic optimization coverage after R245
+# Production/diagnostic optimization coverage after R246
+
+R246 measures a combination of existing R237 pure-loop threading and R245
+vector phases; no new source operation or selection class is lowered.9 root
+and12 path edges thread under the original current-value/typed-phi proof.132
+other original bodies and all7 R245 vector bodies stay identical.710 maintained,
+7 focused proof tests and7076 fresh source cases pass;33 original/decoded image
+pairs match.1700 parent matrix and40 resident path rows remain explicitly reused.
+Natural32 improves4.3880%, but periodic worsens3.7937% and the confirmation eight
+historical gates fail. Archive the complete component; retain R245 and all11 wins.
+Next isolate phase-only threading before attributing the root penalty. Ordinary
+IR215 and standalone contract omissions remain unchanged. [Full scope/evidence](native-loop-threading-combination.md).
 
 R245 retains guarded vector versions of seven existing numeric phases. The
 same134 selected numeric proofs/two maps and original136 machine bodies remain;

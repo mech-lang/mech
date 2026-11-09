@@ -1,11 +1,53 @@
 # Native compression milestone
 
 **Current standings:11 of25 complete compression cases are faster than Roc.**
-The [standing scoreboard](native-compression-scoreboard.md) lists every case,
-all current wins and regressions. It uses the fresh R245 cohort and retained
-experimental R245 executable, compared with prior R242 using the same reference.
-No below1x threshold was crossed in either direction. Historical reports keep
-their original measurements. All25 inputs/sizes remain mandatory after changes.
+Retained experimental compiler remains R245. The [standing scoreboard](native-compression-scoreboard.md)
+shows all25 retained/candidate rows against the same fresh R246 reference;
+its changed ratios do not mean the retained compiler changed. Historical
+reports preserve their original observations. All25 inputs/sizes stay mandatory.
+
+## R246: preserve the combined natural-text gain; keep R245 for periodic input
+
+Archive the measured R237-threader/R245 combination. Natural32 improves
+2.239774x->2.141492x reference (-4.3880% block elapsed), with both cohorts
+favorable and5.6047% fewer instructions/4.1355% fewer cycles. The gain and full
+source remain available for the next isolated combination; they are not discarded.
+
+Periodic worsens1.599350x->1.660024x (+3.7937%) in both cohorts despite2.1247%
+fewer instructions; cycles rise3.1501%. Repeated32 rises1.509380x->1.561093x
+(+3.4261%); random32 rises2.747608x->2.805254x (+2.0981%). Eight is0.513988x->
+0.524576x (+3.0194% pooled block), and its adverse confirmation fails both
+historical1.05 gates while remaining below the user1x ceiling. Preserve the
+contrary initial pair. Pooled gates pass25/25, initial25/25, confirmation24/25;
+fifteen pooled block means worsen. All25 geometric elapsed rises0.1283%, while
+large11 falls1.0591%; neither average overrides the periodic acceptance rule.
+Both variants retain the same11 below-reference cases. All25 allocation/copy/
+zero/private-peak and heap fields remain exactly equal.
+
+The exact existing R237 proof pass is reused; R236 low-word narrowing and R238
+flag reuse remain uncombined. Nine root edges and twelve edges in four path
+bodies are threaded.132 other original kernels and all seven R245 vector bodies
+remain byte-identical; disabled full Object/metadata match R245. Current typed
+arguments, snapshot predicates, source checks, errors, aliases and recovery stay.
+Root/phase interaction is a hypothesis for the periodic loss, not an established
+cause. Fresh C/Rust checked-state-loop analogues show direct exits, not a new
+full-compression timing comparison.
+
+710 maintained tests and seven focused proof tests pass (same7 exclusions).
+7076 native source controls are freshly executed across normal/observed and
+original/decoded modes:4640 dispatch,320 actual path,1700 matrices and416
+boundaries.1160 dispatch/1700 matrix resident calls are fresh;1700 parent matrix
+rows and40 path resident rows are reused by hash.34 inherited path default-work
+denials remain explicit, without raising limits. All33 fresh small image pairs
+match.50 full smokes/every measured stream agree and independently inflate.
+The public download verifies2069 hashes/five numerical replays; the patch
+reconstructs all820 tested source files from R245. OrdinaryIR215 stays unchanged.
+[All25, source/patch, counters, profiles, exact commands and failure dispositions](native-loop-threading-combination.md).
+
+Next apply the same pass only inside outlined phases, leaving root threading
+disabled. Require R245 root code identity and the same four shortened path
+bodies before all25 timings. This control tests whether the root pass causes
+the periodic penalty; no phase-only implementation or speedup is claimed yet.
 
 ## R245: reuse vector geometry across complete native matching phases
 

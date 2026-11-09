@@ -47367,6 +47367,413 @@
           "sha256": "acc956027028d0d4a6deb4baf69635d2d1b84c20ef45d9d508e427b4d50442b1"
         }
       }
+    },
+    "246": {
+      "git_parent": "085dce0ee59b2c798a9ed542c62273759414f0cc",
+      "control": "R245 retained experimental compiler",
+      "decision": {
+        "decision": "Archive R246 as a measured combination; keep R245 as the periodic baseline. Preserve the repeatable natural-text win, complete compiler source and all contrary measurements for the next isolated combination.",
+        "git_parent": "085dce0ee59b2c798a9ed542c62273759414f0cc",
+        "compiler_control": "Retained experimental R245 complete source closure and worker",
+        "retained_experimental_compiler": "R245",
+        "R245_periodic_reference": 1.5993498455447304,
+        "R246_periodic_reference": 1.66002445607812,
+        "periodic_block_percent": 3.79370471710172,
+        "periodic_both_cohorts_improve": false,
+        "R245_natural32_reference": 2.2397737168234153,
+        "R246_natural32_reference": 2.141491828860373,
+        "natural32_block_percent": -4.388027559428265,
+        "natural32_both_cohorts_improve": true,
+        "eight_after_reference": 0.5245760892895471,
+        "eight_user1x_ceiling_pass": true,
+        "confirmation_eight_point_gate": false,
+        "confirmation_eight_block_gate": false,
+        "below_reference_before": 11,
+        "below_reference_after": 11,
+        "new_below_reference": [],
+        "lost_below_reference": [],
+        "adverse_pooled_block_rows": "All15 retained in the tracked25-case tables and external result-decision/primary-results JSON",
+        "parity_complete": false,
+        "ordinary_contract_restored": false,
+        "next": "Use the identical R237 pass only inside outlined native numeric phases, leaving the root pass disabled. First require R245 root code identity and the same four shortened phase bodies; then repeat all25 measurements. This isolates whether root threading causes the periodic penalty; that cause is not established by this round."
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r246-thread-combination-fb363e6d81ff.tar.gz",
+        "sha256": "fb363e6d81ff177c89a49e5a0d327fa304a3c42cb64ec1b57704cf26366ac9b2",
+        "bytes": 5593077,
+        "verified_files": 2069,
+        "numerical_replays": 5,
+        "reconstructed_source_files": 820
+      },
+      "qualification": {
+        "maintained_tests": 710,
+        "inherited_exclusions": 7,
+        "focused_threading_tests": 7,
+        "features": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "compiler_optimization": 3,
+        "test_root_optimization": 1,
+        "warnings_as_errors": true,
+        "toolchain": "nightly-2026-03-03-aarch64-apple-darwin",
+        "private_flags": [
+          "MECH_PRIVATE_INDEXED_CHAINS=1",
+          "MECH_PHASE_OWNER_TRANSFER=1",
+          "MECH_PHASE_VECTOR_FAST=1",
+          "MECH_THREAD_LOOP_EDGES=1"
+        ],
+        "dispatch_native_cases_fresh": 4640,
+        "dispatch_resident_calls_fresh": 1160,
+        "path_native_cases_fresh": 320,
+        "path_resident_rows_reused": 40,
+        "path_inherited_default_work_denials_in_reused_rows": 34,
+        "matrix_native_cases_fresh": 1700,
+        "matrix_native_parent_rows_reused": 1700,
+        "matrix_resident_calls_fresh": 1700,
+        "boundary_native_cases_fresh": 416,
+        "small_original_decoded_pairs_fresh": 33,
+        "complete_smokes": 50,
+        "source_expected_values_allowances_unchanged": true,
+        "all_current_values_errors_origins_aliases_publication_cleanup_retry_agree": true,
+        "ordinary_IR215_unchanged": true,
+        "new_compiler_algorithm": false,
+        "pass_reused_from_R237": true,
+        "unresolved_introduced_semantic_failures": 0,
+        "primary_cohorts": 2,
+        "balanced_blocks_each": 24,
+        "counter_observed_calls": 5200,
+        "counter_retained_calls": 4800,
+        "no_fresh_ABI_rerun": "The array runtime is byte-identical to R245; its seven ABI controls are inherited by hash, while actual compiled matrix/growth/alias/error controls are fresh."
+      },
+      "image": {
+        "root_code_bytes": 5628152,
+        "root_stack_bytes": 55120,
+        "variants_emitted": 134,
+        "variants_selected": 7,
+        "variant_bytes": 102608,
+        "unused_variant_bytes": 75444,
+        "object_text_before": 5860960,
+        "object_text_after": 5858168,
+        "worker_text_before": 6178864,
+        "worker_text_after": 6176072,
+        "worker_bytes_before": 6640168,
+        "worker_bytes_after": 6640168,
+        "scope": "Static generated instructions, not dynamic executed counts. Generic vector guards skip the matrix division blocks; independent complete-call CPU counters remain necessary.",
+        "root_bytes_before": 5630944,
+        "root_bytes_after": 5628152,
+        "root_stack_before": 55136,
+        "root_stack_after": 55120,
+        "root_threaded_control": {
+          "candidates": 58496,
+          "repair_parameters": 71,
+          "selected_conditions": 17,
+          "threaded_edges": 9
+        },
+        "phase_threaded_control": [
+          {
+            "header": 12419,
+            "symbol": "mech_compact_numeric_12419",
+            "candidates": 76,
+            "repair_parameters": 6,
+            "selected_conditions": 6,
+            "threaded_edges": 3
+          },
+          {
+            "header": 15296,
+            "symbol": "mech_compact_numeric_15296",
+            "candidates": 76,
+            "repair_parameters": 6,
+            "selected_conditions": 6,
+            "threaded_edges": 3
+          },
+          {
+            "header": 26895,
+            "symbol": "mech_compact_numeric_26895",
+            "candidates": 76,
+            "repair_parameters": 6,
+            "selected_conditions": 6,
+            "threaded_edges": 3
+          },
+          {
+            "header": 31086,
+            "symbol": "mech_compact_numeric_31086",
+            "candidates": 76,
+            "repair_parameters": 6,
+            "selected_conditions": 6,
+            "threaded_edges": 3
+          }
+        ],
+        "unchanged_existing_bodies": 132,
+        "R245_vector_bodies_unchanged": true,
+        "selected_numeric_phases": 134,
+        "selected_maps": 2,
+        "disabled_full_object_metadata_equal_R245": true
+      },
+      "counter_summary": {
+        "cases": 25,
+        "observed_counter_calls": 5200,
+        "retained_counter_calls": 4800,
+        "instruction_decreases": 22,
+        "instruction_increases": 3,
+        "cycle_decreases": 15,
+        "cycle_increases": 10,
+        "all25_payload_and_heap_fields_identical": true,
+        "scope": "Independent complete-call CPU and allocation cohorts. CPU-time samples are not instruction partitions. RSS/physical are process/lifetime measures, not copied bytes. Allocation-instrumented instructions/cycles are not primary counters."
+      },
+      "primary": {
+        "targets": {
+          "primary_case": "33027-periodic-window",
+          "pooled_periodic_after_reference": 1.66002445607812,
+          "periodic_both_cohorts_improve": false,
+          "eight_byte_after_reference": 0.5245760892895471,
+          "eight_byte_within_user1x_ceiling": true,
+          "historical1_05_columns": "diagnostic, latest user prioritizes one case toward parity and allows eight to1x"
+        },
+        "both_cohorts": {
+          "primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 25,
+            "large_geomean_after_over_before": 0.988899623082218
+          },
+          "confirmation-primary": {
+            "cases": 25,
+            "point_pass": 24,
+            "blockmean_pass": 24,
+            "large_geomean_after_over_before": 0.990879492807712
+          }
+        },
+        "pooled": {
+          "all25_geomean_after_over_before": 1.0012833609850902,
+          "large11_geomean_after_over_before": 0.9894086674152485,
+          "point_pass": 25,
+          "blockmean_pass": 25
+        },
+        "all25": [
+          {
+            "case": "empty",
+            "bytes": 0,
+            "before_reference": 1.9761904761904763,
+            "after_reference": 1.9761904761904763,
+            "block_change_percent": -0.738821340774698
+          },
+          {
+            "case": "one-stored",
+            "bytes": 1,
+            "before_reference": 1.9761904761904763,
+            "after_reference": 1.9761904761904763,
+            "block_change_percent": 1.5796011908586483
+          },
+          {
+            "case": "seven-stored-prefix",
+            "bytes": 7,
+            "before_reference": 1.9761904761904763,
+            "after_reference": 1.9761904761904763,
+            "block_change_percent": -1.2639294735278028
+          },
+          {
+            "case": "eight-literals",
+            "bytes": 8,
+            "before_reference": 0.5139884095299421,
+            "after_reference": 0.5245760892895471,
+            "block_change_percent": 3.0193503945915134
+          },
+          {
+            "case": "eight-overlap",
+            "bytes": 8,
+            "before_reference": 0.5106213558664983,
+            "after_reference": 0.5167331101669906,
+            "block_change_percent": 0.8530324847031201
+          },
+          {
+            "case": "320-overlap",
+            "bytes": 320,
+            "before_reference": 0.5596684896928902,
+            "after_reference": 0.5775498527555742,
+            "block_change_percent": 2.704363500324347
+          },
+          {
+            "case": "eight-literals-prefix",
+            "bytes": 8,
+            "before_reference": 0.5034775256856763,
+            "after_reference": 0.515872408382246,
+            "block_change_percent": 2.3792391598229434
+          },
+          {
+            "case": "128-biased-dynamic",
+            "bytes": 128,
+            "before_reference": 0.510729673481036,
+            "after_reference": 0.5168201465889871,
+            "block_change_percent": 0.5566419095067054
+          },
+          {
+            "case": "32-high-entropy-stored",
+            "bytes": 32,
+            "before_reference": 0.5403179265658747,
+            "after_reference": 0.5439896328293737,
+            "block_change_percent": -0.13909314158860875
+          },
+          {
+            "case": "16384-distribution-change",
+            "bytes": 16384,
+            "before_reference": 2.7411787237226,
+            "after_reference": 2.7213035086406823,
+            "block_change_percent": -0.7250608984344709
+          },
+          {
+            "case": "33027-periodic-window",
+            "bytes": 33027,
+            "before_reference": 1.5993498455447304,
+            "after_reference": 1.66002445607812,
+            "block_change_percent": 3.79370471710172
+          },
+          {
+            "case": "random-64",
+            "bytes": 64,
+            "before_reference": 0.5685112080388692,
+            "after_reference": 0.5728246466431096,
+            "block_change_percent": 0.5709119906922133
+          },
+          {
+            "case": "random-256",
+            "bytes": 256,
+            "before_reference": 0.6587659754549301,
+            "after_reference": 0.6747084214980956,
+            "block_change_percent": 2.312673425075773
+          },
+          {
+            "case": "random-1024",
+            "bytes": 1024,
+            "before_reference": 0.747621224489796,
+            "after_reference": 0.7634024489795919,
+            "block_change_percent": 1.7509376846645663
+          },
+          {
+            "case": "repeated-1024",
+            "bytes": 1024,
+            "before_reference": 0.6497189034005157,
+            "after_reference": 0.6696984320680656,
+            "block_change_percent": 2.9487702496790336
+          },
+          {
+            "case": "random-32769",
+            "bytes": 32769,
+            "before_reference": 2.7476075159148854,
+            "after_reference": 2.805254456121221,
+            "block_change_percent": 2.098077686584743
+          },
+          {
+            "case": "repeated-32769",
+            "bytes": 32769,
+            "before_reference": 1.5093804075191983,
+            "after_reference": 1.5610929295768576,
+            "block_change_percent": 3.4260761435649822
+          },
+          {
+            "case": "reymont-prefix-1024",
+            "bytes": 1024,
+            "before_reference": 0.9343965486334356,
+            "after_reference": 0.9225713158932561,
+            "block_change_percent": -1.3824608163438779
+          },
+          {
+            "case": "reymont-prefix-16384",
+            "bytes": 16384,
+            "before_reference": 2.2008125190232537,
+            "after_reference": 2.0955147631969253,
+            "block_change_percent": -4.784494586256772
+          },
+          {
+            "case": "reymont-prefix-32769",
+            "bytes": 32769,
+            "before_reference": 2.2397737168234153,
+            "after_reference": 2.141491828860373,
+            "block_change_percent": -4.388027559428265
+          },
+          {
+            "case": "heldout-window-32767",
+            "bytes": 32767,
+            "before_reference": 2.248910442708441,
+            "after_reference": 2.144908019224347,
+            "block_change_percent": -4.62456936963841
+          },
+          {
+            "case": "heldout-window-32768",
+            "bytes": 32768,
+            "before_reference": 2.2450889837287615,
+            "after_reference": 2.141978702115855,
+            "block_change_percent": -4.592703556972411
+          },
+          {
+            "case": "heldout-slides-65537",
+            "bytes": 65537,
+            "before_reference": 2.3061787467248602,
+            "after_reference": 2.216221643113908,
+            "block_change_percent": -3.900699533316987
+          },
+          {
+            "case": "heldout-random-65537",
+            "bytes": 65537,
+            "before_reference": 2.9878191738860647,
+            "after_reference": 3.0620568129452796,
+            "block_change_percent": 2.484676439192235
+          },
+          {
+            "case": "heldout-mixed-131073",
+            "bytes": 131073,
+            "before_reference": 2.5037778158241464,
+            "after_reference": 2.5087254185307324,
+            "block_change_percent": 0.19760550138741007
+          }
+        ]
+      },
+      "source_pins": {
+        "object": {
+          "path": "/private/tmp/mech-loop-thread-combination-round246-20261109/full-candidate-image/original/object.o",
+          "sha256": "82cef902cc3e54439a540cade2db2c4b083df0eebca1f8a38cb610b0c06c58fd"
+        },
+        "worker": {
+          "path": "/private/tmp/mech-loop-thread-combination-round246-20261109/mech-worker",
+          "sha256": "46cf234db78f18f8265ecd55a2d758f8b512e0d383b725675fbec21d4b8fcf20"
+        },
+        "compiler_patch": {
+          "path": "/private/tmp/mech-loop-thread-combination-round246-20261109/compiler.patch",
+          "sha256": "eb1d02080a05e7dfaf73c11c4f845afb6de497fc8b6c9a5afad5ef8aa26091cc"
+        },
+        "compiler_source_manifest": {
+          "path": "/private/tmp/mech-loop-thread-combination-round246-20261109/compiler-source-manifest.json",
+          "sha256": "10cdc196c2188890b350d21461474d129130cc6271b78a3f7bb03268063a70d9"
+        },
+        "source": {
+          "path": "/private/tmp/mech-loop-thread-combination-round246-20261109/benchmark-source.mec",
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "mbc14": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "pinned_allocator": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "qualification_runtime": {
+          "path": "/private/tmp/mech-loop-thread-combination-round246-20261109/array-runtime.rs",
+          "sha256": "bbc12169d120eaa60af57904de32f599d594e24c80201f1173991a05746ff066"
+        },
+        "reference_assembly": {
+          "path": "/private/tmp/mech-loop-thread-combination-round246-20261109/reference-matching.asm",
+          "sha256": "acc956027028d0d4a6deb4baf69635d2d1b84c20ef45d9d508e427b4d50442b1"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
