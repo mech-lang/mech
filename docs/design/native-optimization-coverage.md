@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R239
+# Production/diagnostic optimization coverage after R240
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -174,3 +174,11 @@ counts identify private view continuity and direct completion as next targets.
 The minimal private-chain witness has3000 passing clean-parent original/decoded
 checks; implementation and the rest of the census/brief remain open.
 [Evidence and exact scope](native-collector-reduction-census.md).
+
+R240 qualifies short, guarded private indexed-write intervals through existing
+checked root operations. No new operation class becomes native. All136 numeric
+and map bodies stay identical; full source/decoded and disabled-control Objects
+match. The R234-based component improves11 large cases geometrically1.0771%,
+but stays separately retained because R237's large portfolio is0.2132% faster.
+OrdinaryR215, collector-wide/child continuity and resource/recovery integration
+remain open. [Complete evidence and precise tradeoffs](native-private-write-intervals.md).
