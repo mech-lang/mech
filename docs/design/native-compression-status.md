@@ -1,5 +1,18 @@
 # Native compression milestone
 
+## R223: canonical matrix fallback indexing repaired
+
+The experimental root now shares the numeric emitter's logical-to-physical ordinal translation for packed reads and indexed replacement. Original bounds/error order, static-vector fast path, generic current shape, ownership/copy/unchanged behavior and genuine aliases remain. Frozen R222 original/decoded write probes fail the independent/resident oracle before the repair; both now pass. All134 numeric and2 word-map routines retain byte-identical machine code and metadata. Three archived compiler files change; maintained normalIR215 remains unchanged.
+
+Fresh480 multidimensional controls,1280 existing ownership controls and48 unchanged real-capacity buffer checks pass:1808 total, plus two corrected write probes. The232 resident default-work denials are inherited and unchanged. All26 small original/decoded Object/metadata pairs agree. Forty full strict-decoded-MBC14 stream smokes and every measurement call retain exact reference bytes, independent inflate, aliases and zero final private payload/owner records.
+
+All20 original1.05 and supplementary block-mean gates pass. This required correctness repair costs1.004% in geometric balanced block means (16 elapsed medians rise/three equal/one falls); retain the cost rather than advertising a speedup. Fresh matched experimental natural32 is2.473754×→2.485459× reference, periodic2.196971×→2.201556×, repeated2.035081×→2.045225×, random3.089453×→3.127000×, distribution16 3.225765×→3.258703×, eight0.510436×→0.508791×. The eight-byte block-mean pair is+0.796%, so its lower point median is not a new speedup claim.
+
+Instructions fall on7/rise on10/equal3; cycles fall on16/rise on4. All20 heap/request/copy/zero/peak fields match. Root text+19440B; root stack−16B. Fresh161832 primary,3120 independent CPU/heap,23978 wall-profile and99117 current-PC calls are retained. All1012 public evidence file hashes and four numerical analyses replay exactly. No fresh normal678-suite or completed hosted CI claim. Existing draft#973 only.
+
+The new review brief sets the next step: a fixed-level12/runtime-input reference in the same balanced timing order, equivalent warmup/validation and an explicit borrowed/consumed output contract. Then measure duplicate packed-cache bindings as a source control and phase-level range/shape fact reuse as the main compiler experiment. Full ordinary resource restoration is not a prerequisite. [Full results, source, failures and evidence](native-canonical-matrix-fallback.md).
+
+
 ## R222: existing single-loop proofs select; inherited matrix fallback gap found
 
 The compact adapter now accepts complete non-appending indexed-update proofs without a nested schedule. Existing shared emission, checked errors, actual owner/geometry gates and fallback stay. The two target headers12868/15737 actually run.134 proofs are selected statically (7 nested/127 single);92 new headers actually select across the matrix. The prior seven numeric and two total-map functions retain byte-identical actual code and metadata.
