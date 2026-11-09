@@ -1,5 +1,31 @@
 # Native compression milestone
 
+## R240: private write intervals qualify; retained R237 stays
+
+The four-file R234-based experiment carries one currently proved-private view
+through12 two-write intervals, reusing checked indexing and owner settlement.
+Both fixed24-block cohorts and pooled48 pass all25 unchanged point/block1.05
+gates. The primary11 large-case geometric mean improves1.0771% against R234;
+all25 improve0.2291%. Natural32 is2.261704×→2.248339× reference, random32
+2.804555×→2.769391×, heldout random65 3.105705×→3.016150×. Eight regresses
+0.493649×→0.500856×. Preserve every adverse small row.
+
+Instructions fall all25; cycles fall20/rise5. Allocation/copy/heap fields stay
+equal. Root text grows4156B and stack64B; all136 numeric/map bodies stay identical.
+Additional equal-value stores are explicit: random32 predicts154594B, and its
+changed-only owner inspections can increase. This is no allocation win.
+
+700 maintained tests,8 focused proof tests and59028 native controls pass.
+Original/decoded/current-view/packed/alias/error/retry controls agree; all25 exact
+streams independently inflate. Full source/MBC Objects match; disabled complete
+Object matches R234. Fresh25468 wall/103717 PC calls complete. All1561 public
+hashes and seven numerical replays verify.
+
+Keep the component and evidence separately: it is0.2132% slower than R237 on the
+large portfolio, and R237 natural32 remains2.145702×. RetainedR237/ordinaryR215
+stay unchanged. Collector-wide continuity, direct completion, remaining census
+and ordinary integration remain open. [All25, proof, costs, failures and patch](native-private-write-intervals.md).
+
 ## R239: collector and reduction census, implementation still open
 
 Actual native counts confirm the two proposed targets. Random32 has221,976

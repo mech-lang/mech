@@ -46311,6 +46311,177 @@
       "new_branch_or_PR": false,
       "full_observation_data": "Immutable external packet with source/patch, aggregate observations, independent input census, source-site map, all25 table and replay; docs/design/native-collector-reduction-census.md",
       "next": "Implement a narrowly guarded linear private-view chain, reusing checked source operations and owner settlement; preserve shared/equal-write fallback. Then direct ordered-reduction completion. Remaining mismatch/zero-trip/recompute/stack census and geometry/raw-Boolean/refusal/retry controls remain explicit. Primary11 large cases, all25 gates, R234 control and R237 separately reported; no tiny offset."
+    },
+    "240": {
+      "base": "dd04883faa58b304fc7ad94d80208aeb457c3a66",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "compiler_parent": "eab2b19251c9ac6a221b862f1354bb5ec45a4d34",
+      "retained_compiler": "f92415a31dbf0398ae641e66c419f435a3e3cb7c",
+      "archived_compiler_files": [
+        "hosts/gpu/src/native_artifact/program/compact/arrays.rs",
+        "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+        "hosts/gpu/src/native_artifact/program/compact/mod.rs",
+        "hosts/gpu/src/native_artifact/program/compact/private_chains.rs"
+      ],
+      "compressor_source_unchanged": true,
+      "pins": {
+        "base": "dd04883faa58b304fc7ad94d80208aeb457c3a66",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "main_compiler_control": "eab2b19251c9ac6a221b862f1354bb5ec45a4d34",
+        "retained_compiler": "f92415a31dbf0398ae641e66c419f435a3e3cb7c",
+        "ordinary_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+        "ordinary_ir_work_abi_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "object_sha256": "209953c08278efba5755767ecdbe3e9ce940fbb9f01f1edb105dd2b92a0335cd",
+        "compiler_patch_sha256": "c3025e30ae4876e4f94ac162f9d4e1aa8ef571edf5290087e6ae83fb3373ab46",
+        "compiler_source_manifest_sha256": "32cec4d8d1c71bba312bd6e007110ea97c177f1939dbe49a2653bf8612542c3a",
+        "worker_sha256": "93bd699f1ab1d6500159d9d0b679de39a5560516d88372ef472fe737ed0a574d",
+        "producer_sha256": "144fe38ca288795d103aff690a37fc586b03e72b2bed7699a7853d9256bc410c",
+        "reference_worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+        "toolchain": "nightly-2026-03-03-aarch64-apple-darwin",
+        "features": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "warnings": "deny",
+        "scope": "Standalone compact native compiler experiment. Ordinary exact resource/admission/accounting/canonical publication/recovery contract remains omitted; ordinaryR215 unchanged.",
+        "main_control_provenance": {
+          "base": "768936add16b8f4e87588fc96edf7116329289a8",
+          "normal_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+          "compiler_source_manifest_sha256": "d38d8de7f410fd50db57234122b9ace76ad4a4b11e1a6c2dbb03aa51357ccc4a",
+          "compiler_patch_sha256": "d564505ca3a2b1692d722b000ed301d8ad11cea5ebc868783edfb7d48f3dd006",
+          "compiler_rust_files_changed": [
+            "hosts/gpu/src/native_artifact/program/compact/phases.rs",
+            "hosts/gpu/src/native_artifact/program/codegen/numeric_traversal.rs",
+            "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+            "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/flow.rs",
+            "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/mod.rs",
+            "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/read_reuse.rs",
+            "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/write_changes.rs",
+            "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/read_reuse_tests.rs"
+          ],
+          "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+          "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+          "object_sha256": "1561d3a0d98b1db3e8176fb23d5725f543e9accf0b3b383d765c0d80855573fc",
+          "parent_object_sha256": "1c2796ec92aa28a3865cdd7679b14b21a1fccadfeb0f3e563fe30b5c60f8cd7f",
+          "compressor_source_unchanged": true,
+          "R225_bindings_not_combined": true,
+          "ABI_load_hint_not_combined": true,
+          "worker_sha256": "abada0410847dcb96a17f7425c5c2f003d000b7b5a56425d25e75f990ceb7b5c",
+          "reference_worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+          "allocator_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        }
+      },
+      "decision": {
+        "component_qualified": true,
+        "retained_as_separate_R234_based_component": true,
+        "replace_R237": false,
+        "large11_candidate_over_R237": 1.0021322085330826,
+        "reason": "All predeclared R234 gates and large-family objectives pass; preserve implementation, but do not replace faster retained large portfolio without a measured combination.",
+        "brief_complete": false,
+        "ordinary_integration_complete": false,
+        "all_adverse_observations_preserved": true
+      },
+      "events": [
+        {
+          "event": "guarded-private-indexed-write-intervals",
+          "asset": "r240-private-write-e303b38b68d6.tar.gz",
+          "sha256": "e303b38b68d60bb564a59ae07a01a22fcfbb4a863e453182a42c7526c3be10b9",
+          "bytes": 7038753,
+          "files": 1561,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "asset_id": 728633807,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r240-private-write-e303b38b68d6.tar.gz"
+        }
+      ],
+      "observations": {
+        "primary": {
+          "all25_geomean_after_over_before": 0.9977087133734994,
+          "large11_geomean_after_over_before": 0.989229013989359,
+          "point_pass": 25,
+          "blockmean_pass": 25
+        },
+        "families": {
+          "natural": {
+            "cases": [
+              "reymont-prefix-16384",
+              "reymont-prefix-32769"
+            ],
+            "geomean_after_over_before": 0.9937416266327207
+          },
+          "repetitive": {
+            "cases": [
+              "33027-periodic-window",
+              "repeated-32769"
+            ],
+            "geomean_after_over_before": 0.9887265135181013
+          },
+          "random_distribution": {
+            "cases": [
+              "16384-distribution-change",
+              "random-32769",
+              "heldout-random-65537"
+            ],
+            "geomean_after_over_before": 0.9815669420083474
+          },
+          "mixed": {
+            "cases": [
+              "heldout-window-32767",
+              "heldout-window-32768",
+              "heldout-slides-65537",
+              "heldout-mixed-131073"
+            ],
+            "geomean_after_over_before": 0.993005266412996
+          }
+        },
+        "both_cohorts": {
+          "primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 25,
+            "large_geomean_after_over_before": 0.9892989035633628
+          },
+          "confirmation-primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 25,
+            "large_geomean_after_over_before": 0.988395761252054
+          }
+        },
+        "maintained_tests": 700,
+        "focused_proof_tests": 8,
+        "native_controls": 59028,
+        "raw_boolean_parent_agreement": 60,
+        "full_cases": 25,
+        "instruction_decreases": 25,
+        "cycle_decreases": 20,
+        "cycle_increases": 5,
+        "all25_heap_copy_fields_identical": true,
+        "root_code_increase_bytes": 4156,
+        "root_stack_increase_bytes": 64,
+        "numeric_map_bodies_byte_identical": 136,
+        "source_decoded_complete_objects_identical": true,
+        "disabled_complete_object_identical_to_R234": true,
+        "wall_calls": 25468,
+        "pc_calls": 103717,
+        "public_files_verified": 1561,
+        "numerical_replays": 7
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "full_observation_data": "Immutable external source/patch, original/decoded controls, two full four-executable timing cohorts, separate counters, disjoint current profiles and replay; docs/design/native-private-write-intervals.md",
+      "next": "Preserve R237 and this qualified R234-based component separately until a measured combination. Shared ordered-reduction completion is the next compiler target; keep terminal assignments, exact source funding/error prefixes and both entry paths. Collector-wide private continuity and remaining census/ordinary integration remain open."
     }
   },
   "repository": "mech-lang/mech",
