@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R227
+# Production/diagnostic optimization coverage after R230
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -68,3 +68,16 @@ elapsed improvement,smaller text/stack and unchanged source heap metrics. Both
 packet-size orders,live earlier scalar results,late errors,aliases,prior outputs
 and recovery execute. NormalIR215 and its extra ordinary contract remain unchanged.
 [Lifetime proof,actual size ledger and scope](native-shared-phase-storage.md).
+
+
+R230 widens nine admitted immutable equality loops in three existing numeric
+bodies; no new phase class or source operation becomes native. The private
+certificate is reconstructed from current capture/pack proofs and structural
+SSA checks. Ordinary work/admission paths receive no certificate. Source,
+root bytes and 133 other specialized bodies remain identical. 686 maintained,
+74,880 native value and 5,788 source controls pass, with inherited default resident
+caps explicit. The first tiny-case gate failures remain; one predeclared full
+confirmation and all 48 pooled blocks pass all 25 unchanged gates. Pooled timing
+improves 1.620%, including a retained 0.961% natural-text regression. Heap metrics
+are equal; two callee frames add 16 B each. Normal IR215 and extra ordinary contracts
+remain unchanged. [Exact scope and both cohorts](native-guarded-wide-equality.md).

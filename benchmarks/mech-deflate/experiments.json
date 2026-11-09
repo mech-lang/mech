@@ -43449,6 +43449,913 @@
       "ordinary_contract_restored": false,
       "new_branch_or_PR": false,
       "next": "Wider matching and explicit combined R225 source measurement remain separate; further root code-sharing needs its own witness and measurement."
+    },
+    "230": {
+      "base": "f6638441b1756ce732216547f3ee4833a29c6e73",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "compiler_parent": "f6638441b1756ce732216547f3ee4833a29c6e73",
+      "compiler_source_manifest_sha256": "f657b5e0457f980210c793630d214953cfe61750afc7ab594df8be25e9ea8a8e",
+      "compiler_patch_sha256": "bb75b0639a51e54b108cc674b97e38477d0d71c885aba091fe496828c3a17845",
+      "archived_compiler_files": [
+        "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs",
+        "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+      ],
+      "source_files": [],
+      "compressor_source_unchanged": true,
+      "R225_source_control_combined": false,
+      "pins": {
+        "base": "f6638441b1756ce732216547f3ee4833a29c6e73",
+        "experimental_parent": "f6638441b1756ce732216547f3ee4833a29c6e73",
+        "normal_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+        "compiler_source_manifest_sha256": "f657b5e0457f980210c793630d214953cfe61750afc7ab594df8be25e9ea8a8e",
+        "compiler_patch_sha256": "bb75b0639a51e54b108cc674b97e38477d0d71c885aba091fe496828c3a17845",
+        "compiler_rust_files_changed": [
+          "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs",
+          "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+        ],
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "object_sha256": "83cf6a89901dd8796ee2426f6437eef34cd9e666c8f1f3034d3dba7f4bc90ee9",
+        "worker_sha256": "2596c731d8deb59a3aaa14775871fac63067bfd6a3379f700a67b86ae3ffb5f0",
+        "reference_worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+        "allocator_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+        "compressor_source_unchanged": true,
+        "R225_bindings_not_combined": true
+      },
+      "decision": {
+        "retained": true,
+        "qualification_basis": "The one predeclared complete confirmation and all48 pooled balanced blocks pass all25 unchanged1.05 gates. Both original cohorts remain; no first-cohort failure is erased or relabelled passing.",
+        "initial_failed_gates": [
+          {
+            "case": "eight-overlap",
+            "point_gate": false,
+            "blockmean_gate": false,
+            "blockmean_change_percent": 6.398953826152987
+          },
+          {
+            "case": "eight-literals-prefix",
+            "point_gate": false,
+            "blockmean_gate": false,
+            "blockmean_change_percent": 6.136743914553566
+          },
+          {
+            "case": "128-biased-dynamic",
+            "point_gate": false,
+            "blockmean_gate": true,
+            "blockmean_change_percent": 4.701331929858776
+          }
+        ],
+        "initial_point_gates": 22,
+        "initial_blockmean_gates": 23,
+        "confirmation_point_gates": 25,
+        "confirmation_blockmean_gates": 25,
+        "pooled_point_gates": 25,
+        "pooled_blockmean_gates": 25,
+        "tiny_case_timing_instability": "Eight-literal block means +4.339% initially, -2.940% on confirmation, +0.581% pooled. Point median -0.456% pooled. Instructions essentially unchanged; no new tiny-case speedup claim.",
+        "natural32": "Pooled elapsed +0.961%, instructions +0.893%, cycles +1.289%. Real adverse result retained; next bounded experiment should remove speculative probe overhead on early mismatches.",
+        "geometric_pooled_blockmean_improvement_percent": 1.6197192365735247,
+        "next": "Peel an original scalar comparison before vector probing, or remove Boolean materialization in the verified ARM64 vector branch; measure each separately before combining. Path-scan proof/value reuse remains the larger natural-text target."
+      },
+      "events": [
+        {
+          "event": "guarded-two-word-equality",
+          "asset": "r230-wide-equality-11f92e64c902.tar.gz",
+          "sha256": "11f92e64c9029c8fd2abc87d70bf6b5f5910ef0dbb115f981a640fb5160c6304",
+          "bytes": 7116285,
+          "files": 1468,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "asset_id": 726665752,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r230-wide-equality-11f92e64c902.tar.gz"
+        }
+      ],
+      "rows": [
+        {
+          "case": "reymont-prefix-32769",
+          "input_bytes": 32769,
+          "pooled48": {
+            "medians": {
+              "before": 0.0099763335,
+              "after": 0.0100721875,
+              "reference": 0.004373271
+            },
+            "median_block_means": {
+              "before": 0.0099763335,
+              "after": 0.0100721875,
+              "reference": 0.004373271
+            },
+            "multiples_of_reference": {
+              "before": 2.2812063327427,
+              "after": 2.3031244805089828,
+              "reference": 1.0
+            },
+            "after_over_before": 1.0096081391024065,
+            "blockmean_after_over_before": 1.0096081391024065,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0089291841915757,
+          "cycle_ratio": 1.0128916773937942
+        },
+        {
+          "case": "33027-periodic-window",
+          "input_bytes": 33027,
+          "pooled48": {
+            "medians": {
+              "before": 0.0025760625000000002,
+              "after": 0.0022520624999999997,
+              "reference": 0.001260354
+            },
+            "median_block_means": {
+              "before": 0.0025760625000000002,
+              "after": 0.0022520624999999997,
+              "reference": 0.001260354
+            },
+            "multiples_of_reference": {
+              "before": 2.0439198034837833,
+              "after": 1.7868491709472099,
+              "reference": 1.0
+            },
+            "after_over_before": 0.8742266540505129,
+            "blockmean_after_over_before": 0.8742266540505129,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 0.9454909823422297,
+          "cycle_ratio": 0.8774022624473592
+        },
+        {
+          "case": "repeated-32769",
+          "input_bytes": 32769,
+          "pooled48": {
+            "medians": {
+              "before": 0.0025991664999999997,
+              "after": 0.0022593329999999997,
+              "reference": 0.0013445
+            },
+            "median_block_means": {
+              "before": 0.0025991664999999997,
+              "after": 0.0022593329999999997,
+              "reference": 0.0013445
+            },
+            "multiples_of_reference": {
+              "before": 1.933184455187802,
+              "after": 1.680426180736333,
+              "reference": 1.0
+            },
+            "after_over_before": 0.8692528931871044,
+            "blockmean_after_over_before": 0.8692528931871044,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 0.945325563789335,
+          "cycle_ratio": 0.8833847822738057
+        },
+        {
+          "case": "random-32769",
+          "input_bytes": 32769,
+          "pooled48": {
+            "medians": {
+              "before": 0.0030266455000000003,
+              "after": 0.002964313,
+              "reference": 0.001066792
+            },
+            "median_block_means": {
+              "before": 0.0030266455000000003,
+              "after": 0.002964313,
+              "reference": 0.001066792
+            },
+            "multiples_of_reference": {
+              "before": 2.8371467915019988,
+              "after": 2.7787169382597545,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9794054176480198,
+            "blockmean_after_over_before": 0.9794054176480198,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0000118542096978,
+          "cycle_ratio": 0.9917973242222933
+        },
+        {
+          "case": "16384-distribution-change",
+          "input_bytes": 16384,
+          "pooled48": {
+            "medians": {
+              "before": 0.0023298959999999997,
+              "after": 0.0023008539999999997,
+              "reference": 0.000831875
+            },
+            "median_block_means": {
+              "before": 0.0023298959999999997,
+              "after": 0.0023008539999999997,
+              "reference": 0.000831875
+            },
+            "multiples_of_reference": {
+              "before": 2.800776558978211,
+              "after": 2.7658650638617575,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9875350659428576,
+            "blockmean_after_over_before": 0.9875350659428576,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0001712621465686,
+          "cycle_ratio": 0.9893131997341683
+        },
+        {
+          "case": "eight-literals",
+          "input_bytes": 8,
+          "pooled48": {
+            "medians": {
+              "before": 0.000146125,
+              "after": 0.000145458,
+              "reference": 0.000286625
+            },
+            "median_block_means": {
+              "before": 0.00014868984375,
+              "after": 0.0001495536796875,
+              "reference": 0.0002881780390625
+            },
+            "multiples_of_reference": {
+              "before": 0.5098124727431312,
+              "after": 0.5074853903183603,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9954354148845168,
+            "blockmean_after_over_before": 1.0058096499109408,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.000008497796036,
+          "cycle_ratio": 0.9872301229199388
+        },
+        {
+          "case": "reymont-prefix-16384",
+          "input_bytes": 16384,
+          "pooled48": {
+            "medians": {
+              "before": 0.004871396,
+              "after": 0.0048623335,
+              "reference": 0.0021626249999999996
+            },
+            "median_block_means": {
+              "before": 0.004871396,
+              "after": 0.0048623335,
+              "reference": 0.0021626249999999996
+            },
+            "multiples_of_reference": {
+              "before": 2.2525384659846255,
+              "after": 2.248347956765505,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9981396503178964,
+            "blockmean_after_over_before": 0.9981396503178964,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0068595085843093,
+          "cycle_ratio": 1.0055705473544039
+        },
+        {
+          "case": "empty",
+          "input_bytes": 0,
+          "pooled48": {
+            "medians": {
+              "before": 8.3e-08,
+              "after": 8.3e-08,
+              "reference": 4.2e-08
+            },
+            "median_block_means": {
+              "before": 7.65556640625e-08,
+              "after": 7.604980468750001e-08,
+              "reference": 3.29921875e-08
+            },
+            "multiples_of_reference": {
+              "before": 1.9761904761904763,
+              "after": 1.9761904761904763,
+              "reference": 1.0
+            },
+            "after_over_before": 1.0,
+            "blockmean_after_over_before": 0.9933922671667114,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0,
+          "cycle_ratio": 1.087369420702754
+        },
+        {
+          "case": "one-stored",
+          "input_bytes": 1,
+          "pooled48": {
+            "medians": {
+              "before": 8.3e-08,
+              "after": 8.3e-08,
+              "reference": 4.2e-08
+            },
+            "median_block_means": {
+              "before": 9.622167968750001e-08,
+              "after": 9.35029296875e-08,
+              "reference": 3.7514648437500004e-08
+            },
+            "multiples_of_reference": {
+              "before": 1.9761904761904763,
+              "after": 1.9761904761904763,
+              "reference": 1.0
+            },
+            "after_over_before": 1.0,
+            "blockmean_after_over_before": 0.9717449330667505,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0,
+          "cycle_ratio": 0.9864190687361419
+        },
+        {
+          "case": "seven-stored-prefix",
+          "input_bytes": 7,
+          "pooled48": {
+            "medians": {
+              "before": 8.4e-08,
+              "after": 8.4e-08,
+              "reference": 4.2e-08
+            },
+            "median_block_means": {
+              "before": 1.014658203125e-07,
+              "after": 9.996484375e-08,
+              "reference": 3.536328125e-08
+            },
+            "multiples_of_reference": {
+              "before": 2.0,
+              "after": 2.0,
+              "reference": 1.0
+            },
+            "after_over_before": 1.0,
+            "blockmean_after_over_before": 0.9852070721167265,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0,
+          "cycle_ratio": 1.0010770887828897
+        },
+        {
+          "case": "eight-overlap",
+          "input_bytes": 8,
+          "pooled48": {
+            "medians": {
+              "before": 0.000143792,
+              "after": 0.000143667,
+              "reference": 0.000287916
+            },
+            "median_block_means": {
+              "before": 0.00014613705468749999,
+              "after": 0.00014806999999999998,
+              "reference": 0.00028922167968749996
+            },
+            "multiples_of_reference": {
+              "before": 0.49942344294863783,
+              "after": 0.4989892885424916,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9991306887726715,
+            "blockmean_after_over_before": 1.0132269349251182,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": false,
+          "initial_blockmean_gate": false,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.00000988126019,
+          "cycle_ratio": 0.960265864276366
+        },
+        {
+          "case": "320-overlap",
+          "input_bytes": 320,
+          "pooled48": {
+            "medians": {
+              "before": 0.0001715,
+              "after": 0.000168542,
+              "reference": 0.000298833
+            },
+            "median_block_means": {
+              "before": 0.0001744120703125,
+              "after": 0.0001716780859375,
+              "reference": 0.0002999589375
+            },
+            "multiples_of_reference": {
+              "before": 0.5738991342990901,
+              "after": 0.5640006291139198,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9827521865889213,
+            "blockmean_after_over_before": 0.9843245689928373,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 0.9916831222934053,
+          "cycle_ratio": 0.9868191802043653
+        },
+        {
+          "case": "eight-literals-prefix",
+          "input_bytes": 8,
+          "pooled48": {
+            "medians": {
+              "before": 0.0001457705,
+              "after": 0.000145041,
+              "reference": 0.000288542
+            },
+            "median_block_means": {
+              "before": 0.00014851791406249998,
+              "after": 0.00014871486718750002,
+              "reference": 0.0002899973671875
+            },
+            "multiples_of_reference": {
+              "before": 0.5051968171011499,
+              "after": 0.5026685889749153,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9949955580861698,
+            "blockmean_after_over_before": 1.0013261236952005,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": false,
+          "initial_blockmean_gate": false,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0000691990833348,
+          "cycle_ratio": 0.9894855950975898
+        },
+        {
+          "case": "128-biased-dynamic",
+          "input_bytes": 128,
+          "pooled48": {
+            "medians": {
+              "before": 0.000148625,
+              "after": 0.000147667,
+              "reference": 0.000288625
+            },
+            "median_block_means": {
+              "before": 0.00015062143750000002,
+              "after": 0.00015105758593749998,
+              "reference": 0.000289771140625
+            },
+            "multiples_of_reference": {
+              "before": 0.5149415331312257,
+              "after": 0.5116223473365094,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9935542472666107,
+            "blockmean_after_over_before": 1.0028956597728658,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": false,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0000309564614154,
+          "cycle_ratio": 0.9473312732608867
+        },
+        {
+          "case": "32-high-entropy-stored",
+          "input_bytes": 32,
+          "pooled48": {
+            "medians": {
+              "before": 0.000156334,
+              "after": 0.000154708,
+              "reference": 0.0002895
+            },
+            "median_block_means": {
+              "before": 0.0001599876171875,
+              "after": 0.0001594736953125,
+              "reference": 0.0002910693203125
+            },
+            "multiples_of_reference": {
+              "before": 0.540013816925734,
+              "after": 0.5343972366148533,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9895991914746634,
+            "blockmean_after_over_before": 0.9967877396761419,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0000073733961548,
+          "cycle_ratio": 0.9732045259183695
+        },
+        {
+          "case": "random-64",
+          "input_bytes": 64,
+          "pooled48": {
+            "medians": {
+              "before": 0.000167083,
+              "after": 0.000164,
+              "reference": 0.000290625
+            },
+            "median_block_means": {
+              "before": 0.000168982734375,
+              "after": 0.000167221671875,
+              "reference": 0.0002921389609375
+            },
+            "multiples_of_reference": {
+              "before": 0.574909247311828,
+              "after": 0.5643010752688172,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9815480928640257,
+            "blockmean_after_over_before": 0.9895784471324041,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.000000642429927,
+          "cycle_ratio": 0.9770042228237962
+        },
+        {
+          "case": "random-256",
+          "input_bytes": 256,
+          "pooled48": {
+            "medians": {
+              "before": 0.000199291,
+              "after": 0.000197583,
+              "reference": 0.0002987085
+            },
+            "median_block_means": {
+              "before": 0.0002027910390625,
+              "after": 0.0002011484140625,
+              "reference": 0.000299695
+            },
+            "multiples_of_reference": {
+              "before": 0.6671755239639984,
+              "after": 0.6614575748597713,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9914296179957951,
+            "blockmean_after_over_before": 0.9918999132920575,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.000020994599543,
+          "cycle_ratio": 0.9350775414382216
+        },
+        {
+          "case": "random-1024",
+          "input_bytes": 1024,
+          "pooled48": {
+            "medians": {
+              "before": 0.0002345,
+              "after": 0.000233125,
+              "reference": 0.0003086665
+            },
+            "median_block_means": {
+              "before": 0.000238015265625,
+              "after": 0.0002374935078125,
+              "reference": 0.00030986401562499996
+            },
+            "multiples_of_reference": {
+              "before": 0.7597196326779875,
+              "after": 0.7552649866441613,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9941364605543709,
+            "blockmean_after_over_before": 0.9978078808889425,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0000358358421175,
+          "cycle_ratio": 0.8961228606057174
+        },
+        {
+          "case": "repeated-1024",
+          "input_bytes": 1024,
+          "pooled48": {
+            "medians": {
+              "before": 0.000230209,
+              "after": 0.000221083,
+              "reference": 0.000328458
+            },
+            "median_block_means": {
+              "before": 0.00023281998437500002,
+              "after": 0.000225081375,
+              "reference": 0.00032968849218750003
+            },
+            "multiples_of_reference": {
+              "before": 0.7008780422458883,
+              "after": 0.6730936679879924,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9603577618598752,
+            "blockmean_after_over_before": 0.9667614041132502,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 0.9755179661208008,
+          "cycle_ratio": 0.9205831311255704
+        },
+        {
+          "case": "reymont-prefix-1024",
+          "input_bytes": 1024,
+          "pooled48": {
+            "medians": {
+              "before": 0.000318042,
+              "after": 0.0003155,
+              "reference": 0.000336875
+            },
+            "median_block_means": {
+              "before": 0.000321992171875,
+              "after": 0.00032038221875,
+              "reference": 0.0003382838984375
+            },
+            "multiples_of_reference": {
+              "before": 0.9440949907235622,
+              "after": 0.9365491651205938,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9920073449418632,
+            "blockmean_after_over_before": 0.9950000240203821,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.002447410253706,
+          "cycle_ratio": 0.9563347299749706
+        },
+        {
+          "case": "heldout-window-32767",
+          "input_bytes": 32767,
+          "pooled48": {
+            "medians": {
+              "before": 0.0099460625,
+              "after": 0.01005325,
+              "reference": 0.0043659795000000005
+            },
+            "median_block_means": {
+              "before": 0.0099460625,
+              "after": 0.01005325,
+              "reference": 0.0043659795000000005
+            },
+            "multiples_of_reference": {
+              "before": 2.2780827303472218,
+              "after": 2.302633349515269,
+              "reference": 1.0
+            },
+            "after_over_before": 1.0107768777845503,
+            "blockmean_after_over_before": 1.0107768777845503,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0089210979924075,
+          "cycle_ratio": 1.0083581902914396
+        },
+        {
+          "case": "heldout-window-32768",
+          "input_bytes": 32768,
+          "pooled48": {
+            "medians": {
+              "before": 0.009960646,
+              "after": 0.010050416,
+              "reference": 0.004362104
+            },
+            "median_block_means": {
+              "before": 0.009960646,
+              "after": 0.010050416,
+              "reference": 0.004362104
+            },
+            "multiples_of_reference": {
+              "before": 2.2834499131611716,
+              "after": 2.304029431668754,
+              "reference": 1.0
+            },
+            "after_over_before": 1.0090124676652497,
+            "blockmean_after_over_before": 1.0090124676652497,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0089334890689512,
+          "cycle_ratio": 1.010803079572861
+        },
+        {
+          "case": "heldout-slides-65537",
+          "input_bytes": 65537,
+          "pooled48": {
+            "medians": {
+              "before": 0.020884875,
+              "after": 0.0211183545,
+              "reference": 0.00884225
+            },
+            "median_block_means": {
+              "before": 0.020884875,
+              "after": 0.0211183545,
+              "reference": 0.00884225
+            },
+            "multiples_of_reference": {
+              "before": 2.3619412479855244,
+              "after": 2.3883462354038847,
+              "reference": 1.0
+            },
+            "after_over_before": 1.0111793582676458,
+            "blockmean_after_over_before": 1.0111793582676458,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.0104761697238198,
+          "cycle_ratio": 1.0133097498677341
+        },
+        {
+          "case": "heldout-random-65537",
+          "input_bytes": 65537,
+          "pooled48": {
+            "medians": {
+              "before": 0.006152541500000001,
+              "after": 0.006064208,
+              "reference": 0.0019394585
+            },
+            "median_block_means": {
+              "before": 0.006152541500000001,
+              "after": 0.006064208,
+              "reference": 0.0019394585
+            },
+            "multiples_of_reference": {
+              "before": 3.172298608090867,
+              "after": 3.126753163318524,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9856427624259014,
+            "blockmean_after_over_before": 0.9856427624259014,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 1.000011912681431,
+          "cycle_ratio": 1.000176131797172
+        },
+        {
+          "case": "heldout-mixed-131073",
+          "input_bytes": 131073,
+          "pooled48": {
+            "medians": {
+              "before": 0.0221480625,
+              "after": 0.0217372915,
+              "reference": 0.0084002915
+            },
+            "median_block_means": {
+              "before": 0.0221480625,
+              "after": 0.0217372915,
+              "reference": 0.0084002915
+            },
+            "multiples_of_reference": {
+              "before": 2.636582611448662,
+              "after": 2.587682998857837,
+              "reference": 1.0
+            },
+            "after_over_before": 0.9814534115568799,
+            "blockmean_after_over_before": 0.9814534115568799,
+            "original_1_05_gate": true,
+            "blockmean_1_05_gate": true
+          },
+          "initial_point_gate": true,
+          "initial_blockmean_gate": true,
+          "confirmation_point_gate": true,
+          "confirmation_blockmean_gate": true,
+          "instruction_ratio": 0.9958925901268143,
+          "cycle_ratio": 0.99039477597356
+        }
+      ],
+      "observations": {
+        "cases": 25,
+        "original_cases": 20,
+        "heldout_cases": 5,
+        "primary_complete_calls": 324444,
+        "retained_primary_observations": 324144,
+        "separate_counter_calls": 3900,
+        "maintained_tests": 686,
+        "handcrafted_native_value_checks": 74880,
+        "compiled_source_controls": 5788,
+        "initial_point_gates": 22,
+        "initial_blockmean_gates": 23,
+        "confirmation_point_gates": 25,
+        "confirmation_blockmean_gates": 25,
+        "pooled_point_gates": 25,
+        "pooled_blockmean_gates": 25,
+        "initial_geometric_blockmean_ratio": 0.9976311348121141,
+        "confirmation_geometric_blockmean_ratio": 0.9742923073869078,
+        "pooled_geometric_blockmean_ratio": 0.9838028076342648,
+        "instructions_lower": 5,
+        "instructions_equal": 3,
+        "instructions_higher": 17,
+        "cycles_lower": 17,
+        "cycles_equal": 0,
+        "cycles_higher": 8,
+        "static_widened_loops": 9,
+        "changed_routines": 3,
+        "unchanged_routines": 133,
+        "wall_profile_calls": 25185,
+        "pc_profile_calls": 103766,
+        "immediate_full_stream_smoke_calls": 50
+      },
+      "qualifications": {
+        "maintained_tests": 686,
+        "same_inherited_exclusions": 7,
+        "executed_native_value_checks": 74880,
+        "compiled_source_controls": 5788,
+        "small_original_decoded_image_pairs": 8,
+        "resident_default_caps_preserved": true,
+        "root_and133_other_bodies_byte_identical": true
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "next": "Peel an original scalar comparison before vector probing, or remove Boolean materialization in the verified ARM64 vector branch; measure each separately before combining. Path-scan proof/value reuse remains the larger natural-text target."
     }
   },
   "repository": "mech-lang/mech",
