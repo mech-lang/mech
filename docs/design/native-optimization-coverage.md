@@ -1,4 +1,14 @@
-# Production/diagnostic optimization coverage after R243
+# Production/diagnostic optimization coverage after R244
+
+R244 limits successful helper-geometry reuse to already-literal SSA words.
+It restores all136 numeric/map bodies to R242 and changes only root code relative
+to that retained baseline; no additional operation or phase class is lowered.
+The component remains archived: periodic fails the predeclared baseline target
+despite recovering most of R243's penalty. All25 compare R242/R243/R244/reference,
+with the same11 below-reference cases and nine adverse candidate block means.
+703 maintained/7 ABI/3400 matrix/416 boundary controls pass, including42
+original-decoded image pairs. OrdinaryIR215 and omitted standalone contracts
+remain unchanged. [All25 and proof/cost scope](native-constant-helper-geometry.md).
 
 R243 reuses exact successful concrete-helper geometry in one compiler file;
 no new source operation or phase class is selected. Root text/stack shrink,
