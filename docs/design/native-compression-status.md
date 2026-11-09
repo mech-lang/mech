@@ -1,5 +1,14 @@
 # Native compression milestone
 
+## R226: retain guarded phase-level window facts
+
+On the original source, the compiler now carries checked match-count ranges into a generic current-phase length/geometry guard. Refusal retains checked execution; growing node buffers retain a lower bound while pointers refresh. The four path bodies shrink 2208→2096 B. No additional phase class or source algorithm is introduced; R225 bindings remain separate and normal IR215 remains unchanged.
+
+Natural32 improves **4.368%**, **2.463615×→2.356008×** reference. Repeated is **2.004979×**, random **3.070085×**, distribution16 **2.985862×**, eight **0.527454×**. Random/eight block means regress 0.860%/0.743%; retain both. All 25 gates pass; geometric block-mean gain is **0.780%**. Natural32 removes **11.80 million instructions (7.154%)**. All 25 allocation and payload fields match. Root text−656 B, stack−32 B.
+
+679 maintained tests, 21 focused proof tests, 160 linked path and 480 repaired matrix controls pass. The seven inherited exclusions and 136 default resident work denials in the new path controls remain explicit. Final DAG analysis visits each needed expression once and regenerates all 15 Objects/15 metadata files identically. Fifty instrumented full-stream calls record 264 guarded admissions/no refusals; current profiles and all 25 exact streams agree. All 1418 downloaded evidence hashes and numerical replay verify. [Design, all 25 results, pins, failures and remaining work](native-phase-window-facts.md).
+
+
 ## R225: two immutable cache-word bindings measured separately
 
 Retain the isolated source variant: natural32 improves **2.291%** (2.475034×→2.418329× reference); periodic/repeated regress **2.097%/1.981%**. The 25-case geometric block-mean gain is **0.538%**, with all unchanged gates passing. Eight literals are 0.543362× by point median, but block means rise 0.663%, so no new tiny-case win is claimed.

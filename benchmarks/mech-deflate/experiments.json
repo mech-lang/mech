@@ -42960,7 +42960,133 @@
       "diagnostic_only": true,
       "ordinary_contract_restored": false,
       "new_branch_or_PR": false,
-      "next": "Observe exact existing bounds-fact refusals at path reductions; minimal source witness for length-cost>=259,nodes>=258,checked match3..258; then phase-level range/shape proof reuse with guarded checked fallback."
+      "next": "Observe exact existing bounds-fact refusals at path reductions; minimal source witness for length-cost>=259,nodes>=258,checked match3..258; then phase-level range/shape proof reuse with guarded checked fallback.",
+      "source_supplement": {
+        "reason": "The original packet retained the complete source delta but its extension filter excluded the full .mec source. Supply the measured full source without replacing any archive or result.",
+        "server_and_download_verified": true,
+        "files": [
+          {
+            "name": "r225-cache-word-source-138f42708c3d.mec",
+            "bytes": 160865,
+            "sha256": "138f42708c3d4e5c1d8ad3b3731988ebe1a0ab5ed46abb3c51b7070a2070079d",
+            "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r225-cache-word-source-138f42708c3d.mec"
+          },
+          {
+            "name": "r225-cache-word-source-138f42708c3d.mec.sha256",
+            "bytes": 106,
+            "sha256": "3ae7ddcde2f49c9a795d584edccc22d0d8d99d096b7fd48cf56a861d1ce946c9",
+            "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r225-cache-word-source-138f42708c3d.mec.sha256"
+          }
+        ]
+      }
+    },
+    "226": {
+      "base": "ecec11ac6278f1fd520a84bd584ebb572ebf592c",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "compiler_parent": "3c2fadb93ab8254eef8bcd943bbf3b9c76d2876c",
+      "compiler_source_manifest_sha256": "0bd9fc533c299c06982b3f0302d40a5719abb7cbbe488dd0930d9bb69e959eb8",
+      "compiler_patch_sha256": "0cf5ece586f2a57e2e210a317c4663a718be6ab199635ebaae3c3841d7056b85",
+      "archived_compiler_files": [
+        "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_bounds.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_traversal.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/checks.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/flow.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/mod.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/ranges.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/tests.rs",
+        "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+      ],
+      "source_files": [],
+      "compressor_source_unchanged": true,
+      "R225_source_control_combined": false,
+      "pins": {
+        "base": "ecec11ac6278f1fd520a84bd584ebb572ebf592c",
+        "experimental_parent": "3c2fadb93ab8254eef8bcd943bbf3b9c76d2876c",
+        "normal_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+        "compiler_source_manifest_sha256": "0bd9fc533c299c06982b3f0302d40a5719abb7cbbe488dd0930d9bb69e959eb8",
+        "compiler_patch_sha256": "0cf5ece586f2a57e2e210a317c4663a718be6ab199635ebaae3c3841d7056b85",
+        "compiler_rust_files_changed": [
+          "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_bounds.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_traversal.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/checks.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/flow.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/mod.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/ranges.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/tests.rs",
+          "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+        ],
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "object_sha256": "b6a5575f1ff520530357278410eb2af467372aa110c715cb396a63f2a99a6717",
+        "worker_sha256": "2a2c02acbbffba20a430e1f42dc18cb01052c19eb130742f00a10791927984ca",
+        "reference_worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+        "allocator_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+        "compressor_source_unchanged": true,
+        "R225_bindings_not_combined": true
+      },
+      "decision": "Retain guarded phase-bound compiler experiment with the random/tiny contrary elapsed observations; all25 unchanged gates pass. Source bindings remain independent until combined measurement.",
+      "events": [
+        {
+          "event": "guarded-phase-range-shape-window-facts",
+          "asset": "r226-phase-window-facts-667eac538795.tar.gz",
+          "sha256": "667eac538795672e5c3603179bf49750ad2ab38a55793837151335fbc82d57d3",
+          "bytes": 4804389,
+          "files": 1418,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r226-phase-window-facts-667eac538795.tar.gz"
+        }
+      ],
+      "observations": {
+        "cases": 25,
+        "original_cases": 20,
+        "heldout_cases": 5,
+        "primary_complete_calls": 162222,
+        "retained_primary_observations": 162072,
+        "separate_counter_calls": 3900,
+        "original_1_05_gates": 25,
+        "blockmean_1_05_gates": 25,
+        "instructions_lower": 20,
+        "instructions_equal": 0,
+        "instructions_higher": 5,
+        "cycles_lower": 22,
+        "cycles_equal": 0,
+        "cycles_higher": 3,
+        "geometric_blockmean_ratio": 0.9922030513171358,
+        "elapsed_medians_lower": 16,
+        "elapsed_medians_equal": 3,
+        "elapsed_medians_higher": 6,
+        "wall_profile_calls": 24108,
+        "pc_profile_calls": 95790,
+        "maintained_tests": 679,
+        "focused_domain_tests": 21,
+        "compiled_path_controls": 160,
+        "repaired_matrix_controls": 480,
+        "final_identical_Object_and_metadata_files": 30,
+        "full_phase_observer_calls": 50,
+        "actual_guarded_phase_admissions": 264,
+        "actual_guarded_phase_refusals": 0
+      },
+      "qualifications": {
+        "maintained_tests": 679,
+        "same_inherited_exclusions": 7,
+        "focused_proof_tests": 21,
+        "linked_path_controls": 160,
+        "matrix_controls": 480,
+        "inherited_resident_default_denials_in_path_controls": 136,
+        "all15_Objects_and15_metadata_files_final_rebuild_identical": true
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "next": "General immutable-read reuse or independent private-write simplification; preserve separately measured source control. Shared packets and wider matching remain untested experiments."
     }
   },
   "repository": "mech-lang/mech",
