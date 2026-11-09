@@ -43300,6 +43300,155 @@
         "current_source": "compact/phases.rs::Phase::emit allocates two explicit stack slots at each emitted synchronous phase call",
         "required_proof": "Root frame is per invocation. Each callee completes synchronously; all result lanes are read and owner effects settled before the next call. No packet address may escape; independent input/output extents and all-path initialization must hold. Same guards, errors, aliases, fallback, cleanup/retry required."
       }
+    },
+    "229": {
+      "base": "3f140950e58a870dd4a0fcab08239395976a491d",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "compiler_parent": "3f140950e58a870dd4a0fcab08239395976a491d",
+      "compiler_source_manifest_sha256": "fbb7b0ff9c373d173249dce422576d81a60bf32a26bdd5164118053f556c44cd",
+      "compiler_patch_sha256": "38b24c3da223a18ced81ac083897c91913013890a1d8ef524c551a8655c758b4",
+      "archived_compiler_files": [
+        "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+        "hosts/gpu/src/native_artifact/program/compact/mod.rs",
+        "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs",
+        "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+      ],
+      "source_files": [],
+      "compressor_source_unchanged": true,
+      "R225_source_control_combined": false,
+      "pins": {
+        "base": "3f140950e58a870dd4a0fcab08239395976a491d",
+        "experimental_parent": "3f140950e58a870dd4a0fcab08239395976a491d",
+        "normal_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+        "compiler_source_manifest_sha256": "fbb7b0ff9c373d173249dce422576d81a60bf32a26bdd5164118053f556c44cd",
+        "compiler_patch_sha256": "38b24c3da223a18ced81ac083897c91913013890a1d8ef524c551a8655c758b4",
+        "compiler_rust_files_changed": [
+          "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+          "hosts/gpu/src/native_artifact/program/compact/mod.rs",
+          "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs",
+          "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+        ],
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "object_sha256": "240c00f0a1cc298edef2fe32e7074f0b575c9c52b0145b3161232bab70590d6b",
+        "worker_sha256": "89b5d5c75ea43de6561c9ed91dd761afb7deb2115210a9db8951873b1105d491",
+        "reference_worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+        "allocator_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+        "compressor_source_unchanged": true,
+        "R225_bindings_not_combined": true
+      },
+      "decision": "Retain synchronous caller packet reuse. All25 unchanged timing gates pass; geometric balanced block means improve3.136162%. Instructions and cycles fall onall25; retain two adverse stored-only block means and one adverse point median.",
+      "events": [
+        {
+          "event": "shared-synchronous-phase-storage",
+          "asset": "r229-shared-phase-packets-b19ae0d44152.tar.gz",
+          "sha256": "b19ae0d44152f632438ac3a9c028a3cf15e5c62375862c0d97f33022a1430abf",
+          "bytes": 4688123,
+          "files": 2248,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "asset_id": 726466047,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r229-shared-phase-packets-b19ae0d44152.tar.gz"
+        }
+      ],
+      "observations": {
+        "cases": 25,
+        "original_cases": 20,
+        "heldout_cases": 5,
+        "primary_complete_calls": 162222,
+        "retained_primary_observations": 162072,
+        "separate_counter_calls": 3900,
+        "original_1_05_gates": 25,
+        "blockmean_1_05_gates": 25,
+        "instructions_lower": 25,
+        "instructions_equal": 0,
+        "instructions_higher": 0,
+        "cycles_lower": 25,
+        "cycles_equal": 0,
+        "cycles_higher": 0,
+        "geometric_blockmean_ratio": 0.9686383817066014,
+        "elapsed_medians_lower": 22,
+        "elapsed_medians_equal": 2,
+        "elapsed_medians_higher": 1,
+        "wall_profile_calls": 24514,
+        "pc_profile_calls": 102369,
+        "maintained_tests": 684,
+        "focused_domain_tests": 26,
+        "compiled_write_controls": 3800,
+        "ordinary_runtime_controls": 2964,
+        "static_proved_changed_writes": 51,
+        "static_private_write_sites": 236,
+        "private_write_routines": 130,
+        "immediate_full_stream_smoke_calls": 50
+      },
+      "static_size_ledger": {
+        "mov_removed": 147445,
+        "movk_removed": 130541,
+        "unconditional_b_removed": 4810,
+        "static_instructions_removed_including_padding": 282796,
+        "root_text_bytes_removed": 1131184,
+        "stack_bytes_removed": 31648,
+        "same_stack_memory_instruction_count": true,
+        "all136_specialized_bodies_identical": true,
+        "all136_metadata_entries_identical": true,
+        "native_call_count_unchanged": 50972,
+        "before_worker_bytes": 7762616,
+        "after_worker_bytes": 6623288,
+        "stack_memory_offsets_converted_to_immediate": 147207,
+        "stack_address_add_offsets_converted_to_immediate": 238
+      },
+      "phase_call_storage": {
+        "calls": 134,
+        "input_bytes": 264,
+        "input_output_disjoint": true,
+        "invocation_local": true,
+        "output_bytes": 248,
+        "previous_separate_bytes": 32168,
+        "slots": 2,
+        "synchronous_non_escaping": true
+      },
+      "packet_source_controls": {
+        "cases": 50,
+        "both_phases_selected": 41,
+        "later_phase_rejections": 1,
+        "same_parent_candidate_and_original_decoded_results": true,
+        "before_phase_shapes": [
+          [
+            13,
+            12
+          ],
+          [
+            12,
+            11
+          ]
+        ],
+        "after_shared_storage": {
+          "calls": 2,
+          "input_bytes": 104,
+          "input_output_disjoint": true,
+          "invocation_local": true,
+          "output_bytes": 96,
+          "previous_separate_bytes": 384,
+          "slots": 2,
+          "synchronous_non_escaping": true
+        },
+        "source_witness_stack_before": 688,
+        "source_witness_stack_after": 496,
+        "zero_after_cleanup": true,
+        "reverse_both_phases_selected": 41,
+        "reverse_scalar_survives_later_smaller_result": true
+      },
+      "qualifications": {
+        "maintained_tests": 684,
+        "same_inherited_exclusions": 7,
+        "linked_write_controls": 3800,
+        "ordinary_runtime_controls": 2964,
+        "small_original_decoded_image_pairs": 38,
+        "all136_specialized_bodies_and_metadata_identical": true
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "next": "Wider matching and explicit combined R225 source measurement remain separate; further root code-sharing needs its own witness and measurement."
     }
   },
   "repository": "mech-lang/mech",

@@ -56,3 +56,15 @@ retry. NormalIR215 and its additional ordinary contract remain unchanged. A
 0.995% geometric timing improvement retains six adverse instruction cases and
 three adverse block means. Next measure synchronous phase packet reuse; do not
 claim its theoretical stack saving as implemented. [Scope and evidence](native-private-write-stores.md).
+
+
+R229 changes only root call storage. Two disjoint maximum-sized invocation-local
+argument/result slots replace per-site reservations; every reached call still
+supplies fresh values and current owner/capacity lanes. All136 kernel bodies and
+metadata remain identical; no source operation or phase class becomes newly
+native. All25 gates/684 maintained/3800 compiled/2964 ordinary controls pass with
+same seven exclusions. Instruction/cycle medians fall onall25,with3.136% geometric
+elapsed improvement,smaller text/stack and unchanged source heap metrics. Both
+packet-size orders,live earlier scalar results,late errors,aliases,prior outputs
+and recovery execute. NormalIR215 and its extra ordinary contract remain unchanged.
+[Lifetime proof,actual size ledger and scope](native-shared-phase-storage.md).
