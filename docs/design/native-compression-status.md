@@ -1,5 +1,33 @@
 # Native compression milestone
 
+## R230: compare two proved immutable words at once
+
+Retain the general guarded loop-widening experiment over R229. Nine loops in
+three existing numeric bodies compare 16 readable bytes; an unequal vector
+returns to the original scalar mismatch/tail path. Source/algorithm and
+allocation sites stay unchanged; the complete root and 133 other specialized
+bodies remain byte-identical. Numeric text adds 500 B; two frames add 16 B each.
+Root stack 55,088 B and full worker 6,623,288 B stay equal.
+
+Both complete timing cohorts are preserved. The first fails three point gates
+and two block-mean gates on tiny inputs; it is not relabelled passing. Exactly
+one predeclared complete confirmation and all 48 pooled balanced blocks pass
+all 25 unchanged 1.05 gates. Pooled geometric block means improve **1.620%**.
+Repeated32 **1.933184×→1.680426×** reference (−13.075%),periodic33
+**2.043920×→1.786849×** (−12.577%),random32 **2.837147×→2.778717×**.
+Natural32 **2.281206×→2.303124×** regresses 0.961% and adds 0.893% instructions;
+keep this result. Eight **0.509812×→0.507485×** by point median, but block
+means rise 0.581%; no new tiny-case win claim.
+
+686 maintained tests, 74,880 native value checks and 5,788 compiled original/decoded
+source controls pass. Parent resident default compute denials remain counted;
+no allowance changes. All25 heap/copy/zero/peak fields match. Fresh 25,185 wall/
+103,766 actual-PC correct calls and 1,468 public hashes/numerical replay verify.
+Normal IR215 and extra ordinary contract stay unchanged; R225 is uncombined.
+Next reduce the verified vector branch's Boolean materialization or peel an
+original scalar word before speculative wider probing, each measured separately.
+[All25, both cohorts, proof, pins and failures](native-guarded-wide-equality.md).
+
 ## R229: reuse synchronous phase argument/result storage
 
 Retain the four-file compiler experiment. Two disjoint invocation-local packets
