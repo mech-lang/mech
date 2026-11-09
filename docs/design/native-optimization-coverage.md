@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R240
+# Production/diagnostic optimization coverage after R241
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -182,3 +182,15 @@ match. The R234-based component improves11 large cases geometrically1.0771%,
 but stays separately retained because R237's large portfolio is0.2132% faster.
 OrdinaryR215, collector-wide/child continuity and resource/recovery integration
 remain open. [Complete evidence and precise tradeoffs](native-private-write-intervals.md).
+
+
+R241 groups nine already-certified immutable equality loops into64-byte iterations
+in three existing matching routines. No source operation or phase class becomes
+newly native;133 other numeric/map bodies and the whole root remain byte-identical.
+The user now prioritizes periodic33 toward1x, with eight-byte ceiling1x and all25
+controls. Periodic falls1.680619x->1.655346x, instructions3.2905%; eight0.505430x.
+700 maintained/5788 compiled controls pass; historical relative gates have small
+failures preserved. R241 is the next periodic experimental control; R237's faster
+natural result remains preserved, ordinaryIR215 unchanged. Next target is reached
+same-owner settlement and state transport, not a portfolio-average win.
+[Complete disposition](native-wide-equality-groups.md).

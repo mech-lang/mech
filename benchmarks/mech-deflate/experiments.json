@@ -46482,6 +46482,108 @@
       "new_branch_or_PR": false,
       "full_observation_data": "Immutable external source/patch, original/decoded controls, two full four-executable timing cohorts, separate counters, disjoint current profiles and replay; docs/design/native-private-write-intervals.md",
       "next": "Preserve R237 and this qualified R234-based component separately until a measured combination. Shared ordered-reduction completion is the next compiler target; keep terminal assignments, exact source funding/error prefixes and both entry paths. Collector-wide private continuity and remaining census/ordinary integration remain open."
+    },
+    "241": {
+      "parent": "367df475b7d2b721b46c9898294338959c068199",
+      "compiler_control": "R240 R234-based private-write variant,12intervals explicitly enabled",
+      "preserved_retained_variant": "R237 f92415a31dbf0398ae641e66c419f435a3e3cb7c",
+      "ordinary_compiler": "R215 42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "decision": {
+        "decision": "Retain R241 as next periodic-case experimental control under latest user priority. Preserve R237 and R240 separately for comparison/combination. Ordinary IR215 unchanged.",
+        "primary_case": "33027-periodic-window",
+        "primary_before_reference": 1.6806188679245284,
+        "primary_after_reference": 1.655345779543198,
+        "periodic_improvement_percent": 1.5037965396962005,
+        "eight_after_reference": 0.5054298339926642,
+        "eight_user_ceiling": 1.0,
+        "all25_historical1_05_gates_pass": false,
+        "historical_gate_disposition": "Predeclared diagnostic since user explicitly permits tiny-case tradeoff up to1x. Do not label initial/confirmation failures green.",
+        "parity_complete": false,
+        "ordinary_contract_restored": false,
+        "remaining_periodic_time_fraction_to_parity": 0.3958966082144145,
+        "adverse_rows": "All15 adverse pooled block means preserved in external primary-results.json and the complete tracked table."
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r241-wide-group-2f9a06031ee5.tar.gz",
+        "sha256": "2f9a06031ee5ffc594820f922004f352b4e7175bb7b7f722214750da12bff162",
+        "bytes": 5263818,
+        "verified_files": 1480,
+        "numerical_replays": 5
+      },
+      "counter_summary": {
+        "cases": 25,
+        "observed_counter_calls": 5200,
+        "retained_counter_calls": 4800,
+        "instruction_decreases": 13,
+        "instruction_increases": 8,
+        "cycle_decreases": 19,
+        "cycle_increases": 6,
+        "all25_payload_and_heap_fields_identical": true,
+        "scope": "Independent complete-call CPU and allocation cohorts. CPU-time samples are not instruction partitions. RSS/physical are process/lifetime measures, not copied bytes. Allocation-instrumented instructions/cycles are not primary counters."
+      },
+      "qualification": {
+        "maintained_tests": 700,
+        "filtered_inherited_tests": 7,
+        "feature_profile": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "warnings_as_errors": true,
+        "toolchain": "nightly-2026-03-03-aarch64-apple-darwin",
+        "focused_unit_tests": 2,
+        "native_value_checks_per_unit_execution": 5346432,
+        "unit_executions_including_full_suite": 2,
+        "compiled_native_source_controls": 5788,
+        "small_original_decoded_image_pairs": 8,
+        "fresh_resident_source_calls": 0,
+        "resident_provenance": "R230 fixed source and pinned resident library observations reused; every native row compares frozen row plus independent source-operation oracle. No allowances changed.",
+        "all25_complete_stream_smokes": 50,
+        "primary_cohorts": 2,
+        "balanced_blocks_per_cohort": 24,
+        "separate_counter_calls": 5200,
+        "ordinary_contract_restored": false,
+        "new_semantic_test_failures": 0,
+        "introduced_fixed_setup_issue": "Missing R240 private-chain selection switch in first staging emission, caught by root-byte comparison before timing; first image and receipts preserved and excluded."
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "next": "On periodic33 count actual same-owner retain/release and view transport at phase returns; remove proven redundant work with exact fallback/error/alias/retry controls. Keep eight<=1x and all25 matrix. Defer natural terminal-return WIP.",
+      "primary_results": {
+        "targets": {
+          "primary_case": "33027-periodic-window",
+          "pooled_periodic_after_reference": 1.655345779543198,
+          "periodic_both_cohorts_improve": true,
+          "eight_byte_after_reference": 0.5054298339926642,
+          "eight_byte_within_user1x_ceiling": true,
+          "historical1_05_columns": "diagnostic, latest user prioritizes one case toward parity and allows eight to1x"
+        },
+        "both_cohorts": {
+          "primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 24,
+            "large_geomean_after_over_before": 0.9925991175294335
+          },
+          "confirmation-primary": {
+            "cases": 25,
+            "point_pass": 24,
+            "blockmean_pass": 22,
+            "large_geomean_after_over_before": 0.9931625982891544
+          }
+        },
+        "descriptive_aggregate": {
+          "all25_geomean_after_over_before": 1.010458172222684,
+          "large11_geomean_after_over_before": 0.9937650807823283,
+          "point_pass": 25,
+          "blockmean_pass": 24
+        },
+        "full25_rows": "External hashed primary-results.json and docs/design/native-wide-equality-groups.md"
+      }
     }
   },
   "repository": "mech-lang/mech",
