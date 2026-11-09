@@ -1,13 +1,51 @@
 # Native compression milestone
 
 **Current standings:11 of25 complete compression cases are faster than Roc.**
-The wins span8/32/64/128/256/320/1024-byte inputs; larger cases remain above1x.
 The [standing scoreboard](native-compression-scoreboard.md) lists every case,
-all current wins, crossings above/below1x and the latest candidate regressions.
-It now uses the fresh R244 cohort's R242 retained column: the retained compiler
-has not changed merely because the matched reference denominator is fresh.
-Update the comparison after every candidate and label the retained variant;
-preserve earlier checkpoint reports and data.
+all current wins and regressions. It uses the fresh R245 cohort and retained
+experimental R245 executable, compared with prior R242 using the same reference.
+No below1x threshold was crossed in either direction. Historical reports keep
+their original measurements. All25 inputs/sizes remain mandatory after changes.
+
+## R245: reuse vector geometry across complete native matching phases
+
+Retain the six-file experimental compiler change. Periodic33 improves
+1.620851x->1.582628x reference, with2.22%/2.55% lower block elapsed in the two
+cohorts and2.3582% pooled. Independent instructions fall0.9039%, cycles2.2126%.
+All25 point/block1.05 gates pass; all25 descriptive geometric elapsed improves
+0.6306%, large11 improves0.2419%. Eight literals remains0.495073x, with its
+contrary initial pair and+0.2882% instructions preserved.
+
+Eleven pooled block means are adverse. Natural32 is2.230560x->2.240494x
+(+0.4454% elapsed despite-2.7654% instructions); mixed131073 is2.469678x->
+2.502989x (+1.3488%). Random256 is0.664982x->0.671579x (+1.3265% block
+elapsed). All11 below-reference cases remain. Heap requests/bytes, copied/
+zeroed bytes and private live peaks are exactly equal onall25; process
+footprints and emitted code grow and remain in the report.
+
+The caller checks actual current vector geometry once and selects a private
+vector body from the same checked emitter. Matrices keep their original native
+body; shared ownership retains the original root fallback. All136 existing
+numeric/map bodies and their original metadata records stay identical; seven
+extra vector versions execute. Matching2624 loses112 static conditional branches
+and shrinks10120->8228B. This is a general view-geometry optimization, not a
+compression-path selector. Static removed divides are not dynamic counts.
+
+703 maintained tests (same7 exclusions),7 unchanged-runtime ABI tests,3400
+matrix controls,416 boundary controls and208 frozen seed controls pass. All50
+small original/decoded pairs match. Actual dispatch records1372 general/100
+vector visits and52 shared-fallback->vector cases in the same invocation.
+50 full smokes and every measured stream agree exactly and independently inflate.
+The downloaded packet verifies2403 hashes and five numerical replays.
+
+The compiler patch and complete tested source closure are published as the
+R245 experimental compiler; they apply to archived R242, not directly to the
+maintained IR215 tree. OrdinaryIR215 and omitted standalone extra contracts
+remain unchanged. No new PR or branch is created. [All25, source/patch, code/stack costs, current profiles, exact commands and failure disposition](native-vector-phase-specialization.md).
+
+Next inspect the current path-scan/root hot PCs for one bounded proof or
+transport change. Natural32 is dominated by path15296; periodic still spends
+substantial time in its generated root. Preserve R245 and all11 wins.
 
 ## R244: constant-only reuse recovers R243 cost; R242 stays
 

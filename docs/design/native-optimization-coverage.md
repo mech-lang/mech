@@ -1,4 +1,17 @@
-# Production/diagnostic optimization coverage after R244
+# Production/diagnostic optimization coverage after R245
+
+R245 retains guarded vector versions of seven existing numeric phases. The
+same134 selected numeric proofs/two maps and original136 machine bodies remain;
+no additional source operation or phase class becomes native. Opaque private
+current-view guards permit direct element addressing; matrices retain the
+original native body and shared owners retain root fallback. Source bounds,
+packed widths, current arguments, growth refresh, errors and aliases remain.
+All25 gates/703 maintained/3400 matrix/416 boundary/208 seed controls pass;
+50 original-decoded pairs match, including actual general/vector and mixed
+shared fallback->vector execution. Periodic improves2.3582% pooled; eleven
+adverse block means and code/process-footprint costs remain explicit. The
+retained experimental source closure/patch is archived from R242; maintained
+IR215 and its additional guarantees stay unchanged. [Scope, all25 and evidence](native-vector-phase-specialization.md).
 
 R244 limits successful helper-geometry reuse to already-literal SSA words.
 It restores all136 numeric/map bodies to R242 and changes only root code relative
