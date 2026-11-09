@@ -46584,6 +46584,134 @@
         },
         "full25_rows": "External hashed primary-results.json and docs/design/native-wide-equality-groups.md"
       }
+    },
+    "242": {
+      "parent": "a646d9d0a1e0f309c43d573728d2198fae87fb60",
+      "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "compiler_control": "R241 experiment over R240/R234; same numeric bodies and private-write intervals",
+      "preserved_retained_variant": "R237 f92415a31dbf0398ae641e66c419f435a3e3cb7c",
+      "ordinary_compiler": "R215 42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "decision": {
+        "decision": "Retain R242 as next periodic-case experimental control under the user priority. Preserve R237/R240/R241 separately. Ordinary IR215 unchanged.",
+        "primary_case": "33027-periodic-window",
+        "primary_before_reference": 1.652600937724071,
+        "primary_after_reference": 1.627365466244034,
+        "periodic_improvement_percent": 1.527015439964019,
+        "periodic_both_cohorts_improve": true,
+        "eight_before_reference": 0.5104491915520781,
+        "eight_after_reference": 0.5221291752222431,
+        "eight_user_ceiling": 1.0,
+        "all25_pooled_historical_1_05_gates_pass": true,
+        "all25_both_cohorts_historical_1_05_gates_pass": false,
+        "historical_gate_disposition": "Initial eight-byte block mean +5.3197% fails the old gate. Preserved as adverse evidence; no all-cohorts-green claim. The predeclared user rule prioritizes periodic and permits eight up to1x.",
+        "parity_complete": false,
+        "ordinary_contract_restored": false,
+        "remaining_periodic_time_fraction_to_parity": 0.3855098803909094,
+        "adverse_pooled_block_rows": "All11 retained in external primary-results.json/result-decision.json and tracked complete25-case table",
+        "all25_timed_after_change": true
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r242-phase-owner-transfer-0547f382bc85.tar.gz",
+        "sha256": "0547f382bc85dbe8de5c3dfc5043f05a0a82304cd7fcbd384799879880a39e9d",
+        "bytes": 5344191,
+        "verified_files": 1669,
+        "numerical_replays": 5
+      },
+      "counter_summary": {
+        "cases": 25,
+        "observed_counter_calls": 5200,
+        "retained_counter_calls": 4800,
+        "instruction_decreases": 21,
+        "instruction_increases": 1,
+        "cycle_decreases": 16,
+        "cycle_increases": 9,
+        "all25_payload_and_heap_fields_identical": true,
+        "scope": "Independent complete-call CPU and allocation cohorts. CPU-time samples are not instruction partitions. RSS/physical are process/lifetime measures, not copied bytes. Allocation-instrumented instructions/cycles are not primary counters."
+      },
+      "qualification": {
+        "maintained_tests": 703,
+        "filtered_inherited_tests": 7,
+        "feature_profile": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "warnings_as_errors": true,
+        "toolchain": "nightly-2026-03-03-aarch64-apple-darwin",
+        "compiler_library_optimization": 3,
+        "maintained_test_root_optimization": 1,
+        "focused_unit_tests": 3,
+        "compiled_matching_controls": 5788,
+        "compiled_phase_boundary_controls": 416,
+        "matching_original_decoded_image_pairs": 8,
+        "phase_original_decoded_image_pairs": 8,
+        "matching_resident_provenance": "Frozen R230 resident rows with identical source/library pins plus independent source-operation oracle; no fresh matching resident-call claim.",
+        "fresh_fallback_fanout_resident_calls": 320,
+        "fresh_fallback_fanout_resident_values": 236,
+        "fresh_fallback_fanout_resident_errors": 72,
+        "fresh_fallback_fanout_inherited_default_denials": 12,
+        "fanout_selection": "Clean R241 and candidate select no numeric phase for the two existing fanout sources. These are fallback controls; selector-unit tests cover single-token fanout bookkeeping. No compiled selected-fanout claim.",
+        "all25_complete_stream_smokes": 50,
+        "primary_cohorts": 2,
+        "balanced_blocks_per_cohort": 24,
+        "separate_counter_calls": 5200,
+        "retained_counter_calls": 4800,
+        "ordinary_contract_restored": false,
+        "remaining_semantic_test_failures": 0,
+        "setup_failure_disposition": "setup-failures.json; introduced diagnostic import and runner assumptions corrected; disk exhaustion corrected by deleting completed reproducible linked clients, with every source/Object/receipt retained."
+      },
+      "image": {
+        "root_code_before": 5654028,
+        "root_code_after": 5630692,
+        "root_code_delta": -23336,
+        "root_stack_before": 55152,
+        "root_stack_after": 55152,
+        "unchanged_numeric_and_map_bodies": 136,
+        "selected_numeric_phases": 134,
+        "selected_static_exit_transfers": 170,
+        "executed_nonnull_exact_current_owner_transfers_per_periodic_call": 33205,
+        "matching_wide_groups_and_private_write_intervals_preserved": true,
+        "retained_private_write_intervals": 12,
+        "no_new_phase_class": true
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "primary_results": {
+        "targets": {
+          "primary_case": "33027-periodic-window",
+          "pooled_periodic_after_reference": 1.627365466244034,
+          "periodic_both_cohorts_improve": true,
+          "eight_byte_after_reference": 0.5221291752222431,
+          "eight_byte_within_user1x_ceiling": true,
+          "historical1_05_columns": "diagnostic, latest user prioritizes one case toward parity and allows eight to1x"
+        },
+        "both_cohorts": {
+          "primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 24,
+            "large_geomean_after_over_before": 0.9949944929644471
+          },
+          "confirmation-primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 25,
+            "large_geomean_after_over_before": 0.9935288659911878
+          }
+        },
+        "descriptive_aggregate": {
+          "all25_geomean_after_over_before": 0.999498218074093,
+          "large11_geomean_after_over_before": 0.9943030742596626,
+          "point_pass": 25,
+          "blockmean_pass": 25
+        },
+        "full25_rows": "External hashed primary-results.json and docs/design/native-phase-exit-owner-transfer.md"
+      },
+      "next": "Trace/reuse independently proved current length/rows/columns through allocation and fixed-view phase calls. Periodic primary, eight<=1x, all25 timed/counted and every adverse row reported."
     }
   },
   "repository": "mech-lang/mech",

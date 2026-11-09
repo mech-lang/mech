@@ -1,4 +1,16 @@
-# Production/diagnostic optimization coverage after R241
+# Production/diagnostic optimization coverage after R242
+
+R242 changes only successful compact phase-exit token transport. Existing exact
+view/packet identity and exit liveness permit170 static source/result moves;
+the separate periodic witness reaches33205 nonnull identical moves per complete
+compression. Mutation gates, shared/live aliases and growth/error fallback stay.
+All136 numeric/map bodies are byte-identical; no new source operation or phase
+class is claimed. OrdinaryIR215 and the standalone's omitted contracts remain.
+703 maintained/5788 matching/416 boundary controls pass. All25 timings include
+11 adverse pooled block means and the initial eight-byte historical gate failure;
+retain under the user's prospective periodic-primary/eight<=1x rule. Source,
+counter evidence, setup failure disposition and every row are in the
+[R242 report](native-phase-exit-owner-transfer.md).
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
