@@ -1,5 +1,27 @@
 # Native compression milestone
 
+## R228: direct stores to existing private cells
+
+Retain the two-file compiler experiment over R227. Existing current-view private
+flags bypass redundant old-value loads/comparisons; shared/no-change and checked
+first-change behavior remain. All25 unchanged gates pass; geometric balanced
+block means improve **0.995%**. Natural32 is **2.358168×→2.351733×** reference,
+periodic **2.144714×→2.126537×**, repeated **2.015390×→2.009379×**, random
+**3.021212×→3.000196×**, distribution16 **2.958124×→2.929517×**, eight
+**0.519345×→0.507538×**. Preserve three adverse block means and six instruction
+increases; cycles fall onall25. Allocation/copy/zero/peak fields stay equal.
+
+684 maintained tests,3400 compiled and2652 ordinary-native controls pass with
+same seven inherited exclusions. New equal-write/alias witnesses actually select
+native after fallback.236 sites qualify;111 numeric bodies lose3100B, while root
+text/stack and full executable size stay equal. Fresh profiles and all2151 public
+file hashes plus two numerical replays verify. The packet also includes the
+requested eight-byte profile and reference initialization assembly. NormalIR215
+and source remain unchanged; R225 stays separate. Next prove/reuse synchronous
+phase-call packets: current268 slots total32168B versus512B maximum pair, with
+no implemented or promised saving yet. [Scope, results, pins and evidence](native-private-write-stores.md).
+
+
 ## R227: current-element modular writes
 
 The original-source compiler experiment proves 51 writes must change their exact current element, retaining bounds, canonical matrix translation and shared first-change behavior. All 25 timing gates pass; geometric block means improve **1.085%**. Random32 improves **3.059630×→3.000583×** reference (−1.930%); distribution16 **2.975706×→2.941638×** (−1.145%); natural32 **2.361706×→2.346531×** (−0.643%); eight **0.529005×→0.519218×** (−1.317%). Keep three adverse small-case block means and five adverse cycle observations.
