@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R234
+# Production/diagnostic optimization coverage after R235
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -132,3 +132,14 @@ stay equal. Maintained layout checks pass, but the extra experimental audit
 exposes unchanged inherited owner_flow file/directory debt; both failing parent/
 candidate receipts and hashes are retained. Normal IR215/additional ordinary
 contracts remain unchanged. [Proof, all 25 and evidence](native-reused-scalar-reads.md).
+
+
+R235 qualifies only compiler-owned compact input packet reads as nontrapping;
+ordinary/diagnostic/source data contracts and operation coverage stay unchanged.
+All 134 phase reports/geometry and source/MBC pins match; 89 bodies lose 298
+input loads and 1,224 B. The candidate remains archived because pooled elapsed
+rises 0.827%, despite all 25 gates / 696 maintained / 7,064 native controls
+passing. Instructions rise on eleven cases and fall on eleven; heap/stack
+fields stay equal. R234 stays retained; no new operation or ordinary contract
+is adopted. The C/Rust low-word arithmetic audit is evidence for the next
+separate compiler experiment, not an implemented gain. [Scope and receipts](native-input-packet-evaluation.md).
