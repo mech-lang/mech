@@ -45267,6 +45267,122 @@
       "ordinary_contract_restored": false,
       "new_branch_or_PR": false,
       "next": "Peel the original scalar word first, then use a dedicated vector-loop header to remove repeated eight-byte guard work. Preserve original mismatch/tail state and measure separately. Natural path scan/current read reuse remains a larger target."
+    },
+    "232": {
+      "base": "14ae29af688a5372cc1a7fe5712f0efb77ae414b",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "compiler_parent": "14ae29af688a5372cc1a7fe5712f0efb77ae414b",
+      "compiler_source_manifest_sha256": "84b476792376bf1dc805eeb89ffd0913b5f1d4510efef62f990f2f7d548de466",
+      "compiler_patch_sha256": "0e3ba7f8931d5c9d97be34a1410842a3a28d8d03152f214c97e700db3c5dba2f",
+      "archived_compiler_files": [
+        "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs"
+      ],
+      "source_files": [],
+      "compressor_source_unchanged": true,
+      "R225_source_control_combined": false,
+      "pins": {
+        "base": "14ae29af688a5372cc1a7fe5712f0efb77ae414b",
+        "experimental_parent": "14ae29af688a5372cc1a7fe5712f0efb77ae414b",
+        "normal_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+        "compiler_source_manifest_sha256": "84b476792376bf1dc805eeb89ffd0913b5f1d4510efef62f990f2f7d548de466",
+        "compiler_patch_sha256": "0e3ba7f8931d5c9d97be34a1410842a3a28d8d03152f214c97e700db3c5dba2f",
+        "compiler_rust_files_changed": [
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs"
+        ],
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "object_sha256": "3453ec0f1538f218f5e163756b6ae6aa3ee583feddf19d14f4961d99b7675196",
+        "worker_sha256": "b09f31c0ab5bda2e217cffb61835e695dd00cfb24ebc07f4f7b4b605f21ba73d",
+        "reference_worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+        "allocator_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+        "compressor_source_unchanged": true,
+        "R225_bindings_not_combined": true
+      },
+      "decision": {
+        "retained": false,
+        "qualified": true,
+        "default_experimental_compiler_retained": "14ae29af688a5372cc1a7fe5712f0efb77ae414b",
+        "pooled_geometric_ratio": 1.0095905775187632,
+        "pooled_geometric_regression_percent": 0.9590577518763244,
+        "initial_blockmean_gate_failures": [
+          "eight-literals",
+          "eight-overlap",
+          "eight-literals-prefix"
+        ],
+        "both_predeclared_cohorts_retained": true,
+        "no_extra_confirmation": true
+      },
+      "events": [
+        {
+          "event": "qualified-scalar-first-loop-not-adopted",
+          "asset": "r232-peeled-vector-668b107c67f5.tar.gz",
+          "sha256": "668b107c67f545d173a739c6173c8dab60cd7c4cd2740a594ed99c14ad1eec38",
+          "bytes": 6600887,
+          "files": 1434,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "asset_id": 726949380,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r232-peeled-vector-668b107c67f5.tar.gz"
+        }
+      ],
+      "observations": {
+        "cases": 25,
+        "original_cases": 20,
+        "heldout_cases": 5,
+        "primary_complete_calls": 324444,
+        "retained_primary_observations": 324144,
+        "separate_counter_calls": 3900,
+        "maintained_tests": 686,
+        "handcrafted_native_value_checks": 1057536,
+        "handcrafted_native_value_executions": 2115072,
+        "new_focused_resident_calls": 0,
+        "prior_resident_observations_reused": true,
+        "full_maintained_suite_rerun": true,
+        "compiled_source_controls": 5788,
+        "initial_point_gates": 25,
+        "initial_blockmean_gates": 22,
+        "confirmation_point_gates": 25,
+        "confirmation_blockmean_gates": 25,
+        "pooled_point_gates": 25,
+        "pooled_blockmean_gates": 25,
+        "initial_geometric_blockmean_ratio": 1.0128514330552363,
+        "confirmation_geometric_blockmean_ratio": 1.0053221454194965,
+        "pooled_geometric_blockmean_ratio": 1.0095905775187632,
+        "instructions_lower": 19,
+        "instructions_equal": 3,
+        "instructions_higher": 3,
+        "cycles_lower": 21,
+        "cycles_equal": 0,
+        "cycles_higher": 4,
+        "static_widened_loops": 9,
+        "changed_routines": 3,
+        "unchanged_routines": 133,
+        "wall_profile_calls": 25160,
+        "pc_profile_calls": 102758,
+        "immediate_full_stream_smoke_calls": 50
+      },
+      "resident_reuse_provenance": {
+        "asset_path": "evidence/resident-reuse-provenance.json",
+        "sha256": "76ec02ace8c091505cbda4f8d5423e8de9eb1b015b906bee8dc6e4010e7a579e",
+        "new_focused_resident_calls": 0
+      },
+      "qualifications": {
+        "maintained_tests": 686,
+        "same_inherited_exclusions": 7,
+        "distinct_native_value_checks": 1057536,
+        "native_value_checks_executed_twice": 2115072,
+        "fresh_compiled_source_controls": 5788,
+        "new_focused_resident_calls": 0,
+        "small_original_decoded_image_pairs": 8,
+        "root_and133_other_bodies_byte_identical": true
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "retained_experimental_baseline": "14ae29af688a5372cc1a7fe5712f0efb77ae414b",
+      "next": "Measure a dedicated vector header without forcing an initial scalar word, preserving the original scalar fallback and current-window admission. Keep the same source, matrix, gates and R231 retained baseline. Separately investigate already executed packed-read reuse and the four verified reference prefetch hints.",
+      "full_observation_data": "Immutable external packet: results.json, heap-summary.json, both full primary cohorts, source controls and profile receipts; all25 comparison values also in docs/design/native-scalar-peel-evaluation.md"
     }
   },
   "repository": "mech-lang/mech",

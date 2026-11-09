@@ -1,5 +1,27 @@
 # Native compression milestone
 
+## R232: scalar-first loop measured, baseline stays R231
+
+Archive the qualified two-file candidate rather than adopt it. It removes
+1.399%/1.404% of periodic/repeated instructions, but pooled geometric elapsed
+rises **0.959%**. Natural32 improves0.584%; periodic/repeated regress0.537%/
+0.715%, and eight literals2.540%. The first cohort fails three tiny block-mean
+gates; the predeclared second and pooled48 pass all25 unchanged point/block
+gates. Both adverse cohorts and all failures remain. No extra retry or changed
+allowance. The current-cohort retained R231 ratios are natural32 **2.304793×**,
+periodic **1.730550×**, repeated **1.622129×**, random **2.832036×**, eight
+**0.485619×** reference. These fresh denominators do not imply a code change.
+
+686 maintained tests,2,115,072 native value-check executions and5,788 fresh
+native source controls pass. Eight original/decoded image pairs match. Same
+resident reuse provenance/seven inherited exclusions. Root/133 other bodies,
+heap/copy fields and full worker size stay equal; two frames shrink16B.
+Fresh25,160 wall/102,758 actual-PC calls and all1,434 public hashes/replay verify.
+Three setup errors are corrected and retained. NormalIR215, extra ordinary
+contract and R225 separation remain. Next measure the dedicated vector header
+without forcing a scalar first word; preserve this instruction-saving candidate.
+[All25, qualification, tradeoffs and exact evidence](native-scalar-peel-evaluation.md).
+
 ## R231: branch directly on vector difference bits
 
 Retain the two-file compiler experiment. The same nine guarded vector probes

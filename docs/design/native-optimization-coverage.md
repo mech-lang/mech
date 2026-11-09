@@ -92,3 +92,16 @@ other bodies remain identical. Both complete cohorts and pooled data pass all
 resident rows are byte-pinned and reused without recounting their execution;
 all current native rows and independent-oracle results match. Normal IR215 and
 its ordinary contract remain unchanged. [Scope and receipts](native-direct-vector-branch.md).
+
+
+R232 qualifies scalar-first entry plus a dedicated wide-loop header in the same
+three numeric bodies; no new source operation/phase class is selected. The
+candidate is archived rather than adopted: instructions fall on19 cases, but
+pooled geometric elapsed rises0.959%. All25 pooled/confirmation gates pass;
+the first cohort's three block-mean failures remain. 686 maintained tests,
+2,115,072 native value checks and5,788 fresh source controls pass with identical
+original/decoded pairs, oracle/frozen-resident rows, aliases/errors/retry. Zero
+new focused resident calls are claimed. Root/133 other bodies and all25 heap/
+copy fields stay equal; two frames shrink16B. Retained experimental R231 and
+normalIR215/extra ordinary contract remain unchanged. [Measured alternative and
+next bounded step](native-scalar-peel-evaluation.md).
