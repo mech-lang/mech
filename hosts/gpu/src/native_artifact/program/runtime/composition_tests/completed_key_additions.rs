@@ -169,7 +169,7 @@ fn completed_key_additions_reject_earlier_object_identity() {
     for artifact in artifacts(&source("empty", true)) {
         let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
         let mut old = *object.identity().bytes();
-        old[16..24].copy_from_slice(&308u64.to_le_bytes());
+        old[16..24].copy_from_slice(&309u64.to_le_bytes());
         assert!(
             crate::native_artifact::program::linked::prepare_descriptor(&artifact, &catalog, &old)
                 .is_err()

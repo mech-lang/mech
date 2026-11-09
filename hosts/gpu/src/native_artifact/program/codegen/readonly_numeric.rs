@@ -88,6 +88,11 @@ pub(in crate::native_artifact) struct Report {
     // They are never serialized or accepted from a descriptor/image caller.
     #[serde(skip)]
     pub native_extent_bounds: Vec<(Value, u64)>,
+    // Exact successful source additions, kept checked through early CFG and
+    // capture-read selection. Only their surviving overflow edges may be
+    // removed by the late unsigned pass; these are not global value ranges.
+    #[serde(skip)]
+    pub completed_key_addition_values: Vec<(Value, [Value; 2])>,
 }
 
 /// A terminal error never resumes a source consumer. Mode3 still reconciles
@@ -508,6 +513,7 @@ pub(in crate::native_artifact) fn emit_entry(
         parent: region.tail.parent(),
         source_sites: proof.sites.clone(),
         native_extent_bounds: Vec::new(),
+        completed_key_addition_values: Vec::new(),
         typed_loads: Vec::new(),
         movable_capture_reads: Vec::new(),
         ordinary_capture_reads: Vec::new(),
@@ -1419,13 +1425,6 @@ pub(in crate::native_artifact) fn emit_entry(
                         .collect::<Vec<_>>();
                     let value = if let Some(&known) = traversal.predicates.get(&site) {
                         b.ins().iconst(types::I64, i64::from(known))
-                    } else if controls.enabled(OptimizationPass::CompletedKeyAdditions)
-                        && program
-                            .completed_key_additions
-                            .arithmetic(id, site, *op, operands)
-                    {
-                        report.proven_completed_key_additions.push(site);
-                        primitive(b, Op::U64WrappingAdd, &args, fail)
                     } else if version.is_some_and(|v| !v.captures.is_empty())
                         && traversal.arithmetic(site, *op, operands)
                     {
@@ -1443,6 +1442,16 @@ pub(in crate::native_artifact) fn emit_entry(
                     } else {
                         primitive(b, *op, &args, fail)
                     };
+                    if controls.enabled(OptimizationPass::CompletedKeyAdditions)
+                        && program
+                            .completed_key_additions
+                            .arithmetic(id, site, *op, operands)
+                    {
+                        report.proven_completed_key_additions.push(site);
+                        report
+                            .completed_key_addition_values
+                            .push((value, [args[0], args[1]]));
+                    }
                     words.write(b, output.get() as usize, value);
                     report.scalar_operations += 1;
                 }

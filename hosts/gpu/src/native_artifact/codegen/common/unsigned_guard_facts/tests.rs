@@ -3,6 +3,77 @@ use cranelift_codegen::ir::AbiParam;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
+#[test]
+fn completed_additions_bind_current_ssa_and_remove_only_the_matching_overflow_edge() {
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut entries = Vec::new();
+    for mode in 0..7 {
+        // The alternate entry defeats the ordinary dominating range proof.
+        let mut c = test_function(3, if mode == 5 { 2 } else { 1 });
+        let inst = c
+            .func
+            .layout
+            .blocks()
+            .flat_map(|block| c.func.layout.block_insts(block))
+            .find(|inst| c.func.dfg.insts[*inst].opcode() == O::Iadd)
+            .unwrap();
+        let sum = c.func.dfg.inst_results(inst)[0];
+        let D::Binary { args, .. } = c.func.dfg.insts[inst] else {
+            panic!("addition")
+        };
+        let entry = c.func.layout.entry_block().unwrap();
+        let other = c.func.dfg.block_params(entry)[2];
+        let fact = match mode {
+            1 => (sum, [other, args[1]]),
+            2 => (other, args),
+            _ => (sum, args),
+        };
+        if mode == 3 {
+            // Ordinary early canonicalization may turn the exact add into an
+            // immediate without changing its identity or checked semantics.
+            c.func.dfg.replace(inst).iadd_imm(args[0], 1);
+        } else if mode == 4 {
+            c.func.dfg.replace(inst).iadd_imm(args[0], 2);
+        }
+        let facts = if mode == 6 { &[][..] } else { &[fact][..] };
+        assert_eq!(
+            optimize_with_completed_additions(&mut c, &[], facts, true),
+            usize::from(matches!(mode, 0 | 3)),
+            "mode={mode}"
+        );
+        c.verify(module.isa()).unwrap();
+        let id = module
+            .declare_function(
+                &format!("completed_add_{mode}"),
+                Linkage::Local,
+                &c.func.signature,
+            )
+            .unwrap();
+        module.define_function(id, &mut c).unwrap();
+        entries.push((mode, id));
+    }
+    module.finalize_definitions().unwrap();
+    for (mode, id) in entries {
+        // SAFETY: each live module entry has this exact scalar signature.
+        let run: unsafe extern "C" fn(u64, u64, u64) -> u64 =
+            unsafe { std::mem::transmute(module.get_finalized_function(id)) };
+        let increment = if matches!(mode, 4 | 5) { 2 } else { 1 };
+        for key in [0, 1, (1u64 << 63) - 1, 1u64 << 63, u64::MAX - 2] {
+            assert_eq!(unsafe { run(key, 0, 1) }, key + increment);
+        }
+        if matches!(mode, 0 | 3) {
+            // The source certificate excludes MAX; its strongest valid input
+            // still computes MAX, so the proof grants no narrower array bound.
+            assert_eq!(unsafe { run(u64::MAX - 1, 0, 1) }, u64::MAX);
+        } else {
+            assert_eq!(unsafe { run(u64::MAX, 0, 1) }, u64::MAX - 1);
+        }
+    }
+}
+
 fn test_function(mode: usize, increment: u64) -> Context {
     let mut context = Context::new();
     context.func.signature.params = vec![AbiParam::new(types::I64); 3];

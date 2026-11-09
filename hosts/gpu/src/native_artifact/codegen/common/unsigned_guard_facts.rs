@@ -6,7 +6,7 @@ use cranelift_codegen::ir::condcodes::{CondCode, IntCC};
 use cranelift_codegen::ir::{
     Block, Function, InstBuilder, InstructionData as D, Opcode as O, Value, ValueDef, types,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 mod intervals;
 
@@ -320,14 +320,63 @@ pub(in crate::native_artifact) fn optimize_with_bounds(
 
 /// The optional modular transfer handles a whole convex sum interval with a
 /// common wrap count. It never changes source arithmetic or executes a guard.
+#[cfg(test)]
 pub(in crate::native_artifact) fn optimize_with_options(
     context: &mut Context,
     known: &[(Value, u64)],
     modular_addition: bool,
 ) -> usize {
+    optimize_with_completed_additions(context, known, &[], modular_addition)
+}
+
+/// Source certificates identify one exact completed-key addition, not a
+/// general bound on a parameter, array or join. Revalidate its current SSA
+/// expression after early rewrites and remove only its arithmetic failure
+/// branch. Deleted, folded or otherwise changed expressions grant no fact.
+pub(in crate::native_artifact) fn optimize_with_completed_additions(
+    context: &mut Context,
+    known: &[(Value, u64)],
+    additions: &[(Value, [Value; 2])],
+    modular_addition: bool,
+) -> usize {
     context.compute_cfg();
     context.compute_domtree();
     let function = &context.func;
+    let mut completed = BTreeSet::new();
+    for &(sum, args) in additions {
+        let sum = function.dfg.resolve_aliases(sum);
+        let args = args.map(|v| function.dfg.resolve_aliases(v));
+        if function.dfg.value_type(sum) != types::I64
+            || args
+                .iter()
+                .any(|v| function.dfg.value_type(*v) != types::I64)
+            || !args.iter().any(|v| constant(function, *v) == Some(1))
+        {
+            continue;
+        }
+        let matches = match definition(function, sum) {
+            Some(D::Binary {
+                opcode: O::Iadd,
+                args: current,
+            }) => {
+                let current = current.map(|v| function.dfg.resolve_aliases(v));
+                current == args || current == [args[1], args[0]]
+            }
+            Some(D::BinaryImm64 {
+                opcode: O::IaddImm,
+                arg,
+                imm,
+            }) => {
+                let arg = function.dfg.resolve_aliases(*arg);
+                (arg == args[0] && constant(function, args[1]) == Some(imm.bits() as u64))
+                    || (arg == args[1] && constant(function, args[0]) == Some(imm.bits() as u64))
+            }
+            _ => false,
+        };
+        if matches {
+            completed.extend(args.map(|base| (sum, base)));
+        }
+    }
     let mut predecessors = vec![0usize; function.dfg.num_blocks()];
     for block in function.layout.blocks() {
         if let Some(inst) = function.layout.last_inst(block) {
@@ -548,7 +597,9 @@ pub(in crate::native_artifact) fn optimize_with_options(
             continue;
         };
         let limit = u64::MAX - increment;
-        if at_range(Operand::Value(base), block, &upper, &lower).high <= limit {
+        if completed.contains(&(sum, base))
+            || at_range(Operand::Value(base), block, &upper, &lower).high <= limit
+        {
             let call = blocks[success];
             changes.push((
                 inst,

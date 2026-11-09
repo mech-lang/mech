@@ -471,9 +471,10 @@ fn selected_template(
 // IR302 checks private ownership before the old-cell load on ordinary writes.
 // IR307 emits current-funded fixed-key selection and replacement in native code.
 // IR308 binds a selected numeric tree's same-plan dead-owner handoff request.
-// IR309 reuses successful completed-producer key+1 arithmetic;
+// IR310 reuses successful completed-producer key+1 arithmetic only in the late
+// unsigned pass, preserving the checked CFG through early code shaping;
 // array, portable selector, cursor and posting-ID guards are unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 309;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 310;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
