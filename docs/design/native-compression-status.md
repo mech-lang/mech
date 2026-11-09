@@ -1,5 +1,25 @@
 # Native compression milestone
 
+## R239: collector and reduction census, implementation still open
+
+Actual native counts confirm the two proposed targets. Random32 has221,976
+root indexed attempts but only5 backing clones; all149,801 U16 tree attempts
+already arrive with a unique consumed owner.51,506 empty-child clears are all
+equal-value writes. Natural32 completes383,735 optimized reductions and replays
+terminal dispatch;80.5165% span only1–3 candidate lengths.
+
+The instrumented executable passes50 full calls over all25 cases, repeats its
+aggregate counts exactly, and preserves exact bytes, inflate, aliases, capacities,
+cleanup and every payload/copy field versus R234. Instrumentation-disabled
+Object is byte-identical to R234. Five focused controls pass. A proposed private
+chain witness passes3000 original/decoded clean-parent oracle controls before
+new functionality. All936 public evidence hashes and numerical replay verify.
+
+No new performance optimization or timing claim: retainedR237/ordinaryR215
+stay unchanged. Main future large-input control is R234. Private continuity,
+direct completion, remaining mismatch/recompute/stack census and the rest of
+the brief remain open. [All25 counts, acceptance witness and disposition](native-collector-reduction-census.md).
+
 ## R238: shared comparison flags qualified, archived
 
 The two-file AArch64 backend experiment removes one redundant comparison in

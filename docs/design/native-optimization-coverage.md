@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R238
+# Production/diagnostic optimization coverage after R239
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -166,3 +166,11 @@ The candidate stays archived after two initial block-gate failures despite
 R237 remain. Next: the reviewed collector/reduction census, using R234 as main
 large-input control, with all11 large cases primary and all25 guards retained.
 [Complete scope and evidence](native-shared-comparison-evaluation.md).
+
+R239 adds diagnostic evidence only. No new operation becomes native, no
+performance candidate is adopted, and retainedR237/ordinaryR215 stay unchanged.
+All25 full-stream/payload controls pass; actual write/clone and reduction-span
+counts identify private view continuity and direct completion as next targets.
+The minimal private-chain witness has3000 passing clean-parent original/decoded
+checks; implementation and the rest of the census/brief remain open.
+[Evidence and exact scope](native-collector-reduction-census.md).

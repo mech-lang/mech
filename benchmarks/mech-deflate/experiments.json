@@ -46239,6 +46239,78 @@
       "new_branch_or_PR": false,
       "full_observation_data": "Immutable external packet, both complete cohorts and interrupted observations, backend/source witnesses, exact current Mech/reference profiles, replay and all25 table in docs/design/native-shared-comparison-evaluation.md",
       "next": "Follow the new reviewed brief: diagnostic-only aggregate census first, then collector private-view continuity and direct ordered-reduction completion as separately measured experiments. Use R234 as the primary large-input control and R237 as a separately reported retained variant; retain all25 gates, predeclare the11 large cases as primary and report families separately. No retrospective gate change for R238."
+    },
+    "239": {
+      "base": "f1a271c92fa7f1e6772f7ea5739110a3e2cf652d",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "compiler_parent": "eab2b19251c9ac6a221b862f1354bb5ec45a4d34",
+      "retained_compiler": "f92415a31dbf0398ae641e66c419f435a3e3cb7c",
+      "archived_compiler_files": [
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+        "hosts/gpu/src/native_artifact/program/compact/arrays.rs",
+        "hosts/gpu/src/native_artifact/program/compact/census.rs",
+        "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+        "hosts/gpu/src/native_artifact/program/compact/mod.rs",
+        "hosts/gpu/src/native_artifact/program/compact/recipes.rs",
+        "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+      ],
+      "compressor_source_unchanged": true,
+      "pins": {
+        "base": "f1a271c92fa7f1e6772f7ea5739110a3e2cf652d",
+        "main_compiler_control": "eab2b19251c9ac6a221b862f1354bb5ec45a4d34",
+        "retained_compiler": "f92415a31dbf0398ae641e66c419f435a3e3cb7c",
+        "ordinary_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "compiler_source_manifest_sha256": "ecea5d3628c53af8a4836b28cd0e18e1927ba12f2e2cce5c9d3df74bd11522a0",
+        "compiler_patch_sha256": "addf61111392d4e068464ef51c53988f8a3561b3fff9bc81bc504db7083bc628",
+        "diagnostic_worker_sha256": "59c1384b72f11d3d8dbd9421ef069e9956bd74d402f39df1a50698c240573891",
+        "diagnostic_object_sha256": "49f1da9318c636f547a29208a83f3f1e83f40eb910c2fd35aaf2e0ba5bd71b24",
+        "disabled_object_sha256": "1561d3a0d98b1db3e8176fb23d5725f543e9accf0b3b383d765c0d80855573fc"
+      },
+      "decision": {
+        "performance_candidate_implemented": false,
+        "retained_baseline": "R237",
+        "brief_complete": false,
+        "basis": "Diagnostic write/span census and clean-parent witness only. No new timing or speedup claim."
+      },
+      "events": [
+        {
+          "event": "collector-and-ordered-reduction-census",
+          "asset": "r239-collector-census-ecb8c8ca0262.tar.gz",
+          "sha256": "ecb8c8ca02623a31a48336652b3cc0598b2b96ee6d4824678582c8db2910d8c5",
+          "bytes": 6380283,
+          "files": 936,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "asset_id": 728465657,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r239-collector-census-ecb8c8ca0262.tar.gz"
+        }
+      ],
+      "observations": {
+        "full_cases": 25,
+        "correct_full_calls": 50,
+        "aggregate_repeats_identical": true,
+        "payload_and_copy_fields_equal_to_R234": true,
+        "disabled_object_identical_to_R234": true,
+        "focused_tests": 5,
+        "clean_parent_witness_calls": 3000,
+        "primary_timing_claimed": false,
+        "random32_indexed_attempts": 221976,
+        "random32_equal_writes": 78218,
+        "random32_changed_writes": 143758,
+        "random32_backing_clones": 5,
+        "random32_unique_U16_attempts": 149801,
+        "natural32_reductions_terminal_replayed": 383735,
+        "natural32_candidate_lengths": 1130575,
+        "natural32_one_to_three_percent": 80.5165022737045
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "full_observation_data": "Immutable external packet with source/patch, aggregate observations, independent input census, source-site map, all25 table and replay; docs/design/native-collector-reduction-census.md",
+      "next": "Implement a narrowly guarded linear private-view chain, reusing checked source operations and owner settlement; preserve shared/equal-write fallback. Then direct ordered-reduction completion. Remaining mismatch/zero-trip/recompute/stack census and geometry/raw-Boolean/refusal/retry controls remain explicit. Primary11 large cases, all25 gates, R234 control and R237 separately reported; no tiny offset."
     }
   },
   "repository": "mech-lang/mech",
