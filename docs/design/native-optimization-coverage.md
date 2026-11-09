@@ -1,4 +1,15 @@
-# Production/diagnostic optimization coverage after R242
+# Production/diagnostic optimization coverage after R243
+
+R243 reuses exact successful concrete-helper geometry in one compiler file;
+no new source operation or phase class is selected. Root text/stack shrink,
+four existing path bodies change, and132 other numeric/map bodies are identical.
+The component stays archived: periodic elapsed/instructions/cycles worsen in
+both elapsed cohorts despite preserved small-case wins. R242 stays the retained
+periodic baseline; ordinaryIR215 and standalone contract omissions are unchanged.
+All25 timings, twelve adverse rows,703 maintained/7 runtime ABI/3400 matrix/416
+boundary controls,42 original-decoded pairs and failure dispositions are in the
+[R243 report](native-array-helper-geometry.md). The standing scoreboard retains
+all11 below-reference cases and compares both candidate and retained variant.
 
 R242 changes only successful compact phase-exit token transport. Existing exact
 view/packet identity and exit liveness permit170 static source/result moves;

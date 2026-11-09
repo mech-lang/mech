@@ -3,8 +3,40 @@
 **Current standings:11 of25 complete compression cases are faster than Roc.**
 The wins span8/32/64/128/256/320/1024-byte inputs; larger cases remain above1x.
 The [standing scoreboard](native-compression-scoreboard.md) lists every case,
-all current wins, crossings above/below1x and the latest regressions. Update it
-after every measured candidate; preserve earlier checkpoint reports and data.
+all current wins, crossings above/below1x and the latest candidate regressions.
+It now uses the fresh R243 cohort's R242 control column: the retained compiler
+has not changed merely because the matched reference denominator is fresh.
+Update the comparison after every candidate and label the retained variant;
+preserve earlier checkpoint reports and data.
+
+## R243: helper geometry shrinks code but slows the periodic target
+
+Archive this one-file component; keep R242 as the periodic baseline. Reusing
+successful allocation/writable geometry cuts121184B of root text and3888B of
+entry stack, but dynamic metadata kept live through cold growth changes hot-loop
+register allocation. Periodic rises1.624810x->1.648663x reference (+1.4680% block
+elapsed), with both cohorts adverse; instructions rise1.3553%, cycles1.6650%.
+The disassembly confirms changed register assignment and additional scalar stack
+traffic, without claiming a complete per-function instruction attribution.
+
+The small-case wins are preserved: eight0.491448x->0.485602x, random256
+0.649137x->0.630132x. Both variants beat the reference on the same11 cases.
+All25 are timed:12 pooled block means worsen, all11 larger cases worsen, and
+the large-case geometric mean rises1.4080%. All historical1.05 gates pass in
+both cohorts and pooled, while the prospective primary acceptance fails.
+Allocation/copy/heap/peak fields remain equal. Smaller code is not a speed win
+on the target; the all25 descriptive average does not override that result.
+
+703 maintained tests (same7 inherited exclusions),7 runtime ABI tests,3400
+matrix controls,416 boundary controls and50 complete smokes pass; all42 small
+original/decoded image pairs match. Runtime cases include scalar/packed strides,
+2D views, aliases, growth, rejection and retry. Failed harness setup and exact
+fixes are retained. OrdinaryIR215 and standalone contract omissions stay.
+
+Next reuse only already-constant helper geometry, avoiding unknown dynamic-field
+lifetimes through cold calls; compare against both this component and R242.
+Keep fixed-view phase propagation separate. [All25, counters, profile, patch,
+commands and disposition](native-array-helper-geometry.md).
 
 ## R242: successful phase exits transfer dead current owner tokens
 
