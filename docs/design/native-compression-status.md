@@ -1,5 +1,27 @@
 # Native compression milestone
 
+## R238: shared comparison flags qualified, archived
+
+The two-file AArch64 backend experiment removes one redundant comparison in
+four path bodies; root and132 other routines remain byte-identical. Natural32
+instructions fall0.6594% and elapsed0.6062%; all25 pooled geometric elapsed
+improves0.6550%. First-cohort empty/one-stored block ratios1.06178/1.05567 fail
+the unchanged1.05 gates, so R237 remains retained. Confirmation/pooled gates
+pass, but do not override those failures. Heap/copy/code/stack sizes stay equal.
+
+703 maintained tests,10,680 native source controls,1,183 fresh resident calls,
+24 original/decoded image pairs,13 backend emitter tests and155,520 scalar
+oracle checks pass. Both interrupted disk-full captures retain all completed
+and partial data; no completed timing case is rerun. All2,370 public hashes and
+numerical replay verify. PR stays draft; prior external review had a service
+error and hosted CI is cancelled under standing instruction.
+
+The new brief now governs: diagnostic census, collector private-view continuity,
+then direct reduction completion, separately measured. R234 becomes the main
+prospective large-input control; report R237 separately. All11 large inputs are
+the primary portfolio, family regressions explicit, all25 gates retained.
+[All25 results, failures, patch and evidence](native-shared-comparison-evaluation.md).
+
 ## R237: current-value loop dispatch threading retained
 
 The generic nine-file experiment over R236 shortens proved terminal routes
