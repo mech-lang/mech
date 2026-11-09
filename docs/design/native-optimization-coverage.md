@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R230
+# Production/diagnostic optimization coverage after R231
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -81,3 +81,14 @@ confirmation and all 48 pooled blocks pass all 25 unchanged gates. Pooled timing
 improves 1.620%, including a retained 0.961% natural-text regression. Heap metrics
 are equal; two callee frames add 16 B each. Normal IR215 and extra ordinary contracts
 remain unchanged. [Exact scope and both cohorts](native-guarded-wide-equality.md).
+
+
+R231 changes only the private vector nonzero test. I64X2 lane extraction/OR feeds
+the same branch; no canonical Bool observer, source check, operation or phase
+class changes. Nine probes lose 18 machine instructions; root bytes and 133
+other bodies remain identical. Both complete cohorts and pooled data pass all
+25 unchanged gates, with a 1.550% geometric gain and explicit contrary results.
+686 maintained / 5,788 fresh native source controls pass. The previous focused
+resident rows are byte-pinned and reused without recounting their execution;
+all current native rows and independent-oracle results match. Normal IR215 and
+its ordinary contract remain unchanged. [Scope and receipts](native-direct-vector-branch.md).
