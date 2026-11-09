@@ -1,0 +1,116 @@
+{
+  "actions": [
+    {
+      "operation": "Pack { output: NativeMatchValue(14) }",
+      "site": 13
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(14), output: NativeMatchValue(16) }",
+      "site": 14
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(17), output: NativeMatchValue(16) }",
+      "site": 16
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(16), ordinal: 0, output: NativeMatchValue(19) }",
+      "site": 20
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(16), ordinal: 1, output: NativeMatchValue(20) }",
+      "site": 21
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(16), ordinal: 2, output: NativeMatchValue(21) }",
+      "site": 22
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(16), ordinal: 3, output: NativeMatchValue(22) }",
+      "site": 23
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(16), ordinal: 4, output: NativeMatchValue(23) }",
+      "site": 24
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(16), ordinal: 5, output: NativeMatchValue(24) }",
+      "site": 25
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(16), ordinal: 6, output: NativeMatchValue(25) }",
+      "site": 26
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(16), ordinal: 7, output: NativeMatchValue(26) }",
+      "site": 27
+    },
+    {
+      "operation": "Pack { output: NativeMatchValue(29) }",
+      "site": 34
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(29), output: NativeMatchValue(31) }",
+      "site": 35
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(32), output: NativeMatchValue(31) }",
+      "site": 37
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 0, output: NativeMatchValue(34) }",
+      "site": 41
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 1, output: NativeMatchValue(35) }",
+      "site": 42
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 2, output: NativeMatchValue(36) }",
+      "site": 43
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 3, output: NativeMatchValue(37) }",
+      "site": 44
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 4, output: NativeMatchValue(38) }",
+      "site": 45
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 5, output: NativeMatchValue(39) }",
+      "site": 46
+    },
+    {
+      "operation": "Pack { output: NativeMatchValue(48) }",
+      "site": 73
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(48), output: NativeMatchValue(32) }",
+      "site": 74
+    },
+    {
+      "operation": "Pack { output: NativeMatchValue(51) }",
+      "site": 89
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(51), output: NativeMatchValue(17) }",
+      "site": 90
+    }
+  ],
+  "managed_fields": 8,
+  "retained_map_regions": [],
+  "scalar_fields": 48,
+  "uniform_unsigned_collections": [
+    {
+      "collection": 0,
+      "filtered": false,
+      "header": 7,
+      "inclusive": true,
+      "iteration": 0,
+      "kind": "U64",
+      "limit": 0,
+      "start": 8,
+      "word": 7
+    }
+  ]
+}

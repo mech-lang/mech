@@ -1,0 +1,77 @@
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs b/hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs
+index f3fb38d8ad..072aeb6cc6 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs
+@@ -613,6 +613,15 @@ impl BufferFrames {
+             .and_then(Option::take)
+             .ok_or_else(|| invalid("numeric handoff lost current carrier owner"))
+     }
++    pub(super) fn diagnose_numeric_owner(&self, owner: &Value) {
++        if let Some(inner) = &self.inner {
++            for (physical, value) in inner.owners.values().iter().enumerate() {
++                if value.as_ref().is_some_and(|value| value.shares_frozen_storage(owner)) {
++                    eprintln!("OWNERSHIP_FRAME data={} physical={}", owner.data() as *const _ as usize, physical);
++                }
++            }
++        }
++    }
+     pub(super) fn synchronize_numeric_owner(
+         &mut self,
+         at: usize,
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_writes.rs b/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_writes.rs
+index f67dd89686..18200ec89f 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_writes.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_writes.rs
+@@ -85,6 +85,11 @@ impl Invocation<'_, '_, '_> {
+                 .ok_or_else(|| invalid("captured array cannot receive a mutable owner"))?,
+             proof.arrays[*array].schema,
+         )?;
++        if std::env::var_os("MECH_DIAGNOSE_NUMERIC_OWNER").is_some() {
++            eprintln!("OWNERSHIP_WRITE site={} region={} header={} array={} phase={} data={} source={:?} candidates={:?} applied={:?}", site, id, region.tail.header(), array, proof.phase.is_some(), source.data() as *const _ as usize, operands.first(), metadata.unsigned_buffer_calls.get(site).and_then(Option::as_ref).map(|call|call.owned_source_slots()), aliases);
++            self.state.arena.diagnose_numeric_owner(&source);
++            self.state.buffer_frames.diagnose_numeric_owner(&source);
++        }
+         // The same source-site proof used by ordinary replacement/append
+         // admits only dead canonical aliases. A skipped private projection does
+         // not itself retire an earlier canonical definition. Release matching
+diff --git a/hosts/gpu/src/native_artifact/values/mod.rs b/hosts/gpu/src/native_artifact/values/mod.rs
+index 58edce94c1..203ad6943b 100644
+--- a/hosts/gpu/src/native_artifact/values/mod.rs
++++ b/hosts/gpu/src/native_artifact/values/mod.rs
+@@ -563,6 +563,15 @@ impl<'a> NativeValueArena<'a> {
+     /// Retirement only, not an ownership/last-use proof. The generated caller
+     /// supplies its immutable complete-use inventory and retains `owner` while
+     /// matching current frozen allocations. A later generation is never swept.
++    #[cfg(feature = "canonical-native-program-runtime")]
++    pub(in crate::native_artifact) fn diagnose_numeric_owner(&self, owner: &Value) {
++        for (slot, value) in self.values.values().iter().enumerate() {
++            if value.as_ref().is_some_and(|value| value.shares_frozen_storage(owner)) {
++                eprintln!("OWNERSHIP_ARENA data={} slot={} generation={}", owner.data() as *const _ as usize, slot, self.generations.values()[slot]);
++            }
++        }
++    }
++
+     #[cfg(feature = "canonical-native-program-runtime")]
+     pub(in crate::native_artifact) fn retire_current_matching(
+         &mut self,
+diff --git a/src/core/src/snapshot/owned_string.rs b/src/core/src/snapshot/owned_string.rs
+index a47a1c9aaf..2bb34d47ad 100644
+--- a/src/core/src/snapshot/owned_string.rs
++++ b/src/core/src/snapshot/owned_string.rs
+@@ -156,6 +156,16 @@ impl Value {
+         self,
+         budget: &crate::ManagedMemoryBudget,
+     ) -> crate::MemoryRuntimeResult<Result<OwnedSnapshotParts, Value>> {
++        if std::env::var_os("MECH_DIAGNOSE_NUMERIC_OWNER").is_some() {
++            eprintln!(
++                "OWNERSHIP_CORE data={} wrapper_owners={} data_owners={} same_budget={} physical_ticket={}",
++                self.data() as *const _ as usize,
++                Arc::strong_count(&self.root),
++                Arc::strong_count(&self.root.data),
++                self.memory_budget_retained_bytes(budget).is_some(),
++                self.root.data.ownership.get().is_some(),
++            );
++        }
+         if self.memory_budget_retained_bytes(budget).is_none()
+             || self.root.data.ownership.get().is_some()
+             || Arc::strong_count(&self.root) != 1

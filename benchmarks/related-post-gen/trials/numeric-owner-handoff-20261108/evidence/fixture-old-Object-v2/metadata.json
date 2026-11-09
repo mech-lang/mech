@@ -1,0 +1,2614 @@
+{
+  "abi_version": 41,
+  "borrowed_string_regions": 0,
+  "captured_numeric_candidates": [
+    {
+      "header": 23,
+      "iteration": 1,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 53,
+      "iteration": 2,
+      "native_initializer": false,
+      "parent": 1,
+      "proof_eligible": false,
+      "rejection": "no selected unsigned reads or lengths",
+      "scalar_carrier_words": null,
+      "selected": false
+    }
+  ],
+  "closed_tail_regions": 2,
+  "code_bytes": 17388,
+  "compiled_borrowed_record_maps": [],
+  "compiled_bound_call_shim": null,
+  "compiled_captured_numeric_loops": [],
+  "compiled_cfg_cleanup": {
+    "after_blocks": 547,
+    "after_instructions": 2529,
+    "before_blocks": 649,
+    "before_instructions": 4116,
+    "boolean_conditions_simplified": 2,
+    "boolean_phi_values": 1,
+    "constant_branches_removed": 0,
+    "dead_instructions_removed": 80,
+    "dead_loads_removed": 29,
+    "dead_parameters_removed": 0,
+    "enabled": true,
+    "fixed_point": true,
+    "local_phi_parameters_removed": 0,
+    "local_phi_preheaders": 0,
+    "neutral_operations_removed": 0,
+    "pre_codegen_data_passes": 0,
+    "rounds": 1,
+    "selected_range_branches_removed": 14,
+    "unsigned_intervals_combined": 0
+  },
+  "compiled_count_value_loops": [],
+  "compiled_frame_effects": {
+    "complete": true,
+    "regions": []
+  },
+  "compiled_guarded_loops": {
+    "complete": true,
+    "regions": []
+  },
+  "compiled_header_continuation_regions": 0,
+  "compiled_join_map_copies": [],
+  "compiled_lookup_facts": {
+    "complete": true,
+    "regions": []
+  },
+  "compiled_loop_constants": {
+    "callers": [],
+    "complete": true
+  },
+  "compiled_loop_invariants": [],
+  "compiled_module_symbol": "mech_canonical_program_identity_v1_53a86aa68d7727538238171c6846388fa0e881bd09056ea83645fd2a91a92ab9_compiled_module_v1",
+  "compiled_module_version": 1,
+  "compiled_mutation_loops": [],
+  "compiled_numeric_functions": [
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 138,
+        "after_instructions": 826,
+        "before_blocks": 227,
+        "before_instructions": 4704,
+        "boolean_conditions_simplified": 5,
+        "boolean_phi_values": 16,
+        "constant_branches_removed": 0,
+        "dead_instructions_removed": 374,
+        "dead_loads_removed": 21,
+        "dead_parameters_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 3,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1,
+        "selected_range_branches_removed": 0,
+        "unsigned_intervals_combined": 0
+      },
+      "code_bytes": 3872,
+      "header": 23,
+      "stack_bytes": 240,
+      "symbol": "mech_canonical_program_entry_v1_numeric_23",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 73,
+        "after_instructions": 294,
+        "before_blocks": 116,
+        "before_instructions": 1381,
+        "boolean_conditions_simplified": 2,
+        "boolean_phi_values": 1,
+        "constant_branches_removed": 0,
+        "dead_instructions_removed": 21,
+        "dead_loads_removed": 10,
+        "dead_parameters_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1,
+        "selected_range_branches_removed": 0,
+        "unsigned_intervals_combined": 0
+      },
+      "code_bytes": 1452,
+      "header": 53,
+      "stack_bytes": 144,
+      "symbol": "mech_canonical_program_entry_v1_numeric_53",
+      "unsigned_guards": 0
+    }
+  ],
+  "compiled_numeric_map_regions": [],
+  "compiled_numeric_segments": [
+    {
+      "entry": 25,
+      "entry_callbacks": 1,
+      "exit_argument_stores": 58,
+      "exit_argument_words": [
+        15,
+        16
+      ],
+      "exit_boundaries": 29,
+      "frontiers": [
+        [
+          51,
+          52
+        ],
+        [
+          99,
+          100
+        ]
+      ],
+      "iteration": 1,
+      "private_scratch_words": 17,
+      "register_words": 31,
+      "runtime_scalar_path_walks": 0,
+      "scalar_input_loads": 6,
+      "scalar_output_stores": 10,
+      "source_home_words": 14,
+      "source_sites": [
+        25,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        40,
+        39,
+        41,
+        45,
+        44,
+        42,
+        46,
+        43,
+        38,
+        47,
+        50,
+        49,
+        51,
+        99,
+        98
+      ],
+      "successful_interior_helpers": 0,
+      "total_ir_instructions": 1029,
+      "typed_loads": [
+        [
+          42,
+          8
+        ]
+      ]
+    },
+    {
+      "entry": 48,
+      "entry_callbacks": 1,
+      "exit_argument_stores": 22,
+      "exit_argument_words": [
+        12,
+        13
+      ],
+      "exit_boundaries": 11,
+      "frontiers": [
+        [
+          109,
+          110
+        ],
+        [
+          107,
+          24
+        ]
+      ],
+      "iteration": 1,
+      "private_scratch_words": 14,
+      "register_words": 25,
+      "runtime_scalar_path_walks": 0,
+      "scalar_input_loads": 0,
+      "scalar_output_stores": 12,
+      "source_home_words": 11,
+      "source_sites": [
+        48,
+        101,
+        104,
+        103,
+        105,
+        109,
+        108,
+        106,
+        107
+      ],
+      "successful_interior_helpers": 0,
+      "total_ir_instructions": 381,
+      "typed_loads": []
+    }
+  ],
+  "compiled_numeric_write_loops": [
+    {
+      "append_sites": [],
+      "boundary_spill_words": [],
+      "bounds_error_spill_words": [],
+      "bulk_append_sites": [],
+      "capacity_guards": [],
+      "cold_exits": [],
+      "direct_child_edges": [
+        [
+          52,
+          53,
+          96
+        ]
+      ],
+      "entry_shadow_argument_copies": 0,
+      "first_change_boundaries": [
+        80
+      ],
+      "fixed_template_instructions": 397,
+      "fresh_traversal_words": 0,
+      "fuel_derived_child_debit_nodes": 0,
+      "fully_lowered_read_packs": [],
+      "guarded_loop_windows": [],
+      "guarded_scalar_retirement_nodes": [
+        53
+      ],
+      "header": 23,
+      "hoisted_pack_addresses": [],
+      "length_sites": [],
+      "maximum_source_instructions": 222,
+      "movable_capture_reads": [],
+      "ordinary_capture_reads": [
+        [
+          42,
+          1
+        ]
+      ],
+      "parent": null,
+      "private_boundary_words": 17,
+      "projected_child_debit_nodes": 0,
+      "proven_boolean_successors": [
+        [
+          39,
+          45
+        ],
+        [
+          69,
+          73
+        ]
+      ],
+      "proven_checked_increment_writes": [],
+      "proven_child_entry_checks": [],
+      "proven_independent_view_increment_writes": [],
+      "proven_projection_guards": [],
+      "proven_scalar_arithmetic": [],
+      "proven_scalar_read_guards": [],
+      "read_pack_sites": [],
+      "refined_capacity_guards": [],
+      "register_words": 83,
+      "runtime_scalar_path_walks": 0,
+      "scalar_input_loads": 6,
+      "scalar_operations": 7,
+      "scalar_output_stores": 12,
+      "scalar_retirement_mask_words": 1,
+      "source_guarded_read_packs": [],
+      "source_home_words": 25,
+      "source_sites": [
+        23,
+        24,
+        25,
+        26,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111
+      ],
+      "static_array_extents": [],
+      "successful_backedge_helpers": 0,
+      "terminal_scalar_words_omitted": 11,
+      "tree_nodes": [
+        23,
+        53
+      ],
+      "typed_loads": [
+        [
+          42,
+          8
+        ],
+        [
+          80,
+          8
+        ]
+      ],
+      "typed_stores": [
+        [
+          80,
+          8
+        ]
+      ],
+      "version_entry_gates": []
+    },
+    {
+      "append_sites": [],
+      "boundary_spill_words": [
+        [
+          "header",
+          53,
+          11
+        ],
+        [
+          "exit",
+          96,
+          11
+        ],
+        [
+          "failure",
+          53,
+          8
+        ]
+      ],
+      "bounds_error_spill_words": [
+        [
+          80,
+          10
+        ]
+      ],
+      "bulk_append_sites": [],
+      "capacity_guards": [],
+      "cold_exits": [],
+      "direct_child_edges": [],
+      "entry_shadow_argument_copies": 0,
+      "first_change_boundaries": [
+        80
+      ],
+      "fixed_template_instructions": 203,
+      "fresh_traversal_words": 15,
+      "fuel_derived_child_debit_nodes": 0,
+      "fully_lowered_read_packs": [],
+      "guarded_loop_windows": [],
+      "guarded_scalar_retirement_nodes": [],
+      "header": 53,
+      "hoisted_pack_addresses": [],
+      "length_sites": [],
+      "maximum_source_instructions": 114,
+      "movable_capture_reads": [],
+      "ordinary_capture_reads": [],
+      "parent": 1,
+      "private_boundary_words": 5,
+      "projected_child_debit_nodes": 0,
+      "proven_boolean_successors": [
+        [
+          69,
+          73
+        ]
+      ],
+      "proven_checked_increment_writes": [],
+      "proven_child_entry_checks": [],
+      "proven_independent_view_increment_writes": [],
+      "proven_projection_guards": [],
+      "proven_scalar_arithmetic": [],
+      "proven_scalar_read_guards": [],
+      "read_pack_sites": [],
+      "refined_capacity_guards": [],
+      "register_words": 36,
+      "runtime_scalar_path_walks": 0,
+      "scalar_input_loads": 5,
+      "scalar_operations": 4,
+      "scalar_output_stores": 10,
+      "scalar_retirement_mask_words": 0,
+      "source_guarded_read_packs": [],
+      "source_home_words": 13,
+      "source_sites": [
+        53,
+        54,
+        55,
+        56,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95
+      ],
+      "static_array_extents": [],
+      "successful_backedge_helpers": 0,
+      "terminal_scalar_words_omitted": 5,
+      "tree_nodes": [],
+      "typed_loads": [
+        [
+          80,
+          8
+        ]
+      ],
+      "typed_stores": [
+        [
+          80,
+          8
+        ]
+      ],
+      "version_entry_gates": []
+    }
+  ],
+  "compiled_outlined_loops": [],
+  "compiled_preserving_call_regions": [],
+  "compiled_readonly_numeric_loops": [],
+  "compiled_scalar_loops": [],
+  "compiled_scalar_selects": 2,
+  "compiled_source_edge_facts": {
+    "complete": true,
+    "regions": []
+  },
+  "compiled_steady_loops": [],
+  "compiled_string_map_regions": 0,
+  "compiled_tag_threading": {
+    "complete": true,
+    "regions": []
+  },
+  "compiled_unsigned_guards": 1,
+  "compiled_utf8_word_chunk_sites": [],
+  "compiled_window_accumulator": null,
+  "compiled_window_histogram_regions": 0,
+  "compiled_window_query_regions": 0,
+  "effects": 0,
+  "entry_symbol": "mech_canonical_program_entry_v1",
+  "executed": false,
+  "identity_symbol": "mech_canonical_program_identity_v1_53a86aa68d7727538238171c6846388fa0e881bd09056ea83645fd2a91a92ab9",
+  "image_binding_symbol": "mech_canonical_program_identity_v1_53a86aa68d7727538238171c6846388fa0e881bd09056ea83645fd2a91a92ab9_descriptor_binding_v1",
+  "linked": false,
+  "native_descriptor_version": 11,
+  "native_metadata_binding_symbol": "mech_canonical_program_identity_v1_53a86aa68d7727538238171c6846388fa0e881bd09056ea83645fd2a91a92ab9_native_metadata_binding_v1",
+  "native_metadata_bytes": 121761,
+  "native_metadata_format": "mech.typed-build-image.v4",
+  "native_metadata_symbol": "mech_canonical_program_identity_v1_53a86aa68d7727538238171c6846388fa0e881bd09056ea83645fd2a91a92ab9_native_metadata_v1",
+  "numeric_parent_partitions": {
+    "parents": [
+      {
+        "children": [
+          {
+            "child": 2,
+            "child_exit": 96,
+            "child_initialize": 52,
+            "child_successor": 97,
+            "initialize_progress": 1,
+            "returned_arrays": [],
+            "scalar_child": false
+          }
+        ],
+        "iteration": 1,
+        "segments": [
+          {
+            "entry": 25,
+            "exits": [
+              [
+                51,
+                52
+              ],
+              [
+                99,
+                100
+              ]
+            ],
+            "frame_plan": {
+              "aliases": [
+                {
+                  "call_result": false,
+                  "source": 0,
+                  "value": 34
+                }
+              ],
+              "exits": [
+                {
+                  "aliases": [],
+                  "frames": [
+                    46
+                  ],
+                  "from": 51,
+                  "to": 52
+                },
+                {
+                  "aliases": [
+                    34
+                  ],
+                  "frames": [],
+                  "from": 99,
+                  "to": 100
+                }
+              ],
+              "frames": [
+                {
+                  "array_bindings": [
+                    [
+                      3,
+                      0
+                    ]
+                  ],
+                  "arrays": [
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
+                  "fields": [
+                    null,
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                  ],
+                  "maximum_arity": 7,
+                  "scalar_node_count": 6,
+                  "scalar_paths": [
+                    [
+                      [
+                        1
+                      ],
+                      0
+                    ],
+                    [
+                      [
+                        2
+                      ],
+                      1
+                    ],
+                    [
+                      [
+                        3
+                      ],
+                      2
+                    ],
+                    [
+                      [
+                        4
+                      ],
+                      3
+                    ],
+                    [
+                      [
+                        5
+                      ],
+                      4
+                    ],
+                    [
+                      [
+                        6
+                      ],
+                      5
+                    ]
+                  ],
+                  "value": 31
+                },
+                {
+                  "array_bindings": [
+                    [
+                      5,
+                      0
+                    ]
+                  ],
+                  "arrays": [
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
+                  "fields": [
+                    null,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10
+                  ],
+                  "maximum_arity": 6,
+                  "scalar_node_count": 5,
+                  "scalar_paths": [
+                    [
+                      [
+                        1
+                      ],
+                      6
+                    ],
+                    [
+                      [
+                        2
+                      ],
+                      7
+                    ],
+                    [
+                      [
+                        3
+                      ],
+                      8
+                    ],
+                    [
+                      [
+                        4
+                      ],
+                      9
+                    ],
+                    [
+                      [
+                        5
+                      ],
+                      10
+                    ]
+                  ],
+                  "value": 46
+                }
+              ],
+              "inputs": [
+                31
+              ],
+              "retirements": [
+                [
+                  34,
+                  [
+                    31
+                  ]
+                ],
+                [
+                  51,
+                  [
+                    34
+                  ]
+                ]
+              ],
+              "scalar_bindings": [
+                {
+                  "kind": "U64",
+                  "physical": 12,
+                  "steps": 1,
+                  "value": 31,
+                  "word": 0
+                },
+                {
+                  "kind": "U64",
+                  "physical": 13,
+                  "steps": 1,
+                  "value": 31,
+                  "word": 1
+                },
+                {
+                  "kind": "U64",
+                  "physical": 14,
+                  "steps": 1,
+                  "value": 31,
+                  "word": 2
+                },
+                {
+                  "kind": "U64",
+                  "physical": 15,
+                  "steps": 1,
+                  "value": 31,
+                  "word": 3
+                },
+                {
+                  "kind": "U64",
+                  "physical": 16,
+                  "steps": 1,
+                  "value": 31,
+                  "word": 4
+                },
+                {
+                  "kind": "U64",
+                  "physical": 17,
+                  "steps": 1,
+                  "value": 31,
+                  "word": 5
+                },
+                {
+                  "kind": "U64",
+                  "physical": 24,
+                  "steps": 1,
+                  "value": 46,
+                  "word": 6
+                },
+                {
+                  "kind": "U64",
+                  "physical": 25,
+                  "steps": 1,
+                  "value": 46,
+                  "word": 7
+                },
+                {
+                  "kind": "U64",
+                  "physical": 26,
+                  "steps": 1,
+                  "value": 46,
+                  "word": 8
+                },
+                {
+                  "kind": "U64",
+                  "physical": 27,
+                  "steps": 1,
+                  "value": 46,
+                  "word": 9
+                },
+                {
+                  "kind": "U64",
+                  "physical": 28,
+                  "steps": 1,
+                  "value": 46,
+                  "word": 10
+                }
+              ],
+              "scalar_entry_steps": 0,
+              "scalar_words": 11,
+              "sources": [
+                {
+                  "Field": {
+                    "ordinal": 0,
+                    "value": 31
+                  }
+                },
+                {
+                  "Value": 1
+                }
+              ]
+            },
+            "numeric": {
+              "actions": [
+                [
+                  28,
+                  "Frame"
+                ],
+                [
+                  29,
+                  "Frame"
+                ],
+                [
+                  30,
+                  "Frame"
+                ],
+                [
+                  31,
+                  "Frame"
+                ],
+                [
+                  32,
+                  "Frame"
+                ],
+                [
+                  33,
+                  "Frame"
+                ],
+                [
+                  34,
+                  "Frame"
+                ],
+                [
+                  42,
+                  {
+                    "Read": {
+                      "array": 0,
+                      "index": 43,
+                      "output": 44
+                    }
+                  }
+                ],
+                [
+                  51,
+                  "Frame"
+                ]
+              ],
+              "compute": 75440,
+              "retirement_effects": [
+                null,
+                [
+                  {
+                    "Pay": 32
+                  }
+                ]
+              ],
+              "retirement_work": 288,
+              "source_work": 20288,
+              "views": [
+                {
+                  "source": 1,
+                  "width": 8,
+                  "witness": 42
+                }
+              ],
+              "virtual_frames": [],
+              "words": 17
+            },
+            "prepaid_region": null,
+            "rejection": null,
+            "sites": [
+              25,
+              28,
+              29,
+              30,
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              40,
+              39,
+              41,
+              45,
+              44,
+              42,
+              46,
+              43,
+              38,
+              47,
+              50,
+              49,
+              51,
+              99,
+              98
+            ]
+          },
+          {
+            "entry": 48,
+            "exits": [
+              [
+                109,
+                110
+              ],
+              [
+                107,
+                24
+              ]
+            ],
+            "frame_plan": {
+              "aliases": [],
+              "exits": [
+                {
+                  "aliases": [],
+                  "frames": [],
+                  "from": 109,
+                  "to": 110
+                },
+                {
+                  "aliases": [],
+                  "frames": [
+                    32
+                  ],
+                  "from": 107,
+                  "to": 24
+                }
+              ],
+              "frames": [
+                {
+                  "array_bindings": [
+                    [
+                      4,
+                      0
+                    ]
+                  ],
+                  "arrays": [
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
+                  "fields": [
+                    null,
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                  ],
+                  "maximum_arity": 7,
+                  "scalar_node_count": 6,
+                  "scalar_paths": [
+                    [
+                      [
+                        1
+                      ],
+                      0
+                    ],
+                    [
+                      [
+                        2
+                      ],
+                      1
+                    ],
+                    [
+                      [
+                        3
+                      ],
+                      2
+                    ],
+                    [
+                      [
+                        4
+                      ],
+                      3
+                    ],
+                    [
+                      [
+                        5
+                      ],
+                      4
+                    ],
+                    [
+                      [
+                        6
+                      ],
+                      5
+                    ]
+                  ],
+                  "value": 32
+                },
+                {
+                  "array_bindings": [
+                    [
+                      9,
+                      0
+                    ]
+                  ],
+                  "arrays": [
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
+                  "fields": [
+                    null,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11
+                  ],
+                  "maximum_arity": 7,
+                  "scalar_node_count": 6,
+                  "scalar_paths": [
+                    [
+                      [
+                        1
+                      ],
+                      6
+                    ],
+                    [
+                      [
+                        2
+                      ],
+                      7
+                    ],
+                    [
+                      [
+                        3
+                      ],
+                      8
+                    ],
+                    [
+                      [
+                        4
+                      ],
+                      9
+                    ],
+                    [
+                      [
+                        5
+                      ],
+                      10
+                    ],
+                    [
+                      [
+                        6
+                      ],
+                      11
+                    ]
+                  ],
+                  "value": 68
+                }
+              ],
+              "inputs": [],
+              "retirements": [
+                [
+                  106,
+                  [
+                    45
+                  ]
+                ],
+                [
+                  107,
+                  [
+                    68
+                  ]
+                ]
+              ],
+              "scalar_bindings": [
+                {
+                  "kind": "U64",
+                  "physical": 18,
+                  "steps": 1,
+                  "value": 32,
+                  "word": 0
+                },
+                {
+                  "kind": "U64",
+                  "physical": 19,
+                  "steps": 1,
+                  "value": 32,
+                  "word": 1
+                },
+                {
+                  "kind": "U64",
+                  "physical": 20,
+                  "steps": 1,
+                  "value": 32,
+                  "word": 2
+                },
+                {
+                  "kind": "U64",
+                  "physical": 21,
+                  "steps": 1,
+                  "value": 32,
+                  "word": 3
+                },
+                {
+                  "kind": "U64",
+                  "physical": 22,
+                  "steps": 1,
+                  "value": 32,
+                  "word": 4
+                },
+                {
+                  "kind": "U64",
+                  "physical": 23,
+                  "steps": 1,
+                  "value": 32,
+                  "word": 5
+                },
+                {
+                  "kind": "U64",
+                  "physical": 44,
+                  "steps": 1,
+                  "value": 68,
+                  "word": 6
+                },
+                {
+                  "kind": "U64",
+                  "physical": 45,
+                  "steps": 1,
+                  "value": 68,
+                  "word": 7
+                },
+                {
+                  "kind": "U64",
+                  "physical": 46,
+                  "steps": 1,
+                  "value": 68,
+                  "word": 8
+                },
+                {
+                  "kind": "U64",
+                  "physical": 47,
+                  "steps": 1,
+                  "value": 68,
+                  "word": 9
+                },
+                {
+                  "kind": "U64",
+                  "physical": 48,
+                  "steps": 1,
+                  "value": 68,
+                  "word": 10
+                },
+                {
+                  "kind": "U64",
+                  "physical": 49,
+                  "steps": 1,
+                  "value": 68,
+                  "word": 11
+                }
+              ],
+              "scalar_entry_steps": 0,
+              "scalar_words": 12,
+              "sources": [
+                {
+                  "Value": 45
+                }
+              ]
+            },
+            "numeric": {
+              "actions": [
+                [
+                  106,
+                  "Frame"
+                ],
+                [
+                  107,
+                  "Frame"
+                ]
+              ],
+              "compute": 29720,
+              "retirement_effects": [
+                null,
+                [
+                  {
+                    "Pay": 256
+                  }
+                ]
+              ],
+              "retirement_work": 288,
+              "source_work": 7096,
+              "views": [],
+              "virtual_frames": [
+                68
+              ],
+              "words": 14
+            },
+            "prepaid_region": null,
+            "rejection": null,
+            "sites": [
+              48,
+              101,
+              104,
+              103,
+              105,
+              109,
+              108,
+              106,
+              107
+            ]
+          },
+          {
+            "entry": 102,
+            "exits": [
+              [
+                102,
+                111
+              ]
+            ],
+            "frame_plan": {
+              "aliases": [],
+              "exits": [
+                {
+                  "aliases": [],
+                  "frames": [],
+                  "from": 102,
+                  "to": 111
+                }
+              ],
+              "frames": [],
+              "inputs": [],
+              "retirements": [],
+              "scalar_bindings": [],
+              "scalar_entry_steps": 0,
+              "scalar_words": 0,
+              "sources": []
+            },
+            "numeric": {
+              "actions": [],
+              "compute": 5376,
+              "retirement_effects": [],
+              "retirement_work": 0,
+              "source_work": 768,
+              "views": [],
+              "virtual_frames": [],
+              "words": 0
+            },
+            "prepaid_region": null,
+            "rejection": null,
+            "sites": [
+              102
+            ]
+          }
+        ],
+        "suspended_child": null
+      }
+    ]
+  },
+  "numeric_tree_candidates": [
+    {
+      "header": 23,
+      "iteration": 1,
+      "nodes": 2,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 53,
+      "iteration": 2,
+      "nodes": null,
+      "parent": 1,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    }
+  ],
+  "numeric_write_regions": [
+    {
+      "compute_per_traversal": 38824,
+      "header": 23,
+      "iteration": 1,
+      "parent": null,
+      "proof": {
+        "actions": [
+          [
+            24,
+            "Frame"
+          ],
+          [
+            28,
+            "Frame"
+          ],
+          [
+            29,
+            "Frame"
+          ],
+          [
+            30,
+            "Frame"
+          ],
+          [
+            31,
+            "Frame"
+          ],
+          [
+            32,
+            "Frame"
+          ],
+          [
+            33,
+            "Frame"
+          ],
+          [
+            34,
+            "Frame"
+          ],
+          [
+            42,
+            {
+              "Read": {
+                "array": 1,
+                "index": 43,
+                "output": 44
+              }
+            }
+          ],
+          [
+            51,
+            "Frame"
+          ],
+          [
+            52,
+            "Frame"
+          ],
+          [
+            54,
+            "Frame"
+          ],
+          [
+            58,
+            "Frame"
+          ],
+          [
+            59,
+            "Frame"
+          ],
+          [
+            60,
+            "Frame"
+          ],
+          [
+            61,
+            "Frame"
+          ],
+          [
+            62,
+            "Frame"
+          ],
+          [
+            63,
+            "Frame"
+          ],
+          [
+            80,
+            {
+              "Write": {
+                "array": 0,
+                "incoming": 61,
+                "index": 52
+              }
+            }
+          ],
+          [
+            81,
+            "ArrayCopy"
+          ],
+          [
+            84,
+            "ArrayCopy"
+          ],
+          [
+            90,
+            "Frame"
+          ],
+          [
+            91,
+            "Frame"
+          ],
+          [
+            94,
+            "ArrayCopy"
+          ],
+          [
+            95,
+            "ArrayCopy"
+          ],
+          [
+            96,
+            "ArrayCopy"
+          ],
+          [
+            97,
+            "ArrayCopy"
+          ],
+          [
+            100,
+            "ArrayCopy"
+          ],
+          [
+            106,
+            "Frame"
+          ],
+          [
+            107,
+            "Frame"
+          ],
+          [
+            110,
+            "ArrayCopy"
+          ],
+          [
+            111,
+            "ArrayCopy"
+          ]
+        ],
+        "append_limits": [],
+        "arrays": [
+          {
+            "appends": false,
+            "root": 0,
+            "schema": 3,
+            "storage": {
+              "Carrier": {
+                "field": 0,
+                "physical": 3
+              }
+            },
+            "width": 8,
+            "witness": 80,
+            "writable": true
+          },
+          {
+            "appends": false,
+            "root": 7,
+            "schema": 6,
+            "storage": {
+              "Capture": {
+                "value": 1
+              }
+            },
+            "width": 8,
+            "witness": 42,
+            "writable": false
+          }
+        ],
+        "boundary_values": {
+          "candidates": [],
+          "exit": [],
+          "header": []
+        },
+        "boundary_words": 83,
+        "boundary_work": 3760,
+        "cold_aliases": [],
+        "cold_frames": [],
+        "cold_scalars": [],
+        "exits": [],
+        "frames": [
+          {
+            "array_bindings": [
+              [
+                3,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "maximum_arity": 7,
+            "scalar_node_count": 6,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                0
+              ],
+              [
+                [
+                  2
+                ],
+                1
+              ],
+              [
+                [
+                  3
+                ],
+                2
+              ],
+              [
+                [
+                  4
+                ],
+                3
+              ],
+              [
+                [
+                  5
+                ],
+                4
+              ],
+              [
+                [
+                  6
+                ],
+                5
+              ]
+            ],
+            "value": 31
+          },
+          {
+            "array_bindings": [
+              [
+                4,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11
+            ],
+            "maximum_arity": 7,
+            "scalar_node_count": 6,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                6
+              ],
+              [
+                [
+                  2
+                ],
+                7
+              ],
+              [
+                [
+                  3
+                ],
+                8
+              ],
+              [
+                [
+                  4
+                ],
+                9
+              ],
+              [
+                [
+                  5
+                ],
+                10
+              ],
+              [
+                [
+                  6
+                ],
+                11
+              ]
+            ],
+            "value": 32
+          },
+          {
+            "array_bindings": [
+              [
+                5,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              12,
+              13,
+              14,
+              15,
+              16
+            ],
+            "maximum_arity": 6,
+            "scalar_node_count": 5,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                12
+              ],
+              [
+                [
+                  2
+                ],
+                13
+              ],
+              [
+                [
+                  3
+                ],
+                14
+              ],
+              [
+                [
+                  4
+                ],
+                15
+              ],
+              [
+                [
+                  5
+                ],
+                16
+              ]
+            ],
+            "value": 46
+          },
+          {
+            "array_bindings": [
+              [
+                6,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              17,
+              18,
+              19,
+              20,
+              21
+            ],
+            "maximum_arity": 6,
+            "scalar_node_count": 5,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                17
+              ],
+              [
+                [
+                  2
+                ],
+                18
+              ],
+              [
+                [
+                  3
+                ],
+                19
+              ],
+              [
+                [
+                  4
+                ],
+                20
+              ],
+              [
+                [
+                  5
+                ],
+                21
+              ]
+            ],
+            "value": 48
+          },
+          {
+            "array_bindings": [
+              [
+                7,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              22,
+              23,
+              24,
+              25,
+              26
+            ],
+            "maximum_arity": 6,
+            "scalar_node_count": 5,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                22
+              ],
+              [
+                [
+                  2
+                ],
+                23
+              ],
+              [
+                [
+                  3
+                ],
+                24
+              ],
+              [
+                [
+                  4
+                ],
+                25
+              ],
+              [
+                [
+                  5
+                ],
+                26
+              ]
+            ],
+            "value": 49
+          },
+          {
+            "array_bindings": [
+              [
+                8,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              27,
+              28,
+              29,
+              30,
+              31
+            ],
+            "maximum_arity": 6,
+            "scalar_node_count": 5,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                27
+              ],
+              [
+                [
+                  2
+                ],
+                28
+              ],
+              [
+                [
+                  3
+                ],
+                29
+              ],
+              [
+                [
+                  4
+                ],
+                30
+              ],
+              [
+                [
+                  5
+                ],
+                31
+              ]
+            ],
+            "value": 65
+          },
+          {
+            "array_bindings": [
+              [
+                9,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37
+            ],
+            "maximum_arity": 7,
+            "scalar_node_count": 6,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                32
+              ],
+              [
+                [
+                  2
+                ],
+                33
+              ],
+              [
+                [
+                  3
+                ],
+                34
+              ],
+              [
+                [
+                  4
+                ],
+                35
+              ],
+              [
+                [
+                  5
+                ],
+                36
+              ],
+              [
+                [
+                  6
+                ],
+                37
+              ]
+            ],
+            "value": 68
+          }
+        ],
+        "fresh_values": [],
+        "nested_managed": false,
+        "phase": null,
+        "prepaid_sites": [],
+        "result": {
+          "Array": {
+            "array": 0
+          }
+        },
+        "scalar_captures": [],
+        "scalar_inputs": [
+          {
+            "kind": "U64",
+            "physical": 12,
+            "steps": 1,
+            "value": 31,
+            "word": 0
+          },
+          {
+            "kind": "U64",
+            "physical": 13,
+            "steps": 1,
+            "value": 31,
+            "word": 1
+          },
+          {
+            "kind": "U64",
+            "physical": 14,
+            "steps": 1,
+            "value": 31,
+            "word": 2
+          },
+          {
+            "kind": "U64",
+            "physical": 15,
+            "steps": 1,
+            "value": 31,
+            "word": 3
+          },
+          {
+            "kind": "U64",
+            "physical": 16,
+            "steps": 1,
+            "value": 31,
+            "word": 4
+          },
+          {
+            "kind": "U64",
+            "physical": 17,
+            "steps": 1,
+            "value": 31,
+            "word": 5
+          }
+        ],
+        "scalar_outputs": [],
+        "scalar_words": 38,
+        "sites": [
+          23,
+          24,
+          25,
+          26,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          90,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          105,
+          106,
+          107,
+          108,
+          109,
+          110,
+          111
+        ],
+        "words": 55
+      }
+    },
+    {
+      "compute_per_traversal": 33864,
+      "header": 53,
+      "iteration": 2,
+      "parent": 1,
+      "proof": {
+        "actions": [
+          [
+            54,
+            "Frame"
+          ],
+          [
+            58,
+            "Frame"
+          ],
+          [
+            59,
+            "Frame"
+          ],
+          [
+            60,
+            "Frame"
+          ],
+          [
+            61,
+            "Frame"
+          ],
+          [
+            62,
+            "Frame"
+          ],
+          [
+            63,
+            "Frame"
+          ],
+          [
+            80,
+            {
+              "Write": {
+                "array": 0,
+                "incoming": 61,
+                "index": 52
+              }
+            }
+          ],
+          [
+            81,
+            "ArrayCopy"
+          ],
+          [
+            84,
+            "ArrayCopy"
+          ],
+          [
+            90,
+            "Frame"
+          ],
+          [
+            91,
+            "Frame"
+          ],
+          [
+            94,
+            "ArrayCopy"
+          ],
+          [
+            95,
+            "ArrayCopy"
+          ]
+        ],
+        "append_limits": [],
+        "arrays": [
+          {
+            "appends": false,
+            "root": 0,
+            "schema": 3,
+            "storage": {
+              "Carrier": {
+                "field": 0,
+                "physical": 6
+              }
+            },
+            "width": 8,
+            "witness": 80,
+            "writable": true
+          }
+        ],
+        "boundary_values": {
+          "candidates": [
+            8,
+            16,
+            17,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65
+          ],
+          "exit": [
+            8,
+            16,
+            17,
+            50
+          ],
+          "header": [
+            8,
+            16,
+            17,
+            48
+          ]
+        },
+        "boundary_words": 36,
+        "boundary_work": 1024,
+        "cold_aliases": [],
+        "cold_frames": [],
+        "cold_scalars": [],
+        "exits": [],
+        "frames": [
+          {
+            "array_bindings": [
+              [
+                6,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "maximum_arity": 6,
+            "scalar_node_count": 6,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                0
+              ],
+              [
+                [
+                  2
+                ],
+                1
+              ],
+              [
+                [
+                  3
+                ],
+                2
+              ],
+              [
+                [
+                  4
+                ],
+                3
+              ],
+              [
+                [
+                  5
+                ],
+                4
+              ]
+            ],
+            "value": 48
+          },
+          {
+            "array_bindings": [
+              [
+                7,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "maximum_arity": 6,
+            "scalar_node_count": 6,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                5
+              ],
+              [
+                [
+                  2
+                ],
+                6
+              ],
+              [
+                [
+                  3
+                ],
+                7
+              ],
+              [
+                [
+                  4
+                ],
+                8
+              ],
+              [
+                [
+                  5
+                ],
+                9
+              ]
+            ],
+            "value": 49
+          },
+          {
+            "array_bindings": [
+              [
+                8,
+                0
+              ]
+            ],
+            "arrays": [
+              0,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "fields": [
+              null,
+              10,
+              11,
+              12,
+              13,
+              14
+            ],
+            "maximum_arity": 6,
+            "scalar_node_count": 6,
+            "scalar_paths": [
+              [
+                [
+                  1
+                ],
+                10
+              ],
+              [
+                [
+                  2
+                ],
+                11
+              ],
+              [
+                [
+                  3
+                ],
+                12
+              ],
+              [
+                [
+                  4
+                ],
+                13
+              ],
+              [
+                [
+                  5
+                ],
+                14
+              ]
+            ],
+            "value": 65
+          }
+        ],
+        "fresh_values": [
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          61,
+          64,
+          65
+        ],
+        "nested_managed": false,
+        "phase": null,
+        "prepaid_sites": [],
+        "result": {
+          "Array": {
+            "array": 0
+          }
+        },
+        "scalar_captures": [],
+        "scalar_inputs": [
+          {
+            "kind": "U64",
+            "physical": 29,
+            "steps": 1,
+            "value": 48,
+            "word": 0
+          },
+          {
+            "kind": "U64",
+            "physical": 30,
+            "steps": 1,
+            "value": 48,
+            "word": 1
+          },
+          {
+            "kind": "U64",
+            "physical": 31,
+            "steps": 1,
+            "value": 48,
+            "word": 2
+          },
+          {
+            "kind": "U64",
+            "physical": 32,
+            "steps": 1,
+            "value": 48,
+            "word": 3
+          },
+          {
+            "kind": "U64",
+            "physical": 33,
+            "steps": 1,
+            "value": 48,
+            "word": 4
+          }
+        ],
+        "scalar_outputs": [],
+        "scalar_words": 15,
+        "sites": [
+          53,
+          54,
+          55,
+          56,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          90,
+          91,
+          92,
+          93,
+          94,
+          95
+        ],
+        "words": 20
+      }
+    }
+  ],
+  "object_bytes": 141072,
+  "object_optimization": "speed",
+  "observations": 0,
+  "ordinary_scalar_admission_groups": 0,
+  "ordinary_scalar_admission_sites": 0,
+  "private_frozen_map_candidates": 0,
+  "private_line_matrix_regions": 0,
+  "program_revision": "b5b177db7481d0bece80784d8a73b6976c7f42c29f75d60458cbbce5d61c986d",
+  "readonly_numeric_candidates": [
+    {
+      "header": 23,
+      "iteration": 1,
+      "origin": {
+        "block": null,
+        "local": null,
+        "node": 10
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 53,
+      "iteration": 2,
+      "origin": {
+        "block": 3,
+        "local": 1,
+        "node": 10
+      },
+      "parent": 1,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    }
+  ],
+  "readonly_numeric_regions": [],
+  "requirements": 0,
+  "retained_map_scalar_admission_groups": 0,
+  "schema": "mech.canonical-managed-program-object.v1",
+  "selected_matrix_join_regions": 0,
+  "stack_bytes": 400,
+  "target_tag": [
+    1,
+    2,
+    1,
+    64,
+    1,
+    0,
+    0,
+    0
+  ],
+  "timing_samples": 0,
+  "transport_inputs": 7,
+  "transport_outputs": 1,
+  "typed_ir_sha256": "53a86aa68d7727538238171c6846388fa0e881bd09056ea83645fd2a91a92ab9",
+  "typed_ir_version": 307,
+  "unboxed_scalar_aggregate_values": 0,
+  "work_policy_version": 124
+}

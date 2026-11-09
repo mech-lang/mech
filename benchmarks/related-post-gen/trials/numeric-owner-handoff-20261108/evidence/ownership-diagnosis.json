@@ -1,0 +1,206 @@
+{
+  "production_Object_unchanged": true,
+  "exact_full5000_output": true,
+  "timings_eligible": false,
+  "instrumentation_patch_sha256": "14c7710e2be356970e205b0e993272aa351ceeababf23d9f2cea090d5148cecc",
+  "selected": [
+    {
+      "site": "340",
+      "region": "3",
+      "header": "272",
+      "array": "2",
+      "phase": "false",
+      "data": "43735710896",
+      "arena_slots": [],
+      "frame_lanes": [],
+      "candidates": [
+        178,
+        235,
+        277,
+        433,
+        511
+      ],
+      "core": {
+        "data": "43735710896",
+        "wrapper_owners": "1",
+        "data_owners": "1",
+        "same_budget": "true",
+        "physical_ticket": "false"
+      },
+      "dead_matching_slots": [],
+      "live_matching_slots": []
+    },
+    {
+      "site": "847",
+      "region": "8",
+      "header": "796",
+      "array": "0",
+      "phase": "false",
+      "data": "43735710896",
+      "arena_slots": [
+        541,
+        544
+      ],
+      "frame_lanes": [],
+      "candidates": [
+        535,
+        539,
+        544,
+        547,
+        554,
+        556,
+        571,
+        580,
+        592,
+        602,
+        617,
+        624
+      ],
+      "core": {
+        "data": "43735710896",
+        "wrapper_owners": "3",
+        "data_owners": "1",
+        "same_budget": "true",
+        "physical_ticket": "false"
+      },
+      "dead_matching_slots": [
+        544
+      ],
+      "live_matching_slots": [
+        541
+      ]
+    },
+    {
+      "site": "844",
+      "region": "8",
+      "header": "796",
+      "array": "1",
+      "phase": "false",
+      "data": "43735711056",
+      "arena_slots": [
+        563
+      ],
+      "frame_lanes": [],
+      "candidates": [
+        561,
+        562,
+        563,
+        572,
+        593,
+        603,
+        618,
+        625
+      ],
+      "core": {
+        "data": "43735711056",
+        "wrapper_owners": "2",
+        "data_owners": "1",
+        "same_budget": "true",
+        "physical_ticket": "false"
+      },
+      "dead_matching_slots": [
+        563
+      ],
+      "live_matching_slots": []
+    },
+    {
+      "site": "1105",
+      "region": "12",
+      "header": "1037",
+      "array": "2",
+      "phase": "false",
+      "data": "43735711536",
+      "arena_slots": [],
+      "frame_lanes": [],
+      "candidates": [
+        694,
+        751,
+        864,
+        974
+      ],
+      "core": {
+        "data": "43735711536",
+        "wrapper_owners": "1",
+        "data_owners": "1",
+        "same_budget": "true",
+        "physical_ticket": "false"
+      },
+      "dead_matching_slots": [],
+      "live_matching_slots": []
+    },
+    {
+      "site": "1581",
+      "region": "18",
+      "header": "1530",
+      "array": "0",
+      "phase": "false",
+      "data": "43735711536",
+      "arena_slots": [
+        1007,
+        1010
+      ],
+      "frame_lanes": [],
+      "candidates": [
+        1001,
+        1005,
+        1010,
+        1013,
+        1020,
+        1022,
+        1037,
+        1046,
+        1058,
+        1068,
+        1083,
+        1090
+      ],
+      "core": {
+        "data": "43735711536",
+        "wrapper_owners": "3",
+        "data_owners": "1",
+        "same_budget": "true",
+        "physical_ticket": "false"
+      },
+      "dead_matching_slots": [
+        1010
+      ],
+      "live_matching_slots": [
+        1007
+      ]
+    },
+    {
+      "site": "1578",
+      "region": "18",
+      "header": "1530",
+      "array": "1",
+      "phase": "false",
+      "data": "43732647952",
+      "arena_slots": [
+        1029
+      ],
+      "frame_lanes": [],
+      "candidates": [
+        1027,
+        1028,
+        1029,
+        1038,
+        1059,
+        1069,
+        1084,
+        1091
+      ],
+      "core": {
+        "data": "43732647952",
+        "wrapper_owners": "2",
+        "data_owners": "1",
+        "same_budget": "true",
+        "physical_ticket": "false"
+      },
+      "dead_matching_slots": [
+        1029
+      ],
+      "live_matching_slots": []
+    }
+  ],
+  "conclusion": "At each postings first write, the sole extra owner is a matching canonical arena slot certified dead by the same-plan last-use proof. Count banks are already exclusive. Positions retain a live canonical prefix root and must still copy."
+}

@@ -1,0 +1,135 @@
+{
+  "rounds": 8,
+  "seed": 99044021,
+  "variants": [
+    {
+      "name": "handoff-disabled",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/runner-profile",
+      "source": "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "b8b7276c455b9f9eee85a3caa424d2251517e13dc6bc694554e89e7329eba4a6",
+      "Object_text_exact_production": true,
+      "executable_sha256": "cf23b8636579ee54b5904958bead7daa78c5d92ddda6a2b9d11d9e35a4274281",
+      "variant": "handoff-disabled-coarse",
+      "helpers": false,
+      "diagnostic": true
+    },
+    {
+      "name": "handoff-disabled",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/runner-profile",
+      "source": "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "b8b7276c455b9f9eee85a3caa424d2251517e13dc6bc694554e89e7329eba4a6",
+      "Object_text_exact_production": true,
+      "executable_sha256": "cf23b8636579ee54b5904958bead7daa78c5d92ddda6a2b9d11d9e35a4274281",
+      "variant": "handoff-disabled-detail",
+      "helpers": true,
+      "diagnostic": true
+    },
+    {
+      "name": "handoff-enabled",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-enabled/runner-profile",
+      "source": "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-enabled/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "67d17a6435d7bed0648582dbdf285eb9aaa80f7f6f79f5c791e7df6a13fb2fcd",
+      "Object_text_exact_production": true,
+      "executable_sha256": "23a0f4f2741964a3e11fa5973e81ce7ae55126d8b670fc03992e926d86fba2aa",
+      "variant": "handoff-enabled-coarse",
+      "helpers": false,
+      "diagnostic": true
+    },
+    {
+      "name": "handoff-enabled",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-enabled/runner-profile",
+      "source": "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-enabled/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "67d17a6435d7bed0648582dbdf285eb9aaa80f7f6f79f5c791e7df6a13fb2fcd",
+      "Object_text_exact_production": true,
+      "executable_sha256": "23a0f4f2741964a3e11fa5973e81ce7ae55126d8b670fc03992e926d86fba2aa",
+      "variant": "handoff-enabled-detail",
+      "helpers": true,
+      "diagnostic": true
+    },
+    {
+      "name": "rust-fastest",
+      "kind": "rust",
+      "executable": "/private/tmp/mech-related-aligned-constructor-diagnostics-20261108/rust/target/release/rust_mech",
+      "phase_boundaries": [
+        1,
+        2,
+        3
+      ],
+      "base_source": "/private/tmp/mech-related-constant-key-rust256-controls-20261107-v1/default/src/main.rs",
+      "algorithm_unchanged": true,
+      "executable_sha256": "e135b255d7cc5dc32712e4b2f92f34abf034e1ee29a6d8f9a7a46eae5b3b5cb9",
+      "variant": "rust-fastest-coarse",
+      "helpers": false,
+      "diagnostic": true
+    },
+    {
+      "name": "ordinary-mech",
+      "variant": "ordinary-mech",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-numeric-owner-handoff-emission-control-20261108-v2/histogram-reuse/runner-aot",
+      "source": "/private/tmp/mech-related-numeric-owner-handoff-emission-control-20261108-v2/histogram-reuse/build/source.mec",
+      "diagnostic": false,
+      "executable_sha256": "5e86a6e6b105c56341d8593d0b7cdb6d3ad5f639ec843626565639706263a4b0"
+    },
+    {
+      "name": "ordinary-histogram",
+      "variant": "ordinary-histogram",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-numeric-owner-handoff-runners-20261108-v2/histogram-reuse/runner-aot",
+      "source": "/private/tmp/mech-related-numeric-owner-handoff-runners-20261108-v2/histogram-reuse/build/source.mec",
+      "diagnostic": false,
+      "executable_sha256": "bf100b7424c809067607c313756270e27eed0394eb9c4d3728e2c5dc7d073c32"
+    },
+    {
+      "name": "ordinary-rust",
+      "variant": "ordinary-rust",
+      "kind": "rust",
+      "executable": "/private/tmp/mech-related-constant-key-rust256-controls-20261107-v1/default/target/release/rust_mech",
+      "source": null,
+      "diagnostic": false,
+      "executable_sha256": "ffb04744df3c79df5b4b985969ad1a805062d49b224d657e85022e635fce90b5"
+    }
+  ],
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false,
+  "input_sha256": "500530b81cb81c5b1a5e48aa30de6a89ba0a350460ad826c4c7bb023e6e46cb8",
+  "coarse_phases": [
+    "preparation_interning_and_eligibility",
+    "triple_index_and_coverage",
+    "quartet_index_and_masks",
+    "queries_cleanup_and_materialization"
+  ],
+  "process_instructions_all_workers": true,
+  "calling_thread_counters_for_nested_scopes": true,
+  "thread_and_global_allocator_counters": true,
+  "all_first_and_adverse_captures_retained": true,
+  "unchanged_native_Objects": true
+}

@@ -1,0 +1,24 @@
+{
+  "files": [
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v7-optimized/gpu-tests",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v7-optimized/gpu-tests.gz",
+      "bytes": 136948248,
+      "mode": 33261,
+      "sha256": "a63749288e03fbc7a38c7e9f1c7d6962eae8cd9f3cddc12070466ab256b284e9",
+      "archive_bytes": 23190560,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-completed-element-bounds-20261108/extent-tests-v2/gpu-tests",
+      "archive": "/private/tmp/mech-related-completed-element-bounds-20261108/extent-tests-v2/gpu-tests.gz",
+      "bytes": 136883448,
+      "mode": 33261,
+      "sha256": "b4fddab80e3c982fbc7b281f77f3e31cf9b46c1f8cfbb05dab6dcabca7eb1880",
+      "archive_bytes": 23190187,
+      "losslessly_verified": true
+    }
+  ],
+  "all_required_tests_completed": true,
+  "source_and_all_latency_executables_untouched": true
+}

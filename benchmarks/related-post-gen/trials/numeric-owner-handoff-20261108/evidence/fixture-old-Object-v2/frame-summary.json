@@ -1,0 +1,144 @@
+{
+  "actions": [
+    {
+      "operation": "Pack { output: NativeMatchValue(21) }",
+      "site": 13
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(21), ordinal: 0, output: NativeMatchValue(22) }",
+      "site": 14
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(21), ordinal: 2, output: NativeMatchValue(23) }",
+      "site": 15
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(21), ordinal: 3, output: NativeMatchValue(24) }",
+      "site": 16
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(21), ordinal: 4, output: NativeMatchValue(25) }",
+      "site": 17
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(21), ordinal: 5, output: NativeMatchValue(26) }",
+      "site": 18
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(21), ordinal: 6, output: NativeMatchValue(27) }",
+      "site": 19
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(21), ordinal: 7, output: NativeMatchValue(28) }",
+      "site": 20
+    },
+    {
+      "operation": "Pack { output: NativeMatchValue(29) }",
+      "site": 21
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(29), output: NativeMatchValue(31) }",
+      "site": 22
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(32), output: NativeMatchValue(31) }",
+      "site": 24
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 0, output: NativeMatchValue(34) }",
+      "site": 28
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 1, output: NativeMatchValue(35) }",
+      "site": 29
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 2, output: NativeMatchValue(36) }",
+      "site": 30
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 3, output: NativeMatchValue(37) }",
+      "site": 31
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 4, output: NativeMatchValue(38) }",
+      "site": 32
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 5, output: NativeMatchValue(39) }",
+      "site": 33
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(31), ordinal: 6, output: NativeMatchValue(40) }",
+      "site": 34
+    },
+    {
+      "operation": "Pack { output: NativeMatchValue(46) }",
+      "site": 51
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(46), output: NativeMatchValue(48) }",
+      "site": 52
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(49), output: NativeMatchValue(48) }",
+      "site": 54
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(48), ordinal: 0, output: NativeMatchValue(51) }",
+      "site": 58
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(48), ordinal: 1, output: NativeMatchValue(52) }",
+      "site": 59
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(48), ordinal: 2, output: NativeMatchValue(53) }",
+      "site": 60
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(48), ordinal: 3, output: NativeMatchValue(54) }",
+      "site": 61
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(48), ordinal: 4, output: NativeMatchValue(55) }",
+      "site": 62
+    },
+    {
+      "operation": "Project { source: NativeMatchValue(48), ordinal: 5, output: NativeMatchValue(56) }",
+      "site": 63
+    },
+    {
+      "operation": "Pack { output: NativeMatchValue(65) }",
+      "site": 90
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(65), output: NativeMatchValue(49) }",
+      "site": 91
+    },
+    {
+      "operation": "Pack { output: NativeMatchValue(68) }",
+      "site": 106
+    },
+    {
+      "operation": "Copy { source: NativeMatchValue(68), output: NativeMatchValue(32) }",
+      "site": 107
+    }
+  ],
+  "managed_fields": 10,
+  "retained_map_regions": [],
+  "scalar_fields": 50,
+  "uniform_unsigned_collections": [
+    {
+      "collection": 0,
+      "filtered": false,
+      "header": 7,
+      "inclusive": true,
+      "iteration": 0,
+      "kind": "U64",
+      "limit": 0,
+      "start": 8,
+      "word": 7
+    }
+  ]
+}

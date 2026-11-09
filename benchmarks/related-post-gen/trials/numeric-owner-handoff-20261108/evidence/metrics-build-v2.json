@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/latency-config.json",
+    "--out",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/metrics-v2",
+    "--variant",
+    "mech-ir308-numeric-owner-handoff-4",
+    "--variant",
+    "mech-ir308-owner-handoff-disabled-4"
+  ],
+  "exit": 0,
+  "seconds": 4.373609208967537,
+  "stdout": "{\"variant\": \"mech-ir308-numeric-owner-handoff-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-ir308-owner-handoff-disabled-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n",
+  "stderr": "",
+  "diagnostic_adapters_only": true
+}

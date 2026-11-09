@@ -1,0 +1,60 @@
+{
+  "files": [
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v5-fast/gpu-tests",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v5-fast/gpu-tests.gz",
+      "bytes": 193323512,
+      "mode": 33261,
+      "sha256": "f3bca674a53c40380c31fbca9cda8269e537c880f3d0699039e5a7e2fc812acc",
+      "archive_bytes": 28823903,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v6-optimized/gpu-tests",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v6-optimized/gpu-tests.gz",
+      "bytes": 136664984,
+      "mode": 33261,
+      "sha256": "1eba5aed8d714fc7e4ff0d0c94b1292576f8f4c392056ebcfc7f04a562f0b206",
+      "archive_bytes": 23125524,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-regressions-20261108-v1/scalar",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-regressions-20261108-v1/scalar.gz",
+      "bytes": 109196352,
+      "mode": 33261,
+      "sha256": "215d1a3b277e7bb74f41b19e7de4d69b54fb61234f58ff314072355ee8a89262",
+      "archive_bytes": 15207498,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-regressions-20261108-v1/one-kib",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-regressions-20261108-v1/one-kib.gz",
+      "bytes": 105924008,
+      "mode": 33261,
+      "sha256": "8d2238cae30e0e9dce35ad14c4eab4522b0c3651f8e208ad3223591b1a741d3f",
+      "archive_bytes": 13413740,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-runners-20261108-v1/compiler",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-runners-20261108-v1/compiler.gz",
+      "bytes": 107713088,
+      "mode": 33261,
+      "sha256": "4c5e4aa90a3e9a4b2025c5c9764080b891ca1e0f618a653f6e7e1a9f6bd1a4a4",
+      "archive_bytes": 14452219,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-emission-control-20261108-v1/compiler",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-emission-control-20261108-v1/compiler.gz",
+      "bytes": 107711984,
+      "mode": 33261,
+      "sha256": "4414e45bc8ea8c5522610a7552528019f58527cb1d7e710024ca0acb6c316c33",
+      "archive_bytes": 14450156,
+      "losslessly_verified": true
+    }
+  ],
+  "all_processes_completed": true,
+  "benchmark_runners_and_native_Objects_untouched": true
+}

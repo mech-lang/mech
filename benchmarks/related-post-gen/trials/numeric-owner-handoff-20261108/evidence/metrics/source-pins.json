@@ -1,0 +1,22 @@
+[
+  {
+    "variant": "mech-ir308-numeric-owner-handoff-4",
+    "original_source": "/private/tmp/mech-related-numeric-owner-handoff-runners-20261108-v1/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-numeric-owner-handoff-20261108/metrics/mech-ir308-numeric-owner-handoff-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "815e01455f432544f2079ab01c01a756c617f7c21472e19babeb5812fa94526f",
+    "diagnostic_executable_sha256": "95658ee1b8d078e21cd2303110a981b1977541846c83b43ac865fcaeff398a00"
+  },
+  {
+    "variant": "mech-ir308-owner-handoff-disabled-4",
+    "original_source": "/private/tmp/mech-related-numeric-owner-handoff-emission-control-20261108-v1/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-numeric-owner-handoff-20261108/metrics/mech-ir308-owner-handoff-disabled-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "eccf39ec9328beedbc8fd43f53df8efffb30296403ea4ea2fe18b1b3fc64b6fe",
+    "diagnostic_executable_sha256": "ea5bc4b14374e8af1e09df94e301f506ecd63e72c4b75cd8fff16454ac0f369f"
+  }
+]

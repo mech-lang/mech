@@ -1,0 +1,44 @@
+OWNERSHIP_WRITE site=202 region=1 header=106 array=0 phase=false data=43735710256 source=Some(NativeMatchValue(109)) candidates=Some([]) applied=[]
+OWNERSHIP_CORE data=43735710256 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_CORE data=43735710576 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=333 region=3 header=272 array=1 phase=false data=43735710736 source=Some(NativeMatchValue(233)) candidates=Some([NativeMatchValue(177), NativeMatchValue(233), NativeMatchValue(270), NativeMatchValue(426), NativeMatchValue(504)]) applied=[]
+OWNERSHIP_CORE data=43735710736 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=340 region=3 header=272 array=2 phase=false data=43735710896 source=Some(NativeMatchValue(235)) candidates=Some([NativeMatchValue(178), NativeMatchValue(235), NativeMatchValue(277), NativeMatchValue(433), NativeMatchValue(511)]) applied=[]
+OWNERSHIP_CORE data=43735710896 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=699 region=3 header=272 array=0 phase=false data=43735710576 source=Some(NativeMatchValue(194)) candidates=Some([]) applied=[]
+OWNERSHIP_CORE data=43735710576 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_CORE data=43735710896 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=756 region=7 header=729 array=0 phase=false data=43735710896 source=Some(NativeMatchValue(547)) candidates=Some([NativeMatchValue(535), NativeMatchValue(539), NativeMatchValue(547)]) applied=[]
+OWNERSHIP_CORE data=43735710896 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=847 region=8 header=796 array=0 phase=false data=43735710896 source=Some(NativeMatchValue(602)) candidates=Some([NativeMatchValue(535), NativeMatchValue(539), NativeMatchValue(544), NativeMatchValue(547), NativeMatchValue(554), NativeMatchValue(556), NativeMatchValue(571), NativeMatchValue(580), NativeMatchValue(592), NativeMatchValue(602), NativeMatchValue(617), NativeMatchValue(624)]) applied=[]
+OWNERSHIP_ARENA data=43735710896 slot=541 generation=1
+OWNERSHIP_ARENA data=43735710896 slot=544 generation=1
+OWNERSHIP_CORE data=43735710896 wrapper_owners=3 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=844 region=8 header=796 array=1 phase=false data=43735711056 source=Some(NativeMatchValue(603)) candidates=Some([NativeMatchValue(561), NativeMatchValue(562), NativeMatchValue(563), NativeMatchValue(572), NativeMatchValue(593), NativeMatchValue(603), NativeMatchValue(618), NativeMatchValue(625)]) applied=[]
+OWNERSHIP_ARENA data=43735711056 slot=563 generation=1
+OWNERSHIP_CORE data=43735711056 wrapper_owners=2 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_CORE data=43735711216 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=1098 region=12 header=1037 array=1 phase=false data=43735711376 source=Some(NativeMatchValue(749)) candidates=Some([NativeMatchValue(693), NativeMatchValue(749), NativeMatchValue(857), NativeMatchValue(967)]) applied=[]
+OWNERSHIP_CORE data=43735711376 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=1105 region=12 header=1037 array=2 phase=false data=43735711536 source=Some(NativeMatchValue(751)) candidates=Some([NativeMatchValue(694), NativeMatchValue(751), NativeMatchValue(864), NativeMatchValue(974)]) applied=[]
+OWNERSHIP_CORE data=43735711536 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=1433 region=12 header=1037 array=0 phase=false data=43735711216 source=Some(NativeMatchValue(710)) candidates=Some([]) applied=[]
+OWNERSHIP_CORE data=43735711216 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_CORE data=43735711536 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=1490 region=17 header=1463 array=0 phase=false data=43735711536 source=Some(NativeMatchValue(1013)) candidates=Some([NativeMatchValue(1001), NativeMatchValue(1005), NativeMatchValue(1013)]) applied=[]
+OWNERSHIP_CORE data=43735711536 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=1581 region=18 header=1530 array=0 phase=false data=43735711536 source=Some(NativeMatchValue(1068)) candidates=Some([NativeMatchValue(1001), NativeMatchValue(1005), NativeMatchValue(1010), NativeMatchValue(1013), NativeMatchValue(1020), NativeMatchValue(1022), NativeMatchValue(1037), NativeMatchValue(1046), NativeMatchValue(1058), NativeMatchValue(1068), NativeMatchValue(1083), NativeMatchValue(1090)]) applied=[]
+OWNERSHIP_ARENA data=43735711536 slot=1007 generation=1
+OWNERSHIP_ARENA data=43735711536 slot=1010 generation=1
+OWNERSHIP_CORE data=43735711536 wrapper_owners=3 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=1578 region=18 header=1530 array=1 phase=false data=43732647952 source=Some(NativeMatchValue(1069)) candidates=Some([NativeMatchValue(1027), NativeMatchValue(1028), NativeMatchValue(1029), NativeMatchValue(1038), NativeMatchValue(1059), NativeMatchValue(1069), NativeMatchValue(1084), NativeMatchValue(1091)]) applied=[]
+OWNERSHIP_ARENA data=43732647952 slot=1029 generation=1
+OWNERSHIP_CORE data=43732647952 wrapper_owners=2 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=2096 region=20 header=1646 array=0 phase=false data=43732648112 source=Some(NativeMatchValue(1118)) candidates=Some([]) applied=[]
+OWNERSHIP_CORE data=43732648112 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=2096 region=20 header=1646 array=0 phase=false data=43732648272 source=Some(NativeMatchValue(1118)) candidates=Some([]) applied=[]
+OWNERSHIP_CORE data=43732648272 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_WRITE site=2096 region=20 header=1646 array=0 phase=false data=43732648432 source=Some(NativeMatchValue(1118)) candidates=Some([]) applied=[]
+OWNERSHIP_WRITE site=2096 region=20 header=1646 array=0 phase=false data=43732648592 source=Some(NativeMatchValue(1118)) candidates=Some([]) applied=[]
+OWNERSHIP_CORE data=43732648432 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false
+OWNERSHIP_CORE data=43732648592 wrapper_owners=1 data_owners=1 same_budget=true physical_ticket=false

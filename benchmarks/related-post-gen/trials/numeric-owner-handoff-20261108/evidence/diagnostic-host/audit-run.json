@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/diagnostic-host/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/diagnostic-host/runner-owner-diagnostic",
+    "--output",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/diagnostic-host/native-link-proof.json"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.07531400001607835,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 51, \"normalized_text_sha256\": \"ddd081f6f25d1ecbd9e65633596029033c02ce4d8648bf28399fc138161abed6\"}\n",
+  "stderr": "",
+  "diagnostic_only": true,
+  "all_timings_ineligible": true
+}

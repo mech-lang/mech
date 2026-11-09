@@ -1,0 +1,35 @@
+{
+  "foundation": "IR307",
+  "established_speed_reference": "IR305",
+  "scope": "General same-plan dead canonical owner handoff at selected numeric-tree first writes; no new host loop or kernel",
+  "diagnostic_gate": "Observe actual Core transfer-rejection fields and enumerate matching arena and frame owners before optimizing",
+  "target_sites": [
+    844,
+    1578
+  ],
+  "target_payload_bytes": [
+    281824,
+    121216
+  ],
+  "payload_bytes_sum": 403040,
+  "observed_old_first_write_requests_total_bytes": 403792,
+  "observed_old_first_write_span_median_us": 30.9,
+  "span_caveat": "Contains ownership, admission and probe work nested in scatter; not all can disappear and never add it to scatter again",
+  "non_targets": [
+    "positions copies with live prefix aliases",
+    "post-ID or cursor bounds",
+    "query parallelism"
+  ],
+  "qualification": [
+    "Original and decoded artifacts; restored metadata; actual backing pointer before and after first write",
+    "Live internal and external aliases; source-site last use; current frozen identity; cleanup, failures and retry",
+    "All retained compiler and scalar/DEFLATE controls; linked full and edge outputs; same-runtime emission ablation"
+  ],
+  "measurement_policy": [
+    "A meaningful qualified change before any fresh cohort",
+    "Retain first and adverse samples; independent confirmation; all Rust controls; fastest eligible Rust denominator",
+    "Track processing, whole process, restoration, allocations, requested and peak heap, instructions, cycles, native code/frame/executable sizes",
+    "Whole process/restoration reported outside mandatory gate; no unchanged favorable reruns"
+  ],
+  "key_range_work": "Test-only independent prototype preserved; completed subset keys, prefix occupied extent, cursor bounds and post IDs remain distinct proofs"
+}

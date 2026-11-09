@@ -1,0 +1,156 @@
+{
+  "files": [
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_stdlib.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_stdlib.rlib.gz",
+      "bytes": 170032,
+      "mode": 33188,
+      "original_sha256": "9c074c132734a95dadef47586e047d79834266a28f112659f50788cdf6b68ce1",
+      "archive_bytes": 43818,
+      "archive_sha256": "66924273be306f7f73536cff755aa369f4c15dc9fb2fa2ec766513baaa64cc24",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_math.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_math.rlib.gz",
+      "bytes": 39853512,
+      "mode": 33188,
+      "original_sha256": "0a82e55e00eada673b7c7be2567e356bde367d8456789796890402afcd0420db",
+      "archive_bytes": 3007121,
+      "archive_sha256": "2a077d049cfd3339b27f72bb2b74f4bafca7559f9c2f232271d97e3751ab45be",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_syntax.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_syntax.rlib.gz",
+      "bytes": 11770424,
+      "mode": 33188,
+      "original_sha256": "c1d0fbca7dafa20b542d93d48941e0426a3c840fa48a78fdc61836abe9b65c9c",
+      "archive_bytes": 3734489,
+      "archive_sha256": "8d7497d256e19171ab5148bec6d443f117b6781eb8b7dbe8fda5525ba074a7ff",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_logic.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_logic.rlib.gz",
+      "bytes": 2980624,
+      "mode": 33188,
+      "original_sha256": "87bf3f707d8b38d3d0be428243fc287e8e9167cf79a26b7c1e4eac638b3dc340",
+      "archive_bytes": 509631,
+      "archive_sha256": "71dcba19133dacb38103edcf3b02da410df0b5fbfaba9033d9906052de1841ce",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_runtime.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_runtime.rlib.gz",
+      "bytes": 26450280,
+      "mode": 33188,
+      "original_sha256": "6f40bc786c8d7f68fc77f2b0f3ec1aaa319538ec95f3f2c8de2a9a466fd9f9a9",
+      "archive_bytes": 8377341,
+      "archive_sha256": "640aa46dd324ac35a034540f8fef429b86d5f99fa2518c4958c496d9823610f2",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_compare.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_compare.rlib.gz",
+      "bytes": 82991624,
+      "mode": 33188,
+      "original_sha256": "3ceb60f2a0b4c884e048cfd143e20bbbbd7fc836393b510241fe3859f23524d3",
+      "archive_bytes": 5772256,
+      "archive_sha256": "7f3f96930017b09ef3c291502d307b835fa4754238db5324a9dddf165b14d13e",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_compute.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_compute.rlib.gz",
+      "bytes": 1533360,
+      "mode": 33188,
+      "original_sha256": "794a95e8b3afb09966a15eea416a9901b2095353329a1d2c854bb85edd4c2369",
+      "archive_bytes": 502335,
+      "archive_sha256": "bd84ff95bc588736025861ef31e16797ecb49813ccb1e9cad2b114f12c15cde2",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_range.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_range.rlib.gz",
+      "bytes": 5120128,
+      "mode": 33188,
+      "original_sha256": "6103a3dd8503b27286308bfb97d5ed9ee8cb6887c88af305959a647a4507f985",
+      "archive_bytes": 587634,
+      "archive_sha256": "79797d0e6fb0d7ace520f1466d4d19de3c82a1b41b5e2904681be80d68f4e497",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_engine.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_engine.rlib.gz",
+      "bytes": 123059240,
+      "mode": 33188,
+      "original_sha256": "cb4088132f2603e400d5b514da7ee8fe0b52591696178cb9c5042489bcf21564",
+      "archive_bytes": 24253772,
+      "archive_sha256": "e6ca5e1dec55b2be00b42e5e84fe1c72ac0117981102ecfb11c04fbdd687317c",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_bytecode.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_bytecode.rlib.gz",
+      "bytes": 5776,
+      "mode": 33188,
+      "original_sha256": "1db5d3178736143dc3991ae882856726448a4dea4f78d131c0f6f836e02cd6ca",
+      "archive_bytes": 3751,
+      "archive_sha256": "5d1929371ed7fb6290d625b8c3e993a4878a64f75a8d2c06098f74ff964a9aef",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_gpu.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_gpu.rlib.gz",
+      "bytes": 40881816,
+      "mode": 33188,
+      "original_sha256": "f1db22eca771f35ee95adb8244f252518c98d8e7493acf0dfd421ffa84ade934",
+      "archive_bytes": 10358385,
+      "archive_sha256": "2e7679b01b82027193ad7913cbc627df3aeeb55ca703e4d11be7fb25761679cd",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_core.rlib",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-diagnostic-opt-20261108-v1/libmech_core.rlib.gz",
+      "bytes": 31974624,
+      "mode": 33188,
+      "original_sha256": "823fc8cb4e841098a4ab9a6653e93e656ffbabff61b94a76d1151d433b8584a5",
+      "archive_bytes": 9890672,
+      "archive_sha256": "ddf278438bcd66e6d6d15f498134a4325c2a9295773420e4a918e34cd55d5e70",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v2/gpu-tests",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v2/gpu-tests.gz",
+      "bytes": 136665224,
+      "mode": 33261,
+      "original_sha256": "1631e78bb3f87279a05d516c5df8b6a6649f92b83d7e3669f8a4992b93cda3d3",
+      "archive_bytes": 23126811,
+      "archive_sha256": "cc3c3e641c616346d544078bb577bb9937973b780e4d214540e9e9772ff01303",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v3-fast/gpu-tests",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v3-fast/gpu-tests.gz",
+      "bytes": 193323576,
+      "mode": 33261,
+      "original_sha256": "11d0a56eb5be54e5e947b1ad83021b055e19558f39a09125decd42190c387e36",
+      "archive_bytes": 28823679,
+      "archive_sha256": "24ab81988f1ae98658a5ad793148c6bfbdb640c86423913482ea31462bc4b6bf",
+      "losslessly_verified": true
+    },
+    {
+      "original_path": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v4-fast/gpu-tests",
+      "archive_path": "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v4-fast/gpu-tests.gz",
+      "bytes": 193323512,
+      "mode": 33261,
+      "original_sha256": "5aeb6146a0942421da0da4adaf7235f724739557a2b55d4e17bf77a914080cd8",
+      "archive_bytes": 28823698,
+      "archive_sha256": "9e09b4879eaaae836d83592e69a64096d13ae3d8ac64b05a7aa2be59ad761aae",
+      "losslessly_verified": true
+    }
+  ],
+  "all_tests_and_diagnostic_finished_before_archive": true,
+  "production_closure_untouched": true
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-numeric-owner-handoff-runners-20261108-v2/histogram-reuse/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-numeric-owner-handoff-runners-20261108-v2/histogram-reuse/runner-native-profile",
+    "--output",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/quiet-native-profile/native-profile-link-proof.json"
+  ],
+  "exit": 0,
+  "seconds": 0.07893166597932577,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 51, \"normalized_text_sha256\": \"90398e340a615b7b1ef7ee62460783ca6ebfa4cf13892786c04b5850829322eb\"}\n",
+  "stderr": ""
+}

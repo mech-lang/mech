@@ -1,0 +1,24 @@
+{
+  "files": [
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-regressions-20261108-v2/scalar",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-regressions-20261108-v2/scalar.gz",
+      "bytes": 109196352,
+      "mode": 33261,
+      "sha256": "81b27626352204914adbcdb63e5462eed327775bd57bb8d947f27566756e4f85",
+      "archive_bytes": 15207598,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-regressions-20261108-v2/one-kib",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-regressions-20261108-v2/one-kib.gz",
+      "bytes": 105924008,
+      "mode": 33261,
+      "sha256": "c1cd7de56d5e86b6cf6f53ea703886b21a9a141ecad82eaddc28f49165df06e7",
+      "archive_bytes": 13413691,
+      "losslessly_verified": true
+    }
+  ],
+  "all133_controls_completed": true,
+  "benchmark_runners_untouched": true
+}

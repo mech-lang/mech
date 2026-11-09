@@ -1,0 +1,11 @@
+{
+  "commit": "4482c116e1ef1eba5e18dac5d84b64211152e734",
+  "branch": "codex/related-numeric-owner-handoff-20261108",
+  "foundation": "dbd87fc9b82d07cdc0943ac656744f8cf504e744",
+  "compiler_root": "/private/tmp/mech-related-numeric-owner-handoff-compiler-20261108",
+  "Core_Engine_unchanged": true,
+  "typed_IR": 308,
+  "work_policy": 125,
+  "qualification_in_progress": true,
+  "no_authoritative_timing_yet": true
+}

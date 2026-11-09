@@ -1,0 +1,13 @@
+{
+  "expected": 484,
+  "listed": 484,
+  "executed_passed": 484,
+  "all_names_match": true,
+  "all480_parent_names_retained": true,
+  "new_names": [
+    "native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_is_a_bound_emission_request",
+    "native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_keeps_copy_denial_and_recovers",
+    "native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_preserves_finite_admission_and_atomic_retry",
+    "native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_reuses_dead_pins_and_preserves_live_aliases_errors_and_retry"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v7-optimized/gpu-tests",
+    "codegen::packed_map::frame_state::tests",
+    "--test-threads=1"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.016535667004063725,
+  "stdout": "\nrunning 2 tests\ntest native_artifact::program::codegen::packed_map::frame_state::tests::actual_call_emission_keeps_unknown_ops_and_terminal_spills_conservative ... ok\ntest native_artifact::program::codegen::packed_map::frame_state::tests::private_effect_masks_cover_validation_growth_and_all_generated_writes ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1000 filtered out; finished in 0.00s\n\n",
+  "stderr": "",
+  "scope": "IR308 same-plan numeric-tree first-write handoff; qualification only, timers ineligible"
+}

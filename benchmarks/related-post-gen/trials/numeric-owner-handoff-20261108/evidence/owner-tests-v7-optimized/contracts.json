@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v7-optimized/gpu-tests",
+    "numeric_tree_owned_handoff_",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-numeric-owner-handoff-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 0,
+  "seconds": 4.507707542041317,
+  "stdout": "\nrunning 4 tests\ntest native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_is_a_bound_emission_request ... ok\ntest native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_keeps_copy_denial_and_recovers ... ok\ntest native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_preserves_finite_admission_and_atomic_retry ... {\"dimension\":\"control\",\"exact_selected_fragments\":0,\"minimum\":71170518,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"library\",\"exact_selected_fragments\":0,\"minimum\":21791031,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"comparison\",\"exact_selected_fragments\":3,\"minimum\":10,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"memory\",\"exact_selected_fragments\":0,\"minimum\":2804469,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"nodes\",\"exact_selected_fragments\":0,\"minimum\":5330,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"transport\",\"exact_selected_fragments\":0,\"minimum\":15592,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"control\",\"exact_selected_fragments\":0,\"minimum\":71170518,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"library\",\"exact_selected_fragments\":0,\"minimum\":21791031,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"comparison\",\"exact_selected_fragments\":3,\"minimum\":10,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"memory\",\"exact_selected_fragments\":0,\"minimum\":2804469,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"nodes\",\"exact_selected_fragments\":0,\"minimum\":5330,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"transport\",\"exact_selected_fragments\":0,\"minimum\":15592,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\nok\ntest native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_reuses_dead_pins_and_preserves_live_aliases_errors_and_retry ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 998 filtered out; finished in 3.06s\n\n",
+  "stderr": "",
+  "timing_eligible": false
+}

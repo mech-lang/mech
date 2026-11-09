@@ -1,0 +1,5 @@
+{
+  "error": "Publisher expected regression run.py inside the output directory; actual script is packet/run-regression-controls.py",
+  "corrected_by": "Copy the actual retained execution script; no measured data/source changes",
+  "all_original_outputs_preserved": true
+}

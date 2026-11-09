@@ -1,0 +1,55 @@
+{
+  "changes": [
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/options.rs",
+      "before_sha256": "75ee24c4aa8a5a76f0b3df8c1ef4846460e4a18d34109e7ab71abdea6b87addc",
+      "after_sha256": "a69413bf2cb52fd3589aa0637522f7ae31884f5bcdee7da977f398d08050b1df"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_boundary.rs",
+      "before_sha256": "fc6f8880ac2a7fdf6a64d9ae362e0c5da72f74a886be1fbcab3b24b0be8f4827",
+      "after_sha256": "4d78f4fa6943d5407baf5836cc0d1145c80078f9605d29263b21ec6f22be97eb"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+      "before_sha256": "51fde1077db343210610875033ca7dda10837e3570686655ac6bdb192f9e0142",
+      "after_sha256": "7ae30738045207a6960a341db354a0bb2968c1831a37c3b972e8e5e64866b689"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "before_sha256": "a64d481b62768376492b441daf682a930a8ee95f6edeb67a56e23bf7b4d009a9",
+      "after_sha256": "3ad419ac26fae9e982f4a6ec0368bfea19d559dbc3a5f2303639e8816876b702"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/protocol/mod.rs",
+      "before_sha256": "a7cf8467b936e8d9f0661496238e1dbf9e7a09d66efae42e10eca76ede279b16",
+      "after_sha256": "984d53f0c1d5dd7cc7f5c0c4dac66645aef4107eaaf26832161ff733b8e0031e"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+      "before_sha256": "7cb2c1a4a9f33eec0a5d4ec5fc6dc59d49428eb28d0bb49ea3ee1c112a3393b2",
+      "after_sha256": "0cb1ee0bd66b2f7adac0331d0813bc8e25810d55a8065cf4e677eb8e79e873a2"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree_owner_handoff.rs",
+      "before_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "after_sha256": "d854b891ca9741ee0af698bcd4398a73a4e94f43815c704ee4c3ddd272050382"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs",
+      "before_sha256": "4aeaf95654146935473685557ca8d9a1f668bd96b54194e31c12f5006de930f4",
+      "after_sha256": "08bc584994ab20b974fbd956ea84cc38f6dacbf1afecc2500b8b20cf3b43d93a"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_writes.rs",
+      "before_sha256": "6f9135b8716c55e871514c4294b5d430c3b1cf3dfbe6e278c151c2b7bcd5630c",
+      "after_sha256": "bd9bbc7c302e086e40c9c77d3f04dae91fb7c2dd9b79b35e93e5386498057ef2"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/matrix_map_keys_actual_tests.rs",
+      "before_sha256": "06cf3e505d8df09a848024c0ec861b149412868051b6ce027e469f86df96bee5",
+      "after_sha256": "586e9fa28141ac12223aaacd20f638a451412a6c516949c8aa5a59cf5ffbc448"
+    }
+  ],
+  "compiler_source_commit": "4482c116e1ef1eba5e18dac5d84b64211152e734"
+}

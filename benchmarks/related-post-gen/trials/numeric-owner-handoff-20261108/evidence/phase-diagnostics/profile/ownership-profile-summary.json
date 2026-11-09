@@ -1,0 +1,1490 @@
+{
+  "diagnostic_only": true,
+  "authoritative_timings_are_separate": true,
+  "source_and_native_Objects_unchanged": true,
+  "phase_medians_are_not_additive": true,
+  "native_root_includes_cold_helper_work": true,
+  "summary": {
+    "handoff-disabled-detail": {
+      "writes": {
+        "844": {
+          "elapsed_ns": 19291.5,
+          "instructions": 184733.0,
+          "cycles": 72228.5,
+          "thread_requests": 4.0,
+          "thread_requested_bytes": 282200.0,
+          "thread_freed_bytes": 0.0
+        },
+        "1578": {
+          "elapsed_ns": 9646.0,
+          "instructions": 89568.0,
+          "cycles": 35580.0,
+          "thread_requests": 4.0,
+          "thread_requested_bytes": 121592.0,
+          "thread_freed_bytes": 0.0
+        },
+        "847": {
+          "elapsed_ns": 4312.5,
+          "instructions": 33092.5,
+          "cycles": 16253.0,
+          "thread_requests": 4.0,
+          "thread_requested_bytes": 26592.0,
+          "thread_freed_bytes": 0.0
+        },
+        "1581": {
+          "elapsed_ns": 12312.0,
+          "instructions": 111715.0,
+          "cycles": 45927.0,
+          "thread_requests": 4.0,
+          "thread_requested_bytes": 164184.0,
+          "thread_freed_bytes": 0.0
+        },
+        "postings_combined": {
+          "elapsed_ns": 29250.0,
+          "instructions": 274272.0,
+          "cycles": 109446.0,
+          "thread_requests": 8.0,
+          "thread_requested_bytes": 403792.0,
+          "thread_freed_bytes": 0.0
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 113583.0,
+          "instructions": 2212889.0,
+          "cycles": 434900.0,
+          "thread_requests": 13.0,
+          "thread_requested_bytes": 1208.0,
+          "thread_freed_bytes": 1208.0
+        },
+        "795": {
+          "elapsed_ns": 124708.5,
+          "instructions": 2214071.5,
+          "cycles": 473271.5,
+          "thread_requests": 8.0,
+          "thread_requested_bytes": 308792.0,
+          "thread_freed_bytes": 0.0
+        },
+        "1036": {
+          "elapsed_ns": 89500.0,
+          "instructions": 1755866.0,
+          "cycles": 341668.5,
+          "thread_requests": 13.0,
+          "thread_requested_bytes": 1208.0,
+          "thread_freed_bytes": 1208.0
+        },
+        "1529": {
+          "elapsed_ns": 83375.0,
+          "instructions": 1274032.5,
+          "cycles": 317400.5,
+          "thread_requests": 8.0,
+          "thread_requested_bytes": 285776.0,
+          "thread_freed_bytes": 0.0
+        }
+      }
+    },
+    "handoff-enabled-detail": {
+      "writes": {
+        "844": {
+          "elapsed_ns": 1646.0,
+          "instructions": 17889.0,
+          "cycles": 5726.5,
+          "thread_requests": 3.0,
+          "thread_requested_bytes": 376.0,
+          "thread_freed_bytes": 376.0
+        },
+        "1578": {
+          "elapsed_ns": 1542.0,
+          "instructions": 17985.0,
+          "cycles": 5551.5,
+          "thread_requests": 3.0,
+          "thread_requested_bytes": 376.0,
+          "thread_freed_bytes": 376.0
+        },
+        "847": {
+          "elapsed_ns": 4333.0,
+          "instructions": 35675.0,
+          "cycles": 16470.0,
+          "thread_requests": 4.0,
+          "thread_requested_bytes": 26592.0,
+          "thread_freed_bytes": 0.0
+        },
+        "1581": {
+          "elapsed_ns": 12291.5,
+          "instructions": 112960.5,
+          "cycles": 46674.0,
+          "thread_requests": 4.0,
+          "thread_requested_bytes": 164184.0,
+          "thread_freed_bytes": 0.0
+        },
+        "postings_combined": {
+          "elapsed_ns": 3208.0,
+          "instructions": 35874.0,
+          "cycles": 11259.0,
+          "thread_requests": 6.0,
+          "thread_requested_bytes": 752.0,
+          "thread_freed_bytes": 752.0
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 111666.5,
+          "instructions": 2140325.0,
+          "cycles": 429336.0,
+          "thread_requests": 13.0,
+          "thread_requested_bytes": 1208.0,
+          "thread_freed_bytes": 1208.0
+        },
+        "795": {
+          "elapsed_ns": 107458.0,
+          "instructions": 2049810.0,
+          "cycles": 406705.0,
+          "thread_requests": 7.0,
+          "thread_requested_bytes": 26968.0,
+          "thread_freed_bytes": 376.0
+        },
+        "1036": {
+          "elapsed_ns": 88583.5,
+          "instructions": 1769872.0,
+          "cycles": 344606.5,
+          "thread_requests": 13.0,
+          "thread_requested_bytes": 1208.0,
+          "thread_freed_bytes": 1208.0
+        },
+        "1529": {
+          "elapsed_ns": 75479.0,
+          "instructions": 1203643.0,
+          "cycles": 287701.0,
+          "thread_requests": 7.0,
+          "thread_requested_bytes": 164560.0,
+          "thread_freed_bytes": 376.0
+        }
+      }
+    }
+  },
+  "paired_coarse_phase_changes": {
+    "preparation_interning_and_eligibility": {
+      "handoff-disabled-coarse": {
+        "median_difference_ns": 5313.0,
+        "wins": 3
+      },
+      "rust-fastest-coarse": {
+        "median_difference_ns": 114791.5,
+        "wins": 0
+      }
+    },
+    "triple_index_and_coverage": {
+      "handoff-disabled-coarse": {
+        "median_difference_ns": -21208.5,
+        "wins": 7
+      },
+      "rust-fastest-coarse": {
+        "median_difference_ns": 138833.0,
+        "wins": 0
+      }
+    },
+    "quartet_index_and_masks": {
+      "handoff-disabled-coarse": {
+        "median_difference_ns": -9209.0,
+        "wins": 7
+      },
+      "rust-fastest-coarse": {
+        "median_difference_ns": 54625.5,
+        "wins": 0
+      }
+    },
+    "queries_cleanup_and_materialization": {
+      "handoff-disabled-coarse": {
+        "median_difference_ns": 5958.5,
+        "wins": 4
+      },
+      "rust-fastest-coarse": {
+        "median_difference_ns": -77624.5,
+        "wins": 7
+      }
+    }
+  },
+  "raw": [
+    {
+      "pair": 0,
+      "variant": "handoff-disabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 26333,
+          "instructions": 181985,
+          "cycles": 68361,
+          "thread_requests": 4,
+          "thread_requested_bytes": 282200,
+          "thread_freed_bytes": 0
+        },
+        "1578": {
+          "elapsed_ns": 13250,
+          "instructions": 88846,
+          "cycles": 34136,
+          "thread_requests": 4,
+          "thread_requested_bytes": 121592,
+          "thread_freed_bytes": 0
+        },
+        "847": {
+          "elapsed_ns": 6500,
+          "instructions": 33298,
+          "cycles": 16301,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 17000,
+          "instructions": 109516,
+          "cycles": 43800,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 39583,
+          "instructions": 270831,
+          "cycles": 102497,
+          "thread_requests": 8,
+          "thread_requested_bytes": 403792,
+          "thread_freed_bytes": 0
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 225583,
+          "instructions": 2460617,
+          "cycles": 589532,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 178750,
+          "instructions": 2211529,
+          "cycles": 467127,
+          "thread_requests": 8,
+          "thread_requested_bytes": 308792,
+          "thread_freed_bytes": 0
+        },
+        "1036": {
+          "elapsed_ns": 161917,
+          "instructions": 1879617,
+          "cycles": 423049,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 116042,
+          "instructions": 1271105,
+          "cycles": 310756,
+          "thread_requests": 8,
+          "thread_requested_bytes": 285776,
+          "thread_freed_bytes": 0
+        }
+      }
+    },
+    {
+      "pair": 0,
+      "variant": "handoff-enabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 1584,
+          "instructions": 17894,
+          "cycles": 5769,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "1578": {
+          "elapsed_ns": 1417,
+          "instructions": 17894,
+          "cycles": 5129,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "847": {
+          "elapsed_ns": 4125,
+          "instructions": 35902,
+          "cycles": 16087,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 11833,
+          "instructions": 112933,
+          "cycles": 47364,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 3001,
+          "instructions": 35788,
+          "cycles": 10898,
+          "thread_requests": 6,
+          "thread_requested_bytes": 752,
+          "thread_freed_bytes": 752
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 106292,
+          "instructions": 2140985,
+          "cycles": 430543,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 100584,
+          "instructions": 2050042,
+          "cycles": 407337,
+          "thread_requests": 7,
+          "thread_requested_bytes": 26968,
+          "thread_freed_bytes": 376
+        },
+        "1036": {
+          "elapsed_ns": 86250,
+          "instructions": 1770811,
+          "cycles": 349333,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 71459,
+          "instructions": 1203570,
+          "cycles": 289215,
+          "thread_requests": 7,
+          "thread_requested_bytes": 164560,
+          "thread_freed_bytes": 376
+        }
+      }
+    },
+    {
+      "pair": 1,
+      "variant": "handoff-enabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 1542,
+          "instructions": 17889,
+          "cycles": 5734,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "1578": {
+          "elapsed_ns": 1542,
+          "instructions": 17985,
+          "cycles": 5539,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "847": {
+          "elapsed_ns": 4333,
+          "instructions": 35515,
+          "cycles": 16975,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 11750,
+          "instructions": 112156,
+          "cycles": 46934,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 3084,
+          "instructions": 35874,
+          "cycles": 11273,
+          "thread_requests": 6,
+          "thread_requested_bytes": 752,
+          "thread_freed_bytes": 752
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 104833,
+          "instructions": 2139481,
+          "cycles": 424593,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 100541,
+          "instructions": 2049650,
+          "cycles": 407116,
+          "thread_requests": 7,
+          "thread_requested_bytes": 26968,
+          "thread_freed_bytes": 376
+        },
+        "1036": {
+          "elapsed_ns": 83958,
+          "instructions": 1769362,
+          "cycles": 339880,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 71167,
+          "instructions": 1202884,
+          "cycles": 288020,
+          "thread_requests": 7,
+          "thread_requested_bytes": 164560,
+          "thread_freed_bytes": 376
+        }
+      }
+    },
+    {
+      "pair": 1,
+      "variant": "handoff-disabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 19000,
+          "instructions": 184793,
+          "cycles": 71397,
+          "thread_requests": 4,
+          "thread_requested_bytes": 282200,
+          "thread_freed_bytes": 0
+        },
+        "1578": {
+          "elapsed_ns": 10542,
+          "instructions": 89496,
+          "cycles": 39276,
+          "thread_requests": 4,
+          "thread_requested_bytes": 121592,
+          "thread_freed_bytes": 0
+        },
+        "847": {
+          "elapsed_ns": 3916,
+          "instructions": 33094,
+          "cycles": 14088,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 17667,
+          "instructions": 143921,
+          "cycles": 66257,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 29542,
+          "instructions": 274289,
+          "cycles": 110673,
+          "thread_requests": 8,
+          "thread_requested_bytes": 403792,
+          "thread_freed_bytes": 0
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 113541,
+          "instructions": 2212990,
+          "cycles": 428616,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 124792,
+          "instructions": 2214133,
+          "cycles": 471308,
+          "thread_requests": 8,
+          "thread_requested_bytes": 308792,
+          "thread_freed_bytes": 0
+        },
+        "1036": {
+          "elapsed_ns": 89375,
+          "instructions": 1755342,
+          "cycles": 337122,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 90125,
+          "instructions": 1306160,
+          "cycles": 340026,
+          "thread_requests": 8,
+          "thread_requested_bytes": 285776,
+          "thread_freed_bytes": 0
+        }
+      }
+    },
+    {
+      "pair": 2,
+      "variant": "handoff-enabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 1667,
+          "instructions": 17889,
+          "cycles": 5719,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "1578": {
+          "elapsed_ns": 1667,
+          "instructions": 17985,
+          "cycles": 5779,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "847": {
+          "elapsed_ns": 4333,
+          "instructions": 35599,
+          "cycles": 15894,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 12375,
+          "instructions": 112988,
+          "cycles": 46021,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 3334,
+          "instructions": 35874,
+          "cycles": 11498,
+          "thread_requests": 6,
+          "thread_requested_bytes": 752,
+          "thread_freed_bytes": 752
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 111167,
+          "instructions": 2139633,
+          "cycles": 419706,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 107500,
+          "instructions": 2049734,
+          "cycles": 405769,
+          "thread_requests": 7,
+          "thread_requested_bytes": 26968,
+          "thread_freed_bytes": 376
+        },
+        "1036": {
+          "elapsed_ns": 88667,
+          "instructions": 1769410,
+          "cycles": 334728,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 76333,
+          "instructions": 1203716,
+          "cycles": 287842,
+          "thread_requests": 7,
+          "thread_requested_bytes": 164560,
+          "thread_freed_bytes": 376
+        }
+      }
+    },
+    {
+      "pair": 2,
+      "variant": "handoff-disabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 19333,
+          "instructions": 184673,
+          "cycles": 72506,
+          "thread_requests": 4,
+          "thread_requested_bytes": 282200,
+          "thread_freed_bytes": 0
+        },
+        "1578": {
+          "elapsed_ns": 9625,
+          "instructions": 89582,
+          "cycles": 35713,
+          "thread_requests": 4,
+          "thread_requested_bytes": 121592,
+          "thread_freed_bytes": 0
+        },
+        "847": {
+          "elapsed_ns": 4000,
+          "instructions": 33091,
+          "cycles": 14507,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 12209,
+          "instructions": 111783,
+          "cycles": 45670,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 28958,
+          "instructions": 274255,
+          "cycles": 108219,
+          "thread_requests": 8,
+          "thread_requested_bytes": 403792,
+          "thread_freed_bytes": 0
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 114417,
+          "instructions": 2212782,
+          "cycles": 431920,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 124625,
+          "instructions": 2214010,
+          "cycles": 470404,
+          "thread_requests": 8,
+          "thread_requested_bytes": 308792,
+          "thread_freed_bytes": 0
+        },
+        "1036": {
+          "elapsed_ns": 89625,
+          "instructions": 1756112,
+          "cycles": 338150,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 83583,
+          "instructions": 1274108,
+          "cycles": 315347,
+          "thread_requests": 8,
+          "thread_requested_bytes": 285776,
+          "thread_freed_bytes": 0
+        }
+      }
+    },
+    {
+      "pair": 3,
+      "variant": "handoff-enabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 1542,
+          "instructions": 17889,
+          "cycles": 5760,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "1578": {
+          "elapsed_ns": 1542,
+          "instructions": 17985,
+          "cycles": 5679,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "847": {
+          "elapsed_ns": 4542,
+          "instructions": 35671,
+          "cycles": 17745,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 13375,
+          "instructions": 113036,
+          "cycles": 53813,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 3084,
+          "instructions": 35874,
+          "cycles": 11439,
+          "thread_requests": 6,
+          "thread_requested_bytes": 752,
+          "thread_freed_bytes": 752
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 110500,
+          "instructions": 2146948,
+          "cycles": 447739,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 101250,
+          "instructions": 2049806,
+          "cycles": 409929,
+          "thread_requests": 7,
+          "thread_requested_bytes": 26968,
+          "thread_freed_bytes": 376
+        },
+        "1036": {
+          "elapsed_ns": 86791,
+          "instructions": 1769444,
+          "cycles": 351381,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 72958,
+          "instructions": 1203764,
+          "cycles": 295425,
+          "thread_requests": 7,
+          "thread_requested_bytes": 164560,
+          "thread_freed_bytes": 376
+        }
+      }
+    },
+    {
+      "pair": 3,
+      "variant": "handoff-disabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 20083,
+          "instructions": 185931,
+          "cycles": 80871,
+          "thread_requests": 4,
+          "thread_requested_bytes": 282200,
+          "thread_freed_bytes": 0
+        },
+        "1578": {
+          "elapsed_ns": 10709,
+          "instructions": 90342,
+          "cycles": 42875,
+          "thread_requests": 4,
+          "thread_requested_bytes": 121592,
+          "thread_freed_bytes": 0
+        },
+        "847": {
+          "elapsed_ns": 4166,
+          "instructions": 33188,
+          "cycles": 16213,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 12291,
+          "instructions": 112443,
+          "cycles": 49325,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 30792,
+          "instructions": 276273,
+          "cycles": 123746,
+          "thread_requests": 8,
+          "thread_requested_bytes": 403792,
+          "thread_freed_bytes": 0
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 113917,
+          "instructions": 2246351,
+          "cycles": 461356,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 119208,
+          "instructions": 2215365,
+          "cycles": 482829,
+          "thread_requests": 8,
+          "thread_requested_bytes": 308792,
+          "thread_freed_bytes": 0
+        },
+        "1036": {
+          "elapsed_ns": 85583,
+          "instructions": 1756372,
+          "cycles": 346630,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 81625,
+          "instructions": 1275529,
+          "cycles": 330362,
+          "thread_requests": 8,
+          "thread_requested_bytes": 285776,
+          "thread_freed_bytes": 0
+        }
+      }
+    },
+    {
+      "pair": 4,
+      "variant": "handoff-disabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 18708,
+          "instructions": 184561,
+          "cycles": 75134,
+          "thread_requests": 4,
+          "thread_requested_bytes": 282200,
+          "thread_freed_bytes": 0
+        },
+        "1578": {
+          "elapsed_ns": 9667,
+          "instructions": 89528,
+          "cycles": 38530,
+          "thread_requests": 4,
+          "thread_requested_bytes": 121592,
+          "thread_freed_bytes": 0
+        },
+        "847": {
+          "elapsed_ns": 3750,
+          "instructions": 33052,
+          "cycles": 14634,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 11416,
+          "instructions": 111601,
+          "cycles": 45669,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 28375,
+          "instructions": 274089,
+          "cycles": 113664,
+          "thread_requests": 8,
+          "thread_requested_bytes": 403792,
+          "thread_freed_bytes": 0
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 108125,
+          "instructions": 2212882,
+          "cycles": 437880,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 118125,
+          "instructions": 2213859,
+          "cycles": 478392,
+          "thread_requests": 8,
+          "thread_requested_bytes": 308792,
+          "thread_freed_bytes": 0
+        },
+        "1036": {
+          "elapsed_ns": 85250,
+          "instructions": 1755588,
+          "cycles": 345094,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 78833,
+          "instructions": 1273872,
+          "cycles": 319168,
+          "thread_requests": 8,
+          "thread_requested_bytes": 285776,
+          "thread_freed_bytes": 0
+        }
+      }
+    },
+    {
+      "pair": 4,
+      "variant": "handoff-enabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 1625,
+          "instructions": 17889,
+          "cycles": 5586,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "1578": {
+          "elapsed_ns": 1541,
+          "instructions": 17985,
+          "cycles": 5278,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "847": {
+          "elapsed_ns": 4208,
+          "instructions": 35717,
+          "cycles": 15273,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 12792,
+          "instructions": 113784,
+          "cycles": 47677,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 3166,
+          "instructions": 35874,
+          "cycles": 10864,
+          "thread_requests": 6,
+          "thread_requested_bytes": 752,
+          "thread_freed_bytes": 752
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 115334,
+          "instructions": 2148656,
+          "cycles": 435244,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 107458,
+          "instructions": 2049852,
+          "cycles": 405596,
+          "thread_requests": 7,
+          "thread_requested_bytes": 26968,
+          "thread_freed_bytes": 376
+        },
+        "1036": {
+          "elapsed_ns": 89500,
+          "instructions": 1770202,
+          "cycles": 337875,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 75708,
+          "instructions": 1204512,
+          "cycles": 285540,
+          "thread_requests": 7,
+          "thread_requested_bytes": 164560,
+          "thread_freed_bytes": 376
+        }
+      }
+    },
+    {
+      "pair": 5,
+      "variant": "handoff-disabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 20750,
+          "instructions": 185929,
+          "cycles": 83519,
+          "thread_requests": 4,
+          "thread_requested_bytes": 282200,
+          "thread_freed_bytes": 0
+        },
+        "1578": {
+          "elapsed_ns": 8792,
+          "instructions": 89590,
+          "cycles": 35019,
+          "thread_requests": 4,
+          "thread_requested_bytes": 121592,
+          "thread_freed_bytes": 0
+        },
+        "847": {
+          "elapsed_ns": 7333,
+          "instructions": 33091,
+          "cycles": 29025,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 12875,
+          "instructions": 112123,
+          "cycles": 51550,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 29542,
+          "instructions": 275519,
+          "cycles": 118538,
+          "thread_requests": 8,
+          "thread_requested_bytes": 403792,
+          "thread_freed_bytes": 0
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 108417,
+          "instructions": 2212896,
+          "cycles": 438931,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 123333,
+          "instructions": 2215266,
+          "cycles": 499531,
+          "thread_requests": 8,
+          "thread_requested_bytes": 308792,
+          "thread_freed_bytes": 0
+        },
+        "1036": {
+          "elapsed_ns": 84292,
+          "instructions": 1755620,
+          "cycles": 341178,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 80584,
+          "instructions": 1274456,
+          "cycles": 326240,
+          "thread_requests": 8,
+          "thread_requested_bytes": 285776,
+          "thread_freed_bytes": 0
+        }
+      }
+    },
+    {
+      "pair": 5,
+      "variant": "handoff-enabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 1708,
+          "instructions": 17889,
+          "cycles": 5748,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "1578": {
+          "elapsed_ns": 1542,
+          "instructions": 17985,
+          "cycles": 5261,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "847": {
+          "elapsed_ns": 4792,
+          "instructions": 35521,
+          "cycles": 17548,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 12208,
+          "instructions": 112570,
+          "cycles": 45500,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 3250,
+          "instructions": 35874,
+          "cycles": 11009,
+          "thread_requests": 6,
+          "thread_requested_bytes": 752,
+          "thread_freed_bytes": 752
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 114291,
+          "instructions": 2139665,
+          "cycles": 431448,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 107834,
+          "instructions": 2049656,
+          "cycles": 407001,
+          "thread_requests": 7,
+          "thread_requested_bytes": 26968,
+          "thread_freed_bytes": 376
+        },
+        "1036": {
+          "elapsed_ns": 92958,
+          "instructions": 1773302,
+          "cycles": 350858,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 76250,
+          "instructions": 1203298,
+          "cycles": 287560,
+          "thread_requests": 7,
+          "thread_requested_bytes": 164560,
+          "thread_freed_bytes": 376
+        }
+      }
+    },
+    {
+      "pair": 6,
+      "variant": "handoff-enabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 1667,
+          "instructions": 17889,
+          "cycles": 5680,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "1578": {
+          "elapsed_ns": 1666,
+          "instructions": 17985,
+          "cycles": 5779,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "847": {
+          "elapsed_ns": 4625,
+          "instructions": 35679,
+          "cycles": 16853,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 12417,
+          "instructions": 113000,
+          "cycles": 46414,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 3333,
+          "instructions": 35874,
+          "cycles": 11459,
+          "thread_requests": 6,
+          "thread_requested_bytes": 752,
+          "thread_freed_bytes": 752
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 112166,
+          "instructions": 2139599,
+          "cycles": 423272,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 107708,
+          "instructions": 2049814,
+          "cycles": 406409,
+          "thread_requests": 7,
+          "thread_requested_bytes": 26968,
+          "thread_freed_bytes": 376
+        },
+        "1036": {
+          "elapsed_ns": 88500,
+          "instructions": 1769542,
+          "cycles": 334132,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 75250,
+          "instructions": 1203728,
+          "cycles": 283949,
+          "thread_requests": 7,
+          "thread_requested_bytes": 164560,
+          "thread_freed_bytes": 376
+        }
+      }
+    },
+    {
+      "pair": 6,
+      "variant": "handoff-disabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 18583,
+          "instructions": 184834,
+          "cycles": 69845,
+          "thread_requests": 4,
+          "thread_requested_bytes": 282200,
+          "thread_freed_bytes": 0
+        },
+        "1578": {
+          "elapsed_ns": 9292,
+          "instructions": 89566,
+          "cycles": 34422,
+          "thread_requests": 4,
+          "thread_requested_bytes": 121592,
+          "thread_freed_bytes": 0
+        },
+        "847": {
+          "elapsed_ns": 4500,
+          "instructions": 33355,
+          "cycles": 16426,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 12208,
+          "instructions": 111647,
+          "cycles": 45630,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 27875,
+          "instructions": 274400,
+          "cycles": 104267,
+          "thread_requests": 8,
+          "thread_requested_bytes": 403792,
+          "thread_freed_bytes": 0
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 113417,
+          "instructions": 2212753,
+          "cycles": 428089,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 125208,
+          "instructions": 2214435,
+          "cycles": 472793,
+          "thread_requests": 8,
+          "thread_requested_bytes": 308792,
+          "thread_freed_bytes": 0
+        },
+        "1036": {
+          "elapsed_ns": 90333,
+          "instructions": 1762521,
+          "cycles": 340819,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 83666,
+          "instructions": 1273957,
+          "cycles": 315633,
+          "thread_requests": 8,
+          "thread_requested_bytes": 285776,
+          "thread_freed_bytes": 0
+        }
+      }
+    },
+    {
+      "pair": 7,
+      "variant": "handoff-enabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 1667,
+          "instructions": 17884,
+          "cycles": 5681,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "1578": {
+          "elapsed_ns": 1625,
+          "instructions": 17980,
+          "cycles": 5564,
+          "thread_requests": 3,
+          "thread_requested_bytes": 376,
+          "thread_freed_bytes": 376
+        },
+        "847": {
+          "elapsed_ns": 4208,
+          "instructions": 35708,
+          "cycles": 15470,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 12041,
+          "instructions": 112242,
+          "cycles": 44843,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 3292,
+          "instructions": 35864,
+          "cycles": 11245,
+          "thread_requests": 6,
+          "thread_requested_bytes": 752,
+          "thread_freed_bytes": 752
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 113458,
+          "instructions": 2146393,
+          "cycles": 428129,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 107458,
+          "instructions": 2049838,
+          "cycles": 405713,
+          "thread_requests": 7,
+          "thread_requested_bytes": 26968,
+          "thread_freed_bytes": 376
+        },
+        "1036": {
+          "elapsed_ns": 93375,
+          "instructions": 1779927,
+          "cycles": 352172,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 76000,
+          "instructions": 1202965,
+          "cycles": 286559,
+          "thread_requests": 7,
+          "thread_requested_bytes": 164560,
+          "thread_freed_bytes": 376
+        }
+      }
+    },
+    {
+      "pair": 7,
+      "variant": "handoff-disabled-detail",
+      "writes": {
+        "844": {
+          "elapsed_ns": 19250,
+          "instructions": 184341,
+          "cycles": 71951,
+          "thread_requests": 4,
+          "thread_requested_bytes": 282200,
+          "thread_freed_bytes": 0
+        },
+        "1578": {
+          "elapsed_ns": 9542,
+          "instructions": 89570,
+          "cycles": 35447,
+          "thread_requests": 4,
+          "thread_requested_bytes": 121592,
+          "thread_freed_bytes": 0
+        },
+        "847": {
+          "elapsed_ns": 4459,
+          "instructions": 33053,
+          "cycles": 16293,
+          "thread_requests": 4,
+          "thread_requested_bytes": 26592,
+          "thread_freed_bytes": 0
+        },
+        "1581": {
+          "elapsed_ns": 12333,
+          "instructions": 111551,
+          "cycles": 46184,
+          "thread_requests": 4,
+          "thread_requested_bytes": 164184,
+          "thread_freed_bytes": 0
+        },
+        "postings_combined": {
+          "elapsed_ns": 28792,
+          "instructions": 273911,
+          "cycles": 107398,
+          "thread_requests": 8,
+          "thread_requested_bytes": 403792,
+          "thread_freed_bytes": 0
+        }
+      },
+      "native_roots": {
+        "271": {
+          "elapsed_ns": 113625,
+          "instructions": 2212627,
+          "cycles": 428833,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "795": {
+          "elapsed_ns": 125500,
+          "instructions": 2213640,
+          "cycles": 473750,
+          "thread_requests": 8,
+          "thread_requested_bytes": 308792,
+          "thread_freed_bytes": 0
+        },
+        "1036": {
+          "elapsed_ns": 90708,
+          "instructions": 1755561,
+          "cycles": 342159,
+          "thread_requests": 13,
+          "thread_requested_bytes": 1208,
+          "thread_freed_bytes": 1208
+        },
+        "1529": {
+          "elapsed_ns": 83167,
+          "instructions": 1273864,
+          "cycles": 313958,
+          "thread_requests": 8,
+          "thread_requested_bytes": 285776,
+          "thread_freed_bytes": 0
+        }
+      }
+    }
+  ],
+  "already_implemented_geometry": "numeric_words::linear_address already uses schema-certified unit dimensions; schema22 has Constant(1), so treating generic matrix division as a new saving for these arrays would be incorrect."
+}

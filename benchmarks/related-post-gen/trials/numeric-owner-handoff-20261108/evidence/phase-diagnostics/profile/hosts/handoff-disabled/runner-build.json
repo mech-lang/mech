@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/runtime/build.json",
+    "--source",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/runner.rs",
+    "--out",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/runner-profile",
+    "--bundle",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/build",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 1.76774433394894,
+  "stdout": "warning: static `LINKED_IDENTITY` is never used\n --> /private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/build/linked.rs:2:124\n  |\n2 | ...0fefaffe526e3456b405dd778ec803875e5f510bf2bfbf6\"] static LINKED_IDENTITY:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTI...\n  |                                                             ^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/build/linked.rs:3:146\n  |\n3 | ...8ec803875e5f510bf2bfbf6_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA` is never used\n --> /private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/build/linked.rs:4:143\n  |\n4 | ...778ec803875e5f510bf2bfbf6_native_metadata_v1\"] static LINKED_NATIVE_METADATA:[u8;4742346];\n  |                                                          ^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA_BINDING` is never used\n --> /private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/build/linked.rs:5:151\n  |\n5 | ...5f510bf2bfbf6_native_metadata_binding_v1\"] static LINKED_NATIVE_METADATA_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMA...\n  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: function `linked_entry` is never used\n --> /private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/build/linked.rs:6:52\n  |\n6 |  #[link_name=\"mech_canonical_program_entry_v1\"] fn linked_entry(frame:*mut std::ffi::c_void)->u64;\n  |                                                    ^^^^^^^^^^^^\n\nwarning: 5 warnings emitted\n\n{\"seconds\": 1.2469435830134898, \"exit\": 0}\n",
+  "stderr": "",
+  "diagnostic_only": true,
+  "all_timings_ineligible": true
+}

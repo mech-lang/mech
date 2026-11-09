@@ -1,0 +1,25 @@
+{
+  "parent": "IR305 and IR307, whose original 133 nontiming records are identical",
+  "candidate": "IR308",
+  "all_nontiming_fields_exact": true,
+  "including_allocation_bytes_and_work": true,
+  "rows": 133,
+  "cases": [
+    {
+      "kind": "scalar",
+      "rows": 128,
+      "changes": [],
+      "all_nontiming_fields_exact": true,
+      "receipt": "/private/tmp/mech-related-numeric-owner-handoff-regressions-20261108-v1/scalar-run.json"
+    },
+    {
+      "kind": "one-kib",
+      "rows": 5,
+      "changes": [],
+      "all_nontiming_fields_exact": true,
+      "receipt": "/private/tmp/mech-related-numeric-owner-handoff-regressions-20261108-v1/one-kib-run.json"
+    }
+  ],
+  "compiler_build": "/private/tmp/mech-related-numeric-owner-handoff-opt-20261108-v1/build.json",
+  "timings_ineligible": true
+}

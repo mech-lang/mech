@@ -1,0 +1,18 @@
+{
+  "candidate": "/private/tmp/mech-related-numeric-owner-handoff-compiler-20261108",
+  "control": "/private/tmp/mech-related-numeric-owner-handoff-emission-control-compiler-20261108",
+  "copied_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_boundary.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/protocol/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_writes.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/matrix_map_keys_actual_tests.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree_owner_handoff.rs"
+  ],
+  "only_extra_change": "tree_owner_handoff is always false during native emission; runtime-only library and Engine will be the exact candidate libraries",
+  "metadata_typed_IR": 308
+}

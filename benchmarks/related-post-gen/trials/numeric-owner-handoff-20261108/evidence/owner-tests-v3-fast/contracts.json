@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/owner-tests-v3-fast/gpu-tests",
+    "numeric_tree_owned_handoff_",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-numeric-owner-handoff-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 101,
+  "seconds": 2.507653667125851,
+  "stdout": "\nrunning 4 tests\ntest native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_is_a_bound_emission_request ... FAILED\ntest native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_keeps_copy_denial_and_recovers ... ok\ntest native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_preserves_finite_admission_and_atomic_retry ... {\"dimension\":\"control\",\"exact_selected_fragments\":0,\"minimum\":50660123,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"library\",\"exact_selected_fragments\":0,\"minimum\":20947856,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"comparison\",\"exact_selected_fragments\":0,\"minimum\":10,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"memory\",\"exact_selected_fragments\":0,\"minimum\":2487549,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"nodes\",\"exact_selected_fragments\":0,\"minimum\":5147,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"transport\",\"exact_selected_fragments\":0,\"minimum\":13208,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"control\",\"exact_selected_fragments\":0,\"minimum\":50660123,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"library\",\"exact_selected_fragments\":0,\"minimum\":20947856,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"comparison\",\"exact_selected_fragments\":0,\"minimum\":10,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"memory\",\"exact_selected_fragments\":0,\"minimum\":2487549,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"nodes\",\"exact_selected_fragments\":0,\"minimum\":5147,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"transport\",\"exact_selected_fragments\":0,\"minimum\":13208,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\nok\ntest native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_reuses_dead_pins_and_preserves_live_aliases_errors_and_retry ... FAILED\n\nfailures:\n\nfailures:\n    native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_is_a_bound_emission_request\n    native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_reuses_dead_pins_and_preserves_live_aliases_errors_and_retry\n\ntest result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 998 filtered out; finished in 0.83s\n\n",
+  "stderr": "\nthread 'native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_is_a_bound_emission_request' (23269463) panicked at /private/tmp/mech-related-numeric-owner-handoff-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree_owner_handoff.rs:262:9:\nassertion failed: count(native.metadata()) > 0\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\nthread 'native_artifact::program::runtime::composition_tests::numeric_tree_owner_handoff::numeric_tree_owned_handoff_reuses_dead_pins_and_preserves_live_aliases_errors_and_retry' (23269479) panicked at /private/tmp/mech-related-numeric-owner-handoff-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree_owner_handoff.rs:81:17:\nexercise the selected tree rather than a phase\n",
+  "timing_eligible": false
+}

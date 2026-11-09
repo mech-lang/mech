@@ -1,0 +1,8 @@
+fn linked_catalog() -> Result<mech_core::FunctionCatalog,String> {
+    let mut builder = mech_core::FunctionCatalogBuilder::new();
+    mech_engine::linked_factories::ACCESS_SCALAR.install(&mut builder).map_err(|e| format!("{e:?}"))?;
+    mech_engine::linked_factories::CORE_COMPOSITE_PACK.install(&mut builder).map_err(|e| format!("{e:?}"))?;
+    mech_engine::linked_factories::CORE_ASSIGN_INDEXED_AXIS.install(&mut builder).map_err(|e| format!("{e:?}"))?;
+    mech_engine::linked_factories::RANGE_INCLUSIVE.install(&mut builder).map_err(|e| format!("{e:?}"))?;
+    builder.build().map_err(|e| format!("{e:?}"))
+}

@@ -1,0 +1,14 @@
+{
+  "basis": "native-image-libraries",
+  "factories": [
+    "mech_engine::linked_factories::CORE_COMPOSITE_PACK",
+    "mech_engine::linked_factories::CORE_ASSIGN_INDEXED_AXIS",
+    "mech_engine::linked_factories::RANGE_INCLUSIVE"
+  ],
+  "missing": [],
+  "operations": [
+    "core/composite-pack",
+    "core/assign/indexed-axis",
+    "range/inclusive"
+  ]
+}

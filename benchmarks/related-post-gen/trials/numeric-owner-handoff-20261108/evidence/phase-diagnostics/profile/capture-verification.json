@@ -1,0 +1,10 @@
+{
+  "exact_outputs": 64,
+  "instrumented_captures": 40,
+  "ordinary_controls": 24,
+  "all_coarse_points_balanced": true,
+  "all_outputs_qualified": true,
+  "all_executable_hashes_unchanged": true,
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false
+}

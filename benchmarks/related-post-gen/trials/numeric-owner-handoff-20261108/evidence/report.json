@@ -1,0 +1,5080 @@
+{
+  "schema": "mech.related-post-gen.numeric-owner-handoff.v1",
+  "source_commit": "4482c116e1ef1eba5e18dac5d84b64211152e734",
+  "branch": "codex/related-numeric-owner-handoff-20261108",
+  "backend": "Cranelift",
+  "typed_IR": 308,
+  "work_policy": 125,
+  "ABI": 41,
+  "image": 11,
+  "source_algorithm_unchanged": true,
+  "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+  "query_workers": 4,
+  "change": "Compiled numeric trees request the existing same-plan dead canonical pin handoff at their cold first write. Runtime closes the current loan, validates the source-site proof, retires only matching current frozen identities, and delegates actual consuming transfer to unchanged Core exclusivity. No host loop kernel and no bounds elision.",
+  "diagnosis": {
+    "production_Object_unchanged": true,
+    "exact_full5000_output": true,
+    "timings_eligible": false,
+    "instrumentation_patch_sha256": "14c7710e2be356970e205b0e993272aa351ceeababf23d9f2cea090d5148cecc",
+    "selected": [
+      {
+        "site": "340",
+        "region": "3",
+        "header": "272",
+        "array": "2",
+        "phase": "false",
+        "data": "43735710896",
+        "arena_slots": [],
+        "frame_lanes": [],
+        "candidates": [
+          178,
+          235,
+          277,
+          433,
+          511
+        ],
+        "core": {
+          "data": "43735710896",
+          "wrapper_owners": "1",
+          "data_owners": "1",
+          "same_budget": "true",
+          "physical_ticket": "false"
+        },
+        "dead_matching_slots": [],
+        "live_matching_slots": []
+      },
+      {
+        "site": "847",
+        "region": "8",
+        "header": "796",
+        "array": "0",
+        "phase": "false",
+        "data": "43735710896",
+        "arena_slots": [
+          541,
+          544
+        ],
+        "frame_lanes": [],
+        "candidates": [
+          535,
+          539,
+          544,
+          547,
+          554,
+          556,
+          571,
+          580,
+          592,
+          602,
+          617,
+          624
+        ],
+        "core": {
+          "data": "43735710896",
+          "wrapper_owners": "3",
+          "data_owners": "1",
+          "same_budget": "true",
+          "physical_ticket": "false"
+        },
+        "dead_matching_slots": [
+          544
+        ],
+        "live_matching_slots": [
+          541
+        ]
+      },
+      {
+        "site": "844",
+        "region": "8",
+        "header": "796",
+        "array": "1",
+        "phase": "false",
+        "data": "43735711056",
+        "arena_slots": [
+          563
+        ],
+        "frame_lanes": [],
+        "candidates": [
+          561,
+          562,
+          563,
+          572,
+          593,
+          603,
+          618,
+          625
+        ],
+        "core": {
+          "data": "43735711056",
+          "wrapper_owners": "2",
+          "data_owners": "1",
+          "same_budget": "true",
+          "physical_ticket": "false"
+        },
+        "dead_matching_slots": [
+          563
+        ],
+        "live_matching_slots": []
+      },
+      {
+        "site": "1105",
+        "region": "12",
+        "header": "1037",
+        "array": "2",
+        "phase": "false",
+        "data": "43735711536",
+        "arena_slots": [],
+        "frame_lanes": [],
+        "candidates": [
+          694,
+          751,
+          864,
+          974
+        ],
+        "core": {
+          "data": "43735711536",
+          "wrapper_owners": "1",
+          "data_owners": "1",
+          "same_budget": "true",
+          "physical_ticket": "false"
+        },
+        "dead_matching_slots": [],
+        "live_matching_slots": []
+      },
+      {
+        "site": "1581",
+        "region": "18",
+        "header": "1530",
+        "array": "0",
+        "phase": "false",
+        "data": "43735711536",
+        "arena_slots": [
+          1007,
+          1010
+        ],
+        "frame_lanes": [],
+        "candidates": [
+          1001,
+          1005,
+          1010,
+          1013,
+          1020,
+          1022,
+          1037,
+          1046,
+          1058,
+          1068,
+          1083,
+          1090
+        ],
+        "core": {
+          "data": "43735711536",
+          "wrapper_owners": "3",
+          "data_owners": "1",
+          "same_budget": "true",
+          "physical_ticket": "false"
+        },
+        "dead_matching_slots": [
+          1010
+        ],
+        "live_matching_slots": [
+          1007
+        ]
+      },
+      {
+        "site": "1578",
+        "region": "18",
+        "header": "1530",
+        "array": "1",
+        "phase": "false",
+        "data": "43732647952",
+        "arena_slots": [
+          1029
+        ],
+        "frame_lanes": [],
+        "candidates": [
+          1027,
+          1028,
+          1029,
+          1038,
+          1059,
+          1069,
+          1084,
+          1091
+        ],
+        "core": {
+          "data": "43732647952",
+          "wrapper_owners": "2",
+          "data_owners": "1",
+          "same_budget": "true",
+          "physical_ticket": "false"
+        },
+        "dead_matching_slots": [
+          1029
+        ],
+        "live_matching_slots": []
+      }
+    ],
+    "conclusion": "At each postings first write, the sole extra owner is a matching canonical arena slot certified dead by the same-plan last-use proof. Count banks are already exclusive. Positions retain a live canonical prefix root and must still copy."
+  },
+  "selection": {
+    "selected": true,
+    "compiler_foundation": "IR308",
+    "established_processing_reference": "IR308",
+    "previous_established_reference": "IR305",
+    "reason": "Both independently randomized cohorts show a processing reduction versus IR307, IR305 and the exact same-runtime emission ablation; every paired 95% interval is below zero. Exact reuse and resource gains are separately verified.",
+    "whole_process_gate": false,
+    "all_first_and_adverse_samples_retained": true,
+    "no_unchanged_favorable_reruns": true,
+    "comparisons": {
+      "first": {
+        "mech-ir307-fixed-key-native-loops-4": {
+          "candidate": "mech-ir308-numeric-owner-handoff-4",
+          "baseline": "mech-ir307-fixed-key-native-loops-4",
+          "wins": 28,
+          "pairs": 31,
+          "median_paired_relative_change": -0.017979716837908777,
+          "two_sided_95_interval": [
+            -0.021851082003594535,
+            -0.013513513513513487
+          ],
+          "all_pair_changes": [
+            0.025649365874453656,
+            -0.017979716837908777,
+            -0.010791622293219838,
+            -0.01948040313549837,
+            -0.015164089784510892,
+            -0.015012282930961462,
+            -0.02688460711983376,
+            -0.0386100254885301,
+            -0.008675002837857604,
+            -0.04073154662727185,
+            -0.007227271352744147,
+            -0.03283495530077951,
+            -0.010598446623377611,
+            0.0076483959142570335,
+            -0.018002397236127732,
+            -0.023973361797602566,
+            -0.013513513513513487,
+            -0.03379188712522052,
+            -0.02132605878214955,
+            -0.03133754927829624,
+            0.02202952187821383,
+            -0.02159947911059157,
+            -0.044891566319033904,
+            -0.013861339889647106,
+            -0.01603708568969686,
+            -0.021851082003594535,
+            -0.008148541114058272,
+            -0.022024535476002582,
+            -0.010917795456174217,
+            -0.012518379256817869,
+            -0.023937054370197552
+          ]
+        },
+        "mech-ir305-native-dictionary-seed-frames-4": {
+          "candidate": "mech-ir308-numeric-owner-handoff-4",
+          "baseline": "mech-ir305-native-dictionary-seed-frames-4",
+          "wins": 30,
+          "pairs": 31,
+          "median_paired_relative_change": -0.03331077725146914,
+          "two_sided_95_interval": [
+            -0.03732185692112333,
+            -0.024048760997926077
+          ],
+          "all_pair_changes": [
+            0.003423686287070682,
+            -0.02062350874374075,
+            -0.024048760997926077,
+            -0.010313892728733953,
+            -0.021519604429277805,
+            -0.02503802490722251,
+            -0.0619366371067438,
+            -0.03808752531111481,
+            -0.03527334315153019,
+            -0.036149382730693014,
+            -0.03331077725146914,
+            -0.041259679837027385,
+            -0.013942103746855339,
+            -0.010851009744386353,
+            -0.019316152654555663,
+            -0.045988679027832546,
+            -0.011415201361315908,
+            -0.053381121367377715,
+            -0.04882241230271289,
+            -0.03689366918799375,
+            -0.0039554588552616066,
+            -0.027554496664890626,
+            -0.03732185692112333,
+            -0.02859517284258206,
+            -0.039305889343135614,
+            -0.03573263070309263,
+            -0.028712621613318667,
+            -0.039887491041203704,
+            -0.04766050426848378,
+            -0.020990903321345344,
+            -0.06332972209577714
+          ]
+        },
+        "mech-ir308-owner-handoff-disabled-4": {
+          "candidate": "mech-ir308-numeric-owner-handoff-4",
+          "baseline": "mech-ir308-owner-handoff-disabled-4",
+          "wins": 30,
+          "pairs": 31,
+          "median_paired_relative_change": -0.02398510775399154,
+          "two_sided_95_interval": [
+            -0.03199850678132665,
+            -0.01613091726366067
+          ],
+          "all_pair_changes": [
+            0.018988743724807744,
+            -0.014091994704120148,
+            -0.03742152494869666,
+            -0.004193717328098812,
+            -0.0052866360365748655,
+            -0.02856708427598975,
+            -0.04766743550531649,
+            -0.033684030742954785,
+            -0.008581125061825512,
+            -0.030628133210253483,
+            -0.00776962007270654,
+            -0.036033548128863946,
+            -0.01160633837845515,
+            -0.01613091726366067,
+            -0.017356123381435662,
+            -0.03199850678132665,
+            -0.008321479374110874,
+            -0.023921895507189928,
+            -0.033644697129220136,
+            -0.03315106277102431,
+            -0.02578821579056434,
+            -0.02541629452759797,
+            -0.04212004212004228,
+            -0.01979464170447154,
+            -0.0361454090881792,
+            -0.03329703793999361,
+            -0.010631006864988524,
+            -0.02398510775399154,
+            -0.02116008227533861,
+            -0.00996020822933752,
+            -0.0539794705648452
+          ]
+        }
+      },
+      "confirmation": {
+        "mech-ir307-fixed-key-native-loops-4": {
+          "candidate": "mech-ir308-numeric-owner-handoff-4",
+          "baseline": "mech-ir307-fixed-key-native-loops-4",
+          "wins": 29,
+          "pairs": 31,
+          "median_paired_relative_change": -0.023181624840493464,
+          "two_sided_95_interval": [
+            -0.02615238769013095,
+            -0.018475895938909193
+          ],
+          "all_pair_changes": [
+            -0.005412392095918039,
+            -0.0033791886841180174,
+            -0.35468377797935224,
+            -0.023400638932321915,
+            0.001035663344683968,
+            -0.033739747436537404,
+            -0.0241056063788051,
+            -0.0356223212391259,
+            -0.052098390356072666,
+            -0.01386013203812042,
+            -0.053416017797552784,
+            -0.023181624840493464,
+            -0.02822829570317098,
+            -0.030075567485230437,
+            -0.02128244836472104,
+            -0.021692914870781954,
+            -0.006858612559834332,
+            -0.015017149283103604,
+            -0.008990001392371383,
+            -0.026318711449302312,
+            0.0915295627986592,
+            -0.024296390196857476,
+            -0.022764829617164528,
+            -0.017013946800862767,
+            -0.018475895938909193,
+            -0.034786517057720956,
+            -0.02615238769013095,
+            -0.025130903704644325,
+            -0.020333001368288084,
+            -0.03183856093397064,
+            -0.015554242961212772
+          ]
+        },
+        "mech-ir305-native-dictionary-seed-frames-4": {
+          "candidate": "mech-ir308-numeric-owner-handoff-4",
+          "baseline": "mech-ir305-native-dictionary-seed-frames-4",
+          "wins": 28,
+          "pairs": 31,
+          "median_paired_relative_change": -0.03608909326825471,
+          "two_sided_95_interval": [
+            -0.04126376797466347,
+            -0.028603317388655847
+          ],
+          "all_pair_changes": [
+            0.0003678275106728801,
+            0.002530760836736423,
+            -0.041082376153900424,
+            -0.03669160648897962,
+            -0.02365107477726003,
+            -0.05695102553369602,
+            -0.16890612549608175,
+            -0.05637813148788928,
+            -0.04244531028707765,
+            -0.02783455326905171,
+            -0.05462113923741263,
+            -0.030944510865743124,
+            -0.04631109908326658,
+            -0.033575859178541556,
+            -0.02951653064047588,
+            -0.037439153784259216,
+            -0.018798745959717977,
+            -0.024886167548009985,
+            -0.026561871261478354,
+            -0.022882319499715753,
+            0.07190756134897125,
+            -0.043558597569492985,
+            -0.00992200042622704,
+            -0.037405179031338,
+            -0.04126376797466347,
+            -0.048272177397946536,
+            -0.028603317388655847,
+            -0.04867929746922972,
+            -0.03608909326825471,
+            -0.06130276243093924,
+            -0.03367718785538898
+          ]
+        },
+        "mech-ir308-owner-handoff-disabled-4": {
+          "candidate": "mech-ir308-numeric-owner-handoff-4",
+          "baseline": "mech-ir308-owner-handoff-disabled-4",
+          "wins": 30,
+          "pairs": 31,
+          "median_paired_relative_change": -0.025844367344048713,
+          "two_sided_95_interval": [
+            -0.031080164589572856,
+            -0.019198754687610564
+          ],
+          "all_pair_changes": [
+            -0.0335001603449806,
+            -0.019198754687610564,
+            -0.026771507577278975,
+            -0.03278108184650241,
+            -0.020591461690698365,
+            -0.028996642276287177,
+            -0.029524036976750323,
+            -0.04739077435894856,
+            -0.053703092574670985,
+            -0.0061481179127040875,
+            -0.04110504384432845,
+            -0.01875300519799561,
+            -0.027700332508448944,
+            -0.006606288524955595,
+            -0.014607510929297463,
+            -0.04706145622091085,
+            -0.013927170353320695,
+            -0.022982710540992768,
+            -0.021446272681099443,
+            -0.01729559748427667,
+            0.062038803258994246,
+            -0.054868490868042574,
+            -0.01911971285804759,
+            -0.032911737629524374,
+            -0.006101342226386919,
+            -0.031080164589572856,
+            -0.0389799487170609,
+            -0.025844367344048713,
+            -0.022095914742451206,
+            -0.04384796939488722,
+            -0.014245014245014231
+          ]
+        }
+      }
+    },
+    "goal_complete": false
+  },
+  "cohorts": {
+    "first": {
+      "independent_confirmation": false,
+      "all_first_and_adverse_samples_retained": true,
+      "latency_exact_outputs": 1147,
+      "resource_exact_outputs": 266,
+      "fastest_processing_Rust": {
+        "variant": "rust-ordered-mask-tables256",
+        "median_seconds": 0.001548667,
+        "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+        "eligible_variants": [
+          "rust",
+          "rust-mech-control-streaming",
+          "rust-mech-control-u32-casts",
+          "rust-mech-control-u8-ids-u32",
+          "rust-ordered-scan-only",
+          "rust-ordered-ordered",
+          "rust-ordered-mask-reuse",
+          "rust-ordered-ordered-mask",
+          "rust-ordered-ordered-mask-tables",
+          "rust-apple-m3",
+          "rust-mech-control-streaming-apple-m3",
+          "rust-mech-control-u32-casts-apple-m3",
+          "rust-mech-control-u8-ids-u32-apple-m3",
+          "rust-ordered-scan-only-apple-m3",
+          "rust-ordered-ordered-apple-m3",
+          "rust-ordered-mask-reuse-apple-m3",
+          "rust-ordered-ordered-mask-apple-m3",
+          "rust-ordered-ordered-mask-tables-apple-m3",
+          "rust-ordered-mask-tables256",
+          "rust-ordered-mask-tables256-apple-m3"
+        ]
+      },
+      "fastest_whole_Rust": {
+        "variant": "rust-ordered-scan-only",
+        "median_seconds": 0.02428037510253489,
+        "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+      },
+      "medians": {
+        "mech-ir295-histogram-reuse-4": {
+          "post_json_seconds": 0.001922709,
+          "wall_seconds": 0.03806387493386865,
+          "compile_or_restore_seconds": 0.007996666,
+          "times_fastest_processing_Rust": 1.2415251309674706,
+          "times_fastest_whole_Rust": 1.5676806792780869
+        },
+        "mech-ir297-closed-constructors-4": {
+          "post_json_seconds": 0.001924375,
+          "wall_seconds": 0.037842375226318836,
+          "compile_or_restore_seconds": 0.0080125,
+          "times_fastest_processing_Rust": 1.2426008948340734,
+          "times_fastest_whole_Rust": 1.5585580974969395
+        },
+        "mech-ir302-private-write-first-4": {
+          "post_json_seconds": 0.001908041,
+          "wall_seconds": 0.03727387497201562,
+          "compile_or_restore_seconds": 0.008372958,
+          "times_fastest_processing_Rust": 1.2320537597817993,
+          "times_fastest_whole_Rust": 1.5351441159623682
+        },
+        "mech-ir303-borrowed-map-key-views-4": {
+          "post_json_seconds": 0.001885542,
+          "wall_seconds": 0.038677250035107136,
+          "compile_or_restore_seconds": 0.008592916,
+          "times_fastest_processing_Rust": 1.2175257818498102,
+          "times_fastest_whole_Rust": 1.592942854950754
+        },
+        "mech-ir303-canonical-map-key-control-4": {
+          "post_json_seconds": 0.001908291,
+          "wall_seconds": 0.038311250042170286,
+          "compile_or_restore_seconds": 0.008588,
+          "times_fastest_processing_Rust": 1.2322151889334503,
+          "times_fastest_whole_Rust": 1.5778689530282652
+        },
+        "mech-ir304-generic-native-dictionary-4": {
+          "post_json_seconds": 0.00186625,
+          "wall_seconds": 0.04172304109670222,
+          "compile_or_restore_seconds": 0.012195875,
+          "times_fastest_processing_Rust": 1.2050686170752007,
+          "times_fastest_whole_Rust": 1.7183853593903622
+        },
+        "mech-ir304-canonical-dictionary-control-4": {
+          "post_json_seconds": 0.001879709,
+          "wall_seconds": 0.04151324997656047,
+          "compile_or_restore_seconds": 0.012181542,
+          "times_fastest_processing_Rust": 1.2137593168834875,
+          "times_fastest_whole_Rust": 1.7097450019306522
+        },
+        "mech-ir305-native-dictionary-seed-frames-4": {
+          "post_json_seconds": 0.001782084,
+          "wall_seconds": 0.04676679102703929,
+          "compile_or_restore_seconds": 0.015771291,
+          "times_fastest_processing_Rust": 1.1507212331637466,
+          "times_fastest_whole_Rust": 1.926114849113546
+        },
+        "mech-ir305-canonical-seed-control-4": {
+          "post_json_seconds": 0.001864084,
+          "wall_seconds": 0.0469805421307683,
+          "compile_or_restore_seconds": 0.015737,
+          "times_fastest_processing_Rust": 1.2036699949052958,
+          "times_fastest_whole_Rust": 1.9349183005769748
+        },
+        "mech-ir306-borrowed-dictionary-values-4": {
+          "post_json_seconds": 0.001788333,
+          "wall_seconds": 0.0478558752220124,
+          "compile_or_restore_seconds": 0.01873825,
+          "times_fastest_processing_Rust": 1.1547563162384167,
+          "times_fastest_whole_Rust": 1.9709693536413369
+        },
+        "mech-ir306-owned-dictionary-values-control-4": {
+          "post_json_seconds": 0.001778625,
+          "wall_seconds": 0.05001916689798236,
+          "compile_or_restore_seconds": 0.018748,
+          "times_fastest_processing_Rust": 1.1484876994215025,
+          "times_fastest_whole_Rust": 2.0600656574189546
+        },
+        "mech-ir307-fixed-key-native-loops-4": {
+          "post_json_seconds": 0.001760625,
+          "wall_seconds": 0.0528583328705281,
+          "compile_or_restore_seconds": 0.021944292,
+          "times_fastest_processing_Rust": 1.1368648005026258,
+          "times_fastest_whole_Rust": 2.1769981990521083
+        },
+        "mech-ir307-key-loop-callback-control-4": {
+          "post_json_seconds": 0.001772958,
+          "wall_seconds": 0.05055183405056596,
+          "compile_or_restore_seconds": 0.021896291,
+          "times_fastest_processing_Rust": 1.1448284234118762,
+          "times_fastest_whole_Rust": 2.082003833840619
+        },
+        "mech-ir308-numeric-owner-handoff-4": {
+          "post_json_seconds": 0.001733292,
+          "wall_seconds": 0.05138858291320503,
+          "compile_or_restore_seconds": 0.021904375,
+          "times_fastest_processing_Rust": 1.1192154284943114,
+          "times_fastest_whole_Rust": 2.1164657751864806
+        },
+        "mech-ir308-owner-handoff-disabled-4": {
+          "post_json_seconds": 0.001766084,
+          "wall_seconds": 0.0502921671140939,
+          "compile_or_restore_seconds": 0.021900542,
+          "times_fastest_processing_Rust": 1.1403897674580783,
+          "times_fastest_whole_Rust": 2.0713093146919035
+        }
+      },
+      "resource_medians": {
+        "rust-ordered-scan-only-instrumented": {
+          "post_JSON": {
+            "allocation_requests": 58,
+            "requested_allocation_bytes": 6825713,
+            "peak_live_requested_heap_bytes": 7663209,
+            "peak_additional_live_requested_heap_bytes": 5608124,
+            "instructions_retired": 18923881,
+            "cycles": 6090378
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 41555501,
+            "instructions_retired": 167349293,
+            "involuntary_context_switches": 5,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 517,
+            "peak_physical_footprint_bytes": 5488976,
+            "peak_resident_bytes": 6062080,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.0,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.02
+          }
+        },
+        "rust-ordered-mask-tables256-instrumented": {
+          "post_JSON": {
+            "allocation_requests": 58,
+            "requested_allocation_bytes": 6825713,
+            "peak_live_requested_heap_bytes": 7703209,
+            "peak_additional_live_requested_heap_bytes": 5648124,
+            "instructions_retired": 17669321,
+            "cycles": 5940043
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 41167754,
+            "instructions_retired": 167084092,
+            "involuntary_context_switches": 5,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 520,
+            "peak_physical_footprint_bytes": 5538128,
+            "peak_resident_bytes": 6111232,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.0,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.02
+          }
+        },
+        "mech-ir295-histogram-reuse-4-instrumented": {
+          "restore": {
+            "allocation_requests": 28643,
+            "requested_allocation_bytes": 13662080,
+            "peak_live_requested_heap_bytes": 7655102,
+            "peak_additional_live_requested_heap_bytes": 7648735,
+            "instructions_retired": 124167246,
+            "cycles": 30519588
+          },
+          "post_JSON": {
+            "allocation_requests": 1989,
+            "requested_allocation_bytes": 7873166,
+            "peak_live_requested_heap_bytes": 14106625,
+            "peak_additional_live_requested_heap_bytes": 5763262,
+            "instructions_retired": 34677984,
+            "cycles": 11193832
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 81429717,
+            "instructions_retired": 319781008,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1833,
+            "peak_physical_footprint_bytes": 16613736,
+            "peak_resident_bytes": 27344896,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.01,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir297-closed-constructors-4-instrumented": {
+          "restore": {
+            "allocation_requests": 28643,
+            "requested_allocation_bytes": 13662080,
+            "peak_live_requested_heap_bytes": 7655101,
+            "peak_additional_live_requested_heap_bytes": 7648735,
+            "instructions_retired": 124082332,
+            "cycles": 30482228
+          },
+          "post_JSON": {
+            "allocation_requests": 1973,
+            "requested_allocation_bytes": 7871350,
+            "peak_live_requested_heap_bytes": 14106624,
+            "peak_additional_live_requested_heap_bytes": 5763262,
+            "instructions_retired": 34682380,
+            "cycles": 11207217
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 81263388,
+            "instructions_retired": 319034559,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1828,
+            "peak_physical_footprint_bytes": 16630120,
+            "peak_resident_bytes": 27295744,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.01,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir302-private-write-first-4-instrumented": {
+          "restore": {
+            "allocation_requests": 37758,
+            "requested_allocation_bytes": 15417036,
+            "peak_live_requested_heap_bytes": 7818601,
+            "peak_additional_live_requested_heap_bytes": 7812245,
+            "instructions_retired": 131243076,
+            "cycles": 32166068
+          },
+          "post_JSON": {
+            "allocation_requests": 1751,
+            "requested_allocation_bytes": 7861191,
+            "peak_live_requested_heap_bytes": 14107478,
+            "peak_additional_live_requested_heap_bytes": 5763966,
+            "instructions_retired": 34358092,
+            "cycles": 11282098
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 84571357,
+            "instructions_retired": 327013176,
+            "involuntary_context_switches": 16,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1861,
+            "peak_physical_footprint_bytes": 16990568,
+            "peak_resident_bytes": 27787264,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.01,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir303-borrowed-map-key-views-4-instrumented": {
+          "restore": {
+            "allocation_requests": 42884,
+            "requested_allocation_bytes": 16942620,
+            "peak_live_requested_heap_bytes": 7818607,
+            "peak_additional_live_requested_heap_bytes": 7812245,
+            "instructions_retired": 135194209,
+            "cycles": 32809729
+          },
+          "post_JSON": {
+            "allocation_requests": 1291,
+            "requested_allocation_bytes": 7807730,
+            "peak_live_requested_heap_bytes": 14109931,
+            "peak_additional_live_requested_heap_bytes": 5765741,
+            "instructions_retired": 33898878,
+            "cycles": 11062238
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 84439739,
+            "instructions_retired": 330281869,
+            "involuntary_context_switches": 14,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1858,
+            "peak_physical_footprint_bytes": 16990568,
+            "peak_resident_bytes": 27738112,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.01,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir303-canonical-map-key-control-4-instrumented": {
+          "restore": {
+            "allocation_requests": 42884,
+            "requested_allocation_bytes": 16942620,
+            "peak_live_requested_heap_bytes": 7818616,
+            "peak_additional_live_requested_heap_bytes": 7812245,
+            "instructions_retired": 135122382,
+            "cycles": 32677311
+          },
+          "post_JSON": {
+            "allocation_requests": 1751,
+            "requested_allocation_bytes": 7862359,
+            "peak_live_requested_heap_bytes": 14109333,
+            "peak_additional_live_requested_heap_bytes": 5765134,
+            "instructions_retired": 34295282,
+            "cycles": 10983222
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 86083796,
+            "instructions_retired": 329085587,
+            "involuntary_context_switches": 14,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1856,
+            "peak_physical_footprint_bytes": 16974184,
+            "peak_resident_bytes": 27705344,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.01,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir304-generic-native-dictionary-4-instrumented": {
+          "restore": {
+            "allocation_requests": 76874,
+            "requested_allocation_bytes": 61816714,
+            "peak_live_requested_heap_bytes": 9239185,
+            "peak_additional_live_requested_heap_bytes": 9232817,
+            "instructions_retired": 191155840,
+            "cycles": 46450639
+          },
+          "post_JSON": {
+            "allocation_requests": 1145,
+            "requested_allocation_bytes": 7800403,
+            "peak_live_requested_heap_bytes": 14107890,
+            "peak_additional_live_requested_heap_bytes": 5763534,
+            "instructions_retired": 33563421,
+            "cycles": 10984493
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 96192950,
+            "instructions_retired": 383200236,
+            "involuntary_context_switches": 14,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1897,
+            "peak_physical_footprint_bytes": 17514856,
+            "peak_resident_bytes": 28360704,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir304-canonical-dictionary-control-4-instrumented": {
+          "restore": {
+            "allocation_requests": 76874,
+            "requested_allocation_bytes": 61816714,
+            "peak_live_requested_heap_bytes": 9239194,
+            "peak_additional_live_requested_heap_bytes": 9232817,
+            "instructions_retired": 191142968,
+            "cycles": 46520168
+          },
+          "post_JSON": {
+            "allocation_requests": 1292,
+            "requested_allocation_bytes": 7809714,
+            "peak_live_requested_heap_bytes": 14111162,
+            "peak_additional_live_requested_heap_bytes": 5766797,
+            "instructions_retired": 33821751,
+            "cycles": 11148608
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 97502470,
+            "instructions_retired": 385093807,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1896,
+            "peak_physical_footprint_bytes": 17482088,
+            "peak_resident_bytes": 28344320,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir305-native-dictionary-seed-frames-4-instrumented": {
+          "restore": {
+            "allocation_requests": 110856,
+            "requested_allocation_bytes": 106682280,
+            "peak_live_requested_heap_bytes": 9239353,
+            "peak_additional_live_requested_heap_bytes": 9232977,
+            "instructions_retired": 243989560,
+            "cycles": 59050351
+          },
+          "post_JSON": {
+            "allocation_requests": 749,
+            "requested_allocation_bytes": 7727508,
+            "peak_live_requested_heap_bytes": 14105379,
+            "peak_additional_live_requested_heap_bytes": 5760767,
+            "instructions_retired": 33087501,
+            "cycles": 10723606
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 109335957,
+            "instructions_retired": 435217370,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1870,
+            "peak_physical_footprint_bytes": 17203560,
+            "peak_resident_bytes": 27951104,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir305-canonical-seed-control-4-instrumented": {
+          "restore": {
+            "allocation_requests": 110856,
+            "requested_allocation_bytes": 106682280,
+            "peak_live_requested_heap_bytes": 9239352,
+            "peak_additional_live_requested_heap_bytes": 9232977,
+            "instructions_retired": 243811099,
+            "cycles": 59537479
+          },
+          "post_JSON": {
+            "allocation_requests": 1146,
+            "requested_allocation_bytes": 7801219,
+            "peak_live_requested_heap_bytes": 14108961,
+            "peak_additional_live_requested_heap_bytes": 5764350,
+            "instructions_retired": 33588743,
+            "cycles": 11125725
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 110404941,
+            "instructions_retired": 437916504,
+            "involuntary_context_switches": 14,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1881,
+            "peak_physical_footprint_bytes": 17219944,
+            "peak_resident_bytes": 28147712,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir306-borrowed-dictionary-values-4-instrumented": {
+          "restore": {
+            "allocation_requests": 139713,
+            "requested_allocation_bytes": 150014806,
+            "peak_live_requested_heap_bytes": 9239595,
+            "peak_additional_live_requested_heap_bytes": 9233225,
+            "instructions_retired": 293196524,
+            "cycles": 71265076
+          },
+          "post_JSON": {
+            "allocation_requests": 720,
+            "requested_allocation_bytes": 7726381,
+            "peak_live_requested_heap_bytes": 14105597,
+            "peak_additional_live_requested_heap_bytes": 5760799,
+            "instructions_retired": 33006251,
+            "cycles": 10637155
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 122541810,
+            "instructions_retired": 487258931,
+            "involuntary_context_switches": 14,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1888,
+            "peak_physical_footprint_bytes": 17498472,
+            "peak_resident_bytes": 28229632,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir306-owned-dictionary-values-control-4-instrumented": {
+          "restore": {
+            "allocation_requests": 139713,
+            "requested_allocation_bytes": 150014806,
+            "peak_live_requested_heap_bytes": 9239609,
+            "peak_additional_live_requested_heap_bytes": 9233225,
+            "instructions_retired": 293202610,
+            "cycles": 71245139
+          },
+          "post_JSON": {
+            "allocation_requests": 749,
+            "requested_allocation_bytes": 7727556,
+            "peak_live_requested_heap_bytes": 14105611,
+            "peak_additional_live_requested_heap_bytes": 5760799,
+            "instructions_retired": 33105486,
+            "cycles": 10836024
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 122763998,
+            "instructions_retired": 486677422,
+            "involuntary_context_switches": 16,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1888,
+            "peak_physical_footprint_bytes": 17498472,
+            "peak_resident_bytes": 28229632,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir307-fixed-key-native-loops-4-instrumented": {
+          "restore": {
+            "allocation_requests": 167071,
+            "requested_allocation_bytes": 193372864,
+            "peak_live_requested_heap_bytes": 9241587,
+            "peak_additional_live_requested_heap_bytes": 9235225,
+            "instructions_retired": 341539078,
+            "cycles": 83095935
+          },
+          "post_JSON": {
+            "allocation_requests": 722,
+            "requested_allocation_bytes": 7729165,
+            "peak_live_requested_heap_bytes": 14108853,
+            "peak_additional_live_requested_heap_bytes": 5761199,
+            "instructions_retired": 32638179,
+            "cycles": 10543528
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 132526997,
+            "instructions_retired": 533951166,
+            "involuntary_context_switches": 16,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1892,
+            "peak_physical_footprint_bytes": 17449320,
+            "peak_resident_bytes": 28295168,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir307-key-loop-callback-control-4-instrumented": {
+          "restore": {
+            "allocation_requests": 167071,
+            "requested_allocation_bytes": 193372864,
+            "peak_live_requested_heap_bytes": 9241599,
+            "peak_additional_live_requested_heap_bytes": 9235225,
+            "instructions_retired": 341604622,
+            "cycles": 83222259
+          },
+          "post_JSON": {
+            "allocation_requests": 720,
+            "requested_allocation_bytes": 7726781,
+            "peak_live_requested_heap_bytes": 14108865,
+            "peak_additional_live_requested_heap_bytes": 5761199,
+            "instructions_retired": 33044031,
+            "cycles": 10732813
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 133984688,
+            "instructions_retired": 532707787,
+            "involuntary_context_switches": 14,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1880,
+            "peak_physical_footprint_bytes": 17269096,
+            "peak_resident_bytes": 28114944,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.03,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir308-numeric-owner-handoff-4-instrumented": {
+          "restore": {
+            "allocation_requests": 167071,
+            "requested_allocation_bytes": 193372864,
+            "peak_live_requested_heap_bytes": 9241585,
+            "peak_additional_live_requested_heap_bytes": 9235225,
+            "instructions_retired": 341572782,
+            "cycles": 83054504
+          },
+          "post_JSON": {
+            "allocation_requests": 720,
+            "requested_allocation_bytes": 7326125,
+            "peak_live_requested_heap_bytes": 13705059,
+            "peak_additional_live_requested_heap_bytes": 5357407,
+            "instructions_retired": 32363990,
+            "cycles": 10649437
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 132486889,
+            "instructions_retired": 532859533,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1872,
+            "peak_physical_footprint_bytes": 17088896,
+            "peak_resident_bytes": 27951104,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.03,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir308-owner-handoff-disabled-4-instrumented": {
+          "restore": {
+            "allocation_requests": 167071,
+            "requested_allocation_bytes": 193372864,
+            "peak_live_requested_heap_bytes": 9241595,
+            "peak_additional_live_requested_heap_bytes": 9235225,
+            "instructions_retired": 341568686,
+            "cycles": 83255394
+          },
+          "post_JSON": {
+            "allocation_requests": 722,
+            "requested_allocation_bytes": 7729165,
+            "peak_live_requested_heap_bytes": 14108861,
+            "peak_additional_live_requested_heap_bytes": 5761199,
+            "instructions_retired": 32695261,
+            "cycles": 10872585
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 133339676,
+            "instructions_retired": 534447597,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1895,
+            "peak_physical_footprint_bytes": 17465728,
+            "peak_resident_bytes": 28344320,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        }
+      },
+      "paired_comparisons": {
+        "mech-ir308-numeric-owner-handoff-4 vs mech-ir307-fixed-key-native-loops-4": {
+          "post_json_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 28,
+            "pairs": 31,
+            "median_paired_relative_change": -0.017979716837908777,
+            "two_sided_95_interval": [
+              -0.021851082003594535,
+              -0.013513513513513487
+            ],
+            "all_pair_changes": [
+              0.025649365874453656,
+              -0.017979716837908777,
+              -0.010791622293219838,
+              -0.01948040313549837,
+              -0.015164089784510892,
+              -0.015012282930961462,
+              -0.02688460711983376,
+              -0.0386100254885301,
+              -0.008675002837857604,
+              -0.04073154662727185,
+              -0.007227271352744147,
+              -0.03283495530077951,
+              -0.010598446623377611,
+              0.0076483959142570335,
+              -0.018002397236127732,
+              -0.023973361797602566,
+              -0.013513513513513487,
+              -0.03379188712522052,
+              -0.02132605878214955,
+              -0.03133754927829624,
+              0.02202952187821383,
+              -0.02159947911059157,
+              -0.044891566319033904,
+              -0.013861339889647106,
+              -0.01603708568969686,
+              -0.021851082003594535,
+              -0.008148541114058272,
+              -0.022024535476002582,
+              -0.010917795456174217,
+              -0.012518379256817869,
+              -0.023937054370197552
+            ]
+          },
+          "wall_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 26,
+            "pairs": 31,
+            "median_paired_relative_change": -0.03516123151600681,
+            "two_sided_95_interval": [
+              -0.046386668758410354,
+              -0.025226179882643085
+            ],
+            "all_pair_changes": [
+              -0.05531123528938375,
+              -0.06695865442117543,
+              -0.033445528300303784,
+              -0.09853742984473857,
+              -0.05024801276385449,
+              -0.03993129855169619,
+              -0.012376938545073157,
+              0.01795530456382166,
+              -0.05667557490968533,
+              -6.242579546411609e-05,
+              -0.025226179882643085,
+              -0.056474456039545484,
+              -0.046386668758410354,
+              -0.037901830516615775,
+              -0.025248070996923944,
+              0.03199494137534975,
+              -0.0474299046596075,
+              -0.03952393979599378,
+              -0.02441545680015067,
+              -0.027335934683822116,
+              0.02256722977690262,
+              -0.03859189750163017,
+              -0.1418924918873088,
+              0.034076994282610906,
+              -0.05589714637976406,
+              -0.011658501061366344,
+              -0.05996851794899605,
+              -0.03516123151600681,
+              -0.03211117617041104,
+              0.08651627808678564,
+              -0.007742874563620772
+            ]
+          },
+          "compile_or_restore_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 19,
+            "pairs": 31,
+            "median_paired_relative_change": -0.0029554410599463843,
+            "two_sided_95_interval": [
+              -0.0061372790886713435,
+              0.0014521829320763846
+            ],
+            "all_pair_changes": [
+              -0.013824905241749064,
+              -0.009382851049831609,
+              -0.0014821146010023378,
+              -0.016356750761151284,
+              -0.004377877197335511,
+              -0.0023141091542014935,
+              -0.008011539517953081,
+              0.002689721043481308,
+              0.002934293288022305,
+              -0.012021538932926457,
+              -0.013044093439270932,
+              -0.006703319511108252,
+              0.017754575982670495,
+              -0.005753229437750029,
+              0.005319468059591159,
+              0.0039692918627523,
+              -0.013871294362058029,
+              -0.0061372790886713435,
+              -0.004081765500832724,
+              -0.005014611856575368,
+              0.0005050516097762081,
+              -0.00972791447106336,
+              -0.007154312128057949,
+              0.0019567414727554855,
+              0.010387018232671963,
+              -0.0029554410599463843,
+              0.0021292366603604673,
+              0.005298899850214367,
+              -0.0009730130049614427,
+              0.010773959557254909,
+              0.0014521829320763846
+            ]
+          }
+        },
+        "mech-ir308-numeric-owner-handoff-4 vs mech-ir305-native-dictionary-seed-frames-4": {
+          "post_json_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir305-native-dictionary-seed-frames-4",
+            "wins": 30,
+            "pairs": 31,
+            "median_paired_relative_change": -0.03331077725146914,
+            "two_sided_95_interval": [
+              -0.03732185692112333,
+              -0.024048760997926077
+            ],
+            "all_pair_changes": [
+              0.003423686287070682,
+              -0.02062350874374075,
+              -0.024048760997926077,
+              -0.010313892728733953,
+              -0.021519604429277805,
+              -0.02503802490722251,
+              -0.0619366371067438,
+              -0.03808752531111481,
+              -0.03527334315153019,
+              -0.036149382730693014,
+              -0.03331077725146914,
+              -0.041259679837027385,
+              -0.013942103746855339,
+              -0.010851009744386353,
+              -0.019316152654555663,
+              -0.045988679027832546,
+              -0.011415201361315908,
+              -0.053381121367377715,
+              -0.04882241230271289,
+              -0.03689366918799375,
+              -0.0039554588552616066,
+              -0.027554496664890626,
+              -0.03732185692112333,
+              -0.02859517284258206,
+              -0.039305889343135614,
+              -0.03573263070309263,
+              -0.028712621613318667,
+              -0.039887491041203704,
+              -0.04766050426848378,
+              -0.020990903321345344,
+              -0.06332972209577714
+            ]
+          },
+          "wall_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir305-native-dictionary-seed-frames-4",
+            "wins": 0,
+            "pairs": 31,
+            "median_paired_relative_change": 0.10194739815565845,
+            "two_sided_95_interval": [
+              0.08052210818771921,
+              0.11155764532665025
+            ],
+            "all_pair_changes": [
+              0.10340275321410064,
+              0.09434201929813546,
+              0.10657768431032277,
+              0.06785443235862454,
+              0.10510159345355907,
+              0.11155764532665025,
+              0.08343277303712426,
+              0.12101602573711934,
+              0.1093172774754374,
+              0.10194739815565845,
+              0.1017788135457236,
+              0.055413259623128264,
+              0.03204376503697204,
+              0.1308669452449731,
+              0.12829701512933633,
+              0.1227391283933228,
+              0.07424471951260658,
+              0.1204230567996305,
+              0.0845458762790341,
+              0.05268422890591684,
+              0.18863211072527597,
+              0.07601155791400815,
+              0.029951736268281293,
+              0.13666971080905266,
+              0.06949826843912099,
+              0.034701602029309386,
+              0.1293852097588486,
+              0.08052210818771921,
+              0.057350750283376106,
+              0.11233753771993515,
+              0.33607020663611853
+            ]
+          },
+          "compile_or_restore_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir305-native-dictionary-seed-frames-4",
+            "wins": 0,
+            "pairs": 31,
+            "median_paired_relative_change": 0.38949210644052235,
+            "two_sided_95_interval": [
+              0.38488784323632985,
+              0.3914355722840872
+            ],
+            "all_pair_changes": [
+              0.31190923143618376,
+              0.3801160633484735,
+              0.38346842722843566,
+              0.3823088680880846,
+              0.38617735951648346,
+              0.389937982598503,
+              0.37637568655213927,
+              0.3914355722840872,
+              0.3901100579286416,
+              0.37939675132252937,
+              0.3949457349520442,
+              0.3898232242301163,
+              0.41710773841788074,
+              0.3897231804066559,
+              0.3915165148783768,
+              0.3847888360461449,
+              0.385481514420023,
+              0.38949210644052235,
+              0.3737169339901478,
+              0.388259777333714,
+              0.40046085888787886,
+              0.38370458606313274,
+              0.38488784323632985,
+              0.39649233712539034,
+              0.3983351418210299,
+              0.3853523240736261,
+              0.3954786361371021,
+              0.394732200644621,
+              0.3788477275588569,
+              0.406834909497118,
+              0.3919358282083565
+            ]
+          }
+        },
+        "mech-ir308-numeric-owner-handoff-4 vs mech-ir308-owner-handoff-disabled-4": {
+          "post_json_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir308-owner-handoff-disabled-4",
+            "wins": 30,
+            "pairs": 31,
+            "median_paired_relative_change": -0.02398510775399154,
+            "two_sided_95_interval": [
+              -0.03199850678132665,
+              -0.01613091726366067
+            ],
+            "all_pair_changes": [
+              0.018988743724807744,
+              -0.014091994704120148,
+              -0.03742152494869666,
+              -0.004193717328098812,
+              -0.0052866360365748655,
+              -0.02856708427598975,
+              -0.04766743550531649,
+              -0.033684030742954785,
+              -0.008581125061825512,
+              -0.030628133210253483,
+              -0.00776962007270654,
+              -0.036033548128863946,
+              -0.01160633837845515,
+              -0.01613091726366067,
+              -0.017356123381435662,
+              -0.03199850678132665,
+              -0.008321479374110874,
+              -0.023921895507189928,
+              -0.033644697129220136,
+              -0.03315106277102431,
+              -0.02578821579056434,
+              -0.02541629452759797,
+              -0.04212004212004228,
+              -0.01979464170447154,
+              -0.0361454090881792,
+              -0.03329703793999361,
+              -0.010631006864988524,
+              -0.02398510775399154,
+              -0.02116008227533861,
+              -0.00996020822933752,
+              -0.0539794705648452
+            ]
+          },
+          "wall_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir308-owner-handoff-disabled-4",
+            "wins": 12,
+            "pairs": 31,
+            "median_paired_relative_change": 0.01649531340085786,
+            "two_sided_95_interval": [
+              -0.0031477858112561874,
+              0.023549629827248175
+            ],
+            "all_pair_changes": [
+              -0.05212581368786484,
+              -0.008891873168842657,
+              0.0614723694273438,
+              0.0007163743479925433,
+              0.030806329759882622,
+              0.06769510845185667,
+              -0.0031477858112561874,
+              0.08238289400121412,
+              0.023549629827248175,
+              0.0232573735360202,
+              0.013978535227194389,
+              -0.01704749191926669,
+              -0.007319733711553589,
+              0.018817124702240395,
+              0.018030181688824864,
+              0.0675574202585798,
+              -0.00309219280301265,
+              0.07761089456812931,
+              0.038472185676945214,
+              0.039332149254418525,
+              0.06584012818861629,
+              -0.038759758914853726,
+              -0.012665731080451659,
+              0.021228713702857283,
+              0.0064865005978804735,
+              0.04946720739722643,
+              -0.004466497009689152,
+              -0.025387490686697767,
+              -0.04920590495851429,
+              -0.03865130780168968,
+              0.01649531340085786
+            ]
+          },
+          "compile_or_restore_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir308-owner-handoff-disabled-4",
+            "wins": 15,
+            "pairs": 31,
+            "median_paired_relative_change": 0.00043647045657957406,
+            "two_sided_95_interval": [
+              -0.0021485399314979947,
+              0.0034956585488785663
+            ],
+            "all_pair_changes": [
+              -0.055691457590793636,
+              0.0031896735759642247,
+              -0.0021485399314979947,
+              -0.0016771231851113733,
+              0.00043647045657957406,
+              0.005869645979903471,
+              -0.010752448692415428,
+              0.0034956585488785663,
+              -0.0008690011321117463,
+              -0.0032343871153558412,
+              0.00676885927339832,
+              -3.424572779964219e-05,
+              0.01651314247159652,
+              0.003551819579702631,
+              0.005918926358998711,
+              0.004448738446022338,
+              -0.007224193336798246,
+              -0.011425217686305444,
+              0.0006966566955084463,
+              -0.007475871782900767,
+              0.000472772841193958,
+              -0.0031218500531590143,
+              -0.0022354228587311287,
+              -0.0029935456001505267,
+              -0.003749859295820168,
+              0.004560027382034093,
+              0.005343043828709648,
+              0.007577164878778131,
+              0.0004624501866927755,
+              0.004544080688249519,
+              -0.00028648955166998835
+            ]
+          }
+        },
+        "mech-ir308-numeric-owner-handoff-4 vs mech-ir295-histogram-reuse-4": {
+          "post_json_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir295-histogram-reuse-4",
+            "wins": 31,
+            "pairs": 31,
+            "median_paired_relative_change": -0.10119372929578174,
+            "two_sided_95_interval": [
+              -0.11032144487187856,
+              -0.09146538145253669
+            ],
+            "all_pair_changes": [
+              -0.047129884716956894,
+              -0.08855630350957455,
+              -0.10119372929578174,
+              -0.07760376120201717,
+              -0.08417315632649269,
+              -0.07603983243171086,
+              -0.11676285907019734,
+              -0.12237125129265769,
+              -0.09146538145253669,
+              -0.13777148992610366,
+              -0.08519370234726675,
+              -0.12075873645222734,
+              -0.1046817713697219,
+              -0.09215617451553848,
+              -0.11502910153767942,
+              -0.09042298327644716,
+              -0.1969550294816509,
+              -0.10625817653698011,
+              -0.09453048339362047,
+              -0.13726902140128083,
+              -0.09258433813696898,
+              -0.11664251100891099,
+              -0.11032144487187856,
+              -0.20953196347031966,
+              -0.08726066350710904,
+              -0.10194579023447226,
+              -0.09037896120973044,
+              -0.10570756952415139,
+              -0.08657284323749603,
+              -0.09621611036956679,
+              -0.11966457278392828
+            ]
+          },
+          "wall_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir295-histogram-reuse-4",
+            "wins": 0,
+            "pairs": 31,
+            "median_paired_relative_change": 0.35878882049639826,
+            "two_sided_95_interval": [
+              0.3417501819641253,
+              0.3724846467002969
+            ],
+            "all_pair_changes": [
+              0.2924457617621046,
+              0.3816302145073027,
+              0.33673015195123246,
+              0.34902515821883795,
+              0.3705567939511567,
+              0.4082672894356709,
+              0.30435889009055606,
+              0.3734283154921638,
+              0.3417501819641253,
+              0.37180871932268467,
+              0.30935491965888695,
+              0.37222554401177765,
+              0.3488503240961027,
+              0.35878882049639826,
+              0.3846565775272719,
+              0.38799120991655345,
+              0.41009212310329857,
+              0.42207824690378204,
+              0.34639255174691796,
+              0.2759320303560151,
+              0.34307838474900443,
+              0.20035787704025076,
+              0.23007478770045098,
+              0.48885636933928067,
+              0.4203689637904704,
+              0.3724846467002969,
+              0.37543956206918216,
+              0.2607451201354152,
+              0.26450597865070224,
+              0.31956500618247863,
+              0.3607748840896583
+            ]
+          },
+          "compile_or_restore_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir295-histogram-reuse-4",
+            "wins": 0,
+            "pairs": 31,
+            "median_paired_relative_change": 1.7434322990925293,
+            "two_sided_95_interval": [
+              1.7212417892349627,
+              1.74625830281306
+            ],
+            "all_pair_changes": [
+              1.1700003828625252,
+              1.7765333182080392,
+              1.7212417892349627,
+              1.7450791073769327,
+              1.7487200420768998,
+              1.7880439154678593,
+              1.7161475795037582,
+              1.7218631039304024,
+              1.7435374139408153,
+              1.7448764297228494,
+              1.7469720772246746,
+              1.6840447345037841,
+              1.7434322990925293,
+              1.74625830281306,
+              1.709627759475353,
+              1.7536892575486225,
+              1.6878119415860495,
+              1.7393691267226568,
+              1.7221380979899101,
+              1.7461203413226247,
+              1.7185672806978336,
+              1.6785737344664158,
+              1.7543937731201629,
+              1.6800559650429676,
+              1.772973467692645,
+              1.70252591737826,
+              1.7522729856376857,
+              1.7414223744418007,
+              1.7577822542570267,
+              1.7521936071487123,
+              1.713103302866993
+            ]
+          }
+        },
+        "mech-ir308-owner-handoff-disabled-4 vs mech-ir307-fixed-key-native-loops-4": {
+          "post_json_seconds": {
+            "candidate": "mech-ir308-owner-handoff-disabled-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 11,
+            "pairs": 31,
+            "median_paired_relative_change": 0.0025091404401749173,
+            "two_sided_95_interval": [
+              -9.46903255577558e-05,
+              0.008290426244116578
+            ],
+            "all_pair_changes": [
+              0.006536502184802284,
+              -0.003943290969244062,
+              0.027665175718849744,
+              -0.015351063829787237,
+              -0.009929949778275216,
+              0.013953409572215136,
+              0.021823078576033383,
+              -0.005097706032285432,
+              -9.46903255577558e-05,
+              -0.010422639405120893,
+              0.0005465955597954153,
+              0.0033181578278742574,
+              0.0010197270523002455,
+              0.024169184290030232,
+              -0.0006576887823450672,
+              0.008290426244116578,
+              -0.005235602094240899,
+              -0.010111887125220487,
+              0.01274752496361864,
+              0.0018756947677118774,
+              0.04908351391744037,
+              0.003916354640011388,
+              -0.0028933940794896307,
+              0.006053121179771859,
+              0.020862403507835747,
+              0.011840199508655891,
+              0.0025091404401749173,
+              0.0020087524212641927,
+              0.010463699562818007,
+              -0.0025839072820549314,
+              0.031756621827842446
+            ]
+          },
+          "wall_seconds": {
+            "candidate": "mech-ir308-owner-handoff-disabled-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 27,
+            "pairs": 31,
+            "median_paired_relative_change": -0.04447523786703955,
+            "two_sided_95_interval": [
+              -0.05952384298981739,
+              -0.038664245590813384
+            ],
+            "all_pair_changes": [
+              -0.003360595369636954,
+              -0.05858773596982614,
+              -0.08942097831416473,
+              -0.09918275221328221,
+              -0.07863197982361825,
+              -0.10080256634275453,
+              -0.009258295866180877,
+              -0.05952384298981739,
+              -0.07837939890660084,
+              -0.02278976915739117,
+              -0.038664245590813384,
+              -0.040110751838114744,
+              -0.03935500319042806,
+              -0.05567137992054538,
+              -0.0425117579657156,
+              -0.033312005713581505,
+              -0.04447523786703955,
+              -0.10869863598684826,
+              -0.06055784964149191,
+              -0.06414511856105487,
+              -0.040599802228553306,
+              0.0001746300311293858,
+              -0.13088450879788827,
+              0.012581197930840782,
+              -0.06198160327096991,
+              -0.058244514957442206,
+              -0.05575103276041837,
+              -0.01002833509308787,
+              0.017979422545064683,
+              0.13019998560798496,
+              -0.023844859533474594
+            ]
+          },
+          "compile_or_restore_seconds": {
+            "candidate": "mech-ir308-owner-handoff-disabled-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 19,
+            "pairs": 31,
+            "median_paired_relative_change": -0.0014347996682798625,
+            "two_sided_95_interval": [
+              -0.004929909702166446,
+              0.0006678602549221591
+            ],
+            "all_pair_changes": [
+              0.04433567046024045,
+              -0.012532549882595778,
+              0.0006678602549221591,
+              -0.014704288479168826,
+              -0.004812247250160495,
+              -0.008135999696195606,
+              0.002770700994750408,
+              -0.0008031300370175964,
+              0.0038066023618958944,
+              -0.008815665091154723,
+              -0.019679743299736763,
+              -0.006669302178415548,
+              0.0012212665623341223,
+              -0.009272116133823283,
+              -0.0005959310275406304,
+              -0.0004773230976542475,
+              -0.006695470397894976,
+              0.005349052689021638,
+              -0.004775095594023782,
+              0.002479798582576187,
+              3.226351526852689e-05,
+              -0.006626752144438641,
+              -0.004929909702166446,
+              0.004965150477271196,
+              0.014190088363249531,
+              -0.007481353266231783,
+              -0.0031967269163266643,
+              -0.0022611320581465977,
+              -0.0014347996682798625,
+              0.006201697853554622,
+              0.0017391707379914578
+            ]
+          }
+        }
+      },
+      "whole_process_gate": false,
+      "goal_complete": false
+    },
+    "confirmation": {
+      "independent_confirmation": true,
+      "all_first_and_adverse_samples_retained": true,
+      "latency_exact_outputs": 1147,
+      "resource_exact_outputs": 266,
+      "fastest_processing_Rust": {
+        "variant": "rust-ordered-mask-tables256",
+        "median_seconds": 0.001520333,
+        "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+        "eligible_variants": [
+          "rust",
+          "rust-mech-control-streaming",
+          "rust-mech-control-u32-casts",
+          "rust-mech-control-u8-ids-u32",
+          "rust-ordered-scan-only",
+          "rust-ordered-ordered",
+          "rust-ordered-mask-reuse",
+          "rust-ordered-ordered-mask",
+          "rust-ordered-ordered-mask-tables",
+          "rust-apple-m3",
+          "rust-mech-control-streaming-apple-m3",
+          "rust-mech-control-u32-casts-apple-m3",
+          "rust-mech-control-u8-ids-u32-apple-m3",
+          "rust-ordered-scan-only-apple-m3",
+          "rust-ordered-ordered-apple-m3",
+          "rust-ordered-mask-reuse-apple-m3",
+          "rust-ordered-ordered-mask-apple-m3",
+          "rust-ordered-ordered-mask-tables-apple-m3",
+          "rust-ordered-mask-tables256",
+          "rust-ordered-mask-tables256-apple-m3"
+        ]
+      },
+      "fastest_whole_Rust": {
+        "variant": "rust-mech-control-u32-casts",
+        "median_seconds": 0.02474000002257526,
+        "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+      },
+      "medians": {
+        "mech-ir295-histogram-reuse-4": {
+          "post_json_seconds": 0.001903375,
+          "wall_seconds": 0.0380832499358803,
+          "compile_or_restore_seconds": 0.00793975,
+          "times_fastest_processing_Rust": 1.2519461196987764,
+          "times_fastest_whole_Rust": 1.5393391229235782
+        },
+        "mech-ir297-closed-constructors-4": {
+          "post_json_seconds": 0.001909084,
+          "wall_seconds": 0.03777175000868738,
+          "compile_or_restore_seconds": 0.007959375,
+          "times_fastest_processing_Rust": 1.2557012180884055,
+          "times_fastest_whole_Rust": 1.5267481800412548
+        },
+        "mech-ir302-private-write-first-4": {
+          "post_json_seconds": 0.001905917,
+          "wall_seconds": 0.037576874950900674,
+          "compile_or_restore_seconds": 0.008322875,
+          "times_fastest_processing_Rust": 1.2536181218193645,
+          "times_fastest_whole_Rust": 1.5188712577450187
+        },
+        "mech-ir303-borrowed-map-key-views-4": {
+          "post_json_seconds": 0.001876083,
+          "wall_seconds": 0.03788441698998213,
+          "compile_or_restore_seconds": 0.008511708,
+          "times_fastest_processing_Rust": 1.2339947892994494,
+          "times_fastest_whole_Rust": 1.5313022213182128
+        },
+        "mech-ir303-canonical-map-key-control-4": {
+          "post_json_seconds": 0.0019175,
+          "wall_seconds": 0.03799924999475479,
+          "compile_or_restore_seconds": 0.008550291,
+          "times_fastest_processing_Rust": 1.2612368474538143,
+          "times_fastest_whole_Rust": 1.5359438140695416
+        },
+        "mech-ir304-generic-native-dictionary-4": {
+          "post_json_seconds": 0.001861417,
+          "wall_seconds": 0.041074416832998395,
+          "compile_or_restore_seconds": 0.0121765,
+          "times_fastest_processing_Rust": 1.2243482184495107,
+          "times_fastest_whole_Rust": 1.6602432011122867
+        },
+        "mech-ir304-canonical-dictionary-control-4": {
+          "post_json_seconds": 0.001873542,
+          "wall_seconds": 0.04166624997742474,
+          "compile_or_restore_seconds": 0.01216675,
+          "times_fastest_processing_Rust": 1.2323234449294989,
+          "times_fastest_whole_Rust": 1.684165316871636
+        },
+        "mech-ir305-native-dictionary-seed-frames-4": {
+          "post_json_seconds": 0.001784916,
+          "wall_seconds": 0.04662845912389457,
+          "compile_or_restore_seconds": 0.015723625,
+          "times_fastest_processing_Rust": 1.1740296369282257,
+          "times_fastest_whole_Rust": 1.884739655672841
+        },
+        "mech-ir305-canonical-seed-control-4": {
+          "post_json_seconds": 0.001876042,
+          "wall_seconds": 0.04677779204212129,
+          "compile_or_restore_seconds": 0.015750791,
+          "times_fastest_processing_Rust": 1.233967821523311,
+          "times_fastest_whole_Rust": 1.8907757477541043
+        },
+        "mech-ir306-borrowed-dictionary-values-4": {
+          "post_json_seconds": 0.001787083,
+          "wall_seconds": 0.047559665981680155,
+          "compile_or_restore_seconds": 0.01871375,
+          "times_fastest_processing_Rust": 1.1754549825597418,
+          "times_fastest_whole_Rust": 1.9223793831156808
+        },
+        "mech-ir306-owned-dictionary-values-control-4": {
+          "post_json_seconds": 0.001772875,
+          "wall_seconds": 0.04943837504833937,
+          "compile_or_restore_seconds": 0.018731,
+          "times_fastest_processing_Rust": 1.1661096615017894,
+          "times_fastest_whole_Rust": 1.9983175021514483
+        },
+        "mech-ir307-fixed-key-native-loops-4": {
+          "post_json_seconds": 0.001762416,
+          "wall_seconds": 0.05212670797482133,
+          "compile_or_restore_seconds": 0.021806917,
+          "times_fastest_processing_Rust": 1.1592302475839174,
+          "times_fastest_whole_Rust": 2.1069809186441266
+        },
+        "mech-ir307-key-loop-callback-control-4": {
+          "post_json_seconds": 0.001765583,
+          "wall_seconds": 0.05040920805186033,
+          "compile_or_restore_seconds": 0.021829375,
+          "times_fastest_processing_Rust": 1.1613133438529586,
+          "times_fastest_whole_Rust": 2.0375589331391235
+        },
+        "mech-ir308-numeric-owner-handoff-4": {
+          "post_json_seconds": 0.00171975,
+          "wall_seconds": 0.05139245791360736,
+          "compile_or_restore_seconds": 0.021898875,
+          "times_fastest_processing_Rust": 1.131166658883284,
+          "times_fastest_whole_Rust": 2.0773022581532627
+        },
+        "mech-ir308-owner-handoff-disabled-4": {
+          "post_json_seconds": 0.001765667,
+          "wall_seconds": 0.04996383306570351,
+          "compile_or_restore_seconds": 0.021827542,
+          "times_fastest_processing_Rust": 1.1613685949065107,
+          "times_fastest_whole_Rust": 2.019556710594644
+        }
+      },
+      "resource_medians": {
+        "rust-mech-control-u32-casts-instrumented": {
+          "post_JSON": {
+            "allocation_requests": 57,
+            "requested_allocation_bytes": 6803175,
+            "peak_live_requested_heap_bytes": 7640671,
+            "peak_additional_live_requested_heap_bytes": 5585586,
+            "instructions_retired": 19294027,
+            "cycles": 6301462
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 41308074,
+            "instructions_retired": 168702651,
+            "involuntary_context_switches": 5,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 514,
+            "peak_physical_footprint_bytes": 5423440,
+            "peak_resident_bytes": 5996544,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.0,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.02
+          }
+        },
+        "rust-ordered-mask-tables256-instrumented": {
+          "post_JSON": {
+            "allocation_requests": 58,
+            "requested_allocation_bytes": 6825713,
+            "peak_live_requested_heap_bytes": 7703209,
+            "peak_additional_live_requested_heap_bytes": 5648124,
+            "instructions_retired": 17676684,
+            "cycles": 5910526
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 41277504,
+            "instructions_retired": 167418604,
+            "involuntary_context_switches": 5,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 520,
+            "peak_physical_footprint_bytes": 5538128,
+            "peak_resident_bytes": 6111232,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.0,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.01
+          }
+        },
+        "mech-ir295-histogram-reuse-4-instrumented": {
+          "restore": {
+            "allocation_requests": 28643,
+            "requested_allocation_bytes": 13662080,
+            "peak_live_requested_heap_bytes": 7655109,
+            "peak_additional_live_requested_heap_bytes": 7648735,
+            "instructions_retired": 124183736,
+            "cycles": 30275130
+          },
+          "post_JSON": {
+            "allocation_requests": 1989,
+            "requested_allocation_bytes": 7873166,
+            "peak_live_requested_heap_bytes": 14106632,
+            "peak_additional_live_requested_heap_bytes": 5763262,
+            "instructions_retired": 34693396,
+            "cycles": 11265550
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 81875482,
+            "instructions_retired": 320991863,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1834,
+            "peak_physical_footprint_bytes": 16646504,
+            "peak_resident_bytes": 27377664,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.01,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir297-closed-constructors-4-instrumented": {
+          "restore": {
+            "allocation_requests": 28643,
+            "requested_allocation_bytes": 13662080,
+            "peak_live_requested_heap_bytes": 7655108,
+            "peak_additional_live_requested_heap_bytes": 7648735,
+            "instructions_retired": 124059760,
+            "cycles": 30263613
+          },
+          "post_JSON": {
+            "allocation_requests": 1973,
+            "requested_allocation_bytes": 7871350,
+            "peak_live_requested_heap_bytes": 14106631,
+            "peak_additional_live_requested_heap_bytes": 5763262,
+            "instructions_retired": 34665252,
+            "cycles": 11185374
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 81030874,
+            "instructions_retired": 318404502,
+            "involuntary_context_switches": 16,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1827,
+            "peak_physical_footprint_bytes": 16597352,
+            "peak_resident_bytes": 27262976,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.01,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir302-private-write-first-4-instrumented": {
+          "restore": {
+            "allocation_requests": 37758,
+            "requested_allocation_bytes": 15417036,
+            "peak_live_requested_heap_bytes": 7818608,
+            "peak_additional_live_requested_heap_bytes": 7812245,
+            "instructions_retired": 131264005,
+            "cycles": 31737856
+          },
+          "post_JSON": {
+            "allocation_requests": 1751,
+            "requested_allocation_bytes": 7861191,
+            "peak_live_requested_heap_bytes": 14107485,
+            "peak_additional_live_requested_heap_bytes": 5763966,
+            "instructions_retired": 34323010,
+            "cycles": 11207057
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 82292370,
+            "instructions_retired": 325605282,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1860,
+            "peak_physical_footprint_bytes": 16974184,
+            "peak_resident_bytes": 27770880,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.01,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir303-borrowed-map-key-views-4-instrumented": {
+          "restore": {
+            "allocation_requests": 42884,
+            "requested_allocation_bytes": 16942620,
+            "peak_live_requested_heap_bytes": 7818614,
+            "peak_additional_live_requested_heap_bytes": 7812245,
+            "instructions_retired": 135176176,
+            "cycles": 32686317
+          },
+          "post_JSON": {
+            "allocation_requests": 1291,
+            "requested_allocation_bytes": 7807730,
+            "peak_live_requested_heap_bytes": 14109938,
+            "peak_additional_live_requested_heap_bytes": 5765741,
+            "instructions_retired": 33931096,
+            "cycles": 10940990
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 83902490,
+            "instructions_retired": 330140594,
+            "involuntary_context_switches": 16,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1857,
+            "peak_physical_footprint_bytes": 16990568,
+            "peak_resident_bytes": 27721728,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.01,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir303-canonical-map-key-control-4-instrumented": {
+          "restore": {
+            "allocation_requests": 42884,
+            "requested_allocation_bytes": 16942620,
+            "peak_live_requested_heap_bytes": 7818623,
+            "peak_additional_live_requested_heap_bytes": 7812245,
+            "instructions_retired": 135137289,
+            "cycles": 32651005
+          },
+          "post_JSON": {
+            "allocation_requests": 1751,
+            "requested_allocation_bytes": 7862359,
+            "peak_live_requested_heap_bytes": 14109340,
+            "peak_additional_live_requested_heap_bytes": 5765134,
+            "instructions_retired": 34287929,
+            "cycles": 11093496
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 83536560,
+            "instructions_retired": 329543804,
+            "involuntary_context_switches": 16,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1856,
+            "peak_physical_footprint_bytes": 16974184,
+            "peak_resident_bytes": 27705344,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.01,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir304-generic-native-dictionary-4-instrumented": {
+          "restore": {
+            "allocation_requests": 76874,
+            "requested_allocation_bytes": 61816714,
+            "peak_live_requested_heap_bytes": 9239192,
+            "peak_additional_live_requested_heap_bytes": 9232817,
+            "instructions_retired": 191162128,
+            "cycles": 46281091
+          },
+          "post_JSON": {
+            "allocation_requests": 1145,
+            "requested_allocation_bytes": 7800403,
+            "peak_live_requested_heap_bytes": 14107897,
+            "peak_additional_live_requested_heap_bytes": 5763534,
+            "instructions_retired": 33567099,
+            "cycles": 10790652
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 96774045,
+            "instructions_retired": 386138408,
+            "involuntary_context_switches": 14,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1897,
+            "peak_physical_footprint_bytes": 17531240,
+            "peak_resident_bytes": 28360704,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir304-canonical-dictionary-control-4-instrumented": {
+          "restore": {
+            "allocation_requests": 76874,
+            "requested_allocation_bytes": 61816714,
+            "peak_live_requested_heap_bytes": 9239201,
+            "peak_additional_live_requested_heap_bytes": 9232817,
+            "instructions_retired": 191142596,
+            "cycles": 46142071
+          },
+          "post_JSON": {
+            "allocation_requests": 1292,
+            "requested_allocation_bytes": 7809714,
+            "peak_live_requested_heap_bytes": 14111169,
+            "peak_additional_live_requested_heap_bytes": 5766797,
+            "instructions_retired": 33829064,
+            "cycles": 10892533
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 96419621,
+            "instructions_retired": 383160508,
+            "involuntary_context_switches": 16,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1892,
+            "peak_physical_footprint_bytes": 17449320,
+            "peak_resident_bytes": 28295168,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.03
+          }
+        },
+        "mech-ir305-native-dictionary-seed-frames-4-instrumented": {
+          "restore": {
+            "allocation_requests": 110856,
+            "requested_allocation_bytes": 106682280,
+            "peak_live_requested_heap_bytes": 9239360,
+            "peak_additional_live_requested_heap_bytes": 9232977,
+            "instructions_retired": 244019560,
+            "cycles": 59216427
+          },
+          "post_JSON": {
+            "allocation_requests": 749,
+            "requested_allocation_bytes": 7727508,
+            "peak_live_requested_heap_bytes": 14105386,
+            "peak_additional_live_requested_heap_bytes": 5760767,
+            "instructions_retired": 33103564,
+            "cycles": 10682591
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 109561045,
+            "instructions_retired": 436098111,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1872,
+            "peak_physical_footprint_bytes": 17219944,
+            "peak_resident_bytes": 27967488,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir305-canonical-seed-control-4-instrumented": {
+          "restore": {
+            "allocation_requests": 110856,
+            "requested_allocation_bytes": 106682280,
+            "peak_live_requested_heap_bytes": 9239359,
+            "peak_additional_live_requested_heap_bytes": 9232977,
+            "instructions_retired": 243971472,
+            "cycles": 59203611
+          },
+          "post_JSON": {
+            "allocation_requests": 1146,
+            "requested_allocation_bytes": 7801219,
+            "peak_live_requested_heap_bytes": 14108968,
+            "peak_additional_live_requested_heap_bytes": 5764350,
+            "instructions_retired": 33556323,
+            "cycles": 10955072
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 110078747,
+            "instructions_retired": 437327047,
+            "involuntary_context_switches": 14,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1897,
+            "peak_physical_footprint_bytes": 17465704,
+            "peak_resident_bytes": 28393472,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir306-borrowed-dictionary-values-4-instrumented": {
+          "restore": {
+            "allocation_requests": 139713,
+            "requested_allocation_bytes": 150014806,
+            "peak_live_requested_heap_bytes": 9239602,
+            "peak_additional_live_requested_heap_bytes": 9233225,
+            "instructions_retired": 293010109,
+            "cycles": 70544733
+          },
+          "post_JSON": {
+            "allocation_requests": 720,
+            "requested_allocation_bytes": 7726381,
+            "peak_live_requested_heap_bytes": 14105604,
+            "peak_additional_live_requested_heap_bytes": 5760799,
+            "instructions_retired": 33009173,
+            "cycles": 10416674
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 120758126,
+            "instructions_retired": 486605396,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1873,
+            "peak_physical_footprint_bytes": 17252712,
+            "peak_resident_bytes": 27983872,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir306-owned-dictionary-values-control-4-instrumented": {
+          "restore": {
+            "allocation_requests": 139713,
+            "requested_allocation_bytes": 150014806,
+            "peak_live_requested_heap_bytes": 9239616,
+            "peak_additional_live_requested_heap_bytes": 9233225,
+            "instructions_retired": 293178567,
+            "cycles": 71255681
+          },
+          "post_JSON": {
+            "allocation_requests": 749,
+            "requested_allocation_bytes": 7727556,
+            "peak_live_requested_heap_bytes": 14105618,
+            "peak_additional_live_requested_heap_bytes": 5760799,
+            "instructions_retired": 33070550,
+            "cycles": 10726772
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 121503790,
+            "instructions_retired": 484692186,
+            "involuntary_context_switches": 16,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1889,
+            "peak_physical_footprint_bytes": 17498472,
+            "peak_resident_bytes": 28229632,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir307-fixed-key-native-loops-4-instrumented": {
+          "restore": {
+            "allocation_requests": 167071,
+            "requested_allocation_bytes": 193372864,
+            "peak_live_requested_heap_bytes": 9241594,
+            "peak_additional_live_requested_heap_bytes": 9235225,
+            "instructions_retired": 341177631,
+            "cycles": 82813802
+          },
+          "post_JSON": {
+            "allocation_requests": 722,
+            "requested_allocation_bytes": 7729165,
+            "peak_live_requested_heap_bytes": 14108860,
+            "peak_additional_live_requested_heap_bytes": 5761199,
+            "instructions_retired": 32594593,
+            "cycles": 10435834
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 134358586,
+            "instructions_retired": 534937085,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1865,
+            "peak_physical_footprint_bytes": 17006952,
+            "peak_resident_bytes": 27836416,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir307-key-loop-callback-control-4-instrumented": {
+          "restore": {
+            "allocation_requests": 167071,
+            "requested_allocation_bytes": 193372864,
+            "peak_live_requested_heap_bytes": 9241606,
+            "peak_additional_live_requested_heap_bytes": 9235225,
+            "instructions_retired": 341597969,
+            "cycles": 82986351
+          },
+          "post_JSON": {
+            "allocation_requests": 720,
+            "requested_allocation_bytes": 7726781,
+            "peak_live_requested_heap_bytes": 14108872,
+            "peak_additional_live_requested_heap_bytes": 5761199,
+            "instructions_retired": 33021783,
+            "cycles": 10468932
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 132890447,
+            "instructions_retired": 533769806,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1893,
+            "peak_physical_footprint_bytes": 17449320,
+            "peak_resident_bytes": 28311552,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir308-numeric-owner-handoff-4-instrumented": {
+          "restore": {
+            "allocation_requests": 167071,
+            "requested_allocation_bytes": 193372864,
+            "peak_live_requested_heap_bytes": 9241592,
+            "peak_additional_live_requested_heap_bytes": 9235225,
+            "instructions_retired": 341517723,
+            "cycles": 82724676
+          },
+          "post_JSON": {
+            "allocation_requests": 720,
+            "requested_allocation_bytes": 7326125,
+            "peak_live_requested_heap_bytes": 13705066,
+            "peak_additional_live_requested_heap_bytes": 5357407,
+            "instructions_retired": 32339570,
+            "cycles": 10559386
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 133869446,
+            "instructions_retired": 534124922,
+            "involuntary_context_switches": 14,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1869,
+            "peak_physical_footprint_bytes": 17039720,
+            "peak_resident_bytes": 27901952,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        },
+        "mech-ir308-owner-handoff-disabled-4-instrumented": {
+          "restore": {
+            "allocation_requests": 167071,
+            "requested_allocation_bytes": 193372864,
+            "peak_live_requested_heap_bytes": 9241602,
+            "peak_additional_live_requested_heap_bytes": 9235225,
+            "instructions_retired": 341581357,
+            "cycles": 82707325
+          },
+          "post_JSON": {
+            "allocation_requests": 722,
+            "requested_allocation_bytes": 7729165,
+            "peak_live_requested_heap_bytes": 14108868,
+            "peak_additional_live_requested_heap_bytes": 5761199,
+            "instructions_retired": 32704744,
+            "cycles": 10566480
+          },
+          "process_resources": {
+            "average_shared_memory_size": 0,
+            "average_unshared_data_size": 0,
+            "average_unshared_stack_size": 0,
+            "block_input_operations": 0,
+            "block_output_operations": 0,
+            "cycles": 132181138,
+            "instructions_retired": 533441549,
+            "involuntary_context_switches": 15,
+            "messages_received": 0,
+            "messages_sent": 0,
+            "page_faults": 0,
+            "page_reclaims": 1894,
+            "peak_physical_footprint_bytes": 17432960,
+            "peak_resident_bytes": 28311552,
+            "signals_received": 0,
+            "swaps": 0,
+            "system_cpu_seconds": 0.0,
+            "user_cpu_seconds": 0.02,
+            "voluntary_context_switches": 0,
+            "wall_seconds": 0.04
+          }
+        }
+      },
+      "paired_comparisons": {
+        "mech-ir308-numeric-owner-handoff-4 vs mech-ir307-fixed-key-native-loops-4": {
+          "post_json_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 29,
+            "pairs": 31,
+            "median_paired_relative_change": -0.023181624840493464,
+            "two_sided_95_interval": [
+              -0.02615238769013095,
+              -0.018475895938909193
+            ],
+            "all_pair_changes": [
+              -0.005412392095918039,
+              -0.0033791886841180174,
+              -0.35468377797935224,
+              -0.023400638932321915,
+              0.001035663344683968,
+              -0.033739747436537404,
+              -0.0241056063788051,
+              -0.0356223212391259,
+              -0.052098390356072666,
+              -0.01386013203812042,
+              -0.053416017797552784,
+              -0.023181624840493464,
+              -0.02822829570317098,
+              -0.030075567485230437,
+              -0.02128244836472104,
+              -0.021692914870781954,
+              -0.006858612559834332,
+              -0.015017149283103604,
+              -0.008990001392371383,
+              -0.026318711449302312,
+              0.0915295627986592,
+              -0.024296390196857476,
+              -0.022764829617164528,
+              -0.017013946800862767,
+              -0.018475895938909193,
+              -0.034786517057720956,
+              -0.02615238769013095,
+              -0.025130903704644325,
+              -0.020333001368288084,
+              -0.03183856093397064,
+              -0.015554242961212772
+            ]
+          },
+          "wall_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 20,
+            "pairs": 31,
+            "median_paired_relative_change": -0.012724694380547241,
+            "two_sided_95_interval": [
+              -0.022215332358959894,
+              0.002543421006568458
+            ],
+            "all_pair_changes": [
+              0.009003340070999455,
+              -0.016734730371727458,
+              -0.010190204458107921,
+              -0.0193664049440877,
+              0.008891678028084549,
+              -0.00678306467522749,
+              -0.041982623689231,
+              -0.02701163495771497,
+              -0.0168044734318209,
+              0.002543421006568458,
+              -0.06612708410901336,
+              -0.012724694380547241,
+              0.013138307516111558,
+              0.013670043851479852,
+              -0.0672306096739862,
+              -0.022215332358959894,
+              0.03420741922388415,
+              -0.002450865953345205,
+              -0.02709543239653278,
+              0.008830177554009389,
+              -0.005007378210222679,
+              -0.03391052277586826,
+              -0.01978763499896352,
+              0.07525154730144101,
+              -0.06495009176257538,
+              0.10902268429566897,
+              0.012232661369060205,
+              -0.0947168718262239,
+              0.01155187756524656,
+              -0.04682331787455807,
+              -0.03034140723587153
+            ]
+          },
+          "compile_or_restore_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 12,
+            "pairs": 31,
+            "median_paired_relative_change": 0.005179827103491963,
+            "two_sided_95_interval": [
+              -0.0019320522674867169,
+              0.008317535899338147
+            ],
+            "all_pair_changes": [
+              0.016633515206205596,
+              0.014780729080681843,
+              -0.03665785801346333,
+              0.005179827103491963,
+              0.010522784830739873,
+              0.011166173386347511,
+              -0.004866047963049014,
+              -0.004568884194289025,
+              -0.0019320522674867169,
+              0.012489327030869024,
+              -0.009528710242485361,
+              -0.003658278977016205,
+              -0.007645605602152883,
+              -0.0013527817802029274,
+              -0.00562941326237576,
+              -0.0052698882710416894,
+              0.016283223583333006,
+              0.005954774599036039,
+              0.006424792139077873,
+              0.008915126717617516,
+              0.03455832484440857,
+              -0.0021438027639479884,
+              0.00014655930557938568,
+              0.005625554572091351,
+              0.016614817911686952,
+              0.008317535899338147,
+              0.003828870386771266,
+              -0.00802378255945646,
+              0.014431620000024958,
+              0.005805298340604281,
+              0.00431860842536369
+            ]
+          }
+        },
+        "mech-ir308-numeric-owner-handoff-4 vs mech-ir305-native-dictionary-seed-frames-4": {
+          "post_json_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir305-native-dictionary-seed-frames-4",
+            "wins": 28,
+            "pairs": 31,
+            "median_paired_relative_change": -0.03608909326825471,
+            "two_sided_95_interval": [
+              -0.04126376797466347,
+              -0.028603317388655847
+            ],
+            "all_pair_changes": [
+              0.0003678275106728801,
+              0.002530760836736423,
+              -0.041082376153900424,
+              -0.03669160648897962,
+              -0.02365107477726003,
+              -0.05695102553369602,
+              -0.16890612549608175,
+              -0.05637813148788928,
+              -0.04244531028707765,
+              -0.02783455326905171,
+              -0.05462113923741263,
+              -0.030944510865743124,
+              -0.04631109908326658,
+              -0.033575859178541556,
+              -0.02951653064047588,
+              -0.037439153784259216,
+              -0.018798745959717977,
+              -0.024886167548009985,
+              -0.026561871261478354,
+              -0.022882319499715753,
+              0.07190756134897125,
+              -0.043558597569492985,
+              -0.00992200042622704,
+              -0.037405179031338,
+              -0.04126376797466347,
+              -0.048272177397946536,
+              -0.028603317388655847,
+              -0.04867929746922972,
+              -0.03608909326825471,
+              -0.06130276243093924,
+              -0.03367718785538898
+            ]
+          },
+          "wall_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir305-native-dictionary-seed-frames-4",
+            "wins": 0,
+            "pairs": 31,
+            "median_paired_relative_change": 0.1147252723144978,
+            "two_sided_95_interval": [
+              0.08105748279370828,
+              0.12332792082877608
+            ],
+            "all_pair_changes": [
+              0.20773719590974116,
+              0.08105748279370828,
+              0.07872483987116463,
+              0.06354864649667369,
+              0.0859022569310468,
+              0.14537557858374028,
+              0.12332792082877608,
+              0.05151540161267554,
+              0.1929497978454522,
+              0.0638608693103273,
+              0.04702146702311727,
+              0.12790718178849048,
+              0.11601795423108041,
+              0.1344406222886172,
+              0.014795389236283762,
+              0.09173678157823684,
+              0.1464126164603632,
+              0.11620174738889366,
+              0.11697094505382499,
+              0.14830857956497656,
+              0.14055503705577888,
+              0.1147252723144978,
+              0.13073348833352205,
+              0.07621708755602707,
+              0.08627777917285484,
+              0.07874175583021104,
+              0.14346470246817944,
+              0.0017624799084123843,
+              0.08292451288156477,
+              0.06558086131084506,
+              0.11630507594390438
+            ]
+          },
+          "compile_or_restore_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir305-native-dictionary-seed-frames-4",
+            "wins": 0,
+            "pairs": 31,
+            "median_paired_relative_change": 0.3935914526741795,
+            "two_sided_95_interval": [
+              0.3899340967786642,
+              0.39725196778181404
+            ],
+            "all_pair_changes": [
+              0.42821683975451474,
+              0.4199150781167227,
+              0.3883196731775822,
+              0.3924983863571605,
+              0.39890473335129983,
+              0.3902932551263816,
+              0.3329912930041061,
+              0.38583049330533514,
+              0.40927259668942484,
+              0.3935914526741795,
+              0.3756927156126426,
+              0.39379661593436666,
+              0.3872580361630762,
+              0.38857806895892133,
+              0.3890210931199285,
+              0.3714686372555225,
+              0.4051573349020978,
+              0.3929318410650837,
+              0.39725196778181404,
+              0.40755106971421307,
+              0.4336688633618786,
+              0.3867282826867138,
+              0.3966755714581285,
+              0.4044149254195135,
+              0.40530357228025005,
+              0.3933453818723147,
+              0.3965510464286026,
+              0.3885449775290697,
+              0.39909314954808184,
+              0.3899340967786642,
+              0.395325343506606
+            ]
+          }
+        },
+        "mech-ir308-numeric-owner-handoff-4 vs mech-ir308-owner-handoff-disabled-4": {
+          "post_json_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir308-owner-handoff-disabled-4",
+            "wins": 30,
+            "pairs": 31,
+            "median_paired_relative_change": -0.025844367344048713,
+            "two_sided_95_interval": [
+              -0.031080164589572856,
+              -0.019198754687610564
+            ],
+            "all_pair_changes": [
+              -0.0335001603449806,
+              -0.019198754687610564,
+              -0.026771507577278975,
+              -0.03278108184650241,
+              -0.020591461690698365,
+              -0.028996642276287177,
+              -0.029524036976750323,
+              -0.04739077435894856,
+              -0.053703092574670985,
+              -0.0061481179127040875,
+              -0.04110504384432845,
+              -0.01875300519799561,
+              -0.027700332508448944,
+              -0.006606288524955595,
+              -0.014607510929297463,
+              -0.04706145622091085,
+              -0.013927170353320695,
+              -0.022982710540992768,
+              -0.021446272681099443,
+              -0.01729559748427667,
+              0.062038803258994246,
+              -0.054868490868042574,
+              -0.01911971285804759,
+              -0.032911737629524374,
+              -0.006101342226386919,
+              -0.031080164589572856,
+              -0.0389799487170609,
+              -0.025844367344048713,
+              -0.022095914742451206,
+              -0.04384796939488722,
+              -0.014245014245014231
+            ]
+          },
+          "wall_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir308-owner-handoff-disabled-4",
+            "wins": 2,
+            "pairs": 31,
+            "median_paired_relative_change": 0.019088589211774476,
+            "two_sided_95_interval": [
+              0.013997772327134506,
+              0.036017056470334596
+            ],
+            "all_pair_changes": [
+              0.036017056470334596,
+              0.06682438847980543,
+              0.03971801110431583,
+              0.011826718174951623,
+              0.14873032202436565,
+              0.12828051193359902,
+              0.01943055411877559,
+              0.009871293205094167,
+              0.012613965624546752,
+              0.037263659895996115,
+              -0.01856692506931934,
+              0.01583271274893816,
+              0.013997772327134506,
+              0.019088589211774476,
+              0.03971511013855311,
+              0.012025770416893788,
+              0.07511901161348256,
+              0.05389454257982074,
+              0.017511105045825648,
+              0.0644165938866541,
+              0.025988381568258667,
+              0.009500658014875096,
+              0.02821934876682186,
+              0.009838824526754886,
+              0.023884054192164772,
+              0.017597668563143598,
+              0.04767653594664467,
+              -0.04339792609190318,
+              0.00521738098823743,
+              0.014938530823453311,
+              0.007097858425147319
+            ]
+          },
+          "compile_or_restore_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir308-owner-handoff-disabled-4",
+            "wins": 12,
+            "pairs": 31,
+            "median_paired_relative_change": 0.005352130993244719,
+            "two_sided_95_interval": [
+              -0.001060907110715048,
+              0.008337214722495379
+            ],
+            "all_pair_changes": [
+              0.014967525589999475,
+              0.03530754989585172,
+              0.016820818504298396,
+              0.00916509871198734,
+              0.0012097125212220394,
+              0.007932811113821714,
+              -0.007621967239202498,
+              0.00010122771614873294,
+              -0.002647549797736737,
+              0.008940689750100761,
+              -0.002828867931303547,
+              -0.0022088269905284896,
+              -0.0025006938481666463,
+              -0.0018314760597917257,
+              0.00906180593335515,
+              -0.014206087656443822,
+              0.016554053199137275,
+              0.008337214722495379,
+              0.005352130993244719,
+              0.014910547943955743,
+              0.020582014536037363,
+              -0.0012183141504390482,
+              -0.001060907110715048,
+              -0.00022193858345820328,
+              0.007752379866613479,
+              0.002240679805031398,
+              0.007679497127726531,
+              0.006131935443067338,
+              0.01673806111293441,
+              -0.004722665998465492,
+              -0.0014762040467368731
+            ]
+          }
+        },
+        "mech-ir308-numeric-owner-handoff-4 vs mech-ir295-histogram-reuse-4": {
+          "post_json_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir295-histogram-reuse-4",
+            "wins": 30,
+            "pairs": 31,
+            "median_paired_relative_change": -0.10121697801835106,
+            "two_sided_95_interval": [
+              -0.10947803284943736,
+              -0.09464505855355809
+            ],
+            "all_pair_changes": [
+              -0.0866862784606085,
+              -0.08052713300057635,
+              -0.10632429237538576,
+              -0.10284363302029287,
+              -0.10002114743817225,
+              -0.13346441307966628,
+              -0.09507080440841542,
+              -0.12243378544739525,
+              -0.10715830926752423,
+              -0.0695552762156798,
+              -0.10121697801835106,
+              -0.11030534883468668,
+              -0.09958398240245026,
+              -0.0905588641293632,
+              -0.09342130904778423,
+              -0.09464505855355809,
+              -0.086602273473947,
+              -0.07189827814569538,
+              -0.086150089771179,
+              -0.10951363253675284,
+              0.005982123043689169,
+              -0.1144954413191076,
+              -0.09509622126996498,
+              -0.11334899303095036,
+              -0.11327643343034077,
+              -0.10360771263786384,
+              -0.11277241379310343,
+              -0.11809591793407526,
+              -0.1291729344619752,
+              -0.10947803284943736,
+              -0.0870312525561806
+            ]
+          },
+          "wall_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir295-histogram-reuse-4",
+            "wins": 0,
+            "pairs": 31,
+            "median_paired_relative_change": 0.34558725070606866,
+            "two_sided_95_interval": [
+              0.3237969168908683,
+              0.3749705968940251
+            ],
+            "all_pair_changes": [
+              0.28850321245037325,
+              0.4061795475319714,
+              0.31000372151955924,
+              0.3936674332490344,
+              0.3571134846085331,
+              0.2911085827867319,
+              0.29629741373039886,
+              0.32534241818322296,
+              0.38006964476346883,
+              0.34344987376540437,
+              0.29632069791165394,
+              0.34558725070606866,
+              0.418024588352526,
+              0.33518576313901316,
+              0.2943440160173254,
+              0.3912961591248816,
+              0.39598311720487334,
+              0.41973249683214364,
+              0.34250540479802516,
+              0.44447046497084974,
+              0.4301928569003046,
+              0.35698765791188447,
+              0.3647474023702979,
+              0.3749705968940251,
+              0.30119787152166966,
+              0.35015782668443607,
+              0.4170686418574776,
+              0.2632941393298127,
+              0.3237969168908683,
+              0.26160405365220396,
+              0.3117902905083709
+            ]
+          },
+          "compile_or_restore_seconds": {
+            "candidate": "mech-ir308-numeric-owner-handoff-4",
+            "baseline": "mech-ir295-histogram-reuse-4",
+            "wins": 0,
+            "pairs": 31,
+            "median_paired_relative_change": 1.7509510315744747,
+            "two_sided_95_interval": [
+              1.7461833721538431,
+              1.766074245581461
+            ],
+            "all_pair_changes": [
+              1.711247860057072,
+              1.814104996861964,
+              1.7450265094643487,
+              1.7867905458315523,
+              1.7461833721538431,
+              1.7509510315744747,
+              1.774571132356089,
+              1.7416525034917254,
+              1.7365715159226505,
+              1.7718533926669,
+              1.76118397703981,
+              1.7506958183872436,
+              1.7427906654489336,
+              1.7428340942724896,
+              1.7481662591687042,
+              1.6957863519352072,
+              1.7835171023622047,
+              1.7562065007560492,
+              1.7480936368837638,
+              1.7810938798809164,
+              1.84132938514702,
+              1.7692328705932168,
+              1.7446140043784526,
+              1.766074245581461,
+              1.7573175048533405,
+              1.7745713241124936,
+              1.7202051875949365,
+              1.7300254016737053,
+              1.7462135221091835,
+              1.764570200799406,
+              1.7728578477744397
+            ]
+          }
+        },
+        "mech-ir308-owner-handoff-disabled-4 vs mech-ir307-fixed-key-native-loops-4": {
+          "post_json_seconds": {
+            "candidate": "mech-ir308-owner-handoff-disabled-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 13,
+            "pairs": 31,
+            "median_paired_relative_change": 0.0018027467118095775,
+            "two_sided_95_interval": [
+              -0.003716168840274925,
+              0.01235391470401015
+            ],
+            "all_pair_changes": [
+              0.029061327375996315,
+              0.016129227077453345,
+              -0.33693246031646673,
+              0.009698365838509915,
+              0.022081822027727238,
+              -0.00488474640434744,
+              0.00558327130644809,
+              0.01235391470401015,
+              0.001695770329593893,
+              -0.007759721810074449,
+              -0.012838709677419291,
+              -0.004513256770168672,
+              -0.0005430046027725677,
+              -0.023625354871057436,
+              -0.00677388706475579,
+              0.026621382371127877,
+              0.00716839322712004,
+              0.00815293786899085,
+              0.01272926661150886,
+              -0.009181920770810148,
+              0.02776806219242567,
+              0.03234692778284742,
+              -0.003716168840274925,
+              0.01643882099209204,
+              -0.012450518587319492,
+              -0.0038252416068849104,
+              0.013347859922179017,
+              0.0007323918432409204,
+              0.0018027467118095775,
+              0.012560145328893269,
+              -0.0013281482063169925
+            ]
+          },
+          "wall_seconds": {
+            "candidate": "mech-ir308-owner-handoff-disabled-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 28,
+            "pairs": 31,
+            "median_paired_relative_change": -0.038053082447310205,
+            "two_sided_95_interval": [
+              -0.048459910568077524,
+              -0.033472915548693694
+            ],
+            "all_pair_changes": [
+              -0.026074586543362144,
+              -0.07832509244619179,
+              -0.04800168413877415,
+              -0.030828522867337393,
+              -0.12173322259818875,
+              -0.11970744436360081,
+              -0.06024263012314146,
+              -0.03652240479650781,
+              -0.029051978399511125,
+              -0.033472915548693694,
+              -0.048459910568077524,
+              -0.028112312953780028,
+              -0.0008476002950680295,
+              -0.005317050369963994,
+              -0.10286059976399464,
+              -0.0338342202113574,
+              -0.038053082447310205,
+              -0.05346399118382217,
+              -0.043838870378077766,
+              -0.052222425553959284,
+              -0.030210634287206384,
+              -0.04300262753281303,
+              -0.04668943822479277,
+              0.06477540889293953,
+              -0.0867619195660092,
+              0.08984397130313626,
+              -0.03383093288956651,
+              -0.05364711945967515,
+              0.006301618631764594,
+              -0.06085279730970694,
+              -0.03717539993537933
+            ]
+          },
+          "compile_or_restore_seconds": {
+            "candidate": "mech-ir308-owner-handoff-disabled-4",
+            "baseline": "mech-ir307-fixed-key-native-loops-4",
+            "wins": 15,
+            "pairs": 31,
+            "median_paired_relative_change": 0.0004795726053343774,
+            "two_sided_95_interval": [
+              -0.0023627414407341174,
+              0.0027770861357001575
+            ],
+            "all_pair_changes": [
+              0.0016414215964573042,
+              -0.01982678559355122,
+              -0.0525940023498207,
+              -0.003949077919541355,
+              0.009301819781657894,
+              0.0032079144927852354,
+              0.0027770861357001575,
+              -0.004669639213524923,
+              0.0007173968741993608,
+              0.0035171911657632116,
+              -0.0067188490477883,
+              -0.0014526606625672178,
+              -0.00515780985736658,
+              0.0004795726053343774,
+              -0.014559285773523056,
+              0.009064977246773465,
+              -0.00026641929659509955,
+              -0.0023627414407341174,
+              0.0010669506859981581,
+              -0.005907339556657565,
+              0.013694450920463286,
+              -0.0009266175247514274,
+              0.001208748786477143,
+              0.005848791227989647,
+              0.008794261588592311,
+              0.0060632702471117295,
+              -0.0038212812227805815,
+              -0.01406944507361263,
+              -0.002268471301629993,
+              0.010577920323717294,
+              0.005803379444321077
+            ]
+          }
+        }
+      },
+      "whole_process_gate": false,
+      "goal_complete": false
+    }
+  },
+  "confirmation_processing_ms": 1.71975,
+  "confirmation_times_fastest_Rust": 1.131166658883284,
+  "confirmation_fastest_Rust": {
+    "variant": "rust-ordered-mask-tables256",
+    "median_seconds": 0.001520333,
+    "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+    "eligible_variants": [
+      "rust",
+      "rust-mech-control-streaming",
+      "rust-mech-control-u32-casts",
+      "rust-mech-control-u8-ids-u32",
+      "rust-ordered-scan-only",
+      "rust-ordered-ordered",
+      "rust-ordered-mask-reuse",
+      "rust-ordered-ordered-mask",
+      "rust-ordered-ordered-mask-tables",
+      "rust-apple-m3",
+      "rust-mech-control-streaming-apple-m3",
+      "rust-mech-control-u32-casts-apple-m3",
+      "rust-mech-control-u8-ids-u32-apple-m3",
+      "rust-ordered-scan-only-apple-m3",
+      "rust-ordered-ordered-apple-m3",
+      "rust-ordered-mask-reuse-apple-m3",
+      "rust-ordered-ordered-mask-apple-m3",
+      "rust-ordered-ordered-mask-tables-apple-m3",
+      "rust-ordered-mask-tables256",
+      "rust-ordered-mask-tables256-apple-m3"
+    ]
+  },
+  "remaining_gap_ms": 0.1994169999999999,
+  "current_processing_reduction_required_for_parity": 0.11595697048989673,
+  "confirmation_resources": {
+    "allocation_requests": 720,
+    "requested_allocation_bytes": 7326125,
+    "peak_live_requested_heap_bytes": 13705066,
+    "peak_additional_live_requested_heap_bytes": 5357407,
+    "instructions_retired": 32339570,
+    "cycles": 10559386
+  },
+  "confirmation_resource_changes_vs_IR307": {
+    "allocation_requests": {
+      "before": 722,
+      "after": 720,
+      "delta": -2
+    },
+    "requested_allocation_bytes": {
+      "before": 7729165,
+      "after": 7326125,
+      "delta": -403040
+    },
+    "peak_live_requested_heap_bytes": {
+      "before": 14108860,
+      "after": 13705066,
+      "delta": -403794
+    },
+    "peak_additional_live_requested_heap_bytes": {
+      "before": 5761199,
+      "after": 5357407,
+      "delta": -403792
+    },
+    "instructions_retired": {
+      "before": 32594593,
+      "after": 32339570,
+      "delta": -255023
+    },
+    "cycles": {
+      "before": 10435834,
+      "after": 10559386,
+      "delta": 123552
+    }
+  },
+  "code_size": {
+    "name": "mech-ir308-numeric-owner-handoff-4",
+    "file_bytes": 17182256,
+    "whole_executable_text_bytes": 7468640,
+    "size_tool": "/usr/bin/size -m",
+    "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13778944\n\tSection __text: 7468640\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 286384\n\tSection __const: 5050816\n\tSection __cstring: 48420\n\tSection __unwind_info: 131352\n\tSection __eh_frame: 786900\n\ttotal 13774624\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136648\n\ttotal 136664\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312154112\n",
+    "native_program": {
+      "code_bytes": 1034972,
+      "main_stack_bytes": 1568,
+      "max_individual_native_frame_bytes": 1568,
+      "function_count": 49,
+      "typed_IR": 308,
+      "work_policy": 125,
+      "object_bytes": 5786040
+    }
+  },
+  "qualification": {
+    "compiler_contracts": 484,
+    "all480_parent_names_retained": true,
+    "unchanged_Core_Engine_contracts": 168,
+    "Core_Engine_component_hash_reuse_verified": true,
+    "all_map_contracts": 176,
+    "image_and_caller_contracts": 29,
+    "UTF8_range_protocol_contracts": 28,
+    "packed_frame_effect_contracts": 2,
+    "scalar_DEFLATE_records": 133,
+    "all_scalar_DEFLATE_nontiming_fields_exact": true,
+    "linked_exact_outputs": 64,
+    "latency_exact_outputs": 2294,
+    "resource_exact_outputs": 532,
+    "profile_outputs": 64,
+    "original_and_restored_postings_reused": true,
+    "control_postings_copied": true,
+    "positions_copied_in_both": true
+  },
+  "fresh_phase_profile": {
+    "diagnostic_only": true,
+    "authoritative_timings_are_separate": true,
+    "source_and_native_Objects_unchanged": true,
+    "phase_medians_are_not_additive": true,
+    "native_root_includes_cold_helper_work": true,
+    "summary": {
+      "handoff-disabled-detail": {
+        "writes": {
+          "844": {
+            "elapsed_ns": 19291.5,
+            "instructions": 184733.0,
+            "cycles": 72228.5,
+            "thread_requests": 4.0,
+            "thread_requested_bytes": 282200.0,
+            "thread_freed_bytes": 0.0
+          },
+          "1578": {
+            "elapsed_ns": 9646.0,
+            "instructions": 89568.0,
+            "cycles": 35580.0,
+            "thread_requests": 4.0,
+            "thread_requested_bytes": 121592.0,
+            "thread_freed_bytes": 0.0
+          },
+          "847": {
+            "elapsed_ns": 4312.5,
+            "instructions": 33092.5,
+            "cycles": 16253.0,
+            "thread_requests": 4.0,
+            "thread_requested_bytes": 26592.0,
+            "thread_freed_bytes": 0.0
+          },
+          "1581": {
+            "elapsed_ns": 12312.0,
+            "instructions": 111715.0,
+            "cycles": 45927.0,
+            "thread_requests": 4.0,
+            "thread_requested_bytes": 164184.0,
+            "thread_freed_bytes": 0.0
+          },
+          "postings_combined": {
+            "elapsed_ns": 29250.0,
+            "instructions": 274272.0,
+            "cycles": 109446.0,
+            "thread_requests": 8.0,
+            "thread_requested_bytes": 403792.0,
+            "thread_freed_bytes": 0.0
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 113583.0,
+            "instructions": 2212889.0,
+            "cycles": 434900.0,
+            "thread_requests": 13.0,
+            "thread_requested_bytes": 1208.0,
+            "thread_freed_bytes": 1208.0
+          },
+          "795": {
+            "elapsed_ns": 124708.5,
+            "instructions": 2214071.5,
+            "cycles": 473271.5,
+            "thread_requests": 8.0,
+            "thread_requested_bytes": 308792.0,
+            "thread_freed_bytes": 0.0
+          },
+          "1036": {
+            "elapsed_ns": 89500.0,
+            "instructions": 1755866.0,
+            "cycles": 341668.5,
+            "thread_requests": 13.0,
+            "thread_requested_bytes": 1208.0,
+            "thread_freed_bytes": 1208.0
+          },
+          "1529": {
+            "elapsed_ns": 83375.0,
+            "instructions": 1274032.5,
+            "cycles": 317400.5,
+            "thread_requests": 8.0,
+            "thread_requested_bytes": 285776.0,
+            "thread_freed_bytes": 0.0
+          }
+        }
+      },
+      "handoff-enabled-detail": {
+        "writes": {
+          "844": {
+            "elapsed_ns": 1646.0,
+            "instructions": 17889.0,
+            "cycles": 5726.5,
+            "thread_requests": 3.0,
+            "thread_requested_bytes": 376.0,
+            "thread_freed_bytes": 376.0
+          },
+          "1578": {
+            "elapsed_ns": 1542.0,
+            "instructions": 17985.0,
+            "cycles": 5551.5,
+            "thread_requests": 3.0,
+            "thread_requested_bytes": 376.0,
+            "thread_freed_bytes": 376.0
+          },
+          "847": {
+            "elapsed_ns": 4333.0,
+            "instructions": 35675.0,
+            "cycles": 16470.0,
+            "thread_requests": 4.0,
+            "thread_requested_bytes": 26592.0,
+            "thread_freed_bytes": 0.0
+          },
+          "1581": {
+            "elapsed_ns": 12291.5,
+            "instructions": 112960.5,
+            "cycles": 46674.0,
+            "thread_requests": 4.0,
+            "thread_requested_bytes": 164184.0,
+            "thread_freed_bytes": 0.0
+          },
+          "postings_combined": {
+            "elapsed_ns": 3208.0,
+            "instructions": 35874.0,
+            "cycles": 11259.0,
+            "thread_requests": 6.0,
+            "thread_requested_bytes": 752.0,
+            "thread_freed_bytes": 752.0
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 111666.5,
+            "instructions": 2140325.0,
+            "cycles": 429336.0,
+            "thread_requests": 13.0,
+            "thread_requested_bytes": 1208.0,
+            "thread_freed_bytes": 1208.0
+          },
+          "795": {
+            "elapsed_ns": 107458.0,
+            "instructions": 2049810.0,
+            "cycles": 406705.0,
+            "thread_requests": 7.0,
+            "thread_requested_bytes": 26968.0,
+            "thread_freed_bytes": 376.0
+          },
+          "1036": {
+            "elapsed_ns": 88583.5,
+            "instructions": 1769872.0,
+            "cycles": 344606.5,
+            "thread_requests": 13.0,
+            "thread_requested_bytes": 1208.0,
+            "thread_freed_bytes": 1208.0
+          },
+          "1529": {
+            "elapsed_ns": 75479.0,
+            "instructions": 1203643.0,
+            "cycles": 287701.0,
+            "thread_requests": 7.0,
+            "thread_requested_bytes": 164560.0,
+            "thread_freed_bytes": 376.0
+          }
+        }
+      }
+    },
+    "paired_coarse_phase_changes": {
+      "preparation_interning_and_eligibility": {
+        "handoff-disabled-coarse": {
+          "median_difference_ns": 5313.0,
+          "wins": 3
+        },
+        "rust-fastest-coarse": {
+          "median_difference_ns": 114791.5,
+          "wins": 0
+        }
+      },
+      "triple_index_and_coverage": {
+        "handoff-disabled-coarse": {
+          "median_difference_ns": -21208.5,
+          "wins": 7
+        },
+        "rust-fastest-coarse": {
+          "median_difference_ns": 138833.0,
+          "wins": 0
+        }
+      },
+      "quartet_index_and_masks": {
+        "handoff-disabled-coarse": {
+          "median_difference_ns": -9209.0,
+          "wins": 7
+        },
+        "rust-fastest-coarse": {
+          "median_difference_ns": 54625.5,
+          "wins": 0
+        }
+      },
+      "queries_cleanup_and_materialization": {
+        "handoff-disabled-coarse": {
+          "median_difference_ns": 5958.5,
+          "wins": 4
+        },
+        "rust-fastest-coarse": {
+          "median_difference_ns": -77624.5,
+          "wins": 7
+        }
+      }
+    },
+    "raw": [
+      {
+        "pair": 0,
+        "variant": "handoff-disabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 26333,
+            "instructions": 181985,
+            "cycles": 68361,
+            "thread_requests": 4,
+            "thread_requested_bytes": 282200,
+            "thread_freed_bytes": 0
+          },
+          "1578": {
+            "elapsed_ns": 13250,
+            "instructions": 88846,
+            "cycles": 34136,
+            "thread_requests": 4,
+            "thread_requested_bytes": 121592,
+            "thread_freed_bytes": 0
+          },
+          "847": {
+            "elapsed_ns": 6500,
+            "instructions": 33298,
+            "cycles": 16301,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 17000,
+            "instructions": 109516,
+            "cycles": 43800,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 39583,
+            "instructions": 270831,
+            "cycles": 102497,
+            "thread_requests": 8,
+            "thread_requested_bytes": 403792,
+            "thread_freed_bytes": 0
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 225583,
+            "instructions": 2460617,
+            "cycles": 589532,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 178750,
+            "instructions": 2211529,
+            "cycles": 467127,
+            "thread_requests": 8,
+            "thread_requested_bytes": 308792,
+            "thread_freed_bytes": 0
+          },
+          "1036": {
+            "elapsed_ns": 161917,
+            "instructions": 1879617,
+            "cycles": 423049,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 116042,
+            "instructions": 1271105,
+            "cycles": 310756,
+            "thread_requests": 8,
+            "thread_requested_bytes": 285776,
+            "thread_freed_bytes": 0
+          }
+        }
+      },
+      {
+        "pair": 0,
+        "variant": "handoff-enabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 1584,
+            "instructions": 17894,
+            "cycles": 5769,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "1578": {
+            "elapsed_ns": 1417,
+            "instructions": 17894,
+            "cycles": 5129,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "847": {
+            "elapsed_ns": 4125,
+            "instructions": 35902,
+            "cycles": 16087,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 11833,
+            "instructions": 112933,
+            "cycles": 47364,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 3001,
+            "instructions": 35788,
+            "cycles": 10898,
+            "thread_requests": 6,
+            "thread_requested_bytes": 752,
+            "thread_freed_bytes": 752
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 106292,
+            "instructions": 2140985,
+            "cycles": 430543,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 100584,
+            "instructions": 2050042,
+            "cycles": 407337,
+            "thread_requests": 7,
+            "thread_requested_bytes": 26968,
+            "thread_freed_bytes": 376
+          },
+          "1036": {
+            "elapsed_ns": 86250,
+            "instructions": 1770811,
+            "cycles": 349333,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 71459,
+            "instructions": 1203570,
+            "cycles": 289215,
+            "thread_requests": 7,
+            "thread_requested_bytes": 164560,
+            "thread_freed_bytes": 376
+          }
+        }
+      },
+      {
+        "pair": 1,
+        "variant": "handoff-enabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 1542,
+            "instructions": 17889,
+            "cycles": 5734,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "1578": {
+            "elapsed_ns": 1542,
+            "instructions": 17985,
+            "cycles": 5539,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "847": {
+            "elapsed_ns": 4333,
+            "instructions": 35515,
+            "cycles": 16975,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 11750,
+            "instructions": 112156,
+            "cycles": 46934,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 3084,
+            "instructions": 35874,
+            "cycles": 11273,
+            "thread_requests": 6,
+            "thread_requested_bytes": 752,
+            "thread_freed_bytes": 752
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 104833,
+            "instructions": 2139481,
+            "cycles": 424593,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 100541,
+            "instructions": 2049650,
+            "cycles": 407116,
+            "thread_requests": 7,
+            "thread_requested_bytes": 26968,
+            "thread_freed_bytes": 376
+          },
+          "1036": {
+            "elapsed_ns": 83958,
+            "instructions": 1769362,
+            "cycles": 339880,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 71167,
+            "instructions": 1202884,
+            "cycles": 288020,
+            "thread_requests": 7,
+            "thread_requested_bytes": 164560,
+            "thread_freed_bytes": 376
+          }
+        }
+      },
+      {
+        "pair": 1,
+        "variant": "handoff-disabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 19000,
+            "instructions": 184793,
+            "cycles": 71397,
+            "thread_requests": 4,
+            "thread_requested_bytes": 282200,
+            "thread_freed_bytes": 0
+          },
+          "1578": {
+            "elapsed_ns": 10542,
+            "instructions": 89496,
+            "cycles": 39276,
+            "thread_requests": 4,
+            "thread_requested_bytes": 121592,
+            "thread_freed_bytes": 0
+          },
+          "847": {
+            "elapsed_ns": 3916,
+            "instructions": 33094,
+            "cycles": 14088,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 17667,
+            "instructions": 143921,
+            "cycles": 66257,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 29542,
+            "instructions": 274289,
+            "cycles": 110673,
+            "thread_requests": 8,
+            "thread_requested_bytes": 403792,
+            "thread_freed_bytes": 0
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 113541,
+            "instructions": 2212990,
+            "cycles": 428616,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 124792,
+            "instructions": 2214133,
+            "cycles": 471308,
+            "thread_requests": 8,
+            "thread_requested_bytes": 308792,
+            "thread_freed_bytes": 0
+          },
+          "1036": {
+            "elapsed_ns": 89375,
+            "instructions": 1755342,
+            "cycles": 337122,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 90125,
+            "instructions": 1306160,
+            "cycles": 340026,
+            "thread_requests": 8,
+            "thread_requested_bytes": 285776,
+            "thread_freed_bytes": 0
+          }
+        }
+      },
+      {
+        "pair": 2,
+        "variant": "handoff-enabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 1667,
+            "instructions": 17889,
+            "cycles": 5719,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "1578": {
+            "elapsed_ns": 1667,
+            "instructions": 17985,
+            "cycles": 5779,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "847": {
+            "elapsed_ns": 4333,
+            "instructions": 35599,
+            "cycles": 15894,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 12375,
+            "instructions": 112988,
+            "cycles": 46021,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 3334,
+            "instructions": 35874,
+            "cycles": 11498,
+            "thread_requests": 6,
+            "thread_requested_bytes": 752,
+            "thread_freed_bytes": 752
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 111167,
+            "instructions": 2139633,
+            "cycles": 419706,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 107500,
+            "instructions": 2049734,
+            "cycles": 405769,
+            "thread_requests": 7,
+            "thread_requested_bytes": 26968,
+            "thread_freed_bytes": 376
+          },
+          "1036": {
+            "elapsed_ns": 88667,
+            "instructions": 1769410,
+            "cycles": 334728,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 76333,
+            "instructions": 1203716,
+            "cycles": 287842,
+            "thread_requests": 7,
+            "thread_requested_bytes": 164560,
+            "thread_freed_bytes": 376
+          }
+        }
+      },
+      {
+        "pair": 2,
+        "variant": "handoff-disabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 19333,
+            "instructions": 184673,
+            "cycles": 72506,
+            "thread_requests": 4,
+            "thread_requested_bytes": 282200,
+            "thread_freed_bytes": 0
+          },
+          "1578": {
+            "elapsed_ns": 9625,
+            "instructions": 89582,
+            "cycles": 35713,
+            "thread_requests": 4,
+            "thread_requested_bytes": 121592,
+            "thread_freed_bytes": 0
+          },
+          "847": {
+            "elapsed_ns": 4000,
+            "instructions": 33091,
+            "cycles": 14507,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 12209,
+            "instructions": 111783,
+            "cycles": 45670,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 28958,
+            "instructions": 274255,
+            "cycles": 108219,
+            "thread_requests": 8,
+            "thread_requested_bytes": 403792,
+            "thread_freed_bytes": 0
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 114417,
+            "instructions": 2212782,
+            "cycles": 431920,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 124625,
+            "instructions": 2214010,
+            "cycles": 470404,
+            "thread_requests": 8,
+            "thread_requested_bytes": 308792,
+            "thread_freed_bytes": 0
+          },
+          "1036": {
+            "elapsed_ns": 89625,
+            "instructions": 1756112,
+            "cycles": 338150,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 83583,
+            "instructions": 1274108,
+            "cycles": 315347,
+            "thread_requests": 8,
+            "thread_requested_bytes": 285776,
+            "thread_freed_bytes": 0
+          }
+        }
+      },
+      {
+        "pair": 3,
+        "variant": "handoff-enabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 1542,
+            "instructions": 17889,
+            "cycles": 5760,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "1578": {
+            "elapsed_ns": 1542,
+            "instructions": 17985,
+            "cycles": 5679,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "847": {
+            "elapsed_ns": 4542,
+            "instructions": 35671,
+            "cycles": 17745,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 13375,
+            "instructions": 113036,
+            "cycles": 53813,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 3084,
+            "instructions": 35874,
+            "cycles": 11439,
+            "thread_requests": 6,
+            "thread_requested_bytes": 752,
+            "thread_freed_bytes": 752
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 110500,
+            "instructions": 2146948,
+            "cycles": 447739,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 101250,
+            "instructions": 2049806,
+            "cycles": 409929,
+            "thread_requests": 7,
+            "thread_requested_bytes": 26968,
+            "thread_freed_bytes": 376
+          },
+          "1036": {
+            "elapsed_ns": 86791,
+            "instructions": 1769444,
+            "cycles": 351381,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 72958,
+            "instructions": 1203764,
+            "cycles": 295425,
+            "thread_requests": 7,
+            "thread_requested_bytes": 164560,
+            "thread_freed_bytes": 376
+          }
+        }
+      },
+      {
+        "pair": 3,
+        "variant": "handoff-disabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 20083,
+            "instructions": 185931,
+            "cycles": 80871,
+            "thread_requests": 4,
+            "thread_requested_bytes": 282200,
+            "thread_freed_bytes": 0
+          },
+          "1578": {
+            "elapsed_ns": 10709,
+            "instructions": 90342,
+            "cycles": 42875,
+            "thread_requests": 4,
+            "thread_requested_bytes": 121592,
+            "thread_freed_bytes": 0
+          },
+          "847": {
+            "elapsed_ns": 4166,
+            "instructions": 33188,
+            "cycles": 16213,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 12291,
+            "instructions": 112443,
+            "cycles": 49325,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 30792,
+            "instructions": 276273,
+            "cycles": 123746,
+            "thread_requests": 8,
+            "thread_requested_bytes": 403792,
+            "thread_freed_bytes": 0
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 113917,
+            "instructions": 2246351,
+            "cycles": 461356,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 119208,
+            "instructions": 2215365,
+            "cycles": 482829,
+            "thread_requests": 8,
+            "thread_requested_bytes": 308792,
+            "thread_freed_bytes": 0
+          },
+          "1036": {
+            "elapsed_ns": 85583,
+            "instructions": 1756372,
+            "cycles": 346630,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 81625,
+            "instructions": 1275529,
+            "cycles": 330362,
+            "thread_requests": 8,
+            "thread_requested_bytes": 285776,
+            "thread_freed_bytes": 0
+          }
+        }
+      },
+      {
+        "pair": 4,
+        "variant": "handoff-disabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 18708,
+            "instructions": 184561,
+            "cycles": 75134,
+            "thread_requests": 4,
+            "thread_requested_bytes": 282200,
+            "thread_freed_bytes": 0
+          },
+          "1578": {
+            "elapsed_ns": 9667,
+            "instructions": 89528,
+            "cycles": 38530,
+            "thread_requests": 4,
+            "thread_requested_bytes": 121592,
+            "thread_freed_bytes": 0
+          },
+          "847": {
+            "elapsed_ns": 3750,
+            "instructions": 33052,
+            "cycles": 14634,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 11416,
+            "instructions": 111601,
+            "cycles": 45669,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 28375,
+            "instructions": 274089,
+            "cycles": 113664,
+            "thread_requests": 8,
+            "thread_requested_bytes": 403792,
+            "thread_freed_bytes": 0
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 108125,
+            "instructions": 2212882,
+            "cycles": 437880,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 118125,
+            "instructions": 2213859,
+            "cycles": 478392,
+            "thread_requests": 8,
+            "thread_requested_bytes": 308792,
+            "thread_freed_bytes": 0
+          },
+          "1036": {
+            "elapsed_ns": 85250,
+            "instructions": 1755588,
+            "cycles": 345094,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 78833,
+            "instructions": 1273872,
+            "cycles": 319168,
+            "thread_requests": 8,
+            "thread_requested_bytes": 285776,
+            "thread_freed_bytes": 0
+          }
+        }
+      },
+      {
+        "pair": 4,
+        "variant": "handoff-enabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 1625,
+            "instructions": 17889,
+            "cycles": 5586,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "1578": {
+            "elapsed_ns": 1541,
+            "instructions": 17985,
+            "cycles": 5278,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "847": {
+            "elapsed_ns": 4208,
+            "instructions": 35717,
+            "cycles": 15273,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 12792,
+            "instructions": 113784,
+            "cycles": 47677,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 3166,
+            "instructions": 35874,
+            "cycles": 10864,
+            "thread_requests": 6,
+            "thread_requested_bytes": 752,
+            "thread_freed_bytes": 752
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 115334,
+            "instructions": 2148656,
+            "cycles": 435244,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 107458,
+            "instructions": 2049852,
+            "cycles": 405596,
+            "thread_requests": 7,
+            "thread_requested_bytes": 26968,
+            "thread_freed_bytes": 376
+          },
+          "1036": {
+            "elapsed_ns": 89500,
+            "instructions": 1770202,
+            "cycles": 337875,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 75708,
+            "instructions": 1204512,
+            "cycles": 285540,
+            "thread_requests": 7,
+            "thread_requested_bytes": 164560,
+            "thread_freed_bytes": 376
+          }
+        }
+      },
+      {
+        "pair": 5,
+        "variant": "handoff-disabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 20750,
+            "instructions": 185929,
+            "cycles": 83519,
+            "thread_requests": 4,
+            "thread_requested_bytes": 282200,
+            "thread_freed_bytes": 0
+          },
+          "1578": {
+            "elapsed_ns": 8792,
+            "instructions": 89590,
+            "cycles": 35019,
+            "thread_requests": 4,
+            "thread_requested_bytes": 121592,
+            "thread_freed_bytes": 0
+          },
+          "847": {
+            "elapsed_ns": 7333,
+            "instructions": 33091,
+            "cycles": 29025,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 12875,
+            "instructions": 112123,
+            "cycles": 51550,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 29542,
+            "instructions": 275519,
+            "cycles": 118538,
+            "thread_requests": 8,
+            "thread_requested_bytes": 403792,
+            "thread_freed_bytes": 0
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 108417,
+            "instructions": 2212896,
+            "cycles": 438931,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 123333,
+            "instructions": 2215266,
+            "cycles": 499531,
+            "thread_requests": 8,
+            "thread_requested_bytes": 308792,
+            "thread_freed_bytes": 0
+          },
+          "1036": {
+            "elapsed_ns": 84292,
+            "instructions": 1755620,
+            "cycles": 341178,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 80584,
+            "instructions": 1274456,
+            "cycles": 326240,
+            "thread_requests": 8,
+            "thread_requested_bytes": 285776,
+            "thread_freed_bytes": 0
+          }
+        }
+      },
+      {
+        "pair": 5,
+        "variant": "handoff-enabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 1708,
+            "instructions": 17889,
+            "cycles": 5748,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "1578": {
+            "elapsed_ns": 1542,
+            "instructions": 17985,
+            "cycles": 5261,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "847": {
+            "elapsed_ns": 4792,
+            "instructions": 35521,
+            "cycles": 17548,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 12208,
+            "instructions": 112570,
+            "cycles": 45500,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 3250,
+            "instructions": 35874,
+            "cycles": 11009,
+            "thread_requests": 6,
+            "thread_requested_bytes": 752,
+            "thread_freed_bytes": 752
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 114291,
+            "instructions": 2139665,
+            "cycles": 431448,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 107834,
+            "instructions": 2049656,
+            "cycles": 407001,
+            "thread_requests": 7,
+            "thread_requested_bytes": 26968,
+            "thread_freed_bytes": 376
+          },
+          "1036": {
+            "elapsed_ns": 92958,
+            "instructions": 1773302,
+            "cycles": 350858,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 76250,
+            "instructions": 1203298,
+            "cycles": 287560,
+            "thread_requests": 7,
+            "thread_requested_bytes": 164560,
+            "thread_freed_bytes": 376
+          }
+        }
+      },
+      {
+        "pair": 6,
+        "variant": "handoff-enabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 1667,
+            "instructions": 17889,
+            "cycles": 5680,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "1578": {
+            "elapsed_ns": 1666,
+            "instructions": 17985,
+            "cycles": 5779,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "847": {
+            "elapsed_ns": 4625,
+            "instructions": 35679,
+            "cycles": 16853,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 12417,
+            "instructions": 113000,
+            "cycles": 46414,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 3333,
+            "instructions": 35874,
+            "cycles": 11459,
+            "thread_requests": 6,
+            "thread_requested_bytes": 752,
+            "thread_freed_bytes": 752
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 112166,
+            "instructions": 2139599,
+            "cycles": 423272,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 107708,
+            "instructions": 2049814,
+            "cycles": 406409,
+            "thread_requests": 7,
+            "thread_requested_bytes": 26968,
+            "thread_freed_bytes": 376
+          },
+          "1036": {
+            "elapsed_ns": 88500,
+            "instructions": 1769542,
+            "cycles": 334132,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 75250,
+            "instructions": 1203728,
+            "cycles": 283949,
+            "thread_requests": 7,
+            "thread_requested_bytes": 164560,
+            "thread_freed_bytes": 376
+          }
+        }
+      },
+      {
+        "pair": 6,
+        "variant": "handoff-disabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 18583,
+            "instructions": 184834,
+            "cycles": 69845,
+            "thread_requests": 4,
+            "thread_requested_bytes": 282200,
+            "thread_freed_bytes": 0
+          },
+          "1578": {
+            "elapsed_ns": 9292,
+            "instructions": 89566,
+            "cycles": 34422,
+            "thread_requests": 4,
+            "thread_requested_bytes": 121592,
+            "thread_freed_bytes": 0
+          },
+          "847": {
+            "elapsed_ns": 4500,
+            "instructions": 33355,
+            "cycles": 16426,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 12208,
+            "instructions": 111647,
+            "cycles": 45630,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 27875,
+            "instructions": 274400,
+            "cycles": 104267,
+            "thread_requests": 8,
+            "thread_requested_bytes": 403792,
+            "thread_freed_bytes": 0
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 113417,
+            "instructions": 2212753,
+            "cycles": 428089,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 125208,
+            "instructions": 2214435,
+            "cycles": 472793,
+            "thread_requests": 8,
+            "thread_requested_bytes": 308792,
+            "thread_freed_bytes": 0
+          },
+          "1036": {
+            "elapsed_ns": 90333,
+            "instructions": 1762521,
+            "cycles": 340819,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 83666,
+            "instructions": 1273957,
+            "cycles": 315633,
+            "thread_requests": 8,
+            "thread_requested_bytes": 285776,
+            "thread_freed_bytes": 0
+          }
+        }
+      },
+      {
+        "pair": 7,
+        "variant": "handoff-enabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 1667,
+            "instructions": 17884,
+            "cycles": 5681,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "1578": {
+            "elapsed_ns": 1625,
+            "instructions": 17980,
+            "cycles": 5564,
+            "thread_requests": 3,
+            "thread_requested_bytes": 376,
+            "thread_freed_bytes": 376
+          },
+          "847": {
+            "elapsed_ns": 4208,
+            "instructions": 35708,
+            "cycles": 15470,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 12041,
+            "instructions": 112242,
+            "cycles": 44843,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 3292,
+            "instructions": 35864,
+            "cycles": 11245,
+            "thread_requests": 6,
+            "thread_requested_bytes": 752,
+            "thread_freed_bytes": 752
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 113458,
+            "instructions": 2146393,
+            "cycles": 428129,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 107458,
+            "instructions": 2049838,
+            "cycles": 405713,
+            "thread_requests": 7,
+            "thread_requested_bytes": 26968,
+            "thread_freed_bytes": 376
+          },
+          "1036": {
+            "elapsed_ns": 93375,
+            "instructions": 1779927,
+            "cycles": 352172,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 76000,
+            "instructions": 1202965,
+            "cycles": 286559,
+            "thread_requests": 7,
+            "thread_requested_bytes": 164560,
+            "thread_freed_bytes": 376
+          }
+        }
+      },
+      {
+        "pair": 7,
+        "variant": "handoff-disabled-detail",
+        "writes": {
+          "844": {
+            "elapsed_ns": 19250,
+            "instructions": 184341,
+            "cycles": 71951,
+            "thread_requests": 4,
+            "thread_requested_bytes": 282200,
+            "thread_freed_bytes": 0
+          },
+          "1578": {
+            "elapsed_ns": 9542,
+            "instructions": 89570,
+            "cycles": 35447,
+            "thread_requests": 4,
+            "thread_requested_bytes": 121592,
+            "thread_freed_bytes": 0
+          },
+          "847": {
+            "elapsed_ns": 4459,
+            "instructions": 33053,
+            "cycles": 16293,
+            "thread_requests": 4,
+            "thread_requested_bytes": 26592,
+            "thread_freed_bytes": 0
+          },
+          "1581": {
+            "elapsed_ns": 12333,
+            "instructions": 111551,
+            "cycles": 46184,
+            "thread_requests": 4,
+            "thread_requested_bytes": 164184,
+            "thread_freed_bytes": 0
+          },
+          "postings_combined": {
+            "elapsed_ns": 28792,
+            "instructions": 273911,
+            "cycles": 107398,
+            "thread_requests": 8,
+            "thread_requested_bytes": 403792,
+            "thread_freed_bytes": 0
+          }
+        },
+        "native_roots": {
+          "271": {
+            "elapsed_ns": 113625,
+            "instructions": 2212627,
+            "cycles": 428833,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "795": {
+            "elapsed_ns": 125500,
+            "instructions": 2213640,
+            "cycles": 473750,
+            "thread_requests": 8,
+            "thread_requested_bytes": 308792,
+            "thread_freed_bytes": 0
+          },
+          "1036": {
+            "elapsed_ns": 90708,
+            "instructions": 1755561,
+            "cycles": 342159,
+            "thread_requests": 13,
+            "thread_requested_bytes": 1208,
+            "thread_freed_bytes": 1208
+          },
+          "1529": {
+            "elapsed_ns": 83167,
+            "instructions": 1273864,
+            "cycles": 313958,
+            "thread_requests": 8,
+            "thread_requested_bytes": 285776,
+            "thread_freed_bytes": 0
+          }
+        }
+      }
+    ],
+    "already_implemented_geometry": "numeric_words::linear_address already uses schema-certified unit dimensions; schema22 has Constant(1), so treating generic matrix division as a new saving for these arrays would be incorrect."
+  },
+  "whole_process_confirmation_ms": 51.39245791360736,
+  "restoration_confirmation_ms": 21.898875,
+  "whole_process_gate": false,
+  "limitations": [
+    "Authoritative processing, whole-process and resource measurements use separate declared windows.",
+    "Instrumented phase/helper medians overlap and cannot be added to production savings.",
+    "Aggregate cycles did not improve against IR307 in confirmation; instructions and latency did.",
+    "The established 1.151x historical result used a different cohort; compare the fresh paired controls.",
+    "Scalar/DEFLATE and all retained current compiler controls remain mandatory; source/range prototype emits no unchecked accesses."
+  ],
+  "goal_complete": false
+}

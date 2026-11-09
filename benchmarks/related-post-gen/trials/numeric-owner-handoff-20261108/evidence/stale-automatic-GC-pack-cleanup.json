@@ -1,0 +1,11 @@
+{
+  "path": "/Users/cim310/mech-lang/mech/.git/objects/pack/tmp_pack_C7LVeX",
+  "size": 1398669312,
+  "mtime": 1794170942.0621333,
+  "checked_unindexed": true,
+  "checked_no_open_descriptor": true,
+  "processes": "766 /usr/local/bin/gitlab-runner run --config /Users/cim310/.gitlab-runner/config.toml --working-directory /Users/cim310 --service gitlab-runner --syslog\n",
+  "reason": "stale incomplete automatic Git GC pack; original objects remain in the repository; no source or benchmark evidence is removed",
+  "time": 1794187639.977089,
+  "removed": true
+}

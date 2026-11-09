@@ -1,0 +1,42 @@
+{
+  "files": [
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-runners-20261108-v2/compiler",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-runners-20261108-v2/compiler.gz",
+      "bytes": 107713072,
+      "mode": 33261,
+      "sha256": "ed086a62c23d58ecf5d64a649a066777ee86ad20c5be1a68f2798d77ab2404bc",
+      "archive_bytes": 14452367,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-numeric-owner-handoff-emission-control-20261108-v2/compiler",
+      "archive": "/private/tmp/mech-related-numeric-owner-handoff-emission-control-20261108-v2/compiler.gz",
+      "bytes": 107711984,
+      "mode": 33261,
+      "sha256": "850376bbb61a692da4e5abb81fb844c13da0a2c653510c19828e5668dc0bd798",
+      "archive_bytes": 14449676,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-fixed-key-native-loops-runners-20261108-v1/compiler",
+      "archive": "/private/tmp/mech-related-fixed-key-native-loops-runners-20261108-v1/compiler.gz",
+      "bytes": 107717008,
+      "mode": 33261,
+      "sha256": "9833999a25950e4414850c8bc15e009246eaf2b0cc63b4e9e34a4a9d5fc0648b",
+      "archive_bytes": 14452017,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-fixed-key-native-loops-emission-control-20261108-v1/compiler",
+      "archive": "/private/tmp/mech-related-fixed-key-native-loops-emission-control-20261108-v1/compiler.gz",
+      "bytes": 107717024,
+      "mode": 33261,
+      "sha256": "a92345af63b2274e6b31dcaf08140363feec17280dc789bcddd83b1d438c49af",
+      "archive_bytes": 14450449,
+      "losslessly_verified": true
+    }
+  ],
+  "all_Object_emissions_completed": true,
+  "all_source_libraries_and_latency_executables_untouched": true
+}

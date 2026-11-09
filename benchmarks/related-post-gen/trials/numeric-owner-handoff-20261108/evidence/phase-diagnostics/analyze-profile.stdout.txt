@@ -1,0 +1,6 @@
+rust-fastest-coarse post ms 1.529646 M instructions 17.7136 alloc 58.0 bytes 6825713.0 native roots [0]
+ phases [('preparation_interning_and_eligibility', 0.595021, 7778027.5, 38.0), ('triple_index_and_coverage', 0.181729, 2954472.5, 7.0), ('quartet_index_and_masks', 0.193666, 2731735.5, 7.0), ('queries_cleanup_and_materialization', 0.561646, 4238944.5, 6.0)]
+handoff-disabled-coarse post ms 1.791834 M instructions 33.009 alloc 726.0 bytes 7746573.0 native roots [16]
+ phases [('preparation_interning_and_eligibility', 0.702, 8782567.0, 364.0), ('triple_index_and_coverage', 0.345333, 5621861.0, 83.0), ('quartet_index_and_masks', 0.259104, 4483379.5, 83.0), ('queries_cleanup_and_materialization', 0.482396, 14117924.0, 196.0)]
+handoff-enabled-coarse post ms 1.762687 M instructions 32.7492 alloc 724.0 bytes 7343533.0 native roots [16]
+ phases [('preparation_interning_and_eligibility', 0.707646, 8835478.5, 364.0), ('triple_index_and_coverage', 0.321979, 5371420.5, 82.0), ('quartet_index_and_masks', 0.246354, 4424826.5, 82.0), ('queries_cleanup_and_materialization', 0.485687, 14116701.0, 196.0)]

@@ -1,0 +1,9 @@
+IR308 is the selected compiler and timing foundation. Keep IR305 and IR307 as retained controls; do not rerun unchanged IR308 for a more favorable ratio. Confirmation: 1.719750 ms versus fastest eligible Rust 1.520333 ms, 1.131167x; current remaining gap 199.417 us, requiring 11.60% less Mech processing time.
+
+Next: connect the existing completed-key certificate to the identical key+1 arithmetic first, retaining array bounds, portable selector checks, cursor and posting-ID proofs separately. Prefix occupied-length relation remains a separate test-only prototype. No new runtime proof-cache burden is needed for a compiler-only arithmetic certificate.
+
+Fresh critical-path profile: triple phase about 322 us vs Rust 182 us; preparation 708 vs595; quartets246 vs194; queries486 vs562. Paired excesses roughly139,115,55 us and query advantage78 us, respectively. Medians are diagnostic and nonadditive. The two first-write callbacks fell29.25 to3.208 us combined; payload copies403040 bytes disappeared. Native triple generation still~112 us /2.14M main-thread instructions, scatter~107 us /2.05M; focus larger transformations there only after tying savings to actual hot-path counts.
+
+Inspect source-level combinatorial table reuse, repeated native scalar/array-state loads, source admission/check batching and entry/settlement costs. Do not assume multiply-high implements unnecessary overflow checks: constant division uses it. Current numeric_words::linear_address already recognizes schema-certified unit dimensions; vectors here have Constant(1), so generic row/column division is not an unclaimed saving. Query aggregate instructions remain high but its four-worker wall-time advantage is retained.
+
+Keep Cranelift; no LLVM dependency. Original Core exclusivity and real prefix aliases remain intact. Whole-process/restoration costs remain visible outside the mandatory gate.

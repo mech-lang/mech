@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/runner-profile",
+    "--output",
+    "/private/tmp/mech-related-numeric-owner-handoff-20261108/phase-diagnostics/profile/hosts/handoff-disabled/native-link-proof.json"
+  ],
+  "exit": 0,
+  "seconds": 0.08045274997130036,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 51, \"normalized_text_sha256\": \"ddd081f6f25d1ecbd9e65633596029033c02ce4d8648bf28399fc138161abed6\"}\n",
+  "stderr": "",
+  "diagnostic_only": true,
+  "all_timings_ineligible": true
+}

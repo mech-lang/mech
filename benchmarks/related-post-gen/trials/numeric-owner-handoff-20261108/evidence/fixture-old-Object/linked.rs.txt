@@ -1,0 +1,8 @@
+unsafe extern "C" {
+ #[link_name="mech_canonical_program_identity_v1_7a8c9f4e9a2e1112b0f23d8b4a83543929ef91e8193e5969c64d83870e758b20"] static LINKED_IDENTITY:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTITY_BYTES];
+ #[link_name="mech_canonical_program_identity_v1_7a8c9f4e9a2e1112b0f23d8b4a83543929ef91e8193e5969c64d83870e758b20_descriptor_binding_v1"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BINDING_BYTES];
+ #[link_name="mech_canonical_program_identity_v1_7a8c9f4e9a2e1112b0f23d8b4a83543929ef91e8193e5969c64d83870e758b20_native_metadata_v1"] static LINKED_NATIVE_METADATA:[u8;97780];
+ #[link_name="mech_canonical_program_identity_v1_7a8c9f4e9a2e1112b0f23d8b4a83543929ef91e8193e5969c64d83870e758b20_native_metadata_binding_v1"] static LINKED_NATIVE_METADATA_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BINDING_BYTES];
+ #[link_name="mech_canonical_program_entry_v1"] fn linked_entry(frame:*mut std::ffi::c_void)->u64;
+ #[link_name="mech_canonical_program_identity_v1_7a8c9f4e9a2e1112b0f23d8b4a83543929ef91e8193e5969c64d83870e758b20_compiled_module_v1"] static LINKED_MODULE:mech_gpu::native_artifact::NativeProgramModule;
+}
