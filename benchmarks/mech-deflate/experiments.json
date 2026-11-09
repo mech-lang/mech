@@ -42845,6 +42845,58 @@
       "ordinary_contract_restored": false,
       "new_branch_or_PR": false,
       "next": "Matched fixed-level12/runtime-input reference, balanced order/equivalent warmup/validation and explicit ownership; then two cache-read bindings source control and phase range/shape fact reuse."
+    },
+    "224": {
+      "base": "3c2fadb93ab8254eef8bcd943bbf3b9c76d2876c",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "source_files": [],
+      "compiler_or_algorithm_change": false,
+      "decision": {
+        "matched_reference_confirmed": true,
+        "compiler_speedup_claim": false,
+        "ordinary_contract_restored": false,
+        "eight_median_ratio": 0.5281937210020579,
+        "eight_blockmean_ratio": 0.5424062866680036,
+        "original_point_median_wins": 11,
+        "original_blockmean_wins": 10,
+        "natural_1024_borderline": true,
+        "largest_completed_bytes": 131073
+      },
+      "events": [
+        {
+          "event": "fixed-level-runtime-input-balanced-comparison",
+          "asset": "r224-matched-level12-135ea1ec2c87.tar.gz",
+          "sha256": "135ea1ec2c87129c64ad8af8ad66626c881ae804ef4fdc61476199878e4720ec",
+          "bytes": 1558397,
+          "files": 190,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r224-matched-level12-135ea1ec2c87.tar.gz"
+        }
+      ],
+      "observations": {
+        "cases": 25,
+        "original_cases": 20,
+        "heldout_cases": 5,
+        "primary_complete_calls": 108148,
+        "retained_observations": 108048,
+        "additional_verified_warmup_calls": 1168522,
+        "historical_reference_calls": 5120
+      },
+      "matched_protocol": {
+        "cases": 25,
+        "original_cases": 20,
+        "heldout_cases": 5,
+        "all_outputs_exact_and_independent_inflate": true,
+        "warmups_200ms_each": true,
+        "alternating_balanced_order": true,
+        "clock_same": true,
+        "validation_matched": true,
+        "ownership_mode": "borrowed prepared output preserved on both",
+        "native_compressor_source_object_unchanged": true
+      },
+      "diagnostic_only": true,
+      "new_branch_or_PR": false,
+      "next": "Two cache/header word bindings source control on all25 cases,then generic phase range/shape proof reuse; separate private-write,phase-packet and wider-match experiments."
     }
   },
   "repository": "mech-lang/mech",
