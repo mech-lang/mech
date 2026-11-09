@@ -87,6 +87,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     BorrowedDictionaryValues,
     /// Emit a closed fixed-key map body; ablation keeps its ordered callbacks.
     FixedKeyMapLoops,
+    /// Retire same-plan dead canonical pins at a selected tree's first write.
+    NumericTreeOwnerHandoff,
     /// Test private ownership before loading/comparing an old write target.
     PrivateWritesFirst,
     /// Stronger immutable-cell facts require the guarded-load optimization.

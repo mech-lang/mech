@@ -50,6 +50,7 @@ mod numeric_bindings;
 mod numeric_boolean_relations;
 mod numeric_induction;
 mod numeric_tree;
+mod numeric_tree_owner_handoff;
 pub(super) mod observe;
 mod ordered_reduction;
 mod ordered_reduction_exhaustion;
@@ -124,9 +125,9 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                124
+                125
             );
-            // Policy124 adds borrowed dictionary cells; this fixture has none and keeps exact work.
+            // Policy125 adds tree first-write alias checks; this fixture keeps exact work.
             // Policies107/108/110/111 add fills, recursive frames, worker
             // transport and selected String-matrix scalar projections.
             // This fixture has none, so the policy105 decomposition below
@@ -597,7 +598,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                124
+                125
             );
             assert_eq!(
                 report.work, 41_515_826,

@@ -4,6 +4,32 @@ mod owner;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) use crate::native_artifact::program::protocol::owner::OwnerOperation;
 
+/// A cold first-write request, never ownership authority. The runtime still
+/// requires the current selected tree, its exact source-site last-use proof,
+/// matching frozen identity, and Core's exclusive consuming transfer.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::native_artifact) enum NumericWriteHandoff {
+    Established,
+    RetireDeadTreePins,
+}
+impl NumericWriteHandoff {
+    pub const fn raw(self) -> u64 {
+        match self {
+            Self::Established => 0,
+            Self::RetireDeadTreePins => 1,
+        }
+    }
+    pub const fn decode(value: u64) -> Option<Self> {
+        if value == Self::Established.raw() {
+            Some(Self::Established)
+        } else if value == Self::RetireDeadTreePins.raw() {
+            Some(Self::RetireDeadTreePins)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::native_artifact) struct OutputIndex(u64);
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

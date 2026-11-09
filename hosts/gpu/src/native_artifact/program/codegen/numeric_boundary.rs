@@ -168,11 +168,20 @@ pub(super) fn materialize(
     );
     let compute = words.read(b, region.words + 1);
     let comparison = words.read(b, region.words + 2);
+    use crate::native_artifact::program::protocol::NumericWriteHandoff;
+    let handoff = if tree_owner_handoff(controls, region, proof) {
+        b.ins().iconst(
+            types::I64,
+            NumericWriteHandoff::RetireDeadTreePins.raw() as i64,
+        )
+    } else {
+        zero
+    };
     hooks.call(
         b,
         site,
         crate::native_artifact::program::protocol::GlobalHelper::NumericWritePrepare,
-        [compute, comparison, zero],
+        [compute, comparison, handoff],
         error,
     );
     let mut reload = vec![
@@ -245,4 +254,14 @@ pub(super) fn materialize(
         retirement.materialized(b);
     }
     Ok(())
+}
+
+pub(super) fn tree_owner_handoff(
+    controls: &CompilationControls,
+    region: &Region,
+    proof: &Proof,
+) -> bool {
+    region.numeric_tree.is_some()
+        && proof.phase.is_none()
+        && controls.enabled(OptimizationPass::NumericTreeOwnerHandoff)
 }

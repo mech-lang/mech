@@ -19,6 +19,7 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
             &DocumentSyntax::cast(parsed.syntax()).unwrap(), catalog.clone()).unwrap().compile_artifact().unwrap();
         let native = JitProgramArtifact::compile_for_test(&artifact, &catalog, crate::native_artifact::codegen::options::OptimizationPass::FixedKeyMapLoops).unwrap();
         let direct = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let owner_control = JitProgramArtifact::compile_for_test(&artifact, &catalog, crate::native_artifact::codegen::options::OptimizationPass::NumericTreeOwnerHandoff).unwrap();
         let posts: serde_json::Value = serde_json::from_str(&read("MECH_MATRIX_KEY_BENCH_INPUT")).unwrap();
         let posts = posts.as_array().unwrap();
         let oracle: serde_json::Value = serde_json::from_str(&read("MECH_MATRIX_KEY_BENCH_ORACLE")).unwrap();
@@ -86,6 +87,24 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
             assert_eq!(output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>(),
                 direct_output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>());
             drop(direct_output);
+            for (owner_jit, enabled) in [(&direct, true), (&owner_control, false)] {
+                let mut owner_output = vec![None; artifact.outputs().len()];
+                let restored_descriptor = restored.then(|| super::tests::restore_admitted_helper_descriptor(owner_jit));
+                let (result, writes) = super::composition_tests::observe::run_descriptor(
+                    owner_jit,
+                    restored_descriptor.as_ref().unwrap_or_else(|| owner_jit.descriptor()),
+                    &args, &mut owner_output, NativeProgramLimitMode::NoLimits.execution(), &memory);
+                result.unwrap();
+                for (site, should_reuse) in [(844, enabled), (1578, enabled), (847, false), (1581, false)] {
+                    let rows = writes.first_change_sites.iter().filter(|row|row.0 == site).collect::<Vec<_>>();
+                    assert_eq!(rows.len(), 1, "actual first write at {site}");
+                    assert_eq!(rows[0].2 == rows[0].3, should_reuse, "actual backing at {site}; enabled={enabled}");
+                }
+                assert_eq!(output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>(),
+                    owner_output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>());
+                println!("{}",serde_json::json!({"numeric_tree_owned_handoff":enabled,"restored":restored,"postings_reused":enabled,"positions_copied":true,"first_write_sites":writes.first_change_sites,"exact_full5000":true,"timings_ineligible":true}));
+            }
+
 
             let (cached_census, full_census) = super::maps::owner::tests::take_geometry_counts();
             assert!(cached_census >= 28, "actual dictionary must use the admitted caller census: {cached_census}/{full_census}");

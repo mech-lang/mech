@@ -16,7 +16,7 @@ type TailBoundary = (
     u64,
 );
 #[derive(Default, Debug)]
-pub(super) struct Counts {
+pub(in crate::native_artifact::program::runtime) struct Counts {
     pub tail_entries: Vec<(u64, usize, Option<(usize, u32)>)>,
     pub tail_funding: Vec<(usize, u64, bool, u64)>,
     pub tail_bailouts: Vec<(usize, bool, Option<(usize, u32)>)>,
@@ -33,6 +33,7 @@ pub(super) struct Counts {
     pub phase_initial_fuel: Vec<u64>,
     pub phase_write_fuel: Vec<u64>,
     pub first_change_backings: Vec<(usize, usize)>,
+    pub first_change_sites: Vec<(u64, usize, usize, usize)>,
     pub replacement_backings: Vec<(u64, usize, usize)>,
     pub terminal_backings: Vec<(usize, usize)>,
     pub prepaid_segment_charges: Vec<(u64, u64)>,
@@ -597,7 +598,11 @@ unsafe extern "C" fn helper(
             .as_ref()
             .unwrap();
         let after = address(private.elements());
-        COUNTS.with(|v| v.borrow_mut().first_change_backings.push((before, after)));
+        COUNTS.with(|v| {
+            let mut counts = v.borrow_mut();
+            counts.first_change_backings.push((before, after));
+            counts.first_change_sites.push((site, id, before, after));
+        });
     }
     if op == GlobalHelper::ClosedTailBegin.raw() && status == 0 {
         // SAFETY: the checked helper completed and retained its result cell.
@@ -792,7 +797,7 @@ pub(super) fn run_with_secondary_copy_limit(
     result
 }
 
-pub(super) fn run_descriptor(
+pub(in crate::native_artifact::program::runtime) fn run_descriptor(
     jit: &JitProgramArtifact,
     descriptor: &NativeProgramDescriptor,
     args: &[Value],

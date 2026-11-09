@@ -54,6 +54,7 @@ pub(in crate::native_artifact) struct Report {
     proven_child_entry_checks: Vec<(usize, super::traversal_facts::Check)>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
+    pub owned_handoff_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
     pub length_sites: Vec<usize>,
     pub static_array_extents: Vec<(usize, usize, u64)>,
@@ -528,6 +529,7 @@ pub(in crate::native_artifact) fn emit_entry(
         proven_child_entry_checks: Vec::new(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
+        owned_handoff_boundaries: Vec::new(),
         cold_exits: proof
             .exits
             .iter()
@@ -1037,6 +1039,9 @@ pub(in crate::native_artifact) fn emit_entry(
                 report.typed_stores.push((site, width));
                 report.append_sites.push((site, width));
                 report.first_change_boundaries.push(site);
+                if boundary::tree_owner_handoff(controls, region, proof) {
+                    report.owned_handoff_boundaries.push(site);
+                }
             }
             Some(Operation::AppendLeBytes {
                 array,
@@ -1110,6 +1115,9 @@ pub(in crate::native_artifact) fn emit_entry(
                 report.append_sites.push((site, 1));
                 report.bulk_append_sites.push(site);
                 report.first_change_boundaries.push(site);
+                if boundary::tree_owner_handoff(controls, region, proof) {
+                    report.owned_handoff_boundaries.push(site);
+                }
             }
             Some(
                 operation @ (Operation::Read { array, index, .. }
@@ -1384,6 +1392,9 @@ pub(in crate::native_artifact) fn emit_entry(
                         b.switch_to_block(done);
                         report.typed_stores.push((site, width));
                         report.first_change_boundaries.push(site);
+                        if boundary::tree_owner_handoff(controls, region, proof) {
+                            report.owned_handoff_boundaries.push(site);
+                        }
                     }
                     _ => unreachable!("selected numeric access"),
                 }
