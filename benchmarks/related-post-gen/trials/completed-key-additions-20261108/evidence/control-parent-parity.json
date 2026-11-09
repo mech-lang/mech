@@ -1,0 +1,23 @@
+{
+  "parent": "IR305, IR307 and IR308 identical133-record controls",
+  "candidate": "IR309",
+  "all_nontiming_fields_exact": true,
+  "including_allocation_bytes_and_work": true,
+  "rows": 133,
+  "cases": [
+    {
+      "kind": "scalar",
+      "rows": 128,
+      "all_nontiming_fields_exact": true,
+      "candidate_receipt": "/private/tmp/mech-related-completed-key-additions-regressions-20261108-v1/scalar-run.json"
+    },
+    {
+      "kind": "one-kib",
+      "rows": 5,
+      "all_nontiming_fields_exact": true,
+      "candidate_receipt": "/private/tmp/mech-related-completed-key-additions-regressions-20261108-v1/one-kib-run.json"
+    }
+  ],
+  "compiler_build": "/private/tmp/mech-related-completed-key-additions-opt-20261108-v1/build.json",
+  "timings_ineligible": true
+}

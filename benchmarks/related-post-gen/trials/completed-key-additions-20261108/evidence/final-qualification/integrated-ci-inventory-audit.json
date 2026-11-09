@@ -1,0 +1,14 @@
+{
+  "expected": 489,
+  "listed": 489,
+  "executed_passed": 489,
+  "all_names_match": true,
+  "all484_parent_names_retained": true,
+  "new_names": [
+    "native_artifact::program::prepare::readonly_numeric::completed_element_ranges::tests::completed_element_ranges_require_every_append_checked_and_an_empty_seed",
+    "native_artifact::program::prepare::readonly_numeric::completed_element_ranges::tests::completed_key_additions_bind_only_checked_completed_immutable_inputs_and_exact_operands",
+    "native_artifact::program::runtime::composition_tests::completed_key_additions::completed_key_additions_keep_errors_partial_producers_aliases_and_retry",
+    "native_artifact::program::runtime::composition_tests::completed_key_additions::completed_key_additions_keep_finite_admission_and_atomic_publication",
+    "native_artifact::program::runtime::composition_tests::completed_key_additions::completed_key_additions_reject_earlier_object_identity"
+  ]
+}

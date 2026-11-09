@@ -1,0 +1,45 @@
+[
+  {
+    "name": "key-additions-disabled",
+    "kind": "mech",
+    "executable": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-disabled/runner-profile",
+    "source": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-disabled/build/source.mec",
+    "phase_boundaries": [
+      248,
+      1013,
+      1622
+    ],
+    "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+    "Object_sha256": "197306bb3bc3675ad7c419475847ed11cbcd8cea7d465c8f1316e607872c029d",
+    "Object_text_exact_production": true,
+    "executable_sha256": "8d4b46abcf2aac5216517c215c96267b8627b29f3aa47208a91d5bceee463330"
+  },
+  {
+    "name": "key-additions-enabled",
+    "kind": "mech",
+    "executable": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-enabled/runner-profile",
+    "source": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-enabled/build/source.mec",
+    "phase_boundaries": [
+      248,
+      1013,
+      1622
+    ],
+    "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+    "Object_sha256": "679f474b9182afc2b361484e30c07af79179b53ae8269ee937c980d44159d579",
+    "Object_text_exact_production": true,
+    "executable_sha256": "5ca251126576e531cb1e84e3bb75ce43237c83e15c7cf330d2e2a853be774622"
+  },
+  {
+    "name": "rust-fastest",
+    "kind": "rust",
+    "executable": "/private/tmp/mech-related-aligned-constructor-diagnostics-20261108/rust/target/release/rust_mech",
+    "phase_boundaries": [
+      1,
+      2,
+      3
+    ],
+    "base_source": "/private/tmp/mech-related-constant-key-rust256-controls-20261107-v1/default/src/main.rs",
+    "algorithm_unchanged": true,
+    "executable_sha256": "e135b255d7cc5dc32712e4b2f92f34abf034e1ee29a6d8f9a7a46eae5b3b5cb9"
+  }
+]

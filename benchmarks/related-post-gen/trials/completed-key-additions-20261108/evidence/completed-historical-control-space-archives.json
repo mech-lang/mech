@@ -1,0 +1,51 @@
+{
+  "files": [
+    {
+      "original": "/private/tmp/mech-related-generic-native-dictionary-regressions-20261108-v1/scalar",
+      "archive": "/private/tmp/mech-related-generic-native-dictionary-regressions-20261108-v1/scalar.gz",
+      "bytes": 109061088,
+      "mode": 33261,
+      "sha256": "b7cc2bacc7cae424ad5b28a8b0cf6b234f169c75ee343a8f971726442b941a39",
+      "archive_bytes": 15159722,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-generic-native-dictionary-regressions-20261108-v1/one-kib",
+      "archive": "/private/tmp/mech-related-generic-native-dictionary-regressions-20261108-v1/one-kib.gz",
+      "bytes": 105765880,
+      "mode": 33261,
+      "sha256": "5a87ebd9dc200a88eb136f2f0eb89507d62067a25f0bd9616d29f918dcac8242",
+      "archive_bytes": 13363897,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-borrowed-map-key-views-regressions-20261108-v1/one-kib",
+      "archive": "/private/tmp/mech-related-borrowed-map-key-views-regressions-20261108-v1/one-kib.gz",
+      "bytes": 105756936,
+      "mode": 33261,
+      "sha256": "3e1e6575cc3125199fc52cd1e97cccf7ff071a835eb9f4610d4a5c724fc10c87",
+      "archive_bytes": 13343911,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-borrowed-matrix-map-keys-regressions-20261108-v2/one-kib",
+      "archive": "/private/tmp/mech-related-borrowed-matrix-map-keys-regressions-20261108-v2/one-kib.gz",
+      "bytes": 105638104,
+      "mode": 33261,
+      "sha256": "06b8ab34062f8a02071c452132d5adac0c27300fa094f09605beada5609ba228",
+      "archive_bytes": 13316810,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-native-string-classification-reuse-regressions-20261108-v1/one-kib",
+      "archive": "/private/tmp/mech-related-native-string-classification-reuse-regressions-20261108-v1/one-kib.gz",
+      "bytes": 105627880,
+      "mode": 33261,
+      "sha256": "d4f204bcfcae1010a033b5565298dcf383a2b1d93ba77b0bf2143e1fa5b3f754",
+      "archive_bytes": 13307514,
+      "losslessly_verified": true
+    }
+  ],
+  "all_prior_run_receipts_exit_zero": true,
+  "no_live_process_or_latency_executable_changed": true
+}

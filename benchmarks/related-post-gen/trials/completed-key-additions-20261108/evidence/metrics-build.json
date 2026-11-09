@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-completed-key-additions-20261108/latency-config.json",
+    "--out",
+    "/private/tmp/mech-related-completed-key-additions-20261108/metrics",
+    "--variant",
+    "mech-ir309-completed-key-additions-4",
+    "--variant",
+    "mech-ir309-key-additions-disabled-4"
+  ],
+  "exit": 0,
+  "seconds": 3.7898847919423133,
+  "stdout": "{\"variant\": \"mech-ir309-completed-key-additions-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-ir309-key-additions-disabled-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n",
+  "stderr": "",
+  "resource_adapters_only": true
+}

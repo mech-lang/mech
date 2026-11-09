@@ -1,0 +1,41 @@
+{
+  "files": [
+    {
+      "original": "/private/tmp/mech-related-completed-key-additions-20261108/key-tests-v4-optimized/gpu-tests",
+      "archive": "/private/tmp/mech-related-completed-key-additions-20261108/key-tests-v4-optimized/gpu-tests.gz",
+      "bytes": 137038872,
+      "mode": 33261,
+      "sha256": "847241e9e2d08e6f3f72c6b90fa6ac1a0208dd58076c1f97600dd75ae60c4ade",
+      "archive_bytes": 23220963,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-completed-key-additions-control-20261108-v1/compiler",
+      "archive": "/private/tmp/mech-related-completed-key-additions-control-20261108-v1/compiler.gz",
+      "bytes": 107669616,
+      "mode": 33261,
+      "sha256": "55759080e9b9e75c868fc29b64bed2c80d0ebf8b3a6383baa86a34e9d94c61f2",
+      "archive_bytes": 14462863,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-borrowed-dictionary-values-regressions-20261108-v2/scalar",
+      "archive": "/private/tmp/mech-related-borrowed-dictionary-values-regressions-20261108-v2/scalar.gz",
+      "bytes": 109179312,
+      "mode": 33261,
+      "sha256": "19ea9cc4fbbf90205b1a46ca2c11a8d0c51c2896c45bdc725daf4f79b79c28cd",
+      "archive_bytes": 15197861,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-borrowed-dictionary-values-regressions-20261108-v2/one-kib",
+      "archive": "/private/tmp/mech-related-borrowed-dictionary-values-regressions-20261108-v2/one-kib.gz",
+      "bytes": 105908984,
+      "mode": 33261,
+      "sha256": "f4fc92b5081f08c1d61175c00c3be345e1f322c345d51b187672cac931868f1b",
+      "archive_bytes": 13402946,
+      "losslessly_verified": true
+    }
+  ],
+  "no_latency_or_resource_executables_changed": true
+}

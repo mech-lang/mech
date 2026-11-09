@@ -1,0 +1,135 @@
+{
+  "rounds": 8,
+  "seed": 99045021,
+  "variants": [
+    {
+      "name": "key-additions-disabled",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-disabled/runner-profile",
+      "source": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-disabled/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "197306bb3bc3675ad7c419475847ed11cbcd8cea7d465c8f1316e607872c029d",
+      "Object_text_exact_production": true,
+      "executable_sha256": "8d4b46abcf2aac5216517c215c96267b8627b29f3aa47208a91d5bceee463330",
+      "variant": "key-additions-disabled-coarse",
+      "helpers": false,
+      "diagnostic": true
+    },
+    {
+      "name": "key-additions-disabled",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-disabled/runner-profile",
+      "source": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-disabled/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "197306bb3bc3675ad7c419475847ed11cbcd8cea7d465c8f1316e607872c029d",
+      "Object_text_exact_production": true,
+      "executable_sha256": "8d4b46abcf2aac5216517c215c96267b8627b29f3aa47208a91d5bceee463330",
+      "variant": "key-additions-disabled-detail",
+      "helpers": true,
+      "diagnostic": true
+    },
+    {
+      "name": "key-additions-enabled",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-enabled/runner-profile",
+      "source": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-enabled/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "679f474b9182afc2b361484e30c07af79179b53ae8269ee937c980d44159d579",
+      "Object_text_exact_production": true,
+      "executable_sha256": "5ca251126576e531cb1e84e3bb75ce43237c83e15c7cf330d2e2a853be774622",
+      "variant": "key-additions-enabled-coarse",
+      "helpers": false,
+      "diagnostic": true
+    },
+    {
+      "name": "key-additions-enabled",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-enabled/runner-profile",
+      "source": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/hosts/key-additions-enabled/build/source.mec",
+      "phase_boundaries": [
+        248,
+        1013,
+        1622
+      ],
+      "source_sha256": "7707f4b6e57015b5017996bc96c78284a3bda2825a2e8846979b23ccc60b5799",
+      "Object_sha256": "679f474b9182afc2b361484e30c07af79179b53ae8269ee937c980d44159d579",
+      "Object_text_exact_production": true,
+      "executable_sha256": "5ca251126576e531cb1e84e3bb75ce43237c83e15c7cf330d2e2a853be774622",
+      "variant": "key-additions-enabled-detail",
+      "helpers": true,
+      "diagnostic": true
+    },
+    {
+      "name": "rust-fastest",
+      "kind": "rust",
+      "executable": "/private/tmp/mech-related-aligned-constructor-diagnostics-20261108/rust/target/release/rust_mech",
+      "phase_boundaries": [
+        1,
+        2,
+        3
+      ],
+      "base_source": "/private/tmp/mech-related-constant-key-rust256-controls-20261107-v1/default/src/main.rs",
+      "algorithm_unchanged": true,
+      "executable_sha256": "e135b255d7cc5dc32712e4b2f92f34abf034e1ee29a6d8f9a7a46eae5b3b5cb9",
+      "variant": "rust-fastest-coarse",
+      "helpers": false,
+      "diagnostic": true
+    },
+    {
+      "name": "ordinary-mech",
+      "variant": "ordinary-mech",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-completed-key-additions-control-20261108-v1/histogram-reuse/runner-aot",
+      "source": "/private/tmp/mech-related-completed-key-additions-control-20261108-v1/histogram-reuse/build/source.mec",
+      "diagnostic": false,
+      "executable_sha256": "651582e0eef1b67127e1c155e8253dc6180ec3953d804e99c7700008f5e70c29"
+    },
+    {
+      "name": "ordinary-histogram",
+      "variant": "ordinary-histogram",
+      "kind": "mech",
+      "executable": "/private/tmp/mech-related-completed-key-additions-runners-20261108-v1/histogram-reuse/runner-aot",
+      "source": "/private/tmp/mech-related-completed-key-additions-runners-20261108-v1/histogram-reuse/build/source.mec",
+      "diagnostic": false,
+      "executable_sha256": "1ad3adb4c184c96dfea4580f434bb6de0deb01ffe46dfabf59ac04e5b71dca77"
+    },
+    {
+      "name": "ordinary-rust",
+      "variant": "ordinary-rust",
+      "kind": "rust",
+      "executable": "/private/tmp/mech-related-constant-key-rust256-controls-20261107-v1/default/target/release/rust_mech",
+      "source": null,
+      "diagnostic": false,
+      "executable_sha256": "ffb04744df3c79df5b4b985969ad1a805062d49b224d657e85022e635fce90b5"
+    }
+  ],
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false,
+  "input_sha256": "500530b81cb81c5b1a5e48aa30de6a89ba0a350460ad826c4c7bb023e6e46cb8",
+  "coarse_phases": [
+    "preparation_interning_and_eligibility",
+    "triple_index_and_coverage",
+    "quartet_index_and_masks",
+    "queries_cleanup_and_materialization"
+  ],
+  "process_instructions_all_workers": true,
+  "calling_thread_counters_for_nested_scopes": true,
+  "thread_and_global_allocator_counters": true,
+  "all_first_and_adverse_captures_retained": true,
+  "unchanged_native_Objects": true
+}

@@ -1,0 +1,1885 @@
+{
+  "rows": 128,
+  "all_output_and_nonresource_fields_equal_IR305": true,
+  "all_allocation_counts_and_requested_bytes_nonincreasing": true,
+  "allowed_changed_report_fields": [
+    "work",
+    "visits"
+  ],
+  "report_work_and_visits_only_decrease": true,
+  "changes": [
+    {
+      "row": 0,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 1,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 2,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 3,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 4,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 5,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 6,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 7,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 8,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 9,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 10,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 11,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 12,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 13,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 14,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 15,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 16,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 17,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 18,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 19,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 20,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 21,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 22,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 23,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 24,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 25,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 26,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 27,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 28,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 29,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 30,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 31,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 32,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 33,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 34,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 35,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 36,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 37,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 38,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 39,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 40,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 41,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 42,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 43,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 44,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 45,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 46,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 47,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 48,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 49,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 50,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 51,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 52,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 53,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 54,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 55,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 56,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 57,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 58,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 59,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 60,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 61,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 62,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 63,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 64,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 65,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 66,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 67,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 68,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 69,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 70,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 71,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 72,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 73,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 74,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 75,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 76,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 77,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 78,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 79,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 80,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 81,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 82,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 83,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 84,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 85,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 86,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 87,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 88,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 89,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 90,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 91,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 92,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 93,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 94,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 95,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 96,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 97,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 98,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 99,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 100,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 101,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 102,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 103,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 104,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 105,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 106,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 107,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 108,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 109,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 110,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 111,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 112,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 113,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 114,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 115,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 116,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 117,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 118,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 119,
+      "physical": {},
+      "report_resource_changes": {}
+    },
+    {
+      "row": 120,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 121,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 122,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 123,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 124,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 125,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 126,
+      "physical": {
+        "requested_bytes_per_100": {
+          "before": 12674900,
+          "after": 12674900,
+          "delta": 0
+        },
+        "allocation_requests_per_100": {
+          "before": 35200,
+          "after": 35200,
+          "delta": 0
+        }
+      },
+      "report_resource_changes": {}
+    },
+    {
+      "row": 127,
+      "physical": {},
+      "report_resource_changes": {}
+    }
+  ],
+  "pricing_note": "IR309 emits only proved completed-key wrapping arithmetic, preserving the original source operations and prices. All output and nonresource fields must match IR305. Every physical allocation/requested-byte and work/visit difference remains explicit; no resource improvement is assumed. Descriptor prices and finite execution contracts are checked separately."
+}

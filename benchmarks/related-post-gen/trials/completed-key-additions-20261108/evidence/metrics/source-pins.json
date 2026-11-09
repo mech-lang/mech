@@ -1,0 +1,22 @@
+[
+  {
+    "variant": "mech-ir309-completed-key-additions-4",
+    "original_source": "/private/tmp/mech-related-completed-key-additions-runners-20261108-v1/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-completed-key-additions-20261108/metrics/mech-ir309-completed-key-additions-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "1ad3adb4c184c96dfea4580f434bb6de0deb01ffe46dfabf59ac04e5b71dca77",
+    "diagnostic_executable_sha256": "5c4265ec8121da9f188b5186cd0a6a5ea0f0ec4cb987424b17d962265e7573ff"
+  },
+  {
+    "variant": "mech-ir309-key-additions-disabled-4",
+    "original_source": "/private/tmp/mech-related-completed-key-additions-control-20261108-v1/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-completed-key-additions-20261108/metrics/mech-ir309-key-additions-disabled-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "651582e0eef1b67127e1c155e8253dc6180ec3953d804e99c7700008f5e70c29",
+    "diagnostic_executable_sha256": "7158d014dab632cebfa0efe7863b657ef1bacef15cf3f7fe9af12151a9dd7788"
+  }
+]

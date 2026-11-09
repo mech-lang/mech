@@ -1,0 +1,60 @@
+{
+  "files": [
+    {
+      "original": "/private/tmp/mech-related-completed-key-additions-20261108/key-tests-v3-fast/gpu-tests",
+      "archive": "/private/tmp/mech-related-completed-key-additions-20261108/key-tests-v3-fast/gpu-tests.gz",
+      "bytes": 193681080,
+      "mode": 33261,
+      "sha256": "857eeb3eb1f2b3ac5fc8fce8b7e63aa8d562d37d3b094d61315484b7775a2db5",
+      "archive_bytes": 28898554,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-completed-key-additions-runners-20261108-v1/compiler",
+      "archive": "/private/tmp/mech-related-completed-key-additions-runners-20261108-v1/compiler.gz",
+      "bytes": 107747760,
+      "mode": 33261,
+      "sha256": "ce898b1974d29b39b30bd52309ec56bb00858b5fa01bd3682a642ff2749cacea",
+      "archive_bytes": 14460142,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-completed-key-additions-regressions-20261108-v1/scalar",
+      "archive": "/private/tmp/mech-related-completed-key-additions-regressions-20261108-v1/scalar.gz",
+      "bytes": 109236432,
+      "mode": 33261,
+      "sha256": "0e931aae78f1785ae3e6af99aaa9767cb018c8d0f15a038f7787398f1bbf9594",
+      "archive_bytes": 15219904,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-completed-key-additions-regressions-20261108-v1/one-kib",
+      "archive": "/private/tmp/mech-related-completed-key-additions-regressions-20261108-v1/one-kib.gz",
+      "bytes": 105965720,
+      "mode": 33261,
+      "sha256": "1ec8c80d437cbc5ae258ea5b1bf192b5a75050b02a9625f4d420cf188eeb399d",
+      "archive_bytes": 13413683,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-fixed-key-native-loops-regressions-20261108-v1/scalar",
+      "archive": "/private/tmp/mech-related-fixed-key-native-loops-regressions-20261108-v1/scalar.gz",
+      "bytes": 109216480,
+      "mode": 33261,
+      "sha256": "c5281698abc6de7523664600909e954019390c28ba705f38fc176dbce3b3dba0",
+      "archive_bytes": 15208310,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-fixed-key-native-loops-regressions-20261108-v1/one-kib",
+      "archive": "/private/tmp/mech-related-fixed-key-native-loops-regressions-20261108-v1/one-kib.gz",
+      "bytes": 105927256,
+      "mode": 33261,
+      "sha256": "73e844192537d59f58b4bbe83d6f320a4733a559b742adea40dca7ad08d1d45e",
+      "archive_bytes": 13415124,
+      "losslessly_verified": true
+    }
+  ],
+  "completed_before_archive": true,
+  "benchmark_runners_untouched": true
+}

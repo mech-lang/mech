@@ -1,0 +1,12 @@
+{
+  "foundation": "IR308",
+  "foundation_source": "4482c116e1ef1eba5e18dac5d84b64211152e734",
+  "scope": "Arithmetic-only completed source key+1 certificate; no bounds elision, runtime kernel or runtime proof-cache growth",
+  "input_keys": 50380,
+  "estimated_saving": "A small number of instructions per consumer addition; inspect actual emitted sites and Object before asserting a budget. Even five instructions per key would be about252000, under0.8% of32.34M total retired instructions.",
+  "not_a_parity_claim": true,
+  "no_processing_measurement_before_qualification": true,
+  "retain_all_first_and_adverse_samples": true,
+  "whole_process_gate": false,
+  "keep_all20_eligible_Rust_controls": true
+}

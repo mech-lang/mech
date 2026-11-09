@@ -1,0 +1,18 @@
+{
+  "pair": 7,
+  "order": 3,
+  "variant": "ordinary-rust",
+  "kind": "rust",
+  "diagnostic": false,
+  "command": [
+    "/private/tmp/mech-related-constant-key-rust256-controls-20261107-v1/default/target/release/rust_mech"
+  ],
+  "cwd": "/private/tmp/mech-related-completed-key-additions-20261108/phase-diagnostics/profile/captures/07-ordinary-rust/rust",
+  "environment": {},
+  "exit": 0,
+  "seconds": 0.02169354190118611,
+  "stdout": "Processing time (w/o IO): 1.4875ms\n{\"checked_release_arithmetic\":true,\"diagnostic_phases\":{\"fully_covered\":true,\"interning_and_eligibility_seconds\":0.000523,\"quartet_entries\":15152,\"quartet_index_and_masks_seconds\":0.000193292,\"queries_and_index_export_seconds\":0.000524,\"triple_entries\":35228,\"triple_index_and_coverage_seconds\":0.00017225},\"mech_resource_accounting\":false,\"same_numeric_algorithm_as_mech\":true}\n",
+  "stderr": "",
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false
+}

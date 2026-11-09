@@ -1,0 +1,49 @@
+//! Allocation-free diagnostic observations of the unchanged System allocator.
+use std::alloc::{GlobalAlloc, Layout, System};
+use std::cell::Cell;
+use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+static REQUESTS: AtomicU64 = AtomicU64::new(0);
+static REQUESTED: AtomicU64 = AtomicU64::new(0);
+static FREED: AtomicU64 = AtomicU64::new(0);
+static LOCAL_UNAVAILABLE: AtomicU64 = AtomicU64::new(0);
+thread_local! { static LOCAL: Cell<[u64;3]> = const { Cell::new([0;3]) }; }
+fn observe(requests:u64, requested:u64, freed:u64) {
+    REQUESTS.fetch_add(requests,Relaxed);
+    REQUESTED.fetch_add(requested,Relaxed);
+    FREED.fetch_add(freed,Relaxed);
+    if LOCAL.try_with(|local| {let mut v=local.get();v[0]+=requests;v[1]+=requested;v[2]+=freed;local.set(v)}).is_err() {LOCAL_UNAVAILABLE.fetch_add(1,Relaxed);}
+}
+pub struct Tracked;
+// SAFETY: every allocator call forwards the identical pointer/layout to System.
+// Counters use only atomics and const thread-local integer cells.
+unsafe impl GlobalAlloc for Tracked {
+    unsafe fn alloc(&self,l:Layout)->*mut u8 {observe(1,l.size()as u64,0);unsafe{System.alloc(l)}}
+    unsafe fn alloc_zeroed(&self,l:Layout)->*mut u8 {observe(1,l.size()as u64,0);unsafe{System.alloc_zeroed(l)}}
+    unsafe fn realloc(&self,p:*mut u8,l:Layout,n:usize)->*mut u8 {
+        observe(1,n as u64,0);let result=unsafe{System.realloc(p,l,n)};
+        if !result.is_null(){observe(0,0,l.size()as u64);}result
+    }
+    unsafe fn dealloc(&self,p:*mut u8,l:Layout){unsafe{System.dealloc(p,l)};observe(0,0,l.size()as u64);}
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_related_allocation_snapshot_v1(dst:*mut u64) {
+    let local=LOCAL.with(Cell::get);
+    let values=[local[0],local[1],local[2],REQUESTS.load(Relaxed),REQUESTED.load(Relaxed),FREED.load(Relaxed)];
+    // SAFETY: the private diagnostic sink passes a live six-word buffer.
+    unsafe{std::ptr::copy_nonoverlapping(values.as_ptr(),dst,6)};
+}
+pub fn local_unavailable()->u64 {LOCAL_UNAVAILABLE.load(Relaxed)}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_related_process_counters_v1(dst:*mut u64)->i32 {
+    #[link(name="proc")]
+    unsafe extern "C" {
+        fn proc_pid_rusage(pid:i32,flavor:i32,buffer:*mut std::ffi::c_void)->i32;
+        fn getpid()->i32;
+    }
+    // RUSAGE_INFO_V4 is 296 bytes, with instruction/cycle words at 248/256.
+    // The benchmark's retained SDK C probe independently verifies this layout.
+    let mut usage=[0u64;37];
+    let result=unsafe{proc_pid_rusage(getpid(),4,usage.as_mut_ptr().cast())};
+    if result==0 {unsafe{dst.write(usage[31]);dst.add(1).write(usage[32]);}}
+    result
+}

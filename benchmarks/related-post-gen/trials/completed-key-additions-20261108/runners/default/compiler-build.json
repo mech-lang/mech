@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-completed-key-additions-opt-20261108-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-completed-key-additions-runners-20261108-v1/compiler-facts.rs",
+    "--out",
+    "/private/tmp/mech-related-completed-key-additions-runners-20261108-v1/compiler"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 2.7641749589238316,
+  "stdout": "{\"seconds\": 2.1694003329612315, \"exit\": 0}\n",
+  "stderr": ""
+}

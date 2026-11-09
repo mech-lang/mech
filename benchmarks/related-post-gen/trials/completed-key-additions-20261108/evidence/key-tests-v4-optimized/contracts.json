@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/private/tmp/mech-related-completed-key-additions-20261108/key-tests-v4-optimized/gpu-tests",
+    "completed_element_ranges_require",
+    "completed_key_additions_",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-completed-key-additions-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 0,
+  "seconds": 3.3469877501484007,
+  "stdout": "\nrunning 6 tests\ntest native_artifact::program::prepare::readonly_numeric::completed_element_ranges::tests::completed_element_ranges_require_every_append_checked_and_an_empty_seed ... ok\ntest native_artifact::program::prepare::readonly_numeric::completed_element_ranges::tests::completed_key_additions_actual_source_emits_only_arithmetic_elision ... ignored, requires caller-pinned full benchmark source\ntest native_artifact::program::prepare::readonly_numeric::completed_element_ranges::tests::completed_key_additions_bind_only_checked_completed_immutable_inputs_and_exact_operands ... ok\ntest native_artifact::program::runtime::composition_tests::completed_key_additions::completed_key_additions_keep_errors_partial_producers_aliases_and_retry ... ok\ntest native_artifact::program::runtime::composition_tests::completed_key_additions::completed_key_additions_keep_finite_admission_and_atomic_publication ... {\"dimension\":\"control\",\"exact_selected_fragments\":0,\"minimum\":119794065,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"library\",\"exact_selected_fragments\":0,\"minimum\":20997040,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"comparison\",\"exact_selected_fragments\":0,\"minimum\":9,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"memory\",\"exact_selected_fragments\":0,\"minimum\":2041352,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"nodes\",\"exact_selected_fragments\":0,\"minimum\":5672,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"transport\",\"exact_selected_fragments\":0,\"minimum\":13472,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"control\",\"exact_selected_fragments\":0,\"minimum\":119794065,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"library\",\"exact_selected_fragments\":0,\"minimum\":20997040,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"comparison\",\"exact_selected_fragments\":0,\"minimum\":9,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"memory\",\"exact_selected_fragments\":0,\"minimum\":2041352,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"nodes\",\"exact_selected_fragments\":0,\"minimum\":5672,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\n{\"dimension\":\"transport\",\"exact_selected_fragments\":0,\"minimum\":13472,\"witness\":\"composition-finite-boundary\",\"zero_spending\":false}\nok\ntest native_artifact::program::runtime::composition_tests::completed_key_additions::completed_key_additions_reject_earlier_object_identity ... ok\n\ntest result: ok. 5 passed; 0 failed; 1 ignored; 0 measured; 1003 filtered out; finished in 2.09s\n\n",
+  "stderr": "",
+  "timing_eligible": false
+}

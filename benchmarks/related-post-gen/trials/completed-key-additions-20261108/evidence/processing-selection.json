@@ -1,0 +1,7 @@
+{
+  "selected": "IR308",
+  "candidate": "IR309",
+  "candidate_selected": false,
+  "reason": "The first paired cohort is uncertain, and confirmation regresses against selected IR308. The same-runtime ablation does not establish a latency gain. Preserve the proof as unselected research and do not rerun unchanged.",
+  "whole_process_gate": false
+}

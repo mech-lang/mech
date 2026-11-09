@@ -1,0 +1,24 @@
+{
+  "files": [
+    {
+      "original": "/private/tmp/mech-related-modular-unsigned-ranges-regressions-20261108-v1/one-kib",
+      "archive": "/private/tmp/mech-related-modular-unsigned-ranges-regressions-20261108-v1/one-kib.gz",
+      "bytes": 105611048,
+      "mode": 33261,
+      "sha256": "a095a69a2ea635d4b0f293ebbd856599d3bf4a90e782eaa0689c1d51c791f2aa",
+      "archive_bytes": 13302089,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-closed-composite-constructors-regressions-20261108-v1/one-kib",
+      "archive": "/private/tmp/mech-related-closed-composite-constructors-regressions-20261108-v1/one-kib.gz",
+      "bytes": 105607688,
+      "mode": 33261,
+      "sha256": "3a308710d5c58559d62342af21b88cd3786a2e0db61275e36f6f76cc01fd97ef",
+      "archive_bytes": 13307573,
+      "losslessly_verified": true
+    }
+  ],
+  "all_prior_runs_complete": true,
+  "all_benchmark_executables_untouched": true
+}

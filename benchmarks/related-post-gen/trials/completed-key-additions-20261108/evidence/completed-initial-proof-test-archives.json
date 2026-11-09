@@ -1,0 +1,23 @@
+{
+  "files": [
+    {
+      "original": "/private/tmp/mech-related-completed-key-additions-20261108/key-tests-v1-fast/gpu-tests",
+      "archive": "/private/tmp/mech-related-completed-key-additions-20261108/key-tests-v1-fast/gpu-tests.gz",
+      "bytes": 193619464,
+      "mode": 33261,
+      "sha256": "040f6aa25795bda7e65370160e4a0d5881b6ebed09d923a13295cdabc6f95031",
+      "archive_bytes": 28889215,
+      "losslessly_verified": true
+    },
+    {
+      "original": "/private/tmp/mech-related-completed-key-additions-20261108/key-tests-v2-fast/gpu-tests",
+      "archive": "/private/tmp/mech-related-completed-key-additions-20261108/key-tests-v2-fast/gpu-tests.gz",
+      "bytes": 193683256,
+      "mode": 33261,
+      "sha256": "5257f41a9b13305c78548ab722172b626f1b34f61661979c80419b5bae46c9b2",
+      "archive_bytes": 28897297,
+      "losslessly_verified": true
+    }
+  ],
+  "tests_completed": true
+}

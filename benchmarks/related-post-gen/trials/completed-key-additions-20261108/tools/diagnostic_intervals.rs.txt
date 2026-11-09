@@ -1,0 +1,296 @@
+//! Explicit diagnostic-only elapsed intervals and optional calling-thread counters.
+//! Never promotion timing. Overlapping elapsed intervals are not CPU shares.
+use std::cell::RefCell;
+use std::sync::{
+    Mutex, OnceLock,
+    atomic::{AtomicBool, AtomicU64, Ordering},
+};
+use std::time::Instant;
+
+static ENABLED: AtomicBool = AtomicBool::new(false);
+static HELPER_DETAIL: AtomicBool = AtomicBool::new(false);
+static COUNTER_DETAIL: AtomicBool = AtomicBool::new(false);
+static COUNTER_ERRORS: AtomicU64 = AtomicU64::new(0);
+static BASE: OnceLock<Instant> = OnceLock::new();
+static NEXT_THREAD: AtomicU64 = AtomicU64::new(1);
+static DROPPED: AtomicU64 = AtomicU64::new(0);
+static UNMATCHED_END: AtomicU64 = AtomicU64::new(0);
+static EVENTS: Mutex<Vec<Event>> = Mutex::new(Vec::new());
+static MAIN_THREAD: AtomicU64 = AtomicU64::new(0);
+static COARSE_NEXT: AtomicU64 = AtomicU64::new(0);
+static COARSE_POINTS: [AtomicU64; 3] = [const { AtomicU64::new(u64::MAX) }; 3];
+const CAPACITY: usize = 65_536;
+thread_local! {
+    static THREAD: u64 = NEXT_THREAD.fetch_add(1, Ordering::Relaxed);
+    static LOANS: RefCell<Vec<DiagnosticIntervalScope>> = const { RefCell::new(Vec::new()) };
+    static LEAF_SCOPES: RefCell<Vec<DiagnosticIntervalScope>> = const { RefCell::new(Vec::new()) };
+}
+
+#[derive(Clone, Copy, Default, serde::Serialize)]
+#[repr(C)]
+struct AllocationSnapshot {
+    thread_requests: u64,
+    thread_requested_bytes: u64,
+    thread_freed_bytes: u64,
+    global_requests: u64,
+    global_requested_bytes: u64,
+    global_freed_bytes: u64,
+}
+fn allocations() -> AllocationSnapshot {
+    unsafe extern "C" {
+        fn mech_related_allocation_snapshot_v1(dst: *mut AllocationSnapshot);
+    }
+    let mut value = AllocationSnapshot::default();
+    // SAFETY: the diagnostic host fills this exact six-word C-layout buffer.
+    unsafe { mech_related_allocation_snapshot_v1(&mut value) };
+    value
+}
+
+fn process_counters(stage: &str) -> Option<ThreadCounters> {
+    if stage != "post_JSON" && stage != "coarse_checkpoint" { return None; }
+    unsafe extern "C" {
+        fn mech_related_process_counters_v1(dst: *mut ThreadCounters) -> i32;
+    }
+    let mut value = ThreadCounters::default();
+    // SAFETY: the diagnostic host fills exactly this two-word buffer.
+    if unsafe { mech_related_process_counters_v1(&mut value) } == 0 {
+        Some(value)
+    } else {
+        COUNTER_ERRORS.fetch_add(1, Ordering::Relaxed);
+        None
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mech_related_native_probe_begin_v1(stage: u64) -> u64 {
+    if !ENABLED.load(Ordering::Relaxed) || !HELPER_DETAIL.load(Ordering::Relaxed) {
+        return 0;
+    }
+    let name = match stage {
+        1 => "leaf_binding",
+        2 => "leaf_binding_layouts",
+        3 => "leaf_binding_bound_call",
+        4 => "leaf_binding_memory_plan",
+        5 => "leaf_binding_factory",
+        6 => "leaf_binding_finish",
+        7 => "leaf_invocation",
+        8 => "leaf_validation_and_owner",
+        9 => "leaf_current_facts_and_plan",
+        10 => "leaf_candidate",
+        11 => "leaf_kernel",
+        12 => "leaf_publication",
+        13 => "leaf_turn_plan",
+        _ => panic!("unknown diagnostic leaf stage"),
+    };
+    LEAF_SCOPES.with(|scopes| {
+        let mut scopes = scopes.borrow_mut();
+        if scopes.capacity() == 0 { scopes.reserve_exact(16); }
+        let token = scopes.len() as u64 + 1;
+        scopes.push(diagnostic_interval_scope(name, 0, stage));
+        token
+    })
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn mech_related_native_probe_end_v1(token: u64) {
+    if token == 0 { return; }
+    LEAF_SCOPES.with(|scopes| {
+        let mut scopes = scopes.borrow_mut();
+        assert_eq!(token, scopes.len() as u64);
+        drop(scopes.pop().unwrap());
+    });
+}
+
+pub(super) fn coarse_checkpoint(site: u64) {
+    if !ENABLED.load(Ordering::Relaxed) { return; }
+    let ordinal = COARSE_NEXT.load(Ordering::Relaxed) as usize;
+    if ordinal >= 3 || COARSE_POINTS[ordinal].load(Ordering::Relaxed) != site
+        || THREAD.with(|id| *id) != MAIN_THREAD.load(Ordering::Relaxed) { return; }
+    let at = now();
+    let counts = counters();
+    let process = process_counters("coarse_checkpoint");
+    let allocated = allocations();
+    let event = Event {
+        stage: "coarse_checkpoint", site, operation: ordinal as u64 + 1,
+        thread: MAIN_THREAD.load(Ordering::Relaxed),
+        start_ns: at, end_ns: at, closed: true, close_site: None,
+        start_counters: counts, end_counters: counts,
+        start_process_counters: process, end_process_counters: process,
+        start_allocations: allocated, end_allocations: allocated,
+    };
+    EVENTS.lock().unwrap_or_else(|e| e.into_inner()).push(event);
+    COARSE_NEXT.store(ordinal as u64 + 1, Ordering::Relaxed);
+}
+
+/// Apple XNU bsd/sys/resource_private.h, THSC_CPI (1). This diagnostic-only
+/// SPI reads the calling thread, including its work on different CPU cores.
+#[derive(Clone, Copy, Default, serde::Serialize)]
+#[repr(C)]
+struct ThreadCounters {
+    instructions: u64,
+    cycles: u64,
+}
+
+fn counters() -> Option<ThreadCounters> {
+    if !COUNTER_DETAIL.load(Ordering::Relaxed) {
+        return None;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        unsafe extern "C" {
+            fn thread_selfcounts(kind: u32, dst: *mut ThreadCounters, size: usize) -> i32;
+        }
+        let mut result = ThreadCounters::default();
+        // SAFETY: the C layout and exact buffer size are the documented THSC_CPI
+        // pair. The kernel writes only this synchronous live stack buffer.
+        if unsafe { thread_selfcounts(1, &mut result, core::mem::size_of::<ThreadCounters>()) } == 0
+        {
+            return Some(result);
+        }
+    }
+    COUNTER_ERRORS.fetch_add(1, Ordering::Relaxed);
+    None
+}
+
+#[derive(Clone, serde::Serialize)]
+pub struct Event {
+    stage: &'static str,
+    site: u64,
+    operation: u64,
+    thread: u64,
+    start_ns: u64,
+    end_ns: u64,
+    closed: bool,
+    close_site: Option<u64>,
+    start_counters: Option<ThreadCounters>,
+    end_counters: Option<ThreadCounters>,
+    start_process_counters: Option<ThreadCounters>,
+    end_process_counters: Option<ThreadCounters>,
+    start_allocations: AllocationSnapshot,
+    end_allocations: AllocationSnapshot,
+}
+
+pub struct DiagnosticIntervalScope {
+    event: Option<Event>,
+}
+fn now() -> u64 {
+    BASE.get().unwrap().elapsed().as_nanos().try_into().unwrap()
+}
+pub fn diagnostic_interval_scope(
+    stage: &'static str,
+    site: u64,
+    operation: u64,
+) -> DiagnosticIntervalScope {
+    if matches!(stage, "helper" | "helper_ffi" | "admit") && !HELPER_DETAIL.load(Ordering::Relaxed)
+    {
+        return DiagnosticIntervalScope { event: None };
+    }
+    let event = ENABLED.load(Ordering::Relaxed).then(|| Event {
+        stage,
+        site,
+        operation,
+        thread: THREAD.with(|id| *id),
+        start_ns: now(),
+        start_counters: counters(),
+        start_process_counters: process_counters(stage),
+        start_allocations: allocations(),
+        end_ns: 0,
+        end_counters: None,
+        end_process_counters: None,
+        end_allocations: AllocationSnapshot::default(),
+        closed: true,
+        close_site: None,
+    });
+    DiagnosticIntervalScope { event }
+}
+impl Drop for DiagnosticIntervalScope {
+    fn drop(&mut self) {
+        let Some(mut event) = self.event.take() else {
+            return;
+        };
+        event.end_counters = counters();
+        event.end_process_counters = process_counters(event.stage);
+        event.end_allocations = allocations();
+        event.end_ns = now();
+        let mut events = EVENTS.lock().unwrap_or_else(|e| e.into_inner());
+        if events.len() < CAPACITY {
+            events.push(event);
+        } else {
+            DROPPED.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+}
+
+pub fn diagnostic_intervals_begin() -> u64 {
+    assert!(!ENABLED.load(Ordering::Relaxed));
+    let main = THREAD.with(|id| *id);
+    MAIN_THREAD.store(main, Ordering::Relaxed);
+    if let Ok(points) = std::env::var("MECH_PHASE_BOUNDARIES") {
+        let points: Vec<u64> = points.split(',').map(|p| p.parse().unwrap()).collect();
+        assert_eq!(points.len(), 3);
+        for (target, value) in COARSE_POINTS.iter().zip(points) { target.store(value, Ordering::Relaxed); }
+    }
+    let mut events = EVENTS.lock().unwrap_or_else(|e| e.into_inner());
+    assert!(events.is_empty());
+    events.reserve_exact(CAPACITY);
+    LOANS.with(|v| v.borrow_mut().reserve_exact(16));
+    LEAF_SCOPES.with(|v| v.borrow_mut().reserve_exact(16));
+    BASE.set(Instant::now())
+        .expect("one capture per fresh process");
+    HELPER_DETAIL.store(
+        std::env::var("MECH_INTERVAL_HELPERS").as_deref() == Ok("1"),
+        Ordering::Relaxed,
+    );
+    COUNTER_DETAIL.store(
+        std::env::var("MECH_INTERVAL_COUNTERS").as_deref() == Ok("1"),
+        Ordering::Relaxed,
+    );
+    ENABLED.store(true, Ordering::Relaxed);
+    main
+}
+pub(in crate::native_artifact) fn native_begin(site: u64, operation: u64) {
+    if !ENABLED.load(Ordering::Relaxed) {
+        return;
+    }
+    LOANS.with(|v| {
+        let mut loans = v.borrow_mut();
+        // First-use logging allocation precedes the native-body timestamp.
+        if loans.capacity() == 0 {
+            loans.reserve_exact(16);
+        }
+        let mut scope = diagnostic_interval_scope("native_body", site, operation);
+        if let Some(event) = &mut scope.event {
+            event.closed = false;
+        }
+        loans.push(scope);
+    });
+}
+pub(in crate::native_artifact) fn native_end(site: u64) {
+    if !ENABLED.load(Ordering::Relaxed) {
+        return;
+    }
+    LOANS.with(|v| {
+        if let Some(mut scope) = v.borrow_mut().pop() {
+            if let Some(event) = &mut scope.event {
+                event.closed = true;
+                event.close_site = Some(site);
+            }
+            drop(scope);
+        } else {
+            UNMATCHED_END.fetch_add(1, Ordering::Relaxed);
+        }
+    });
+}
+pub fn diagnostic_intervals_finish() -> serde_json::Value {
+    // Workers have joined. Any unmatched main-thread native loan is disclosed.
+    LOANS.with(|v| v.borrow_mut().clear());
+    ENABLED.store(false, Ordering::Relaxed);
+    let events = EVENTS.lock().unwrap_or_else(|e| e.into_inner());
+    serde_json::json!({"diagnostic_only":true,"promotion_timing_eligible":false,
+        "helper_detail":HELPER_DETAIL.load(Ordering::Relaxed),
+        "calling_thread_counters":COUNTER_DETAIL.load(Ordering::Relaxed),
+        "counter_errors":COUNTER_ERRORS.load(Ordering::Relaxed),
+        "events": &*events,"dropped":DROPPED.load(Ordering::Relaxed),
+        "unmatched_ends":UNMATCHED_END.load(Ordering::Relaxed),
+        "coarse_checkpoints":COARSE_NEXT.load(Ordering::Relaxed),
+        "scope":"Elapsed intervals include scheduling and diagnostic overhead. Optional hardware deltas count only each calling thread, including diagnostic probes; different thread instruction totals may be added but overlapping elapsed durations may not. Native-body intervals span successful loan-open return through loan-close entry, including the unchanged generated dispatcher. Helpers may include worker waits. Nested intervals require union/subtraction before attribution."})
+}

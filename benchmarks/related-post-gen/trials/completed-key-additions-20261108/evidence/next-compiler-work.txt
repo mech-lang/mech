@@ -1,0 +1,3 @@
+Keep the checked arithmetic and CFG through early cleanup/capture selection. Supply the compiler-certified upper bound to the existing later unsigned-guard pass, then inspect whether query code remains unchanged while surviving index checks disappear.
+
+The small key theorem is implemented and qualified, but the early rewrite failed its measured purpose. Preserve IR308. Triple generation and scatter remain the next substantial budget; no native-host work has been hidden outside the timer.
