@@ -1,5 +1,18 @@
 # Native compression milestone
 
+## R222: existing single-loop proofs select; inherited matrix fallback gap found
+
+The compact adapter now accepts complete non-appending indexed-update proofs without a nested schedule. Existing shared emission, checked errors, actual owner/geometry gates and fallback stay. The two target headers12868/15737 actually run.134 proofs are selected statically (7 nested/127 single);92 new headers actually select across the matrix. The prior seven numeric and two total-map functions retain byte-identical actual code and metadata.
+
+All20 original1.05 and block-mean gates pass. Balanced block means improve **17.150%** over R221. Experimental natural32 **2.657029×→2.456952× Roc**, periodic **2.418937×→2.189403×**, repeated **2.236612×→2.045910×**, random **3.977705×→3.073894×**, distribution16 **3.732273×→3.191886×**, eight literals **0.760708×→0.538732×**.17 elapsed medians fall/three equal. Instructions fall on13/rise on seven; natural/periodic/repeated instruction medians rise2.7–3.2%. Cycles fall on18/rise on two. All20 heap/copy/zero/peak metrics remain equal. Root code grows1150584B and stack25232B; keep these costs with the gain.
+
+3568 passing compiled vector/ownership/buffer controls,47 original/decoded small image pairs,40 stream smokes and40 full observer calls verify outputs and cleanup. Fresh161832 primary,3120 CPU/heap,24035 wall and96779 PC-profile calls are retained. Faster eight-byte profiling exposed a request/reply pipe deadlock: the first five captures stay; only the sixth resumes with concurrent delivery. Primary/counter measurements are unchanged, and the original failed profile receipt remains.
+
+**A newly added multidimensional test finds an inherited experimental fallback bug.** On a legal2×3 input the resident/oracle result is14; R221 returns13, and R222's shared alias path returns12 when a first root fallback precedes correct numeric entry. The private numeric path returns14. Eight original/decoded controlled probes establish the classification; the broad planned matrix suite stops at the clean-parent negative and is not claimed passing. Root Read directly scales the logical index. General compact qualification is withheld. NormalR215/IR215 remains unchanged and the full diagnostic still omits ordinary exact contracts.
+
+Next fix canonical indexing in the experimental fallback using the existing shared helper, with an executed indexed-write witness before expanding that repair. Then repeat multidimensional/native/fallback/error/alias/retry checks and all20 streams/timings/counters/profiles. Parity remains open. [Full scope, all20 results, exact source, failures and public evidence](native-single-loop-entry.md).
+
+
 ## R221: hand ownership through successful buffer updates
 
 The existing held/dead source proof now permits one owned reference to move into a successful same-owner buffer result. All original checks, actual mutation uniqueness/capacity, fresh fallback, genuine aliases and old destination cleanup stay. Two archived compiler files change; source/runtime/allocator stay pinned.562 source sites qualify. Separate real-buffer census observes357738 handoffs per natural32 and440192 per random32, including shared backing. The change bypasses result-retain/source-retire memory updates rather than imposing uniqueness on reference moves.

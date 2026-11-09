@@ -42685,6 +42685,85 @@
       "ordinary_contract_restored": false,
       "new_branch_or_PR": false,
       "next": "Test the existing complete non-appending single-loop numeric class in compact entry; exact hot source witnesses, checked fallback/current-owner gates,original/decoded controls and all20 measurements."
+    },
+    "222": {
+      "base": "52131f04f546ad25875d457d583a69402952a2c1",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "versions_retained": {
+        "ir": 215,
+        "work": 107,
+        "abi": 39,
+        "bytecode": 14
+      },
+      "source_files": [],
+      "archived_compiler_delta": [
+        "hosts/gpu/src/native_artifact/program/codegen/numeric_minimal.rs",
+        "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+      ],
+      "decision": {
+        "retained_experiment": "R222 complete single-loop numeric vector-compression experiment",
+        "normal_compiler": "R215/IR215",
+        "ordinary_source_unchanged": true,
+        "geometric_blockmean_ratio": 0.8285005732581214,
+        "original_1_05_gates": 20,
+        "instructions_lower_higher": [
+          13,
+          7
+        ],
+        "cycles_lower_higher": [
+          18,
+          2
+        ],
+        "code_root_delta": 1150584,
+        "stack_root_delta": 25232,
+        "allocation_copy_peaks_unchanged_all20": true,
+        "ordinary_contract_restored": false,
+        "parity_achieved": false,
+        "general_compact_qualification": false,
+        "inherited_failure": "Multidimensional root fallback uses physical order rather than canonical linear order; before13/after-shared12/oracle14."
+      },
+      "events": [
+        {
+          "event": "existing-single-loop-numeric-entry",
+          "asset": "r222-single-loop-native-9a8c862c0a70.tar.gz",
+          "sha256": "9a8c862c0a709f7e0b7b49663cbfa318a91b26a234cf002b1c16ef6ee31c6ac6",
+          "bytes": 2867639,
+          "files": 1536,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r222-single-loop-native-9a8c862c0a70.tar.gz"
+        }
+      ],
+      "observations": {
+        "primary_complete_calls": 161832,
+        "retained_primary_observations": 161712,
+        "primary_reference_compressions": 5120,
+        "separate_mech_cpu_heap_calls": 3120,
+        "reference_counter_windows": 1280,
+        "reference_counter_compressions": 10240,
+        "compiled_control_cases": 3568,
+        "original_1_05_gates_pass": 20,
+        "blockmean_1_05_gates_pass": 20,
+        "elapsed_medians_lower": 17,
+        "elapsed_medians_higher": 0,
+        "elapsed_medians_equal": 3,
+        "instructions_lower": 13,
+        "instructions_higher": 7,
+        "cycles_lower": 18,
+        "cycles_higher": 2,
+        "geometric_elapsed_ratio": 0.8230443923779486,
+        "geometric_blockmean_ratio": 0.8285005732581214,
+        "wall_profile_calls": 24035,
+        "pc_profile_calls": 96779,
+        "full_observer_calls": 40,
+        "original_decoded_small_image_pairs": 47,
+        "existing_specialized_functions_byte_identical": 9,
+        "actual_new_headers_selected": 92,
+        "controlled_inherited_matrix_probes": 8
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "next": "Fix inherited compact fallback canonical matrix indexing with minimal indexed-write evidence and changing-shape/alias/error/retry acceptance, then repeat all20 measurements."
     }
   },
   "repository": "mech-lang/mech",
