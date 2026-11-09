@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R231
+# Production/diagnostic optimization coverage after R234
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -118,3 +118,17 @@ Allnine loops select; root/133 other Object bodies and all25 heap/copy fields st
 equal. Two frames shrink16B. NormalIR215/extra ordinary contract stay unchanged.
 An environmental profile-only disk failure is recovered without remeasuring any
 completed primary/counter case;242 files remain hash-identical. [Scope and evidence](native-vector-loop-entry.md).
+
+
+R234 reuses scalar results of already executed guarded reads on the current
+traversal, using existing view provenance and conservative memory epochs.
+Only four existing path bodies change; no new operation/phase class becomes
+native. Source/algorithm, root Object and 132 other bodies stay identical.
+All 25 gates / 692 maintained / 7,064 native source controls pass, including 279 fresh
+resident calls; old resident denials remain pinned and explicit. Pooled gain
+0.813% retains five small adverse block means and the second cohort's adverse
+geometric mean. Instructions fall on 22 cases/tie on three; heap/copy fields
+stay equal. Maintained layout checks pass, but the extra experimental audit
+exposes unchanged inherited owner_flow file/directory debt; both failing parent/
+candidate receipts and hashes are retained. Normal IR215/additional ordinary
+contracts remain unchanged. [Proof, all 25 and evidence](native-reused-scalar-reads.md).

@@ -1,5 +1,28 @@
 # Native compression milestone
 
+## R234: reuse already computed guarded scalar reads
+
+Retain the eight-file compiler experiment over R233. Both predeclared complete
+cohorts and pooled 48 pass all 25 unchanged point/block gates; geometric elapsed
+improves **0.813%**. Natural32 **2.306883×→2.248385×** reference (−2.536%),
+periodic **1.688313×→1.662209×**, repeated **1.591807×→1.567436×**, random
+**2.794810×→2.766237×**. Eight **0.514124×→0.505476×** stays faster, with only
+0.0275% fewer instructions. Preserve five adverse small block means and the
+second cohort's 0.0249% adverse geometric mean. 22 instruction medians decrease,
+three tie; 24 cycle medians decrease, one rises. All allocation/copy counts match.
+
+Four path bodies lose 192 B total; root and 132 other bodies stay byte-identical.
+Frames/full worker size stay equal. 692 maintained/7064 native source controls
+pass, including 279 fresh resident calls and six new proof tests. Fresh 25,529 wall/
+104,666 PC calls and 1,677 public hashes/replay verify. Natural32 is 97.855%
+generated exclusive/0.525% host-under-generated in wall samples. Maintained
+layout checks pass; a separate audit finds unchanged experimental owner_flow
+file/directory layout debt in both parent/candidate. Explicitly retain that
+inherited failure and the seven test exclusions. Normal IR215/additional ordinary
+contract, R225 separation and pinned algorithm/source remain. Next inspect
+unused current argument-packet lanes; existing path vectorization is complete.
+[All 25, proof, tradeoffs and exact evidence](native-reused-scalar-reads.md).
+
 ## R233: enter the dedicated vector loop directly
 
 Retain the two-file compiler experiment over R231; R232's scalar-first alternative
