@@ -44,3 +44,15 @@ R225 measures only two immutable packed-cache bindings in source; no compiler/ru
 R226 improves range inference and current-phase guard reuse on existing reduction windows. The same 134 numeric phases/two maps remain; only four path bodies change and 132 other special routines keep identical actual code. No new source operation is counted as newly native. Normal IR215 and its additional contract remain unchanged. All 25 gates, 679 maintained tests and 640 linked path/matrix controls pass, with inherited exclusions/denials explicit. [Scope and evidence](native-phase-window-facts.md).
 
 R227 reuses the same current-traversal engine to prove 51 same-address nonzero modular updates across45 existing numeric routines. It removes only redundant old-value loads/comparisons; no additional source operation or phase class becomes native. Normal IR215 is unchanged. All25 gates/684 maintained tests/2304 compiled controls/864 ordinary controls pass. Instructions fall on22 cases/tie onthree, allocations stay equal, and contrary elapsed/cycle observations remain. [Source, proof, measurements and limits](native-current-element-write-proofs.md).
+
+
+R228 changes no source operation or phase selection. The shared native emitter
+uses the existing exact-view private flag to store directly, retaining shared
+old-value comparison and all checks/first-change behavior.236 sites across130
+routines qualify;111 bodies change and23 numeric/two map bodies stay identical.
+All25 gates/684 maintained/3400 compiled/2652 ordinary controls pass, including
+private equal writes, mixed alias fallback/native, finite denial/publication and
+retry. NormalIR215 and its additional ordinary contract remain unchanged. A
+0.995% geometric timing improvement retains six adverse instruction cases and
+three adverse block means. Next measure synchronous phase packet reuse; do not
+claim its theoretical stack saving as implemented. [Scope and evidence](native-private-write-stores.md).
