@@ -35,6 +35,9 @@ impl Invocation<'_, '_, '_> {
             || self.closed_tail.is_some()
             || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
     }
+    pub(in crate::native_artifact::program::runtime) fn retained_caller_dynamic_private_nodes(&self,site:usize)->Result<u64,Error>{
+        self.state.call_caches.caller_retained_nodes(&self.state.library).map_err(|error|Error::Library{origin:self.descriptor.metadata().plan.blocks()[site].origin(),error})
+    }
     pub(in crate::native_artifact::program::runtime) fn retained_caller_dynamic_nodes(
         &self,
         site: usize,

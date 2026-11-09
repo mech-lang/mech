@@ -80,6 +80,7 @@ impl Layout {
         owners: &mech_engine::native_artifact::NativeMapOwnerWords,
         frames: &mech_engine::native_artifact::NativeBufferFrames,
         calls: &[Option<mech_engine::native_artifact::NativePreparedLibraryCall>],
+        fixed_keys: &super::fixed_key_loops::Layout,
     ) -> Result<Self, &'static str> {
         let discovery = super::numeric_tree::Discovery::new(plan)?;
         let mut layout = Self {
@@ -141,12 +142,12 @@ impl Layout {
                         .collect::<Vec<_>>();
                     // One non-escaping projection over an invariant String. The
                     // source body still computes every range endpoint and value.
-                    spans.len() == 1
+                    fixed_keys.owner(owner).is_some() || (spans.len() == 1
                         && owners.regions()[owner]
                             .reads()
                             .iter()
                             .chain(owners.regions()[owner].writes())
-                            .all(|&site| owners.call_span(site as usize) == Some(spans[0].0))
+                            .all(|&site| owners.call_span(site as usize) == Some(spans[0].0)))
                 });
             // A closed map body may run inside an ordinary comprehension.
             // Its own body must still contain no child loop; the parent is
@@ -263,7 +264,8 @@ impl Layout {
                     || aggregates.action(site as usize).is_some()
                     || borrowed.action(site as usize).is_some()
                     || map.is_some_and(|owner| {
-                        owners.action_region(site as usize) == Some(owner)
+                        fixed_keys.owner(owner).is_some_and(|p|p.cell==site as usize)
+                            || owners.action_region(site as usize) == Some(owner)
                             || owners.call_region(site as usize) == Some(owner)
                             || owners
                                 .span_site(site as usize)
@@ -661,6 +663,7 @@ pub(in crate::native_artifact) fn validate_image(
     serialized_aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
     calls: &[Option<mech_engine::native_artifact::NativePreparedLibraryCall>],
     serialized: &Layout,
+    fixed_keys: &super::fixed_key_loops::Layout,
 ) -> Result<(), String> {
     let facts = plan.facts();
     let aggregates = facts.scalar_aggregates();
@@ -700,7 +703,7 @@ pub(in crate::native_artifact) fn validate_image(
             .and_then(|n| n.checked_add(super::map_owner::extra_work(owners, site).ok()?))
             .ok_or("restored closed-tail price overflows")?;
     }
-    let proved = Layout::derive(plan, &borrowed, &visits, &aggregates, owners, frames, calls)?;
+    let proved = Layout::derive(plan, &borrowed, &visits, &aggregates, owners, frames, calls, fixed_keys)?;
     if serde_json::to_vec(&proved).map_err(|e| e.to_string())?
         != serde_json::to_vec(serialized).map_err(|e| e.to_string())?
     {

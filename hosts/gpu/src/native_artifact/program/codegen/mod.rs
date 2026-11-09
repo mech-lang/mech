@@ -89,3 +89,6 @@ mod numeric_loop_windows;
 mod numeric_traversal;
 #[cfg(feature = "canonical-native-program")]
 mod ordered_reduction;
+
+#[cfg(feature = "canonical-native-program")]
+mod fixed_keys;

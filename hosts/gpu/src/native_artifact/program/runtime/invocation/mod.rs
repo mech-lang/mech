@@ -171,6 +171,9 @@ impl<'borrow, 'state, 'visit, 'plan> MapExecution<'borrow, 'state, 'visit, 'plan
     ) -> Result<u64, Error> {
         self.invocation.retained_caller_dynamic_nodes(site)
     }
+    pub(in crate::native_artifact::program::runtime) fn retained_caller_dynamic_private_nodes(&self,site:usize)->Result<u64,Error>{
+        self.invocation.retained_caller_dynamic_private_nodes(site)
+    }
     #[cfg(all(test, feature = "canonical-native-program"))]
     pub(in crate::native_artifact::program::runtime) fn retained_caller_fixed_inventory(
         &mut self,

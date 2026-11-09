@@ -22,3 +22,5 @@ pub(in crate::native_artifact) mod utf8_read;
 
 // Physical storage only; original-call admission controls every loan.
 pub(in crate::native_artifact) mod utf8_histogram;
+
+pub(in crate::native_artifact) mod fixed_keys;

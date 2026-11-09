@@ -253,6 +253,38 @@ fn add(a: u64, b: u64) -> Result<u64, Error> {
 }
 
 impl<'plan> State<'plan> {
+    fn private_geometry_nodes(&self,ctx:&mut MapExecution<'_, '_, '_, '_>)->Result<u64,Error>{
+        let mut nodes = self.reservation.capacity_bytes();
+        for slot in &self.slots {
+            if let Some(frozen) = &slot.frozen {
+                nodes = add(nodes, frozen.map.retained_nodes())?;
+            }
+            if let Some(binding) = &slot.binding {
+                nodes = add(
+                    nodes,
+                    binding.retained_nodes().map_err(storage_error)?,
+                )?;
+            }
+        }
+        for dictionary in self.dictionaries.iter().flatten() {
+            nodes = add(nodes, dictionary.map.retained_nodes())?;
+        }
+        ctx.work()
+            .charge(Phase::Setup, amount(self.seeds.len(), 64, 0)?)?;
+        for seed in self.seeds.iter().flatten() {
+            nodes = add(
+                nodes,
+                seed.frame.metadata_demand().retained_nodes,
+            )?;
+        }
+        for span in &self.spans {
+            if matches!(span, Some(spans::Lane::Span { .. })) {
+                nodes = add(nodes, 2)?;
+            }
+        }
+        nodes = add(nodes, self.matrix_key_nodes()?)?;
+        Ok(nodes)
+    }
     #[cfg(test)]
     pub(in crate::native_artifact::program::runtime) fn new(
         descriptor: &'plan NativeProgramDescriptor,
@@ -443,35 +475,7 @@ impl<'plan> State<'plan> {
                 )?,
             )?,
         )?;
-        geometry.live_nodes = add(geometry.live_nodes, self.reservation.capacity_bytes())?;
-        for slot in &self.slots {
-            if let Some(frozen) = &slot.frozen {
-                geometry.live_nodes = add(geometry.live_nodes, frozen.map.retained_nodes())?;
-            }
-            if let Some(binding) = &slot.binding {
-                geometry.live_nodes = add(
-                    geometry.live_nodes,
-                    binding.retained_nodes().map_err(storage_error)?,
-                )?;
-            }
-        }
-        for dictionary in self.dictionaries.iter().flatten() {
-            geometry.live_nodes = add(geometry.live_nodes, dictionary.map.retained_nodes())?;
-        }
-        ctx.work()
-            .charge(Phase::Setup, amount(self.seeds.len(), 64, 0)?)?;
-        for seed in self.seeds.iter().flatten() {
-            geometry.live_nodes = add(
-                geometry.live_nodes,
-                seed.frame.metadata_demand().retained_nodes,
-            )?;
-        }
-        for span in &self.spans {
-            if matches!(span, Some(spans::Lane::Span { .. })) {
-                geometry.live_nodes = add(geometry.live_nodes, 2)?;
-            }
-        }
-        geometry.live_nodes = add(geometry.live_nodes, self.matrix_key_nodes()?)?;
+        geometry.live_nodes=add(geometry.live_nodes,self.private_geometry_nodes(ctx)?)?;
         // Every table/key/lane reservation shares this exact account. Snapshot
         // nodes come from the base view; private table nodes are added above.
         geometry.live_bytes = ctx.library().memory_budget().used_bytes();

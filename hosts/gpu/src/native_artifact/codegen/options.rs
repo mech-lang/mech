@@ -85,6 +85,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     DictionarySeedFrames,
     /// Keep admitted immutable Map keys and independent current native U64 cells.
     BorrowedDictionaryValues,
+    /// Emit a closed fixed-key map body; ablation keeps its ordered callbacks.
+    FixedKeyMapLoops,
     /// Test private ownership before loading/comparing an old write target.
     PrivateWritesFirst,
     /// Stronger immutable-cell facts require the guarded-load optimization.

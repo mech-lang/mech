@@ -17,7 +17,8 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
         let catalog = mech_stdlib::source_catalog();
         let artifact = mech_engine::CanonicalSourceFrontend.compile_document_with_catalog(
             &DocumentSyntax::cast(parsed.syntax()).unwrap(), catalog.clone()).unwrap().compile_artifact().unwrap();
-        let native = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let native = JitProgramArtifact::compile_for_test(&artifact, &catalog, crate::native_artifact::codegen::options::OptimizationPass::FixedKeyMapLoops).unwrap();
+        let direct = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let posts: serde_json::Value = serde_json::from_str(&read("MECH_MATRIX_KEY_BENCH_INPUT")).unwrap();
         let posts = posts.as_array().unwrap();
         let oracle: serde_json::Value = serde_json::from_str(&read("MECH_MATRIX_KEY_BENCH_ORACLE")).unwrap();
@@ -78,6 +79,14 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
             assert_eq!(output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>(),
                 bank_output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>());
             drop(bank_output);
+            let mut direct_output=vec![None;artifact.outputs().len()];
+            let (result,native_counts,helpers)=super::composition_tests::fixed_key_loops::run(
+                &direct,&args,&mut direct_output,&memory,restored,NativeProgramLimitMode::NoLimits.execution(),false);
+            result.unwrap();assert_eq!(native_counts,[1,28,1,0]);assert_eq!(helpers,[0;2]);
+            assert_eq!(output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>(),
+                direct_output.iter().map(|v|v.as_ref().unwrap().canonical_data_draft().unwrap()).collect::<Vec<_>>());
+            drop(direct_output);
+
             let (cached_census, full_census) = super::maps::owner::tests::take_geometry_counts();
             assert!(cached_census >= 28, "actual dictionary must use the admitted caller census: {cached_census}/{full_census}");
             let ValueData::Matrix(matrix) = output.last().unwrap().as_ref().unwrap().data() else { panic!("result matrix"); };
@@ -88,7 +97,7 @@ fn matrix_map_keys_full_input_selects_28_borrowed_cells_with_exact_results() {
                     assert_eq!(&posts[*index as usize], expected);
                 }
             }
-            println!("{}", serde_json::json!({"full_input_posts":posts.len(),"borrowed_value_banks":banks[0],"owned_seed_imports":banks[1],"borrowed_bank_entry_helpers":banks[2],"restored":restored,"producer_callbacks":counts.0,"borrowed_cells":counts.1,"canonical_string_values":counts.2,"retained_insertions":counts.3,"cached_census":cached_census,"full_census":full_census,"owned_key_views":views[0],"canonical_key_matrices":views[1],"retired_histogram_handles":views[3],"native_seed_frames":seeds[0],"canonical_seed_tuples":seeds[1],"native_seed_imports":seeds[2],"late_seed_materializations":seeds[3],"native_dictionary_publications":dictionaries[0],"canonical_dictionaries_at_publication":dictionaries[1],"frozen_dictionary_loans":dictionaries[2],"fallback_materializations":dictionaries[3],"exact_related_posts":true,"timings_ineligible":true}));
+            println!("{}", serde_json::json!({"full_input_posts":posts.len(),"native_fixed_key_loops":native_counts[0],"native_fixed_key_writes":native_counts[1],"native_key_helpers":helpers[0],"native_insert_helpers":helpers[1],"borrowed_value_banks":banks[0],"owned_seed_imports":banks[1],"borrowed_bank_entry_helpers":banks[2],"restored":restored,"producer_callbacks":counts.0,"borrowed_cells":counts.1,"canonical_string_values":counts.2,"retained_insertions":counts.3,"cached_census":cached_census,"full_census":full_census,"owned_key_views":views[0],"canonical_key_matrices":views[1],"retired_histogram_handles":views[3],"native_seed_frames":seeds[0],"canonical_seed_tuples":seeds[1],"native_seed_imports":seeds[2],"late_seed_materializations":seeds[3],"native_dictionary_publications":dictionaries[0],"canonical_dictionaries_at_publication":dictionaries[1],"frozen_dictionary_loans":dictionaries[2],"fallback_materializations":dictionaries[3],"exact_related_posts":true,"timings_ineligible":true}));
         }
         drop(args); assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0,0));
     }).unwrap().join().unwrap();

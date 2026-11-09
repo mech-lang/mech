@@ -402,6 +402,20 @@ impl NativeBorrowedMapKeys {
     ) -> Result<NativeStringMatrixKeyView, InvokeError> {
         self.loan.native_view(&self.loan.owner, work)
     }
+    /// Descriptive native geometry for this exact current loan and compatible
+    /// selected consumer. This does not visit either source operation, debit
+    /// its work, or grant an output/mutation/publication allowance.
+    pub fn native_view_for_consumer(
+        &self,
+        consumer: &NativePreparedLibraryCall,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<NativeStringMatrixKeyView, InvokeError> {
+        self.loan.current(&self.loan.owner, work)?;
+        if !self.loan.supports_consumer(consumer) {
+            return Err(InvokeError::InvalidInput);
+        }
+        self.native_view(work)
+    }
     pub fn admit_element(
         &mut self,
         index: u64,

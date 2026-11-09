@@ -229,6 +229,9 @@ impl<S: BuildHasher> OwnedStringMap<S> {
             .ok_or(Error::Binding("ordinal write without borrowed bank"))?[0]
             .replace(source, index, text, value)
     }
+    pub(in crate::native_artifact) fn native_values(&mut self,source:&mech_core::Value)->Result<Option<(u64,u64)>,Error>{
+        self.borrowed.as_mut().map(|one|one[0].native_values(source)).transpose()
+    }
     // Bound a full collision chain before lookup. Raw String equality can
     // inspect at most all stored key bytes plus fixed bucket/header work.
     pub(in crate::native_artifact) fn lookup_work(

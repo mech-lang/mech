@@ -523,6 +523,18 @@ impl NativeStringMatrixKeyLoan {
         )?
     }
 
+    fn supports_consumer(&self, consumer: &NativePreparedLibraryCall) -> bool {
+        let inputs = consumer.template.inputs();
+        matches!(
+            consumer.template.primitive(),
+            Primitive::MapContainsKey | Primitive::MapKeyAccess | Primitive::MapInsert
+        ) && inputs.len() >= 2
+            && consumer.input_keys.get(1) == Some(&self.key)
+            && inputs[1].body() == &SchemaBody::String
+            && inputs[1].dimension_parameters().is_empty()
+            && matches!(inputs[0].body(),SchemaBody::Map{key,value,..}if key.as_ref()==&SchemaBody::String&&value.as_ref()==&SchemaBody::UnsignedInteger(IntegerWidth::W64))
+    }
+
     /// Borrow only for a genuine same-schema selected String→Map-key use.
     /// The closure cannot export a borrowed lifetime. Map lookup/insertion,
     /// missing-key errors and allocation stay in their original maintained
@@ -536,18 +548,9 @@ impl NativeStringMatrixKeyLoan {
         use_key: impl FnOnce(&str) -> T,
     ) -> Result<T, InvokeError> {
         self.current(source, work)?;
-        let inputs = consumer.template.inputs();
         if selected.loan != self.epoch
             || selected.serial != self.serial
-            || !matches!(
-                consumer.template.primitive(),
-                Primitive::MapContainsKey | Primitive::MapKeyAccess | Primitive::MapInsert
-            )
-            || inputs.len() < 2
-            || consumer.input_keys.get(1) != Some(&self.key)
-            || inputs[1].body() != &SchemaBody::String
-            || !inputs[1].dimension_parameters().is_empty()
-            || !matches!(inputs[0].body(),SchemaBody::Map {key,value,..} if key.as_ref()==&SchemaBody::String && value.as_ref()==&SchemaBody::UnsignedInteger(IntegerWidth::W64))
+            || !self.supports_consumer(consumer)
         {
             return Err(InvokeError::InvalidInput);
         }

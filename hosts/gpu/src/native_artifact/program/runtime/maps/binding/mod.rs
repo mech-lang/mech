@@ -341,11 +341,19 @@ impl<'plan> Binding<'plan> {
             limits,
         )
     }
-    #[cfg(test)]
     pub(in crate::native_artifact) fn has_borrowed_keys(&self) -> bool {
         self.map
             .as_ref()
             .is_some_and(OwnedStringMap::has_borrowed_keys)
+    }
+    pub(in crate::native_artifact) fn fixed_call_geometry(&self,geometry:Geometry,limits:MemoryBudgetLimits)->Result<(),Error>{
+        let map=self.current(self.token)?;self.geometry(self.token,geometry,limits,map.len()as u64,map.key_bytes(),0).map(|_|())
+    }
+    pub(in crate::native_artifact) fn fixed_native_values(&mut self,source:&Value,geometry:Geometry,limits:MemoryBudgetLimits)->Result<Option<(u64,u64,u64)>,Error>{
+        let map=self.current(self.token)?;
+        self.geometry(self.token,geometry,limits,map.len()as u64,map.key_bytes(),0)?;
+        let token=self.token;
+        self.map.as_mut().ok_or(Error::Binding("closed fixed-key owner"))?.native_values(source).map(|v|v.map(|(pointer,len)|(pointer,len,token)))
     }
     fn import_source(
         plan: &'plan Plan,

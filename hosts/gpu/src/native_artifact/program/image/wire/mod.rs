@@ -443,6 +443,52 @@ fn decode_inner<
         (frames, Some(owners))
     };
     native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
+    let raw_owners=if frozen_layouts {w.map_owner_words.as_ref()}else{computed_map_owner_words.as_ref()};
+    let matrix_map_keys = if OBJECT_BOUND {
+        // SAFETY: only the private VerifiedObjectImage borrow selects this
+        // monomorph. Its exact checked compiler plan is already valid. Keep
+        // fresh complete-use derivation, without repeating global validation.
+        unsafe {
+            native::program::prepare::matrix_map_keys::Layout::from_checked_object_plan(
+                &plan,
+                raw_owners,
+            )
+        }
+    } else {
+        native::program::prepare::matrix_map_keys::Layout::derive(&plan, raw_owners)
+    }
+    .map_err(str::to_owned)?;
+    let borrowed_map_keys = native::program::prepare::borrowed_map_keys::Layout::derive(
+        &plan,
+        &buffer_frames,
+        &matrix_map_keys,
+    )
+    .map_err(str::to_owned)?;
+    let utf8_reads = if frozen_layouts {
+        w.utf8_reads
+    } else {
+        let derived =
+            native::program::prepare::utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
+        if derived != w.utf8_reads {
+            return Err(
+                "native UTF8 lookup proof differs from exact source collection uses".into(),
+            );
+        }
+        derived
+    };
+    let generic_dictionary = raw_owners.map(|owners|native::program::prepare::generic_dictionary::Layout::derive(&plan, owners,&utf8_reads)).transpose().map_err(str::to_owned)?.unwrap_or_default();
+    let dictionary_seed_frames = raw_owners.map(|owners|native::program::prepare::dictionary_seed_frames::Layout::derive(&plan,owners)).transpose().map_err(str::to_owned)?.unwrap_or_default();
+    let borrowed_dictionary_values =
+        native::program::prepare::borrowed_dictionary_values::Layout::derive(
+            &plan,
+            raw_owners,
+            &borrowed_map_keys,
+            &matrix_map_keys,
+            &dictionary_seed_frames,
+            &generic_dictionary,
+        )
+        .map_err(str::to_owned)?;
+    let fixed_key_loops=native::program::prepare::fixed_key_loops::Layout::derive(&plan,raw_owners,&borrowed_dictionary_values,&matrix_map_keys).map_err(str::to_owned)?;
     if !OBJECT_BOUND {
         native::program::prepare::tail::validate_image(
             &plan,
@@ -451,6 +497,7 @@ fn decode_inner<
             &w.scalar_aggregates,
             &calls,
             &closed_tails,
+            &fixed_key_loops,
         )?;
     }
     let borrowed_strings: native::program::prepare::borrowed::Layout = w.borrowed_strings.into();
@@ -497,64 +544,6 @@ fn decode_inner<
         derived
     };
     // This cache carries no wire authority, including on the same-Object path.
-    let matrix_map_keys = if OBJECT_BOUND {
-        // SAFETY: only the private VerifiedObjectImage borrow selects this
-        // monomorph. Its exact checked compiler plan is already valid. Keep
-        // fresh complete-use derivation, without repeating global validation.
-        unsafe {
-            native::program::prepare::matrix_map_keys::Layout::from_checked_object_plan(
-                &plan,
-                map_owner_words.as_ref(),
-            )
-        }
-    } else {
-        native::program::prepare::matrix_map_keys::Layout::derive(&plan, map_owner_words.as_ref())
-    }
-    .map_err(str::to_owned)?;
-    let borrowed_map_keys = native::program::prepare::borrowed_map_keys::Layout::derive(
-        &plan,
-        &buffer_frames,
-        &matrix_map_keys,
-    )
-    .map_err(str::to_owned)?;
-    let utf8_reads = if frozen_layouts {
-        w.utf8_reads
-    } else {
-        let derived =
-            native::program::prepare::utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
-        if derived != w.utf8_reads {
-            return Err(
-                "native UTF8 lookup proof differs from exact source collection uses".into(),
-            );
-        }
-        derived
-    };
-    let generic_dictionary = map_owner_words
-        .as_ref()
-        .map(|owners| {
-            native::program::prepare::generic_dictionary::Layout::derive(&plan, owners, &utf8_reads)
-        })
-        .transpose()
-        .map_err(str::to_owned)?
-        .unwrap_or_default();
-    let dictionary_seed_frames = map_owner_words
-        .as_ref()
-        .map(|owners| {
-            native::program::prepare::dictionary_seed_frames::Layout::derive(&plan, owners)
-        })
-        .transpose()
-        .map_err(str::to_owned)?
-        .unwrap_or_default();
-    let borrowed_dictionary_values =
-        native::program::prepare::borrowed_dictionary_values::Layout::derive(
-            &plan,
-            map_owner_words.as_ref(),
-            &borrowed_map_keys,
-            &matrix_map_keys,
-            &dictionary_seed_frames,
-            &generic_dictionary,
-        )
-        .map_err(str::to_owned)?;
     if (image.version >= 7) != w.numeric_maps.is_some() {
         return Err("native descriptor version differs from numeric map inventory".into());
     }
@@ -859,6 +848,7 @@ fn decode_inner<
             generic_dictionary,
             dictionary_seed_frames,
             borrowed_dictionary_values,
+            fixed_key_loops,
             utf8_reads,
             numeric_maps,
             frozen_maps,

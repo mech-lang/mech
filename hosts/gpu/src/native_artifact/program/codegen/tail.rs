@@ -282,6 +282,7 @@ pub(in crate::native_artifact) fn prepare(
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
+    fixed_keys: Option<&crate::native_artifact::program::prepare::fixed_key_loops::Layout>,
     site: usize,
     hooks: &Hooks,
     error: Block,
@@ -291,6 +292,8 @@ pub(in crate::native_artifact) fn prepare(
         return Ok(());
     };
     let region = &layout.regions[region];
+    if region.map.is_some_and(|owner| fixed_keys.is_some_and(|keys| keys.owner(owner).is_some()))
+        && !controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::FixedKeyMapLoops) { return Ok(()); }
     if region.numeric_subtree()
         && !controls
             .enabled(crate::native_artifact::codegen::options::OptimizationPass::NumericTrees)

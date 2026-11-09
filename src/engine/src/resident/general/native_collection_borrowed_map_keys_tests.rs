@@ -113,6 +113,17 @@ fn borrowed_map_keys_pin_generic_snapshot_and_match_real_matrix_cells_and_logica
             .try_borrowed_map_keys(element, &source, limits(), &w, ResourceDemand::default())
             .unwrap()
             .unwrap();
+        let used = w.used();
+        assert_eq!(
+            view.native_view_for_consumer(insert, &w).unwrap().count,
+            texts.len() as u64
+        );
+        assert!(view.native_view_for_consumer(keys, &w).is_err());
+        assert_eq!(
+            w.used(),
+            used,
+            "descriptive geometry grants no source operation or debit"
+        );
         let mut meter = ResidentBudgetMeter::for_closed_analysis(u64::MAX, u64::MAX);
         assert_eq!(
             view.logical_footprint(),

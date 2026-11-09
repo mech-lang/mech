@@ -122,6 +122,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) generic_dictionary: generic_dictionary::Layout,
     pub(in crate::native_artifact) dictionary_seed_frames: dictionary_seed_frames::Layout,
     pub(in crate::native_artifact) borrowed_dictionary_values: borrowed_dictionary_values::Layout,
+    pub(in crate::native_artifact) fixed_key_loops: fixed_key_loops::Layout,
     pub(in crate::native_artifact) map_admission: native::program::prepare::map_admission::Layout,
     pub(in crate::native_artifact) parallel: native::program::prepare::parallel::Layout,
     pub(in crate::native_artifact) borrowed_strings: native::program::prepare::borrowed::Layout,
@@ -255,6 +256,23 @@ impl PreparedNativeProgram {
             .collect::<Result<Box<[_]>, _>>()?;
         query_stages::validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
         prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
+        let matrix_map_keys = matrix_map_keys::Layout::derive(&plan, Some(&map_owner_words))
+            .map_err(str::to_owned)?;
+        let borrowed_map_keys =
+            borrowed_map_keys::Layout::derive(&plan, &buffer_frames, &matrix_map_keys)
+                .map_err(str::to_owned)?;
+        let generic_dictionary = generic_dictionary::Layout::derive(&plan, &map_owner_words, &utf8_reads).map_err(str::to_owned)?;
+        let dictionary_seed_frames = dictionary_seed_frames::Layout::derive(&plan, &map_owner_words).map_err(str::to_owned)?;
+        let borrowed_dictionary_values = borrowed_dictionary_values::Layout::derive(
+            &plan,
+            Some(&map_owner_words),
+            &borrowed_map_keys,
+            &matrix_map_keys,
+            &dictionary_seed_frames,
+            &generic_dictionary,
+        )
+        .map_err(str::to_owned)?;
+        let fixed_key_loops = fixed_key_loops::Layout::derive(&plan,Some(&map_owner_words),&borrowed_dictionary_values,&matrix_map_keys).map_err(str::to_owned)?;
         let closed_tails = native::program::prepare::tail::Layout::derive(
             &plan,
             &borrowed_strings,
@@ -263,6 +281,7 @@ impl PreparedNativeProgram {
             &map_owner_words,
             &buffer_frames,
             &calls,
+            &fixed_key_loops,
         )?;
         compose_work(
             &mut analysis_visits,
@@ -414,32 +433,6 @@ impl PreparedNativeProgram {
             .transpose()
             .map_err(str::to_owned)?
             .unwrap_or_default();
-        let matrix_map_keys = matrix_map_keys::Layout::derive(&plan, map_owner_words.as_ref())
-            .map_err(str::to_owned)?;
-        let borrowed_map_keys =
-            borrowed_map_keys::Layout::derive(&plan, &buffer_frames, &matrix_map_keys)
-                .map_err(str::to_owned)?;
-        let generic_dictionary = map_owner_words
-            .as_ref()
-            .map(|owners| generic_dictionary::Layout::derive(&plan, owners, &utf8_reads))
-            .transpose()
-            .map_err(str::to_owned)?
-            .unwrap_or_default();
-        let dictionary_seed_frames = map_owner_words
-            .as_ref()
-            .map(|owners| dictionary_seed_frames::Layout::derive(&plan, owners))
-            .transpose()
-            .map_err(str::to_owned)?
-            .unwrap_or_default();
-        let borrowed_dictionary_values = borrowed_dictionary_values::Layout::derive(
-            &plan,
-            map_owner_words.as_ref(),
-            &borrowed_map_keys,
-            &matrix_map_keys,
-            &dictionary_seed_frames,
-            &generic_dictionary,
-        )
-        .map_err(str::to_owned)?;
         let call_routes = call_routes::derive(
             &plan,
             &buffer_frames,
@@ -484,6 +477,7 @@ impl PreparedNativeProgram {
             generic_dictionary,
             dictionary_seed_frames,
             borrowed_dictionary_values,
+            fixed_key_loops,
             map_admission,
             parallel,
             borrowed_strings,
@@ -634,3 +628,5 @@ pub(in crate::native_artifact) mod borrowed_map_keys;
 pub(in crate::native_artifact) mod generic_dictionary;
 
 pub(in crate::native_artifact) mod dictionary_seed_frames;
+
+pub(in crate::native_artifact) mod fixed_key_loops;

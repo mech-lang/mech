@@ -10,7 +10,7 @@ use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMatchA
 
 pub(in crate::native_artifact::program::runtime::maps::owner) struct Caller {
     pub iteration: u32,
-    fixed_nodes: u64,
+    pub(super) fixed_nodes: u64,
 }
 
 impl State<'_> {

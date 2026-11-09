@@ -188,6 +188,13 @@ impl BorrowedStringValues {
             .ok_or(Error::Binding("borrowed dictionary cell"))?;
         Ok(core::mem::replace(cell, incoming))
     }
+    /// Descriptive exclusive backing for an uninterrupted generated owner.
+    /// The caller pins this bank and the matching genuine key loan until exit.
+    pub(in crate::native_artifact) fn native_values(&mut self,source:&Value)->Result<(u64,u64),Error>{
+        if !source.shares_frozen_storage(&self.snapshot)
+            ||source.memory_budget_retained_bytes(&self.work.memory_budget()).is_none(){return Err(Error::Binding("foreign fixed-key native source"))}
+        Ok((self.values.as_mut_ptr()as u64,self.values.len()as u64))
+    }
     pub(in crate::native_artifact) fn entries(
         &self,
     ) -> Result<impl ExactSizeIterator<Item = (&str, u64)>, Error> {

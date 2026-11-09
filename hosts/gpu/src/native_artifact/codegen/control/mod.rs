@@ -1794,7 +1794,7 @@ impl<'plan> CfgDefinition<'plan> {
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
                 crate::native_artifact::program::codegen::tail::prepare(
-                    controls, b, locals, &closed, index, hooks, error,
+                    controls, b, locals, &closed, match plan { plan::CodePlan::Program(p) => Some(&p.metadata().fixed_key_loops), _ => None }, index, hooks, error,
                 )?;
             }
             #[cfg(feature = "canonical-native-program")]

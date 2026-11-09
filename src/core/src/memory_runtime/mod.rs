@@ -21,7 +21,10 @@ pub use self::access::*;
 pub use self::allocation::{FixedHostArenaPlan, PlannedArenaElement, PlannedArenaProjection};
 pub(crate) use self::budget::ManagedMemoryCharge;
 pub(crate) use self::budget::SnapshotNodeCharge;
-pub use self::budget::{ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation};
+pub use self::budget::{
+    ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation,
+    NativeMemoryBudgetCounters,
+};
 pub use self::domain::*;
 pub use self::error::*;
 pub use self::identity::*;

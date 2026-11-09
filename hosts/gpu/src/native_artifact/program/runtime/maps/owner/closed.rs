@@ -21,6 +21,7 @@ pub(in crate::native_artifact::program::runtime) struct Owner<'plan> {
     // Private generated-code prefix. No source Value can carry this address.
     packed_frame: u64,
     packed: Option<PackedMap>,
+    fixed: Option<Box<crate::native_artifact::program::runtime::maps::fixed_keys::Lane>>,
     packed_ssa_entered: bool,
     guarded_loop_entered: bool,
     guarded_calls_entered: bool,
@@ -51,6 +52,7 @@ impl Owner<'_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         crate::native_artifact::program::runtime::maps::closed_tests::record_bound_call(op);
         let op = OwnerOperation::decode(op);
+        if self.fixed.is_some(){return self.fixed_call(site,op,args)}
         if op == OwnerOperation::EnterPackedSsa {
             let packed = self
                 .packed
@@ -338,6 +340,11 @@ impl<'plan> State<'plan> {
         let index = proof
             .map
             .ok_or_else(|| invalid("closed map missing owner proof"))?;
+        // Entry is optional after the ordinary initializer refused private
+        // storage. It has no consumed private visit or current binding to loan.
+        let Some(binding) = self.slots[index].binding.as_ref() else {
+            return Ok(None);
+        };
         if !core::ptr::eq(self.descriptor, ctx.descriptor())
             || self.work_identity != ctx.control().work.identity()
             || ctx.control().previous != Some(proof.tail.initialize())
@@ -357,9 +364,7 @@ impl<'plan> State<'plan> {
         {
             return Ok(None);
         }
-        let Some(binding) = self.slots[index].binding.as_ref() else {
-            return Ok(None);
-        };
+        if self.descriptor.metadata().fixed_key_loops.owner(index).is_some(){return self.try_begin_fixed(ctx,region)}
         let layout = self.descriptor.metadata().map_owner_words.as_ref().unwrap();
         let span = layout
             .spans()
@@ -488,6 +493,7 @@ impl<'plan> State<'plan> {
         let mut owner = Box::new(Owner {
             packed_frame: 0,
             packed,
+            fixed:None,
             packed_ssa_entered: false,
             guarded_loop_entered: false,
             guarded_calls_entered: false,
@@ -539,3 +545,6 @@ impl<'plan> State<'plan> {
 
 #[path = "../../invocation/closed_map_calls.rs"]
 mod closed_map_calls;
+
+#[path="fixed_keys.rs"]
+mod fixed_keys;

@@ -223,6 +223,29 @@ pub(in crate::native_artifact) fn emit(
     let active = b.ins().icmp_imm(IntCC::NotEqual, active, 0);
     b.ins().brif(active, native, &[], ordinary, &[]);
     b.switch_to_block(native);
+    if let CodePlan::Program(program) = code
+        && let Some(fixed) = program.metadata().fixed_key_loops.owner(index)
+        && (site == fixed.cell || site == fixed.insert)
+        && let Some(closed_id) = closed.sites.get(site).copied().flatten()
+        && closed.regions[closed_id].map == Some(index)
+    {
+        let proof = &closed.regions[closed_id];
+        let ready = load(b, locals, proof.words)?;
+        let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
+        let direct = b.create_block();
+        let retained = b.create_block();
+        b.ins().brif(ready, direct, &[], retained, &[]);
+        b.switch_to_block(direct);
+        let function = load(b, locals, proof.words + 3)?;
+        let context = load(b, locals, proof.words + 4)?;
+        let frame = b.ins().load(types::I64, MemFlags::new(), context, 0);
+        crate::native_artifact::program::codegen::fixed_keys::emit(
+            b, locals, frame, function, context, site, site == fixed.cell,
+            code.blocks()[site].action(), hooks, error,
+        )?;
+        b.ins().jump(joined, &[]);
+        b.switch_to_block(retained);
+    }
     if matrix_key.is_some() {
         let NativeIterationAction::LibraryCall { operands, .. } = code.blocks()[site].action()
         else {
