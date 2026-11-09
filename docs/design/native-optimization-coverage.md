@@ -1,4 +1,4 @@
-# Production/diagnostic optimization coverage after R235
+# Production/diagnostic optimization coverage after R236
 
 Counts describe different representation boundaries and are not interchangeable coverage percentages. Normal production now includes the qualified R215 interface (IR215); R199 remains the frozen comparison. The operation coverage below is unchanged by that transport integration.
 
@@ -143,3 +143,14 @@ passing. Instructions rise on eleven cases and fall on eleven; heap/stack
 fields stay equal. R234 stays retained; no new operation or ordinary contract
 is adopted. The C/Rust low-word arithmetic audit is evidence for the next
 separate compiler experiment, not an implemented gain. [Scope and receipts](native-input-packet-evaluation.md).
+
+R236 narrows only pure I64 add/sub/mul with an exact low 32-bit mask as sole use.
+The same compact root/numeric adapters and source operation classes remain;
+checked/multiple/edge uses, loads, error order and source pins remain. 178 sites
+qualify, 33 numeric bodies change, root stack grows 96 B. Both cohorts/all 25 gates
+pass, with only 0.1793% pooled geometric gain and large-case regressions retained.
+696 maintained / 8,360 native source controls and 603 fresh resident calls pass.
+All heap/copy fields agree; current 25,270 wall / 106,514 PC calls are pinned.
+Normal IR215/ordinary contracts stay unchanged; R235/R225 stay uncombined.
+Next establish a minimal current-SSA witness for path-scan completion checks;
+no new control-threading gain is claimed. [Evidence](native-low-word-arithmetic.md).
