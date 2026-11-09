@@ -1,5 +1,31 @@
 # Native compression milestone
 
+## R241: periodic input is now the primary parity target
+
+The user prioritizes periodic33,027B toward<=1x before moving to other cases;
+eight bytes may rise from about0.5x as far as1x. All25 remain correctness and
+timing controls. This prospective rule replaces portfolio-average selection.
+
+Grouping existing certified immutable equality loops into64-byte iterations
+improves periodic1.680619x->1.655346x reference,1.5038%, in both fixed cohorts.
+Eight is0.505430x. Periodic instructions fall3.2905%, cycles1.6140%; allocation,
+copy and peak fields stay equal. All25 exact streams/independent inflate agree;
+700 maintained tests,5,788 native source controls and5,346,432 focused machine
+checks per execution pass. Root is byte-identical; three matching bodies add1044B.
+
+Retain R241 as next periodic experimental control, preserving R237/R240 for
+measured combinations. Historical1.05 gates are not all green: pooled one-stored
+block mean rises5.8496%; all25 geometric elapsed rises1.0458%. Natural32 still
+favors preservedR237,2.141133x versus2.236146x. Both contrary cohorts remain.
+Eight stays within the explicitly authorized1x ceiling in both cohorts.
+
+Another39.59% of current periodic time must disappear. Current-PC shares remain
+root41.05%, matching32.47%, path12.82%; these are not removable-overhead shares.
+Next count/eliminate repeated same-owner settlement and view transport around
+phase returns on this same input. Deferred natural-terminal work stays parked.
+OrdinaryIR215 and its omitted standalone contracts remain unchanged.
+[All25, exact patch, tests and evidence](native-wide-equality-groups.md).
+
 ## R240: private write intervals qualify; retained R237 stays
 
 The four-file R234-based experiment carries one currently proved-private view
