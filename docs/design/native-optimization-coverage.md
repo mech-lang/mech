@@ -105,3 +105,16 @@ new focused resident calls are claimed. Root/133 other bodies and all25 heap/
 copy fields stay equal; two frames shrink16B. Retained experimental R231 and
 normalIR215/extra ordinary contract remain unchanged. [Measured alternative and
 next bounded step](native-scalar-peel-evaluation.md).
+
+
+R233 enters the same certified immutable matching loops through a dedicated
+current-position header, preserving the first vector probe and exact scalar
+fallback. Additional incoming paths decline. No new source operation/phase
+class becomes native. Both complete cohorts and pooled48 pass all25 unchanged
+gates, with0.282% pooled geometric improvement and explicit contrary results.
+686 maintained/2,115,072 native value/5,788 fresh source controls pass; original/
+decoded/oracle/frozen-resident agreement, aliases/error/publication/retry remain.
+Allnine loops select; root/133 other Object bodies and all25 heap/copy fields stay
+equal. Two frames shrink16B. NormalIR215/extra ordinary contract stay unchanged.
+An environmental profile-only disk failure is recovered without remeasuring any
+completed primary/counter case;242 files remain hash-identical. [Scope and evidence](native-vector-loop-entry.md).

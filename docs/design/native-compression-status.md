@@ -1,5 +1,29 @@
 # Native compression milestone
 
+## R233: enter the dedicated vector loop directly
+
+Retain the two-file compiler experiment over R231; R232's scalar-first alternative
+stays archived. Both predeclared complete cohorts and pooled48 pass all25
+unchanged point/block gates. Pooled geometric elapsed improves **0.282%**.
+Periodic **1.730610×→1.690612×** reference (−2.311%), repeated
+**1.636908×→1.604756×** (−1.964%); both retire about3.17% fewer instructions.
+Random **2.822516×→2.805143×**, distribution16 **2.789648×→2.769035×**.
+Keep natural32's **+0.160%**, the second cohort's **+0.0319%** geometric mean
+and11 adverse cycle medians. Eight **0.548447×→0.547064×** has essentially
+unchanged instructions; no additional tiny algorithmic saving is claimed.
+
+Same nine loops/three bodies; root and133 other Object bodies remain identical.
+Two frames shrink16B each; worker, root stack and all25 heap/copy fields stay equal.
+686 maintained tests,2,115,072 native value controls and5,788 fresh source controls
+pass. Unit admission/refusal counts and unchanged real-source errors/aliases/
+retry are explicit; focused resident data is reused without recounting it.
+Fresh25,395 wall/100,005 qualified actual-PC calls and all1,429 public hashes/
+replay verify. An OS disk-full failure repeats only the unfinished tiny profile;
+242 completed files stay hash-identical. About1.94GB of completed builds/logs
+were freed. NormalIR215/extra ordinary contract and R225 separation remain.
+Next target guarded packed-read reuse with a minimal alias/error/retry witness.
+[All25, proof, tradeoffs and exact evidence](native-vector-loop-entry.md).
+
 ## R232: scalar-first loop measured, baseline stays R231
 
 Archive the qualified two-file candidate rather than adopt it. It removes

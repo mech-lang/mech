@@ -45383,6 +45383,115 @@
       "retained_experimental_baseline": "14ae29af688a5372cc1a7fe5712f0efb77ae414b",
       "next": "Measure a dedicated vector header without forcing an initial scalar word, preserving the original scalar fallback and current-window admission. Keep the same source, matrix, gates and R231 retained baseline. Separately investigate already executed packed-read reuse and the four verified reference prefetch hints.",
       "full_observation_data": "Immutable external packet: results.json, heap-summary.json, both full primary cohorts, source controls and profile receipts; all25 comparison values also in docs/design/native-scalar-peel-evaluation.md"
+    },
+    "233": {
+      "base": "253f322057268025403ec8f82c20943299df4f8a",
+      "production": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+      "compiler_parent": "14ae29af688a5372cc1a7fe5712f0efb77ae414b",
+      "archived_compiler_files": [
+        "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs"
+      ],
+      "source_files": [],
+      "compressor_source_unchanged": true,
+      "R225_source_control_combined": false,
+      "pins": {
+        "base": "253f322057268025403ec8f82c20943299df4f8a",
+        "experimental_parent": "14ae29af688a5372cc1a7fe5712f0efb77ae414b",
+        "normal_compiler": "42c95cfd79e0dc3773d03aeb9f553d32ff3922c5",
+        "compiler_source_manifest_sha256": "322bb1e4be404cee0000a4b05449a7e659b4f857682784076106f73176e67c8e",
+        "compiler_patch_sha256": "8d5a9710c86148b68c68523652078fb7bcd218a59a2b30fb0b78d72f0a940037",
+        "compiler_rust_files_changed": [
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs"
+        ],
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "object_sha256": "1c2796ec92aa28a3865cdd7679b14b21a1fccadfeb0f3e563fe30b5c60f8cd7f",
+        "worker_sha256": "61ae98062be0a785cfe0795e39ca866c8bbf6b873d020dfef552f4b616357cef",
+        "reference_worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+        "allocator_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+        "compressor_source_unchanged": true,
+        "R225_bindings_not_combined": true
+      },
+      "decision": {
+        "retained": true,
+        "qualified": true,
+        "basis": "Both predeclared complete cohorts and all48 pooled balanced blocks pass all25 unchanged point/block gates, with lower pooled geometric elapsed. Preserve contrary measurements.",
+        "pooled_geometric_ratio": 0.9971793758411552,
+        "pooled_geometric_improvement_percent": 0.28206241588447645,
+        "retained_compiler_parent": "14ae29af688a5372cc1a7fe5712f0efb77ae414b",
+        "repository_parent": "253f322057268025403ec8f82c20943299df4f8a",
+        "R232_scalar_first_not_combined": true
+      },
+      "events": [
+        {
+          "event": "direct-dedicated-vector-loop-entry",
+          "asset": "r233-vector-entry-38c7926b9788.tar.gz",
+          "sha256": "38c7926b97887d5eb5e344ce7cb286e1d1c7e296fc38f47ad0169684ad02a941",
+          "bytes": 6630694,
+          "files": 1429,
+          "release_tag": "evidence-native-compression-experiments-6",
+          "asset_id": 727040844,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r233-vector-entry-38c7926b9788.tar.gz"
+        }
+      ],
+      "observations": {
+        "cases": 25,
+        "original_cases": 20,
+        "heldout_cases": 5,
+        "primary_complete_calls": 324444,
+        "retained_primary_observations": 324144,
+        "separate_counter_calls": 3900,
+        "maintained_tests": 686,
+        "handcrafted_native_value_checks": 1057536,
+        "handcrafted_admitted_controls": 951264,
+        "handcrafted_declined_controls": 106272,
+        "handcrafted_native_value_executions": 2115072,
+        "new_focused_resident_calls": 0,
+        "prior_resident_observations_reused": true,
+        "full_maintained_suite_rerun": true,
+        "compiled_source_controls": 5788,
+        "initial_point_gates": 25,
+        "initial_blockmean_gates": 25,
+        "confirmation_point_gates": 25,
+        "confirmation_blockmean_gates": 25,
+        "pooled_point_gates": 25,
+        "pooled_blockmean_gates": 25,
+        "initial_geometric_blockmean_ratio": 0.993422048122613,
+        "confirmation_geometric_blockmean_ratio": 1.0003187052700557,
+        "pooled_geometric_blockmean_ratio": 0.9971793758411552,
+        "instructions_lower": 17,
+        "instructions_equal": 3,
+        "instructions_higher": 5,
+        "cycles_lower": 14,
+        "cycles_equal": 0,
+        "cycles_higher": 11,
+        "static_widened_loops": 9,
+        "changed_routines": 3,
+        "unchanged_routines": 133,
+        "wall_profile_calls": 25395,
+        "pc_profile_calls": 100005,
+        "immediate_full_stream_smoke_calls": 50
+      },
+      "resident_reuse_provenance": {
+        "asset_path": "evidence/resident-reuse-provenance.json",
+        "sha256": "76ec02ace8c091505cbda4f8d5423e8de9eb1b015b906bee8dc6e4010e7a579e",
+        "new_focused_resident_calls": 0
+      },
+      "environmental_recovery": {
+        "error": "OS errno28 saving final tiny PC profile",
+        "preserved_completed_files": 242,
+        "first_five_PC_captures_preserved": true,
+        "primary_counters_not_remeasured": true,
+        "completed_build_bytes_freed": 1536711696,
+        "old_completed_build_log_bytes_freed": 405434075
+      },
+      "diagnostic_only": true,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "full_observation_data": "Immutable external packet results.json, heap-summary.json, both full primary cohorts, source controls and profiles; full25 table also in docs/design/native-vector-loop-entry.md",
+      "next": "Target reuse of already executed guarded packed reads in the natural-text path, with a minimal original/decoded alias/error/retry witness first. Keep the four verified reference prefetch hints separate; no blanket movable-load flags or program-specific selection."
     }
   },
   "repository": "mech-lang/mech",
