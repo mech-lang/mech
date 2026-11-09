@@ -4,10 +4,38 @@
 The wins span8/32/64/128/256/320/1024-byte inputs; larger cases remain above1x.
 The [standing scoreboard](native-compression-scoreboard.md) lists every case,
 all current wins, crossings above/below1x and the latest candidate regressions.
-It now uses the fresh R243 cohort's R242 control column: the retained compiler
+It now uses the fresh R244 cohort's R242 retained column: the retained compiler
 has not changed merely because the matched reference denominator is fresh.
 Update the comparison after every candidate and label the retained variant;
 preserve earlier checkpoint reports and data.
+
+## R244: constant-only reuse recovers R243 cost; R242 stays
+
+The one-file policy restores all136 numeric/map bodies byte-for-byte to R242,
+keeping only1444B of root-text and16B of stack savings. Against R243 it recovers
+most of the large-case penalty; against retained R242 it does not establish a
+periodic win:1.617537x->1.625343x reference, +0.4826% pooled block elapsed,
++0.4971% instructions and+0.3563% cycles. Initial elapsed is adverse and
+confirmation nearly tied. Archive the component; keep R242 as the baseline.
+
+All25 are timed against R242, R243 and the reference in both fixed cohorts.
+All three variants beat the reference on the same11 cases. Nine candidate
+block means are adverse to R242; pooled point/block1.05 gates all pass while
+the primary acceptance still fails. All25 descriptive geometric elapsed
+improves0.2230%; large11 is effectively tied (-0.0014%). Preserve both cohorts
+and contrary timing/counter directions. Allocation/copy/heap/peak fields are
+exactly equal across all three variants.
+
+703 maintained,7 runtime ABI,3400 matrix and416 boundary controls pass;
+all42 small original/decoded pairs match and50 complete smokes independently
+inflate exactly. Compiler/test profiles, inherited exclusions and skipped
+coverage remain explicit. OrdinaryIR215 and omitted standalone contracts stay.
+
+The next useful target is constant proof after whole-loop SSA analysis, using
+exact helper/phase metadata identities without keeping unknown dynamic fields
+live across cold calls. Establish a fixed-buffer witness and negative shape,
+growth, alias and failure controls before the new proof pass. [All25, counters,
+current profiles, exact patches and disposition](native-constant-helper-geometry.md).
 
 ## R243: helper geometry shrinks code but slows the periodic target
 

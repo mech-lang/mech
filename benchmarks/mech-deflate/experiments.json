@@ -46845,6 +46845,154 @@
       "ordinary_contract_restored": false,
       "new_branch_or_PR": false,
       "next": "Test only constant helper-geometry facts to avoid keeping unknown dynamic fields live through cold calls. Preserve small-case wins; all25 measured against both R243 component and retained R242."
+    },
+    "244": {
+      "git_parent": "e21d1415fe03138b3fbb0f1f5ee7ddb9c0b6b8dd",
+      "control": "R242 6fe370c1cedb7a0ea26b11501e242f89d6aa852c",
+      "component_before": "archived R243",
+      "decision": {
+        "decision": "Archive R244 as a measured constant-only component; keep R242 as the periodic baseline. Preserve R243 small-case gains and all comparisons.",
+        "retained_compiler": "R242 6fe370c1cedb7a0ea26b11501e242f89d6aa852c",
+        "R242_periodic_reference": 1.6175373245156695,
+        "R243_periodic_reference": 1.6545990765452068,
+        "R244_periodic_reference": 1.6253430085268483,
+        "periodic_block_percent_vs_R242": 0.4825659286419093,
+        "periodic_both_cohorts_improve_vs_R242": false,
+        "eight_after_reference": 0.49343386581469645,
+        "eight_ceiling": 1.0,
+        "retained_below1x": 11,
+        "candidate_below1x": 11,
+        "all25_R242_pooled_point_block_gates_pass": true,
+        "adverse_pooled_block_rows_vs_R242": "All9 retained in full tracked table and external primary-results/result-decision JSON",
+        "parity_complete": false,
+        "ordinary_contract_restored": false,
+        "next": "Current late CFG analysis loses true metadata identities at helper/phase return loads. Establish one generic fixed-buffer loop witness, then test constant-only proof through those identity edges after SSA closes; keep unknown geometry dynamic and failure/alias fallback."
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r244-constant-geometry-4be083119d1b.tar.gz",
+        "sha256": "4be083119d1bfc0dc856c386ac8d3f8c3c4a1da8f4a603bdafcad5fdd9433e2f",
+        "bytes": 5329692,
+        "verified_files": 2129,
+        "numerical_replays": 5
+      },
+      "qualification": {
+        "maintained_tests": 703,
+        "inherited_exclusions": 7,
+        "features": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "warnings_as_errors": true,
+        "compiler_optimization": 3,
+        "maintained_test_root_optimization": 1,
+        "maintained_test_environment": [
+          "MECH_PRIVATE_INDEXED_CHAINS=1",
+          "MECH_PHASE_OWNER_TRANSFER=1",
+          "MECH_ARRAY_GEOMETRY_FACTS=1",
+          "MECH_ARRAY_GEOMETRY_CONSTANTS_ONLY=1"
+        ],
+        "toolchain": "nightly-2026-03-03-aarch64-apple-darwin",
+        "runtime_ABI_tests": 7,
+        "new_runtime_ABI_tests": 3,
+        "new_allocation_geometry_cases": 51,
+        "new_writable_geometry_cases": 240,
+        "runtime_ABI_profile": "opt3 -Dwarnings; -Adead_code only for unused included diagnostic runtime methods",
+        "compiled_matrix_controls": 3400,
+        "matrix_fixtures": 17,
+        "matrix_resident_values": 2924,
+        "matrix_resident_errors": 476,
+        "compiled_boundary_controls": 416,
+        "small_original_decoded_image_pairs": 42,
+        "native_parent_candidate_and_original_decoded_equal": true,
+        "fresh_fanout_resident_calls": 320,
+        "fresh_fanout_resident_values": 236,
+        "fresh_fanout_resident_errors": 72,
+        "inherited_fanout_default_denials": 12,
+        "fanout_phase_selection": "Unselected on both R242 and candidate; these are fallback controls, not newly selected native fanout.",
+        "complete_stream_smokes": 50,
+        "primary_cohorts": 2,
+        "balanced_blocks_each": 24,
+        "counter_observed_calls": 5200,
+        "counter_retained_calls": 4800,
+        "unchanged_source_limits_and_allowances": true,
+        "remaining_semantic_failures": 0,
+        "ordinary_contract_restored": false,
+        "compiler_control": "R242 retained; R243 before component; R244 candidate",
+        "source_allocation_and_heap_fields_equal_all_three": true
+      },
+      "image": {
+        "root_bytes_R242": 5630692,
+        "root_bytes_R244": 5629248,
+        "root_stack_R242": 55152,
+        "root_stack_R244": 55136,
+        "all136_numeric_map_bodies_identical_to_R242": true,
+        "R243_path_bodies_restored_to_R242": 4,
+        "selected_numeric_phases": 134,
+        "selected_maps": 2,
+        "private_write_intervals": 12,
+        "phase_owner_transfer_pairs": 170,
+        "disabled_full_object_and_metadata_identical_to_R243": true
+      },
+      "primary": {
+        "roles": {
+          "before": "archived R243 helper geometry",
+          "after": "R244 constant-only geometry",
+          "retained": "R242 periodic baseline",
+          "reference": "pinned matched Roc"
+        },
+        "targets": {
+          "primary_case": "33027-periodic-window",
+          "pooled_periodic_after_reference": 1.6253430085268483,
+          "periodic_both_cohorts_improve": true,
+          "eight_byte_after_reference": 0.49343386581469645,
+          "eight_byte_within_user1x_ceiling": true,
+          "historical1_05_columns": "diagnostic, latest user prioritizes one case toward parity and allows eight to1x",
+          "periodic_both_cohorts_improve_vs_R242": false,
+          "periodic_after_over_R242_blockmean": 1.004825659286419,
+          "periodic_R242_over_reference": 1.6175373245156695,
+          "eight_R242_over_reference": 0.4869009584664536
+        },
+        "both_cohorts": {
+          "primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 25,
+            "large_geomean_after_over_before": 0.9836228947934483
+          },
+          "confirmation-primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 25,
+            "large_geomean_after_over_before": 0.983259139873227
+          }
+        },
+        "descriptive_aggregate": {
+          "all25_geomean_after_over_before": 0.9886841911323133,
+          "large11_geomean_after_over_before": 0.9833836540583085,
+          "point_pass": 25,
+          "blockmean_pass": 25,
+          "all25_geomean_after_over_R242": 0.9977702066384665,
+          "large11_geomean_after_over_R242": 0.9999855160166691,
+          "R242_point_gate_pass": 25,
+          "R242_blockmean_gate_pass": 25
+        },
+        "full25_rows": "docs/design/native-constant-helper-geometry.md and external primary-results.json"
+      },
+      "counters": {
+        "observed_calls": 5200,
+        "retained_calls": 4800,
+        "all25_allocation_copy_heap_peaks_equal_all_three": true,
+        "scope": "Whole-call hardware counters separate from elapsed and samples; all25 per-case comparisons against R242 and R243 in external counter-results.json"
+      },
+      "retained_periodic_control_unchanged": true,
+      "ordinary_IR": 215,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "next": "Establish a fixed-buffer loop witness, then reuse only constant metadata facts across proved helper/phase identity edges after SSA closes. Keep unknown dynamic geometry and aliases/failure fallback."
     }
   },
   "repository": "mech-lang/mech",
