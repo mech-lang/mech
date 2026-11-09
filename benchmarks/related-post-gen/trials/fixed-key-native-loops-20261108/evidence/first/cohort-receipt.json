@@ -1,0 +1,7 @@
+{
+  "compiler_commit": "1bb7bfd2febf6b076720c76aec3a875976f28a63",
+  "source_unchanged": true,
+  "latency": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-fixed-key-native-loops-20261108-5000-m3.json",
+  "resources": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-fixed-key-native-loops-resources-20261108-5000-m3.json",
+  "goal_complete": false
+}

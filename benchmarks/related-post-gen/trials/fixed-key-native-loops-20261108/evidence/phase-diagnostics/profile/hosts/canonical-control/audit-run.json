@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/profile/hosts/canonical-control/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/profile/hosts/canonical-control/runner-profile",
+    "--output",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/profile/hosts/canonical-control/native-link-proof.json"
+  ],
+  "exit": 0,
+  "seconds": 0.07652395777404308,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 51, \"normalized_text_sha256\": \"7e504e23bab51a251af0b68767f2c5c75e6b27cb4cbd4e9e57bfda76809a9746\"}\n",
+  "stderr": "",
+  "diagnostic_only": true,
+  "all_timings_ineligible": true
+}

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/proof-tests-v3/gpu-tests",
+    "fixed_key_native_loops",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "environment": {
+    "RUSTC_BOOTSTRAP": "1",
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-related-fixed-key-native-loops-compiler-20261108/hosts/gpu",
+    "CARGO_PKG_NAME": "mech-gpu",
+    "CARGO_PKG_VERSION": "0.3.5",
+    "CARGO_PKG_VERSION_MAJOR": "0",
+    "CARGO_PKG_VERSION_MINOR": "3",
+    "CARGO_PKG_VERSION_PATCH": "5",
+    "CARGO_PKG_DESCRIPTION": "Resident CPU and wgpu compute backends for Mech."
+  },
+  "exit": 0,
+  "seconds": 1.460997916990891,
+  "stdout": "\nrunning 2 tests\ntest native_artifact::program::prepare::fixed_key_loops::tests::fixed_key_native_loops_actual_source_has_two_complete_acyclic_bodies ... ignored, requires caller-pinned full source\ntest native_artifact::program::prepare::fixed_key_loops::tests::fixed_key_native_loops_require_closed_bodies_and_private_complete_map_uses ... ok\n\ntest result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 991 filtered out; finished in 0.21s\n\n",
+  "stderr": "",
+  "timing_eligible": false
+}

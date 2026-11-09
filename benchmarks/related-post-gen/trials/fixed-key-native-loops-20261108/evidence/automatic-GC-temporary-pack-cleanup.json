@@ -1,0 +1,9 @@
+{
+  "path": "/Users/cim310/mech-lang/mech/.git/objects/pack/tmp_pack_3TIyfx",
+  "bytes": 2112094208,
+  "mtime": 1794184960.4905977,
+  "reason": "Unindexed unfinished temporary pack left by this task automatic git gc after disk exhaustion; no process has it open; original Git objects and source commit remain present",
+  "source_commit": "1bb7bfd2febf6b076720c76aec3a875976f28a63",
+  "indexed_pack_removed": false,
+  "benchmark_evidence_removed": false
+}

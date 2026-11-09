@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/connected-tests-v4/gpu-tests",
+    "codegen::packed_map::frame_state::tests",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.011191458906978369,
+  "stdout": "\nrunning 2 tests\ntest native_artifact::program::codegen::packed_map::frame_state::tests::actual_call_emission_keeps_unknown_ops_and_terminal_spills_conservative ... ok\ntest native_artifact::program::codegen::packed_map::frame_state::tests::private_effect_masks_cover_validation_growth_and_all_generated_writes ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 996 filtered out; finished in 0.00s\n\n",
+  "stderr": "",
+  "timing_eligible": false
+}

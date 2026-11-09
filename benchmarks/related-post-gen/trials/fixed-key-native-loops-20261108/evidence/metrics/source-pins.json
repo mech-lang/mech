@@ -1,0 +1,22 @@
+[
+  {
+    "variant": "mech-ir307-fixed-key-native-loops-4",
+    "original_source": "/private/tmp/mech-related-fixed-key-native-loops-runners-20261108-v1/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-fixed-key-native-loops-20261108/metrics/mech-ir307-fixed-key-native-loops-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "fc9dddf82a731ddd78d261c282c7c146f8f7479aa68951a3eb7bd727963c63a9",
+    "diagnostic_executable_sha256": "d04f14a1bc3c43256df66d91e5569f11142786d0cd4cddce630fdac0570efbf8"
+  },
+  {
+    "variant": "mech-ir307-key-loop-callback-control-4",
+    "original_source": "/private/tmp/mech-related-fixed-key-native-loops-emission-control-20261108-v1/histogram-reuse/runner.rs",
+    "original_source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "instrumented_source": "/private/tmp/mech-related-fixed-key-native-loops-20261108/metrics/mech-ir307-key-loop-callback-control-4/runner.rs",
+    "instrumented_source_sha256": "17a56c02e953add162aff1ef4427a31ae5a1c48389d58ac9ac2cd3d63d3abb05",
+    "reverse_patch_exact": true,
+    "original_executable_sha256": "d77e96e77328ef045ad4010db52764749f452438c6aec80d07c8b1f0a8c52771",
+    "diagnostic_executable_sha256": "e4b33ddd71569eead1d223db3a6e1ff2ba41ff4fdef9e00cdd75ca1c42578302"
+  }
+]

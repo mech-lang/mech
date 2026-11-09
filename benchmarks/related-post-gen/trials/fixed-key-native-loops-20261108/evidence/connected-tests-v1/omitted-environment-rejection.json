@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/connected-tests-v1/gpu-tests",
+    "fixed_key_native_loops_actual",
+    "--ignored",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 101,
+  "reason": "manual attempted invocation omitted required source environment; rejected with NotPresent; no source or timing conclusion",
+  "remedy": "explicit pinned environment in actual-source-followup.json"
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/connected-tests-v3/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/connected-tests-v3/gpu-tests.gz",
+    "sha256": "6177d2a5728e7ea80ebb69b22f88d0de58bbc7e8879a22285a885385404dbdb7",
+    "original_bytes": 136804568,
+    "compressed_bytes": 23170605,
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-fixed-key-native-loops-opt-20261108-v2/libmech_gpu.rlib",
+    "archive_path": "/private/tmp/mech-related-fixed-key-native-loops-opt-20261108-v2/libmech_gpu.rlib.gz",
+    "sha256": "3784ae22f569716321065290611d439ab559db402f3fdd3af9eea229263377a8",
+    "original_bytes": 40951288,
+    "compressed_bytes": 10363164,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-fixed-key-native-loops-engine-20261108-v1/libmech_engine.rlib",
+    "archive_path": "/private/tmp/mech-related-fixed-key-native-loops-engine-20261108-v1/libmech_engine.rlib.gz",
+    "sha256": "5eee05ece5072666ac06832bc88ce1e2d5fb84a67f4be415164e2ceb50d64ac0",
+    "original_bytes": 123062800,
+    "compressed_bytes": 24253352,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  }
+]

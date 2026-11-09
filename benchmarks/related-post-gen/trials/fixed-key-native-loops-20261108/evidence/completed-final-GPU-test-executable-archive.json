@@ -1,0 +1,10 @@
+{
+  "original_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/connected-tests-v4/gpu-tests",
+  "archive_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/connected-tests-v4/gpu-tests.gz",
+  "sha256": "d885eabda947f8dece90538a6b9646aecdb2d74fc9c37973acfc59133cda3ba7",
+  "original_bytes": 136804568,
+  "compressed_bytes": 23170130,
+  "mode": 33261,
+  "lossless_readback_verified": true,
+  "qualification_complete": true
+}

@@ -1,0 +1,727 @@
+{
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false,
+  "coarse": {
+    "canonical-control-detail": {
+      "captures": 8,
+      "phases": {
+        "preparation_interning_and_eligibility": {
+          "elapsed_ns": 833708.0,
+          "thread_instructions": 10406211.5,
+          "thread_cycles": 3158491.5,
+          "process_instructions": 10406197.5,
+          "process_cycles": 3158006.0,
+          "thread_requests": 362.0,
+          "thread_requested_bytes": 1846597.0,
+          "thread_freed_bytes": 1040302.0,
+          "global_requests": 362.0,
+          "global_requested_bytes": 1846597.0,
+          "global_freed_bytes": 1040302.0
+        },
+        "triple_index_and_coverage": {
+          "elapsed_ns": 425958.0,
+          "thread_instructions": 6505120.5,
+          "thread_cycles": 1631331.5,
+          "process_instructions": 6505120.5,
+          "process_cycles": 1631327.0,
+          "thread_requests": 83.0,
+          "thread_requested_bytes": 1954304.0,
+          "thread_freed_bytes": 33640.0,
+          "global_requests": 83.0,
+          "global_requested_bytes": 1954304.0,
+          "global_freed_bytes": 33640.0
+        },
+        "quartet_index_and_masks": {
+          "elapsed_ns": 332020.5,
+          "thread_instructions": 5279383.5,
+          "thread_cycles": 1255138.0,
+          "process_instructions": 5279383.5,
+          "process_cycles": 1255119.5,
+          "thread_requests": 83.0,
+          "thread_requested_bytes": 1347432.0,
+          "thread_freed_bytes": 171280.0,
+          "global_requests": 83.0,
+          "global_requested_bytes": 1347432.0,
+          "global_freed_bytes": 171280.0
+        },
+        "queries_cleanup_and_materialization": {
+          "elapsed_ns": 538667.0,
+          "thread_instructions": 1097103.0,
+          "thread_cycles": 547230.5,
+          "process_instructions": 15373580.0,
+          "process_cycles": 6074884.5,
+          "thread_requests": 39.0,
+          "thread_requested_bytes": 730400.0,
+          "thread_freed_bytes": 4104151.0,
+          "global_requests": 196.0,
+          "global_requested_bytes": 2595856.0,
+          "global_freed_bytes": 5777239.0
+        }
+      },
+      "total": {
+        "elapsed_ns": 2121979.0,
+        "thread_instructions": 23302826.5,
+        "thread_cycles": 6588968.0,
+        "process_instructions": 37564906.0,
+        "process_cycles": 12159949.0,
+        "thread_requests": 567.0,
+        "thread_requested_bytes": 5878733.0,
+        "thread_freed_bytes": 5349373.0,
+        "global_requests": 724.0,
+        "global_requested_bytes": 7744189.0,
+        "global_freed_bytes": 7022461.0
+      },
+      "native_body_events": [
+        15
+      ],
+      "worker_recorded_instructions": 13998211.5,
+      "process_less_recorded_instructions": 279780.5
+    },
+    "native-dictionary-detail": {
+      "captures": 8,
+      "phases": {
+        "preparation_interning_and_eligibility": {
+          "elapsed_ns": 738104.0,
+          "thread_instructions": 9220305.5,
+          "thread_cycles": 2797897.0,
+          "process_instructions": 9220291.5,
+          "process_cycles": 2797249.0,
+          "thread_requests": 364.0,
+          "thread_requested_bytes": 1848981.0,
+          "thread_freed_bytes": 1042686.0,
+          "global_requests": 364.0,
+          "global_requested_bytes": 1848981.0,
+          "global_freed_bytes": 1042686.0
+        },
+        "triple_index_and_coverage": {
+          "elapsed_ns": 429749.5,
+          "thread_instructions": 6528749.0,
+          "thread_cycles": 1631585.5,
+          "process_instructions": 6528749.0,
+          "process_cycles": 1631564.5,
+          "thread_requests": 83.0,
+          "thread_requested_bytes": 1954304.0,
+          "thread_freed_bytes": 33640.0,
+          "global_requests": 83.0,
+          "global_requested_bytes": 1954304.0,
+          "global_freed_bytes": 33640.0
+        },
+        "quartet_index_and_masks": {
+          "elapsed_ns": 330541.5,
+          "thread_instructions": 5283019.5,
+          "thread_cycles": 1254392.5,
+          "process_instructions": 5283019.5,
+          "process_cycles": 1254358.5,
+          "thread_requests": 83.0,
+          "thread_requested_bytes": 1347432.0,
+          "thread_freed_bytes": 171280.0,
+          "global_requests": 83.0,
+          "global_requested_bytes": 1347432.0,
+          "global_freed_bytes": 171280.0
+        },
+        "queries_cleanup_and_materialization": {
+          "elapsed_ns": 538187.5,
+          "thread_instructions": 1093943.5,
+          "thread_cycles": 521511.0,
+          "process_instructions": 15408289.5,
+          "process_cycles": 6091098.0,
+          "thread_requests": 39.0,
+          "thread_requested_bytes": 730400.0,
+          "thread_freed_bytes": 4104151.0,
+          "global_requests": 196.0,
+          "global_requested_bytes": 2595856.0,
+          "global_freed_bytes": 5777239.0
+        }
+      },
+      "total": {
+        "elapsed_ns": 2036187.5,
+        "thread_instructions": 22119258.5,
+        "thread_cycles": 6203097.5,
+        "process_instructions": 36445844.5,
+        "process_cycles": 11758966.5,
+        "thread_requests": 569.0,
+        "thread_requested_bytes": 5881117.0,
+        "thread_freed_bytes": 5351757.0,
+        "global_requests": 726.0,
+        "global_requested_bytes": 7746573.0,
+        "global_freed_bytes": 7024845.0
+      },
+      "native_body_events": [
+        16
+      ],
+      "worker_recorded_instructions": 14054042.5,
+      "process_less_recorded_instructions": 277746.5
+    },
+    "rust-fastest-coarse": {
+      "captures": 8,
+      "phases": {
+        "preparation_interning_and_eligibility": {
+          "elapsed_ns": 589417.0,
+          "thread_instructions": 7772270.0,
+          "thread_cycles": 2293626.0,
+          "process_instructions": 7772258.0,
+          "process_cycles": 2292623.5,
+          "thread_requests": 38.0,
+          "thread_requested_bytes": 1426079.0,
+          "thread_freed_bytes": 591268.0,
+          "global_requests": 38.0,
+          "global_requested_bytes": 1426079.0,
+          "global_freed_bytes": 591268.0
+        },
+        "triple_index_and_coverage": {
+          "elapsed_ns": 185750.0,
+          "thread_instructions": 2977284.0,
+          "thread_cycles": 715509.5,
+          "process_instructions": 2977284.0,
+          "process_cycles": 715494.0,
+          "thread_requests": 7.0,
+          "thread_requested_bytes": 1662633.0,
+          "thread_freed_bytes": 26216.0,
+          "global_requests": 7.0,
+          "global_requested_bytes": 1662633.0,
+          "global_freed_bytes": 26216.0
+        },
+        "quartet_index_and_masks": {
+          "elapsed_ns": 193562.5,
+          "thread_instructions": 2732198.5,
+          "thread_cycles": 750805.0,
+          "process_instructions": 2732199.0,
+          "process_cycles": 750784.5,
+          "thread_requests": 7.0,
+          "thread_requested_bytes": 3176927.0,
+          "thread_freed_bytes": 327608.0,
+          "global_requests": 7.0,
+          "global_requested_bytes": 3176927.0,
+          "global_freed_bytes": 327608.0
+        },
+        "queries_cleanup_and_materialization": {
+          "elapsed_ns": 565229.0,
+          "thread_instructions": 4238788.5,
+          "thread_cycles": 2186406.0,
+          "process_instructions": 4238801.5,
+          "process_cycles": 2186414.0,
+          "thread_requests": 6.0,
+          "thread_requested_bytes": 560074.0,
+          "thread_freed_bytes": 4729994.0,
+          "global_requests": 6.0,
+          "global_requested_bytes": 560074.0,
+          "global_freed_bytes": 4729994.0
+        }
+      },
+      "total": {
+        "elapsed_ns": 1533396.0,
+        "thread_instructions": 17739115.0,
+        "thread_cycles": 5941127.5,
+        "process_instructions": 17739116.0,
+        "process_cycles": 5939980.0,
+        "thread_requests": 58.0,
+        "thread_requested_bytes": 6825713.0,
+        "thread_freed_bytes": 5675086.0,
+        "global_requests": 58.0,
+        "global_requested_bytes": 6825713.0,
+        "global_freed_bytes": 5675086.0
+      },
+      "native_body_events": [
+        0
+      ],
+      "worker_recorded_instructions": 0.0,
+      "process_less_recorded_instructions": 1.0
+    },
+    "native-dictionary-coarse": {
+      "captures": 8,
+      "phases": {
+        "preparation_interning_and_eligibility": {
+          "elapsed_ns": 700521.5,
+          "thread_instructions": 8777886.5,
+          "thread_cycles": 2652981.5,
+          "process_instructions": 8777872.5,
+          "process_cycles": 2647197.0,
+          "thread_requests": 364.0,
+          "thread_requested_bytes": 1848981.0,
+          "thread_freed_bytes": 1042686.0,
+          "global_requests": 364.0,
+          "global_requested_bytes": 1848981.0,
+          "global_freed_bytes": 1042686.0
+        },
+        "triple_index_and_coverage": {
+          "elapsed_ns": 347229.0,
+          "thread_instructions": 5611841.0,
+          "thread_cycles": 1322684.5,
+          "process_instructions": 5611841.5,
+          "process_cycles": 1322613.0,
+          "thread_requests": 83.0,
+          "thread_requested_bytes": 1954304.0,
+          "thread_freed_bytes": 33640.0,
+          "global_requests": 83.0,
+          "global_requested_bytes": 1954304.0,
+          "global_freed_bytes": 33640.0
+        },
+        "quartet_index_and_masks": {
+          "elapsed_ns": 258521.0,
+          "thread_instructions": 4487826.0,
+          "thread_cycles": 1003922.0,
+          "process_instructions": 4487826.0,
+          "process_cycles": 1003893.0,
+          "thread_requests": 83.0,
+          "thread_requested_bytes": 1347432.0,
+          "thread_freed_bytes": 171280.0,
+          "global_requests": 83.0,
+          "global_requested_bytes": 1347432.0,
+          "global_freed_bytes": 171280.0
+        },
+        "queries_cleanup_and_materialization": {
+          "elapsed_ns": 475916.5,
+          "thread_instructions": 821779.0,
+          "thread_cycles": 422079.5,
+          "process_instructions": 14132917.0,
+          "process_cycles": 5562070.5,
+          "thread_requests": 39.0,
+          "thread_requested_bytes": 730400.0,
+          "thread_freed_bytes": 4104151.0,
+          "global_requests": 196.0,
+          "global_requested_bytes": 2595856.0,
+          "global_freed_bytes": 5777239.0
+        }
+      },
+      "total": {
+        "elapsed_ns": 1786104.0,
+        "thread_instructions": 19705570.5,
+        "thread_cycles": 5383636.5,
+        "process_instructions": 33021446.0,
+        "process_cycles": 10538661.0,
+        "thread_requests": 569.0,
+        "thread_requested_bytes": 5881117.0,
+        "thread_freed_bytes": 5351757.0,
+        "global_requests": 726.0,
+        "global_requested_bytes": 7746573.0,
+        "global_freed_bytes": 7024845.0
+      },
+      "native_body_events": [
+        16
+      ],
+      "worker_recorded_instructions": 13045382.5,
+      "process_less_recorded_instructions": 274369.5
+    },
+    "canonical-control-coarse": {
+      "captures": 8,
+      "phases": {
+        "preparation_interning_and_eligibility": {
+          "elapsed_ns": 728520.5,
+          "thread_instructions": 9214104.0,
+          "thread_cycles": 2751199.5,
+          "process_instructions": 9214090.0,
+          "process_cycles": 2750548.0,
+          "thread_requests": 362.0,
+          "thread_requested_bytes": 1846597.0,
+          "thread_freed_bytes": 1040302.0,
+          "global_requests": 362.0,
+          "global_requested_bytes": 1846597.0,
+          "global_freed_bytes": 1040302.0
+        },
+        "triple_index_and_coverage": {
+          "elapsed_ns": 350395.5,
+          "thread_instructions": 5608544.0,
+          "thread_cycles": 1328743.0,
+          "process_instructions": 5608544.0,
+          "process_cycles": 1328751.5,
+          "thread_requests": 83.0,
+          "thread_requested_bytes": 1954304.0,
+          "thread_freed_bytes": 33640.0,
+          "global_requests": 83.0,
+          "global_requested_bytes": 1954304.0,
+          "global_freed_bytes": 33640.0
+        },
+        "quartet_index_and_masks": {
+          "elapsed_ns": 260687.5,
+          "thread_instructions": 4492283.0,
+          "thread_cycles": 1015934.5,
+          "process_instructions": 4492283.0,
+          "process_cycles": 1015944.5,
+          "thread_requests": 83.0,
+          "thread_requested_bytes": 1347432.0,
+          "thread_freed_bytes": 171280.0,
+          "global_requests": 83.0,
+          "global_requested_bytes": 1347432.0,
+          "global_freed_bytes": 171280.0
+        },
+        "queries_cleanup_and_materialization": {
+          "elapsed_ns": 479583.5,
+          "thread_instructions": 817522.5,
+          "thread_cycles": 427904.0,
+          "process_instructions": 14135990.0,
+          "process_cycles": 5552333.5,
+          "thread_requests": 39.0,
+          "thread_requested_bytes": 730400.0,
+          "thread_freed_bytes": 4104151.0,
+          "global_requests": 196.0,
+          "global_requested_bytes": 2595856.0,
+          "global_freed_bytes": 5777239.0
+        }
+      },
+      "total": {
+        "elapsed_ns": 1830604.5,
+        "thread_instructions": 20148421.5,
+        "thread_cycles": 5552739.5,
+        "process_instructions": 33443186.5,
+        "process_cycles": 10679947.5,
+        "thread_requests": 567.0,
+        "thread_requested_bytes": 5878733.0,
+        "thread_freed_bytes": 5349373.0,
+        "global_requests": 724.0,
+        "global_requested_bytes": 7744189.0,
+        "global_freed_bytes": 7022461.0
+      },
+      "native_body_events": [
+        15
+      ],
+      "worker_recorded_instructions": 13036609.0,
+      "process_less_recorded_instructions": 276945.5
+    }
+  },
+  "key_loop_detail": {
+    "canonical-control-detail": {
+      "top_callbacks": [
+        {
+          "site": 62,
+          "operation": 18446744073709551598,
+          "source_operation": "map/insert",
+          "callbacks": 28.0,
+          "elapsed_ns": 28540.5,
+          "instructions": 305619.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 61,
+          "operation": 18446744073709551568,
+          "source_operation": "access/scalar",
+          "callbacks": 28.0,
+          "elapsed_ns": 27081.0,
+          "instructions": 283832.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 45,
+          "operation": 18446744073709551564,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 16688.0,
+          "instructions": 74422.0,
+          "requests": 8.0,
+          "requested_bytes": 742.0
+        },
+        {
+          "site": 44,
+          "operation": 18446744073709551565,
+          "source_operation": "core/composite-pack",
+          "callbacks": 1.0,
+          "elapsed_ns": 10229.0,
+          "instructions": 87808.0,
+          "requests": 9.0,
+          "requested_bytes": 1008.0
+        },
+        {
+          "site": 40,
+          "operation": 0,
+          "source_operation": "core/composite-pack",
+          "callbacks": 1.0,
+          "elapsed_ns": 6916.5,
+          "instructions": 64806.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 79,
+          "operation": 2,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 4208.5,
+          "instructions": 23825.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 39,
+          "operation": 0,
+          "source_operation": "sequence/length",
+          "callbacks": 1.0,
+          "elapsed_ns": 2979.0,
+          "instructions": 13361.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 78,
+          "operation": 18446744073709551566,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 2896.0,
+          "instructions": 11859.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 82,
+          "operation": 2,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 2395.5,
+          "instructions": 12706.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 41,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 1291.5,
+          "instructions": 6942.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 43,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 1000.0,
+          "instructions": 7967.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 42,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 750.0,
+          "instructions": 6942.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        }
+      ],
+      "runs": [
+        {
+          "pair": 0,
+          "callbacks": 66,
+          "requests": 17
+        },
+        {
+          "pair": 1,
+          "callbacks": 66,
+          "requests": 17
+        },
+        {
+          "pair": 2,
+          "callbacks": 66,
+          "requests": 17
+        },
+        {
+          "pair": 3,
+          "callbacks": 66,
+          "requests": 17
+        },
+        {
+          "pair": 4,
+          "callbacks": 66,
+          "requests": 17
+        },
+        {
+          "pair": 5,
+          "callbacks": 66,
+          "requests": 17
+        },
+        {
+          "pair": 6,
+          "callbacks": 66,
+          "requests": 17
+        },
+        {
+          "pair": 7,
+          "callbacks": 66,
+          "requests": 17
+        }
+      ]
+    },
+    "native-dictionary-detail": {
+      "top_callbacks": [
+        {
+          "site": 45,
+          "operation": 18446744073709551564,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 15979.0,
+          "instructions": 73054.5,
+          "requests": 8.0,
+          "requested_bytes": 742.0
+        },
+        {
+          "site": 44,
+          "operation": 18446744073709551565,
+          "source_operation": "core/composite-pack",
+          "callbacks": 1.0,
+          "elapsed_ns": 9354.0,
+          "instructions": 82486.0,
+          "requests": 9.0,
+          "requested_bytes": 1008.0
+        },
+        {
+          "site": 40,
+          "operation": 0,
+          "source_operation": "core/composite-pack",
+          "callbacks": 1.0,
+          "elapsed_ns": 7437.0,
+          "instructions": 70278.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 79,
+          "operation": 2,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 4375.0,
+          "instructions": 23803.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 45,
+          "operation": 18446744073709551608,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 4166.5,
+          "instructions": 14694.5,
+          "requests": 2.0,
+          "requested_bytes": 2384.0
+        },
+        {
+          "site": 78,
+          "operation": 18446744073709551566,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 2917.0,
+          "instructions": 11865.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 39,
+          "operation": 0,
+          "source_operation": "sequence/length",
+          "callbacks": 1.0,
+          "elapsed_ns": 2896.0,
+          "instructions": 13361.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 82,
+          "operation": 2,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 2313.0,
+          "instructions": 12700.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 78,
+          "operation": 18446744073709551607,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 2020.5,
+          "instructions": 9824.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 41,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 1312.5,
+          "instructions": 6942.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 43,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 1020.5,
+          "instructions": 7967.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        },
+        {
+          "site": 42,
+          "operation": 18446744073709551585,
+          "source_operation": null,
+          "callbacks": 1.0,
+          "elapsed_ns": 729.5,
+          "instructions": 6942.0,
+          "requests": 0.0,
+          "requested_bytes": 0.0
+        }
+      ],
+      "runs": [
+        {
+          "pair": 0,
+          "callbacks": 12,
+          "requests": 19
+        },
+        {
+          "pair": 1,
+          "callbacks": 12,
+          "requests": 19
+        },
+        {
+          "pair": 2,
+          "callbacks": 12,
+          "requests": 19
+        },
+        {
+          "pair": 3,
+          "callbacks": 12,
+          "requests": 19
+        },
+        {
+          "pair": 4,
+          "callbacks": 12,
+          "requests": 19
+        },
+        {
+          "pair": 5,
+          "callbacks": 12,
+          "requests": 19
+        },
+        {
+          "pair": 6,
+          "callbacks": 12,
+          "requests": 19
+        },
+        {
+          "pair": 7,
+          "callbacks": 12,
+          "requests": 19
+        }
+      ]
+    }
+  },
+  "all64_captures_exact": true,
+  "production_Objects_unchanged": true,
+  "main_and_all_worker_hardware_counters": true,
+  "quiet_native_sample": "/private/tmp/mech-related-fixed-key-native-loops-20261108/quiet-native-profile/native-profile.json",
+  "first_sample_overlap_retained": "/private/tmp/mech-related-fixed-key-native-loops-20261108/native-profile-build-overlap-notice.json",
+  "limitations": [
+    "Counters include diagnostic probes and tracked-allocator observation; coarse and detailed instrumentation must be compared separately.",
+    "Mech phase0 includes canonical input admission, session setup and immutable-snapshot work absent in Rust. Necessary work differs, despite aligned semantic boundaries.",
+    "No worker elapsed-time sums are used; coarse elapsed time and process counters are continuous main-thread boundary snapshots.",
+    "Query phase includes worker create/run/join, index/other internal cleanup, result export/materialization. Rust generate temporary destruction is included even though its old inner query timer excluded part of it.",
+    "Detailed callback subscopes are inclusive; outside_binding_and_invocation is a disjoint residual containing wrapper preparation, binding destruction, probes and publication work outside invoke_scoped."
+  ]
+}

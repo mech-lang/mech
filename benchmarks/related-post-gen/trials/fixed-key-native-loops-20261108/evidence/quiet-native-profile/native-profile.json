@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/private/tmp/mech-related-fixed-key-native-loops-runners-20261108-v1/histogram-reuse/runner-native-profile",
+    "/private/tmp/mech-related-fixed-key-native-loops-runners-20261108-v1/histogram-reuse/build/source.mec",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/quiet-native-profile/native-profile-output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 12.263951999833807,
+  "sampler_command": [
+    "/usr/bin/sample",
+    "53811",
+    "10",
+    "1",
+    "-file",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/quiet-native-profile/native-profile.sample.txt"
+  ],
+  "sampler_exit": 0,
+  "sampler_stdout": "",
+  "sampler_stderr": "Sampling process 53811 for 10 seconds with 1 millisecond of run time between samples\nCouldn't find _sigtramp symbol in expected dylibs\nFound _sigtramp symbol after 6 tries\nSampling completed, processing symbols...\nSample analysis of process 53811 written to file /private/tmp/mech-related-fixed-key-native-loops-20261108/quiet-native-profile/native-profile.sample.txt\n",
+  "same_Object_audit_passed": true,
+  "repeated_native_invocations": 10001,
+  "exact_final5000_output": true,
+  "qualification_times_ineligible": true,
+  "scope": "Repeated IR307 evaluate_into with fresh invocations/loans/workers/cleanup and immutable admitted inputs. Repeated admission/export/materialization excluded. Inclusive overlapping stacks are diagnostic, not full processing timings or additive savings.",
+  "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc"
+}

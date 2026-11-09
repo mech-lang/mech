@@ -1,0 +1,6 @@
+{
+  "qualification_valid": false,
+  "reason": "Copied test recipe retained parent absolute lib.rs and manifest paths; both selected tests executed zero cases. Detected before using evidence. New recipe remaps source/manifest paths and requires one named test pass in each filter.",
+  "native_emission_unchanged": true,
+  "timing_eligible": false
+}

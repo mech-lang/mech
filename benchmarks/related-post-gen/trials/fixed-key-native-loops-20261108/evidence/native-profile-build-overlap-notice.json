@@ -1,0 +1,7 @@
+{
+  "first_profile": "/private/tmp/mech-related-fixed-key-native-loops-20261108/native-profile.json",
+  "concurrent_diagnostic_runtime_build": "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/profile/runtime/runtime-build.json",
+  "timings_and_hotspot_shares_ineligible_due_to_build_overlap": true,
+  "raw_first_profile_retained": true,
+  "remedy": "One separately stored capture with explicit quiet check after all profile hosts finish; no latency cohort rerun"
+}

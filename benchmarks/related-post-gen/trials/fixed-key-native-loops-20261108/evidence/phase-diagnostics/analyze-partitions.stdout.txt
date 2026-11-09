@@ -1,0 +1,172 @@
+canonical-control-coarse MAIN instructions {'input_admission': 2513794.5, 'input_views': 111320.0, 'result_construction': 169234.0, 'session_setup': 209562.5, 'worker_dispatch': 0.0, 'runtime_callbacks': 0.0, 'numeric_native': 10314123.5, 'other_generated_entry': 6574976.0, 'runtime_outside_entry': 195657.5, 'other_driver': 30607.5}
+WORKER sum instructions {'input_admission': 0.0, 'input_views': 0.0, 'result_construction': 0.0, 'session_setup': 804370.0, 'worker_dispatch': 0.0, 'runtime_callbacks': 0.0, 'numeric_native': 10762587.0, 'other_generated_entry': 1119438.5, 'runtime_outside_entry': 346174.0, 'other_driver': 0.0}
+canonical-control-detail MAIN instructions {'input_admission': 2513688.5, 'input_views': 111320.5, 'result_construction': 169234.0, 'session_setup': 207029.5, 'worker_dispatch': 263572.5, 'runtime_callbacks': 4941852.0, 'numeric_native': 9799574.0, 'other_generated_entry': 5048062.5, 'runtime_outside_entry': 198082.0, 'other_driver': 30605.5}
+WORKER sum instructions {'input_admission': 0.0, 'input_views': 0.0, 'result_construction': 0.0, 'session_setup': 784931.5, 'worker_dispatch': 0.0, 'runtime_callbacks': 1755975.0, 'numeric_native': 10676572.0, 'other_generated_entry': 418519.0, 'runtime_outside_entry': 349349.5, 'other_driver': 0.0}
+native-dictionary-coarse MAIN instructions {'input_admission': 2515155.0, 'input_views': 111501.5, 'result_construction': 169234.0, 'session_setup': 199986.5, 'worker_dispatch': 0.0, 'runtime_callbacks': 0.0, 'numeric_native': 10343828.0, 'other_generated_entry': 6141596.5, 'runtime_outside_entry': 191486.5, 'other_driver': 30608.5}
+WORKER sum instructions {'input_admission': 0.0, 'input_views': 0.0, 'result_construction': 0.0, 'session_setup': 817496.0, 'worker_dispatch': 0.0, 'runtime_callbacks': 0.0, 'numeric_native': 10763206.5, 'other_generated_entry': 1121016.0, 'runtime_outside_entry': 347161.0, 'other_driver': 0.0}
+native-dictionary-detail MAIN instructions {'input_admission': 2515317.0, 'input_views': 111320.5, 'result_construction': 169234.0, 'session_setup': 196948.5, 'worker_dispatch': 263563.5, 'runtime_callbacks': 4108047.5, 'numeric_native': 9821096.5, 'other_generated_entry': 4707381.5, 'runtime_outside_entry': 190278.5, 'other_driver': 30610.0}
+WORKER sum instructions {'input_admission': 0.0, 'input_views': 0.0, 'result_construction': 0.0, 'session_setup': 839136.5, 'worker_dispatch': 0.0, 'runtime_callbacks': 1735225.5, 'numeric_native': 10675857.0, 'other_generated_entry': 422026.0, 'runtime_outside_entry': 350641.5, 'other_driver': 0.0}
+top callbacks [
+  {
+    "variant": "canonical-control-detail",
+    "site": 62,
+    "operation": 18446744073709551598,
+    "elapsed_ns": 28540.5,
+    "instructions": 305619.0,
+    "cycles": 90617.0
+  },
+  {
+    "variant": "canonical-control-detail",
+    "site": 61,
+    "operation": 18446744073709551568,
+    "elapsed_ns": 27081.0,
+    "instructions": 283832.0,
+    "cycles": 86493.0
+  },
+  {
+    "variant": "canonical-control-detail",
+    "site": 83,
+    "operation": 18446744073709551580,
+    "elapsed_ns": 18687.5,
+    "instructions": 242821.5,
+    "cycles": 69975.0
+  },
+  {
+    "variant": "native-dictionary-detail",
+    "site": 83,
+    "operation": 18446744073709551580,
+    "elapsed_ns": 17375.5,
+    "instructions": 235380.0,
+    "cycles": 65388.5
+  },
+  {
+    "variant": "native-dictionary-detail",
+    "site": 844,
+    "operation": 18446744073709551589,
+    "elapsed_ns": 21187.5,
+    "instructions": 185839.0,
+    "cycles": 77930.5
+  },
+  {
+    "variant": "canonical-control-detail",
+    "site": 844,
+    "operation": 18446744073709551589,
+    "elapsed_ns": 20208.5,
+    "instructions": 185369.0,
+    "cycles": 75689.0
+  },
+  {
+    "variant": "canonical-control-detail",
+    "site": 37,
+    "operation": 18446744073709551575,
+    "elapsed_ns": 15187.5,
+    "instructions": 172125.0,
+    "cycles": 56611.0
+  },
+  {
+    "variant": "native-dictionary-detail",
+    "site": 37,
+    "operation": 18446744073709551575,
+    "elapsed_ns": 15083.5,
+    "instructions": 161839.5,
+    "cycles": 56375.5
+  },
+  {
+    "variant": "canonical-control-detail",
+    "site": 37,
+    "operation": 18446744073709551576,
+    "elapsed_ns": 17813.0,
+    "instructions": 118803.0,
+    "cycles": 66664.0
+  },
+  {
+    "variant": "native-dictionary-detail",
+    "site": 37,
+    "operation": 18446744073709551576,
+    "elapsed_ns": 17875.0,
+    "instructions": 118789.0,
+    "cycles": 67015.0
+  },
+  {
+    "variant": "canonical-control-detail",
+    "site": 38,
+    "operation": 18446744073709551567,
+    "elapsed_ns": 13270.5,
+    "instructions": 113070.0,
+    "cycles": 49538.0
+  },
+  {
+    "variant": "native-dictionary-detail",
+    "site": 38,
+    "operation": 18446744073709551567,
+    "elapsed_ns": 13479.0,
+    "instructions": 112793.0,
+    "cycles": 50296.0
+  }
+]
+top native roots [
+  {
+    "variant": "native-dictionary-detail",
+    "site": 271,
+    "operation": 18446744073709551608,
+    "elapsed_ns": 116250.0,
+    "instructions": 2220321.5,
+    "cycles": 440055.0
+  },
+  {
+    "variant": "native-dictionary-detail",
+    "site": 795,
+    "operation": 18446744073709551608,
+    "elapsed_ns": 126687.5,
+    "instructions": 2215292.0,
+    "cycles": 478649.5
+  },
+  {
+    "variant": "canonical-control-detail",
+    "site": 795,
+    "operation": 18446744073709551608,
+    "elapsed_ns": 126312.5,
+    "instructions": 2214858.0,
+    "cycles": 478069.0
+  },
+  {
+    "variant": "canonical-control-detail",
+    "site": 271,
+    "operation": 18446744073709551608,
+    "elapsed_ns": 114604.5,
+    "instructions": 2202109.5,
+    "cycles": 432467.0
+  },
+  {
+    "variant": "native-dictionary-detail",
+    "site": 1036,
+    "operation": 18446744073709551608,
+    "elapsed_ns": 90104.5,
+    "instructions": 1755596.0,
+    "cycles": 340207.5
+  },
+  {
+    "variant": "canonical-control-detail",
+    "site": 1036,
+    "operation": 18446744073709551608,
+    "elapsed_ns": 89396.0,
+    "instructions": 1755018.0,
+    "cycles": 338101.0
+  },
+  {
+    "variant": "canonical-control-detail",
+    "site": 105,
+    "operation": 18446744073709551608,
+    "elapsed_ns": 80750.0,
+    "instructions": 1538839.0,
+    "cycles": 304677.0
+  },
+  {
+    "variant": "native-dictionary-detail",
+    "site": 105,
+    "operation": 18446744073709551608,
+    "elapsed_ns": 80729.0,
+    "instructions": 1538836.5,
+    "cycles": 304816.5
+  }
+]

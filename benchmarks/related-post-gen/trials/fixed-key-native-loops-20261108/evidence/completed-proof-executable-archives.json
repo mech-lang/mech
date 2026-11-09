@@ -1,0 +1,22 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/proof-tests-v1/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/proof-tests-v1/gpu-tests.gz",
+    "sha256": "3bafe46f632d8888af7c1700c871d607cd954b79e3706fbc8fbfae1ef8d90f8f",
+    "original_bytes": 136759880,
+    "compressed_bytes": 23119861,
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "scope": "completed applicability prototype; v1 rejected zero-test provenance, v3 positive source proof, neither timing eligible"
+  },
+  {
+    "original_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/proof-tests-v3/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/proof-tests-v3/gpu-tests.gz",
+    "sha256": "ae85a87b14d03f1052729748bd03fb61b85bc2fdded1eda4968a20690afd3624",
+    "original_bytes": 136669304,
+    "compressed_bytes": 23101442,
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "scope": "completed applicability prototype; v1 rejected zero-test provenance, v3 positive source proof, neither timing eligible"
+  }
+]

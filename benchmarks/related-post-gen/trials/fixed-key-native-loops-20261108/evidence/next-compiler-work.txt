@@ -1,0 +1,22 @@
+Continue from IR307 source 1bb7bfd2febf6b076720c76aec3a875976f28a63; no LLVM dependency.
+Keep IR305 as the established speed reference and all twenty eligible Rust controls. Do not rerun unchanged IR307 latency to seek a favorable result.
+
+IR307 removes the 28 key-selection and 28 replacement helper calls on the actual 5000-post execution. The entire original source loop executes in Cranelift, with fresh atomic memory/snapshot observations at every source operation, genuine pinned keys and private U64 cells, checked scalar arithmetic and ordinal/call limits, one finite refill, original diagnostics, exact cleanup and fallback. Source and four query workers are unchanged.
+
+First paired post-JSON change vs IR305: -0.640%, 19/31 wins, 95% interval [-1.496%,+0.300%].
+Confirmation: -1.734%, 24/31 wins, interval [-3.306%,-0.825%].
+Both comparisons to IR306 exclude zero. Both same-runtime control intervals cross zero, so avoid a strong causal speed claim. Confirmation candidate1.778292ms/1.157931x fastest Rust1.535750ms; same-cohort IR3051.809667ms/1.178360x. Earlier historical1.151x belongs to another cohort.
+Retain this native foundation for combined gains rather than discarding it for the whole-process regression. Whole process52.675ms vs46.878ms, restoration21.949ms vs15.775ms; neither is an acceptance gate.
+Confirmation post-JSON instructions32,784,473 vs33,267,688 IR305 and33,211,987 same-runtime control. Allocations722 vs749 IR305, requested bytes7,729,165 vs7,727,508; additional heap peak5,761,199 vs5,760,767. Code1,035,256 vs1,031,168; largest native frame1568 vs1600; executable17,182,304 vs17,127,264.
+
+Fresh 64 aligned captures, unchanged production Engine and Objects, eight randomized rounds:
+Mech preparation700.521us / Rust589.417us; triples347.229us /185.750us; quartets258.521us /193.562us; queries475.916us /565.229us. Diagnostic probes are ineligible for speed promotion, phase medians are not additive, nested scopes are inclusive, and worker elapsed times are not summed.
+Preparation instructions8.78M vsRust7.77M; triples5.61M vs2.98M; quartets4.49M vs2.73M; query aggregate14.13M vs4.24M. Query parallelism hides extra CPU work; serial triples are the largest aligned latency deficit.
+Default detailed traces contain no source61/62 helper calls. Ablated source61 costs27.081us/28 calls and source62 costs28.541us/28 calls; their sum is not an additive saving estimate. The new native entry has preflight/setup costs.
+
+NEXT: finish generic completed-producer element ranges and extent relationships before removing any checks.
+The cfg(test)-only proof branch57a84629ea417fa2a3e44f25d1a9c8719709f999 at /private/tmp/mech-related-completed-element-ranges-compiler-20261108 already identifies header272 completion and header1037's seven origins. It emits no unchecked access. Recheck the exact commit with git before use.
+Prove occupied posting prefixes contain actual producer post IDs bounded by the SAME current counter-bank extent. Allocation length alone never bounds arbitrary input values. Preserve origin, generation, account and source-schema ownership, immutable/independent captures, aliases, mutation invalidation and all error orders. Relate completed producer values through private frame/word extraction to the consumer checked scatter and loads. Start with scalar bounds/overflow and duplicate loads, then inspect instructions; do not substitute a Rust algorithm kernel or benchmark-specific intrinsic.
+Qualify bad indices including0/u32MAX+1/u64MAX, shorter target banks, partial and repeated producers, mutated/escaped origins, finite work/memory/per-call limits, original/decoded/restored/Object-bound execution, cleanup and retry. Preserve all480 CI contracts,168 Engine names,133 scalar/DEFLATE nontiming records. Update source identity and meaningful tests before a new timing cohort.
+SECOND: inspect pre-index preparation and histogram/key-only canonical snapshot work; source histogram finish still172 requests. Explore generic private-map key/seed lifetime and dead-value elimination, not a benchmark runtime kernel. Runtime admission and snapshot work remain material, but most index-loop work is already generated native instructions.
+Keep source-level narrower counter types/flat carriers on the list, with compiler support and exact finite overflow behavior. Consider vectorization only where dependency, bounds, alias and failure-order proofs are complete.

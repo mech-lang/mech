@@ -1,0 +1,8 @@
+{
+  "selected_for_processing": false,
+  "selected_processing_reference": "IR305",
+  "adopted_as_next_compiler_source_foundation": true,
+  "working_compiler_IR": 307,
+  "reason": "Both candidate point estimates improve over IR305 and IR306; IR306 comparisons exclude zero in both cohorts. The first IR305 interval and both same-runtime-ablation intervals cross zero. Retain the native lowering and instruction reduction for further work, but keep IR305 as the conservative established speed reference. No latency rerun of this unchanged candidate.",
+  "whole_process_gate": false
+}

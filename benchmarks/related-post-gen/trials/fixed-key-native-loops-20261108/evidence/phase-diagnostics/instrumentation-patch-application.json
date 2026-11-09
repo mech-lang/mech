@@ -1,0 +1,42 @@
+{
+  "command": [
+    "patch",
+    "-p1",
+    "--forward",
+    "-i",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/runtime-instrumentation.patch"
+  ],
+  "exit": 0,
+  "stdout": "patching file 'hosts/gpu/src/native_artifact/mod.rs'\npatching file 'hosts/gpu/src/native_artifact/program/runtime/hooks.rs'\npatching file 'hosts/gpu/src/native_artifact/program/runtime/mod.rs'\npatching file 'hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs'\npatching file 'hosts/gpu/src/native_artifact/program/runtime/session/mod.rs'\n",
+  "stderr": "",
+  "changed": [
+    {
+      "path": "hosts/gpu/src/native_artifact/mod.rs",
+      "kind": "existing_diagnostic_hooks"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/hooks.rs",
+      "kind": "existing_diagnostic_hooks"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/mod.rs",
+      "kind": "existing_diagnostic_hooks"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/diagnostic_intervals.rs",
+      "kind": "diagnostic_only_added",
+      "sha256": "4ab71040475b295db81e89bd8ea9bf5b289bd7d6ab8dfcc5c6a6e33ff90bc95d"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+      "kind": "existing_diagnostic_hooks"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs",
+      "kind": "existing_diagnostic_hooks"
+    }
+  ],
+  "production_Engine_unchanged": true,
+  "production_Objects_unchanged": true,
+  "diagnostic_only": true
+}

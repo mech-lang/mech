@@ -1,0 +1,9 @@
+{
+  "commit": "1bb7bfd2febf6b076720c76aec3a875976f28a63",
+  "branch": "codex/related-fixed-key-native-loops-20261108",
+  "parent": "21198588b43cd3cdf81b0f620cacff12c28f07c4",
+  "IR": 307,
+  "work_policy": 124,
+  "source_inventory_sha256": "3bb6c7d1633dbdc569b335ead1c9aba8d943432939ecc8c5aa59c636008ca573",
+  "performance_measured_yet": false
+}

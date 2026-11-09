@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/analyze-partitions.py"
+  ],
+  "exit": 0,
+  "seconds": 0.2359670838341117,
+  "stdout_file": "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/analyze-partitions.stdout.txt",
+  "stderr": "",
+  "diagnostic_only": true
+}

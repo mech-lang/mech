@@ -1,0 +1,172 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_compute.rlib",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_compute.rlib.gz",
+    "sha256": "090c4b41b56f40155ade07e677013320adf06c62c360aad2a9043a2c47210a7e",
+    "original_bytes": 1533512,
+    "compressed_bytes": 502163,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_engine.rlib",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_engine.rlib.gz",
+    "sha256": "ebf11cd2fdf25eea77804b88b7005354003ec9acbde64efe95070ff4eff66e2a",
+    "original_bytes": 123032672,
+    "compressed_bytes": 24267049,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_runtime.rlib",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_runtime.rlib.gz",
+    "sha256": "7558ea0fdf338240445141cc65433f26833af71976decb6abb0d2327054efdc4",
+    "original_bytes": 26452480,
+    "compressed_bytes": 8374809,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_stdlib.rlib",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_stdlib.rlib.gz",
+    "sha256": "9b09a1e2edf09b6eecda6a7bff7176ddd795a4e1604820dae20a8dad1ef0e7a3",
+    "original_bytes": 170080,
+    "compressed_bytes": 43806,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v5/libmech_gpu.rlib",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v5/libmech_gpu.rlib.gz",
+    "sha256": "1c4d4c3e4b28b1e073c5d88bd6937a0d9a512b70d1b1163dfd538465d50dde4f",
+    "original_bytes": 40823400,
+    "compressed_bytes": 10324657,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-native-dictionary-seed-frames-engine-20261108-v1/libmech_engine.rlib",
+    "archive_path": "/private/tmp/mech-related-native-dictionary-seed-frames-engine-20261108-v1/libmech_engine.rlib.gz",
+    "sha256": "e663a29ebecb449901f75dafdaba797ec1969283d85466766941cd03fe27e99e",
+    "original_bytes": 123052856,
+    "compressed_bytes": 24266436,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v1/libmech_compute.rlib",
+    "archive_path": "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v1/libmech_compute.rlib.gz",
+    "sha256": "b9d24e3952d85147234624e1ec10a67d7e0cf50f2eee5003deb7bad53bbbce73",
+    "original_bytes": 1533504,
+    "compressed_bytes": 502384,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v1/libmech_runtime.rlib",
+    "archive_path": "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v1/libmech_runtime.rlib.gz",
+    "sha256": "5638b24c25def26ab773e86c6d39bcd4de29703adaa8184238f9eea5749ac488",
+    "original_bytes": 26454128,
+    "compressed_bytes": 8376467,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v1/libmech_stdlib.rlib",
+    "archive_path": "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v1/libmech_stdlib.rlib.gz",
+    "sha256": "255e345efa9550ef3b7910f1acd7eec1f5ec0a7d9f8443477f8eff45cee70ede",
+    "original_bytes": 170152,
+    "compressed_bytes": 43786,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v4/libmech_gpu.rlib",
+    "archive_path": "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v4/libmech_gpu.rlib.gz",
+    "sha256": "c60381ae022fe646ebf4a79787bf3a18970aff29ac0db9cd6ec555fe0d45c137",
+    "original_bytes": 40351992,
+    "compressed_bytes": 10252887,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_bytecode.rlib",
+    "archive_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_bytecode.rlib.gz",
+    "sha256": "c9064acca73f66bad887b05658ec51f0522bfe64056d1f60075dd84b778990f1",
+    "original_bytes": 5776,
+    "compressed_bytes": 3724,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_compare.rlib",
+    "archive_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_compare.rlib.gz",
+    "sha256": "d2d1734a5552148d0463fb031369c1b675df40c20cc2630157bf4ee5599ef0b3",
+    "original_bytes": 82991000,
+    "compressed_bytes": 5772174,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_core.rlib",
+    "archive_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_core.rlib.gz",
+    "sha256": "caedfd5503e81e62c7ae65dd2db7e53ccb35af1db450c45393bc301cbf63d497",
+    "original_bytes": 31990152,
+    "compressed_bytes": 9886346,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_logic.rlib",
+    "archive_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_logic.rlib.gz",
+    "sha256": "869eddff269e99b67e254970bf27b115ef2c51233df1d4a9bce89f1f68c7f91b",
+    "original_bytes": 2980376,
+    "compressed_bytes": 509502,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_math.rlib",
+    "archive_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_math.rlib.gz",
+    "sha256": "52b485f66d81c96bdbeeca1893aa50b1a59bc0122d54e0db9b702280ab470b55",
+    "original_bytes": 39853376,
+    "compressed_bytes": 3006499,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_range.rlib",
+    "archive_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_range.rlib.gz",
+    "sha256": "e828dd162082d08bf9e0c4ad9514ca7ff2b10503534ef31f0477b9926ffbf7ec",
+    "original_bytes": 5119720,
+    "compressed_bytes": 587487,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  },
+  {
+    "original_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_syntax.rlib",
+    "archive_path": "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_syntax.rlib.gz",
+    "sha256": "330c5fd648f802a762f870d1cceef2f4d81dd19a3123545005ee27bbdf204abc",
+    "original_bytes": 11771432,
+    "compressed_bytes": 3734235,
+    "mode": 33188,
+    "lossless_readback_verified": true,
+    "current_production_closure_not_affected": true
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "parent": "IR305",
+  "candidate": "IR307",
+  "all_nontiming_fields_exact": true,
+  "including_allocation_bytes_and_work": true,
+  "rows": 133,
+  "cases": [
+    {
+      "kind": "scalar",
+      "rows": 128,
+      "all_nontiming_fields_exact": true,
+      "parent_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-regressions-20261108-v1/scalar-run.json",
+      "candidate_receipt": "/private/tmp/mech-related-fixed-key-native-loops-regressions-20261108-v1/scalar-run.json"
+    },
+    {
+      "kind": "one-kib",
+      "rows": 5,
+      "all_nontiming_fields_exact": true,
+      "parent_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-regressions-20261108-v1/one-kib-run.json",
+      "candidate_receipt": "/private/tmp/mech-related-fixed-key-native-loops-regressions-20261108-v1/one-kib-run.json"
+    }
+  ],
+  "compiler_build": "/private/tmp/mech-related-fixed-key-native-loops-opt-20261108-v3/build.json",
+  "timings_ineligible": true
+}

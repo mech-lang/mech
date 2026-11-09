@@ -1,0 +1,18 @@
+canonical-control-detail
+{'site': 62, 'operation': 18446744073709551598, 'source_operation': 'map/insert', 'callbacks': 28.0, 'elapsed_ns': 28540.5, 'instructions': 305619.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 28.5405}
+{'site': 61, 'operation': 18446744073709551568, 'source_operation': 'access/scalar', 'callbacks': 28.0, 'elapsed_ns': 27081.0, 'instructions': 283832.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 27.081}
+{'site': 45, 'operation': 18446744073709551564, 'source_operation': None, 'callbacks': 1.0, 'elapsed_ns': 16688.0, 'instructions': 74422.0, 'requests': 8.0, 'requested_bytes': 742.0, 'elapsed_us': 16.688}
+{'site': 44, 'operation': 18446744073709551565, 'source_operation': 'core/composite-pack', 'callbacks': 1.0, 'elapsed_ns': 10229.0, 'instructions': 87808.0, 'requests': 9.0, 'requested_bytes': 1008.0, 'elapsed_us': 10.229}
+{'site': 40, 'operation': 0, 'source_operation': 'core/composite-pack', 'callbacks': 1.0, 'elapsed_ns': 6916.5, 'instructions': 64806.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 6.9165}
+{'site': 79, 'operation': 2, 'source_operation': None, 'callbacks': 1.0, 'elapsed_ns': 4208.5, 'instructions': 23825.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 4.2085}
+{'site': 39, 'operation': 0, 'source_operation': 'sequence/length', 'callbacks': 1.0, 'elapsed_ns': 2979.0, 'instructions': 13361.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 2.979}
+{'site': 78, 'operation': 18446744073709551566, 'source_operation': None, 'callbacks': 1.0, 'elapsed_ns': 2896.0, 'instructions': 11859.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 2.896}
+native-dictionary-detail
+{'site': 45, 'operation': 18446744073709551564, 'source_operation': None, 'callbacks': 1.0, 'elapsed_ns': 15979.0, 'instructions': 73054.5, 'requests': 8.0, 'requested_bytes': 742.0, 'elapsed_us': 15.979}
+{'site': 44, 'operation': 18446744073709551565, 'source_operation': 'core/composite-pack', 'callbacks': 1.0, 'elapsed_ns': 9354.0, 'instructions': 82486.0, 'requests': 9.0, 'requested_bytes': 1008.0, 'elapsed_us': 9.354}
+{'site': 40, 'operation': 0, 'source_operation': 'core/composite-pack', 'callbacks': 1.0, 'elapsed_ns': 7437.0, 'instructions': 70278.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 7.437}
+{'site': 79, 'operation': 2, 'source_operation': None, 'callbacks': 1.0, 'elapsed_ns': 4375.0, 'instructions': 23803.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 4.375}
+{'site': 45, 'operation': 18446744073709551608, 'source_operation': None, 'callbacks': 1.0, 'elapsed_ns': 4166.5, 'instructions': 14694.5, 'requests': 2.0, 'requested_bytes': 2384.0, 'elapsed_us': 4.1665}
+{'site': 78, 'operation': 18446744073709551566, 'source_operation': None, 'callbacks': 1.0, 'elapsed_ns': 2917.0, 'instructions': 11865.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 2.917}
+{'site': 39, 'operation': 0, 'source_operation': 'sequence/length', 'callbacks': 1.0, 'elapsed_ns': 2896.0, 'instructions': 13361.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 2.896}
+{'site': 82, 'operation': 2, 'source_operation': None, 'callbacks': 1.0, 'elapsed_ns': 2313.0, 'instructions': 12700.0, 'requests': 0.0, 'requested_bytes': 0.0, 'elapsed_us': 2.313}

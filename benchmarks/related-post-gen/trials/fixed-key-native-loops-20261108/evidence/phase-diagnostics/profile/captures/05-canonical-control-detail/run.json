@@ -1,0 +1,27 @@
+{
+  "pair": 5,
+  "order": 3,
+  "variant": "canonical-control-detail",
+  "kind": "mech",
+  "diagnostic": true,
+  "command": [
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/profile/hosts/canonical-control/runner-profile",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/profile/hosts/canonical-control/build/source.mec",
+    "/private/tmp/mech-related-current-input-fixtures-20261107/posts.json",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/profile/captures/05-canonical-control-detail/output.json",
+    "1"
+  ],
+  "cwd": "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/profile/captures/05-canonical-control-detail",
+  "environment": {
+    "MECH_INTERVAL_COUNTERS": "1",
+    "MECH_INTERVAL_HELPERS": "1",
+    "MECH_PHASE_BOUNDARIES": "248,1013,1622",
+    "MECH_PHASE_TRACE": "/private/tmp/mech-related-fixed-key-native-loops-20261108/phase-diagnostics/profile/captures/05-canonical-control-detail/trace.json"
+  },
+  "exit": 0,
+  "seconds": 0.05305304192006588,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.0214805,\"input_admission_seconds\":0.000157291,\"json_read_and_parse_seconds\":0.001627708,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":8,\"parallel_numeric_work\":24693650114,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":4,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.002113084,\"posts\":5000,\"processing_plus_admission_seconds\":0.002105624,\"retained_bytes\":956332,\"sample\":0,\"seconds\":0.001948333,\"work\":36973436789}\n",
+  "stderr": "",
+  "diagnostic_only": true,
+  "promotion_timing_eligible": false
+}

@@ -1,0 +1,37 @@
+{
+  "paths": [
+    "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_compute.rlib",
+    "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_engine.rlib",
+    "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_runtime.rlib",
+    "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v3/libmech_stdlib.rlib",
+    "/private/tmp/mech-related-borrowed-dictionary-values-opt-20261108-v5/libmech_gpu.rlib",
+    "/private/tmp/mech-related-native-dictionary-seed-frames-engine-20261108-v1/libmech_engine.rlib",
+    "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v1/libmech_compute.rlib",
+    "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v1/libmech_runtime.rlib",
+    "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v1/libmech_stdlib.rlib",
+    "/private/tmp/mech-related-native-dictionary-seed-frames-opt-20261108-v4/libmech_gpu.rlib",
+    "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_bytecode.rlib",
+    "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_compare.rlib",
+    "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_core.rlib",
+    "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_logic.rlib",
+    "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_math.rlib",
+    "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_range.rlib",
+    "/private/tmp/mech-related-shared-call-metadata-opt-20261108-v2/libmech_syntax.rlib"
+  ],
+  "active_current_libraries": [
+    "/private/tmp/mech-related-fixed-key-native-loops-core-engine-20261108-v1/libmech_bytecode.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-core-engine-20261108-v1/libmech_core.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-core-engine-20261108-v1/libmech_engine.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-core-engine-20261108-v1/libmech_syntax.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-opt-20261108-v3/libmech_gpu.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-runners-20261108-v1/runtime/libmech_gpu.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-runtime-20261108-v2/libmech_compare.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-runtime-20261108-v2/libmech_compute.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-runtime-20261108-v2/libmech_logic.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-runtime-20261108-v2/libmech_math.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-runtime-20261108-v2/libmech_range.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-runtime-20261108-v2/libmech_runtime.rlib",
+    "/private/tmp/mech-related-fixed-key-native-loops-runtime-20261108-v2/libmech_stdlib.rlib"
+  ],
+  "scope": "Completed previous-generation compiler libraries only; all selected/default/control executables intact; restore losslessly before rebuilding a historical compiler"
+}

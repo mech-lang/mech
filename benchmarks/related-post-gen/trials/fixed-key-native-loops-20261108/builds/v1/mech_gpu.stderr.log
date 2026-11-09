@@ -1,0 +1,21 @@
+error[E0433]: cannot find type `CodePlan` in this scope
+    --> /private/tmp/mech-related-fixed-key-native-loops-compiler-20261108/hosts/gpu/src/native_artifact/codegen/control/mod.rs:1797:64
+     |
+1797 | ...   controls, b, locals, &closed, match plan { CodePlan::Program(p) => Some(&p.metadata().fixed_key_loops), _ => None }, index, ...
+     |                                                  ^^^^^^^^ use of undeclared type `CodePlan`
+     |
+help: consider importing this enum
+     |
+   2 + use crate::native_artifact::codegen::control::plan::CodePlan;
+     |
+
+error[E0616]: field `fixed_nodes` of struct `Caller` is private
+  --> /private/tmp/mech-related-fixed-key-native-loops-compiler-20261108/hosts/gpu/src/native_artifact/program/runtime/maps/owner/fixed_keys.rs:77:97
+   |
+77 |         let base=self.caller.as_ref().ok_or_else(||invalid("fixed-key caller census missing"))?.fixed_nodes;
+   |                                                                                                 ^^^^^^^^^^^ private field
+
+error: aborting due to 2 previous errors
+
+Some errors have detailed explanations: E0433, E0616.
+For more information about an error, try `rustc --explain E0433`.

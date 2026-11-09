@@ -1,0 +1,32 @@
+[
+  {
+    "original_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/connected-tests-v1/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/connected-tests-v1/gpu-tests.gz",
+    "sha256": "00c41d44cd94e7f1827208dfb06d77cbefd286fa8f232b76a1af92b46824b9da",
+    "original_bytes": 136776280,
+    "compressed_bytes": 23121543,
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "scope": "completed obsolete qualification executable; includes all adverse receipts; selected runtimes intact"
+  },
+  {
+    "original_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/connected-tests-v2/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/connected-tests-v2/gpu-tests.gz",
+    "sha256": "29d46df68744b2646c12b5ecb4b6cdc59806dbc9f688d7250fad96b1915aee53",
+    "original_bytes": 136776744,
+    "compressed_bytes": 23122263,
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "scope": "completed obsolete qualification executable; includes all adverse receipts; selected runtimes intact"
+  },
+  {
+    "original_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/connected-tests-v6/gpu-tests",
+    "archive_path": "/private/tmp/mech-related-borrowed-dictionary-values-20261108/connected-tests-v6/gpu-tests.gz",
+    "sha256": "14f03df0432ebd74bf4bef8e4164130a00e7b11a9885dc68f539dc50d812e425",
+    "original_bytes": 136759864,
+    "compressed_bytes": 23120689,
+    "mode": 33261,
+    "lossless_readback_verified": true,
+    "scope": "completed obsolete qualification executable; includes all adverse receipts; selected runtimes intact"
+  }
+]

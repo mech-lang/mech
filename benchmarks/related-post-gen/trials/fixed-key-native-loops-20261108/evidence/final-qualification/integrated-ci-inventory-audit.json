@@ -1,0 +1,15 @@
+{
+  "expected": 480,
+  "listed": 480,
+  "executed_passed": 480,
+  "all_names_match": true,
+  "all474_parent_names_retained": true,
+  "new_names": [
+    "native_artifact::program::prepare::fixed_key_loops::tests::fixed_key_native_loops_require_closed_bodies_and_private_complete_map_uses",
+    "native_artifact::program::runtime::composition_tests::fixed_key_loops::fixed_key_native_loops_execute_without_per_key_helpers_and_preserve_aliases",
+    "native_artifact::program::runtime::composition_tests::fixed_key_loops::fixed_key_native_loops_keep_finite_refills_and_decline_tight_call_caps",
+    "native_artifact::program::runtime::composition_tests::fixed_key_loops::fixed_key_native_loops_observe_peer_bytes_after_entry_and_recover",
+    "native_artifact::program::runtime::composition_tests::fixed_key_loops::fixed_key_native_loops_observe_peer_snapshot_nodes_after_entry",
+    "native_artifact::program::runtime::composition_tests::fixed_key_loops::fixed_key_native_loops_preserve_bounds_origin_atomic_output_and_retry"
+  ]
+}

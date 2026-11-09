@@ -1,0 +1,409 @@
+{
+  "schema": "mech.related-post-gen.native-link-audit.v9",
+  "status": "passed",
+  "object": {
+    "path": "/private/tmp/mech-related-fixed-key-native-loops-emission-control-20261108-v1/histogram-reuse/build/object.o",
+    "sha256": "e08f552d1d4ec3b850f3d50186a2434a3e6d3eecfe050bed4ef43d6824356bf0"
+  },
+  "executable": {
+    "path": "/private/tmp/mech-related-fixed-key-native-loops-20261108/metrics/mech-ir307-key-loop-callback-control-4/runner-metrics",
+    "sha256": "e4b33ddd71569eead1d223db3a6e1ff2ba41ff4fdef9e00cdd75ca1c42578302"
+  },
+  "object_text": {
+    "name": "__text",
+    "segment": "__TEXT",
+    "address": 0,
+    "size": 1038324,
+    "offset": 448,
+    "relocations": 5781520,
+    "relocation_count": 53
+  },
+  "linked_text_address": 4301412992,
+  "linked_text_file_offset": 6445696,
+  "entry_symbol": "_mech_canonical_program_entry_v1",
+  "defined_native_function_count": 51,
+  "every_native_symbol_has_exact_object_relative_address": true,
+  "all_text_equal_except_independently_verified_relocation_fields": true,
+  "all_page_references_bound_to_exact_literals_or_defined_symbols": true,
+  "all_got_pointer_loads_or_relaxations_bind_to_exact_defined_symbols": true,
+  "normalized_text_sha256": "7e504e23bab51a251af0b68767f2c5c75e6b27cb4cbd4e9e57bfda76809a9746",
+  "object_owned_data_exports": [
+    {
+      "symbol": "_mech_canonical_program_identity_v1_f85c1e5f726bff3cb0d3a8e746e5367697a184f99207510d14a6f3ac7cb9303c",
+      "bytes": 192,
+      "linked": true,
+      "complete_bytes_equal": true,
+      "object_data_has_no_relocations": true,
+      "linked_data_is_read_only": true
+    },
+    {
+      "symbol": "_mech_canonical_program_identity_v1_f85c1e5f726bff3cb0d3a8e746e5367697a184f99207510d14a6f3ac7cb9303c_compiled_module_v1",
+      "bytes": 72,
+      "linked": true,
+      "complete_bytes_equal_except_four_verified_relocations": true,
+      "linked_data_is_read_only": true,
+      "linked_segment": "__DATA_CONST",
+      "all_four_compiler_module_relocations_verified": true,
+      "relocations": [
+        {
+          "offset": 32,
+          "symbol": "_mech_canonical_program_identity_v1_f85c1e5f726bff3cb0d3a8e746e5367697a184f99207510d14a6f3ac7cb9303c_native_metadata_v1",
+          "address": 4303114032
+        },
+        {
+          "offset": 48,
+          "symbol": "_mech_canonical_program_identity_v1_f85c1e5f726bff3cb0d3a8e746e5367697a184f99207510d14a6f3ac7cb9303c",
+          "address": 4303113840
+        },
+        {
+          "offset": 56,
+          "symbol": "_mech_canonical_program_identity_v1_f85c1e5f726bff3cb0d3a8e746e5367697a184f99207510d14a6f3ac7cb9303c_native_metadata_binding_v1",
+          "address": 4307856384
+        },
+        {
+          "offset": 64,
+          "symbol": "_mech_canonical_program_entry_v1",
+          "address": 4301943808
+        }
+      ]
+    },
+    {
+      "symbol": "_mech_canonical_program_identity_v1_f85c1e5f726bff3cb0d3a8e746e5367697a184f99207510d14a6f3ac7cb9303c_descriptor_binding_v1",
+      "bytes": 64,
+      "linked": false
+    },
+    {
+      "symbol": "_mech_canonical_program_identity_v1_f85c1e5f726bff3cb0d3a8e746e5367697a184f99207510d14a6f3ac7cb9303c_native_metadata_binding_v1",
+      "bytes": 64,
+      "linked": true,
+      "complete_bytes_equal": true,
+      "object_data_has_no_relocations": true,
+      "linked_data_is_read_only": true
+    },
+    {
+      "symbol": "_mech_canonical_program_identity_v1_f85c1e5f726bff3cb0d3a8e746e5367697a184f99207510d14a6f3ac7cb9303c_native_metadata_v1",
+      "bytes": 4742346,
+      "linked": true,
+      "complete_bytes_equal": true,
+      "object_data_has_no_relocations": true,
+      "linked_data_is_read_only": true
+    }
+  ],
+  "relocations": [
+    {
+      "offset": 938824,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1917",
+      "resolved_target": 4301710336,
+      "verified": true
+    },
+    {
+      "offset": 934148,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1886",
+      "resolved_target": 4301703680,
+      "verified": true
+    },
+    {
+      "offset": 916936,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1705",
+      "resolved_target": 4301700992,
+      "verified": true
+    },
+    {
+      "offset": 912496,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1675",
+      "resolved_target": 4301691648,
+      "verified": true
+    },
+    {
+      "offset": 908028,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1646",
+      "resolved_target": 4301659008,
+      "verified": true
+    },
+    {
+      "offset": 905356,
+      "paired_offset": 905360,
+      "symbol": "_mech_canonical_program_entry_v1",
+      "resolved_target": 4301943808,
+      "verified": true,
+      "pointer_load_relaxation": "LDR_X_to_ADD_exact_defined_symbol"
+    },
+    {
+      "offset": 890784,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1557",
+      "resolved_target": 4301656448,
+      "verified": true
+    },
+    {
+      "offset": 887096,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1530",
+      "resolved_target": 4301649408,
+      "verified": true
+    },
+    {
+      "offset": 881436,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1463",
+      "resolved_target": 4301648128,
+      "verified": true
+    },
+    {
+      "offset": 853464,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1304",
+      "resolved_target": 4301640960,
+      "verified": true
+    },
+    {
+      "offset": 851004,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1277",
+      "resolved_target": 4301630464,
+      "verified": true
+    },
+    {
+      "offset": 848800,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1252",
+      "resolved_target": 4301617024,
+      "verified": true
+    },
+    {
+      "offset": 846828,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1229",
+      "resolved_target": 4301600384,
+      "verified": true
+    },
+    {
+      "offset": 843516,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1037",
+      "resolved_target": 4301532288,
+      "verified": true
+    },
+    {
+      "offset": 822580,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2294",
+      "resolved_target": 4301745024,
+      "verified": true
+    },
+    {
+      "offset": 814516,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2208",
+      "resolved_target": 4301742336,
+      "verified": true
+    },
+    {
+      "offset": 810400,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2180",
+      "resolved_target": 4301733504,
+      "verified": true
+    },
+    {
+      "offset": 806812,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2154",
+      "resolved_target": 4301712000,
+      "verified": true
+    },
+    {
+      "offset": 770076,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3163",
+      "resolved_target": 4301867392,
+      "verified": true
+    },
+    {
+      "offset": 764068,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3106",
+      "resolved_target": 4301858560,
+      "verified": true
+    },
+    {
+      "offset": 758164,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3040",
+      "resolved_target": 4301856512,
+      "verified": true
+    },
+    {
+      "offset": 754116,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3015",
+      "resolved_target": 4301850624,
+      "verified": true
+    },
+    {
+      "offset": 739656,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2862",
+      "resolved_target": 4301848320,
+      "verified": true
+    },
+    {
+      "offset": 731552,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2776",
+      "resolved_target": 4301845632,
+      "verified": true
+    },
+    {
+      "offset": 727412,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2748",
+      "resolved_target": 4301836800,
+      "verified": true
+    },
+    {
+      "offset": 722952,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2713",
+      "resolved_target": 4301759872,
+      "verified": true
+    },
+    {
+      "offset": 713784,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2619",
+      "resolved_target": 4301757312,
+      "verified": true
+    },
+    {
+      "offset": 710012,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2592",
+      "resolved_target": 4301750144,
+      "verified": true
+    },
+    {
+      "offset": 705260,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2538",
+      "resolved_target": 4301748864,
+      "verified": true
+    },
+    {
+      "offset": 701156,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_2492",
+      "resolved_target": 4301747328,
+      "verified": true
+    },
+    {
+      "offset": 694036,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_917",
+      "resolved_target": 4301530752,
+      "verified": true
+    },
+    {
+      "offset": 691356,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_895",
+      "resolved_target": 4301526400,
+      "verified": true
+    },
+    {
+      "offset": 684788,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_823",
+      "resolved_target": 4301523840,
+      "verified": true
+    },
+    {
+      "offset": 681100,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_796",
+      "resolved_target": 4301516800,
+      "verified": true
+    },
+    {
+      "offset": 675444,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_729",
+      "resolved_target": 4301515520,
+      "verified": true
+    },
+    {
+      "offset": 642104,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_597",
+      "resolved_target": 4301510656,
+      "verified": true
+    },
+    {
+      "offset": 639896,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_572",
+      "resolved_target": 4301503488,
+      "verified": true
+    },
+    {
+      "offset": 637928,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_549",
+      "resolved_target": 4301494016,
+      "verified": true
+    },
+    {
+      "offset": 634620,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_272",
+      "resolved_target": 4301422080,
+      "verified": true
+    },
+    {
+      "offset": 603284,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3847",
+      "resolved_target": 4301940480,
+      "verified": true
+    },
+    {
+      "offset": 597276,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3790",
+      "resolved_target": 4301931648,
+      "verified": true
+    },
+    {
+      "offset": 591368,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3724",
+      "resolved_target": 4301929600,
+      "verified": true
+    },
+    {
+      "offset": 587312,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3699",
+      "resolved_target": 4301923712,
+      "verified": true
+    },
+    {
+      "offset": 583436,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3673",
+      "resolved_target": 4301883264,
+      "verified": true
+    },
+    {
+      "offset": 575300,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3589",
+      "resolved_target": 4301880704,
+      "verified": true
+    },
+    {
+      "offset": 571524,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3562",
+      "resolved_target": 4301873536,
+      "verified": true
+    },
+    {
+      "offset": 566752,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3508",
+      "resolved_target": 4301872256,
+      "verified": true
+    },
+    {
+      "offset": 562648,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_3462",
+      "resolved_target": 4301870720,
+      "verified": true
+    },
+    {
+      "offset": 553932,
+      "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+      "resolved_target": 4301412992,
+      "verified": true
+    },
+    {
+      "offset": 546436,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_145",
+      "resolved_target": 4301421056,
+      "verified": true
+    },
+    {
+      "offset": 541136,
+      "symbol": "_mech_canonical_program_entry_v1_numeric_106",
+      "resolved_target": 4301414272,
+      "verified": true
+    },
+    {
+      "offset": 532324,
+      "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+      "resolved_target": 4301412992,
+      "verified": true
+    }
+  ],
+  "scope": "All native object text bytes compared. ARM64 BRANCH26 displacements bind to exact named defined symbols. Every PAGE21/PAGEOFF12 relocation constrains its symbol to consistent exact literal/constant bytes or a defined address. GOT address loads, including checked LDR-to-ADD linker relaxation, bind to exact defined function addresses. Nonzero page addends and other relocation forms fail closed."
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-fixed-key-native-loops-emission-control-20261108-v1/histogram-reuse/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/metrics/mech-ir307-key-loop-callback-control-4/runner-metrics",
+    "--output",
+    "/private/tmp/mech-related-fixed-key-native-loops-20261108/metrics/mech-ir307-key-loop-callback-control-4/native-link-audit.json"
+  ],
+  "cwd": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen",
+  "exit": 0,
+  "seconds": 0.09535387507639825,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 51, \"normalized_text_sha256\": \"7e504e23bab51a251af0b68767f2c5c75e6b27cb4cbd4e9e57bfda76809a9746\"}\n",
+  "stderr": "",
+  "rustflags": null
+}

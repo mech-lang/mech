@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-fixed-key-native-loops-emission-control-20261108-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-fixed-key-native-loops-runners-20261108-v1/compiler-facts.rs",
+    "--out",
+    "/private/tmp/mech-related-fixed-key-native-loops-emission-control-20261108-v1/compiler"
+  ],
+  "exit": 0,
+  "seconds": 2.7510072079021484,
+  "stdout": "{\"seconds\": 2.189871624810621, \"exit\": 0}\n",
+  "stderr": ""
+}
