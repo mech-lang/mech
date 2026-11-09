@@ -1,0 +1,8 @@
+{
+  "selected": "IR308",
+  "candidate": "IR310",
+  "candidate_selected": false,
+  "reason": "First cohort clearly regresses against both selected IR308 and the same-runtime ablation. No unchanged confirmation rerun.",
+  "confirmation_run": false,
+  "whole_process_gate": false
+}

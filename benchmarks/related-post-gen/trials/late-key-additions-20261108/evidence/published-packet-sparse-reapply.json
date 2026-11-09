@@ -1,0 +1,20 @@
+[
+  {
+    "worktree": "/private/tmp/mech-related-completed-key-additions-compiler-20261108",
+    "head": "1fe55f8fae6789d36df118c55216f52e6dbb66c2",
+    "manifest_sha256": "44a304f79babd9926b8e2364bde3fc2c4de6b819e3f3043fce6b162cd3275a1c",
+    "packet_files": 3850,
+    "tracked_bytes": 125318946,
+    "action": "Reapplied existing sparse checkout after clean committed publication. Git objects and original experiment evidence are retained; checkout is reversible.",
+    "exit": 0
+  },
+  {
+    "worktree": "/private/tmp/mech-related-numeric-owner-handoff-compiler-20261108",
+    "head": "0d2641f4f2e5adcf1c5c782f299dcc91d401db9b",
+    "manifest_sha256": "d1c4de6ad0a082dedaaa701451d13813ec2342e014ee2f4938aa56b99eab81e1",
+    "packet_files": 3789,
+    "tracked_bytes": 121490972,
+    "action": "Reapplied existing sparse checkout after clean committed publication. Git objects and original experiment evidence are retained; checkout is reversible.",
+    "exit": 0
+  }
+]

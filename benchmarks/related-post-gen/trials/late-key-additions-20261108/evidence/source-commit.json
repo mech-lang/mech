@@ -1,0 +1,11 @@
+{
+  "commit": "e8e2ec395116b1ac4a936385b49402af04d55f1f",
+  "branch": "codex/related-late-key-additions-20261108",
+  "foundation": "IR308 plus qualified IR309 proof",
+  "typed_IR": 310,
+  "work_policy": 125,
+  "source_algorithm_unchanged": true,
+  "no_authoritative_timing_yet": true,
+  "all_qualification_passed": true,
+  "compiler_contracts": 490
+}

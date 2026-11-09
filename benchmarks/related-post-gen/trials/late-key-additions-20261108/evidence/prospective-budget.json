@@ -1,0 +1,13 @@
+{
+  "foundation": "IR308",
+  "foundation_source": "4482c116e1ef1eba5e18dac5d84b64211152e734",
+  "scope": "IR310 late removal of surviving exact completed-key overflow branches, preserving checked CFG through early cleanup/capture selection. No global range, array, cursor or post-ID proof.",
+  "input_keys": 50380,
+  "estimated_saving": "A small number of instructions per consumer addition; inspect actual emitted sites and Object before asserting a budget. Even five instructions per key would be about252000, under0.8% of32.34M total retired instructions.",
+  "not_a_parity_claim": true,
+  "no_processing_measurement_before_qualification": true,
+  "retain_all_first_and_adverse_samples": true,
+  "whole_process_gate": false,
+  "keep_all20_eligible_Rust_controls": true,
+  "measured_failed_predecessor": "IR309 reduced serial indexing instructions but added query instructions and regressed selected latency. IR310 aims to retain serial check savings without perturbing already-optimized query code; machine code must be inspected before timing."
+}

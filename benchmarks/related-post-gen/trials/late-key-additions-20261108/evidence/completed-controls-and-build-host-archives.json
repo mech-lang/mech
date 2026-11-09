@@ -1,0 +1,57 @@
+[
+  {
+    "original": "/private/tmp/mech-related-late-key-additions-20261108/key-tests-v2-optimized/gpu-tests",
+    "archive": "/private/tmp/mech-related-late-key-additions-20261108/key-tests-v2-optimized/gpu-tests.gz",
+    "original_sha256": "2d5159ec39dfba7451bde03aa083695c464e09bb83e19dcb3a3d86de21fddba5",
+    "original_bytes": 136964824,
+    "archive_sha256": "ebaf9794b68d21486e0db54cda00ef7fd8d8f332c1a436225f0faad8cfd3a1fa",
+    "archive_bytes": 25656042,
+    "mode": 493,
+    "lossless_verified": true,
+    "qualification_completed": true
+  },
+  {
+    "original": "/private/tmp/mech-related-late-key-additions-runners-20261108-v1/compiler",
+    "archive": "/private/tmp/mech-related-late-key-additions-runners-20261108-v1/compiler.gz",
+    "original_sha256": "a270fab443d03d3d271411e707bdd18e14b5750c60c4ff801c2c870ec748942f",
+    "original_bytes": 107716352,
+    "archive_sha256": "d9aa93b3a3edd6de8141e9bd37acf624059c74777f57807cf01486f156a30a09",
+    "archive_bytes": 16134829,
+    "mode": 493,
+    "lossless_verified": true,
+    "qualification_completed": true
+  },
+  {
+    "original": "/private/tmp/mech-related-late-key-additions-control-20261108-v1/compiler",
+    "archive": "/private/tmp/mech-related-late-key-additions-control-20261108-v1/compiler.gz",
+    "original_sha256": "66c041e8696303b47f2e4648715ac3c8e1f79315882b057a3743a9bd66888f61",
+    "original_bytes": 107685440,
+    "archive_sha256": "28831aedc545189fc8123cb910e6eebc8078e402d041999575db5f64761c7939",
+    "archive_bytes": 16131284,
+    "mode": 493,
+    "lossless_verified": true,
+    "qualification_completed": true
+  },
+  {
+    "original": "/private/tmp/mech-related-late-key-additions-regressions-20261108-v2/scalar",
+    "archive": "/private/tmp/mech-related-late-key-additions-regressions-20261108-v2/scalar.gz",
+    "original_sha256": "192cb03d08a840f673038be853cd928c8b6d12d9f661bb04c039d567166c05ca",
+    "original_bytes": 109226144,
+    "archive_sha256": "fd3524c77e84a2b36cf5ded541dc944e3ee4679fe8f018c0b74cb475ce703bda",
+    "archive_bytes": 16929077,
+    "mode": 493,
+    "lossless_verified": true,
+    "qualification_completed": true
+  },
+  {
+    "original": "/private/tmp/mech-related-late-key-additions-regressions-20261108-v2/one-kib",
+    "archive": "/private/tmp/mech-related-late-key-additions-regressions-20261108-v2/one-kib.gz",
+    "original_sha256": "bb3e1fffba2879db4b6f24e60990fe9313dd34fc9b80f526b9c380b3f43625d7",
+    "original_bytes": 105938968,
+    "archive_sha256": "dd5aa1631e764c415cd3fd8cd20db4be132e14ea133d6c695bb88bab0e1ff5b6",
+    "archive_bytes": 14897169,
+    "mode": 493,
+    "lossless_verified": true,
+    "qualification_completed": true
+  }
+]

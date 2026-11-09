@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-related-late-key-additions-control-20261108-v1/compiler",
+    "/private/tmp/mech-related-late-key-additions-runners-20261108-v1/histogram-reuse/build/source.mec",
+    "/private/tmp/mech-related-late-key-additions-control-20261108-v1/histogram-reuse/build"
+  ],
+  "exit": 0,
+  "seconds": 6.504757542163134,
+  "stdout": "{\"code_bytes\":1034972,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1568}\n",
+  "stderr": "",
+  "qualification_only": true,
+  "timings_ineligible": true
+}

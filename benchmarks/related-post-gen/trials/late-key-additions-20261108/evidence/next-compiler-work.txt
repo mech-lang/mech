@@ -1,0 +1,3 @@
+Retained current phase profiles still prioritize serial preparation and index generation/scatter. Next test compact native tag IDs with combinatorial lookup tables, separately and combined, using selected IR308. Fix any compiler lowering gaps encountered.
+
+Two placements of the smallest completed-key proof are qualified but unselected. The early rewrite adds query instructions; late removal shrinks code but leaves total instructions nearly unchanged and still regresses latency. Do not spend more unchanged full cohorts on this small arithmetic budget. Preserve the proof work for composition.

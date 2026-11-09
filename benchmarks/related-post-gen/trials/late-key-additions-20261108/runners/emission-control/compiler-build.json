@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-late-key-additions-control-opt-20261108-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-late-key-additions-control-20261108-v1/compiler-facts.rs",
+    "--out",
+    "/private/tmp/mech-related-late-key-additions-control-20261108-v1/compiler"
+  ],
+  "exit": 0,
+  "seconds": 2.539359083864838,
+  "stdout": "{\"seconds\": 1.9966299589723349, \"exit\": 0}\n",
+  "stderr": "",
+  "qualification_only": true,
+  "timings_ineligible": true
+}

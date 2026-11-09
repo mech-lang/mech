@@ -1,0 +1,6 @@
+{
+  "base_source": "e8e2ec395116b1ac4a936385b49402af04d55f1f",
+  "source_root": "/private/tmp/mech-related-late-key-additions-control-compiler-20261108",
+  "change": "One compiler-only certificate-emission predicate false; runtime and Engine exactly candidate libraries.",
+  "diff": "diff --git a/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs b/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs\nindex 7870956d38..5eb62fb8ac 100644\n--- a/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs\n+++ b/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs\n@@ -1442,7 +1442,7 @@ pub(in crate::native_artifact) fn emit_entry(\n                     } else {\n                         primitive(b, *op, &args, fail)\n                     };\n-                    if controls.enabled(OptimizationPass::CompletedKeyAdditions)\n+                    if (false && controls.enabled(OptimizationPass::CompletedKeyAdditions))\n                         && program\n                             .completed_key_additions\n                             .arithmetic(id, site, *op, operands)\n"
+}

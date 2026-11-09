@@ -1,0 +1,24 @@
+{
+  "source_changes": false,
+  "corrections": [
+    {
+      "action": "Optimized GPU build v1 rejected unused wrapper; gate wrapper with cfg(test), then rebuild v2.",
+      "receipt": "/private/tmp/mech-related-late-key-additions-opt-20261108-v1/mech_gpu.build.json"
+    },
+    {
+      "action": "Regression launch raced script version update and read failed v1 build path; retained v1 failed receipt, rerun with completed v2 build.",
+      "receipt": "/private/tmp/mech-related-late-key-additions-regressions-20261108-v1/scalar.build.json"
+    },
+    {
+      "action": "Qualification script accidentally expected 490 parent names while the unchanged parent has 489. Current CI lists 490 as intended. Correct parent inventory assertion and reuse exact already-passing source output/list receipts.",
+      "actual_source_passed": true,
+      "CI_listed_current": 490,
+      "parent": 489
+    },
+    {
+      "action": "The new common SSA contract was not in the inherited native-composition selectors. Add its explicit selector to both listing and execution; retain expected count490 and rerun only the affected inventory/full selected campaign.",
+      "prior_current_list": 489,
+      "new_contract_was_already_executed_in_focused_suite": true
+    }
+  ]
+}

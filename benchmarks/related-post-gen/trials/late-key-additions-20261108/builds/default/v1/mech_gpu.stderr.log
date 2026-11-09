@@ -1,0 +1,11 @@
+error: function `optimize_with_options` is never used
+   --> /private/tmp/mech-related-late-key-additions-compiler-20261108/hosts/gpu/src/native_artifact/codegen/common/unsigned_guard_facts.rs:323:35
+    |
+323 | pub(in crate::native_artifact) fn optimize_with_options(
+    |                                   ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `-D dead-code` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+error: aborting due to 1 previous error
+

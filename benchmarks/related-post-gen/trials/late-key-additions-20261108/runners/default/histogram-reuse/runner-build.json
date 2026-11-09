@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-late-key-additions-runners-20261108-v1/runtime/build.json",
+    "--source",
+    "/private/tmp/mech-related-late-key-additions-runners-20261108-v1/histogram-reuse/runner.rs",
+    "--out",
+    "/private/tmp/mech-related-late-key-additions-runners-20261108-v1/histogram-reuse/runner-aot",
+    "--bundle",
+    "/private/tmp/mech-related-late-key-additions-runners-20261108-v1/histogram-reuse/build",
+    "--linked"
+  ],
+  "environment": {},
+  "exit": 0,
+  "seconds": 2.223428042139858,
+  "stdout": "warning: static `LINKED_IDENTITY` is never used\n --> /private/tmp/mech-related-late-key-additions-runners-20261108-v1/histogram-reuse/build/linked.rs:2:124\n  |\n2 | ...09409fecb19400f8cd765f5a43c3ceda94930dc93729029\"] static LINKED_IDENTITY:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTI...\n  |                                                             ^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-late-key-additions-runners-20261108-v1/histogram-reuse/build/linked.rs:3:146\n  |\n3 | ...43c3ceda94930dc93729029_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA` is never used\n --> /private/tmp/mech-related-late-key-additions-runners-20261108-v1/histogram-reuse/build/linked.rs:4:143\n  |\n4 | ...5a43c3ceda94930dc93729029_native_metadata_v1\"] static LINKED_NATIVE_METADATA:[u8;4742346];\n  |                                                          ^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA_BINDING` is never used\n --> /private/tmp/mech-related-late-key-additions-runners-20261108-v1/histogram-reuse/build/linked.rs:5:151\n  |\n5 | ...930dc93729029_native_metadata_binding_v1\"] static LINKED_NATIVE_METADATA_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMA...\n  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: function `linked_entry` is never used\n --> /private/tmp/mech-related-late-key-additions-runners-20261108-v1/histogram-reuse/build/linked.rs:6:52\n  |\n6 |  #[link_name=\"mech_canonical_program_entry_v1\"] fn linked_entry(frame:*mut std::ffi::c_void)->u64;\n  |                                                    ^^^^^^^^^^^^\n\nwarning: 5 warnings emitted\n\n{\"seconds\": 1.6127096249256283, \"exit\": 0}\n",
+  "stderr": ""
+}

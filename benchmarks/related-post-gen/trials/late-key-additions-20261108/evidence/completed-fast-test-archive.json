@@ -1,0 +1,11 @@
+{
+  "original": "/private/tmp/mech-related-late-key-additions-20261108/key-tests-v1-fast/gpu-tests",
+  "archive": "/private/tmp/mech-related-late-key-additions-20261108/key-tests-v1-fast/gpu-tests.gz",
+  "original_sha256": "5d3f10b4b24bef21f8e42bd66185d5f04b6da0d6c88b1fcf22221b74e41c4902",
+  "original_bytes": 193809000,
+  "archive_sha256": "2dac2521872884a35031ace1c81ceb3a0076210376b9894206e9c1a5772fdda3",
+  "archive_bytes": 32574908,
+  "mode": 493,
+  "lossless_verified": true,
+  "completed": true
+}

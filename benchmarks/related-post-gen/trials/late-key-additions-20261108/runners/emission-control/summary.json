@@ -1,0 +1,25 @@
+{
+  "exact_outputs": 32,
+  "linked_audit_passed": true,
+  "same_candidate_runtime": true,
+  "runtime_build": "/private/tmp/mech-related-late-key-additions-runners-20261108-v1/runtime/build.json",
+  "runtime_sha256": "eb288256fbb4d24c78b7d43c04a23be69193bd8608fb78b14c60711862848860",
+  "Engine_libraries_identical": true,
+  "typed_IR": 310,
+  "work_policy": 125,
+  "only_completed_key_arithmetic_emission_ablated": true,
+  "default_completed_key_arithmetic_sites": [
+    841,
+    845,
+    932,
+    1575,
+    1579,
+    1693,
+    1906,
+    2197,
+    2765
+  ],
+  "control_completed_key_arithmetic_sites": [],
+  "whole_process_gate": false,
+  "qualification_times_ineligible": true
+}

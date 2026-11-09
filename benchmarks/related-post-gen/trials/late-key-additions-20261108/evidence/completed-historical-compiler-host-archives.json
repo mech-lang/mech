@@ -1,0 +1,90 @@
+[
+  {
+    "original": "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108-v3/compiler",
+    "archive": "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108-v3/compiler.gz",
+    "original_sha256": "93a9bfbe5beb7ec80fce9494fd4a84ed98d26e8b329e97c6aab631d48206e193",
+    "original_bytes": 107689552,
+    "archive_bytes": 16112519,
+    "archive_sha256": "a3be3263abcc9043d54f85cfa86eee696d0e226511db3fd836352b0caaae3ab6",
+    "mode": 493,
+    "completed_build_receipt": "/private/tmp/mech-related-borrowed-dictionary-values-emission-control-20261108-v3/compiler-build.json",
+    "lossless_verified": true
+  },
+  {
+    "original": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/compiler",
+    "archive": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/compiler.gz",
+    "original_sha256": "196130e3ae1b95707397325d156f66580b0e53e7f455d3c8fb9ab2b6c303d743",
+    "original_bytes": 107689536,
+    "archive_bytes": 16111799,
+    "archive_sha256": "c5a5c32e07e2946904764c9800ee5a8c7273563fb0b1679a40e5542cd1a5d8fe",
+    "mode": 493,
+    "completed_build_receipt": "/private/tmp/mech-related-borrowed-dictionary-values-runners-20261108-v3/compiler-build.json",
+    "lossless_verified": true
+  },
+  {
+    "original": "/private/tmp/mech-related-native-dictionary-seed-frames-emission-control-20261108/compiler",
+    "archive": "/private/tmp/mech-related-native-dictionary-seed-frames-emission-control-20261108/compiler.gz",
+    "original_sha256": "3d9d727ab87faadedad3bd77216cb7bc26faac573dd0ce41d92acec634cd5317",
+    "original_bytes": 107659728,
+    "archive_bytes": 16123038,
+    "archive_sha256": "393ef6e458a0118af18bf7334c66e48342a38fd46d60b24b22c393fccf49de7f",
+    "mode": 493,
+    "completed_build_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-emission-control-20261108/compiler-build.json",
+    "lossless_verified": true
+  },
+  {
+    "original": "/private/tmp/mech-related-native-dictionary-seed-frames-runners-20261108-v1/compiler",
+    "archive": "/private/tmp/mech-related-native-dictionary-seed-frames-runners-20261108-v1/compiler.gz",
+    "original_sha256": "c10983cc36e83b2f4bcda0852bbd15574119d9a0bc8be6a493abad90a9e19499",
+    "original_bytes": 107654944,
+    "archive_bytes": 16121133,
+    "archive_sha256": "421d3d48859d1abbc348038465ceaff47a13e3f2440f02892397a847d087a5a1",
+    "mode": 493,
+    "completed_build_receipt": "/private/tmp/mech-related-native-dictionary-seed-frames-runners-20261108-v1/compiler-build.json",
+    "lossless_verified": true
+  },
+  {
+    "original": "/private/tmp/mech-related-paired-scalar-selects-20261107-v1/compiler",
+    "archive": "/private/tmp/mech-related-paired-scalar-selects-20261107-v1/compiler.gz",
+    "original_sha256": "f5dce6038a514c151d55d0d3f5707a4dd753665501a360982c9c372bd54395ea",
+    "original_bytes": 107438064,
+    "archive_bytes": 16047080,
+    "archive_sha256": "8de947cfa5b1d0632441a61c3ce898196b120f765a107e6770f358baaa2eb893",
+    "mode": 493,
+    "completed_build_receipt": "/private/tmp/mech-related-paired-scalar-selects-20261107-v1/compiler.build.json",
+    "lossless_verified": true
+  },
+  {
+    "original": "/private/tmp/mech-related-llvm-native-image-opt-20261107-v2/compiler",
+    "archive": "/private/tmp/mech-related-llvm-native-image-opt-20261107-v2/compiler.gz",
+    "original_sha256": "013c615f3c6c01d9697773f4dc6fa1fac71c6d959bab2d2fd99c7233eee3cb58",
+    "original_bytes": 107436864,
+    "archive_bytes": 16048514,
+    "archive_sha256": "508e33a0e8fc983c1610eae0f666710fb2ab30f7554b4c19789c45bc6b82bfe6",
+    "mode": 493,
+    "completed_build_receipt": "/private/tmp/mech-related-llvm-native-image-opt-20261107-v2/compiler.build.json",
+    "lossless_verified": true
+  },
+  {
+    "original": "/private/tmp/mech-related-llvm-typed-ssa-opt-20261107-v4/compiler",
+    "archive": "/private/tmp/mech-related-llvm-typed-ssa-opt-20261107-v4/compiler.gz",
+    "original_sha256": "efd25f1044c02b5631941885596fd1fbc24933b12ffea21724ddf246a8910469",
+    "original_bytes": 107383776,
+    "archive_bytes": 16048203,
+    "archive_sha256": "988e2f3565cb6da9a2777d2e19e4cd286531a30c420a9a2cf0403880d131d635",
+    "mode": 493,
+    "completed_build_receipt": "/private/tmp/mech-related-llvm-typed-ssa-opt-20261107-v4/compiler.build.json",
+    "lossless_verified": true
+  },
+  {
+    "original": "/private/tmp/mech-related-llvm-typed-ssa-opt-20261107-v6/compiler",
+    "archive": "/private/tmp/mech-related-llvm-typed-ssa-opt-20261107-v6/compiler.gz",
+    "original_sha256": "851027dd8c58c76fd3b6542e7a2c8eb2fda57612f9d30021bd587350252a6189",
+    "original_bytes": 107368992,
+    "archive_bytes": 16048540,
+    "archive_sha256": "5bc025c7137531cc315ded508d78b2c6bb57c6a7104845cf50c05fca0332e2c1",
+    "mode": 493,
+    "completed_build_receipt": "/private/tmp/mech-related-llvm-typed-ssa-opt-20261107-v6/compiler.build.json",
+    "lossless_verified": true
+  }
+]

@@ -1,0 +1,465 @@
+{
+  "rows": [
+    {
+      "name": "rust",
+      "file_bytes": 385360,
+      "whole_executable_text_bytes": 269016,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 344064\n\tSection __text: 269016\n\tSection __stubs: 816\n\tSection __stub_helper: 840\n\tSection __const: 18616\n\tSection __gcc_except_tab: 3996\n\tSection __cstring: 7347\n\tSection __unwind_info: 4376\n\tSection __eh_frame: 22656\n\ttotal 327663\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 9416\n\ttotal 9432\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 544\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3409\nSegment __LINKEDIT: 16384\ntotal 4295360512\n"
+    },
+    {
+      "name": "rust-preinitialized",
+      "file_bytes": 504544,
+      "whole_executable_text_bytes": 371884,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 458752\n\tSection __text: 371884\n\tSection __stubs: 1104\n\tSection __stub_helper: 1128\n\tSection __const: 19792\n\tSection __gcc_except_tab: 4656\n\tSection __cstring: 12560\n\tSection __unwind_info: 5632\n\tSection __eh_frame: 24328\n\ttotal 441084\nSegment __DATA_CONST: 16384\n\tSection __got: 48\n\tSection __mod_init_func: 8\n\tSection __const: 15744\n\ttotal 15800\nSegment __DATA: 212992\n\tSection __la_symbol_ptr: 736\n\tSection __data: 8064\n\tSection __thread_vars: 288\n\tSection __thread_data: 40\n\tSection __thread_bss: 154 (zerofill)\n\tSection __bss: 198528 (zerofill)\n\tSection __common: 656 (zerofill)\n\ttotal 208466\nSegment __LINKEDIT: 16384\ntotal 4295671808\n"
+    },
+    {
+      "name": "rust-mech-control-streaming",
+      "file_bytes": 418528,
+      "whole_executable_text_bytes": 299328,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 299328\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29796\n\tSection __gcc_except_tab: 4056\n\tSection __cstring: 8829\n\tSection __unwind_info: 4568\n\tSection __eh_frame: 22880\n\ttotal 371137\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12760\n\ttotal 12776\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-mech-control-u32-casts",
+      "file_bytes": 418528,
+      "whole_executable_text_bytes": 299920,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 299920\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29836\n\tSection __gcc_except_tab: 4056\n\tSection __cstring: 8829\n\tSection __unwind_info: 4584\n\tSection __eh_frame: 22880\n\ttotal 371785\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12864\n\ttotal 12880\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-mech-control-u8-ids-u32",
+      "file_bytes": 418528,
+      "whole_executable_text_bytes": 299904,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 299904\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29836\n\tSection __gcc_except_tab: 4056\n\tSection __cstring: 8829\n\tSection __unwind_info: 4584\n\tSection __eh_frame: 22880\n\ttotal 371769\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12720\n\ttotal 12736\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-scan-only",
+      "file_bytes": 418528,
+      "whole_executable_text_bytes": 299704,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 299704\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29868\n\tSection __gcc_except_tab: 4056\n\tSection __cstring: 8829\n\tSection __unwind_info: 4592\n\tSection __eh_frame: 22880\n\ttotal 371609\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12696\n\ttotal 12712\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-ordered",
+      "file_bytes": 418528,
+      "whole_executable_text_bytes": 301644,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301644\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29868\n\tSection __gcc_except_tab: 4056\n\tSection __cstring: 8829\n\tSection __unwind_info: 4592\n\tSection __eh_frame: 22880\n\ttotal 373549\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 13128\n\ttotal 13144\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-mask-reuse",
+      "file_bytes": 418528,
+      "whole_executable_text_bytes": 299656,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 299656\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29868\n\tSection __gcc_except_tab: 4056\n\tSection __cstring: 8829\n\tSection __unwind_info: 4592\n\tSection __eh_frame: 22880\n\ttotal 371561\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12696\n\ttotal 12712\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-ordered-mask",
+      "file_bytes": 418528,
+      "whole_executable_text_bytes": 301688,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301688\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29868\n\tSection __gcc_except_tab: 4056\n\tSection __cstring: 8829\n\tSection __unwind_info: 4592\n\tSection __eh_frame: 22880\n\ttotal 373593\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 13128\n\ttotal 13144\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-ordered-mask-tables",
+      "file_bytes": 418528,
+      "whole_executable_text_bytes": 301668,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301668\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 30644\n\tSection __gcc_except_tab: 4056\n\tSection __cstring: 8829\n\tSection __unwind_info: 4592\n\tSection __eh_frame: 22880\n\ttotal 374349\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 13032\n\ttotal 13048\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-apple-m3",
+      "file_bytes": 385376,
+      "whole_executable_text_bytes": 270344,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 344064\n\tSection __text: 270344\n\tSection __stubs: 816\n\tSection __stub_helper: 840\n\tSection __const: 18616\n\tSection __gcc_except_tab: 3992\n\tSection __cstring: 7347\n\tSection __unwind_info: 4504\n\tSection __eh_frame: 23000\n\ttotal 329459\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 9416\n\ttotal 9432\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 544\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3409\nSegment __LINKEDIT: 16384\ntotal 4295360512\n"
+    },
+    {
+      "name": "rust-preinitialized-apple-m3",
+      "file_bytes": 504624,
+      "whole_executable_text_bytes": 374212,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 458752\n\tSection __text: 374212\n\tSection __stubs: 1104\n\tSection __stub_helper: 1128\n\tSection __const: 19856\n\tSection __gcc_except_tab: 4652\n\tSection __cstring: 12654\n\tSection __unwind_info: 5808\n\tSection __eh_frame: 25576\n\ttotal 444990\nSegment __DATA_CONST: 16384\n\tSection __got: 48\n\tSection __mod_init_func: 8\n\tSection __const: 16000\n\ttotal 16056\nSegment __DATA: 212992\n\tSection __la_symbol_ptr: 736\n\tSection __data: 8064\n\tSection __thread_vars: 288\n\tSection __thread_data: 40\n\tSection __thread_bss: 154 (zerofill)\n\tSection __bss: 198528 (zerofill)\n\tSection __common: 656 (zerofill)\n\ttotal 208466\nSegment __LINKEDIT: 16384\ntotal 4295671808\n"
+    },
+    {
+      "name": "rust-mech-control-streaming-apple-m3",
+      "file_bytes": 418544,
+      "whole_executable_text_bytes": 301196,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301196\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29796\n\tSection __gcc_except_tab: 4044\n\tSection __cstring: 8829\n\tSection __unwind_info: 4712\n\tSection __eh_frame: 23216\n\ttotal 373473\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12760\n\ttotal 12776\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-mech-control-u32-casts-apple-m3",
+      "file_bytes": 418544,
+      "whole_executable_text_bytes": 301196,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301196\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29796\n\tSection __gcc_except_tab: 4044\n\tSection __cstring: 8829\n\tSection __unwind_info: 4712\n\tSection __eh_frame: 23216\n\ttotal 373473\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12760\n\ttotal 12776\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-mech-control-u8-ids-u32-apple-m3",
+      "file_bytes": 418544,
+      "whole_executable_text_bytes": 301196,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301196\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29796\n\tSection __gcc_except_tab: 4044\n\tSection __cstring: 8829\n\tSection __unwind_info: 4712\n\tSection __eh_frame: 23216\n\ttotal 373473\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12760\n\ttotal 12776\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-scan-only-apple-m3",
+      "file_bytes": 418544,
+      "whole_executable_text_bytes": 301196,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301196\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29796\n\tSection __gcc_except_tab: 4044\n\tSection __cstring: 8829\n\tSection __unwind_info: 4712\n\tSection __eh_frame: 23216\n\ttotal 373473\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12760\n\ttotal 12776\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-ordered-apple-m3",
+      "file_bytes": 418544,
+      "whole_executable_text_bytes": 301196,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301196\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29796\n\tSection __gcc_except_tab: 4044\n\tSection __cstring: 8829\n\tSection __unwind_info: 4712\n\tSection __eh_frame: 23216\n\ttotal 373473\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12760\n\ttotal 12776\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-mask-reuse-apple-m3",
+      "file_bytes": 418544,
+      "whole_executable_text_bytes": 301196,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301196\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29796\n\tSection __gcc_except_tab: 4044\n\tSection __cstring: 8829\n\tSection __unwind_info: 4712\n\tSection __eh_frame: 23216\n\ttotal 373473\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12760\n\ttotal 12776\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-ordered-mask-apple-m3",
+      "file_bytes": 418544,
+      "whole_executable_text_bytes": 301196,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301196\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29796\n\tSection __gcc_except_tab: 4044\n\tSection __cstring: 8829\n\tSection __unwind_info: 4712\n\tSection __eh_frame: 23216\n\ttotal 373473\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12760\n\ttotal 12776\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-ordered-mask-tables-apple-m3",
+      "file_bytes": 418544,
+      "whole_executable_text_bytes": 301196,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 376832\n\tSection __text: 301196\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 29796\n\tSection __gcc_except_tab: 4044\n\tSection __cstring: 8829\n\tSection __unwind_info: 4712\n\tSection __eh_frame: 23216\n\ttotal 373473\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12760\n\ttotal 12776\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295393280\n"
+    },
+    {
+      "name": "rust-ordered-mask-tables256",
+      "file_bytes": 435056,
+      "whole_executable_text_bytes": 301576,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 393216\n\tSection __text: 301576\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 32948\n\tSection __gcc_except_tab: 4056\n\tSection __cstring: 8829\n\tSection __unwind_info: 4592\n\tSection __eh_frame: 22880\n\ttotal 376561\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12912\n\ttotal 12928\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295409664\n"
+    },
+    {
+      "name": "rust-ordered-mask-tables256-apple-m3",
+      "file_bytes": 435072,
+      "whole_executable_text_bytes": 303240,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 393216\n\tSection __text: 303240\n\tSection __stubs: 828\n\tSection __stub_helper: 852\n\tSection __const: 32948\n\tSection __gcc_except_tab: 4044\n\tSection __cstring: 8829\n\tSection __unwind_info: 4744\n\tSection __eh_frame: 23280\n\ttotal 378765\nSegment __DATA_CONST: 16384\n\tSection __got: 16\n\tSection __const: 12912\n\ttotal 12928\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 552\n\tSection __data: 2496\n\tSection __thread_vars: 120\n\tSection __thread_data: 32\n\tSection __thread_bss: 33 (zerofill)\n\tSection __bss: 184 (zerofill)\n\ttotal 3417\nSegment __LINKEDIT: 16384\ntotal 4295409664\n"
+    },
+    {
+      "name": "mech-ir295-histogram-reuse-4",
+      "file_bytes": 17059856,
+      "whole_executable_text_bytes": 7355320,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13647872\n\tSection __text: 7355320\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 279296\n\tSection __const: 5044264\n\tSection __cstring: 47866\n\tSection __unwind_info: 129736\n\tSection __eh_frame: 777976\n\ttotal 13636570\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 133816\n\ttotal 133832\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3024\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4769\nSegment __LINKEDIT: 3260416\ntotal 4312039424\n",
+      "native_program": {
+        "code_bytes": 1031388,
+        "main_stack_bytes": 1568,
+        "max_individual_native_frame_bytes": 1568,
+        "function_count": 49,
+        "typed_IR": 295,
+        "work_policy": 116,
+        "object_bytes": 5781112
+      }
+    },
+    {
+      "name": "mech-ir297-closed-constructors-4",
+      "file_bytes": 17057424,
+      "whole_executable_text_bytes": 7359544,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13647872\n\tSection __text: 7359544\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 279784\n\tSection __const: 5044328\n\tSection __cstring: 48158\n\tSection __unwind_info: 129680\n\tSection __eh_frame: 778108\n\ttotal 13641714\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 133800\n\ttotal 133816\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3024\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4769\nSegment __LINKEDIT: 3260416\ntotal 4312039424\n",
+      "native_program": {
+        "code_bytes": 1031388,
+        "main_stack_bytes": 1568,
+        "max_individual_native_frame_bytes": 1568,
+        "function_count": 49,
+        "typed_IR": 297,
+        "work_policy": 116,
+        "object_bytes": 5781112
+      }
+    },
+    {
+      "name": "mech-ir302-private-write-first-4",
+      "file_bytes": 17092928,
+      "whole_executable_text_bytes": 7386804,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13680640\n\tSection __text: 7386804\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 281840\n\tSection __const: 5045160\n\tSection __cstring: 47390\n\tSection __unwind_info: 130296\n\tSection __eh_frame: 781692\n\ttotal 13675294\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 134536\n\ttotal 134552\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3260416\ntotal 4312072192\n",
+      "native_program": {
+        "code_bytes": 1031144,
+        "main_stack_bytes": 1584,
+        "max_individual_native_frame_bytes": 1584,
+        "function_count": 49,
+        "typed_IR": 302,
+        "work_policy": 119,
+        "object_bytes": 5780800
+      }
+    },
+    {
+      "name": "mech-ir303-borrowed-map-key-views-4",
+      "file_bytes": 17097728,
+      "whole_executable_text_bytes": 7396696,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13697024\n\tSection __text: 7396696\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 281836\n\tSection __const: 5043776\n\tSection __cstring: 47222\n\tSection __unwind_info: 130632\n\tSection __eh_frame: 782336\n\ttotal 13684610\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 135232\n\ttotal 135248\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312072192\n",
+      "native_program": {
+        "code_bytes": 1031248,
+        "main_stack_bytes": 1584,
+        "max_individual_native_frame_bytes": 1584,
+        "function_count": 49,
+        "typed_IR": 303,
+        "work_policy": 120,
+        "object_bytes": 5780944
+      }
+    },
+    {
+      "name": "mech-ir303-canonical-map-key-control-4",
+      "file_bytes": 17097728,
+      "whole_executable_text_bytes": 7396592,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13697024\n\tSection __text: 7396592\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 281836\n\tSection __const: 5043776\n\tSection __cstring: 47242\n\tSection __unwind_info: 130632\n\tSection __eh_frame: 782336\n\ttotal 13684526\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 135232\n\ttotal 135248\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312072192\n",
+      "native_program": {
+        "code_bytes": 1031144,
+        "main_stack_bytes": 1584,
+        "max_individual_native_frame_bytes": 1584,
+        "function_count": 49,
+        "typed_IR": 303,
+        "work_policy": 120,
+        "object_bytes": 5780840
+      }
+    },
+    {
+      "name": "mech-ir304-generic-native-dictionary-4",
+      "file_bytes": 17127024,
+      "whole_executable_text_bytes": 7410876,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13713408\n\tSection __text: 7410876\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 282216\n\tSection __const: 5044224\n\tSection __cstring: 48522\n\tSection __unwind_info: 130872\n\tSection __eh_frame: 783612\n\ttotal 13702434\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 134904\n\ttotal 134920\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3260416\ntotal 4312104960\n",
+      "native_program": {
+        "code_bytes": 1031248,
+        "main_stack_bytes": 1584,
+        "max_individual_native_frame_bytes": 1584,
+        "function_count": 49,
+        "typed_IR": 304,
+        "work_policy": 121,
+        "object_bytes": 5780944
+      }
+    },
+    {
+      "name": "mech-ir304-canonical-dictionary-control-4",
+      "file_bytes": 17127024,
+      "whole_executable_text_bytes": 7410876,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13713408\n\tSection __text: 7410876\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 282216\n\tSection __const: 5044224\n\tSection __cstring: 48542\n\tSection __unwind_info: 130872\n\tSection __eh_frame: 783612\n\ttotal 13702454\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 134904\n\ttotal 134920\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3260416\ntotal 4312104960\n",
+      "native_program": {
+        "code_bytes": 1031248,
+        "main_stack_bytes": 1584,
+        "max_individual_native_frame_bytes": 1584,
+        "function_count": 49,
+        "typed_IR": 304,
+        "work_policy": 121,
+        "object_bytes": 5780944
+      }
+    },
+    {
+      "name": "mech-ir305-native-dictionary-seed-frames-4",
+      "file_bytes": 17127264,
+      "whole_executable_text_bytes": 7428628,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13729792\n\tSection __text: 7428628\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 284096\n\tSection __const: 5047936\n\tSection __cstring: 49902\n\tSection __unwind_info: 130560\n\tSection __eh_frame: 782376\n\ttotal 13725610\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 135864\n\ttotal 135880\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312104960\n",
+      "native_program": {
+        "code_bytes": 1031168,
+        "main_stack_bytes": 1600,
+        "max_individual_native_frame_bytes": 1600,
+        "function_count": 49,
+        "typed_IR": 305,
+        "work_policy": 122,
+        "object_bytes": 5780864
+      }
+    },
+    {
+      "name": "mech-ir305-canonical-seed-control-4",
+      "file_bytes": 17127264,
+      "whole_executable_text_bytes": 7428708,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13729792\n\tSection __text: 7428708\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 284096\n\tSection __const: 5047936\n\tSection __cstring: 49922\n\tSection __unwind_info: 130560\n\tSection __eh_frame: 782376\n\ttotal 13725710\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 135864\n\ttotal 135880\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312104960\n",
+      "native_program": {
+        "code_bytes": 1031248,
+        "main_stack_bytes": 1584,
+        "max_individual_native_frame_bytes": 1584,
+        "function_count": 49,
+        "typed_IR": 305,
+        "work_policy": 122,
+        "object_bytes": 5780944
+      }
+    },
+    {
+      "name": "mech-ir306-borrowed-dictionary-values-4",
+      "file_bytes": 17147792,
+      "whole_executable_text_bytes": 7446012,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13762560\n\tSection __text: 7446012\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 285316\n\tSection __const: 5048896\n\tSection __cstring: 49042\n\tSection __unwind_info: 130816\n\tSection __eh_frame: 784084\n\ttotal 13746278\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136104\n\ttotal 136120\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3227648\ntotal 4312121344\n",
+      "native_program": {
+        "code_bytes": 1031168,
+        "main_stack_bytes": 1600,
+        "max_individual_native_frame_bytes": 1600,
+        "function_count": 49,
+        "typed_IR": 306,
+        "work_policy": 123,
+        "object_bytes": 5780864
+      }
+    },
+    {
+      "name": "mech-ir306-owned-dictionary-values-control-4",
+      "file_bytes": 17147792,
+      "whole_executable_text_bytes": 7446012,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13762560\n\tSection __text: 7446012\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 285316\n\tSection __const: 5048896\n\tSection __cstring: 49066\n\tSection __unwind_info: 130816\n\tSection __eh_frame: 784084\n\ttotal 13746302\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136104\n\ttotal 136120\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3227648\ntotal 4312121344\n",
+      "native_program": {
+        "code_bytes": 1031168,
+        "main_stack_bytes": 1600,
+        "max_individual_native_frame_bytes": 1600,
+        "function_count": 49,
+        "typed_IR": 306,
+        "work_policy": 123,
+        "object_bytes": 5780864
+      }
+    },
+    {
+      "name": "mech-ir307-fixed-key-native-loops-4",
+      "file_bytes": 17182304,
+      "whole_executable_text_bytes": 7468512,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13778944\n\tSection __text: 7468512\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 286384\n\tSection __const: 5050816\n\tSection __cstring: 48536\n\tSection __unwind_info: 131336\n\tSection __eh_frame: 786900\n\ttotal 13774596\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136680\n\ttotal 136696\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312154112\n",
+      "native_program": {
+        "code_bytes": 1035256,
+        "main_stack_bytes": 1568,
+        "max_individual_native_frame_bytes": 1568,
+        "function_count": 49,
+        "typed_IR": 307,
+        "work_policy": 124,
+        "object_bytes": 5786040
+      }
+    },
+    {
+      "name": "mech-ir307-key-loop-callback-control-4",
+      "file_bytes": 17182304,
+      "whole_executable_text_bytes": 7468260,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13778944\n\tSection __text: 7468260\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 286384\n\tSection __const: 5050816\n\tSection __cstring: 48560\n\tSection __unwind_info: 131336\n\tSection __eh_frame: 786900\n\ttotal 13774368\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136680\n\ttotal 136696\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312154112\n",
+      "native_program": {
+        "code_bytes": 1035004,
+        "main_stack_bytes": 1584,
+        "max_individual_native_frame_bytes": 1584,
+        "function_count": 49,
+        "typed_IR": 307,
+        "work_policy": 124,
+        "object_bytes": 5785792
+      }
+    },
+    {
+      "name": "mech-ir308-numeric-owner-handoff-4",
+      "file_bytes": 17182256,
+      "whole_executable_text_bytes": 7468640,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13778944\n\tSection __text: 7468640\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 286384\n\tSection __const: 5050816\n\tSection __cstring: 48420\n\tSection __unwind_info: 131352\n\tSection __eh_frame: 786900\n\ttotal 13774624\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136648\n\ttotal 136664\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312154112\n",
+      "native_program": {
+        "code_bytes": 1034972,
+        "main_stack_bytes": 1568,
+        "max_individual_native_frame_bytes": 1568,
+        "function_count": 49,
+        "typed_IR": 308,
+        "work_policy": 125,
+        "object_bytes": 5786040
+      }
+    },
+    {
+      "name": "mech-ir308-owner-handoff-disabled-4",
+      "file_bytes": 17182256,
+      "whole_executable_text_bytes": 7468640,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13778944\n\tSection __text: 7468640\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 286384\n\tSection __const: 5050816\n\tSection __cstring: 48444\n\tSection __unwind_info: 131352\n\tSection __eh_frame: 786900\n\ttotal 13774648\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136648\n\ttotal 136664\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312154112\n",
+      "native_program": {
+        "code_bytes": 1035256,
+        "main_stack_bytes": 1568,
+        "max_individual_native_frame_bytes": 1568,
+        "function_count": 49,
+        "typed_IR": 308,
+        "work_policy": 125,
+        "object_bytes": 5786040
+      }
+    },
+    {
+      "name": "mech-ir309-completed-key-additions-4",
+      "file_bytes": 17182272,
+      "whole_executable_text_bytes": 7467232,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13778944\n\tSection __text: 7467232\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 286384\n\tSection __const: 5050816\n\tSection __cstring: 48652\n\tSection __unwind_info: 131360\n\tSection __eh_frame: 786900\n\ttotal 13773456\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136648\n\ttotal 136664\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312154112\n",
+      "native_program": {
+        "code_bytes": 1033864,
+        "main_stack_bytes": 1568,
+        "max_individual_native_frame_bytes": 1568,
+        "function_count": 49,
+        "typed_IR": 309,
+        "work_policy": 125,
+        "object_bytes": 5784632
+      }
+    },
+    {
+      "name": "mech-ir309-key-additions-disabled-4",
+      "file_bytes": 17182272,
+      "whole_executable_text_bytes": 7468640,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13778944\n\tSection __text: 7468640\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 286384\n\tSection __const: 5050816\n\tSection __cstring: 48652\n\tSection __unwind_info: 131360\n\tSection __eh_frame: 786900\n\ttotal 13774864\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136648\n\ttotal 136664\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312154112\n",
+      "native_program": {
+        "code_bytes": 1034972,
+        "main_stack_bytes": 1568,
+        "max_individual_native_frame_bytes": 1568,
+        "function_count": 49,
+        "typed_IR": 309,
+        "work_policy": 125,
+        "object_bytes": 5786040
+      }
+    },
+    {
+      "name": "mech-ir310-late-key-additions-4",
+      "file_bytes": 17182272,
+      "whole_executable_text_bytes": 7464160,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13778944\n\tSection __text: 7464160\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 286384\n\tSection __const: 5050816\n\tSection __cstring: 48072\n\tSection __unwind_info: 131352\n\tSection __eh_frame: 786900\n\ttotal 13769796\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136648\n\ttotal 136664\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312154112\n",
+      "native_program": {
+        "code_bytes": 1030828,
+        "main_stack_bytes": 1568,
+        "max_individual_native_frame_bytes": 1568,
+        "function_count": 49,
+        "typed_IR": 310,
+        "work_policy": 125,
+        "object_bytes": 5781560
+      }
+    },
+    {
+      "name": "mech-ir310-key-additions-disabled-4",
+      "file_bytes": 17182256,
+      "whole_executable_text_bytes": 7468640,
+      "size_tool": "/usr/bin/size -m",
+      "size_stdout": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 13778944\n\tSection __text: 7468640\n\tSection __stubs: 1044\n\tSection __stub_helper: 1068\n\tSection __gcc_except_tab: 286384\n\tSection __const: 5050816\n\tSection __cstring: 48072\n\tSection __unwind_info: 131352\n\tSection __eh_frame: 786900\n\ttotal 13774276\nSegment __DATA_CONST: 147456\n\tSection __got: 16\n\tSection __const: 136648\n\ttotal 136664\nSegment __DATA: 16384\n\tSection __la_symbol_ptr: 696\n\tSection __data: 3032\n\tSection __thread_vars: 312\n\tSection __thread_data: 32\n\tSection __thread_bss: 465 (zerofill)\n\tSection __common: 96 (zerofill)\n\tSection __bss: 144 (zerofill)\n\ttotal 4777\nSegment __LINKEDIT: 3244032\ntotal 4312154112\n",
+      "native_program": {
+        "code_bytes": 1034972,
+        "main_stack_bytes": 1568,
+        "max_individual_native_frame_bytes": 1568,
+        "function_count": 49,
+        "typed_IR": 310,
+        "work_policy": 125,
+        "object_bytes": 5786040
+      }
+    }
+  ],
+  "stack_is_per_function_not_peak": true,
+  "native_program_excludes_runtime": true,
+  "retained_control_sizes_reused_from_verified_unchanged_executables": true
+}

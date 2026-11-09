@@ -1,0 +1,21 @@
+{
+  "all_nontiming_fields_exact": true,
+  "rows": 133,
+  "comparisons": [
+    {
+      "kind": "scalar",
+      "rows": 128,
+      "all_nontiming_fields_exact": true,
+      "parent": "/private/tmp/mech-related-completed-key-additions-regressions-20261108-v1/scalar-run.json",
+      "current": "/private/tmp/mech-related-late-key-additions-regressions-20261108-v2/scalar-run.json"
+    },
+    {
+      "kind": "one-kib",
+      "rows": 5,
+      "all_nontiming_fields_exact": true,
+      "parent": "/private/tmp/mech-related-completed-key-additions-regressions-20261108-v1/one-kib-run.json",
+      "current": "/private/tmp/mech-related-late-key-additions-regressions-20261108-v2/one-kib-run.json"
+    }
+  ],
+  "includes_allocation_counts_requested_bytes_work_visits": true
+}
