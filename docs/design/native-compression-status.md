@@ -1,5 +1,11 @@
 # Native compression milestone
 
+**Current standings:11 of25 complete compression cases are faster than Roc.**
+The wins span8/32/64/128/256/320/1024-byte inputs; larger cases remain above1x.
+The [standing scoreboard](native-compression-scoreboard.md) lists every case,
+all current wins, crossings above/below1x and the latest regressions. Update it
+after every measured candidate; preserve earlier checkpoint reports and data.
+
 ## R242: successful phase exits transfer dead current owner tokens
 
 Periodic33,027B improves1.652601x->1.627365x reference,1.5270% in pooled
