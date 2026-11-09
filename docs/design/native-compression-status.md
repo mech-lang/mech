@@ -1,5 +1,32 @@
 # Native compression milestone
 
+## R229: reuse synchronous phase argument/result storage
+
+Retain the four-file compiler experiment. Two disjoint invocation-local packets
+replace268 slots across134 phases. Root stack **86736→55088B**, root text
+**6781056→5649872B** and worker **7762616→6623288B**. All136 numeric/map bodies
+and metadata remain identical; native-call count stays50972. Smaller stack
+offsets remove147445 `mov`,130541 `movk` and4810 unconditional branch instructions,
+accounting for the complete1131184B text saving. Static stack access count stays
+441725. This changes caller transport, not source work or allocation sites.
+
+All25 unchanged gates pass; geometric block means improve **3.136%**. Natural32
+**2.344085×→2.279283×** reference,periodic **2.157944×→2.054242×**,repeated
+**2.020157×→1.933865×**,random **3.006009×→2.837767×**,distribution16
+**2.956251×→2.805722×**,eight **0.515418×→0.500720×**. Instructions/cycles fall
+onall25; random instructions−21.086%,natural−10.453%. Heap/copy/zero/peak fields
+match. Keep two adverse stored-only block means and one adverse point median.
+
+684 maintained,3800 compiled and2964 ordinary-native controls pass,including both
+packet-size orders,earlier scalar results live across a later call,late rejection,
+prior outputs/aliases and retry. Same seven inherited exclusions. Fresh24514 wall/
+102369 actual-PC calls and all2248 public hashes/numerical replay verify. The
+frozen parent rejects an invalid new test spelling; corrected existing syntax
+needs no parser change. NormalIR215 and source stay unchanged; R225 is separate.
+Next wider matching and a bounded inventory of remaining caller scratch.
+[Proof,source,pins,all25 results and evidence](native-shared-phase-storage.md).
+
+
 ## R228: direct stores to existing private cells
 
 Retain the two-file compiler experiment over R227. Existing current-view private
