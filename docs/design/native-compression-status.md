@@ -1,5 +1,16 @@
 # Native compression milestone
 
+## R224: fixed-level runtime-input comparison confirmed
+
+The reference now has level12 fixed at compile time and receives runtime input,matching Mech. Both workers persist, use the same pinned Rust Instant and miniz validation, warm up for200ms per case and alternate in24 balanced blocks. Both hold actual input and prepared-output aliases; original prefixes/capacities and distinct returned backing are checked. Complete scratch construction/compression/cleanup stay timed. Historical runtime-level/embedded-input/consumed-output reference denominators remain separately published. No compiler or algorithm change is included.
+
+The eight-byte win survives: **0.528194×** reference by median, **0.542406×** by block means. Natural32 is2.466172×,periodic2.117953×,repeated1.973199×,random3.018290×,distribution16 2.951727×. Ten original cases have lower block means. Natural1024 is borderline (median0.9994×,block mean1.0126×),not a clear eleventh win. The three stored-only reference medians are now nonzero; Mech is2.3–2.8× slower by block means there,at sub-microsecond times. Keep all20 cases.
+
+All20 original and five new held-out cases pass exact bytes,independent inflate and aliases through **131073 bytes**. Window boundaries32767/32768,slides at65537,random65537 and mixed131073 inputs are included.108148 primary calls/108048 retained observations,1168522 checked warmup calls and5120 historical reference calls are retained. All190 downloaded evidence files and numerical replay verify. The Mech compression Object is byte-identical to R223; maintained normalIR215 remains unchanged. No new compiler speedup or fresh matched-reference hardware-counter claim.
+
+The extra ordinary resource contract is not a prerequisite for this standalone comparison. Next:the brief's two duplicate cache/header bindings are compiled as an isolated source control; measure all25 cases before generic phase range/shape proof reuse. [Matched protocol,all25 distributions,exact pins and evidence](native-matched-compression-comparison.md).
+
+
 ## R223: canonical matrix fallback indexing repaired
 
 The experimental root now shares the numeric emitter's logical-to-physical ordinal translation for packed reads and indexed replacement. Original bounds/error order, static-vector fast path, generic current shape, ownership/copy/unchanged behavior and genuine aliases remain. Frozen R222 original/decoded write probes fail the independent/resident oracle before the repair; both now pass. All134 numeric and2 word-map routines retain byte-identical machine code and metadata. Three archived compiler files change; maintained normalIR215 remains unchanged.
