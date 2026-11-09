@@ -1,5 +1,35 @@
 # Native compression milestone
 
+## R242: successful phase exits transfer dead current owner tokens
+
+Periodic33,027B improves1.652601x->1.627365x reference,1.5270% in pooled
+balanced block means; both fixed cohorts improve. Eight regresses0.510449x
+->0.522129x. All25 inputs/sizes are timed after this change:11 pooled block
+means are slower, including random256 (+1.8336%) and distribution16 (+0.1814%).
+Initial eight block latency rises5.3197%, failing the old1.05 gate; confirmation
+falls0.3836%, and pooled gates pass25/25. Preserve these contrary outcomes.
+The user's prospective periodic-primary/eight<=1x rule retains the candidate.
+
+Existing exact current packet/word identity and successful-exit liveness permit
+one dead owner token to move into its result. The separate witness observes33205
+nonnull identical moves per periodic compression. Shared aliases and growth keep
+their current ownership behavior; failed calls leave the original path intact.
+Root text shrinks23336B, stack is unchanged, all136 numeric/map bodies match.
+Periodic instructions fall1.9581%, cycles2.3491%; all25 allocation/copy/peak fields
+are equal. This is an ownership-transport improvement, not an allocation win.
+
+703 maintained tests,5788 native matching controls,416 boundary controls and50
+complete smokes pass. The maintained test root uses opt1, compiler/producer opt3;
+seven inherited exclusions remain. Selected growth/live-alias controls execute
+the change; two fanout sources remain inherited unselected fallback controls.
+Exact source/observations, eleven adverse rows, setup failures and their fixes
+are retained. OrdinaryIR215/standalone contract omissions remain unchanged.
+
+Another38.55% of current periodic time must disappear. Next trace fixed array
+geometry through allocation and phase result transport; keep current pointers,
+general matrix fallback, all25 timings and every adverse row explicit.
+[All25, proof, commands, failures and evidence](native-phase-exit-owner-transfer.md).
+
 ## R241: periodic input is now the primary parity target
 
 The user prioritizes periodic33,027B toward<=1x before moving to other cases;
