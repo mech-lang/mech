@@ -1,5 +1,27 @@
 # Native compression milestone
 
+## R236: demanded low-word arithmetic, with mixed timing tradeoffs
+
+Retain the generic five-file experiment over R234 under the predeclared gates.
+Both full cohorts and pooled 48 pass all 25 unchanged point/block 1.05 gates;
+geometric gains are 0.0619%, 0.0727%, pooled **0.1793%**. Natural32
+**2.254849×→2.251962×** reference changes little; periodic
+**1.670354×→1.714871×**, repeated **1.581205×→1.622047×**, random
+**2.783315×→2.852892×** regress. Eight **0.499641×→0.481110×** improves.
+Preserve all ten adverse block means, eight adverse instruction and fifteen
+adverse cycle medians. This is not uniform larger-input progress.
+
+178 pure wrapping/mask sites narrow to 32 bits; 33 numeric bodies change.
+Root text falls 3,484 B while its stack rises 96 B; 103 other routines stay identical.
+696 maintained tests / 8,360 compiled source controls / 603 fresh resident calls
+pass. Allocation/copy fields match. Fresh 25,270 wall / 106,514 PC calls and 1,757
+public hashes/replay verify. Normal IR215 and omitted ordinary contracts remain.
+Natural32 is 97.6815% generated and 0.8311% host in wall samples; 2,570/5,362 PC
+samples lie in the path scans. Next reproduce remaining loop-state dispatch
+and inspect actual incoming edge facts before any pure-control threading.
+R235 packet flags and R225 source bindings stay uncombined.
+[All25, exact patch, tradeoffs and next witness](native-low-word-arithmetic.md).
+
 ## R235: qualified argument-load experiment stays archived
 
 Keep R234 as the retained compiler. The six-file candidate removes 298 static
