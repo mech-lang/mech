@@ -1,5 +1,33 @@
 # Native compression milestone
 
+## R231: branch directly on vector difference bits
+
+Retain the two-file compiler experiment. The same nine guarded vector probes
+extract and OR two U64 lanes, then branch on nonzero, avoiding canonical Bool
+materialization for a private branch. Actual ARM64 removes two instructions per
+probe, 18 instructions / 72 B in total. Root bytes, 133 other specialized bodies,
+all frames, heap/copy metrics and the 6,623,288 B worker remain unchanged.
+
+Both predeclared complete cohorts and all 48 pooled blocks pass every unchanged
+1.05 gate across all 25 inputs. Pooled geometric improvement is **1.550%**.
+Periodic **1.785572×→1.714551×** reference (−3.977%), repeated
+**1.680338×→1.617311×** (−3.751%), natural text
+**2.313231×→2.299463×** (−0.595%), random **2.804937×→2.787642×**.
+Eight bytes measures **0.513047×→0.499426×**, with essentially unchanged
+instructions; no additional tiny-case algorithmic saving is claimed. Keep the
+one-stored +0.413% block mean and five adverse cycle cases.
+
+686 maintained tests and 5,788 fresh native/oracle source controls pass. The
+149,760 distinct high/low-bit, alignment and tail combinations run twice across
+focused/full tests. Focused resident observations are explicitly reused from
+byte-pinned R230 source/engine records; they are not counted as newly executed.
+Fresh 25,338 wall / 103,556 current-PC calls and all 1,416 public file hashes /
+numerical replay verify. The exporter’s obsolete required-client check was
+corrected; its failed receipt remains. Normal IR215 / extra ordinary contract
+and R225 source separation stay unchanged. Next measure scalar peeling and a
+dedicated wider-loop header, preserving the original mismatch/tail state.
+[All 25 cases, proof, source, pins and receipts](native-direct-vector-branch.md).
+
 ## R230: compare two proved immutable words at once
 
 Retain the general guarded loop-widening experiment over R229. Nine loops in
