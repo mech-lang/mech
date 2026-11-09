@@ -1,5 +1,26 @@
 # Native compression milestone
 
+## R235: qualified argument-load experiment stays archived
+
+Keep R234 as the retained compiler. The six-file candidate removes 298 static
+input loads and 1,224 B across 89 bodies, but pooled geometric elapsed rises
+**0.827%**. Natural32 improves **2.255569×→2.239070×** reference; periodic
+regresses **1.670905×→1.703978×**, repeated **1.584578×→1.611664×**, random
+**2.787998×→2.835677×**. Eight **0.493009×→0.494791×** also regresses slightly.
+Both full cohorts and all 25 unchanged gates pass; twenty pooled block means
+rise. Eleven instruction medians fall / eleven rise / three tie. All adverse
+observations and the complete qualified patch remain recoverable.
+
+696 maintained / 7,064 native source controls pass, including four new packet
+proof tests and 279 fresh resident calls. Heap/copy/stack and source/algorithm
+stay unchanged; root Object and 47 other bodies stay identical. Fresh 25,184
+wall / 103,919 PC calls and 1,653 public hashes/replay verify. Inherited
+experimental layout debt / seven exclusions and normal IR215 remain explicit.
+A separate C/Rust/actual-retained-code audit establishes masked low32 wrapping
+arithmetic as the next target; no such compiler change or saving is claimed.
+Start it from R234, with its own witness and full matrix before combination.
+[All 25, proof, negative result and next audit](native-input-packet-evaluation.md).
+
 ## R234: reuse already computed guarded scalar reads
 
 Retain the eight-file compiler experiment over R233. Both predeclared complete
