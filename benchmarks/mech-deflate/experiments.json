@@ -46712,6 +46712,139 @@
         "full25_rows": "External hashed primary-results.json and docs/design/native-phase-exit-owner-transfer.md"
       },
       "next": "Trace/reuse independently proved current length/rows/columns through allocation and fixed-view phase calls. Periodic primary, eight<=1x, all25 timed/counted and every adverse row reported."
+    },
+    "243": {
+      "git_parent": "a2dc7c4d635780c274d7d4ce2fec6910d897f4fa",
+      "compiler_control": "R242 6fe370c1cedb7a0ea26b11501e242f89d6aa852c",
+      "decision": {
+        "decision": "Archive R243 as a measured component; keep R242 as the periodic baseline. Preserve the small-case improvements for the next bounded combination, not discard them.",
+        "retained_periodic_control": "R242 6fe370c1cedb7a0ea26b11501e242f89d6aa852c",
+        "primary_case": "33027-periodic-window",
+        "primary_before_reference": 1.6248104368452265,
+        "primary_after_reference": 1.6486625815378533,
+        "periodic_block_percent": 1.4679955366940334,
+        "periodic_both_cohorts_improve": false,
+        "eight_after_reference": 0.48560208528600846,
+        "eight_ceiling": 1.0,
+        "all25_initial_confirmation_pooled_old_gates_pass": true,
+        "below_reference_before": 11,
+        "below_reference_after": 11,
+        "new_below_reference": [],
+        "lost_below_reference": [],
+        "adverse_pooled_block_rows": "All12 retained in external primary-results.json/result-decision.json and tracked full25-case table",
+        "parity_complete": false,
+        "ordinary_contract_restored": false,
+        "next": "Test constant-only helper geometry reuse. Dynamic metadata held across cold growth calls changes hot-loop register allocation; preserve cheap constants without extending unknown current geometry lifetimes. Then measure fixed-view phase propagation separately."
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r243-array-geometry-40a9e631f27c.tar.gz",
+        "sha256": "40a9e631f27cad373465a0884c3aba3e524ccc19dcd41f15dbb40c989470fb5d",
+        "bytes": 5328777,
+        "verified_files": 2149,
+        "numerical_replays": 5
+      },
+      "counter_summary": {
+        "cases": 25,
+        "observed_counter_calls": 5200,
+        "retained_counter_calls": 4800,
+        "instruction_decreases": 17,
+        "instruction_increases": 8,
+        "cycle_decreases": 18,
+        "cycle_increases": 7,
+        "all25_payload_and_heap_fields_identical": true,
+        "scope": "Independent complete-call CPU and allocation cohorts. CPU-time samples are not instruction partitions. RSS/physical are process/lifetime measures, not copied bytes. Allocation-instrumented instructions/cycles are not primary counters."
+      },
+      "qualification": {
+        "maintained_tests": 703,
+        "inherited_exclusions": 7,
+        "features": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "warnings_as_errors": true,
+        "compiler_optimization": 3,
+        "maintained_test_root_optimization": 1,
+        "maintained_test_environment": [
+          "MECH_PRIVATE_INDEXED_CHAINS=1",
+          "MECH_PHASE_OWNER_TRANSFER=1",
+          "MECH_ARRAY_GEOMETRY_FACTS=1"
+        ],
+        "toolchain": "nightly-2026-03-03-aarch64-apple-darwin",
+        "runtime_ABI_tests": 7,
+        "new_runtime_ABI_tests": 3,
+        "new_allocation_geometry_cases": 51,
+        "new_writable_geometry_cases": 240,
+        "runtime_ABI_profile": "opt3 -Dwarnings; -Adead_code only for unused included diagnostic runtime methods",
+        "compiled_matrix_controls": 3400,
+        "matrix_fixtures": 17,
+        "matrix_resident_values": 2924,
+        "matrix_resident_errors": 476,
+        "compiled_boundary_controls": 416,
+        "small_original_decoded_image_pairs": 42,
+        "native_parent_candidate_and_original_decoded_equal": true,
+        "fresh_fanout_resident_calls": 320,
+        "fresh_fanout_resident_values": 236,
+        "fresh_fanout_resident_errors": 72,
+        "inherited_fanout_default_denials": 12,
+        "fanout_phase_selection": "Unselected on both R242 and candidate; these are fallback controls, not newly selected native fanout.",
+        "complete_stream_smokes": 50,
+        "primary_cohorts": 2,
+        "balanced_blocks_each": 24,
+        "counter_observed_calls": 5200,
+        "counter_retained_calls": 4800,
+        "unchanged_source_limits_and_allowances": true,
+        "remaining_semantic_failures": 0,
+        "ordinary_contract_restored": false
+      },
+      "image": {
+        "root_bytes_before": 5630692,
+        "root_bytes_after": 5509508,
+        "root_stack_before": 55152,
+        "root_stack_after": 51264,
+        "changed_path_bodies": 4,
+        "changed_path_total_byte_delta": -64,
+        "unchanged_numeric_map_bodies": 132
+      },
+      "primary": {
+        "targets": {
+          "primary_case": "33027-periodic-window",
+          "pooled_periodic_after_reference": 1.6486625815378533,
+          "periodic_both_cohorts_improve": false,
+          "eight_byte_after_reference": 0.48560208528600846,
+          "eight_byte_within_user1x_ceiling": true,
+          "historical1_05_columns": "diagnostic, latest user prioritizes one case toward parity and allows eight to1x"
+        },
+        "both_cohorts": {
+          "primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 25,
+            "large_geomean_after_over_before": 1.0139152884551874
+          },
+          "confirmation-primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 25,
+            "large_geomean_after_over_before": 1.0138762509702333
+          }
+        },
+        "descriptive_aggregate": {
+          "all25_geomean_after_over_before": 0.9962361304116301,
+          "large11_geomean_after_over_before": 1.014080111242976,
+          "point_pass": 25,
+          "blockmean_pass": 25
+        },
+        "all25_rows": "docs/design/native-array-helper-geometry.md and external hashed primary-results.json"
+      },
+      "retained_periodic_control_unchanged": true,
+      "ordinary_IR": 215,
+      "ordinary_contract_restored": false,
+      "new_branch_or_PR": false,
+      "next": "Test only constant helper-geometry facts to avoid keeping unknown dynamic fields live through cold calls. Preserve small-case wins; all25 measured against both R243 component and retained R242."
     }
   },
   "repository": "mech-lang/mech",
