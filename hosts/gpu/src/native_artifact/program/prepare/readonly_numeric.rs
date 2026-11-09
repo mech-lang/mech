@@ -1493,3 +1493,7 @@ fn register_bound(
     }
     Ok(words.len())
 }
+
+#[cfg(feature = "canonical-native-program")]
+#[path = "completed_element_ranges.rs"]
+pub(in crate::native_artifact) mod completed_element_ranges;

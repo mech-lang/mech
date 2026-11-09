@@ -135,6 +135,11 @@ pub(in crate::native_artifact) struct ProgramMetadata {
 /// Exactly one owned plan and its derived metadata, shared by emission and
 /// source-backed reconstruction. Complete frontiers are identity scratch.
 pub(in crate::native_artifact) struct PreparedNativeProgram {
+    // Compiler-only completed content facts; native image loading never
+    // rederives or transports this cache. It is not runtime access authority.
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) completed_key_additions:
+        readonly_numeric::completed_element_ranges::Layout,
     metadata: ProgramMetadata,
     complete_frontiers: Box<[NativeTextLineRetentionFrontier]>,
 }
@@ -261,8 +266,12 @@ impl PreparedNativeProgram {
         let borrowed_map_keys =
             borrowed_map_keys::Layout::derive(&plan, &buffer_frames, &matrix_map_keys)
                 .map_err(str::to_owned)?;
-        let generic_dictionary = generic_dictionary::Layout::derive(&plan, &map_owner_words, &utf8_reads).map_err(str::to_owned)?;
-        let dictionary_seed_frames = dictionary_seed_frames::Layout::derive(&plan, &map_owner_words).map_err(str::to_owned)?;
+        let generic_dictionary =
+            generic_dictionary::Layout::derive(&plan, &map_owner_words, &utf8_reads)
+                .map_err(str::to_owned)?;
+        let dictionary_seed_frames =
+            dictionary_seed_frames::Layout::derive(&plan, &map_owner_words)
+                .map_err(str::to_owned)?;
         let borrowed_dictionary_values = borrowed_dictionary_values::Layout::derive(
             &plan,
             Some(&map_owner_words),
@@ -272,7 +281,13 @@ impl PreparedNativeProgram {
             &generic_dictionary,
         )
         .map_err(str::to_owned)?;
-        let fixed_key_loops = fixed_key_loops::Layout::derive(&plan,Some(&map_owner_words),&borrowed_dictionary_values,&matrix_map_keys).map_err(str::to_owned)?;
+        let fixed_key_loops = fixed_key_loops::Layout::derive(
+            &plan,
+            Some(&map_owner_words),
+            &borrowed_dictionary_values,
+            &matrix_map_keys,
+        )
+        .map_err(str::to_owned)?;
         let closed_tails = native::program::prepare::tail::Layout::derive(
             &plan,
             &borrowed_strings,
@@ -486,7 +501,12 @@ impl PreparedNativeProgram {
             line_matrices,
             prefix,
         };
+        #[cfg(feature = "canonical-native-program")]
+        let completed_key_additions =
+            readonly_numeric::completed_element_ranges::Layout::derive(&metadata);
         Ok(Self {
+            #[cfg(feature = "canonical-native-program")]
+            completed_key_additions,
             metadata,
             complete_frontiers: line_retention_frontiers.into_boxed_slice(),
         })

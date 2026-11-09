@@ -49,6 +49,7 @@ pub(in crate::native_artifact) struct Report {
     pub proven_checked_increment_writes: Vec<(usize, usize, usize, u32, u32)>,
     pub proven_independent_view_increment_writes: Vec<(usize, usize, usize)>,
     pub proven_scalar_arithmetic: Vec<usize>,
+    pub proven_completed_key_additions: Vec<usize>,
     pub guarded_loop_windows: Vec<super::numeric_loop_windows::Report>,
     pub version_entry_gates: Vec<(usize, usize, Option<usize>)>,
     proven_child_entry_checks: Vec<(usize, super::traversal_facts::Check)>,
@@ -524,6 +525,7 @@ pub(in crate::native_artifact) fn emit_entry(
         proven_checked_increment_writes: Vec::new(),
         proven_independent_view_increment_writes: Vec::new(),
         proven_scalar_arithmetic: Vec::new(),
+        proven_completed_key_additions: Vec::new(),
         guarded_loop_windows: versions.iter().map(|v| v.report(proof)).collect(),
         version_entry_gates: Vec::new(),
         proven_child_entry_checks: Vec::new(),
@@ -1417,6 +1419,13 @@ pub(in crate::native_artifact) fn emit_entry(
                         .collect::<Vec<_>>();
                     let value = if let Some(&known) = traversal.predicates.get(&site) {
                         b.ins().iconst(types::I64, i64::from(known))
+                    } else if controls.enabled(OptimizationPass::CompletedKeyAdditions)
+                        && program
+                            .completed_key_additions
+                            .arithmetic(id, site, *op, operands)
+                    {
+                        report.proven_completed_key_additions.push(site);
+                        primitive(b, Op::U64WrappingAdd, &args, fail)
                     } else if version.is_some_and(|v| !v.captures.is_empty())
                         && traversal.arithmetic(site, *op, operands)
                     {

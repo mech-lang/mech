@@ -51,6 +51,7 @@ mod numeric_boolean_relations;
 mod numeric_induction;
 mod numeric_tree;
 mod numeric_tree_owner_handoff;
+mod completed_key_additions;
 pub(super) mod observe;
 mod ordered_reduction;
 mod ordered_reduction_exhaustion;

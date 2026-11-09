@@ -89,6 +89,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     FixedKeyMapLoops,
     /// Retire same-plan dead canonical pins at a selected tree's first write.
     NumericTreeOwnerHandoff,
+    /// Reuse checked key+1 arithmetic only after its complete source producer.
+    CompletedKeyAdditions,
     /// Test private ownership before loading/comparing an old write target.
     PrivateWritesFirst,
     /// Stronger immutable-cell facts require the guarded-load optimization.
