@@ -1,5 +1,15 @@
 # Production/diagnostic optimization coverage after R256
 
+R258 changes no native operation class: it isolates checked-definition timing
+in the same packed-read geometry adapter.715 maintained/same7 exclusions,
+268800 original/decoded linked controls,162 smokes and12 fresh captures pass;
+source-qualified complete streams stay exact. The full extra ordinary managed
+contract remains omitted. R256 is retained pending the requested explicit
+dynamic-window three-way control. Root predicate refinement in numeric phases
+is only an applicability lead, deferred behind empty-route and completion
+machine witnesses. [Scope, results and remaining work](native-packed-read-ssa.md).
+
+
 R257 is an archived component, not a new retained optimization. It reuses only
 existing current-entry geometry in packed reads and requires the independent
 source-window proof before complete replacement. One of340 numeric definitions
