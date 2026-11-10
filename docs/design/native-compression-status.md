@@ -2,6 +2,16 @@
 
 **Current retained experimental compiler: R250.** The original 25 retain 11 below-reference cases; the 56 prefixes have five in this fresh cohort, including duplicate inputs. All 81 have two-cohort timings in the [scoreboard](native-compression-scoreboard.md). Large-input throughput remains the priority.
 
+## R252: archive broad identity continuation forwarding
+
+Retain R250. The generic pure-SSA route experiment bypasses 1,909 selected edges and introduces 2,201 typed repair parameters. Most aggregate work was already virtual. Root code falls 32.97%, but its frame grows 960 B and the difficult random/text cases do more work. The exact final source reproduces the measured Object/metadata; disabled complete images restore R250. All 136 original routines and seven selected vector bodies are byte-identical.
+
+Both all 81 cohorts pass existing gates and preserve exact outputs/independent inflate/aliases/capacity/cleanup. Nevertheless, random 1 MiB worsens 3.221988x->3.293046x reference (+2.2054% elapsed,+2.5057% instructions), and natural 1MiB2.237932x->2.251347x (+0.5994%,+0.7189%). Eight improves 0.508766x->0.493174x; periodic 33 improves 2.0365%. Keep those useful components and all contrary evidence, without enabling the broad variant. The scoreboard uses the fresh R252 control denominator for retained R250.
+
+707 maintained tests pass with the same seven inherited exclusions; four focused tests contain 3,918 native calls. 3,500 fresh original/decoded source calls include 700 zero trips. Current 1 MiB random samples remain root-heavy (3,541/5,554); text is mostly numeric phases (4,394/5,352). Samples are not instruction or removable-time budgets. Payload and listed whole-heap fields stay equal on all 81 configurations.
+
+Next test current-interval predicate refinement without adding transport parameters, then inspect empty path-reduction transport. Enclosing multi-position cold handoff and the bounded R247 placement control remain separate outstanding work. No ordinary integration or new native operation class is claimed. [Exact patch, all 81 measurements, source, profiles and failure dispositions](native-identity-route-forwarding.md).
+
 ## R251: identity-route and enclosing-region evidence
 
 Retain R250; the diagnostic compiler emits the same complete normal Object and metadata. The current zero-skip route executes 1,048,576 times on random 1 MiB and 1,048,572 times on natural 1 MiB. Four natural nonzero helper visits are near EOF and outside the earlier qualified matching-skip counter; all 81 route counts reconcile with cache headers. Most record construction is already virtual. A 22-instruction relay (21 stack loads/stores) and a separate 97-instruction continuation corridor (96 loads/stores) survive in the actual image. The latter has 455/5,470 random64 running samples, not an instruction or removable-time budget.
