@@ -1,119 +1,117 @@
 # Current compression scoreboard
 
-**Retained experimental compiler: R253.** All 81 balanced elapsed medians and independent instruction/cycle medians improve over the matched R250 control. Every unchanged 1.05 gate passes in both confirmation cohorts, and eight bytes remains below its 1x ceiling. The original 25 retain 11 below-reference configurations; the 56 prefixes have six, including duplicate inputs. The largest winning size remains 4 KiB, now periodic and repeated.
+**Retained experimental compiler: R253. R254 combination archived.** Adding the existing broad identity-forwarding pass after current-predicate proof hurts large random/text in both confirmation cohorts. The source compiler and source algorithm remain unchanged.
 
-The generic current-SSA predicate proof eliminates impossible Boolean branches and their cleanup paths. Root code shrinks 5,623,612 -> 940,264 bytes; the frame shrinks 4,576 B. All 136 existing routines and seven vector bodies stay identical. Additional cleanup alone restores the entire baseline executable, confirming the new proof is required.
+These are fresh R254 matched observations: both columns share the same new reference denominator. The retained R253 implementation is unchanged from the [R253 improvement](native-current-predicates.md); its historical measurements remain there. Eight stays below 1x. The largest winning controlled size remains 4 KiB.
 
-Current matched ratios: eight **0.430586x**, random 64 KiB **2.797023x**; at 1 MiB text **2.174189x**, random **3.083160x**, periodic **1.690930x**, repeated **1.596171x**. The larger-input gap remains. Historical ratios keep their original denominators; both columns below share the fresh R253 denominator.
+All 81 exact streams, independent inflation, aliases, output capacity and private cleanup pass. Both Mech variants have identical heap/copy/zero fields and source-phase counts. The candidate has larger-call instruction increases and fails several unchanged timing gates, so it is not retained. Ordinary IR215 and the compact entry’s additional omitted managed contract remain unchanged. [Design, every result, current profile, qualification and evidence](native-predicate-forwarding-combination.md).
 
-Complete level-12 computation, runtime input, matched live borrowed output and full scratch construction/output transfer/private cleanup. CPU/heap cohorts remain independent of elapsed. Ordinary IR215 and the compact entry’s additional omitted managed contract remain unchanged. [Design, source, current profile and every validation receipt](native-current-predicates.md).
+## Every retained below-reference configuration
 
-## Every current below-reference configuration
-
-| Group | Case | Bytes | R253 / Roc |
+| Group | Case | Bytes | Retained R253 / Roc |
 |---|---|---:|---:|
-| original25 | eight-literals | 8 | **0.430586x** |
-| original25 | eight-overlap | 8 | **0.428488x** |
-| original25 | 320-overlap | 320 | **0.476647x** |
-| original25 | eight-literals-prefix | 8 | **0.430005x** |
-| original25 | 128-biased-dynamic | 128 | **0.436179x** |
-| original25 | 32-high-entropy-stored | 32 | **0.450353x** |
-| original25 | random-64 | 64 | **0.478032x** |
-| original25 | random-256 | 256 | **0.554668x** |
-| original25 | random-1024 | 1024 | **0.656141x** |
-| original25 | repeated-1024 | 1024 | **0.569490x** |
-| original25 | reymont-prefix-1024 | 1024 | **0.807463x** |
-| prefix56 | prefix-natural-1024 | 1024 | **0.804925x** |
-| prefix56 | prefix-random-1024 | 1024 | **0.658209x** |
-| prefix56 | prefix-periodic-1024 | 1024 | **0.584372x** |
-| prefix56 | prefix-periodic-4096 | 4096 | **0.896756x** |
-| prefix56 | prefix-repeated-1024 | 1024 | **0.566308x** |
-| prefix56 | prefix-repeated-4096 | 4096 | **0.858050x** |
+| original25 | eight-literals | 8 | **0.416931x** |
+| original25 | eight-overlap | 8 | **0.407556x** |
+| original25 | 320-overlap | 320 | **0.464849x** |
+| original25 | eight-literals-prefix | 8 | **0.417555x** |
+| original25 | 128-biased-dynamic | 128 | **0.423843x** |
+| original25 | 32-high-entropy-stored | 32 | **0.432775x** |
+| original25 | random-64 | 64 | **0.461064x** |
+| original25 | random-256 | 256 | **0.542358x** |
+| original25 | random-1024 | 1024 | **0.639798x** |
+| original25 | repeated-1024 | 1024 | **0.555818x** |
+| original25 | reymont-prefix-1024 | 1024 | **0.800973x** |
+| prefix56 | prefix-natural-1024 | 1024 | **0.803887x** |
+| prefix56 | prefix-random-1024 | 1024 | **0.648466x** |
+| prefix56 | prefix-periodic-1024 | 1024 | **0.582820x** |
+| prefix56 | prefix-periodic-4096 | 4096 | **0.901405x** |
+| prefix56 | prefix-repeated-1024 | 1024 | **0.556795x** |
+| prefix56 | prefix-repeated-4096 | 4096 | **0.866526x** |
 
 ## All 81 matched measurements
 
-Ratios use pooled observation medians; changes use balanced block means. Positive changes would be regressions. All individual observations, including near-resolution empty/one/seven-byte cases, remain in the public packet.
+Ratios use pooled observation medians. Changes use balanced block means of archived R254 versus retained R253. Positive changes are regressions. Near-resolution empty/one/seven-byte samples and every adverse individual observation remain archived.
 
-| Case | Bytes | R250 / Roc | Retained R253 / Roc | Elapsed change | Instructions change |
+| Case | Bytes | Retained R253 / Roc | Archived R254 / Roc | Candidate elapsed change | Candidate instruction change |
 |---|---:|---:|---:|---:|---:|
-| empty | 0 | 1.976190x | 1.976190x | -13.0590% | -0.9192% |
-| one-stored | 1 | 2.000000x | 1.976190x | -23.8669% | -1.2862% |
-| seven-stored-prefix | 7 | 1.976190x | 1.976190x | -18.8236% | -1.2761% |
-| eight-literals | 8 | 0.496470x | 0.430586x | -12.4937% | -4.3235% |
-| eight-overlap | 8 | 0.490952x | 0.428488x | -13.0673% | -4.2322% |
-| 320-overlap | 320 | 0.544897x | 0.476647x | -12.6865% | -4.1314% |
-| eight-literals-prefix | 8 | 0.487295x | 0.430005x | -11.0230% | -4.3234% |
-| 128-biased-dynamic | 128 | 0.498919x | 0.436179x | -12.5528% | -4.5889% |
-| 32-high-entropy-stored | 32 | 0.523856x | 0.450353x | -14.7901% | -5.1060% |
-| 16384-distribution-change | 16384 | 2.688227x | 2.323779x | -13.5572% | -4.9444% |
-| 33027-periodic-window | 33027 | 1.534159x | 1.424118x | -7.1727% | -4.1944% |
-| random-64 | 64 | 0.560038x | 0.478032x | -14.9124% | -5.4364% |
-| random-256 | 256 | 0.654488x | 0.554668x | -14.9916% | -6.1342% |
-| random-1024 | 1024 | 0.737837x | 0.656141x | -11.1018% | -5.3625% |
-| repeated-1024 | 1024 | 0.634346x | 0.569490x | -10.6173% | -3.8866% |
-| random-32769 | 32769 | 2.668885x | 2.518187x | -5.6465% | -4.9941% |
-| repeated-32769 | 32769 | 1.457184x | 1.362171x | -6.5203% | -4.1784% |
-| reymont-prefix-1024 | 1024 | 0.915964x | 0.807463x | -12.0746% | -4.2161% |
-| reymont-prefix-16384 | 16384 | 2.178044x | 2.060267x | -5.4075% | -2.1837% |
-| reymont-prefix-32769 | 32769 | 2.220723x | 2.130488x | -4.0633% | -1.9323% |
-| heldout-window-32767 | 32767 | 2.227375x | 2.132613x | -4.2544% | -1.9363% |
-| heldout-window-32768 | 32768 | 2.227672x | 2.135918x | -4.1188% | -1.9372% |
-| heldout-slides-65537 | 65537 | 2.293668x | 2.205655x | -3.8372% | -1.8154% |
-| heldout-random-65537 | 65537 | 2.948469x | 2.797023x | -5.1365% | -5.0350% |
-| heldout-mixed-131073 | 131073 | 2.442930x | 2.270648x | -7.0523% | -3.3384% |
-| prefix-natural-1024 | 1024 | 0.915214x | 0.804925x | -11.9433% | -4.2162% |
-| prefix-natural-4096 | 4096 | 1.720220x | 1.569873x | -8.7400% | -2.5199% |
-| prefix-natural-8192 | 8192 | 2.003041x | 1.856638x | -7.3090% | -2.2761% |
-| prefix-natural-16384 | 16384 | 2.190738x | 2.056135x | -6.1442% | -2.1836% |
-| prefix-natural-32767 | 32767 | 2.231778x | 2.134866x | -4.3424% | -1.9358% |
-| prefix-natural-32768 | 32768 | 2.229170x | 2.131487x | -4.3820% | -1.9351% |
-| prefix-natural-32769 | 32769 | 2.228753x | 2.131146x | -4.3795% | -1.9359% |
-| prefix-natural-33027 | 33027 | 2.225623x | 2.130753x | -4.2626% | -1.9312% |
-| prefix-natural-65535 | 65535 | 2.201721x | 2.123837x | -3.5374% | -1.5582% |
-| prefix-natural-65536 | 65536 | 2.201227x | 2.124178x | -3.5003% | -1.5578% |
-| prefix-natural-65537 | 65537 | 2.243909x | 2.166866x | -3.4334% | -1.5511% |
-| prefix-natural-131072 | 131072 | 2.201440x | 2.128889x | -3.2956% | -1.4612% |
-| prefix-natural-262144 | 262144 | 2.205956x | 2.140922x | -2.9481% | -1.4108% |
-| prefix-natural-1048576 | 1048576 | 2.240265x | 2.174189x | -2.9495% | -1.5313% |
-| prefix-random-1024 | 1024 | 0.737984x | 0.658209x | -10.5867% | -5.3646% |
-| prefix-random-4096 | 4096 | 1.358550x | 1.210273x | -10.9144% | -5.3357% |
-| prefix-random-8192 | 8192 | 1.726901x | 1.564482x | -9.4052% | -5.2385% |
-| prefix-random-16384 | 16384 | 2.281403x | 2.112230x | -7.4153% | -5.0863% |
-| prefix-random-32767 | 32767 | 2.692352x | 2.529481x | -6.0494% | -5.0174% |
-| prefix-random-32768 | 32768 | 2.707886x | 2.538700x | -6.2479% | -5.0173% |
-| prefix-random-32769 | 32769 | 2.684537x | 2.523804x | -5.9874% | -4.9917% |
-| prefix-random-33027 | 33027 | 2.702402x | 2.529977x | -6.3804% | -4.9910% |
-| prefix-random-65535 | 65535 | 2.957766x | 2.797302x | -5.4252% | -4.9543% |
-| prefix-random-65536 | 65536 | 2.962113x | 2.799693x | -5.4833% | -4.9509% |
-| prefix-random-65537 | 65537 | 2.948459x | 2.792447x | -5.2913% | -4.9375% |
-| prefix-random-131072 | 131072 | 3.104938x | 2.924923x | -5.7977% | -5.0019% |
-| prefix-random-262144 | 262144 | 3.143963x | 3.000630x | -4.5590% | -4.9437% |
-| prefix-random-1048576 | 1048576 | 3.221790x | 3.083160x | -4.3029% | -5.0483% |
-| prefix-periodic-1024 | 1024 | 0.657210x | 0.584372x | -11.0898% | -4.1396% |
-| prefix-periodic-4096 | 4096 | 1.018763x | 0.896756x | -11.9760% | -4.0072% |
-| prefix-periodic-8192 | 8192 | 1.176310x | 1.077666x | -8.3859% | -3.9579% |
-| prefix-periodic-16384 | 16384 | 1.370205x | 1.260670x | -7.9941% | -4.2239% |
-| prefix-periodic-32767 | 32767 | 1.536621x | 1.430592x | -6.9001% | -4.2206% |
-| prefix-periodic-32768 | 32768 | 1.532381x | 1.428118x | -6.8040% | -4.2206% |
-| prefix-periodic-32769 | 32769 | 1.533775x | 1.428978x | -6.8326% | -4.1942% |
-| prefix-periodic-33027 | 33027 | 1.531628x | 1.430057x | -6.6316% | -4.1944% |
-| prefix-periodic-65535 | 65535 | 1.655486x | 1.555904x | -6.0153% | -4.2054% |
-| prefix-periodic-65536 | 65536 | 1.652601x | 1.552138x | -6.0791% | -4.2054% |
-| prefix-periodic-65537 | 65537 | 1.655574x | 1.553409x | -6.1710% | -4.1920% |
-| prefix-periodic-131072 | 131072 | 1.715754x | 1.623045x | -5.4034% | -4.1946% |
-| prefix-periodic-262144 | 262144 | 1.749652x | 1.662526x | -4.9796% | -4.1927% |
-| prefix-periodic-1048576 | 1048576 | 1.776343x | 1.690930x | -4.8084% | -4.1889% |
-| prefix-repeated-1024 | 1024 | 0.630400x | 0.566308x | -9.9666% | -3.8869% |
-| prefix-repeated-4096 | 4096 | 0.970059x | 0.858050x | -11.5467% | -3.9190% |
-| prefix-repeated-8192 | 8192 | 1.143431x | 1.048841x | -8.2725% | -3.9092% |
-| prefix-repeated-16384 | 16384 | 1.305312x | 1.207345x | -7.5053% | -4.1950% |
-| prefix-repeated-32767 | 32767 | 1.456847x | 1.373327x | -5.7329% | -4.2053% |
-| prefix-repeated-32768 | 32768 | 1.463455x | 1.369818x | -6.3984% | -4.2049% |
-| prefix-repeated-32769 | 32769 | 1.466358x | 1.369173x | -6.6277% | -4.1784% |
-| prefix-repeated-33027 | 33027 | 1.464600x | 1.372711x | -6.2740% | -4.1786% |
-| prefix-repeated-65535 | 65535 | 1.569091x | 1.482657x | -5.5086% | -4.1974% |
-| prefix-repeated-65536 | 65536 | 1.571538x | 1.484218x | -5.5563% | -4.1974% |
-| prefix-repeated-65537 | 65537 | 1.581430x | 1.486302x | -6.0153% | -4.1839% |
-| prefix-repeated-131072 | 131072 | 1.631247x | 1.545218x | -5.2738% | -4.1949% |
-| prefix-repeated-262144 | 262144 | 1.659798x | 1.573378x | -5.2066% | -4.1916% |
-| prefix-repeated-1048576 | 1048576 | 1.633536x | 1.596171x | -2.2874% | -4.0864% |
+| empty | 0 | 1.976190x | 1.976190x | -5.3628% | -0.2079% |
+| one-stored | 1 | 1.976190x | 1.976190x | +1.3993% | -0.1256% |
+| seven-stored-prefix | 7 | 1.976190x | 1.976190x | +0.0807% | +1.3861% |
+| eight-literals | 8 | 0.416931x | 0.434926x | +3.9367% | -1.1652% |
+| eight-overlap | 8 | 0.407556x | 0.432289x | +5.6347% | -1.2326% |
+| 320-overlap | 320 | 0.464849x | 0.484281x | +2.5100% | -0.8817% |
+| eight-literals-prefix | 8 | 0.417555x | 0.436693x | +3.2921% | -1.1652% |
+| 128-biased-dynamic | 128 | 0.423843x | 0.445584x | +5.2414% | -1.0313% |
+| 32-high-entropy-stored | 32 | 0.432775x | 0.460897x | +6.6654% | -0.6563% |
+| 16384-distribution-change | 16384 | 2.341313x | 2.353894x | +0.5374% | +0.9242% |
+| 33027-periodic-window | 33027 | 1.436220x | 1.426367x | -0.6860% | +0.0524% |
+| random-64 | 64 | 0.461064x | 0.489083x | +5.8650% | -0.3857% |
+| random-256 | 256 | 0.542358x | 0.563540x | +3.1700% | +0.6211% |
+| random-1024 | 1024 | 0.639798x | 0.675071x | +4.5818% | +1.3592% |
+| repeated-1024 | 1024 | 0.555818x | 0.579535x | +4.4252% | -0.5214% |
+| random-32769 | 32769 | 2.513835x | 2.586962x | +2.9089% | +3.2197% |
+| repeated-32769 | 32769 | 1.372088x | 1.359102x | -0.9465% | +0.0517% |
+| reymont-prefix-1024 | 1024 | 0.800973x | 0.821765x | +2.1123% | +0.3909% |
+| reymont-prefix-16384 | 16384 | 2.057270x | 2.061354x | +0.1985% | +0.8079% |
+| reymont-prefix-32769 | 32769 | 2.126448x | 2.129332x | +0.1356% | +0.8179% |
+| heldout-window-32767 | 32767 | 2.131203x | 2.134625x | +0.1606% | +0.8200% |
+| heldout-window-32768 | 32768 | 2.129094x | 2.131727x | +0.1237% | +0.8204% |
+| heldout-slides-65537 | 65537 | 2.211736x | 2.215980x | +0.1919% | +0.8075% |
+| heldout-random-65537 | 65537 | 2.791868x | 2.862779x | +2.5399% | +3.2128% |
+| heldout-mixed-131073 | 131073 | 2.269250x | 2.272002x | +0.1213% | +0.7683% |
+| prefix-natural-1024 | 1024 | 0.803887x | 0.818777x | +1.6827% | +0.3909% |
+| prefix-natural-4096 | 4096 | 1.572704x | 1.563078x | -0.6121% | +0.8101% |
+| prefix-natural-8192 | 8192 | 1.862594x | 1.866224x | +0.1949% | +0.8415% |
+| prefix-natural-16384 | 16384 | 2.058570x | 2.060594x | +0.0983% | +0.8005% |
+| prefix-natural-32767 | 32767 | 2.132498x | 2.134013x | +0.0710% | +0.8203% |
+| prefix-natural-32768 | 32768 | 2.130545x | 2.132447x | +0.0893% | +0.8202% |
+| prefix-natural-32769 | 32769 | 2.131449x | 2.133620x | +0.1018% | +0.8187% |
+| prefix-natural-33027 | 33027 | 2.124321x | 2.127111x | +0.1313% | +0.8181% |
+| prefix-natural-65535 | 65535 | 2.141611x | 2.139072x | -0.1186% | +0.7097% |
+| prefix-natural-65536 | 65536 | 2.130765x | 2.130849x | +0.0039% | +0.7084% |
+| prefix-natural-65537 | 65537 | 2.162356x | 2.164367x | +0.0930% | +0.7042% |
+| prefix-natural-131072 | 131072 | 2.134067x | 2.137101x | +0.1422% | +0.6949% |
+| prefix-natural-262144 | 262144 | 2.145937x | 2.152422x | +0.3022% | +0.6855% |
+| prefix-natural-1048576 | 1048576 | 2.180404x | 2.187823x | +0.3403% | +0.7747% |
+| prefix-random-1024 | 1024 | 0.648466x | 0.678212x | +4.1172% | +1.3605% |
+| prefix-random-4096 | 4096 | 1.212611x | 1.243166x | +2.5197% | +2.6654% |
+| prefix-random-8192 | 8192 | 1.570189x | 1.615219x | +2.8678% | +3.1487% |
+| prefix-random-16384 | 16384 | 2.122976x | 2.156758x | +1.5913% | +3.2477% |
+| prefix-random-32767 | 32767 | 2.532465x | 2.605475x | +2.8830% | +3.2383% |
+| prefix-random-32768 | 32768 | 2.541059x | 2.603612x | +2.4617% | +3.2383% |
+| prefix-random-32769 | 32769 | 2.528863x | 2.592185x | +2.5040% | +3.2209% |
+| prefix-random-33027 | 33027 | 2.532118x | 2.589776x | +2.2771% | +3.2199% |
+| prefix-random-65535 | 65535 | 2.798722x | 2.864512x | +2.3507% | +3.1467% |
+| prefix-random-65536 | 65536 | 2.803080x | 2.865412x | +2.2237% | +3.1467% |
+| prefix-random-65537 | 65537 | 2.789249x | 2.848817x | +2.1356% | +3.1383% |
+| prefix-random-131072 | 131072 | 2.933092x | 2.998981x | +2.2464% | +2.9654% |
+| prefix-random-262144 | 262144 | 2.999043x | 3.067335x | +2.2771% | +3.0125% |
+| prefix-random-1048576 | 1048576 | 3.083508x | 3.163219x | +2.5851% | +3.1225% |
+| prefix-periodic-1024 | 1024 | 0.582820x | 0.589613x | +0.8903% | -0.4007% |
+| prefix-periodic-4096 | 4096 | 0.901405x | 0.900914x | -0.0544% | -0.1667% |
+| prefix-periodic-8192 | 8192 | 1.087992x | 1.078040x | -0.9147% | -0.0565% |
+| prefix-periodic-16384 | 16384 | 1.273057x | 1.262416x | -0.8359% | +0.0108% |
+| prefix-periodic-32767 | 32767 | 1.446102x | 1.428295x | -1.2314% | +0.0525% |
+| prefix-periodic-32768 | 32768 | 1.446918x | 1.437282x | -0.6660% | +0.0524% |
+| prefix-periodic-32769 | 32769 | 1.435549x | 1.417969x | -1.2247% | +0.0521% |
+| prefix-periodic-33027 | 33027 | 1.436424x | 1.425200x | -0.7814% | +0.0524% |
+| prefix-periodic-65535 | 65535 | 1.557299x | 1.545913x | -0.7312% | +0.0741% |
+| prefix-periodic-65536 | 65536 | 1.556858x | 1.542617x | -0.9148% | +0.0742% |
+| prefix-periodic-65537 | 65537 | 1.551953x | 1.539446x | -0.8059% | +0.0739% |
+| prefix-periodic-131072 | 131072 | 1.627331x | 1.616391x | -0.6723% | +0.0853% |
+| prefix-periodic-262144 | 262144 | 1.662538x | 1.651109x | -0.6875% | +0.0898% |
+| prefix-periodic-1048576 | 1048576 | 1.693255x | 1.681601x | -0.6882% | +0.0906% |
+| prefix-repeated-1024 | 1024 | 0.556795x | 0.566037x | +0.8693% | -0.5221% |
+| prefix-repeated-4096 | 4096 | 0.866526x | 0.854134x | -1.4301% | -0.1798% |
+| prefix-repeated-8192 | 8192 | 1.045081x | 1.030149x | -1.4288% | -0.0605% |
+| prefix-repeated-16384 | 16384 | 1.230123x | 1.212366x | -1.4435% | +0.0108% |
+| prefix-repeated-32767 | 32767 | 1.371927x | 1.359697x | -0.8914% | +0.0523% |
+| prefix-repeated-32768 | 32768 | 1.372578x | 1.357252x | -1.1166% | +0.0578% |
+| prefix-repeated-32769 | 32769 | 1.369621x | 1.355752x | -1.0126% | +0.0519% |
+| prefix-repeated-33027 | 33027 | 1.376601x | 1.360710x | -1.1544% | +0.0523% |
+| prefix-repeated-65535 | 65535 | 1.482930x | 1.467044x | -1.0713% | +0.0738% |
+| prefix-repeated-65536 | 65536 | 1.480168x | 1.466074x | -0.9521% | +0.0737% |
+| prefix-repeated-65537 | 65537 | 1.478054x | 1.465739x | -0.8332% | +0.0736% |
+| prefix-repeated-131072 | 131072 | 1.544085x | 1.531743x | -0.7993% | +0.0848% |
+| prefix-repeated-262144 | 262144 | 1.576509x | 1.565041x | -0.7275% | +0.0892% |
+| prefix-repeated-1048576 | 1048576 | 1.583638x | 1.574199x | -0.5961% | +0.0906% |

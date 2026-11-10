@@ -1,6 +1,16 @@
 # Native compression milestone
 
-**Current retained experimental compiler: R253.** All 81 balanced elapsed medians and independent instruction/cycle medians improve; every unchanged timing gate passes in both cohorts. The original 25 have 11 below-reference cases and the 56 prefixes have six, including duplicate inputs. Full current results are in the [scoreboard](native-compression-scoreboard.md). Large random/text throughput remains the priority.
+**Current retained experimental compiler: R253.** R254 combines the existing predicate and broad identity-forwarding passes and archives that combination after confirmed large random/text regressions. All 81 current measurements, with fresh denominators and the retained R253 column identified, are in the [scoreboard](native-compression-scoreboard.md). Large-input parity remains incomplete.
+
+## R254: archive forwarding after predicate proof
+
+The same 822-file R253 compiler enables current-predicate proof followed by archived broad identity-route forwarding. Root code is 1,160 B smaller but the frame grows 1,600 B; 136 original and seven vector bodies and all corresponding metadata stay exact. The source, algorithm, buffers, allocation sites and timing boundary are unchanged.
+
+Both matched confirmations show larger random/text regressions. Random 1 MiB is 3.083508x -> 3.163219x reference (+2.5851% balanced elapsed, +3.1225% instructions); text 2.180404x -> 2.187823x (+0.3403%, +0.7747%). Repetitive cases improve slightly. Eight has contrary confirmations (+7.1242%, -0.4249%), with pooled elapsed +3.9367% and independent instructions -1.1652%. Preserve this contrary evidence. Pooled point gates pass 76/81 and balanced gates 77/81; no allowances change. Retain R253 with forwarding disabled.
+
+Fresh 3,500 original/decoded source calls/700 zero trips, 162 all-81 smokes and 162 observed all-81 calls pass. Phase counts, heap/copy/zero medians and private terminal cleanup remain exact. The unchanged compiler’s 712 maintained tests and seven exclusions are inherited, not rerun. Current-image annotations reproduce the complete measured Object/metadata. The old external-PC label error is corrected and replayed: all R253 native counts and measurements stay unchanged.
+
+The current profile locates the hot scalar reduction inside an already native/vector-capable path phase, distinct from its rare entry setup. Fresh C/Rust witnesses use one comparison for two selects, while the hot Mech window repeats the comparison. This identifies a generic code-generation opportunity, not a measured future speedup. Empty reduction, enclosing recurrence funding/cold handoff and the R247 placement control remain open. [Exact results, source provenance, current profile, exclusions and public evidence](native-predicate-forwarding-combination.md).
 
 ## R253: current predicate proof removes impossible cleanup paths
 
