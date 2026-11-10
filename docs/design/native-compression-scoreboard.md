@@ -1,12 +1,66 @@
 # Current compression scoreboard
 
-**Retained computational baseline: R256, with R261 correctness repairs.** The compiler composes fixed-buffer nested computations into one guarded native phase and hands back exact current state before unsupported operations. The source/algorithm and ordinary funding guard stay unchanged. The historical R256 all 81 descriptive geometric elapsed improvement is18.2622%; the larger controlled-prefix improvement is22.2123% against the freshly remeasured R255 parent.
+**Retained experimental computational baseline: R263, on R261's correctness repairs.**
+This generic compiler change reuses guarded current-length bounds for masked
+one-based indices. It removes 20 read checks and 15 write checks in each matching
+body. The complete source algorithm, allocation behavior and ordinary contract
+boundary remain unchanged. All 81 complete compression cases are timed and checked.
 
-All 81 pooled point/balanced1.05 gates pass. Primary A passes 81/81; Primary B passes 81/81 point and 78/81 balanced, with explicit misses for empty, one-stored and eight-literals-prefix. No allowances change. Their contrary observations remain in the report. Heap requests, initialized copying, zeroing and private peaks remain equal on all 81. Root code/frame and executable size increase; this is not a memory-size reduction.
+| Round comparison | Paired geometric elapsed | Existing pooled gates | Existing block gates | Below-reference cases |
+|---|---:|---:|---:|---:|
+| Repaired R261 to R263 | **−1.188790%** | 81/81 | 81/81 | 22 to 22 |
 
-There are22 measured below-reference configurations. The largest controlled wins are now16 KiB: periodic0.980901x, repeated0.949197x; random4 KiB0.947134x. At 32 KiB:text1.837344x, random1.828522x, periodic1.090658x, repeated1.048871x. At 1 MiB:text1.908252x, random2.170161x, periodic1.267271x, repeated1.222946x. Eight stays0.414364x. These use a fresh shared reference denominator; historical tables retain their original denominators.
+The next priority is the controlled cases nearest 1x, especially repeated and
+periodic inputs near 32 KiB. This round creates no new parity crossing. Negative
+time changes below mean faster; ratios below 1x mean faster than the reference.
 
-[Compiler patch, exact qualification, profiles, limits and verified evidence](native-private-nested-phases.md). [R255 historical measurements](native-shared-comparison.md). Ordinary IR215 and the compact entry’s additional omitted managed contract remain unchanged. Large-input parity remains incomplete.
+| Input | Bytes | R261 / Roc | R263 / Roc | Time change | Additional cut to 1x |
+|---|---:|---:|---:|---:|---:|
+| repeated | 32767 | 1.051163x | 1.020506x | -2.9165% | 2.009% |
+| repeated | 32769 | 1.052589x | 1.025549x | -2.5688% | 2.491% |
+| repeated | 32768 | 1.055728x | 1.027648x | -2.6598% | 2.690% |
+| repeated | 33027 | 1.073708x | 1.041968x | -2.9561% | 4.028% |
+| periodic | 32768 | 1.089061x | 1.050873x | -3.5065% | 4.841% |
+| periodic | 32767 | 1.092386x | 1.055233x | -3.4011% | 5.234% |
+| periodic | 33027 | 1.096717x | 1.061571x | -3.2046% | 5.800% |
+| periodic | 32769 | 1.094361x | 1.062217x | -2.9372% | 5.857% |
+
+| Input | Bytes | R261 / Roc | R263 / Roc | Time change |
+|---|---:|---:|---:|---:|
+| eight-literals | 8 | 0.414859x | 0.420113x | +1.2663% |
+| prefix-natural-32768 | 32768 | 1.836182x | 1.832518x | -0.1995% |
+| prefix-random-32768 | 32768 | 1.824029x | 1.786578x | -2.0532% |
+| prefix-natural-1048576 | 1048576 | 1.902061x | 1.896635x | -0.2852% |
+| prefix-random-1048576 | 1048576 | 2.167748x | 2.158164x | -0.4421% |
+| prefix-periodic-1048576 | 1048576 | 1.267936x | 1.221557x | -3.6578% |
+| prefix-repeated-1048576 | 1048576 | 1.222298x | 1.180133x | -3.4497% |
+
+[All 81 before/after rows, compiler design, exact pins, qualification and evidence](native-guarded-index-bounds.md).
+Every historical round below keeps its original denominator. The current comparison
+uses two fresh balanced cohorts and ratios formed inside 48 blocks per case.
+No valid observation is discarded or rerun and no gate is relaxed. Small adverse
+results remain: eight +1.2663%, random 64 +3.9597%, eight-prefix +3.5080%.
+
+All 81 payload allocation/requested-byte/copy/zero/private-peak fields remain
+unchanged. Fresh independent instructions decline on natural/random/periodic/
+repeated 1 MiB by 1.64%/3.62%/3.35%/3.32%. The worker shrinks 2,100,808→2,084,296 bytes;
+matching frames grow 16 bytes and the root frame shrinks 32 bytes. Fresh profiles
+retain the path phase as the main natural-text bottleneck.
+
+719 native tests, 3936 linked/resident comparisons and 324 complete original/decoded
+smokes pass; seven inherited native exclusions remain. The unchanged maintained
+680-test result is inherited. Full CI, the full linked/AOT integration suite and
+full 6.6 MB input are not freshly run. The memory-only cohort tail overlaps the
+first profile; no isolated RSS improvement is claimed. Primary elapsed and CPU
+instruction/cycle measurements finish before profiling. Ordinary managed
+admission/accounting/publication/recovery costs remain outside the compact timing
+entry, and their integration remains open. IR/work/ABI/bytecode stay 215/107/39/14.
+
+## Historical measurements
+
+R256 composed fixed-buffer nested computations into one guarded native phase.
+Its historical all-81 improvement is 18.2622%; R261 repairs preserve that Object.
+The tables below remain historical rather than current R263 results.
 
 ## R262 packed-state retest
 
@@ -68,7 +122,7 @@ block first, with the existing pooled gates preserved.
 
 The supplemental paired audit finds two R257 sign reversals from pooling actor medians across heterogeneous cohorts. Repeated32KiB's pooled−2.1642% masks individual+0.5778%/+0.3198% slowdowns; comparing within the48 balanced blocks gives+0.3240%. The same audit confirms R256's18.2763% matrix improvement and finds no R256 reversals. Existing observations, pooled ratios and1.05 gates are preserved. The historical R256 table below remains unchanged; pooled medians are descriptive, not paired causal estimates.
 
-## Every retained below-reference configuration
+## Historical R256 below-reference configurations
 
 | Group | Case | Bytes | R256 / Roc |
 |---|---|---:|---:|
@@ -95,7 +149,7 @@ The supplemental paired audit finds two R257 sign reversals from pooling actor m
 | prefix56 | prefix-repeated-8192 | 8192 | **0.851834x** |
 | prefix56 | prefix-repeated-16384 | 16384 | **0.949197x** |
 
-## All 81 matched measurements
+## Historical R255 versus R256 matched measurements
 
 Ratios use pooled observation medians. Changes use balanced block means against matched R255. Positive changes are regressions. Instructions/cycles are from a separate cohort. All observations and the three individual Primary B gate misses remain recorded.
 

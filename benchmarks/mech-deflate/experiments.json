@@ -52053,6 +52053,591 @@
         "Parity across all compression families and sizes"
       ],
       "complete_goal": false
+    },
+    "263": {
+      "git_parent": "f62e16365f25a1e77988b73d22f9216e76183436",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R263 guarded static index bounds on repaired R261",
+      "retained_source_packet_round": 263,
+      "review_before_experiment": "https://github.com/mech-lang/mech/pull/973#issuecomment-6774340485",
+      "decision": {
+        "round": 263,
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 263,
+        "published_parent": "f62e16365f25a1e77988b73d22f9216e76183436",
+        "baseline": "R261 repaired compiler; Object unchanged from R256",
+        "reason": "All81 unchanged gates pass; static current-length index proofs reduce complete-call geometric elapsed and instructions without source or heap changes. Small adverse timings and memory-tail overlap remain explicit.",
+        "all81_paired_after_over_before": 0.9881120964771126,
+        "existing_pooled_gates": 81,
+        "existing_block_gates": 81,
+        "below_reference_counts": {
+          "before": 22,
+          "after": 22
+        },
+        "new_parity_crossings": 0,
+        "next_priority": "Repeated and periodic controlled cases nearest1x around32KiB; protect current wins and time all81.",
+        "nearest_above_reference": [
+          {
+            "case": "prefix-repeated-32767",
+            "before": 1.0511627159293635,
+            "after": 1.0205058262117064,
+            "change_percent": -2.9164742292588364,
+            "remaining_time_cut_percent": 2.0093786517444534
+          },
+          {
+            "case": "prefix-repeated-32769",
+            "before": 1.0525886662059538,
+            "after": 1.0255493806203164,
+            "change_percent": -2.568836854675649,
+            "remaining_time_cut_percent": 2.491287216697702
+          },
+          {
+            "case": "prefix-repeated-32768",
+            "before": 1.0557278585006225,
+            "after": 1.0276478229047197,
+            "change_percent": -2.6597797310930815,
+            "remaining_time_cut_percent": 2.6903986257248214
+          },
+          {
+            "case": "prefix-repeated-33027",
+            "before": 1.0737076628155433,
+            "after": 1.0419682777176804,
+            "change_percent": -2.9560546317266567,
+            "remaining_time_cut_percent": 4.027788428416212
+          },
+          {
+            "case": "prefix-periodic-32768",
+            "before": 1.089060500759189,
+            "after": 1.050873130373682,
+            "change_percent": -3.506450776507486,
+            "remaining_time_cut_percent": 4.841034460134297
+          },
+          {
+            "case": "prefix-periodic-32767",
+            "before": 1.0923859169662649,
+            "after": 1.0552330473699452,
+            "change_percent": -3.4010754825088974,
+            "remaining_time_cut_percent": 5.234203715246366
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "before": 1.0967165005742037,
+            "after": 1.0615710878874667,
+            "change_percent": -3.204603256022498,
+            "remaining_time_cut_percent": 5.7999966832172785
+          },
+          {
+            "case": "prefix-periodic-32769",
+            "before": 1.0943609436824155,
+            "after": 1.0622173242317718,
+            "change_percent": -2.9372045517709777,
+            "remaining_time_cut_percent": 5.85730648638868
+          }
+        ],
+        "source_files": 825,
+        "modified_files": 10,
+        "new_files": 0,
+        "compiler_source_manifest_sha256": "74b19df267297ca5414a64dec6290776ae0667f5279cd449f496a30af7d3d2b6",
+        "compiler_patch_sha256": "11fbd210e84e554838decffbc503b466d5e6da7419c1e2fc8b426e160e996a1e",
+        "all81_heap_copy_zero_private_peaks_equal": true,
+        "qualified_native_tests": 719,
+        "linked_and_fresh_resident_calls_each": 3936,
+        "complete_smoke_calls": 324,
+        "coverage_limits": [
+          "Unchanged maintained680-test result is inherited from R261; not relabelled fresh.",
+          "No full hosted CI, fresh full linked/AOT integration or full6.6MB input.",
+          "The compact timing entry retains its existing ordinary managed-contract omissions.",
+          "The tail of the memory cohort overlaps the first diagnostic profile; no isolated RSS improvement claim."
+        ],
+        "measurement_overlap": {
+          "primary_elapsed_and_cpu_instruction_cohorts_completed_before_profiles": true,
+          "first_profile_started_while_allocation_cohort_was_finishing": true,
+          "memory_packets_finished_after_profile_start": [
+            "prefix-repeated-65537",
+            "prefix-repeated-65536",
+            "prefix-repeated-262144",
+            "prefix-repeated-1048576",
+            "prefix-repeated-65535",
+            "prefix-repeated-32767",
+            "prefix-repeated-32769",
+            "prefix-repeated-131072",
+            "prefix-repeated-32768",
+            "prefix-repeated-33027"
+          ],
+          "allocation_copy_zero_private_peak_counters_are_per_worker": true,
+          "tail_rss_and_wall_times_not_isolated_from_profile_work": true,
+          "valid_measurements_discarded_or_repeated": false,
+          "profile_launch_utc": "2026-11-10T18:34:53.874760+00:00",
+          "allocation_cases_completed_at_prelaunch_check": 66,
+          "memory_packets_completed_before_actual_profile_launch": 71
+        },
+        "complete_goal": false
+      },
+      "source": {
+        "files": 825,
+        "modified": 10,
+        "new": 0,
+        "baseline": "R261 exact repaired archive",
+        "manifest_sha256": "74b19df267297ca5414a64dec6290776ae0667f5279cd449f496a30af7d3d2b6",
+        "patch_sha256": "11fbd210e84e554838decffbc503b466d5e6da7419c1e2fc8b426e160e996a1e",
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ]
+      },
+      "summary": {
+        "cases": 81,
+        "blocks_per_case": 48,
+        "actors": 3,
+        "method": "Two fresh cohorts; all six balanced actor orders repeated four times per cohort. Ratios formed within each balanced block before geometric aggregation. The old pooled median and block-median 1.05 gates are reported unchanged. All adverse observations retained.",
+        "all81_paired_after_over_before": 0.9881120964771126,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81
+      },
+      "qualification": {
+        "round": 263,
+        "tests": {
+          "passed": 719,
+          "failed": 0,
+          "filtered_out": 7,
+          "command": [
+            "env",
+            "MECH_PRIVATE_INDEXED_CHAINS=1",
+            "MECH_PHASE_OWNER_TRANSFER=1",
+            "MECH_PHASE_VECTOR_FAST=1",
+            "MECH_PRIVATE_READ_INTERVALS=1",
+            "MECH_PHASE_INVARIANT_VIEWS=1",
+            "MECH_CURRENT_PREDICATES=1",
+            "MECH_PRIVATE_NESTED_PHASES=1",
+            "MECH_PHASE_ASSERTION_FLOORS=1",
+            "MECH_TRAVERSAL_WRITE_BOUNDS=1",
+            "/private/tmp/mech-phase-length-floors-round263-20261110/candidate-tests",
+            "--test-threads=1",
+            "--skip",
+            "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+            "--skip",
+            "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+            "--skip",
+            "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+            "--skip",
+            "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+            "--skip",
+            "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+            "--skip",
+            "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+            "--skip",
+            "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+          ]
+        },
+        "native_feature_profile": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "test_root_opt_level": 1,
+        "performance_library_opt_level": 3,
+        "warnings_as_errors": true,
+        "new_compiler_unit_tests": 4,
+        "linked_native_calls": 3936,
+        "fresh_resident_calls": 3936,
+        "linked_variants": [
+          {
+            "kind": "basic",
+            "native_calls": 576,
+            "fresh_resident_calls": 576,
+            "cases_each": 144,
+            "selected_visits_each": [
+              222,
+              222,
+              360,
+              360
+            ],
+            "rejected_each": [
+              48,
+              48,
+              48,
+              48
+            ],
+            "before_after_original_decoded_equal": true,
+            "source_sha256": "76e83e0ae47bfb760c10cc1ce250e1b7712e65cf39767c20a6773ec71a9bb008"
+          },
+          {
+            "kind": "product",
+            "native_calls": 576,
+            "fresh_resident_calls": 576,
+            "cases_each": 144,
+            "selected_visits_each": [
+              222,
+              222,
+              360,
+              360
+            ],
+            "rejected_each": [
+              48,
+              48,
+              48,
+              48
+            ],
+            "before_after_original_decoded_equal": true,
+            "source_sha256": "f0f452aa7d248fb2d71c541f50a0befd1a0850ba1648b882e9d32cf369eacada"
+          },
+          {
+            "kind": "unmasked",
+            "native_calls": 576,
+            "fresh_resident_calls": 576,
+            "cases_each": 144,
+            "selected_visits_each": [
+              174,
+              174,
+              285,
+              285
+            ],
+            "rejected_each": [
+              60,
+              60,
+              60,
+              60
+            ],
+            "before_after_original_decoded_equal": true,
+            "source_sha256": "7bae2d1e7c64e26ebcc23da1044b968865140141ce0cb1b17e46adfd3120d3f9"
+          },
+          {
+            "kind": "dynamic-mask",
+            "native_calls": 576,
+            "fresh_resident_calls": 576,
+            "cases_each": 144,
+            "selected_visits_each": [
+              174,
+              174,
+              285,
+              285
+            ],
+            "rejected_each": [
+              60,
+              60,
+              60,
+              60
+            ],
+            "before_after_original_decoded_equal": true,
+            "source_sha256": "b84d00096ffa6a99fc9bda1328c3700da0eb70f24cfbd5aebe81b82bcc55bc15"
+          },
+          {
+            "kind": "upper-assertion",
+            "native_calls": 576,
+            "fresh_resident_calls": 576,
+            "cases_each": 144,
+            "selected_visits_each": [
+              174,
+              174,
+              174,
+              174
+            ],
+            "rejected_each": [
+              55,
+              55,
+              55,
+              55
+            ],
+            "before_after_original_decoded_equal": true,
+            "source_sha256": "209c1f7caeed27eda69867dd311bdb5f3005563c3532ad017d38564332561969"
+          },
+          {
+            "kind": "no-assertion",
+            "native_calls": 576,
+            "fresh_resident_calls": 576,
+            "cases_each": 144,
+            "selected_visits_each": [
+              285,
+              285,
+              285,
+              285
+            ],
+            "rejected_each": [
+              43,
+              43,
+              43,
+              43
+            ],
+            "before_after_original_decoded_equal": true,
+            "source_sha256": "30aeca411a67b1f62cae76785d2cbe71d8f9f78bf751e54a59c2831ab011e881"
+          },
+          {
+            "kind": "cold",
+            "native_calls": 480,
+            "fresh_resident_calls": 480,
+            "cases_each": 120,
+            "selected_visits_each": [
+              6666,
+              6666,
+              8202,
+              8202
+            ],
+            "rejected_each": [
+              66,
+              66,
+              66,
+              66
+            ],
+            "before_after_original_decoded_equal": true,
+            "source_sha256": "c499fa5653ec386f3ab2abd55a64c2253810cc896fab876cd63fde3e52015047"
+          }
+        ],
+        "complete_smoke_calls": 324,
+        "complete_cases_each_form": 81,
+        "original_decoded_full_images_equal": true,
+        "disabled_experiment": {
+          "Object_exact": true,
+          "metadata_scope": "Additional diagnostic proof lists are expected; executable Object is exactly the retained R261 Object.",
+          "baseline_sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631"
+        },
+        "unchanged_seven_inherited_exclusions": [
+          "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+          "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+          "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+          "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+          "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+          "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+          "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+        ],
+        "architecture_catalog_checks": {
+          "tracked-analysis-layout": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-native-build-analysis-layout.py"
+            ],
+            "exit": 0,
+            "seconds": 0.026452125050127506
+          },
+          "tracked-host-catalog": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-native-host-catalog.py"
+            ],
+            "exit": 0,
+            "seconds": 0.7161589581519365
+          },
+          "tracked-source-catalog": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-source-catalog-entrypoints.py"
+            ],
+            "exit": 0,
+            "seconds": 0.06975358305498958
+          }
+        },
+        "measurement_overlap": {
+          "primary_elapsed_and_cpu_instruction_cohorts_completed_before_profiles": true,
+          "first_profile_started_while_allocation_cohort_was_finishing": true,
+          "memory_packets_finished_after_profile_start": [
+            "prefix-repeated-65537",
+            "prefix-repeated-65536",
+            "prefix-repeated-262144",
+            "prefix-repeated-1048576",
+            "prefix-repeated-65535",
+            "prefix-repeated-32767",
+            "prefix-repeated-32769",
+            "prefix-repeated-131072",
+            "prefix-repeated-32768",
+            "prefix-repeated-33027"
+          ],
+          "allocation_copy_zero_private_peak_counters_are_per_worker": true,
+          "tail_rss_and_wall_times_not_isolated_from_profile_work": true,
+          "valid_measurements_discarded_or_repeated": false,
+          "profile_launch_utc": "2026-11-10T18:34:53.874760+00:00",
+          "allocation_cases_completed_at_prelaunch_check": 66,
+          "memory_packets_completed_before_actual_profile_launch": 71
+        },
+        "coverage_limits": [
+          "Unchanged maintained680-test result is inherited from R261; not relabelled fresh.",
+          "No full hosted CI, fresh full linked/AOT integration or full6.6MB input.",
+          "The compact timing entry retains its existing ordinary managed-contract omissions.",
+          "The tail of the memory cohort overlaps the first diagnostic profile; no isolated RSS improvement claim."
+        ]
+      },
+      "machine": {
+        "common_root_and_numeric_definitions": 341,
+        "changed_definitions": [
+          {
+            "symbol": "_mech_compact_closed_v2",
+            "before": {
+              "code_bytes": 1040856,
+              "stack_bytes": 57088,
+              "sha256": "b3c9f7efd1268525ce3125448067c1244810aa2d180e6de44923a7d1dd963fdd"
+            },
+            "after": {
+              "code_bytes": 1040404,
+              "stack_bytes": 57056,
+              "sha256": "01dae6621d76f284d24770deed57f575b0537b426a58cedcaa1228b1b0ec0155"
+            }
+          },
+          {
+            "symbol": "_mech_compact_numeric_837",
+            "before": {
+              "code_bytes": 54748,
+              "stack_bytes": 928,
+              "sha256": "0384a562d12b572bc66d0730360703241be2b820fd104db91bb9a72b62d91c11"
+            },
+            "after": {
+              "code_bytes": 53500,
+              "stack_bytes": 944,
+              "sha256": "bbc8f381a5b6ce03af46e53cd6335c8e31d0afc18af33e65fdbbff9bb13f34b9"
+            }
+          },
+          {
+            "symbol": "_mech_compact_numeric_837_vector",
+            "before": {
+              "code_bytes": 42800,
+              "stack_bytes": 928,
+              "sha256": "78f2daba78e8e570b6f372ec7400bf624538f09ae4d5b21d25581d7f376c14d9"
+            },
+            "after": {
+              "code_bytes": 41456,
+              "stack_bytes": 944,
+              "sha256": "3916ea4337365c69ea0ba033df3ce8c5163f3cbeab72b9a2c84eb8b30017775e"
+            }
+          }
+        ],
+        "unchanged_definitions": 338,
+        "root_Object_code_and_frame_exact": false,
+        "worker_bytes": {
+          "before": 2100808,
+          "after": 2084296
+        },
+        "scope": "Exact function body bytes in each actual Object, with corresponding linked current-image disassembly. No sampled weight is treated as an instruction count."
+      },
+      "additional_bounds_proofs_each_matching_body": {
+        "reads": 20,
+        "writes": 15
+      },
+      "all81_heap_copy_zero_private_peaks_equal": true,
+      "external_pins": {
+        "bytecode": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "benchmark_source": {
+          "path": "/private/tmp/mech-phase-length-floors-round263-20261110/benchmark-source.mec",
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "baseline_object": {
+          "path": "/private/tmp/mech-review-interactions-round261-20261110/full-candidate-image/original/object.o",
+          "bytes": 1478952,
+          "sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631"
+        },
+        "baseline_worker": {
+          "path": "/private/tmp/mech-review-interactions-round261-20261110/mech-worker",
+          "bytes": 2100808,
+          "sha256": "96091f758139371d0f8455d18be30c2086af70904c5604a0b11307c651648297"
+        },
+        "candidate_object": {
+          "path": "/private/tmp/mech-phase-length-floors-round263-20261110/full-image/original/object.o",
+          "bytes": 1475808,
+          "sha256": "6685707b0633d9dee058f15354d2d7b5339cee8c3ccced6f0da310ac6caf9942"
+        },
+        "candidate_metadata": {
+          "path": "/private/tmp/mech-phase-length-floors-round263-20261110/full-image/original/metadata.json",
+          "bytes": 4436131,
+          "sha256": "3c5bd029c4b18833da55e230436f9b92ed4d50dc4b06ec636e6ee30807122aa0"
+        },
+        "candidate_worker": {
+          "path": "/private/tmp/mech-phase-length-floors-round263-20261110/mech-worker",
+          "bytes": 2084296,
+          "sha256": "2ca0242f60c57f04a40a894a7f40f203c72c019fe51e459bb02f6f9769b51df7"
+        },
+        "producer": {
+          "path": "/private/tmp/mech-phase-length-floors-round263-20261110/producer",
+          "bytes": 96990296,
+          "sha256": "c905bf6bd05ab197ec69eda9af2375b1da74846d85226bab69c4a4e912bc9199"
+        },
+        "compiler_source_manifest": {
+          "path": "/private/tmp/mech-phase-length-floors-round263-20261110/compiler-source-manifest.json",
+          "bytes": 163729,
+          "sha256": "74b19df267297ca5414a64dec6290776ae0667f5279cd449f496a30af7d3d2b6"
+        },
+        "compiler_patch": {
+          "path": "/private/tmp/mech-phase-length-floors-round263-20261110/compiler.patch",
+          "bytes": 25156,
+          "sha256": "11fbd210e84e554838decffbc503b466d5e6da7419c1e2fc8b426e160e996a1e"
+        },
+        "retained_backend_patch": {
+          "path": "/private/tmp/mech-shared-compare-round255-20261110/backend.patch",
+          "bytes": 8897,
+          "sha256": "83c5fc6c14689ba80238615ae6e75c00103cbc447c8ae6681a62fae97607dc54"
+        }
+      },
+      "artifacts": [
+        {
+          "name": "r263-guarded-index-bounds-4e0c510fac04.tar.gz",
+          "bytes": 11055258,
+          "sha256": "4e0c510fac04305843a70ca38b61febcb62382ccb12344e1e0acf2e3543179b6",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r263-guarded-index-bounds-4e0c510fac04.tar.gz"
+        },
+        {
+          "name": "r263-guarded-index-bounds-4e0c510fac04.tar.gz.sha256",
+          "bytes": 112,
+          "sha256": "a59332d456013f13b72f4cc67262962269f56e0d48740c997c0001d875b15b30",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r263-guarded-index-bounds-4e0c510fac04.tar.gz.sha256"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "4e0c510fac04305843a70ca38b61febcb62382ccb12344e1e0acf2e3543179b6",
+        "verified_files": 2283,
+        "offline_reports": 5,
+        "current_source_files": 825,
+        "reversed_base_source_files": 825,
+        "source_reconstruction_exact": true,
+        "replayed_output_hashes": {
+          "primary-results.json": "81fe870a9de81e889a6125de94030ba5d5c676e95b5b0f3fcc9905c735a8f133",
+          "counter-results.json": "6d77a6557a12a49a9e606aca280d51d5a29575ef44b8009f390b5667841cea62",
+          "qualification-results.json": "16d6bf7f270219cdcf6bd590c8f2809432ed8fc049817f0a80700f08bad81f4c",
+          "REPORT.md": "8aea20424eeb8970d5813743e04ad524a3ca988eb2c79c0c47abced749ac37bd",
+          "result-decision.json": "a92f7a689032c5abd812d718d50ec060bc64432cd42cfa8b822750353020839c"
+        },
+        "stdout": "Five reports replay identically;825-file compiler reconstructs in both directions; no compilation or compression executed.\n"
+      },
+      "report": "docs/design/native-guarded-index-bounds.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r263-guarded-index-bounds-4e0c510fac04.tar.gz",
+        "bytes": 11055258,
+        "sha256": "4e0c510fac04305843a70ca38b61febcb62382ccb12344e1e0acf2e3543179b6",
+        "files": 2283,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "81fe870a9de81e889a6125de94030ba5d5c676e95b5b0f3fcc9905c735a8f133",
+            "counter-results.json": "6d77a6557a12a49a9e606aca280d51d5a29575ef44b8009f390b5667841cea62",
+            "qualification-results.json": "16d6bf7f270219cdcf6bd590c8f2809432ed8fc049817f0a80700f08bad81f4c",
+            "REPORT.md": "8aea20424eeb8970d5813743e04ad524a3ca988eb2c79c0c47abced749ac37bd",
+            "result-decision.json": "a92f7a689032c5abd812d718d50ec060bc64432cd42cfa8b822750353020839c"
+          }
+        }
+      },
+      "remaining": [
+        "Repeated/periodic cases nearest1x around32KiB; continue all81 checks.",
+        "Parity across all compression families and sizes.",
+        "Additional ordinary managed contract integration."
+      ],
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
