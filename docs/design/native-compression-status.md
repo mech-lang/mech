@@ -1,6 +1,16 @@
 # Native compression milestone
 
-**Current retained experimental compiler: R253.** R254 combines the existing predicate and broad identity-forwarding passes and archives that combination after confirmed large random/text regressions. All 81 current measurements, with fresh denominators and the retained R253 column identified, are in the [scoreboard](native-compression-scoreboard.md). Large-input parity remains incomplete.
+**Current retained experimental compiler: R255.** The bounded AArch64 backend change reduces text1MiB instructions 0.6974% with essentially flat elapsed. All 81 unchanged timing gates pass both confirmations, and heap/copy figures stay equal. Current ratios and every adverse measurement are in the [scoreboard](native-compression-scoreboard.md). Large-input parity remains incomplete.
+
+## R255: retain instruction reduction without claiming a large time gain
+
+The experimental backend reuses a current integer comparison across nonoverwriting selections/moves within one basic block. Different registers/width/order and all unknown instructions invalidate it; unknown multi-instruction expansions suppress tracking entirely. It changes only flags-preserving native instruction emission, with no new source, permission, arithmetic, ownership, funding or operation selection.
+
+The feature-disabled rebuilt compiler restores the entire R253 Object/metadata exactly. Final enabled annotations reproduce the measured image. Exactly four reduction bodies lose one comparison, while padding keeps their 2048-byte footprints. Root,132 other routines,seven vector bodies and all phase metadata remain exact. All142 linked function starts and linked root bytes match. The frame remains50560B and worker1884504B.
+
+Text1MiB retires31.8million fewer instructions (-0.6974%) but elapsed is flat/slightly worse:2.172846x->2.174604x reference(+0.0809%). Random1MiB is3.086275x->3.070799x(-0.5014% elapsed) with a much smaller independent instruction reduction; do not assign all elapsed change to this mechanism. All81 geometric elapsed is-0.1774%,56 improve/25 worsen; every unchanged point/balanced gate passes both. Eight stays0.434532x with equal instruction medians and contrary timings preserved. Heap/copy/zero medians stay exact.
+
+Fresh712 maintained tests/same7 exclusions,8 backend tests,58816 native probe calls,3500 original/decoded source calls/700 zero trips,162 complete smokes and162 observed calls/all81 exact phase counts pass. Three backend source files change; all822 Mech compiler files remain R253. Ordinary IR215/extra-contract omissions stay unchanged. The current profile still puts random mainly in root state transport and text mainly in existing numeric phases. Move the main effort to the enclosing recurrence funding/cold handoff and empty reduction path; the R247 placement control remains open. [Exact patch, all validation, current profile and evidence](native-shared-comparison.md).
 
 ## R254: archive forwarding after predicate proof
 
