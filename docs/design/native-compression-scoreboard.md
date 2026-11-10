@@ -8,6 +8,8 @@ At 1 MiB: random **3.217791x**, text **2.244741x**, periodic **1.774171x**, repe
 
 Complete fixed-level-12 native execution, runtime input and matched live output ownership. Ordinary IR215 and the standalone extra-contract omissions remain unchanged. Ratios use pooled observation medians; elapsed changes use balanced block means. Near-resolution 0/1/7-byte timings remain visible.
 
+R251 adds [exact zero-route and state-transport attribution](native-zero-trip-state.md) while restoring this complete normal image byte-for-byte. It adds no timing claim; all standings below remain the R250 measurements.
+
 ## All current below-reference configurations
 
 | Group | Case | Bytes | R250 / Roc |
