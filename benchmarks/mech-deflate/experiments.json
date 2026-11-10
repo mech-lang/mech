@@ -52638,6 +52638,545 @@
         "Additional ordinary managed contract integration."
       ],
       "complete_goal": false
+    },
+    "264": {
+      "git_parent": "f299af56c78319dd3b820dae6fd56697d12c6a61",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R264 direct vector-truth branches on R263",
+      "retained_source_packet_round": 264,
+      "review_before_experiment": "https://github.com/mech-lang/mech/pull/973#issuecomment-6776512634",
+      "decision": {
+        "round": 264,
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 264,
+        "published_parent": "f299af56c78319dd3b820dae6fd56697d12c6a61",
+        "baseline": "R263 guarded-index bounds on repaired R261",
+        "basis": "Small positive combined paired elapsed signal with all81 unchanged gates, a generic branch-specific lowering and focused observer/alias semantics. Retain every adverse cohort/case/counter and continue full-matrix measurement; no uniform or large win is claimed.",
+        "all81_paired_after_over_before": 0.9966390714138815,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 1.0009453022264494,
+          "primary-b": 0.9923513667123509
+        },
+        "existing_pooled_gates": 81,
+        "existing_block_gates": 81,
+        "below_reference_counts": {
+          "before": 22,
+          "after": 22
+        },
+        "new_parity_crossings": 0,
+        "source_files": 825,
+        "modified_mech_files": 2,
+        "backend_files": 200,
+        "modified_backend_files": 1,
+        "all81_heap_copy_zero_private_peaks_equal": true,
+        "nearest_above_reference": [
+          {
+            "case": "prefix-repeated-32767",
+            "before": 1.0211180414994296,
+            "after": 1.0228051784452097,
+            "change_percent": 0.1652244772115452
+          },
+          {
+            "case": "prefix-repeated-32769",
+            "before": 1.0268896879201452,
+            "after": 1.026792838511491,
+            "change_percent": -0.009431335205078994
+          },
+          {
+            "case": "prefix-repeated-32768",
+            "before": 1.0413358347486474,
+            "after": 1.0348967365716581,
+            "change_percent": -0.6183498120511333
+          },
+          {
+            "case": "prefix-repeated-33027",
+            "before": 1.0389282467421697,
+            "after": 1.0404665016626564,
+            "change_percent": 0.14806170929611007
+          },
+          {
+            "case": "prefix-periodic-32768",
+            "before": 1.0619076801126786,
+            "after": 1.057479015622619,
+            "change_percent": -0.41704797629769086
+          },
+          {
+            "case": "prefix-periodic-32769",
+            "before": 1.0632547097909957,
+            "after": 1.0613175808444884,
+            "change_percent": -0.18218860717655883
+          },
+          {
+            "case": "prefix-periodic-32767",
+            "before": 1.0619427627590015,
+            "after": 1.0663110391255028,
+            "change_percent": 0.4113476281105921
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "before": 1.0718609782810276,
+            "after": 1.0688218333748598,
+            "change_percent": -0.28353909394498444
+          }
+        ],
+        "qualified_native_tests": 720,
+        "fresh_native_source_calls": 5788,
+        "fresh_source_resident_calls": 0,
+        "complete_smoke_calls": 324,
+        "next": "Revisit the archived R235 checked packet-read alternative on the current outlined architecture, with exact span/refusal tests and all81 timing; keep source data guards and original resource contracts.",
+        "coverage_limits": [
+          "The unchanged maintained680-test result is inherited from R261, not rerun.",
+          "Focused source-resident rows are reused with exact source/library provenance, not counted as fresh.",
+          "No full hostedCI, fresh full linked/AOT integration suite, full6.6MB input or full disabled-pipeline emission is claimed.",
+          "The compact timing entry retains the established additional ordinary managed-contract omissions."
+        ],
+        "complete_goal": false
+      },
+      "source": {
+        "files": 825,
+        "modified": 2,
+        "new": 0,
+        "baseline": "R263 exact source closure",
+        "manifest_sha256": "6720846f1371c4fc2c52236bb4177f950cb818450e51ccd7c51bc4ad50bcdbac",
+        "patch_sha256": "514901b6e33072550b807fa728b9c413775c8e9b9d1bbddf24da0a803899f708",
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ]
+      },
+      "backend_source": {
+        "files": 200,
+        "modified": 1,
+        "baseline": "R255 retained comparison-reuse backend",
+        "manifest_sha256": "c8484b399352ebdd51705941ee5f032cd23ef5c25f698ba0e3018999017dd751",
+        "patch_sha256": "da4412bf12efdfc7ba3ea4638e7706bf0bd591881a568445a03a012c971d319d",
+        "generated_manifest_sha256": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b"
+      },
+      "summary": {
+        "cases": 81,
+        "blocks_per_case": 48,
+        "actors": 3,
+        "method": "Two fresh cohorts; all six balanced actor orders repeated four times per cohort. Ratios formed within each balanced block before geometric aggregation. The old pooled median and block-median 1.05 gates are reported unchanged. All adverse observations retained.",
+        "all81_paired_after_over_before": 0.9966390714138815,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 1.0009453022264494,
+          "primary-b": 0.9923513667123509
+        },
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81
+      },
+      "qualification": {
+        "round": 264,
+        "tests": {
+          "passed": 720,
+          "failed": 0,
+          "filtered_out": 7,
+          "command": [
+            "env",
+            "MECH_WIDE_ANY_BITS=1",
+            "MECH_PRIVATE_INDEXED_CHAINS=1",
+            "MECH_PHASE_OWNER_TRANSFER=1",
+            "MECH_PHASE_VECTOR_FAST=1",
+            "MECH_PRIVATE_READ_INTERVALS=1",
+            "MECH_PHASE_INVARIANT_VIEWS=1",
+            "MECH_CURRENT_PREDICATES=1",
+            "MECH_PRIVATE_NESTED_PHASES=1",
+            "MECH_PHASE_ASSERTION_FLOORS=1",
+            "MECH_TRAVERSAL_WRITE_BOUNDS=1",
+            "/private/tmp/mech-border-loops-round264-20261110/candidate-tests",
+            "--test-threads=1",
+            "--skip",
+            "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+            "--skip",
+            "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+            "--skip",
+            "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+            "--skip",
+            "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+            "--skip",
+            "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+            "--skip",
+            "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+            "--skip",
+            "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+          ]
+        },
+        "focused_tests": 3,
+        "exhaustive_equality_calls_per_test_execution": 5346432,
+        "vector_bit_and_observation_calls_per_test_execution": 1596,
+        "focused_and_full_suite_execute_both": true,
+        "source_native_calls": 5788,
+        "source_variants": [
+          {
+            "mode": "normal",
+            "source_sha256": "e2a4db534632d071d9974668ea5eb61097beeec38380584ef9b35ae3067ad200",
+            "cases_each": 1174,
+            "native_calls": 4696,
+            "fresh_resident_calls": 0,
+            "source_oracle_and_frozen_resident_match": true,
+            "selected_cases_each": [
+              1168,
+              1168,
+              1168,
+              1168
+            ],
+            "rejections_each": 4,
+            "current_phase_visits_original_decoded_before_after_exact": true,
+            "widened_loops": [
+              60,
+              80,
+              469
+            ]
+          },
+          {
+            "mode": "swapped",
+            "source_sha256": "2e408f09ba97a88b758aab089d50d4b8202a246fccace1d227fc046db16b780e",
+            "cases_each": 91,
+            "native_calls": 364,
+            "fresh_resident_calls": 0,
+            "source_oracle_and_frozen_resident_match": true,
+            "selected_cases_each": [
+              85,
+              85,
+              85,
+              85
+            ],
+            "rejections_each": 4,
+            "current_phase_visits_original_decoded_before_after_exact": true,
+            "widened_loops": [
+              60,
+              80,
+              469
+            ]
+          },
+          {
+            "mode": "fallible",
+            "source_sha256": "2fffb74b12a4b503dfd4b19950c0db32e033c7d57fc68c99d500bcb7b27d8726",
+            "cases_each": 91,
+            "native_calls": 364,
+            "fresh_resident_calls": 0,
+            "source_oracle_and_frozen_resident_match": true,
+            "selected_cases_each": [
+              85,
+              85,
+              85,
+              85
+            ],
+            "rejections_each": 5,
+            "current_phase_visits_original_decoded_before_after_exact": true,
+            "widened_loops": []
+          },
+          {
+            "mode": "stride12",
+            "source_sha256": "4d97e448b2c50d518f4a292d7f4e8146077c5df29aa2d3dcb534106d1e5e0643",
+            "cases_each": 91,
+            "native_calls": 364,
+            "fresh_resident_calls": 0,
+            "source_oracle_and_frozen_resident_match": true,
+            "selected_cases_each": [
+              85,
+              85,
+              85,
+              85
+            ],
+            "rejections_each": 4,
+            "current_phase_visits_original_decoded_before_after_exact": true,
+            "widened_loops": []
+          }
+        ],
+        "fresh_source_resident_calls": 0,
+        "frozen_resident_scope": "Unchanged R230 source and resident library observations are reused, not counted as new. Current native phase observations compare before/after; historical phase visits are excluded from the resident value/error comparison.",
+        "complete_smoke_calls": 324,
+        "complete_cases_each_form": 81,
+        "full_original_decoded_object_and_metadata_equal": true,
+        "test_root_opt_level": 1,
+        "performance_library_opt_level": 3,
+        "warnings_as_errors": true,
+        "native_feature_profile": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "same_seven_inherited_exclusions": [
+          "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+          "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+          "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+          "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+          "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+          "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+          "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+        ],
+        "checks": {
+          "tracked-analysis-layout": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-native-build-analysis-layout.py"
+            ],
+            "exit": 0,
+            "stdout": "Native build analysis layout contract passed\n",
+            "stderr": ""
+          },
+          "tracked-host-catalog": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-native-host-catalog.py"
+            ],
+            "exit": 0,
+            "stdout": "native host catalog contract passed (five standard providers, six full providers, no actor migration linkages)\n",
+            "stderr": ""
+          },
+          "tracked-source-catalog": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-source-catalog-entrypoints.py"
+            ],
+            "exit": 0,
+            "stdout": "Source catalog entry-point contract passed\n",
+            "stderr": ""
+          },
+          "format-check": {
+            "command": [
+              "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustfmt",
+              "--edition",
+              "2024",
+              "--check",
+              "--config",
+              "skip_children=true",
+              "candidate-source/hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs",
+              "candidate-source/hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs"
+            ],
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        "all_measurements_finished_before_post_change_profiles": true,
+        "fresh_profiles": {
+          "before_border": 2,
+          "reference_border": 2,
+          "after": 8
+        },
+        "measurement_barrier": {
+          "cases_per_stage": 81,
+          "stages": [
+            "primary-a",
+            "primary-b",
+            "cpu",
+            "memory"
+          ],
+          "actual_stage_order": [
+            "primary-a",
+            "primary-b",
+            "cpu",
+            "memory"
+          ],
+          "all_complete_before_any_post_change_profile": true,
+          "discarded_or_repeated_valid_observations": false
+        },
+        "coverage_limits": [
+          "The unchanged maintained680-test result is inherited from R261, not rerun.",
+          "Focused source-resident rows are reused with exact source/library provenance, not counted as fresh.",
+          "No full hostedCI, fresh full linked/AOT integration suite, full6.6MB input or full disabled-pipeline emission is claimed.",
+          "The compact timing entry retains the established additional ordinary managed-contract omissions."
+        ]
+      },
+      "machine": {
+        "common_root_and_numeric_definitions": 341,
+        "changed_definitions": [
+          {
+            "symbol": "_mech_compact_numeric_837",
+            "before": {
+              "code_bytes": 53500,
+              "stack_bytes": 944,
+              "sha256": "bbc8f381a5b6ce03af46e53cd6335c8e31d0afc18af33e65fdbbff9bb13f34b9"
+            },
+            "after": {
+              "code_bytes": 51868,
+              "stack_bytes": 960,
+              "sha256": "a0099a6fc639bbdac5cf49159c40b1783f8856354746d25cbf5225823ce8e00f"
+            }
+          },
+          {
+            "symbol": "_mech_compact_numeric_837_vector",
+            "before": {
+              "code_bytes": 41456,
+              "stack_bytes": 944,
+              "sha256": "3916ea4337365c69ea0ba033df3ce8c5163f3cbeab72b9a2c84eb8b30017775e"
+            },
+            "after": {
+              "code_bytes": 41576,
+              "stack_bytes": 960,
+              "sha256": "e0fb7b63d22a81d2380d47f5df5cf71dfc0611b11a7a7cdc141ad9300d5030c5"
+            }
+          }
+        ],
+        "unchanged_definitions": 339,
+        "root_Object_code_and_frame_exact": true,
+        "worker_bytes": {
+          "before": 2084296,
+          "after": 2084296
+        },
+        "scope": "Exact function body bytes in each actual Object, with corresponding linked current-image disassembly. No sampled weight is treated as an instruction count."
+      },
+      "private_predicate_instructions": [
+        4,
+        3
+      ],
+      "private_predicate_scalar_transfers": [
+        2,
+        1
+      ],
+      "all81_heap_copy_zero_private_peaks_equal": true,
+      "external_pins": {
+        "bytecode": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "benchmark_source": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/benchmark-source.mec",
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "baseline_object": {
+          "path": "/private/tmp/mech-phase-length-floors-round263-20261110/full-image/original/object.o",
+          "bytes": 1475808,
+          "sha256": "6685707b0633d9dee058f15354d2d7b5339cee8c3ccced6f0da310ac6caf9942"
+        },
+        "baseline_worker": {
+          "path": "/private/tmp/mech-phase-length-floors-round263-20261110/mech-worker",
+          "bytes": 2084296,
+          "sha256": "2ca0242f60c57f04a40a894a7f40f203c72c019fe51e459bb02f6f9769b51df7"
+        },
+        "candidate_object": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/full-image/original/object.o",
+          "bytes": 1474400,
+          "sha256": "4c78d2f955b9f045cb9f85103c6f0408ca08556a1c137f2ed446077170bb9a1b"
+        },
+        "candidate_metadata": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/full-image/original/metadata.json",
+          "bytes": 4436131,
+          "sha256": "af1e7065272e609169638be0c765006e42bd02117a8fc3b0ee5f1404a2c1ea52"
+        },
+        "candidate_worker": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/mech-worker",
+          "bytes": 2084296,
+          "sha256": "9f3b73dd3d731bce97316a3f279d9abf20ec4890b3e8d02af8c22191e75a31cf"
+        },
+        "producer": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/producer",
+          "bytes": 96987480,
+          "sha256": "b55a834be4539014d6b977cc04ff21ecdc710166514d1164d3b10ded2942e75b"
+        },
+        "compiler_source_manifest": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/compiler-source-manifest.json",
+          "bytes": 163727,
+          "sha256": "6720846f1371c4fc2c52236bb4177f950cb818450e51ccd7c51bc4ad50bcdbac"
+        },
+        "compiler_patch": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/compiler.patch",
+          "bytes": 5890,
+          "sha256": "514901b6e33072550b807fa728b9c413775c8e9b9d1bbddf24da0a803899f708"
+        },
+        "retained_backend_patch": {
+          "path": "/private/tmp/mech-shared-compare-round255-20261110/backend.patch",
+          "bytes": 8897,
+          "sha256": "83c5fc6c14689ba80238615ae6e75c00103cbc447c8ae6681a62fae97607dc54"
+        },
+        "candidate_backend_source_manifest": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/backend-source-manifest.json",
+          "bytes": 32144,
+          "sha256": "c8484b399352ebdd51705941ee5f032cd23ef5c25f698ba0e3018999017dd751"
+        },
+        "candidate_backend_patch": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/backend.patch",
+          "bytes": 1185,
+          "sha256": "da4412bf12efdfc7ba3ea4638e7706bf0bd591881a568445a03a012c971d319d"
+        },
+        "candidate_backend_generated_manifest": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/backend-generated-manifest.json",
+          "bytes": 3293,
+          "sha256": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b"
+        },
+        "candidate_backend_library": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/backend-on/libcranelift_codegen.rlib",
+          "bytes": 26307224,
+          "sha256": "4ce0bb965a317af01f3c1c9693f3d0dc649a777a56826b0baef77c84c08ef867"
+        }
+      },
+      "artifacts": [
+        {
+          "name": "r264-vector-truth-branch-f40f9602e8dc.tar.gz",
+          "bytes": 11491859,
+          "sha256": "f40f9602e8dc8bc5e0142e57cb9c747e8a4bb249001d9f58be4e0c51dbb0c3e5",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r264-vector-truth-branch-f40f9602e8dc.tar.gz"
+        },
+        {
+          "name": "r264-vector-truth-branch-f40f9602e8dc.tar.gz.sha256",
+          "bytes": 111,
+          "sha256": "f5188aba61cfdf31a6b6ffa565293a689027c5ec2edc6ee7e2dc87d3b0dada9b",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r264-vector-truth-branch-f40f9602e8dc.tar.gz.sha256"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "f40f9602e8dc8bc5e0142e57cb9c747e8a4bb249001d9f58be4e0c51dbb0c3e5",
+        "verified_files": 2252,
+        "offline_reports": 5,
+        "current_source_files": 825,
+        "reversed_base_source_files": 825,
+        "current_backend_source_files": 200,
+        "reversed_backend_source_files": 200,
+        "source_reconstruction_exact": true,
+        "replayed_output_hashes": {
+          "primary-results.json": "6ca6403c1d66e1c09edcafb2ce34789692a3e517d393a4279090e75ff4e45003",
+          "counter-results.json": "72a14f9e3ab19e9b082965e78980e32197dfe8e79bac305d08edbdd59e42ef51",
+          "qualification-results.json": "b8d99cc9f2bcfcca26538a61ca9befba635f0000484cf9701706b42e7d46b3a3",
+          "REPORT.md": "08604ec33f04792380a48894972934552a99279b0ebdc11707c398c8e9f8e6e9",
+          "result-decision.json": "808bb60681bfef8d4ab13e5505a0f963f83de724e3bc861759885f45bcad0297"
+        },
+        "stdout": "Five reports replay identically;825-file compiler and200-file backend reconstruct in both directions; no compilation or compression executed.\n"
+      },
+      "report": "docs/design/native-vector-truth-lowering.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r264-vector-truth-branch-f40f9602e8dc.tar.gz",
+        "bytes": 11491859,
+        "sha256": "f40f9602e8dc8bc5e0142e57cb9c747e8a4bb249001d9f58be4e0c51dbb0c3e5",
+        "files": 2252,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "6ca6403c1d66e1c09edcafb2ce34789692a3e517d393a4279090e75ff4e45003",
+            "counter-results.json": "72a14f9e3ab19e9b082965e78980e32197dfe8e79bac305d08edbdd59e42ef51",
+            "qualification-results.json": "b8d99cc9f2bcfcca26538a61ca9befba635f0000484cf9701706b42e7d46b3a3",
+            "REPORT.md": "08604ec33f04792380a48894972934552a99279b0ebdc11707c398c8e9f8e6e9",
+            "result-decision.json": "808bb60681bfef8d4ab13e5505a0f963f83de724e3bc861759885f45bcad0297"
+          }
+        }
+      },
+      "remaining": [
+        "Retest the archived checked input-packet alternative on current outlined phases, with real current prologue evidence and original span controls.",
+        "Parity across all compression families and sizes.",
+        "Additional ordinary managed contract integration."
+      ],
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
