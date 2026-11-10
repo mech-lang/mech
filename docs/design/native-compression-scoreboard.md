@@ -8,6 +8,12 @@ There are22 measured below-reference configurations. The largest controlled wins
 
 [Compiler patch, exact qualification, profiles, limits and verified evidence](native-private-nested-phases.md). [R255 historical measurements](native-shared-comparison.md). Ordinary IR215 and the compact entry’s additional omitted managed contract remain unchanged. Large-input parity remains incomplete.
 
+## R257 component and timing audit
+
+**R256 remains retained.** The next packed-read geometry experiment is archived with all81 results, including text/random gains, repetitive-input instruction increases and the failed pooled empty timing gate. Code shrinks, but executed work does not improve uniformly. [Complete R257 component, qualification, profiles and all81 observations](native-entry-packed-geometry.md).
+
+The supplemental paired audit finds two R257 sign reversals from pooling actor medians across heterogeneous cohorts. Repeated32KiB's pooled−2.1642% masks individual+0.5778%/+0.3198% slowdowns; comparing within the48 balanced blocks gives+0.3240%. The same audit confirms R256's18.2763% matrix improvement and finds no R256 reversals. Existing observations, pooled ratios and1.05 gates are preserved. The historical R256 table below remains unchanged; pooled medians are descriptive, not paired causal estimates.
+
 ## Every retained below-reference configuration
 
 | Group | Case | Bytes | R256 / Roc |

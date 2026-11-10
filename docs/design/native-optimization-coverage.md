@@ -1,5 +1,17 @@
 # Production/diagnostic optimization coverage after R256
 
+R257 is an archived component, not a new retained optimization. It reuses only
+existing current-entry geometry in packed reads and requires the independent
+source-window proof before complete replacement. One of340 numeric definitions
+changes; all339 others are byte-identical.715 maintained tests and268800 linked
+width2/4/8 controls pass, including actual readable windows after native entry.
+The ordinary funded entry and its extra-contract omission remain unchanged.
+All81 elapsed/counter cohorts and12 profiles complete. The pooled empty gate
+fails, and repetitive-input instructions increase, so retain R256. Supplemental
+paired timing analysis preserves original gates and exposes two pooled sign
+reversals; R256's previous large gain is independently confirmed.
+[Scope, tradeoffs, all81 numbers and public evidence](native-entry-packed-geometry.md).
+
 R256 adds private fixed-buffer nested composition using the SAME operation/version
 proof and emitter.43 enclosing regions qualify;7 matching phases fold into their
 parent, with170 selected numeric phases total. The new collector retains26 Tail

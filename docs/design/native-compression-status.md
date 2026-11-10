@@ -2,6 +2,16 @@
 
 **Current retained experimental compiler: R256.** Consecutive positions stay in a guarded native region, with exact cold handoffs and unchanged ordinary funding. At 1 MiB: text1.908252x, random2.170161x, periodic1.267271x, repeated1.222946x reference. Eight0.414364x;22/81 cases beat reference, through 16 KiB. Large-input parity remains incomplete. [Current all 81 scoreboard](native-compression-scoreboard.md).
 
+## R257: preserve the geometry component and correct timing interpretation
+
+Tracing the R256 hot route narrows the earlier hypothesis: the repeated geometry test is in a packed-read adapter before the child version. Reusing the already checked parent geometry independently of source-window safety changes only one of340 numeric definitions. It shrinks42800→23588B and928→816B of stack; source, buffers, funding and ordinary extra-contract omissions stay fixed.
+
+Text32KiB instructions fall2.5112%, random4.1126%; periodic/repeated rise about1.45%. At1MiB, text/random instructions fall2.5431%/4.9512%, but periodic/repeated rise1.4784%/1.4620%. All81 heap/copy/zero/private-peak medians stay identical. The pooled empty timing gate fails(+5.6582%, with raw83ns medians unchanged), so **retain R256 and archive this component**. Small gains remain available for a narrower follow-up.
+
+The paired audit also exposes a pooled sign reversal: repeated32KiB is slower in both individual cohorts despite a pooled apparent win. Existing gates/raw observations are retained; within-block ratios are added. The historical R25618.3% gain survives the same audit with no reversals.715 maintained tests and268800 focused width2/4/8 source executions pass;12 new profiles, all81 two elapsed/CPU/heap cohorts and exact826→825→826 source reconstruction are verified. Environmental archive extraction failure is resolved and documented. [Design, complete numbers, failure disposition and verified evidence](native-entry-packed-geometry.md).
+
+Next isolate shape-only reuse from full checked-fallback removal and inspect the periodic skip loop's moves/spills before combining the component; then continue the remaining native path-scan work. R247 placement and empty outer reduction remain open.
+
 ## R256: compose private fixed-buffer nested phases
 
 The shared numeric proof and source operations remain. A sealed same-proof private contract requires actual exclusive writable owners and fixed capacity, while ordinary checked visits/funding retain their original refusal and debits. Unsupported collection work receives exact current scalars/views before running in its original CFG. No source algorithm, allocation site or new primitive operation changes. The collector encloses 26 Tail loops and enters 35–36 times per1 MiB, with 31 window handoffs.

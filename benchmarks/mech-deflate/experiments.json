@@ -50408,6 +50408,345 @@
       },
       "report": "docs/design/native-private-nested-phases.md",
       "next": "Carry only certified current vector geometry through supported child-version facts; retain exact cold handoff and ordinary funding."
+    },
+    "257": {
+      "git_parent": "608ed69aedb98bb8c9d61b0bf6364580b304a6d1",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "decision": {
+        "round": 257,
+        "retain": false,
+        "reason": "Archive component and retain R256: pooled empty balanced timing gate fails; periodic/repeated instructions rise despite text/random improvements. Preserve the component, code/stack reduction and every measurement for a narrower follow-up.",
+        "primary_summary": {
+          "round": 257,
+          "baseline": "R256",
+          "candidate": "independent current-entry packed-read geometry",
+          "all81_geomean_after_over_before": 0.9924403455702584,
+          "large_original11_geomean_after_over_before": 0.9849142268786898,
+          "large_controlled_prefix_geomean_after_over_before": 0.9950046018450716,
+          "balanced_improvements": 53,
+          "balanced_regressions": 28,
+          "raw_improvements": 49,
+          "raw_ties": 3,
+          "point_gate_pass": 81,
+          "balanced_gate_pass": 80,
+          "cohorts": {
+            "primary-a": {
+              "point_gate_pass": 81,
+              "balanced_gate_pass": 81,
+              "large_prefix_geomean": 0.9932394246361591
+            },
+            "primary-b": {
+              "point_gate_pass": 81,
+              "balanced_gate_pass": 80,
+              "large_prefix_geomean": 0.9938661964151115
+            }
+          }
+        },
+        "individual_gate_misses": [
+          {
+            "cohort": "primary-b",
+            "case": "empty",
+            "point_ratio": 1.0,
+            "balanced_ratio": 1.073711375212224,
+            "point_gate": true,
+            "balanced_gate": false
+          }
+        ],
+        "adverse_balanced_cases": [
+          {
+            "case": "empty",
+            "change": 1.0565819232131666
+          },
+          {
+            "case": "one-stored",
+            "change": 1.0247661822311256
+          },
+          {
+            "case": "eight-overlap",
+            "change": 1.0018275791128985
+          },
+          {
+            "case": "32-high-entropy-stored",
+            "change": 1.0176579537933919
+          },
+          {
+            "case": "33027-periodic-window",
+            "change": 1.007299832842624
+          },
+          {
+            "case": "repeated-32769",
+            "change": 1.0058410188844973
+          },
+          {
+            "case": "prefix-periodic-1024",
+            "change": 1.0018950206427513
+          },
+          {
+            "case": "prefix-periodic-16384",
+            "change": 1.002344612354777
+          },
+          {
+            "case": "prefix-periodic-32767",
+            "change": 1.0076672148146135
+          },
+          {
+            "case": "prefix-periodic-32768",
+            "change": 1.010294923327047
+          },
+          {
+            "case": "prefix-periodic-32769",
+            "change": 1.0001061639675115
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "change": 1.0066916499814502
+          },
+          {
+            "case": "prefix-periodic-65535",
+            "change": 1.0076717970266797
+          },
+          {
+            "case": "prefix-periodic-65536",
+            "change": 1.0059127380379438
+          },
+          {
+            "case": "prefix-periodic-65537",
+            "change": 1.0192999554440354
+          },
+          {
+            "case": "prefix-periodic-262144",
+            "change": 1.0264047569036612
+          },
+          {
+            "case": "prefix-periodic-1048576",
+            "change": 1.018885050229586
+          },
+          {
+            "case": "prefix-repeated-4096",
+            "change": 1.0236104949199
+          },
+          {
+            "case": "prefix-repeated-16384",
+            "change": 1.0290829274129618
+          },
+          {
+            "case": "prefix-repeated-32767",
+            "change": 1.0052257015385897
+          },
+          {
+            "case": "prefix-repeated-32769",
+            "change": 1.028527508398947
+          },
+          {
+            "case": "prefix-repeated-33027",
+            "change": 1.0318260409819668
+          },
+          {
+            "case": "prefix-repeated-65535",
+            "change": 1.021790895312892
+          },
+          {
+            "case": "prefix-repeated-65536",
+            "change": 1.004851337464196
+          },
+          {
+            "case": "prefix-repeated-65537",
+            "change": 1.0136536541245347
+          },
+          {
+            "case": "prefix-repeated-131072",
+            "change": 1.007553527590526
+          },
+          {
+            "case": "prefix-repeated-262144",
+            "change": 1.009709771032584
+          },
+          {
+            "case": "prefix-repeated-1048576",
+            "change": 1.0086146584923072
+          }
+        ],
+        "instruction_decreases": 46,
+        "instruction_increases": 32,
+        "memory_equality": true,
+        "changed_numeric_definitions": [
+          "_mech_compact_numeric_837_vector"
+        ],
+        "qualification_calls": 268800,
+        "allows_timing_gate_increase": false,
+        "complete_goal": false,
+        "supplemental_paired_effect": 0.9919910796390221,
+        "pooled_direction_reversals": [
+          "prefix-periodic-131072",
+          "prefix-repeated-32768"
+        ]
+      },
+      "retained_compiler": "R256",
+      "source": {
+        "files": 826,
+        "modified": 2,
+        "new": 1,
+        "manifest_sha256": "74ddfd1c8ba9d3040b0d17cd42530206676175ade95c0240d0e83ac3cb92d5ee",
+        "patch_sha256": "2498dce0e6cc31e4366e2f43efc9c6e56645e4d33d0240e867cfd101389eabd7",
+        "ordinary_IR215_unchanged": true,
+        "retained_backend": "R255 Cranelift0.131.3"
+      },
+      "current_pins": {
+        "bytecode": {
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "benchmark_source": {
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "reference_worker": {
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "baseline_object": {
+          "bytes": 1478952,
+          "sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631"
+        },
+        "baseline_worker": {
+          "bytes": 2100808,
+          "sha256": "96091f758139371d0f8455d18be30c2086af70904c5604a0b11307c651648297"
+        },
+        "candidate_object": {
+          "bytes": 1459752,
+          "sha256": "540deeb9977aad17d607760c664781989de8b457b1983fecd88e4cfa3a43b309"
+        },
+        "candidate_metadata": {
+          "bytes": 4345308,
+          "sha256": "4568703ff36c5db2014b843a9983660d261b7cf335c5c44bf35cbf0f2282ddea"
+        },
+        "candidate_worker": {
+          "bytes": 2067784,
+          "sha256": "7108d3d5a31a18dc32d6ad3df6f69926ac6d7587dfc8da053e89523883d5afc2"
+        },
+        "producer": {
+          "bytes": 96965400,
+          "sha256": "7d420f8e03c7ecc45229a9a314f189a5871d6f34ac19709008fd2ac3225f4e88"
+        },
+        "compiler_source_manifest": {
+          "bytes": 163924,
+          "sha256": "74ddfd1c8ba9d3040b0d17cd42530206676175ade95c0240d0e83ac3cb92d5ee"
+        },
+        "compiler_patch": {
+          "bytes": 6860,
+          "sha256": "2498dce0e6cc31e4366e2f43efc9c6e56645e4d33d0240e867cfd101389eabd7"
+        },
+        "retained_backend_patch": {
+          "bytes": 8897,
+          "sha256": "83c5fc6c14689ba80238615ae6e75c00103cbc447c8ae6681a62fae97607dc54"
+        }
+      },
+      "primary_summary": {
+        "round": 257,
+        "baseline": "R256",
+        "candidate": "independent current-entry packed-read geometry",
+        "all81_geomean_after_over_before": 0.9924403455702584,
+        "large_original11_geomean_after_over_before": 0.9849142268786898,
+        "large_controlled_prefix_geomean_after_over_before": 0.9950046018450716,
+        "balanced_improvements": 53,
+        "balanced_regressions": 28,
+        "raw_improvements": 49,
+        "raw_ties": 3,
+        "point_gate_pass": 81,
+        "balanced_gate_pass": 80,
+        "cohorts": {
+          "primary-a": {
+            "point_gate_pass": 81,
+            "balanced_gate_pass": 81,
+            "large_prefix_geomean": 0.9932394246361591
+          },
+          "primary-b": {
+            "point_gate_pass": 81,
+            "balanced_gate_pass": 80,
+            "large_prefix_geomean": 0.9938661964151115
+          }
+        }
+      },
+      "paired_summary": {
+        "round": "R257",
+        "cases": 81,
+        "descriptive_geomean_of_case_paired_effects": 0.9919910796390221,
+        "direction_reversals": [
+          "prefix-periodic-131072",
+          "prefix-repeated-32768"
+        ]
+      },
+      "historical_R256_paired_audit": {
+        "round": "R256",
+        "cases": 81,
+        "descriptive_geomean_of_case_paired_effects": 0.8172371710448196,
+        "direction_reversals": []
+      },
+      "qualification": {
+        "maintained_passed": 715,
+        "inherited_filtered": 7,
+        "focused_linked_calls": 268800,
+        "complete_smokes": 162,
+        "fresh_profiles": 12,
+        "all81_CPU_heap_and_two_elapsed_cohorts": true,
+        "default_off_restores_R256": true,
+        "final_source_reproduces_measured_image": true,
+        "all81_heap_copy_identical": true
+      },
+      "machine": {
+        "common_numeric_definitions": 340,
+        "unchanged_common_definitions": 339,
+        "changed_definitions": {
+          "_mech_compact_numeric_837_vector": {
+            "before": {
+              "code_bytes": 42800,
+              "stack_bytes": 928,
+              "sha256": "78f2daba78e8e570b6f372ec7400bf624538f09ae4d5b21d25581d7f376c14d9"
+            },
+            "after": {
+              "code_bytes": 23588,
+              "stack_bytes": 816,
+              "sha256": "b7964c498907adf3ebf0c7301ee498ea0a8326204a0234e616ef536efa10bf59"
+            }
+          }
+        },
+        "root_before": {
+          "code_bytes": 1040856,
+          "stack_bytes": 57088
+        },
+        "root_after": {
+          "code_bytes": 1040856,
+          "stack_bytes": 57088
+        },
+        "object_text_bytes": {
+          "before": 1385816,
+          "after": 1366616
+        },
+        "worker_bytes": {
+          "before": 2100808,
+          "after": 2067784
+        }
+      },
+      "environmental_failure": {
+        "class": "resolved packaging disk exhaustion after measurements",
+        "obsolete_test_binary_bytes_freed": 287213280,
+        "obsolete_backend_bytes_freed": 202406400,
+        "all_retained_workers_source_and_receipts_preserved": true
+      },
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r257-pack-geometry-d00759469e51.tar.gz",
+        "sha256": "d00759469e51061d5f73a537251e5d21354f99fdf6f8e18464f2997149d7f24c",
+        "bytes": 21617354,
+        "files": 2619,
+        "reports_replayed": 7,
+        "fresh_public_verification": true
+      },
+      "report": "docs/design/native-entry-packed-geometry.md",
+      "next": "Isolate shape-only reuse from full fallback erasure; inspect periodic skip-loop register transport, then return to native path-scan cost."
     }
   },
   "repository": "mech-lang/mech",
