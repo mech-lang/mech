@@ -53775,6 +53775,613 @@
         "Parity across all compression families/sizes and additional ordinary managed contract integration."
       ],
       "complete_goal": false
+    },
+    "266": {
+      "git_parent": "3a04fd479caf4f2df37b749c7c2b2a0744cadf4e",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R264 direct vector-truth branches on R263; R266 extending-load alternative rejected globally and preserved for later composition",
+      "retained_source_packet_round": 264,
+      "review_before_experiment": "https://github.com/mech-lang/mech/pull/973#issuecomment-6779140146",
+      "decision": {
+        "round": 266,
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 264,
+        "evaluated_source_packet_round": 266,
+        "published_parent": "3a04fd479caf4f2df37b749c7c2b2a0744cadf4e",
+        "baseline": "Exact retained R264 source and binary, excluding rejected R265",
+        "basis": "Reject globally: both primary cohorts and the near-parity frontier are slower despite genuine instruction and eight-byte wins. Keep the qualified alternative for later isolated/composed measurements. Do not promote a passing1.05 ceiling or lower instruction count into a latency win.",
+        "all81_paired_after_over_before": 1.0174784588936718,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 1.017021104759716,
+          "primary-b": 1.0179360186996664
+        },
+        "existing_pooled_gates": 81,
+        "existing_block_gates": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R264",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 22,
+          "after_count": 22,
+          "denominator": 81,
+          "before_percent": 27.160493827160494,
+          "after_percent": 27.160493827160494,
+          "change_percentage_points": 0.0
+        },
+        "retained_faster_than_reference_percent": 27.160493827160494,
+        "source_files": 827,
+        "modified_existing_mech_files": 6,
+        "new_mech_files": 2,
+        "retained_backend_files": 200,
+        "new_backend_changes": 0,
+        "all81_heap_copy_zero_private_peaks_equal": true,
+        "nearest_above_reference": [
+          {
+            "case": "prefix-repeated-32767",
+            "before": 1.0188855552684113,
+            "after": 1.0443223830372965,
+            "change_percent": 2.4965343396377904
+          },
+          {
+            "case": "prefix-repeated-32768",
+            "before": 1.0237059080218665,
+            "after": 1.0493527382302328,
+            "change_percent": 2.505292780611623
+          },
+          {
+            "case": "prefix-repeated-32769",
+            "before": 1.028317063358099,
+            "after": 1.0581313207002665,
+            "change_percent": 2.899325354458804
+          },
+          {
+            "case": "prefix-repeated-33027",
+            "before": 1.0415271173375595,
+            "after": 1.067907460628117,
+            "change_percent": 2.5328522754158422
+          },
+          {
+            "case": "prefix-periodic-32768",
+            "before": 1.0576124812376893,
+            "after": 1.0863956769278138,
+            "change_percent": 2.7215257195566167
+          },
+          {
+            "case": "prefix-periodic-32767",
+            "before": 1.063286401235816,
+            "after": 1.0959512628420531,
+            "change_percent": 3.0720661496537405
+          },
+          {
+            "case": "prefix-periodic-32769",
+            "before": 1.0666280726708675,
+            "after": 1.0946664133098325,
+            "change_percent": 2.628689545809171
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "before": 1.0677651344504848,
+            "after": 1.102437549456281,
+            "change_percent": 3.2471949014930113
+          }
+        ],
+        "qualified_native_tests": 725,
+        "fresh_native_source_calls": 7384,
+        "fresh_source_resident_calls": 759,
+        "complete_smoke_calls": 324,
+        "preserved_positive_results": [
+          "Eight primary elapsed -2.171652%, separate retired instructions -1.789593%.",
+          "Repeated/periodic32KiB instructions about -1.878%.",
+          "Natural1MiB instructions -2.998690%, separate primary elapsed remains adverse."
+        ],
+        "next": "From retained R264, simplify only the maximum1 unit-append capacity predicate to unsigned length<capacity; retain general cases and cold paths, qualify total equivalence/error/alias/retry and measure all81 before adoption.",
+        "coverage_limits": [
+          "The unchanged maintained680-test result is inherited from R261, not rerun.",
+          "R230 matching-source resident rows and R264 baseline/reference profiles are explicitly reused, not counted as fresh.",
+          "No full hostedCI, fresh full linked/AOT integration suite, full6.6MB input or full disabled-pipeline emission is claimed.",
+          "The compact timing entry retains the established additional ordinary managed-contract omissions."
+        ],
+        "complete_goal": false
+      },
+      "source": {
+        "evaluated_only": true,
+        "files": 827,
+        "modified": 6,
+        "new": 2,
+        "baseline": "R264 exact825-file source closure; R265 alternative excluded",
+        "manifest_sha256": "8d3d8457ecd7628284466f65a652c55637bf30d6276591b053dca90321be615d",
+        "patch_sha256": "bb166e8b2b970c7dbd9616e4742c9815892638cb3b3f96567f8657d3e3c825ee",
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ]
+      },
+      "backend_source": {
+        "files": 200,
+        "modified_since_R264": 0,
+        "baseline": "Retained R264, reversible backend patch has R255 reconstruction base",
+        "manifest_sha256": "c8484b399352ebdd51705941ee5f032cd23ef5c25f698ba0e3018999017dd751",
+        "patch_sha256": "da4412bf12efdfc7ba3ea4638e7706bf0bd591881a568445a03a012c971d319d",
+        "generated_manifest_sha256": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b"
+      },
+      "summary": {
+        "cases": 81,
+        "blocks_per_case": 48,
+        "actors": 3,
+        "method": "Two fresh cohorts; all six balanced actor orders repeated four times per cohort. Ratios formed within each balanced block before geometric aggregation. The old pooled median and block-median 1.05 gates are reported unchanged. All adverse observations retained.",
+        "all81_paired_after_over_before": 1.0174784588936718,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 1.017021104759716,
+          "primary-b": 1.0179360186996664
+        },
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R264",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 22,
+          "after_count": 22,
+          "denominator": 81,
+          "before_percent": 27.160493827160494,
+          "after_percent": 27.160493827160494,
+          "change_percentage_points": 0.0
+        }
+      },
+      "qualification": {
+        "round": 266,
+        "tests": {
+          "passed": 725,
+          "failed": 0,
+          "filtered_out": 7,
+          "command": [
+            "env",
+            "MECH_WIDE_ANY_BITS=1",
+            "MECH_PRIVATE_INDEXED_CHAINS=1",
+            "MECH_PHASE_OWNER_TRANSFER=1",
+            "MECH_PHASE_VECTOR_FAST=1",
+            "MECH_PRIVATE_READ_INTERVALS=1",
+            "MECH_PHASE_INVARIANT_VIEWS=1",
+            "MECH_CURRENT_PREDICATES=1",
+            "MECH_PRIVATE_NESTED_PHASES=1",
+            "MECH_PHASE_ASSERTION_FLOORS=1",
+            "MECH_TRAVERSAL_WRITE_BOUNDS=1",
+            "/private/tmp/mech-extending-loads-round266-20261110/candidate-tests",
+            "--test-threads=1",
+            "--skip",
+            "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+            "--skip",
+            "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+            "--skip",
+            "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+            "--skip",
+            "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+            "--skip",
+            "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+            "--skip",
+            "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+            "--skip",
+            "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+          ]
+        },
+        "focused_tests": 5,
+        "native_unaligned_mutable_argument_calls_per_test_execution": 2048,
+        "protected_page_end_calls_per_test_execution": 64,
+        "explicit_endian_original_candidate_support_comparisons": 8,
+        "focused_and_full_suite_execute_both": true,
+        "source_native_calls": 7384,
+        "fresh_source_resident_calls": 759,
+        "matching": {
+          "variants": [
+            {
+              "mode": "normal",
+              "source_sha256": "e2a4db534632d071d9974668ea5eb61097beeec38380584ef9b35ae3067ad200",
+              "cases_each": 1174,
+              "native_calls": 4696,
+              "fresh_resident_calls": 0,
+              "source_oracle_and_frozen_resident_match": true,
+              "selected_cases_each": [
+                1168,
+                1168,
+                1168,
+                1168
+              ],
+              "rejections_each": 4,
+              "current_phase_visits_original_decoded_before_after_exact": true,
+              "widened_loops": [
+                60,
+                80,
+                469
+              ]
+            },
+            {
+              "mode": "swapped",
+              "source_sha256": "2e408f09ba97a88b758aab089d50d4b8202a246fccace1d227fc046db16b780e",
+              "cases_each": 91,
+              "native_calls": 364,
+              "fresh_resident_calls": 0,
+              "source_oracle_and_frozen_resident_match": true,
+              "selected_cases_each": [
+                85,
+                85,
+                85,
+                85
+              ],
+              "rejections_each": 4,
+              "current_phase_visits_original_decoded_before_after_exact": true,
+              "widened_loops": [
+                60,
+                80,
+                469
+              ]
+            },
+            {
+              "mode": "fallible",
+              "source_sha256": "2fffb74b12a4b503dfd4b19950c0db32e033c7d57fc68c99d500bcb7b27d8726",
+              "cases_each": 91,
+              "native_calls": 364,
+              "fresh_resident_calls": 0,
+              "source_oracle_and_frozen_resident_match": true,
+              "selected_cases_each": [
+                85,
+                85,
+                85,
+                85
+              ],
+              "rejections_each": 5,
+              "current_phase_visits_original_decoded_before_after_exact": true,
+              "widened_loops": []
+            },
+            {
+              "mode": "stride12",
+              "source_sha256": "4d97e448b2c50d518f4a292d7f4e8146077c5df29aa2d3dcb534106d1e5e0643",
+              "cases_each": 91,
+              "native_calls": 364,
+              "fresh_resident_calls": 0,
+              "source_oracle_and_frozen_resident_match": true,
+              "selected_cases_each": [
+                85,
+                85,
+                85,
+                85
+              ],
+              "rejections_each": 4,
+              "current_phase_visits_original_decoded_before_after_exact": true,
+              "widened_loops": []
+            }
+          ],
+          "native_calls": 5788,
+          "fresh_resident_calls": 0,
+          "frozen_resident_scope": "Unchanged R230 source and resident library observations are reused, not counted as new. Current native phase observations compare before/after; historical phase visits are excluded from the resident value/error comparison.",
+          "final_private_payload_bytes": 0,
+          "final_managed_bytes": 0,
+          "final_managed_nodes": 0
+        },
+        "checked_array_read_controls": {
+          "variants": [
+            {
+              "mode": "same",
+              "source_sha256": "bfa5ba784cbf8d7faf4abfc3cec76d487b8c41342466c3ae618021252f5f50cc",
+              "native_calls": 372,
+              "fresh_resident_calls": 93,
+              "current_round_resident_row_reuses": 279,
+              "original_decoded_before_after_equal": true
+            },
+            {
+              "mode": "different",
+              "source_sha256": "574cd96de0b30448058f84d3065379c58dc785908aab2cc070a0997ec29cb0fb",
+              "native_calls": 372,
+              "fresh_resident_calls": 93,
+              "current_round_resident_row_reuses": 279,
+              "original_decoded_before_after_equal": true
+            },
+            {
+              "mode": "write-alias",
+              "source_sha256": "91bceb545c7f2027ac0de2a027bf0a3a109aab08b03891c4c490c0ee250d57ad",
+              "native_calls": 372,
+              "fresh_resident_calls": 93,
+              "current_round_resident_row_reuses": 279,
+              "original_decoded_before_after_equal": true
+            }
+          ],
+          "native_calls": 1116,
+          "fresh_resident_calls": 279
+        },
+        "cold_handoff": {
+          "variants": [
+            {
+              "kind": "cold",
+              "native_calls": 480,
+              "fresh_resident_calls": 480,
+              "cases_each": 120,
+              "selected_visits_each": [
+                8202,
+                8202,
+                8202,
+                8202
+              ],
+              "rejected_each": [
+                66,
+                66,
+                66,
+                66
+              ],
+              "before_after_original_decoded_equal": true,
+              "source_sha256": "c499fa5653ec386f3ab2abd55a64c2253810cc896fab876cd63fde3e52015047"
+            }
+          ],
+          "native_calls": 480,
+          "fresh_resident_calls": 480,
+          "final_private_payload_bytes": 0,
+          "final_managed_bytes": 0,
+          "final_managed_nodes": 0
+        },
+        "complete_smoke_calls": 324,
+        "complete_cases_each_form": 81,
+        "full_original_decoded_object_and_metadata_equal": true,
+        "image_pairs": 17,
+        "test_root_opt_level": 1,
+        "performance_library_opt_level": 3,
+        "warnings_as_errors": true,
+        "native_feature_profile": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "same_seven_inherited_exclusions": [
+          "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+          "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+          "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+          "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+          "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+          "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+          "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+        ],
+        "checks": {
+          "tracked-analysis-layout": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-native-build-analysis-layout.py"
+            ],
+            "exit": 0,
+            "stdout": "Native build analysis layout contract passed\n",
+            "stderr": ""
+          },
+          "tracked-host-catalog": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-native-host-catalog.py"
+            ],
+            "exit": 0,
+            "stdout": "native host catalog contract passed (five standard providers, six full providers, no actor migration linkages)\n",
+            "stderr": ""
+          },
+          "tracked-source-catalog": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-source-catalog-entrypoints.py"
+            ],
+            "exit": 0,
+            "stdout": "Source catalog entry-point contract passed\n",
+            "stderr": ""
+          },
+          "format-check": {
+            "command": [
+              "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustfmt",
+              "--edition",
+              "2024",
+              "--check",
+              "--config",
+              "skip_children=true",
+              "candidate-source/hosts/gpu/src/native_artifact/codegen/common/mod.rs",
+              "candidate-source/hosts/gpu/src/native_artifact/codegen/common/scalar_memory.rs",
+              "candidate-source/hosts/gpu/src/native_artifact/codegen/common/scalar_memory_tests.rs",
+              "candidate-source/hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/word_ranges/mod.rs",
+              "candidate-source/hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/word_ranges/tests.rs",
+              "candidate-source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+              "candidate-source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+              "candidate-source/hosts/gpu/src/native_artifact/program/compact/packed.rs"
+            ],
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        "all_measurements_finished_before_post_change_profiles": true,
+        "fresh_profiles": {
+          "before": 0,
+          "reference": 0,
+          "after": 8
+        },
+        "inherited_profile_provenance": {
+          "baseline": {
+            "round": 264,
+            "file": "profile-input.json",
+            "file_sha256": "d15afc49c47ccd20c44b4ecb809b89a3e494be0a352b05d808a94fdf0928a46c",
+            "captures": 8,
+            "exact_baseline_image": true
+          },
+          "reference": {
+            "round": 264,
+            "file": "reference-profile-input.json",
+            "file_sha256": "83de59a1ad105c09bf1bac389871d0d137c036479a267ad988a1fe7c236f2c0b",
+            "captures": 2,
+            "exact_reference_image": true
+          },
+          "fresh_before_or_reference_profiles": 0,
+          "fresh_after_profiles_expected": 8,
+          "no_inherited_sample_count_claimed_fresh": true
+        },
+        "measurement_barrier": {
+          "cases_per_stage": 81,
+          "stages": [
+            "primary-a",
+            "primary-b",
+            "cpu",
+            "memory"
+          ],
+          "actual_stage_order": [
+            "primary-a",
+            "primary-b",
+            "cpu",
+            "memory"
+          ],
+          "all_complete_before_any_post_change_profile": true,
+          "discarded_or_repeated_valid_observations": false
+        },
+        "coverage_limits": [
+          "The unchanged maintained680-test result is inherited from R261, not rerun.",
+          "R230 matching-source resident rows and R264 baseline/reference profiles are explicitly reused, not counted as fresh.",
+          "No full hostedCI, fresh full linked/AOT integration suite, full6.6MB input or full disabled-pipeline emission is claimed.",
+          "The compact timing entry retains the established additional ordinary managed-contract omissions."
+        ]
+      },
+      "pins": {
+        "bytecode": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "benchmark_source": {
+          "path": "/private/tmp/mech-extending-loads-round266-20261110/benchmark-source.mec",
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "baseline_object": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/full-image/original/object.o",
+          "bytes": 1474400,
+          "sha256": "4c78d2f955b9f045cb9f85103c6f0408ca08556a1c137f2ed446077170bb9a1b"
+        },
+        "baseline_worker": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/mech-worker",
+          "bytes": 2084296,
+          "sha256": "9f3b73dd3d731bce97316a3f279d9abf20ec4890b3e8d02af8c22191e75a31cf"
+        },
+        "candidate_object": {
+          "path": "/private/tmp/mech-extending-loads-round266-20261110/full-image/original/object.o",
+          "bytes": 1465008,
+          "sha256": "a8f1a368cf4fd367783daacf3133ba64a8d64edad09830a3ee745367033cf7de"
+        },
+        "candidate_metadata": {
+          "path": "/private/tmp/mech-extending-loads-round266-20261110/full-image/original/metadata.json",
+          "bytes": 4436131,
+          "sha256": "16449a3c881889b4268e870542e5c37d2918047db7a7d4bfe97a50a35fe6c2d3"
+        },
+        "candidate_worker": {
+          "path": "/private/tmp/mech-extending-loads-round266-20261110/mech-worker",
+          "bytes": 2084296,
+          "sha256": "4a187874f7842f798b2cc946d58673a1dd5b87b01a59f2006b91051f90627f1c"
+        },
+        "producer": {
+          "path": "/private/tmp/mech-extending-loads-round266-20261110/producer",
+          "bytes": 96987912,
+          "sha256": "b56a2129410b174a735033979b9d34c70b3d4a599802f00638c8bc1fc8aff056"
+        },
+        "compiler_source_manifest": {
+          "path": "/private/tmp/mech-extending-loads-round266-20261110/compiler-source-manifest.json",
+          "bytes": 164126,
+          "sha256": "8d3d8457ecd7628284466f65a652c55637bf30d6276591b053dca90321be615d"
+        },
+        "compiler_patch": {
+          "path": "/private/tmp/mech-extending-loads-round266-20261110/compiler.patch",
+          "bytes": 21224,
+          "sha256": "bb166e8b2b970c7dbd9616e4742c9815892638cb3b3f96567f8657d3e3c825ee"
+        },
+        "retained_backend_source_manifest": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/backend-source-manifest.json",
+          "bytes": 32144,
+          "sha256": "c8484b399352ebdd51705941ee5f032cd23ef5c25f698ba0e3018999017dd751"
+        },
+        "retained_backend_patch": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/backend.patch",
+          "bytes": 1185,
+          "sha256": "da4412bf12efdfc7ba3ea4638e7706bf0bd591881a568445a03a012c971d319d"
+        },
+        "retained_backend_generated_manifest": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/backend-generated-manifest.json",
+          "bytes": 3293,
+          "sha256": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b"
+        },
+        "retained_backend_library": {
+          "path": "/private/tmp/mech-border-loops-round264-20261110/backend-on/libcranelift_codegen.rlib",
+          "bytes": 26307224,
+          "sha256": "4ce0bb965a317af01f3c1c9693f3d0dc649a777a56826b0baef77c84c08ef867"
+        }
+      },
+      "artifacts": [
+        {
+          "name": "r266-extending-scalar-loads-8bd91ced424a.tar.gz",
+          "bytes": 11192892,
+          "sha256": "8bd91ced424ad5b3b751660d7eb6d1696498a93a2c4c233482568f85e56863ad",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r266-extending-scalar-loads-8bd91ced424a.tar.gz"
+        },
+        {
+          "name": "r266-extending-scalar-loads-8bd91ced424a.tar.gz.sha256",
+          "bytes": 114,
+          "sha256": "bd811b42605f19188bd2f6cdcddcf141977ff50a096a48d2808331f8696ad092",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r266-extending-scalar-loads-8bd91ced424a.tar.gz.sha256"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "8bd91ced424ad5b3b751660d7eb6d1696498a93a2c4c233482568f85e56863ad",
+        "verified_files": 2389,
+        "offline_reports": 5,
+        "current_source_files": 827,
+        "reversed_base_source_files": 825,
+        "current_backend_source_files": 200,
+        "reversed_backend_source_files": 200,
+        "source_reconstruction_exact": true,
+        "replayed_output_hashes": {
+          "primary-results.json": "1d1877b0e522216077cc3067a4f393b56633e0bbaf974a141a89deb26630f63f",
+          "counter-results.json": "b0c0540370339b5aac9ed26492a568479e56335bf57a9c63e2b65641ddb1a972",
+          "qualification-results.json": "4f01777364d0aadb890cd87941510c7c99c8b5d1c1ec17e447ace2bd30bfa3be",
+          "REPORT.md": "2fbc051b7efdd72bbc7058d6d488cf04d72dc34c3df8f0094f83ab023018bbb9",
+          "result-decision.json": "699891373c8efed1ea70d20f04301110893cbd27828843df9d70b7b6f042fdb9"
+        },
+        "stdout": "Five reports replay identically;827-file compiler (825-file retained parent) and200-file backend reconstruct in both directions; no compilation or compression executed.\n"
+      },
+      "report": "docs/design/native-extending-scalar-loads.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r266-extending-scalar-loads-8bd91ced424a.tar.gz",
+        "bytes": 11192892,
+        "sha256": "8bd91ced424ad5b3b751660d7eb6d1696498a93a2c4c233482568f85e56863ad",
+        "files": 2389,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "1d1877b0e522216077cc3067a4f393b56633e0bbaf974a141a89deb26630f63f",
+            "counter-results.json": "b0c0540370339b5aac9ed26492a568479e56335bf57a9c63e2b65641ddb1a972",
+            "qualification-results.json": "4f01777364d0aadb890cd87941510c7c99c8b5d1c1ec17e447ace2bd30bfa3be",
+            "REPORT.md": "2fbc051b7efdd72bbc7058d6d488cf04d72dc34c3df8f0094f83ab023018bbb9",
+            "result-decision.json": "699891373c8efed1ea70d20f04301110893cbd27828843df9d70b7b6f042fdb9"
+          }
+        }
+      },
+      "remaining": [
+        "From retained R264, qualify and measure the generic maximum1 append-capacity predicate simplification; preserve other maxima and the existing cold/error path.",
+        "Preserve R266 as a qualified instruction/small-input alternative for a later separately measured combination.",
+        "Reach100% of the fixed81 cases faster than the reference; retained22/81 =27.160494%.",
+        "Parity across all compression families/sizes and additional ordinary managed contract integration."
+      ],
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
