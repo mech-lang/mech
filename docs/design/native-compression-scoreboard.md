@@ -1,6 +1,70 @@
 # Current compression scoreboard
 
 **Cases faster than Roc: 22/81 = 27.2%; goal 100%.**
+Retained experimental compiler: **R264**. R266 is rejected globally: direct
+extending loads reduce instructions but slow the near-parity frontier. Its
+qualified instruction savings and eight-byte improvement remain available for
+later isolated or combined measurements.
+
+| Headline | Retained R264 | Evaluated R266 | Movement |
+|---|---:|---:|---:|
+| Faster-than-reference configurations | 22/81 (27.1605%) | 22/81 (27.1605%) | 0.0000 percentage points |
+| Target | 100% | 100% | Open |
+| All 81 paired geometric elapsed | Baseline | +1.747846% | Candidate rejected |
+| Primary cohorts | Baseline | +1.702110%, +1.793602% | Both adverse |
+| Existing pooled/block 1.05 gates | — | 81/81 each | Unchanged ceilings |
+| Heap/copy/zero/private peaks | Baseline | Equal on all 81 | No saving |
+
+A case counts only when its paired geometric elapsed ratio is strictly below 1.0
+in the same fresh balanced blocks; ties do not count. The fixed 81-case inventory
+is unchanged. This is a configuration share, not byte-weighted throughput or a
+confidence threshold. Chat updates should show this metric and compact frontier;
+all 81 cases continue to be measured and saved in the round report.
+
+| Frontier / control | Bytes | Retained R264 / Roc | Rejected R266 / Roc | Time change |
+|---|---:|---:|---:|---:|
+| prefix-repeated-32767 | 32767 | 1.018886x | 1.044322x | +2.4965% |
+| prefix-repeated-32768 | 32768 | 1.023706x | 1.049353x | +2.5053% |
+| prefix-repeated-32769 | 32769 | 1.028317x | 1.058131x | +2.8993% |
+| prefix-repeated-33027 | 33027 | 1.041527x | 1.067907x | +2.5329% |
+| prefix-periodic-32768 | 32768 | 1.057612x | 1.086396x | +2.7215% |
+| prefix-periodic-32769 | 32769 | 1.066628x | 1.094666x | +2.6287% |
+| eight-literals | 8 | 0.431513x | 0.422142x | -2.1717% |
+
+The candidate cuts repeated/periodic 32 KiB retired instructions about 1.88% but
+slows their primary elapsed about 2.5–2.7%. Eight literals improves 2.17% elapsed
+and 1.79% instructions. Natural 1 MiB instructions decline 3.00% while primary elapsed
+worsens 0.84%. These separate cohorts and positive/negative observations remain.
+Both columns use the same fresh reference measurements; the retained compiler
+is unchanged and historical denominators are preserved. No new case crosses 1x.
+
+[All 81 rows, shared-load design, counters, C/Rust/reference assembly, source controls and review contract](native-extending-scalar-loads.md).
+The path has six adjacent narrow-load/extension-or-copy pairs before and zero
+after, but that is a static count. The selected matching frame shrinks 960→944B;
+normal matching code grows 796B. The root frame shrinks 64B. The 2,084,296-byte
+worker file size remains unchanged, and no heap/RSS saving is claimed.
+
+725 native tests pass with seven inherited exclusions, plus five focused tests;
+7384 native source controls, 759 fresh resident calls and 324 original/decoded full
+smokes pass. All 17 image pairs agree. Eight new candidate profiles follow all
+four measurement cohorts. R264 baseline/reference profiles and R230 matching
+resident rows remain inherited. Full hosted CI, a fresh full linked/AOT suite,
+full 6.6 MB input and the additional ordinary managed-contract integration remain
+outside the current claims. The maintained 680-test result is inherited.
+
+Next simplify the generic unit-append spare-capacity check: for maximum 1,
+`length <= capacity && capacity-length >= 1` is exactly unsigned `length < capacity`.
+The actual retained path currently builds that test with eight instructions.
+Keep other maxima and the same cold growth/rejection path; qualify the unsigned
+extremes, source errors/aliases/recovery and all 81 performance before adoption.
+This proposal is not yet implemented. The target remains 100% faster cases.
+
+Review requests must name exact base/head, linked source/evidence, metric
+expectations, safety invariants and coverage limits.
+
+## Historical R265 measured rejection
+
+**Cases faster than Roc: 22/81 = 27.2%; goal 100%.**
 Retained experimental compiler: **R264**. R265's checked internal argument-read
 alternative is rejected: paired geometric elapsed **+1.812837%**, with both
 primary cohorts adverse (+2.055305% and +1.570945%). Its isolated natural-text
