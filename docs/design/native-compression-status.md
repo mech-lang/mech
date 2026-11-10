@@ -1,5 +1,43 @@
 # Native compression milestone
 
+## R259: explicit-window ablation loses; R256 remains retained
+
+The requested matched comparison now includes R256, an explicit-window control,
+fullR257 and the pinned reference in the same two fixed24-order cohorts/all81.
+Paired geometric elapsed: control+2.8501%, fullR257−1.0201% versus R256.
+At1MiB, control/reference is text1.932734x, random2.253865x,
+periodic1.327850x, repeated1.279962x. FullR257 is1.885660x/2.103148x/
+1.277338x/1.231565x in that cohort. Retained historical R256 stays unchanged.
+
+Source inspection corrects the premise: these27 R256 sites already consume the
+source-window proof and dynamically check geometry. The control reuses geometry
+but withholds that proof from the adapter, adding an explicit enough/fits gate
+and retaining fallback. It is a conservative proof-use ablation, not a pure
+geometry-only deletion. Source checks and all algorithm/allocation pins remain.
+
+The control fails periodic/repeated262144 combined point/block gates(79/81).
+All individual misses remain; no allowances or observations change. FullR257's
+fresh81/81 combined gates do not erase its historical miss or imply adoption.
+All81 three-way heap/copy/zero/private peaks match. Root Object bytes and339
+other routines are exact;837_vector42604B/frame944B versus42800/928 retained.
+The specific scalar-tail base reload is gone, but primary elapsed worsens despite
+mixed favorable instruction/cycle readings. No complete causal budget is claimed.
+
+Fresh268800 original/decoded oracle calls,162 smokes,16848 independent counter/
+heap calls and12 current/reference captures pass. The maintained715-test/same7
+exclusions remain inherited, not relabelled fresh. Disabled/final annotated
+images reproduce R256/the timed image exactly. Environmental disk exhaustion
+preserves the first two observation hashes and recovers the complete third batch
+byte-identically to its written prefix; zero timing calls are repeated. Two
+storage-wrapper assertions are disclosed; no compressor/resource denial occurs.
+2425 public hashes, exact source and six offline replays verify. OrdinaryIR215
+and the additional omitted managed contract remain unchanged.
+
+Next establish the whole current empty outer path route and actual eligibility,
+keeping its already-decremented cursor. Then current-baseline fixed-placement
+R247 and short-completion/live-state evidence; no broad fact campaign or repeated
+old phase-only trial. [Full matched table, caveats, profiles and recovery](native-explicit-window-control.md).
+
 ## R258: checked-path SSA isolation recorded; R256 remains retained
 
 The bounded follow-up retains new checked source definitions during SSA

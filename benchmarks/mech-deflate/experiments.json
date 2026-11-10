@@ -51085,6 +51085,263 @@
           "remaining_elapsed_reduction_fraction": 0.18965442797917453
         }
       ]
+    },
+    "259": {
+      "git_parent": "488046d851dcaef7569d9d8f56791965572a29dc",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R256",
+      "decision": {
+        "round": 259,
+        "retain": false,
+        "retained": "R256",
+        "reason": "Archive explicit-window proof-use ablation: paired all81 elapsed worsens2.8501%, two combined gates fail. Full R257 stays a separate archived component. The ablation adds a redundant adapter window guard where R256 already consumes the source proof, so it is not a pure geometry-only deletion. Preserve all observations and the environmental recovery.",
+        "summary": {
+          "round": 259,
+          "cases": 81,
+          "blocks_each": 48,
+          "actor_count": 4,
+          "geometry_control_all81_geomean": 1.0285013787734454,
+          "full_R257_all81_geomean": 0.9897987261331388,
+          "geometry_vs_full_R257_all81_geomean": 1.039101538139483,
+          "legacy_pooled_point_gates": {
+            "after": 79,
+            "r257": 81
+          },
+          "legacy_pooled_block_gates": {
+            "after": 79,
+            "r257": 81
+          },
+          "cohorts": {
+            "primary-a": {
+              "point_gates": 75,
+              "block_gates": 72
+            },
+            "primary-b": {
+              "point_gates": 78,
+              "block_gates": 78
+            }
+          }
+        },
+        "individual_gate_misses": [
+          {
+            "case": "eight-literals",
+            "cohort": "primary-a",
+            "point": 1.033248769341913,
+            "block_median": 1.0675682519663445
+          },
+          {
+            "case": "eight-literals-prefix",
+            "cohort": "primary-a",
+            "point": 1.042461479343572,
+            "block_median": 1.0564065505224873
+          },
+          {
+            "case": "prefix-random-16384",
+            "cohort": "primary-a",
+            "point": 1.0540272924610852,
+            "block_median": 1.0540272924610852
+          },
+          {
+            "case": "prefix-periodic-1024",
+            "cohort": "primary-a",
+            "point": 1.0422684810855483,
+            "block_median": 1.0523815078100445
+          },
+          {
+            "case": "prefix-periodic-32768",
+            "cohort": "primary-a",
+            "point": 1.0505897283211094,
+            "block_median": 1.0505897283211094
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "cohort": "primary-b",
+            "point": 1.054237951356645,
+            "block_median": 1.054237951356645
+          },
+          {
+            "case": "prefix-periodic-65535",
+            "cohort": "primary-a",
+            "point": 1.0508460290571333,
+            "block_median": 1.0508460290571333
+          },
+          {
+            "case": "prefix-periodic-131072",
+            "cohort": "primary-a",
+            "point": 1.0500094108883233,
+            "block_median": 1.0500094108883233
+          },
+          {
+            "case": "prefix-periodic-262144",
+            "cohort": "primary-a",
+            "point": 1.052931151847338,
+            "block_median": 1.052931151847338
+          },
+          {
+            "case": "prefix-periodic-262144",
+            "cohort": "primary-b",
+            "point": 1.0516171211592147,
+            "block_median": 1.0516171211592147
+          },
+          {
+            "case": "prefix-repeated-262144",
+            "cohort": "primary-a",
+            "point": 1.0591473643188345,
+            "block_median": 1.0591473643188345
+          },
+          {
+            "case": "prefix-repeated-262144",
+            "cohort": "primary-b",
+            "point": 1.0709501987087968,
+            "block_median": 1.0709501987087968
+          }
+        ],
+        "pooled_gate_misses": [
+          "prefix-periodic-262144",
+          "prefix-repeated-262144"
+        ],
+        "qualification_calls": 268800,
+        "all_three_heap_copy_equal": true,
+        "complete_goal": false,
+        "allowance": 1.05
+      },
+      "source": {
+        "files": 826,
+        "modified": 3,
+        "new": 1,
+        "manifest_sha256": "cde511703e36d4b192edb9160a61fa60026a3986122cd17d44785fda4d0feb6e",
+        "patch_sha256": "a59ea10a6e6d82a517f099674027981e3a2bb10de3f290ed9989ba362261ea48",
+        "ordinary_IR215_unchanged": true
+      },
+      "current_pins": {
+        "bytecode": {
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "benchmark_source": {
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "reference_worker": {
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "baseline_object": {
+          "bytes": 1478952,
+          "sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631"
+        },
+        "baseline_worker": {
+          "bytes": 2100808,
+          "sha256": "96091f758139371d0f8455d18be30c2086af70904c5604a0b11307c651648297"
+        },
+        "candidate_object": {
+          "bytes": 1478696,
+          "sha256": "b08d70e66ad5c776214f8ddf7d049be25d88befe12d6378bd6075a426fec561d"
+        },
+        "candidate_metadata": {
+          "bytes": 4359134,
+          "sha256": "e35db72b70d1b9fb830be33e370a3b8756bf2ba46eb382a3c6704bbfe6d1ee5c"
+        },
+        "candidate_worker": {
+          "bytes": 2100808,
+          "sha256": "749b15a2ff916c7941f3b129700545d1fd8c70c2551237de5d8cc9dd7c3f49e8"
+        },
+        "producer": {
+          "bytes": 96965400,
+          "sha256": "e08d602a7112fa0ffc69ac9d727a03f3e5205ca1a4e725a8ba0969a742470154"
+        },
+        "compiler_source_manifest": {
+          "bytes": 163924,
+          "sha256": "cde511703e36d4b192edb9160a61fa60026a3986122cd17d44785fda4d0feb6e"
+        },
+        "compiler_patch": {
+          "bytes": 8238,
+          "sha256": "a59ea10a6e6d82a517f099674027981e3a2bb10de3f290ed9989ba362261ea48"
+        },
+        "retained_backend_patch": {
+          "bytes": 8897,
+          "sha256": "83c5fc6c14689ba80238615ae6e75c00103cbc447c8ae6681a62fae97607dc54"
+        }
+      },
+      "qualification": {
+        "fresh_linked_calls": 268800,
+        "fresh_complete_smokes": 162,
+        "fresh_counter_heap_calls": 16848,
+        "fresh_profiles": 12,
+        "maintained_715_and_7_exclusions_inherited_from_R258": true,
+        "default_off_exact_R256": true,
+        "final_source_annotation_exact_measured": true,
+        "all81_three_actor_heap_copy_equal": true
+      },
+      "machine": {
+        "common_numeric_definitions": 340,
+        "unchanged_common_definitions": 339,
+        "changed_definitions": {
+          "_mech_compact_numeric_837_vector": {
+            "before": {
+              "code_bytes": 42800,
+              "stack_bytes": 928,
+              "sha256": "78f2daba78e8e570b6f372ec7400bf624538f09ae4d5b21d25581d7f376c14d9"
+            },
+            "after": {
+              "code_bytes": 42604,
+              "stack_bytes": 944,
+              "sha256": "df958382298055da8538c6e46fd159f7fce437fd7b3b3796ddff5aa0e820dfdd"
+            }
+          }
+        },
+        "added_definitions": [],
+        "removed_definitions": [],
+        "root_before": {
+          "code_bytes": 1040856,
+          "stack_bytes": 57088
+        },
+        "root_after": {
+          "code_bytes": 1040856,
+          "stack_bytes": 57088
+        },
+        "object_text_bytes": {
+          "before": 1385816,
+          "after": 1385560
+        },
+        "worker_bytes": {
+          "before": 2100808,
+          "after": 2100808
+        },
+        "scope": "Exact current and previous Mach-O Object function bytes and stack metadata. The diagnostic withholds the adapter source-window proof at newly geometry-reused sites, so its explicit window gate retains the checked fallback. It is not a pure geometry-only deletion or a dynamic instruction saving."
+      },
+      "environmental_recovery": {
+        "failure": "ENOSPC writing observations after three complete tiny-case batches",
+        "complete_first_two_observation_hashes": {
+          "empty": "658d8c88df0b4252502f789f59dce3c3a8da17fe78e2c9b3c0db3c281e074122",
+          "one-stored": "5922be324fecab250707192b5d1cfa32619053cad46f024b4d6ec89cd9d77d30"
+        },
+        "third_case": "seven-stored-prefix",
+        "third_case_recovered_complete_calls_each": 12290,
+        "retimed_calls": 0,
+        "original_partial_file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "original_partial_file_bytes": 0,
+        "all_four_actor_CASE_DONE_markers_confirmed": true,
+        "recovered_third_observation_exactly_matches_original_written_prefix": true,
+        "recovered_third_uncompressed_sha256": "f9b4d9459072d52cd3608fe1cf084ec6d523c6844cfaef61731324ddd88469a7",
+        "first_two_files_unchanged_before_lossless_compression": true,
+        "resume_wrapper_initial_failure": "An inverted defensive assertion stopped before launching workers; corrected and syntax-checked all four scripts",
+        "measurement_storage_change": "Lossless compressed observations between cases; append worker journals across resume; timer scope/order/allowance unchanged"
+      },
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r259-explicit-window-cdc32081dd49.tar.gz",
+        "sha256": "cdc32081dd49a091adb3426c7dc8571594d68f923aa0edbbd1fa77287ea86a64",
+        "bytes": 12045072,
+        "files": 2425,
+        "reports_replayed": 6,
+        "fresh_public_verification": true
+      },
+      "report": "docs/design/native-explicit-window-control.md",
+      "next": "Whole empty outer reduction/current cursor and actual eligibility, then single current-baseline R247 placement/short-completion control."
     }
   },
   "repository": "mech-lang/mech",
