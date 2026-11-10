@@ -23,6 +23,7 @@ import subprocess
 import sys
 import tarfile
 import time
+from urllib.parse import unquote, urlparse
 
 
 RESULTS = "benchmarks/mech-deflate/results/"
@@ -192,12 +193,94 @@ def replay(args):
     write_json(args.output / "replay.json", result)
 
 
+def download_packet(args, index, release_tag, asset, directory):
+    if len(safe_path(asset).parts) != 1:
+        raise ValueError("release asset must be a filename")
+    cache = getattr(args, "packet_cache", None)
+    if cache is not None:
+        shutil.copyfile(cache / asset, directory / asset)
+    else:
+        subprocess.run(["gh", "release", "download", release_tag, "--repo", index["repository"],
+                        "--pattern", asset, "--dir", str(directory)], check=True)
+
+
+def replay_review_packet(args, index, packet):
+    """Verify the current single-packet format before running its pinned recipe."""
+    url = urlparse(packet["url"])
+    prefix = f"/{index['repository']}/releases/download/"
+    if url.scheme != "https" or url.netloc != "github.com" or not url.path.startswith(prefix) or url.query or url.fragment:
+        raise ValueError("review packet must name this repository's release asset")
+    release_tag, asset = map(unquote, url.path[len(prefix):].split("/", 1))
+    safe_path(release_tag)
+    recipe = packet.get("replay")
+    if not isinstance(recipe, dict) or not recipe.get("script") or not recipe.get("expected_outputs"):
+        raise ValueError("review packet needs a declared replay recipe and expected outputs")
+    script = safe_path(recipe["script"])
+    expected_outputs = recipe["expected_outputs"]
+    if not expected_outputs or len(expected_outputs) != packet["reports_replayed"]:
+        raise ValueError("review packet needs the complete expected report inventory")
+    for name in expected_outputs:
+        safe_path(name)
+    downloads = args.output / "downloads"
+    downloads.mkdir()
+    download_packet(args, index, release_tag, asset, downloads)
+    archive_path = downloads / asset
+    if archive_path.stat().st_size != packet["bytes"] or sha256(archive_path) != packet["sha256"]:
+        raise ValueError("archive size or SHA-256 mismatch")
+    evidence = args.output / "evidence"
+    evidence.mkdir()
+    with tarfile.open(archive_path, "r:gz") as archive:
+        members = {}
+        for member in archive.getmembers():
+            safe_path(member.name)
+            if not member.isfile() or member.name in members:
+                raise ValueError(f"unexpected archive entry: {member.name}")
+            members[member.name] = member
+        manifest_name = "evidence/manifest.json"
+        if manifest_name not in members:
+            raise ValueError("review packet lacks evidence/manifest.json")
+        manifest = json.load(archive.extractfile(members[manifest_name]))
+        rows = manifest["files"]
+        inventory = {str(safe_path(row["path"])): row for row in rows}
+        if len(inventory) != len(rows) or len(rows) != packet["files"] or "manifest.json" in inventory:
+            raise ValueError("review manifest count or paths differ")
+        if set(members) != {manifest_name, *("evidence/" + name for name in inventory)}:
+            raise ValueError("incomplete or unexpected review manifest member")
+        if str(script) not in inventory or not set(expected_outputs).issubset(inventory):
+            raise ValueError("replay recipe or expected output is absent from manifest")
+        for name, row in inventory.items():
+            member = members["evidence/" + name]
+            data = archive.extractfile(member).read()
+            if len(data) != row["bytes"] or hashlib.sha256(data).hexdigest() != row["sha256"]:
+                raise ValueError(f"content mismatch: {name}")
+            target = evidence / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+    # Outputs are checked against the external index after execution, even when
+    # the archived recipe performs its own internal consistency checks.
+    subprocess.run([sys.executable, str((evidence / script).resolve())],
+                   cwd=evidence, check=True)
+    for name, digest in expected_outputs.items():
+        if sha256(evidence / name) != digest:
+            raise ValueError(f"replayed output differs from its committed hash: {name}")
+    result = {"round": args.round, "schema": "review_packet", "verified_archives": 1,
+              "archive_sha256": packet["sha256"], "verified_file_occurrences": len(rows),
+              "unique_paths": len(rows), "byte_identical_outputs": list(expected_outputs),
+              "scope": "Complete archive and internal manifest verified; declared numerical reports replayed without compiling or compressing."}
+    write_json(args.output / "replay.json", result)
+    print(json.dumps(result, indent=2))
+
+
 def replay_round(args):
     """Retrieve every immutable packet, verify all versions, then replay numbers."""
     index = json.loads(args.index.read_text())
     round = index["rounds"][str(args.round)]
-    release_tag = round.get("release_tag", index["release_tag"])
+    if ("events" in round) == ("review_packet" in round):
+        raise ValueError("round must declare exactly one supported evidence schema")
     args.output.mkdir(parents=True, exist_ok=False)
+    if "review_packet" in round:
+        return replay_review_packet(args, index, round["review_packet"])
+    release_tag = round.get("release_tag", index["release_tag"])
     downloads, evidence = args.output / "downloads", args.output / "evidence"
     downloads.mkdir()
     evidence.mkdir()
@@ -205,8 +288,7 @@ def replay_round(args):
     for position, event in enumerate(round["events"]):
         packet = downloads / str(position)
         packet.mkdir()
-        subprocess.run(["gh", "release", "download", release_tag, "--repo", index["repository"],
-                        "--pattern", event["asset"], "--dir", str(packet)], check=True)
+        download_packet(args, index, release_tag, event["asset"], packet)
         receipt = {**event, "archive_name": event["asset"]}
         receipt_path = packet / "receipt.json"
         write_json(receipt_path, receipt)
@@ -414,6 +496,7 @@ def main():
     command = commands.add_parser("replay-round", help="retrieve and reconstruct a hash-indexed external experiment")
     command.add_argument("--index", type=Path, required=True)
     command.add_argument("--round", type=int, required=True)
+    command.add_argument("--packet-cache", type=Path, help="use local release assets; all integrity checks still apply")
     command.add_argument("--output", type=Path, required=True)
     command.set_defaults(run=replay_round)
     command = commands.add_parser("measure", help="run balanced linked workers with all observations retained")

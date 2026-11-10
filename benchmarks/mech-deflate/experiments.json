@@ -50404,7 +50404,18 @@
         "sha256": "b406c5af5f1868a6e21522e181b90b0f6468a2128aa26f302b53804faeeb96f1",
         "files": 2206,
         "bytes": 20028159,
-        "reports_replayed": 6
+        "reports_replayed": 6,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "b36f73cf941260b1dace648ddf3a63a22237e09b25a243fd08e7cd73f47041f3",
+            "counter-results.json": "f02b3ca8f2277ebc267fe45871ace7b159c1af81cea01bdcb6080c0cdc27d0f3",
+            "profile-results.json": "6ba0b61e982db7f25710ffb648218c906a14f4cb5fbacb79b5bf8d5245e2cc0b",
+            "reference-profile-results.json": "c74c7fd1d0b47ebc41d90aa2a6f429eae1a4ff6850a2cc2ecef1d4369be16bfc",
+            "REPORT.md": "7ea7b34a188ab9a1db650365dcff762c21ebc233d820c0cfaa858ec6e5e286d6",
+            "result-decision.json": "b55058b85b93acb47b0afe63a6b769048d5c3f875db6c37673d3bab6fbe1d461"
+          }
+        }
       },
       "report": "docs/design/native-private-nested-phases.md",
       "next": "Carry only certified current vector geometry through supported child-version facts; retain exact cold handoff and ordinary funding."
@@ -50743,7 +50754,19 @@
         "bytes": 21617354,
         "files": 2619,
         "reports_replayed": 7,
-        "fresh_public_verification": true
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "8152645ba09d685417b0b3dd1e0ea41844b47edf009bcc8d4077e58fd556f6d3",
+            "counter-results.json": "7b74c119e64c988dcd2555ed550a5805efb9fc74e2b7a46334f5cf57f9673481",
+            "profile-results.json": "7ed26644d40eb16c311b432b7367aaa444dbafc5df565f1972547f5b1dcdc09d",
+            "reference-profile-results.json": "8d42843d3b4548103e611227db4712264137fe37d383e8ab5bf5399d9407a82d",
+            "REPORT.md": "6490e39068b04ca6f3df3ef6e8b37f6db3438f29583a773d447e56d7a717fd52",
+            "result-decision.json": "2e6c7e1c91901f2b5617acfd1da5202909858a8c91e829e8c74408469fa4e7cd",
+            "paired-results.json": "917f1b363b554050a9e2f5297bbc1254f3788dfecccc9627b8b097bb2dcc31d1"
+          }
+        }
       },
       "report": "docs/design/native-entry-packed-geometry.md",
       "next": "Isolate shape-only reuse from full fallback erasure; inspect periodic skip-loop register transport, then return to native path-scan cost."
@@ -51039,7 +51062,20 @@
         "bytes": 11322499,
         "files": 2512,
         "reports_replayed": 8,
-        "fresh_public_verification": true
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "e0ef040b4bc95e7f68a242835025cce322671a347e0365ba244eca052948fc0d",
+            "counter-results.json": "40ee6c2ba56043609d6c3ef924b9da37091dedc78f62c57b1ac2472021bead8d",
+            "profile-results.json": "6a9fb53b01efb20e88ceb039df94f7de161f5602de2c8516e4786fae0ea93a02",
+            "reference-profile-results.json": "1ed41b7bc379731d3c48b94aa67a017254d7b672c93132cf19bee849404cb574",
+            "REPORT.md": "c01c18c9d037fc40847880334196216612b37613046a9e0bbcc79ad74038ba95",
+            "result-decision.json": "dedd7f52a83889f599614d0f080ccd33911125a89ee45e4dd5331d95a50cb72d",
+            "paired-results.json": "847a564868fbc4f8d131f940e6f1f422c176ee564a53f945b3d14da3a62aa5cd",
+            "witness-results.json": "f5dc5a3b0f459932ff4d00caa2d6ac0d5cdca1cd58b59241464c840deb4f3c88"
+          }
+        }
       },
       "report": "docs/design/native-packed-read-ssa.md",
       "next": "Keep R256; matched dynamic-window geometry control versus R256/fullR257, then empty outer path and fixed-placement/short-completion witnesses.",
@@ -51338,7 +51374,18 @@
         "bytes": 12045072,
         "files": 2425,
         "reports_replayed": 6,
-        "fresh_public_verification": true
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "three-way-results.json": "1884633a2ca48c0573922e16a429c25c41cbd392ba3c183c05d1f67d2ed23e95",
+            "three-counter-results.json": "41052d947ff0760a8b42fa457b3d07240285bb975db91e102d083525ad56c6ab",
+            "profile-results.json": "0a2eeb98c203f0251617f2ea9091f4d19788e9b197f31842944ec8bea6bdac98",
+            "reference-profile-results.json": "5ddf643a9f71c67398bcf5252b18e6dfc0170dcc99b3e0aaac2695c6d2620e0f",
+            "REPORT.md": "eb195a1729d67786a65d22e14689a6d835e1098f0647d5cec78e4247c826a90a",
+            "result-decision.json": "ce0c88ea3ac36b831468026144e509d55423eee523faefc30219d4c5929fd62b"
+          }
+        }
       },
       "report": "docs/design/native-explicit-window-control.md",
       "next": "Whole empty outer reduction/current cursor and actual eligibility, then single current-baseline R247 placement/short-completion control."
@@ -51518,7 +51565,18 @@
         "sha256": "8c7ab1e856aa1558517abc71228a212075767880d549552d22d513af06de5f1b",
         "files": 1885,
         "reports_replayed": 6,
-        "fresh_public_verification": true
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "three-way-results.json": "871ad54ec2ee5e2fc024ca8838498cf4a5111c24e6ef53c1a5391120a4140d22",
+            "three-counter-results.json": "66510d2bdd9a9eefce40c1cf097dea9b07d286d5963029d184dc5dde617b4a0e",
+            "profile-results.json": "85b5fbe95952ccd4a995aaa1031ea433fc398f10518f83ace80f29a0cd9208f7",
+            "empty-route-witness.json": "0ebf42ee9127a1080ee0e198e61d43b35fde27fd6c4fa2e79654fd5e1c206f05",
+            "REPORT.md": "38904165709ed76f73c4e4914d681242dbacda96c3b74977ce1816fe6aeaa191",
+            "result-decision.json": "d3551e42677886b2658464743457244e4ec45e6a9bef5666e6bccaa5c3c141c3"
+          }
+        }
       },
       "subsequent_review": {
         "reviewed_parent": "9dbdf42d2157715941e3b6cd75421eb01442d1d7",
