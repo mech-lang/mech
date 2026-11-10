@@ -1,4 +1,13 @@
-# Production/diagnostic optimization coverage after R246
+# Production/diagnostic optimization coverage after R247
+
+R247 isolates phase-only use of the existing threader. No new operation class
+is lowered. Root body/frame/relocations restore R245; all270 phase/variant bodies
+match R246. Natural32 improves4.5545%, periodic regresses2.4420%; retain R245
+and preserve the component. All25 gates pass in both cohorts;11 wins remain.
+710 maintained/7 focused/7076 fresh source controls and33 original-decoded pairs
+pass. Fresh exact retained random64 PCs and prefix hash relationships are added.
+Logical-work equality, expanded scaling and phase-success uniqueness reuse remain
+investigations, not completed optimizations. [Full evidence](native-phase-only-loop-threading.md).
 
 R246 measures a combination of existing R237 pure-loop threading and R245
 vector phases; no new source operation or selection class is lowered.9 root
