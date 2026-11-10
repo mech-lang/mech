@@ -1,10 +1,18 @@
 # Native compression milestone
 
-**Current standings:11 of25 complete compression cases are faster than Roc.**
-Retained experimental compiler remains R245. The [standing scoreboard](native-compression-scoreboard.md)
-shows all25 retained/candidate rows against the same fresh R247 reference;
-its changed ratios do not mean the retained compiler changed. Historical
-reports preserve their original observations. All25 inputs/sizes stay mandatory.
+**Current retained experimental compiler: R249.** The original25 retain11 below-reference cases; the56 prefixes now have6, including duplicate inputs. All81 have fresh two-cohort measurements in the [scoreboard](native-compression-scoreboard.md). Large-input throughput is the priority; wins reach4KiB only for periodic/repeated inputs.
+
+## R249: reuse private permission across a checked scalar read
+
+Retain the one-file extension over R245. Periodic33 improves1.577853x->1.535339x Roc (-2.6944% pooled, both cohorts favorable). Independent instructions fall1.7640%, cycles2.6635%. Eight remains0.493774x with contrary cohort observations preserved. All81 unchanged timing gates pass in both cohorts;8 pooled block means regress. Periodic4KiB improves1.014317x->0.977414x, below1x in both cohorts.
+
+The exact current-view scalar read between three skip-table stores no longer ends the existing private interval. It executes32854 times at33K and1044466 at1MiB. Bounds, lexical error order, current matrix indexing, aliases, cleanup and recovery stay with the shared emitter. Calls/growth/joins/changed views/owner-producing results still decline. No phase boundary or new source operation is selected. All136 original routines and7 selected vector bodies stay identical; root code shrinks32B while its frame grows16B. All81 allocation/copy/zero/private-peak and listed heap medians stay equal.
+
+703 maintained tests (same7 exclusions),48432 fresh normal/observed original/decoded read controls,1700 fresh existing matrix native/resident comparisons,416 boundary controls and37 image pairs pass.162 normal and162 observed complete-call controls verify exact streams/inflate/aliases/capacity/cleanup. Test-setup corrections and the recovered environmental disk failure remain explicit. No allowance or expected existing output changes.
+
+At1MiB random remains3.247617x, text2.241704x, periodic1.774457x, repeated1.658908x. Fresh random64 samples still favor the root3351/5437; text favors path15296. Next reduce repeated per-position state/view transport and checks on the large cases, with64KiB/1MiB throughput and instructions per byte as witnesses; keep all81 and the eight-byte ceiling. Sample shares are not removable-time or instruction partitions. Phase-success uniqueness propagation and direct Mech per-block offsets remain unimplemented. OrdinaryIR215/additional standalone omitted contracts remain unchanged.
+
+[All81 results, counters, profiles, exact source/patch, test commands, limitations and public evidence](native-private-read-intervals.md).
 
 ## R248:81 configurations agree on measured work;1MiB scaling complete
 

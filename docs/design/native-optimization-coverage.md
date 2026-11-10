@@ -269,3 +269,6 @@ failures preserved. R241 is the next periodic experimental control; R237's faste
 natural result remains preserved, ordinaryIR215 unchanged. Next target is reached
 same-owner settlement and state transport, not a portfolio-average win.
 [Complete disposition](native-wide-equality-groups.md).
+
+
+R249 extends the existing guarded root private-write interval through only an owner-free scalar read of its exact current view. No new operation/phase becomes native; no phase boundary or source algorithm changes. All136 original routines and7 selected vector bodies stay byte-identical, root code-32B/frame+16B. Actual private skip interval counts equal independent skipped-position counts on all81 configurations. Periodic33 improves2.6944% in both-cohort direction, eight0.493774x, all81 gates pass,8 adverse block means retained.703 maintained/48432 fresh normal-observed read controls/1700 matrix native+resident/416 boundaries/37 image pairs qualify; the unchanged ordinaryIR215 extra contract remains separate. All81 payload/heap/copy fields remain equal. Fresh large-case profiles identify per-position root work on random and path work on text; future focus is large-input cost per byte, preserving every size. [Exact scope and evidence](native-private-read-intervals.md).

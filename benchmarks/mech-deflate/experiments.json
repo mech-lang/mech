@@ -49132,6 +49132,126 @@
           "private_payload_peak": 10550486
         }
       ]
+    },
+    "249": {
+      "git_parent": "f7cf8c0704ba9b923001c5c8f5ca214b468f6d3f",
+      "control": "Retained R245 remeasured alongside R249 and pinned fixed-level12 runtime-input reference; all81 two primary cohorts",
+      "decision": {
+        "round": 249,
+        "decision": "Retain R249 over R245; preserve R247 natural-text component separately",
+        "git_parent": "f7cf8c0704ba9b923001c5c8f5ca214b468f6d3f",
+        "compiler_base": "R245 archived815-file GPU slice",
+        "changed_compiler_files": 1,
+        "compiler_patch_sha256": "77917b5ebf8c123268f5126e756cf3e3a700076d097ce11cc0d8ee750efb3113",
+        "normal_object_sha256": "da30e96737ec133b6c466c4ad719522a7138f2e308dcf9032bed2f2e7e9653aa",
+        "worker_sha256": "0ab9ce8176e59074e068733b30ecb18ee246b6b7aebcd22bab22bfe627f63460",
+        "periodic_both_cohorts_improve": true,
+        "eight_both_cohorts_below1x": true,
+        "all81_each_cohort_point_block1_05_gates_pass": true,
+        "pooled_block_adverse_cases": [
+          "eight-overlap",
+          "32-high-entropy-stored",
+          "random-1024",
+          "prefix-random-1024",
+          "prefix-random-65535",
+          "prefix-random-65536",
+          "prefix-random-65537",
+          "prefix-random-131072"
+        ],
+        "original25_below_reference": 11,
+        "prefix56_below_reference": 6,
+        "individual_Mech_block_history_not_directly_sampled": true,
+        "phase_success_uniqueness_propagation_implemented": false,
+        "ordinary_IR215_unchanged": true,
+        "ordinary_extra_contract_restored": false,
+        "next": "Prioritize large-input throughput: use current random64 root PCs to identify repeated per-position view/state transport and checks, with64KiB/1MiB cost per byte as witnesses and all81 regression controls. Text has a separate path15296 bottleneck. Establish one static proof, minimal witness and executed count before changing lowering; observed uniqueness alone is not mutation authority."
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r249-private-read-intervals-474fe983ca44.tar.gz",
+        "sha256": "474fe983ca4421cdd8923b4866eb2e644f8be6ef823fff349dec5b1d1201fe06",
+        "bytes": 11190750,
+        "verified_files": 2732,
+        "numerical_replays": 5,
+        "reconstructed_source_files": 815
+      },
+      "qualification": {
+        "maintained_pass": 703,
+        "inherited_exclusions": 7,
+        "fresh_read_source_native_cases": 48432,
+        "fresh_existing_matrix_native_cases": 1700,
+        "fresh_existing_matrix_resident_cases": 1700,
+        "parent_matrix_rows_reused_by_hash": 1700,
+        "fresh_boundary_cases": 416,
+        "small_original_decoded_image_pairs": 37,
+        "normal_complete_smokes": 162,
+        "diagnostic_complete_interval_calls": 162,
+        "primary_cohorts": 2,
+        "cases_each": 81,
+        "balanced_blocks_each": 24,
+        "point_and_block1_05_pass_both_cohorts": 81,
+        "compiler_features": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "private_flags": [
+          "MECH_PRIVATE_INDEXED_CHAINS=1",
+          "MECH_PHASE_OWNER_TRANSFER=1",
+          "MECH_PHASE_VECTOR_FAST=1",
+          "MECH_PRIVATE_READ_INTERVALS=1"
+        ],
+        "warnings_as_errors": true,
+        "toolchain": "nightly-2026-03-03-aarch64-apple-darwin",
+        "original_expected_values_allowances_unchanged": true,
+        "ordinary_IR215_unchanged": true,
+        "ordinary_extra_contract_omitted": true
+      },
+      "source_pins": {
+        "source": {
+          "path": "/private/tmp/mech-private-read-intervals-round249-20261109/benchmark-source.mec",
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "mbc14": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "normal_object": {
+          "path": "/private/tmp/mech-private-read-intervals-round249-20261109/full-candidate-image/original/object.o",
+          "sha256": "da30e96737ec133b6c466c4ad719522a7138f2e308dcf9032bed2f2e7e9653aa"
+        },
+        "normal_metadata": {
+          "path": "/private/tmp/mech-private-read-intervals-round249-20261109/full-candidate-image/original/metadata.json",
+          "sha256": "d658a44bdcad92c14365dd6334d5b197444f2b8eb09f82842690a00ea0191737"
+        },
+        "normal_worker": {
+          "path": "/private/tmp/mech-private-read-intervals-round249-20261109/mech-worker",
+          "sha256": "0ab9ce8176e59074e068733b30ecb18ee246b6b7aebcd22bab22bfe627f63460"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "runtime": {
+          "path": "/private/tmp/mech-private-read-intervals-round249-20261109/array-runtime.rs",
+          "sha256": "bbc12169d120eaa60af57904de32f599d594e24c80201f1173991a05746ff066"
+        },
+        "compiler_patch": {
+          "path": "/private/tmp/mech-private-read-intervals-round249-20261109/compiler.patch",
+          "sha256": "77917b5ebf8c123268f5126e756cf3e3a700076d097ce11cc0d8ee750efb3113"
+        },
+        "compiler_source_manifest": {
+          "path": "/private/tmp/mech-private-read-intervals-round249-20261109/compiler-source-manifest.json",
+          "sha256": "0e962ed1609df6e86b84c6f73ac9ebf01e27a8f467064a694203c0ac42a81b51"
+        },
+        "pinned_allocator": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        }
+      },
+      "report": "docs/design/native-private-read-intervals.md"
     }
   },
   "repository": "mech-lang/mech",
