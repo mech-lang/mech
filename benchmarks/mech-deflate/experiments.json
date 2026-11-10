@@ -50747,6 +50747,344 @@
       },
       "report": "docs/design/native-entry-packed-geometry.md",
       "next": "Isolate shape-only reuse from full fallback erasure; inspect periodic skip-loop register transport, then return to native path-scan cost."
+    },
+    "258": {
+      "git_parent": "d2a06fc7577b0a6481006b110a82a7848db1757c",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "decision": {
+        "round": 258,
+        "retain": false,
+        "measured_eligible_under_existing_pooled_gates": true,
+        "reason": "Archive the SSA-isolation component and keep R256 per the new brief until the exact dynamic-window geometry control is measured against R256 and full R257. Preserve the measured text/random gains, repetitive instruction increases and every adverse cohort; this is not rejection for a small gain.",
+        "primary_summary": {
+          "round": 258,
+          "baseline": "R256",
+          "candidate": "current-entry packed geometry with checked definitions retained during SSA construction",
+          "all81_geomean_after_over_before": 0.987675236441502,
+          "large_original11_geomean_after_over_before": 0.9830511352108839,
+          "large_controlled_prefix_geomean_after_over_before": 0.9910679894555853,
+          "balanced_improvements": 55,
+          "balanced_regressions": 26,
+          "raw_improvements": 55,
+          "raw_ties": 3,
+          "point_gate_pass": 81,
+          "balanced_gate_pass": 81,
+          "cohorts": {
+            "primary-a": {
+              "point_gate_pass": 81,
+              "balanced_gate_pass": 81,
+              "large_prefix_geomean": 0.99123477846126
+            },
+            "primary-b": {
+              "point_gate_pass": 81,
+              "balanced_gate_pass": 80,
+              "large_prefix_geomean": 0.9910878184429418
+            }
+          }
+        },
+        "paired_summary": {
+          "round": "R258",
+          "cases": 81,
+          "descriptive_geomean_of_case_paired_effects": 0.9877548226235955,
+          "direction_reversals": [
+            "prefix-repeated-8192"
+          ]
+        },
+        "individual_gate_misses": [
+          {
+            "cohort": "primary-b",
+            "case": "empty",
+            "point_ratio": 1.0,
+            "balanced_ratio": 1.0635145455807817,
+            "point_gate": true,
+            "balanced_gate": false
+          }
+        ],
+        "adverse_balanced_cases": [
+          {
+            "case": "empty",
+            "change": 1.0395270914489634
+          },
+          {
+            "case": "one-stored",
+            "change": 1.0357761329963955
+          },
+          {
+            "case": "seven-stored-prefix",
+            "change": 1.0211637576874237
+          },
+          {
+            "case": "33027-periodic-window",
+            "change": 1.0020791747222042
+          },
+          {
+            "case": "repeated-32769",
+            "change": 1.00484303884046
+          },
+          {
+            "case": "prefix-periodic-8192",
+            "change": 1.0020155357495575
+          },
+          {
+            "case": "prefix-periodic-32767",
+            "change": 1.008142601284811
+          },
+          {
+            "case": "prefix-periodic-32768",
+            "change": 1.0017369267109058
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "change": 1.0012179718513172
+          },
+          {
+            "case": "prefix-periodic-65535",
+            "change": 1.0015123569000102
+          },
+          {
+            "case": "prefix-periodic-65536",
+            "change": 1.0035285355253087
+          },
+          {
+            "case": "prefix-periodic-65537",
+            "change": 1.0058434289309548
+          },
+          {
+            "case": "prefix-periodic-131072",
+            "change": 1.0065548620309754
+          },
+          {
+            "case": "prefix-periodic-262144",
+            "change": 1.0054725629478893
+          },
+          {
+            "case": "prefix-periodic-1048576",
+            "change": 1.0087955281173695
+          },
+          {
+            "case": "prefix-repeated-8192",
+            "change": 1.0048467403607255
+          },
+          {
+            "case": "prefix-repeated-32767",
+            "change": 1.0014387525877637
+          },
+          {
+            "case": "prefix-repeated-32768",
+            "change": 1.0009331399037995
+          },
+          {
+            "case": "prefix-repeated-32769",
+            "change": 1.003078252454514
+          },
+          {
+            "case": "prefix-repeated-33027",
+            "change": 1.0019543480992528
+          },
+          {
+            "case": "prefix-repeated-65535",
+            "change": 1.0025649125419562
+          },
+          {
+            "case": "prefix-repeated-65536",
+            "change": 1.0038066290052063
+          },
+          {
+            "case": "prefix-repeated-65537",
+            "change": 1.0036157872006124
+          },
+          {
+            "case": "prefix-repeated-131072",
+            "change": 1.0067939902034664
+          },
+          {
+            "case": "prefix-repeated-262144",
+            "change": 1.0044922312384028
+          },
+          {
+            "case": "prefix-repeated-1048576",
+            "change": 1.0076888956584327
+          }
+        ],
+        "instruction_decreases": 43,
+        "instruction_increases": 35,
+        "memory_equality": true,
+        "changed_numeric_definitions": [
+          "_mech_compact_numeric_837_vector"
+        ],
+        "qualification_calls": 268800,
+        "allows_timing_gate_increase": false,
+        "complete_goal": false
+      },
+      "retained_compiler": "R256",
+      "source": {
+        "files": 826,
+        "modified": 3,
+        "new": 1,
+        "manifest_sha256": "f6da6ddd02972b839f90113adca98dce7bb14650fcf96e7d7dd473735df452ea",
+        "patch_sha256": "7cfe93e3270137d1e6cba030ec29a055936d807d75cbfe90324814fb60280249",
+        "ordinary_IR215_unchanged": true,
+        "retained_backend": "R255 Cranelift0.131.3"
+      },
+      "current_pins": {
+        "bytecode": {
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "benchmark_source": {
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "reference_worker": {
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "baseline_object": {
+          "bytes": 1478952,
+          "sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631"
+        },
+        "baseline_worker": {
+          "bytes": 2100808,
+          "sha256": "96091f758139371d0f8455d18be30c2086af70904c5604a0b11307c651648297"
+        },
+        "candidate_object": {
+          "bytes": 1459496,
+          "sha256": "9507e4472a88dea45130096bab19b6938c53770a781b2c5ee1311e67fbdbfd21"
+        },
+        "candidate_metadata": {
+          "bytes": 4359133,
+          "sha256": "97417ba5f866d7ec022ccb1d80f018f452c65930795aeff3b378c77f4f5a4c68"
+        },
+        "candidate_worker": {
+          "bytes": 2067784,
+          "sha256": "c54bbc5772cf5c6da168e3e4bb8c766784dac1f876334ac2fbb0b12623cd7498"
+        },
+        "producer": {
+          "bytes": 96965352,
+          "sha256": "00d8ea7192ce33d5bac9014bb49d11713be1f3958412dd0f54456edc69b2fc3f"
+        },
+        "compiler_source_manifest": {
+          "bytes": 163924,
+          "sha256": "f6da6ddd02972b839f90113adca98dce7bb14650fcf96e7d7dd473735df452ea"
+        },
+        "compiler_patch": {
+          "bytes": 7620,
+          "sha256": "7cfe93e3270137d1e6cba030ec29a055936d807d75cbfe90324814fb60280249"
+        },
+        "retained_backend_patch": {
+          "bytes": 8897,
+          "sha256": "83c5fc6c14689ba80238615ae6e75c00103cbc447c8ae6681a62fae97607dc54"
+        }
+      },
+      "qualification": {
+        "maintained_passed": 715,
+        "inherited_filtered": 7,
+        "focused_linked_calls": 268800,
+        "complete_smokes": 162,
+        "fresh_profiles": 12,
+        "all81_CPU_heap_and_two_elapsed_cohorts": true,
+        "default_off_restores_R256": true,
+        "final_source_reproduces_measured_image": true,
+        "all81_heap_copy_identical": true
+      },
+      "machine": {
+        "common_numeric_definitions": 340,
+        "unchanged_common_definitions": 339,
+        "changed_definitions": {
+          "_mech_compact_numeric_837_vector": {
+            "before": {
+              "code_bytes": 42800,
+              "stack_bytes": 928,
+              "sha256": "78f2daba78e8e570b6f372ec7400bf624538f09ae4d5b21d25581d7f376c14d9"
+            },
+            "after": {
+              "code_bytes": 23384,
+              "stack_bytes": 800,
+              "sha256": "4eb677d9eea2555c075c743d9eb1db8929bc72d1e7f07270f659f1f0d189071b"
+            }
+          }
+        },
+        "added_definitions": [],
+        "removed_definitions": [],
+        "root_before": {
+          "code_bytes": 1040856,
+          "stack_bytes": 57088
+        },
+        "root_after": {
+          "code_bytes": 1040856,
+          "stack_bytes": 57088
+        },
+        "object_text_bytes": {
+          "before": 1385816,
+          "after": 1366360
+        },
+        "worker_bytes": {
+          "before": 2100808,
+          "after": 2067784
+        },
+        "scope": "Exact current and previous Mach-O Object function bytes and stack metadata. Code reduction includes previously unexecuted checked fallback bodies; it is not a dynamic instruction saving."
+      },
+      "setup_failure": {
+        "copied_relative_source_path": "corrected; only interrupted qualification resumed",
+        "scanner_self_literal": "corrected; no data uploaded before rescan",
+        "prior_measurement_observations_preserved": true
+      },
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r258-packed-read-ssa-e260b0057577.tar.gz",
+        "sha256": "e260b0057577b7365947e47838d2f05f3de0aa9c0b4ae5140801db902e13ae31",
+        "bytes": 11322499,
+        "files": 2512,
+        "reports_replayed": 8,
+        "fresh_public_verification": true
+      },
+      "report": "docs/design/native-packed-read-ssa.md",
+      "next": "Keep R256; matched dynamic-window geometry control versus R256/fullR257, then empty outer path and fixed-placement/short-completion witnesses.",
+      "family_summary": [
+        {
+          "case": "eight-literals",
+          "paired_reference_multiple": 0.42417833600523425,
+          "paired_elapsed_change_percent": -1.6481030687376164,
+          "instruction_change_percent": 0.0433027561654864,
+          "cycle_change_percent": -3.9000204614835665,
+          "remaining_elapsed_reduction_fraction": 0
+        },
+        {
+          "case": "prefix-natural-1048576",
+          "paired_reference_multiple": 1.8804955571049935,
+          "paired_elapsed_change_percent": -1.5146690441726673,
+          "instruction_change_percent": -3.5225540605092087,
+          "cycle_change_percent": -1.2770917664944093,
+          "remaining_elapsed_reduction_fraction": 0.46822527911765377
+        },
+        {
+          "case": "prefix-random-1048576",
+          "paired_reference_multiple": 2.102708623197148,
+          "paired_elapsed_change_percent": -2.9981035129193145,
+          "instruction_change_percent": -5.556827915374596,
+          "cycle_change_percent": -3.1170998747938494,
+          "remaining_elapsed_reduction_fraction": 0.5244229328933318
+        },
+        {
+          "case": "prefix-periodic-1048576",
+          "paired_reference_multiple": 1.2941656225626716,
+          "paired_elapsed_change_percent": 2.1048645073909578,
+          "instruction_change_percent": 1.0078632657803954,
+          "cycle_change_percent": 0.7859731050535057,
+          "remaining_elapsed_reduction_fraction": 0.2273013727409734
+        },
+        {
+          "case": "prefix-repeated-1048576",
+          "paired_reference_multiple": 1.234041419522066,
+          "paired_elapsed_change_percent": 0.7183015950130933,
+          "instruction_change_percent": 0.9977295130211283,
+          "cycle_change_percent": 0.7330541480434993,
+          "remaining_elapsed_reduction_fraction": 0.18965442797917453
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",

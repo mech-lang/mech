@@ -8,6 +8,19 @@ There are22 measured below-reference configurations. The largest controlled wins
 
 [Compiler patch, exact qualification, profiles, limits and verified evidence](native-private-nested-phases.md). [R255 historical measurements](native-shared-comparison.md). Ordinary IR215 and the compact entry’s additional omitted managed contract remain unchanged. Large-input parity remains incomplete.
 
+## R258 SSA-isolation component
+
+R256 remains the retained compiler. R258 records a1.2245% all81 within-block
+geometric elapsed improvement, with text/random gains and periodic/repeated
+instruction increases. At1MiB the paired candidate/reference ratios are
+1.880496x/2.102709x/1.294166x/1.234041x for text/random/periodic/repeated;
+paired changes versus its fresh R256 control are−1.5147%/−2.9981%/+2.1049%/+0.7183%.
+Eight is0.424178x in that paired cohort. These are experimental observations,
+not replacement retained timings. All combined gates pass; the second-cohort
+empty miss remains. New effect tables calculate ratios inside each balanced
+block first, with the existing pooled gates preserved.
+[Complete component and next exact geometry control](native-packed-read-ssa.md).
+
 ## R257 component and timing audit
 
 **R256 remains retained.** The next packed-read geometry experiment is archived with all81 results, including text/random gains, repetitive-input instruction increases and the failed pooled empty timing gate. Code shrinks, but executed work does not improve uniformly. [Complete R257 component, qualification, profiles and all81 observations](native-entry-packed-geometry.md).

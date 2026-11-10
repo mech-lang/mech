@@ -1,5 +1,39 @@
 # Native compression milestone
 
+## R258: checked-path SSA isolation recorded; R256 remains retained
+
+The bounded follow-up retains new checked source definitions during SSA
+construction while reusing the same current-entry geometry. It does not yet
+supply the newly requested dynamic-readable-window three-way control. Preserve
+this component and the full source; retain R256 under the new brief.
+
+Within the48 balanced blocks, all81 geometric elapsed improves1.2245% against
+fresh R256. At1MiB, paired ratios/control effects are text1.880496x/−1.5147%,
+random2.102709x/−2.9981%, periodic1.294166x/+2.1049%,
+repeated1.234041x/+0.7183%. Eight is0.424178x in this paired cohort. Historical
+R256 ratios and legacy pooled summaries retain their original denominators;
+new tables lead with ratios formed inside each matched block.
+
+Both full cohorts and separate CPU/heap cohorts complete. Pooled point/balanced
+gates81/81; first cohort81/81, second81point/80balanced. Its empty+6.3515%
+miss remains, with raw83ns medians equal.43 instruction medians fall/35rise.
+All81 heap/copy/zero/private peaks stay equal. One of340 numeric definitions
+changes:42800→23384B, stack928→800B. Root/339others stay exact. The additional
+scalar-tail base reload still survives; smaller code has not removed that cost.
+
+715 maintained tests/same7 exclusions,268800 linked original/decoded oracle
+calls and162 all81 smokes pass. Disabled Object/metadata restores R256; final
+annotations match the timed image. Twelve fresh current/reference captures and
+narrow three-image machine windows are preserved. A copied relative harness
+path and scanner self-literal check were corrected; completed measurements were
+not rerun.2512 public hashes/source reconstruction/eight report replays verify.
+OrdinaryIR215 and the additional omitted managed contract remain unchanged.
+
+Next: exact R256/geometry-with-dynamic-window/fullR257 comparison; then current
+empty outer reduction with the decremented header cursor, fixed-placement R247,
+and short-completion/live-state evidence. No broad fact pass or repeated old
+phase-only trial. [All81 paired results, proof, evidence and disposition](native-packed-read-ssa.md).
+
 **Current retained experimental compiler: R256.** Consecutive positions stay in a guarded native region, with exact cold handoffs and unchanged ordinary funding. At 1 MiB: text1.908252x, random2.170161x, periodic1.267271x, repeated1.222946x reference. Eight0.414364x;22/81 cases beat reference, through 16 KiB. Large-input parity remains incomplete. [Current all 81 scoreboard](native-compression-scoreboard.md).
 
 ## R257: preserve the geometry component and correct timing interpretation
