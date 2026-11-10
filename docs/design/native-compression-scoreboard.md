@@ -8,6 +8,17 @@ There are22 measured below-reference configurations. The largest controlled wins
 
 [Compiler patch, exact qualification, profiles, limits and verified evidence](native-private-nested-phases.md). [R255 historical measurements](native-shared-comparison.md). Ordinary IR215 and the compact entry’s additional omitted managed contract remain unchanged. Large-input parity remains incomplete.
 
+## R262 packed-state retest
+
+R261 remains retained. The old packed scalar-choice idea is retested after
+native outlining: its continuing loop shrinks14→12 instructions with no frame
+growth, but the empty outer route grows39→44 through extra stack traffic.
+All81 paired elapsed worsens2.8700%; random1MiB changes2.168785x→2.254190x
+reference and periodic1MiB1.268420x→1.332019x. The unchanged gates pass76/81
+point and77/81 block cases. All81 heap/copy/private-peak fields stay equal.
+The candidate is archived; no slower executable replaces the baseline.
+[Complete retest, native witnesses, profiles and all81 evidence](native-scalar-choice-retest.md).
+
 ## R261 interaction repairs
 
 The four review findings are repaired and qualified. The complete compressor

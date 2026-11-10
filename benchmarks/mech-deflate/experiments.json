@@ -51809,6 +51809,250 @@
         "Parity across all compression families and sizes"
       ],
       "complete_goal": false
+    },
+    "262": {
+      "git_parent": "56f7a4dd0bcffdce20be6ac4e5b62dd8fa1fb87d",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R261 correctness repairs on R256",
+      "retained_source_packet_round": 261,
+      "review_before_experiment": "https://github.com/mech-lang/mech/pull/973#issuecomment-6773197869",
+      "decision": {
+        "round": 262,
+        "decision": "reject isolated packed scalar choice; retain repaired R261 on R256",
+        "retained_git_head": "56f7a4dd0bcffdce20be6ac4e5b62dd8fa1fb87d",
+        "all81_paired_elapsed": 1.028700052841848,
+        "original_1_05_gates_passed": 76,
+        "blockmean_1_05_gates_passed": 77,
+        "heap_families_unchanged_all81": true,
+        "inner_scalar_continuing_steps": [
+          14,
+          12
+        ],
+        "empty_outer_steps": [
+          39,
+          44
+        ],
+        "path_frame_bytes": [
+          288,
+          288
+        ],
+        "source_algorithm_unchanged": true,
+        "old_rejections_do_not_prove_current_outcome": true,
+        "ordinary_managed_contract_restored": false,
+        "next": "Investigate the current redundant narrow-extension machine instructions without changing loop live ranges; require a current-binary witness and separate qualification before another compiler change."
+      },
+      "source": {
+        "files": 825,
+        "modified": 2,
+        "new": 0,
+        "baseline": "R261 exact repaired archive",
+        "manifest_sha256": "9704ec0c679cb68caf85bcf452d46b74704523e62cdcffd71be2cab2cfb1f7a8",
+        "patch_sha256": "7298f1e2263edc29be0a908879ddd416d5f872a3dff93d700d8198766c626584",
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ]
+      },
+      "summary": {
+        "cases": 81,
+        "blocks_per_case": 48,
+        "actors": 3,
+        "method": "Two fresh cohorts; all six balanced actor orders repeated four times per cohort. Ratios formed within each balanced block before geometric aggregation. The old pooled median and block-median 1.05 gates are reported unchanged. All adverse observations retained.",
+        "all81_paired_after_over_before": 1.028700052841848,
+        "original_1_05_gates_passed": 76,
+        "blockmean_1_05_gates_passed": 77
+      },
+      "qualification": {
+        "round": 262,
+        "tests": {
+          "focused-reductions": {
+            "passed": 10,
+            "failed": 0,
+            "filtered_out": 713,
+            "command": [
+              "env",
+              "MECH_PACK_SCALAR_CHOICE=1",
+              "MECH_SCALAR_CHOICE_ASM=/private/tmp/mech-loop-state-round262-20261110/packed-choice-helper.asm",
+              "./candidate-tests",
+              "ordered_reduction",
+              "--test-threads=1",
+              "--nocapture"
+            ]
+          },
+          "candidate-qualified-tests": {
+            "passed": 716,
+            "failed": 0,
+            "filtered_out": 7,
+            "command": [
+              "env",
+              "MECH_PACK_SCALAR_CHOICE=1",
+              "/private/tmp/mech-loop-state-round262-20261110/candidate-tests",
+              "--test-threads=1",
+              "--skip",
+              "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+              "--skip",
+              "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+              "--skip",
+              "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+              "--skip",
+              "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+              "--skip",
+              "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+              "--skip",
+              "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+              "--skip",
+              "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+            ]
+          }
+        },
+        "compiled_helper_boundary_comparisons": 12288,
+        "source_path_native_calls": 160,
+        "fresh_resident_calls_for_path_controls": 0,
+        "frozen_resident_and_independent_oracle_retained": true,
+        "complete_compression_original_decoded_calls": 324,
+        "complete_cases_each_form": 81,
+        "disabled_experiment_restores_R261": {
+          "Object_exact": true,
+          "metadata_exact": true,
+          "baseline": "56f7a4dd0bcffdce20be6ac4e5b62dd8fa1fb87d"
+        },
+        "actual_cohort_order": [
+          "primary-b",
+          "cpu",
+          "memory",
+          "primary-a"
+        ],
+        "test_root_opt_level": 1,
+        "performance_library_opt_level": 3,
+        "warnings_as_errors": true,
+        "features": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "tracked_architecture_catalog_checks": {
+          "tracked-analysis-layout": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-native-build-analysis-layout.py"
+            ],
+            "exit": 0,
+            "seconds": 0.026046500075608492
+          },
+          "tracked-host-catalog": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-native-host-catalog.py"
+            ],
+            "exit": 0,
+            "seconds": 0.7986235837452114
+          },
+          "tracked-source-catalog": {
+            "command": [
+              "python3",
+              "/private/tmp/mech-optimization-pr973/scripts/check-source-catalog-entrypoints.py"
+            ],
+            "exit": 0,
+            "seconds": 0.06911833258345723
+          }
+        },
+        "same_seven_inherited_exclusions": [
+          "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+          "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+          "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+          "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+          "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+          "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+          "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+        ],
+        "coverage_limits": [
+          "The 680-test current maintained runtime matrix is inherited from unchanged R261; not rerun or relabelled fresh here.",
+          "No full hosted CI, fresh full linked/AOT integration matrix or full 6.6-MB input run.",
+          "The compact timing entry still omits the ordinary managed resource/admission/publication/recovery contract."
+        ]
+      },
+      "machine": {
+        "common_root_and_numeric_definitions": 341,
+        "unchanged_definitions": 333,
+        "root_Object_code_and_frame_exact": true,
+        "worker_bytes": {
+          "before": 2100808,
+          "after": 2100808
+        }
+      },
+      "scalar_continuing_instructions": [
+        14,
+        12
+      ],
+      "empty_outer_instructions": [
+        39,
+        44
+      ],
+      "frame_bytes": [
+        288,
+        288
+      ],
+      "all81_heap_copy_zero_private_peaks_equal": true,
+      "artifacts": [
+        {
+          "name": "r262-scalar-choice-retest-b842a1a42f30.tar.gz",
+          "bytes": 10897052,
+          "sha256": "b842a1a42f307c1ec2b253b8d3be957d335aeb2137ffe5723960bbc7c1b04c6b",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r262-scalar-choice-retest-b842a1a42f30.tar.gz"
+        },
+        {
+          "name": "r262-scalar-choice-retest-b842a1a42f30.tar.gz.sha256",
+          "bytes": 112,
+          "sha256": "fd2b091ef141070ebfb3cf824de8cce738ee6e1151e150127ff7e009f69b4c13",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r262-scalar-choice-retest-b842a1a42f30.tar.gz.sha256"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "b842a1a42f307c1ec2b253b8d3be957d335aeb2137ffe5723960bbc7c1b04c6b",
+        "verified_files": 1907,
+        "offline_reports": 5,
+        "current_source_files": 825,
+        "reversed_base_source_files": 825,
+        "source_reconstruction_exact": true,
+        "replayed_output_hashes": {
+          "primary-results.json": "52ddb12252bdc9ad814a1aae7c31204f16239856c35ccac94eb3dcbb1798d129",
+          "counter-results.json": "b31ceb8c10bf1b6aa6a696a5e17c6eb41922fb671e1a2801cd45733da9a807b7",
+          "qualification-results.json": "66102c77363701c0e86c7ce6eea2a11b4a67fbaaea91c2757fa9e79d51c2895e",
+          "REPORT.md": "0bf1855fba9579976e9b7f37c3f428dccbaf4e5c06ac60c0323fe7c368f67ba3",
+          "result-decision.json": "5c09193d53acb94f5c3b3fbf9b9ccb16c33095adfdf3ba3245bc2df9d9784293"
+        },
+        "stdout": "Five reports replay identically;825-file compiler reconstructs in both directions; no compilation or compression executed.\n"
+      },
+      "report": "docs/design/native-scalar-choice-retest.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r262-scalar-choice-retest-b842a1a42f30.tar.gz",
+        "bytes": 10897052,
+        "sha256": "b842a1a42f307c1ec2b253b8d3be957d335aeb2137ffe5723960bbc7c1b04c6b",
+        "files": 1907,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "52ddb12252bdc9ad814a1aae7c31204f16239856c35ccac94eb3dcbb1798d129",
+            "counter-results.json": "b31ceb8c10bf1b6aa6a696a5e17c6eb41922fb671e1a2801cd45733da9a807b7",
+            "qualification-results.json": "66102c77363701c0e86c7ce6eea2a11b4a67fbaaea91c2757fa9e79d51c2895e",
+            "REPORT.md": "0bf1855fba9579976e9b7f37c3f428dccbaf4e5c06ac60c0323fe7c368f67ba3",
+            "result-decision.json": "5c09193d53acb94f5c3b3fbf9b9ccb16c33095adfdf3ba3245bc2df9d9784293"
+          }
+        }
+      },
+      "remaining": [
+        "Current narrow-extension machine witness without changing loop live ranges",
+        "Parity across all compression families and sizes"
+      ],
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",

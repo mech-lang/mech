@@ -48,7 +48,8 @@ serialized authority or production selection behavior changes.
 | Actual R256–R260 maintained CLI replays | 11,647 file occurrences; 33 identical reports |
 | Complete compression original/decoded smokes | 324 calls; all 81 cases through 1 MiB |
 
-Both Rust matrices use `-C opt-level=3 -D warnings` and features `aot`, `jit`,
+Both Rust test roots use `-C opt-level=1 -D warnings`; the performance GPU library
+uses `-C opt-level=3`. Their features are `aot`, `jit`,
 `canonical-native`, `canonical-native-runtime`, `canonical-native-program` and
 `canonical-native-program-runtime`. Exact build and test commands are in
 `qualification-results.json` and the build receipts in the packet. Layout,
