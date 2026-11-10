@@ -49860,6 +49860,216 @@
         }
       },
       "report": "docs/design/native-current-predicates.md"
+    },
+    "254": {
+      "git_parent": "63a5fcf0473c9f61346b81911b808bcb4dfb8835",
+      "decision": {
+        "round": 254,
+        "decision": "Archive combination; retain R253",
+        "source_compiler_changed": false,
+        "retained_flags": [
+          "MECH_PRIVATE_INDEXED_CHAINS=1",
+          "MECH_PHASE_OWNER_TRANSFER=1",
+          "MECH_PHASE_VECTOR_FAST=1",
+          "MECH_PRIVATE_READ_INTERVALS=1",
+          "MECH_PHASE_INVARIANT_VIEWS=1",
+          "MECH_CURRENT_PREDICATES=1"
+        ],
+        "archived_additional_flag": "MECH_IDENTITY_ROUTE_FORWARDING=1",
+        "primary_large_regressions_confirmed_both": true,
+        "eight_reference_ceiling_pass_both": true,
+        "all81_payload_copy_heap_fields_equal": true,
+        "introduced_unresolved_semantic_failures": 0,
+        "ordinary_extra_contract_restored": false
+      },
+      "summary": {
+        "round": 254,
+        "baseline": "R253",
+        "candidate": "R253 current predicates followed by archived R252 identity-route forwarding",
+        "all81_geomean_after_over_before": 1.007753725694004,
+        "large_original11_geomean_after_over_before": 1.0047412636394741,
+        "large_controlled_prefix_geomean_after_over_before": 1.002258123698345,
+        "balanced_improvements": 31,
+        "balanced_regressions": 50,
+        "raw_improvements": 30,
+        "raw_ties": 3,
+        "point_gate_pass": 76,
+        "balanced_gate_pass": 77,
+        "cohorts": {
+          "primary-a": {
+            "point_gate_pass": 70,
+            "balanced_gate_pass": 71,
+            "large_prefix_geomean": 1.0022059111730641
+          },
+          "primary-b": {
+            "point_gate_pass": 81,
+            "balanced_gate_pass": 81,
+            "large_prefix_geomean": 1.0026646689723542
+          }
+        }
+      },
+      "code_and_qualification": {
+        "round": 254,
+        "git_parent": "63a5fcf0473c9f61346b81911b808bcb4dfb8835",
+        "decision": "Archive combined forwarding; retain R253",
+        "introduced_performance_regressions": true,
+        "introduced_unresolved_semantic_failures": 0,
+        "compiler_source_unchanged": true,
+        "ordinary_IR215_unchanged": true,
+        "ordinary_extra_contract_restored": false,
+        "forwarded_edges": 913,
+        "selected_conditions": 1553,
+        "repair_parameters": 1011,
+        "root_code_before": 940264,
+        "root_code_after": 939104,
+        "stack_bytes_before": 50560,
+        "stack_bytes_after": 52160,
+        "existing_routines_byte_identical": 136,
+        "existing_vector_bodies_byte_identical": 7,
+        "source_programs": 6,
+        "source_variants": 7,
+        "source_calls": 3500,
+        "zero_trip_source_calls": 700,
+        "full_smoke_calls": 162,
+        "all81_observed_calls": 162,
+        "all81_phase_counts_exact_R253": true,
+        "maintained_tests_inherited": 712,
+        "maintained_tests_rerun": false,
+        "inherited_exclusions": 7,
+        "full_decoded_compressor_emitted": false,
+        "small_original_decoded_pairs_exact": 7,
+        "full_source_annotations_preserve_measured_object": true,
+        "additional_cleanup_only_ablation": "R253 inherited; not repeated",
+        "remaining_brief": [
+          "empty outer reduction transport",
+          "multi-position recurrence/current funding proof and cold handoff",
+          "R247 single placement control"
+        ],
+        "next_target": "Inspect measured empty/short reduction control and exact enclosing recurrence funding requirement; do not repeat broad identity forwarding or already completed phase-only isolation."
+      },
+      "source_reuse": {
+        "source_round": 253,
+        "source_manifest_sha256": "83535847961a921ef4a761c8ee9c6e19264fd9632fbc15505b904e0262b7fdff",
+        "compiler_source_files": 822,
+        "new_compiler_source_files": 0,
+        "source_packet_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r253-current-predicates-d1a351896db9.tar.gz",
+        "source_packet_sha256": "d1a351896db95a70115194d1583a7b0a3f7271535fe5997ccc2d9a3881b950d7",
+        "producer_sha256": "13878dd1ddae7ed3b3dd47a1d8fe6f1e198f8725cdc3085d7e1e9f4664e7f80a"
+      },
+      "source_pins": {
+        "benchmark_source": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/benchmark-source.mec",
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "bytecode": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "array_runtime": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/array-runtime.rs",
+          "bytes": 14286,
+          "sha256": "bbc12169d120eaa60af57904de32f599d594e24c80201f1173991a05746ff066"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "baseline_object": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/full-candidate-image/original/object.o",
+          "bytes": 1255024,
+          "sha256": "380d5e39e9a7e8ea8973adf14bf7c82a912c84e9ea41701c7047f64b036afe3c"
+        },
+        "baseline_worker": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/mech-worker",
+          "bytes": 1884504,
+          "sha256": "3e0e37c59693b932f026fd4c317cfb4ebf545827d645dd0275e8a28956a35344"
+        },
+        "candidate_object": {
+          "path": "/private/tmp/mech-predicate-forwarding-round254-20261110/full-candidate-image/original/object.o",
+          "bytes": 1253864,
+          "sha256": "0a80d8c98fa4b60dee9b9eeb00f5dc0f58e704922e8ba2ab4ced2ea5f1397a97"
+        },
+        "candidate_metadata": {
+          "path": "/private/tmp/mech-predicate-forwarding-round254-20261110/full-candidate-image/original/metadata.json",
+          "bytes": 4645838,
+          "sha256": "9b05e704f17d6b69708aefd2972833cd0d2c638223b27337f867f02b498a803e"
+        },
+        "candidate_worker": {
+          "path": "/private/tmp/mech-predicate-forwarding-round254-20261110/mech-worker",
+          "bytes": 1884504,
+          "sha256": "fce5279909a7c1cadbf8ad0d08a0a728ed101f52fd6b755dbd2f8a69bc52c551"
+        },
+        "source_manifest": {
+          "path": "/private/tmp/mech-predicate-forwarding-round254-20261110/compiler-source-manifest.json",
+          "bytes": 163939,
+          "sha256": "83535847961a921ef4a761c8ee9c6e19264fd9632fbc15505b904e0262b7fdff"
+        },
+        "producer": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/producer",
+          "bytes": 96887608,
+          "sha256": "13878dd1ddae7ed3b3dd47a1d8fe6f1e198f8725cdc3085d7e1e9f4664e7f80a"
+        }
+      },
+      "targets": {
+        "eight-literals": {
+          "before_over_reference": 0.4169312790886507,
+          "after_over_reference": 0.4349260755242436,
+          "balanced_elapsed_change": 3.9366882810227155,
+          "instruction_change": -1.165233089275386,
+          "cohort_changes": {
+            "primary-a": 7.124230442913393,
+            "primary-b": -0.42491523902240536
+          }
+        },
+        "heldout-random-65537": {
+          "before_over_reference": 2.7918678165579927,
+          "after_over_reference": 2.862779154602822,
+          "balanced_elapsed_change": 2.539924620509204,
+          "instruction_change": 3.212846858692142,
+          "cohort_changes": {
+            "primary-a": 2.8068746610762085,
+            "primary-b": 2.319774365379579
+          }
+        },
+        "prefix-natural-1048576": {
+          "before_over_reference": 2.1804036554051436,
+          "after_over_reference": 2.1878230728055543,
+          "balanced_elapsed_change": 0.3402772409603294,
+          "instruction_change": 0.7747482846356846,
+          "cohort_changes": {
+            "primary-a": 0.3329985178316175,
+            "primary-b": 0.31175916922712155
+          }
+        },
+        "prefix-random-1048576": {
+          "before_over_reference": 3.0835079105671266,
+          "after_over_reference": 3.163219200945791,
+          "balanced_elapsed_change": 2.585084672735727,
+          "instruction_change": 3.122452201901438,
+          "cohort_changes": {
+            "primary-a": 2.540766093216318,
+            "primary-b": 2.6085535526810366
+          }
+        }
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r254-predicate-forwarding-303bd52f963e.tar.gz",
+        "sha256": "303bd52f963e6f4a00c3584acabf46dfa1a793326f1c0a6981871de331c97251",
+        "bytes": 16531511,
+        "verified_files": 1241,
+        "offline_reports": 5,
+        "exact_unchanged_compiler_files": 822,
+        "downloaded_archive_and_receipt_exact": true
+      },
+      "report": "docs/design/native-predicate-forwarding-combination.md"
     }
   },
   "repository": "mech-lang/mech",
