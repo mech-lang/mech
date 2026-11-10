@@ -50256,6 +50256,158 @@
         "downloaded_archive_and_receipt_exact": true
       },
       "report": "docs/design/native-shared-comparison.md"
+    },
+    "256": {
+      "git_parent": "d6b1ef3a9a4082ebf50e9d060ee026c53816a9d5",
+      "decision": {
+        "round": 256,
+        "git_parent": "d6b1ef3a9a4082ebf50e9d060ee026c53816a9d5",
+        "decision": "Retain fixed-buffer private nested composition and exact cold handoff; preserve three individual primary-B control misses",
+        "retained_compiler": "R256 with MECH_PRIVATE_NESTED_PHASES; retained R255 backend",
+        "source_algorithm_changed": false,
+        "ordinary_funding_guard_changed": false,
+        "ordinary_extra_contract_restored": false,
+        "source_files": 825,
+        "modified_source_files": 8,
+        "new_source_files": 3,
+        "all81_pooled_point_and_balanced_gates": true,
+        "all81_individual_gates_both_cohorts": false,
+        "primary_b_balanced_misses": [
+          "empty",
+          "one-stored",
+          "eight-literals-prefix"
+        ],
+        "all81_payload_copy_heap_identical": true,
+        "next": "Same-current-view geometry facts through supported captured-child versions; confirm actual redundant instructions disappear, then measure all81."
+      },
+      "primary_summary": {
+        "round": 256,
+        "baseline": "R255",
+        "candidate": "private fixed-buffer nested computation with exact cold handoff",
+        "all81_geomean_after_over_before": 0.8173784238954603,
+        "large_original11_geomean_after_over_before": 0.8075947500517684,
+        "large_controlled_prefix_geomean_after_over_before": 0.7778770826260274,
+        "balanced_improvements": 78,
+        "balanced_regressions": 3,
+        "raw_improvements": 78,
+        "raw_ties": 3,
+        "point_gate_pass": 81,
+        "balanced_gate_pass": 81,
+        "cohorts": {
+          "primary-a": {
+            "point_gate_pass": 81,
+            "balanced_gate_pass": 81,
+            "large_prefix_geomean": 0.7773945306529407
+          },
+          "primary-b": {
+            "point_gate_pass": 81,
+            "balanced_gate_pass": 78,
+            "large_prefix_geomean": 0.778145442804385
+          }
+        }
+      },
+      "source": {
+        "files": 825,
+        "modified": 8,
+        "new": 3,
+        "manifest_sha256": "2e2334553a85f102268778a18ac9602cbdeaca0813eaaab587d6038c2042c7f6",
+        "patch_sha256": "25aefc9e891f454e3575ca0386ee873aeb6b34a13da069e08859becb2517c7b1",
+        "backend": "retained R255 Cranelift0.131.3 comparison reuse",
+        "ordinary_IR215_unchanged": true
+      },
+      "current_pins": {
+        "bytecode": {
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "benchmark_source": {
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "reference_worker": {
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "baseline_object": {
+          "bytes": 1255024,
+          "sha256": "95b6068d392da03301dddac22123bbc1c00bf358803cf09da930f023649205fb"
+        },
+        "baseline_worker": {
+          "bytes": 1884504,
+          "sha256": "37f94af73c6ac33d1edb32a301c05bb5606e122ea6992abfa9817ee530c33a91"
+        },
+        "candidate_object": {
+          "bytes": 1478952,
+          "sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631"
+        },
+        "candidate_metadata": {
+          "bytes": 4356579,
+          "sha256": "11a6c889a596c95d01d00f7a7108aa4244c69b412c665fa3b9d0897e777aa772"
+        },
+        "candidate_worker": {
+          "bytes": 2100808,
+          "sha256": "96091f758139371d0f8455d18be30c2086af70904c5604a0b11307c651648297"
+        },
+        "producer": {
+          "bytes": 96962312,
+          "sha256": "1b4a3f8caf13f011345e6918c208267d68c64600b3789043245ebca2221b9887"
+        },
+        "compiler_source_manifest": {
+          "bytes": 163706,
+          "sha256": "2e2334553a85f102268778a18ac9602cbdeaca0813eaaab587d6038c2042c7f6"
+        },
+        "compiler_patch": {
+          "bytes": 37051,
+          "sha256": "25aefc9e891f454e3575ca0386ee873aeb6b34a13da069e08859becb2517c7b1"
+        },
+        "retained_backend_patch": {
+          "bytes": 8897,
+          "sha256": "83c5fc6c14689ba80238615ae6e75c00103cbc447c8ae6681a62fae97607dc54"
+        }
+      },
+      "qualification": {
+        "maintained_passed": 715,
+        "inherited_filtered": 7,
+        "new_contract_tests_in_maintained": 3,
+        "cold_source_executions": 36864,
+        "existing_source_executions": 3500,
+        "zero_trip_calls": 700,
+        "complete_smokes": 162,
+        "observed_complete_calls": 162,
+        "uncovered_phase_count_controls": 4685,
+        "fresh_Mech_reference_profiles": 12,
+        "default_off_restores_R255": true,
+        "final_source_reproduces_measured_image": true,
+        "all81_heap_copy_identical": true
+      },
+      "machine": {
+        "root_code_before": 940264,
+        "root_code_after": 1040856,
+        "root_frame_before": 50560,
+        "root_frame_after": 57088,
+        "worker_bytes_before": 1884504,
+        "worker_bytes_after": 2100808,
+        "common_numeric_definitions_unchanged": 254,
+        "new_private_nested_regions": 43,
+        "selected_numeric_phases": 170
+      },
+      "wins": {
+        "count": 22,
+        "largest_bytes": 16384
+      },
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r256-private-nested-b406c5af5f18.tar.gz",
+        "sha256": "b406c5af5f1868a6e21522e181b90b0f6468a2128aa26f302b53804faeeb96f1",
+        "files": 2206,
+        "bytes": 20028159,
+        "reports_replayed": 6
+      },
+      "report": "docs/design/native-private-nested-phases.md",
+      "next": "Carry only certified current vector geometry through supported child-version facts; retain exact cold handoff and ordinary funding."
     }
   },
   "repository": "mech-lang/mech",
