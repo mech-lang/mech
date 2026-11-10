@@ -1,5 +1,15 @@
 # Production/diagnostic optimization coverage after R256
 
+R259 is an adverse adapter proof-use control, not new native coverage. Source
+window checks remain; the adapter deliberately adds a dynamic range gate where
+R256 already consumes a proof. Fresh268800 original/decoded width2/4/8 oracle
+calls and all81 complete streams qualify it, with final disabled/current image
+equality. The715 maintained tests/same7 exclusions are inherited from R258.
+R256 remains retained. Dynamic search/skip pack counts and whole empty-route
+cost remain unproved; do not infer them from27 static sites or CPU samples.
+[Comparison, limitation and next witnesses](native-explicit-window-control.md).
+
+
 R258 changes no native operation class: it isolates checked-definition timing
 in the same packed-read geometry adapter.715 maintained/same7 exclusions,
 268800 original/decoded linked controls,162 smokes and12 fresh captures pass;

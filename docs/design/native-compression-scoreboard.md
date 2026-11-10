@@ -8,6 +8,17 @@ There are22 measured below-reference configurations. The largest controlled wins
 
 [Compiler patch, exact qualification, profiles, limits and verified evidence](native-private-nested-phases.md). [R255 historical measurements](native-shared-comparison.md). Ordinary IR215 and the compact entry’s additional omitted managed contract remain unchanged. Large-input parity remains incomplete.
 
+## R259 matched proof-use control
+
+R256 remains retained. A fresh four-actor comparison measures R256, explicit
+adapter-window gating, fullR257 and the reference together on all81 cases.
+The explicit-window control is2.8501% slower by paired geometric elapsed and
+fails two combined gates. FullR257 is1.0201% faster in the same cohort, while its
+repetitive penalty and historical misses remain. The control adds a redundant
+adapter check at source-window-proved sites, so it is not pure geometry-only
+attribution. All81 three-way heap/copy fields match. None of these observations
+replace the retained table. [All81 paired results and disposition](native-explicit-window-control.md).
+
 ## R258 SSA-isolation component
 
 R256 remains the retained compiler. R258 records a1.2245% all81 within-block
