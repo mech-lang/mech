@@ -1,4 +1,13 @@
-# Production/diagnostic optimization coverage after R247
+# Production/diagnostic optimization coverage after R248
+
+R248 is inert opt-in diagnostic coverage, not a new native operation or speedup.
+Disabled full Object/metadata are exact R245. All81 configurations agree on11
+current work categories, with374 diagnostic correctness calls and112 normal
+prefix controls.56 same-stream sizes through1MiB have separate balanced elapsed,
+CPU and heap cohorts. Five focused tests are fresh; the parent broad suite stays
+inherited. Current unique returned lanes are observations, not mutation authority.
+Scalar reads inside existing private intervals and success-edge uniqueness reuse
+remain unimplemented. [Full scope and evidence](native-work-ledger-prefix-scaling.md).
 
 R247 isolates phase-only use of the existing threader. No new operation class
 is lowered. Root body/frame/relocations restore R245; all270 phase/variant bodies
