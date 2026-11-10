@@ -49674,6 +49674,192 @@
         }
       },
       "report": "docs/design/native-identity-route-forwarding.md"
+    },
+    "253": {
+      "git_parent": "d78da2862824993d16cf4958243feb36737d04be",
+      "control": "R250 retained Object; R252 broad forwarding disabled",
+      "decision": {
+        "round": 253,
+        "git_parent": "d78da2862824993d16cf4958243feb36737d04be",
+        "decision": "Retain R253 current immutable SSA predicate proof",
+        "candidate_flag": "MECH_CURRENT_PREDICATES=1",
+        "archived_R252_forwarding_enabled": false,
+        "all81_gates_pass_both_cohorts": true,
+        "all81_balanced_elapsed_instruction_cycle_improve": true,
+        "raw_observation_medians_improved": 79,
+        "raw_observation_medians_tied": 2,
+        "all81_payload_heap_identical": true,
+        "eight_ceiling_pass": true,
+        "root_code_change_bytes": -4683348,
+        "frame_change_bytes": -4576,
+        "structural_only_complete_worker_identical_R250": true,
+        "ordinary_IR215_unchanged": true,
+        "ordinary_extra_contract_restored": false,
+        "remaining": [
+          "empty outer path reduction",
+          "multi-position cold handoff",
+          "R247 placement control"
+        ]
+      },
+      "target_measurements": {
+        "eight-literals": {
+          "before_over_reference": 0.49647033613459907,
+          "after_over_reference": 0.43058615749645307,
+          "balanced_elapsed_change": -12.493729701450507,
+          "instruction_change": -4.323508500987272,
+          "cohort_changes": {
+            "primary-a": -11.210512032127006,
+            "primary-b": -14.512461806368416
+          }
+        },
+        "heldout-random-65537": {
+          "before_over_reference": 2.9484693456980935,
+          "after_over_reference": 2.7970226687274597,
+          "balanced_elapsed_change": -5.136450789003422,
+          "instruction_change": -5.034996416965853,
+          "cohort_changes": {
+            "primary-a": -5.048827911650955,
+            "primary-b": -5.272955810147295
+          }
+        },
+        "prefix-natural-1048576": {
+          "before_over_reference": 2.2402650386848544,
+          "after_over_reference": 2.1741892935057527,
+          "balanced_elapsed_change": -2.949461069922843,
+          "instruction_change": -1.5313276935661646,
+          "cohort_changes": {
+            "primary-a": -3.0409912655803284,
+            "primary-b": -2.9184958476867973
+          }
+        },
+        "prefix-random-1048576": {
+          "before_over_reference": 3.2217902014661957,
+          "after_over_reference": 3.0831604670105897,
+          "balanced_elapsed_change": -4.302879014049942,
+          "instruction_change": -5.048321887902274,
+          "cohort_changes": {
+            "primary-a": -4.3541280630343016,
+            "primary-b": -4.200765980754961
+          }
+        }
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r253-current-predicates-d1a351896db9.tar.gz",
+        "sha256": "d1a351896db95a70115194d1583a7b0a3f7271535fe5997ccc2d9a3881b950d7",
+        "bytes": 18669710,
+        "verified_files": 2098,
+        "numerical_replays": 5,
+        "reconstructed_source_files": 822,
+        "ablation_reconstructed_source_files": 822,
+        "downloaded_archive_and_receipt_exact": true
+      },
+      "qualification": {
+        "maintained_tests": 712,
+        "new_focused_tests": 5,
+        "new_focused_native_calls": 3942,
+        "inherited_exclusions": 7,
+        "source_programs": 6,
+        "source_execution_variants": 7,
+        "source_original_decoded_pairs": 7,
+        "source_calls": 3500,
+        "zero_trip_source_calls": 700,
+        "complete_configurations": 81,
+        "immediate_complete_smokes": 162,
+        "observed_complete_calls": 162,
+        "all81_phase_counts_exact_R250": true,
+        "primary_cohorts": 2,
+        "balanced_blocks_each": 24,
+        "counter_cohorts": [
+          "CPU",
+          "memory"
+        ],
+        "actual_PC_profiles": 4,
+        "all136_existing_routines_and7_vector_bodies_byte_identical": true,
+        "final_formatted_source_measured_object_and_metadata_identical": true,
+        "disabled_full_original_object_and_metadata_exact_R250": true,
+        "full_disabled_decoded_image_emitted": false,
+        "full_candidate_decoded_compression_image_emitted": false,
+        "small_original_decoded_images_equal": true,
+        "warnings_as_errors": true,
+        "compiler_opt_level": 3,
+        "test_root_opt_level": 1,
+        "features": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "unchanged_expectations_and_allowances": true,
+        "R250_extended_matrix_buffer_boundary_controls": "inherited; not relabeled fresh R252",
+        "ordinary_IR215_unchanged": true,
+        "ordinary_extra_contract_restored": false,
+        "introduced_unresolved_semantic_failures": 0
+      },
+      "source_pins": {
+        "benchmark_source": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/benchmark-source.mec",
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "bytecode": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "retained_object": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/full-candidate-image/original/object.o",
+          "bytes": 6684256,
+          "sha256": "12127a7982dd982db282d993895035656da96eace5f151426436cbd5ac2c290f"
+        },
+        "retained_worker": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/mech-worker",
+          "bytes": 6640168,
+          "sha256": "8d9abe2beca132f0d86f1f7119216a0980b5e06b325492ff232b74ce8a1ca81a"
+        },
+        "candidate_object": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/full-candidate-image/original/object.o",
+          "bytes": 1255024,
+          "sha256": "380d5e39e9a7e8ea8973adf14bf7c82a912c84e9ea41701c7047f64b036afe3c"
+        },
+        "candidate_metadata": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/full-candidate-image/original/metadata.json",
+          "bytes": 4224948,
+          "sha256": "b48b91b782938a227d677e83576d023878a4b0c4297826225aed7967a4e3c3be"
+        },
+        "candidate_worker": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/mech-worker",
+          "bytes": 1884504,
+          "sha256": "3e0e37c59693b932f026fd4c317cfb4ebf545827d645dd0275e8a28956a35344"
+        },
+        "array_runtime": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/array-runtime.rs",
+          "bytes": 14286,
+          "sha256": "bbc12169d120eaa60af57904de32f599d594e24c80201f1173991a05746ff066"
+        },
+        "patch": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/compiler.patch",
+          "bytes": 37817,
+          "sha256": "0daa041aa8f14e1153033008edda1a3ee4b5c69f4347f84856e95bafee889d34"
+        },
+        "source_manifest": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/compiler-source-manifest.json",
+          "bytes": 163939,
+          "sha256": "83535847961a921ef4a761c8ee9c6e19264fd9632fbc15505b904e0262b7fdff"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        }
+      },
+      "report": "docs/design/native-current-predicates.md"
     }
   },
   "repository": "mech-lang/mech",

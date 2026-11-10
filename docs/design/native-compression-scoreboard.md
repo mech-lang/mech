@@ -1,118 +1,119 @@
 # Current compression scoreboard
 
-**Retained compiler: R250, remeasured in the R252 cohort. The broad R252 variant is archived.** Large random/text throughput remains the priority. The original 25 retain 11 below-reference cases; the 56 prefixes have five, including duplicate inputs. The largest winning retained size is 4 KiB repeated.
+**Retained experimental compiler: R253.** All 81 balanced elapsed medians and independent instruction/cycle medians improve over the matched R250 control. Every unchanged 1.05 gate passes in both confirmation cohorts, and eight bytes remains below its 1x ceiling. The original 25 retain 11 below-reference configurations; the 56 prefixes have six, including duplicate inputs. The largest winning size remains 4 KiB, now periodic and repeated.
 
-The archived variant reduces root code 32.97% and improves eight/short repetitive cases, but increases both elapsed and instructions on the difficult large random/text cases. All 81 unchanged 1.05 gates pass in both cohorts; that does not justify retaining it against the current priority. Every candidate result, including improvements and regressions, remains below.
+The generic current-SSA predicate proof eliminates impossible Boolean branches and their cleanup paths. Root code shrinks 5,623,612 -> 940,264 bytes; the frame shrinks 4,576 B. All 136 existing routines and seven vector bodies stay identical. Additional cleanup alone restores the entire baseline executable, confirming the new proof is required.
 
-Current matched retained ratios: eight **0.508766x**, random 64 **2.960736x**; at 1 MiB text **2.237932x**, random **3.221988x**, periodic **1.779520x**, repeated **1.680464x**. These use a fresh shared reference denominator and the unchanged R250 binary. Historical R250/R251 ratios remain in their original reports.
+Current matched ratios: eight **0.430586x**, random 64 KiB **2.797023x**; at 1 MiB text **2.174189x**, random **3.083160x**, periodic **1.690930x**, repeated **1.596171x**. The larger-input gap remains. Historical ratios keep their original denominators; both columns below share the fresh R253 denominator.
 
-Complete fixed-level 12 computation, runtime input, matched live borrowed output, full scratch construction/output transfer/private cleanup. CPU/heap cohorts are independent of primary timings. Ordinary IR215 and the experimental compact entry’s additional omitted contract remain unchanged. [R252 design, complete evidence and archive decision](native-identity-route-forwarding.md).
+Complete level-12 computation, runtime input, matched live borrowed output and full scratch construction/output transfer/private cleanup. CPU/heap cohorts remain independent of elapsed. Ordinary IR215 and the compact entry’s additional omitted managed contract remain unchanged. [Design, source, current profile and every validation receipt](native-current-predicates.md).
 
-## Every retained below-reference configuration
+## Every current below-reference configuration
 
-| Group | Case | Bytes | Retained R250 / Roc |
+| Group | Case | Bytes | R253 / Roc |
 |---|---|---:|---:|
-| original 25 | eight-literals | 8 | **0.508766x** |
-| original 25 | eight-overlap | 8 | **0.502017x** |
-| original 25 | 320-overlap | 320 | **0.556349x** |
-| original 25 | eight-literals-prefix | 8 | **0.503846x** |
-| original 25 | 128-biased-dynamic | 128 | **0.510124x** |
-| original 25 | 32-high-entropy-stored | 32 | **0.540998x** |
-| original 25 | random-64 | 64 | **0.561477x** |
-| original 25 | random-256 | 256 | **0.656791x** |
-| original 25 | random-1024 | 1024 | **0.740323x** |
-| original 25 | repeated-1024 | 1024 | **0.636514x** |
-| original 25 | reymont-prefix-1024 | 1024 | **0.926660x** |
-| prefix 56 | prefix-natural-1024 | 1024 | **0.925241x** |
-| prefix 56 | prefix-random-1024 | 1024 | **0.754210x** |
-| prefix 56 | prefix-periodic-1024 | 1024 | **0.672202x** |
-| prefix 56 | prefix-repeated-1024 | 1024 | **0.661030x** |
-| prefix 56 | prefix-repeated-4096 | 4096 | **0.977098x** |
+| original25 | eight-literals | 8 | **0.430586x** |
+| original25 | eight-overlap | 8 | **0.428488x** |
+| original25 | 320-overlap | 320 | **0.476647x** |
+| original25 | eight-literals-prefix | 8 | **0.430005x** |
+| original25 | 128-biased-dynamic | 128 | **0.436179x** |
+| original25 | 32-high-entropy-stored | 32 | **0.450353x** |
+| original25 | random-64 | 64 | **0.478032x** |
+| original25 | random-256 | 256 | **0.554668x** |
+| original25 | random-1024 | 1024 | **0.656141x** |
+| original25 | repeated-1024 | 1024 | **0.569490x** |
+| original25 | reymont-prefix-1024 | 1024 | **0.807463x** |
+| prefix56 | prefix-natural-1024 | 1024 | **0.804925x** |
+| prefix56 | prefix-random-1024 | 1024 | **0.658209x** |
+| prefix56 | prefix-periodic-1024 | 1024 | **0.584372x** |
+| prefix56 | prefix-periodic-4096 | 4096 | **0.896756x** |
+| prefix56 | prefix-repeated-1024 | 1024 | **0.566308x** |
+| prefix56 | prefix-repeated-4096 | 4096 | **0.858050x** |
 
-## All 81 current measurements
+## All 81 matched measurements
 
-Ratios use pooled observation medians from the same R252 reference. Changes are balanced block means against the concurrently remeasured R250 control. The right-hand candidate is archived, not the default. Near-resolution empty/one/seven-byte observations remain visible.
+Ratios use pooled observation medians; changes use balanced block means. Positive changes would be regressions. All individual observations, including near-resolution empty/one/seven-byte cases, remain in the public packet.
 
-| Case | Bytes | Retained R250 / Roc | Archived R252 / Roc | Candidate elapsed change | Candidate instructions change |
+| Case | Bytes | R250 / Roc | Retained R253 / Roc | Elapsed change | Instructions change |
 |---|---:|---:|---:|---:|---:|
-| empty | 0 | 1.976190x | 1.976190x | -7.3316% | -0.0634% |
-| one-stored | 1 | 2.000000x | 1.976190x | -5.9946% | -0.2634% |
-| seven-stored-prefix | 7 | 1.976190x | 2.000000x | +1.7290% | -0.2614% |
-| eight-literals | 8 | 0.508766x | 0.493174x | -1.3536% | -1.3074% |
-| eight-overlap | 8 | 0.502017x | 0.483795x | -4.5947% | -1.2794% |
-| 320-overlap | 320 | 0.556349x | 0.545266x | -1.9148% | -1.0313% |
-| eight-literals-prefix | 8 | 0.503846x | 0.493347x | -1.8768% | -1.3072% |
-| 128-biased-dynamic | 128 | 0.510124x | 0.502946x | -1.2182% | -0.9027% |
-| 32-high-entropy-stored | 32 | 0.540998x | 0.520356x | -3.1076% | -1.3670% |
-| 16384-distribution-change | 16384 | 2.710542x | 2.660476x | -1.8471% | +0.7260% |
-| 33027-periodic-window | 33027 | 1.546264x | 1.514774x | -2.0365% | -0.4582% |
-| random-64 | 64 | 0.561477x | 0.543710x | -2.7018% | -1.3978% |
-| random-256 | 256 | 0.656791x | 0.633416x | -3.5603% | -1.0761% |
-| random-1024 | 1024 | 0.740323x | 0.744087x | +0.3049% | +0.7346% |
-| repeated-1024 | 1024 | 0.636514x | 0.632211x | -1.1198% | -0.7696% |
-| random-32769 | 32769 | 2.681532x | 2.720398x | +1.4494% | +2.6743% |
-| repeated-32769 | 32769 | 1.468270x | 1.442728x | -1.7395% | -0.4498% |
-| reymont-prefix-1024 | 1024 | 0.926660x | 0.923020x | -0.2713% | +0.1244% |
-| reymont-prefix-16384 | 16384 | 2.183037x | 2.185118x | +0.0953% | +0.6964% |
-| reymont-prefix-32769 | 32769 | 2.222817x | 2.224440x | +0.0730% | +0.7439% |
-| heldout-window-32767 | 32767 | 2.223614x | 2.221926x | -0.0759% | +0.7415% |
-| heldout-window-32768 | 32768 | 2.228023x | 2.227961x | -0.0028% | +0.7412% |
-| heldout-slides-65537 | 65537 | 2.299596x | 2.287167x | -0.5405% | +0.5998% |
-| heldout-random-65537 | 65537 | 2.960736x | 3.008642x | +1.6181% | +2.6840% |
-| heldout-mixed-131073 | 131073 | 2.441508x | 2.442603x | +0.0449% | +0.5811% |
-| prefix-natural-1024 | 1024 | 0.925241x | 0.919934x | -0.5845% | +0.1229% |
-| prefix-natural-4096 | 4096 | 1.709284x | 1.676193x | -1.9360% | +0.6045% |
-| prefix-natural-8192 | 8192 | 1.995019x | 1.970393x | -1.2344% | +0.6701% |
-| prefix-natural-16384 | 16384 | 2.185602x | 2.177246x | -0.3823% | +0.7033% |
-| prefix-natural-32767 | 32767 | 2.232872x | 2.231034x | -0.0823% | +0.7449% |
-| prefix-natural-32768 | 32768 | 2.238170x | 2.230699x | -0.3338% | +0.7446% |
-| prefix-natural-32769 | 32769 | 2.220182x | 2.221197x | +0.0457% | +0.7445% |
-| prefix-natural-33027 | 33027 | 2.218018x | 2.216092x | -0.0869% | +0.7432% |
-| prefix-natural-65535 | 65535 | 2.196571x | 2.205958x | +0.4274% | +0.7508% |
-| prefix-natural-65536 | 65536 | 2.197010x | 2.207424x | +0.4740% | +0.7506% |
-| prefix-natural-65537 | 65537 | 2.236179x | 2.240498x | +0.1932% | +0.6636% |
-| prefix-natural-131072 | 131072 | 2.198196x | 2.221252x | +1.0489% | +0.8204% |
-| prefix-natural-262144 | 262144 | 2.201946x | 2.213402x | +0.5203% | +0.6806% |
-| prefix-natural-1048576 | 1048576 | 2.237932x | 2.251347x | +0.5995% | +0.7189% |
-| prefix-random-1024 | 1024 | 0.754210x | 0.743429x | -1.1166% | +0.7471% |
-| prefix-random-4096 | 4096 | 1.400565x | 1.326690x | -5.2747% | +1.9102% |
-| prefix-random-8192 | 8192 | 1.755160x | 1.751713x | -0.1964% | +2.5106% |
-| prefix-random-16384 | 16384 | 2.306531x | 2.314051x | +0.3260% | +2.6784% |
-| prefix-random-32767 | 32767 | 2.713510x | 2.739740x | +0.9666% | +2.6840% |
-| prefix-random-32768 | 32768 | 2.701142x | 2.736192x | +1.2976% | +2.6908% |
-| prefix-random-32769 | 32769 | 2.694064x | 2.732786x | +1.4373% | +2.6838% |
-| prefix-random-33027 | 33027 | 2.707628x | 2.728205x | +0.7600% | +2.6770% |
-| prefix-random-65535 | 65535 | 2.961548x | 3.024576x | +2.1282% | +2.6098% |
-| prefix-random-65536 | 65536 | 2.960115x | 3.013432x | +1.8012% | +2.6087% |
-| prefix-random-65537 | 65537 | 2.961248x | 3.015735x | +1.8400% | +2.6041% |
-| prefix-random-131072 | 131072 | 3.092855x | 3.206768x | +3.6831% | +2.7744% |
-| prefix-random-262144 | 262144 | 3.152504x | 3.213137x | +1.9233% | +2.4869% |
-| prefix-random-1048576 | 1048576 | 3.221988x | 3.293046x | +2.2054% | +2.5057% |
-| prefix-periodic-1024 | 1024 | 0.672202x | 0.656998x | -2.6211% | -0.7935% |
-| prefix-periodic-4096 | 4096 | 1.039828x | 0.985353x | -5.2388% | -0.5488% |
-| prefix-periodic-8192 | 8192 | 1.178681x | 1.157408x | -1.8048% | -0.5012% |
-| prefix-periodic-16384 | 16384 | 1.378267x | 1.352093x | -1.8990% | -0.4957% |
-| prefix-periodic-32767 | 32767 | 1.542416x | 1.526270x | -1.0468% | -0.4639% |
-| prefix-periodic-32768 | 32768 | 1.538564x | 1.516256x | -1.4500% | -0.4627% |
-| prefix-periodic-32769 | 32769 | 1.540062x | 1.510660x | -1.9092% | -0.4672% |
-| prefix-periodic-33027 | 33027 | 1.540711x | 1.510597x | -1.9546% | -0.4592% |
-| prefix-periodic-65535 | 65535 | 1.655958x | 1.633212x | -1.3736% | -0.4475% |
-| prefix-periodic-65536 | 65536 | 1.656272x | 1.636949x | -1.1667% | -0.4517% |
-| prefix-periodic-65537 | 65537 | 1.653918x | 1.631818x | -1.3362% | -0.4468% |
-| prefix-periodic-131072 | 131072 | 1.719799x | 1.701982x | -1.0360% | -0.4389% |
-| prefix-periodic-262144 | 262144 | 1.749992x | 1.788525x | +2.2019% | -0.0715% |
-| prefix-periodic-1048576 | 1048576 | 1.779520x | 1.786825x | +0.4105% | -0.3315% |
-| prefix-repeated-1024 | 1024 | 0.661030x | 0.647771x | -3.1616% | -0.7623% |
-| prefix-repeated-4096 | 4096 | 0.977098x | 0.926900x | -5.1375% | -0.5301% |
-| prefix-repeated-8192 | 8192 | 1.147509x | 1.113228x | -2.9875% | -0.4737% |
-| prefix-repeated-16384 | 16384 | 1.318874x | 1.295250x | -1.7913% | -0.4788% |
-| prefix-repeated-32767 | 32767 | 1.472379x | 1.449311x | -1.5667% | -0.4593% |
-| prefix-repeated-32768 | 32768 | 1.468606x | 1.454764x | -0.9425% | -0.4600% |
-| prefix-repeated-32769 | 32769 | 1.488649x | 1.453128x | -2.3861% | -0.4537% |
-| prefix-repeated-33027 | 33027 | 1.475066x | 1.441852x | -2.2517% | -0.4519% |
-| prefix-repeated-65535 | 65535 | 1.556018x | 1.525856x | -1.9384% | -0.4460% |
-| prefix-repeated-65536 | 65536 | 1.573924x | 1.553098x | -1.3232% | -0.4498% |
-| prefix-repeated-65537 | 65537 | 1.615177x | 1.572438x | -2.6461% | -0.4459% |
-| prefix-repeated-131072 | 131072 | 1.616565x | 1.605348x | -0.6939% | -0.4382% |
-| prefix-repeated-262144 | 262144 | 1.652213x | 1.692036x | +2.4102% | +0.0552% |
-| prefix-repeated-1048576 | 1048576 | 1.680464x | 1.692097x | +0.6922% | -0.3305% |
+| empty | 0 | 1.976190x | 1.976190x | -13.0590% | -0.9192% |
+| one-stored | 1 | 2.000000x | 1.976190x | -23.8669% | -1.2862% |
+| seven-stored-prefix | 7 | 1.976190x | 1.976190x | -18.8236% | -1.2761% |
+| eight-literals | 8 | 0.496470x | 0.430586x | -12.4937% | -4.3235% |
+| eight-overlap | 8 | 0.490952x | 0.428488x | -13.0673% | -4.2322% |
+| 320-overlap | 320 | 0.544897x | 0.476647x | -12.6865% | -4.1314% |
+| eight-literals-prefix | 8 | 0.487295x | 0.430005x | -11.0230% | -4.3234% |
+| 128-biased-dynamic | 128 | 0.498919x | 0.436179x | -12.5528% | -4.5889% |
+| 32-high-entropy-stored | 32 | 0.523856x | 0.450353x | -14.7901% | -5.1060% |
+| 16384-distribution-change | 16384 | 2.688227x | 2.323779x | -13.5572% | -4.9444% |
+| 33027-periodic-window | 33027 | 1.534159x | 1.424118x | -7.1727% | -4.1944% |
+| random-64 | 64 | 0.560038x | 0.478032x | -14.9124% | -5.4364% |
+| random-256 | 256 | 0.654488x | 0.554668x | -14.9916% | -6.1342% |
+| random-1024 | 1024 | 0.737837x | 0.656141x | -11.1018% | -5.3625% |
+| repeated-1024 | 1024 | 0.634346x | 0.569490x | -10.6173% | -3.8866% |
+| random-32769 | 32769 | 2.668885x | 2.518187x | -5.6465% | -4.9941% |
+| repeated-32769 | 32769 | 1.457184x | 1.362171x | -6.5203% | -4.1784% |
+| reymont-prefix-1024 | 1024 | 0.915964x | 0.807463x | -12.0746% | -4.2161% |
+| reymont-prefix-16384 | 16384 | 2.178044x | 2.060267x | -5.4075% | -2.1837% |
+| reymont-prefix-32769 | 32769 | 2.220723x | 2.130488x | -4.0633% | -1.9323% |
+| heldout-window-32767 | 32767 | 2.227375x | 2.132613x | -4.2544% | -1.9363% |
+| heldout-window-32768 | 32768 | 2.227672x | 2.135918x | -4.1188% | -1.9372% |
+| heldout-slides-65537 | 65537 | 2.293668x | 2.205655x | -3.8372% | -1.8154% |
+| heldout-random-65537 | 65537 | 2.948469x | 2.797023x | -5.1365% | -5.0350% |
+| heldout-mixed-131073 | 131073 | 2.442930x | 2.270648x | -7.0523% | -3.3384% |
+| prefix-natural-1024 | 1024 | 0.915214x | 0.804925x | -11.9433% | -4.2162% |
+| prefix-natural-4096 | 4096 | 1.720220x | 1.569873x | -8.7400% | -2.5199% |
+| prefix-natural-8192 | 8192 | 2.003041x | 1.856638x | -7.3090% | -2.2761% |
+| prefix-natural-16384 | 16384 | 2.190738x | 2.056135x | -6.1442% | -2.1836% |
+| prefix-natural-32767 | 32767 | 2.231778x | 2.134866x | -4.3424% | -1.9358% |
+| prefix-natural-32768 | 32768 | 2.229170x | 2.131487x | -4.3820% | -1.9351% |
+| prefix-natural-32769 | 32769 | 2.228753x | 2.131146x | -4.3795% | -1.9359% |
+| prefix-natural-33027 | 33027 | 2.225623x | 2.130753x | -4.2626% | -1.9312% |
+| prefix-natural-65535 | 65535 | 2.201721x | 2.123837x | -3.5374% | -1.5582% |
+| prefix-natural-65536 | 65536 | 2.201227x | 2.124178x | -3.5003% | -1.5578% |
+| prefix-natural-65537 | 65537 | 2.243909x | 2.166866x | -3.4334% | -1.5511% |
+| prefix-natural-131072 | 131072 | 2.201440x | 2.128889x | -3.2956% | -1.4612% |
+| prefix-natural-262144 | 262144 | 2.205956x | 2.140922x | -2.9481% | -1.4108% |
+| prefix-natural-1048576 | 1048576 | 2.240265x | 2.174189x | -2.9495% | -1.5313% |
+| prefix-random-1024 | 1024 | 0.737984x | 0.658209x | -10.5867% | -5.3646% |
+| prefix-random-4096 | 4096 | 1.358550x | 1.210273x | -10.9144% | -5.3357% |
+| prefix-random-8192 | 8192 | 1.726901x | 1.564482x | -9.4052% | -5.2385% |
+| prefix-random-16384 | 16384 | 2.281403x | 2.112230x | -7.4153% | -5.0863% |
+| prefix-random-32767 | 32767 | 2.692352x | 2.529481x | -6.0494% | -5.0174% |
+| prefix-random-32768 | 32768 | 2.707886x | 2.538700x | -6.2479% | -5.0173% |
+| prefix-random-32769 | 32769 | 2.684537x | 2.523804x | -5.9874% | -4.9917% |
+| prefix-random-33027 | 33027 | 2.702402x | 2.529977x | -6.3804% | -4.9910% |
+| prefix-random-65535 | 65535 | 2.957766x | 2.797302x | -5.4252% | -4.9543% |
+| prefix-random-65536 | 65536 | 2.962113x | 2.799693x | -5.4833% | -4.9509% |
+| prefix-random-65537 | 65537 | 2.948459x | 2.792447x | -5.2913% | -4.9375% |
+| prefix-random-131072 | 131072 | 3.104938x | 2.924923x | -5.7977% | -5.0019% |
+| prefix-random-262144 | 262144 | 3.143963x | 3.000630x | -4.5590% | -4.9437% |
+| prefix-random-1048576 | 1048576 | 3.221790x | 3.083160x | -4.3029% | -5.0483% |
+| prefix-periodic-1024 | 1024 | 0.657210x | 0.584372x | -11.0898% | -4.1396% |
+| prefix-periodic-4096 | 4096 | 1.018763x | 0.896756x | -11.9760% | -4.0072% |
+| prefix-periodic-8192 | 8192 | 1.176310x | 1.077666x | -8.3859% | -3.9579% |
+| prefix-periodic-16384 | 16384 | 1.370205x | 1.260670x | -7.9941% | -4.2239% |
+| prefix-periodic-32767 | 32767 | 1.536621x | 1.430592x | -6.9001% | -4.2206% |
+| prefix-periodic-32768 | 32768 | 1.532381x | 1.428118x | -6.8040% | -4.2206% |
+| prefix-periodic-32769 | 32769 | 1.533775x | 1.428978x | -6.8326% | -4.1942% |
+| prefix-periodic-33027 | 33027 | 1.531628x | 1.430057x | -6.6316% | -4.1944% |
+| prefix-periodic-65535 | 65535 | 1.655486x | 1.555904x | -6.0153% | -4.2054% |
+| prefix-periodic-65536 | 65536 | 1.652601x | 1.552138x | -6.0791% | -4.2054% |
+| prefix-periodic-65537 | 65537 | 1.655574x | 1.553409x | -6.1710% | -4.1920% |
+| prefix-periodic-131072 | 131072 | 1.715754x | 1.623045x | -5.4034% | -4.1946% |
+| prefix-periodic-262144 | 262144 | 1.749652x | 1.662526x | -4.9796% | -4.1927% |
+| prefix-periodic-1048576 | 1048576 | 1.776343x | 1.690930x | -4.8084% | -4.1889% |
+| prefix-repeated-1024 | 1024 | 0.630400x | 0.566308x | -9.9666% | -3.8869% |
+| prefix-repeated-4096 | 4096 | 0.970059x | 0.858050x | -11.5467% | -3.9190% |
+| prefix-repeated-8192 | 8192 | 1.143431x | 1.048841x | -8.2725% | -3.9092% |
+| prefix-repeated-16384 | 16384 | 1.305312x | 1.207345x | -7.5053% | -4.1950% |
+| prefix-repeated-32767 | 32767 | 1.456847x | 1.373327x | -5.7329% | -4.2053% |
+| prefix-repeated-32768 | 32768 | 1.463455x | 1.369818x | -6.3984% | -4.2049% |
+| prefix-repeated-32769 | 32769 | 1.466358x | 1.369173x | -6.6277% | -4.1784% |
+| prefix-repeated-33027 | 33027 | 1.464600x | 1.372711x | -6.2740% | -4.1786% |
+| prefix-repeated-65535 | 65535 | 1.569091x | 1.482657x | -5.5086% | -4.1974% |
+| prefix-repeated-65536 | 65536 | 1.571538x | 1.484218x | -5.5563% | -4.1974% |
+| prefix-repeated-65537 | 65537 | 1.581430x | 1.486302x | -6.0153% | -4.1839% |
+| prefix-repeated-131072 | 131072 | 1.631247x | 1.545218x | -5.2738% | -4.1949% |
+| prefix-repeated-262144 | 262144 | 1.659798x | 1.573378x | -5.2066% | -4.1916% |
+| prefix-repeated-1048576 | 1048576 | 1.633536x | 1.596171x | -2.2874% | -4.0864% |

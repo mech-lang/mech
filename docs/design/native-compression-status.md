@@ -1,6 +1,18 @@
 # Native compression milestone
 
-**Current retained experimental compiler: R250.** The original 25 retain 11 below-reference cases; the 56 prefixes have five in this fresh cohort, including duplicate inputs. All 81 have two-cohort timings in the [scoreboard](native-compression-scoreboard.md). Large-input throughput remains the priority.
+**Current retained experimental compiler: R253.** All 81 balanced elapsed medians and independent instruction/cycle medians improve; every unchanged timing gate passes in both cohorts. The original 25 have 11 below-reference cases and the 56 prefixes have six, including duplicate inputs. Full current results are in the [scoreboard](native-compression-scoreboard.md). Large random/text throughput remains the priority.
+
+## R253: current predicate proof removes impossible cleanup paths
+
+Retain the generic current-SSA range proof. On a selected false edge of a normalized 0/1 word’s comparison with one, the current word is zero. Scoped immutable facts survive unrelated effects, while new loads and shared paths inherit no memory or permission assumption. Existing effects, aliases and error order remain. Raw invalid values keep their fallback. No additional result-transport parameters, native operation class or ordinary contract change is introduced; the broad R252 forwarding flag stays disabled.
+
+Root code shrinks 5,623,612 -> 940,264 B; its frame shrinks 55,136 -> 50,560 B. The linked worker shrinks 6,640,168 -> 1,884,504 B. All 136 original routines, seven vector bodies and their metadata stay identical. A structural-cleanup-only compiler restores the entire R250 worker byte for byte. Final source/annotations reproduce the measured image, and disabling the flag restores the baseline Object/metadata.
+
+Random 64 KiB improves 2.948469x -> 2.797023x reference (-5.1365% elapsed). At 1 MiB: random 3.221790x -> 3.083160x (-4.3029%); text 2.240265x -> 2.174189x (-2.9495%); periodic 1.690930x; repeated 1.596171x. Eight improves 0.496470x -> 0.430586x (-12.4937% balanced elapsed). All 81 balanced elapsed and instruction/cycle medians improve, with every unchanged gate passing both cohorts. Heap, copying and zeroing figures are identical. Counter cohorts remain separate from elapsed claims.
+
+712 maintained tests pass with the same seven exclusions. Five new focused tests contain 3,942 native calls; 3,500 source calls include 700 zero trips across original/decoded forms. The 162 complete smokes and another 162 observed calls verify exact bytes/inflate/aliases/capacity/cleanup and unchanged all-81 native-phase counts. Current random 1 MiB samples remain root-heavy (3,383/5,552); text remains mostly numeric phases (4,444/5,361). These are not instruction or removable-time budgets.
+
+Empty outer path-reduction forwarding, enclosing multi-position cold handoff and the bounded R247 placement control remain outstanding. The inherited funding guard is not weakened. [Exact patch, all results, profiles, failure dispositions and verified public evidence](native-current-predicates.md).
 
 ## R252: archive broad identity continuation forwarding
 
