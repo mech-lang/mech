@@ -1,4 +1,22 @@
-# Production/diagnostic optimization coverage after R255
+# Production/diagnostic optimization coverage after R256
+
+R256 adds private fixed-buffer nested composition using the SAME operation/version
+proof and emitter.43 enclosing regions qualify;7 matching phases fold into their
+parent, with170 selected numeric phases total. The new collector retains26 Tail
+loops and exact current source exports before unsupported operations. Actual
+exclusive-owner/capacity guards retain shared/borrowed fallback; ordinary current
+funding and its refusal stay unchanged. This is new enclosing-region selection,
+not a new primitive operation or restoration of the ordinary extra contract.
+
+715 maintained / 7 inherited exclusions,36864 cold source calls,3500 existing source
+controls and162 all 81 smokes/162 observed calls pass. All 81 pooled elapsed gates
+pass;3 Primary B balanced misses remain explicit. Heap/copy/zero figures are equal;
+code/frame grow. Large random 1 MiB improves29.3087%, text12.5701%. Fresh profiles
+identify lost current-vector geometry in child-version facts as the next bounded
+target. The older eleven-category work census and extended matrix controls remain
+inherited. [Exact scope, failures, source and evidence](native-private-nested-phases.md).
+
+Historical entries below retain their original checkpoint scopes.
 
 R248 is inert opt-in diagnostic coverage, not a new native operation or speedup.
 Disabled full Object/metadata are exact R245. All81 configurations agree on11
@@ -79,7 +97,7 @@ Counts describe different representation boundaries and are not interchangeable 
 
 | Capability | Ordinary production | Complete diagnostic | Reason for difference |
 |---|---|---|---|
-| Numeric phases | Maintained admitted numeric segments and four outlined phases; existing funding/ownership/publication contracts | 134 selected disjoint existing numeric proofs (7 nested/127 single loops), using shared emitters; fixed-buffer current-owner gates and fallback | Compact typed interface permits different disjoint selection; ordinary contracts still omitted in diagnostic |
+| Numeric phases | Maintained admitted numeric segments and four outlined phases; existing funding/ownership/publication contracts | 170 selected disjoint numeric phases, including 43 new fixed-buffer enclosing regions; shared emitters,current-owner/capacity gates and exact cold handoffs | Compact typed interface permits different disjoint selection; ordinary contracts still omitted in diagnostic |
 | Packed reads | Existing confined byte-expression proofs in ordinary numeric lowering | Same proof/emission retained at27 static root sites, plus uses inside shared phases | Root adapter preserves existing optimization; counts do not include every in-phase emission |
 | Total unsigned maps | Existing prepared pointwise totality proof and scalar/vector emitter | Same two proved tree-rebase maps, dense captures and fresh private sinks | Entry/storage/admission adapters differ; scalar/vector computation is shared |
 | Scalar-result leaves | Efficient Bool/U64/I64/F64 direct checked entry and private scalar-aggregate support;117 unboxed aggregate values in retained metadata | Primitive scalar and aggregate operations emitted directly into the typed root/shared phases; no separate ordinary canonical leaf boundary | A flattened diagnostic result is not an ordinary admitted leaf; scalar/map ordinary Objects/metadata/descriptors remain byte-identical |

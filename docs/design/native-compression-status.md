@@ -1,6 +1,16 @@
 # Native compression milestone
 
-**Current retained experimental compiler: R255.** The bounded AArch64 backend change reduces text1MiB instructions 0.6974% with essentially flat elapsed. All 81 unchanged timing gates pass both confirmations, and heap/copy figures stay equal. Current ratios and every adverse measurement are in the [scoreboard](native-compression-scoreboard.md). Large-input parity remains incomplete.
+**Current retained experimental compiler: R256.** Consecutive positions stay in a guarded native region, with exact cold handoffs and unchanged ordinary funding. At 1 MiB: text1.908252x, random2.170161x, periodic1.267271x, repeated1.222946x reference. Eight0.414364x;22/81 cases beat reference, through 16 KiB. Large-input parity remains incomplete. [Current all 81 scoreboard](native-compression-scoreboard.md).
+
+## R256: compose private fixed-buffer nested phases
+
+The shared numeric proof and source operations remain. A sealed same-proof private contract requires actual exclusive writable owners and fixed capacity, while ordinary checked visits/funding retain their original refusal and debits. Unsupported collection work receives exact current scalars/views before running in its original CFG. No source algorithm, allocation site or new primitive operation changes. The collector encloses 26 Tail loops and enters 35–36 times per1 MiB, with 31 window handoffs.
+
+Two confirmations show substantial larger-case gains: random 1 MiB3.069914x→2.170161x(-29.3087% elapsed,-31.2393% instructions); text2.182609x→1.908252x(-12.5701%,-14.9740%); periodic-25.0894%, repeated-22.7866% elapsed. All 81 pooled point/balanced gates pass. Primary B has 3 individual balanced misses(empty, one-stored, eight-literals-prefix); preserve them without changing thresholds. Heap/copy/zero medians stay identical, while root frame grows6528 B and worker216304 B.
+
+715 maintained tests/7 inherited exclusions pass, with3 new contract tests included.36864 current/parent original/decoded cold controls,3500 existing source controls,162 all 81 smokes and162 observed calls pass.4685 uncovered phase-count controls stay exact; fused-child boundary counts intentionally change. Default-off restores R255, final source restores the timed/profiled image, and all 825 source files reconstruct exactly from the822-file parent. Ordinary IR215/extra-contract omissions stay unchanged.
+
+Fresh six-case profiles of both executables move the remaining work inside native matching/path loops. The actual certified vector collector still repeats current geometry tests in a captured child version. Next prove only that same current geometry through supported descendants, verify the redundant machine instructions disappear, and measure all 81. Empty outer reduction and the single R247 placement control remain open. [Design, exact results, profiles and evidence](native-private-nested-phases.md).
 
 ## R255: retain instruction reduction without claiming a large time gain
 
