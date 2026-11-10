@@ -51342,6 +51342,192 @@
       },
       "report": "docs/design/native-explicit-window-control.md",
       "next": "Whole empty outer reduction/current cursor and actual eligibility, then single current-baseline R247 placement/short-completion control."
+    },
+    "260": {
+      "git_parent": "9dbdf42d2157715941e3b6cd75421eb01442d1d7",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R256",
+      "retained_source": "608ed69aedb98bb8c9d61b0bf6364580b304a6d1",
+      "decision": {
+        "round": 260,
+        "decision": "archive both controls; retain R256",
+        "retained_source": "608ed69aedb98bb8c9d61b0bf6364580b304a6d1",
+        "padded_all81_geomean": 1.0153791876147313,
+        "unpadded_all81_geomean": 1.0088409677112558,
+        "all81_heap_copy_zero_private_peaks_exact": true,
+        "changed_source_algorithm": false,
+        "whole_function_placement_explains_regression": false,
+        "spill_is_a_candidate_not_complete_causal_budget": true,
+        "ordinary_managed_contract_restored": false,
+        "brief_stages_B_C_complete": true,
+        "brief_stage_A_remaining": "dynamic selected-pack-site search-versus-skip counts; R259 control already executed",
+        "brief_stage_D_next": "one U64 scalar reduction carry under existing U32 range/sentinel proof"
+      },
+      "summary": {
+        "round": 260,
+        "cases": 81,
+        "blocks_each": 48,
+        "actor_count": 4,
+        "padded_all81_geomean": 1.0153791876147313,
+        "unpadded_all81_geomean": 1.0088409677112558,
+        "padded_vs_unpadded_all81_geomean": 1.0064809222788689,
+        "legacy_pooled_point_gates": {
+          "after": 78,
+          "unpadded": 80
+        },
+        "legacy_pooled_block_gates": {
+          "after": 75,
+          "unpadded": 79
+        },
+        "cohorts": {
+          "primary-a": {
+            "point_gates": 77,
+            "block_gates": 71
+          },
+          "primary-b": {
+            "point_gates": 77,
+            "block_gates": 74
+          }
+        }
+      },
+      "source": {
+        "files": 830,
+        "modified": 3,
+        "new": 5,
+        "manifest_sha256": "706a2053854556b63101b34f5b1197820a7bcfa0d3362449d068013a2bd5570f",
+        "patch_sha256": "172af34dab48038d92c4a6ee9c22c612ecf7510ea9739dcd4f94fa923e5171f0",
+        "ordinary_IR215_unchanged": true
+      },
+      "current_pins": {
+        "bytecode": {
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "benchmark_source": {
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "reference_worker": {
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "baseline_object": {
+          "bytes": 1478952,
+          "sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631"
+        },
+        "baseline_worker": {
+          "bytes": 2100808,
+          "sha256": "96091f758139371d0f8455d18be30c2086af70904c5604a0b11307c651648297"
+        },
+        "candidate_object": {
+          "bytes": 1478952,
+          "sha256": "a8cca1ec4f9b392cddf43583a40ae4748b23720d8be499efcf9b0524ba5bc302"
+        },
+        "candidate_metadata": {
+          "bytes": 4358571,
+          "sha256": "02d48dff934464e7af580004f831bd2888ec4be74b80a756db82105d61cd1983"
+        },
+        "candidate_worker": {
+          "bytes": 2100808,
+          "sha256": "e9f22ec19362403cdef3e3b51caa830262c78c9736a99dc84e51884a315264f5"
+        },
+        "producer": {
+          "bytes": 97011736,
+          "sha256": "23e9fb12ca3e8b50ed9acc8ed85d9ff6d7d6b93763763c18136c15faf93d23ba"
+        },
+        "compiler_source_manifest": {
+          "bytes": 164814,
+          "sha256": "706a2053854556b63101b34f5b1197820a7bcfa0d3362449d068013a2bd5570f"
+        },
+        "compiler_patch": {
+          "bytes": 44215,
+          "sha256": "172af34dab48038d92c4a6ee9c22c612ecf7510ea9739dcd4f94fa923e5171f0"
+        },
+        "retained_backend_patch": {
+          "bytes": 8897,
+          "sha256": "83c5fc6c14689ba80238615ae6e75c00103cbc447c8ae6681a62fae97607dc54"
+        }
+      },
+      "qualification": {
+        "maintained_tests_passed": 722,
+        "inherited_exclusions": 7,
+        "focused_original_decoded_path_calls": 240,
+        "all81_complete_snapshot_calls": 162,
+        "all81_uninstrumented_smokes": 162,
+        "fresh_counter_heap_observations": 16848,
+        "fresh_current_profiles": 6,
+        "fresh_reference_profiles": 0,
+        "default_off_exact_R256": true,
+        "decoded_diagnostic_exact_original": true,
+        "final_formatted_and_annotated_Object_metadata_exact_measured": true,
+        "all81_three_actor_heap_copy_zero_peaks_equal": true
+      },
+      "machine": {
+        "Object_functions": 343,
+        "linked_retained_entries": 178,
+        "all_padded_starts_exact_R256": true,
+        "root_code_and_symbolic_relocations_exact_R256": true,
+        "changed_definitions": 8,
+        "unchanged_definitions": 335,
+        "before_body_bytes": 2048,
+        "threaded_body_bytes": 1968,
+        "padding_bytes": 80,
+        "frame_bytes": 288,
+        "empty_route_steps_before": 39,
+        "empty_route_steps_after": 21,
+        "local_repair_phis_per_body": 6,
+        "global_repair_parameters_added": false
+      },
+      "artifacts": [
+        {
+          "name": "r260-path-placement-8c7ab1e856aa.tar.gz",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r260-path-placement-8c7ab1e856aa.tar.gz",
+          "bytes": 10604541,
+          "sha256": "8c7ab1e856aa1558517abc71228a212075767880d549552d22d513af06de5f1b"
+        },
+        {
+          "name": "r260-path-placement-8c7ab1e856aa.tar.gz.sha256",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r260-path-placement-8c7ab1e856aa.tar.gz.sha256",
+          "bytes": 106,
+          "sha256": "f6a0407870bd50dc33b4336ef17d1fc77f2c56bc17124fa748de34a786740c37"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "8c7ab1e856aa1558517abc71228a212075767880d549552d22d513af06de5f1b",
+        "verified_files": 1885,
+        "offline_reports": 6,
+        "current_source_files": 830,
+        "reversed_base_source_files": 825,
+        "source_reconstruction_exact": true
+      },
+      "report": "docs/design/native-empty-path-placement-control.md",
+      "remaining": [
+        "dynamic selected-pack-site search/skip attribution",
+        "one measured loop-state representation experiment",
+        "parity across all compression families/sizes"
+      ],
+      "complete_goal": false,
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r260-path-placement-8c7ab1e856aa.tar.gz",
+        "bytes": 10604541,
+        "sha256": "8c7ab1e856aa1558517abc71228a212075767880d549552d22d513af06de5f1b",
+        "files": 1885,
+        "reports_replayed": 6,
+        "fresh_public_verification": true
+      },
+      "subsequent_review": {
+        "reviewed_parent": "9dbdf42d2157715941e3b6cd75421eb01442d1d7",
+        "OPT-01": "inherited source-backed pack/reuse SSA defect; native reproduction and repair take priority",
+        "OPT-02": "tracked managed projection cardinality in two paths",
+        "OPT-03": "inherited metadata-only owner acquisition defect; native reproduction required",
+        "OPT-04": "maintained replay schema dispatch defect",
+        "performance_baseline_is_not_broad_compiler_adoption": true
+      }
     }
   },
   "repository": "mech-lang/mech",

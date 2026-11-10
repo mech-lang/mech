@@ -8,6 +8,10 @@ There are22 measured below-reference configurations. The largest controlled wins
 
 [Compiler patch, exact qualification, profiles, limits and verified evidence](native-private-nested-phases.md). [R255 historical measurements](native-shared-comparison.md). Ordinary IR215 and the compact entry’s additional omitted managed contract remain unchanged. Large-input parity remains incomplete.
 
+## R260 empty-path and fixed-placement control
+
+R256 remains the measurement control. The current empty route shrinks39→21 instructions, and all178 retained function entries stay at the same linked addresses. Text1MiB improves4.11% to1.821964x reference, but random/periodic/repeated regress3.61%/3.68%/4.11% despite fewer instructions. Both controls are archived; the retained table below is unchanged. All81 heap/copy/zero/private-peak fields match. The new review of inherited compiler/runtime/tooling defects takes priority over another optimization. [Full paired all81 results, native census and qualification](native-empty-path-placement-control.md).
+
 ## R259 matched proof-use control
 
 R256 remains retained. A fresh four-actor comparison measures R256, explicit
