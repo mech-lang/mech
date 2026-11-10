@@ -1,6 +1,64 @@
 # Current compression scoreboard
 
-**Retained experimental computational baseline: R263, on R261's correctness repairs.**
+**Retained experimental computational baseline: R264 on R263.**
+The compiler branches directly on vector truth while retaining normalized Boolean
+values for observers. The source algorithm and timing boundary stay unchanged.
+
+| Paired result, all 81 | R263 to R264 |
+|---|---:|
+| Geometric elapsed | **−0.336093%** |
+| Cohort A | +0.094530% |
+| Cohort B | −0.764863% |
+| Existing pooled/block gates | 81/81 each |
+| Below-reference configurations | 22 to 22 |
+| Heap/copy/zero/private-peak families | Equal on all 81 |
+
+This is a small, noisy gain with explicit tradeoffs. The next priority remains
+the repeated/periodic cases nearest 1x around 32 KiB. No case newly crosses 1x.
+Both columns below use the same fresh reference runs; historical tables retain
+their original denominators. Negative changes mean faster.
+
+| Case | Bytes | R263 / Roc | R264 / Roc | Time change |
+|---|---:|---:|---:|---:|
+| prefix-repeated-32767 | 32767 | 1.021118x | 1.022805x | +0.1652% |
+| prefix-repeated-32768 | 32768 | 1.041336x | 1.034897x | -0.6183% |
+| prefix-repeated-32769 | 32769 | 1.026890x | 1.026793x | -0.0094% |
+| prefix-repeated-33027 | 33027 | 1.038928x | 1.040467x | +0.1481% |
+| prefix-periodic-32767 | 32767 | 1.061943x | 1.066311x | +0.4113% |
+| prefix-periodic-32768 | 32768 | 1.061908x | 1.057479x | -0.4170% |
+| prefix-periodic-32769 | 32769 | 1.063255x | 1.061318x | -0.1822% |
+| prefix-periodic-33027 | 33027 | 1.071861x | 1.068822x | -0.2835% |
+| eight-literals | 8 | 0.428201x | 0.424475x | -0.8701% |
+| prefix-natural-1048576 | 1048576 | 1.889632x | 1.890300x | +0.0353% |
+| prefix-random-1048576 | 1048576 | 2.145590x | 2.149057x | +0.1616% |
+| prefix-periodic-1048576 | 1048576 | 1.220897x | 1.222641x | +0.1428% |
+| prefix-repeated-1048576 | 1048576 | 1.180242x | 1.180345x | +0.0087% |
+
+[All81 comparisons, compiler/backend design, counters, profiles and evidence](native-vector-truth-lowering.md).
+The actual private difference test shrinks 4→3 instructions and needs one scalar
+lane transfer instead of two. Both matching frames grow 16 bytes; their normal
+body shrinks 1,632 bytes and vector body grows 120 bytes. Root Object bytes, 339 of 341
+root/numeric definitions and the 2,084,296-byte worker file size remain exact.
+Natural/random 1 MiB instructions increase 0.27%/0.75%, while repeated/periodic 32 KiB
+instructions fall about 0.35%. These costs remain beside the elapsed results.
+
+720 native tests, 5788 fresh native source controls and 324 final complete
+original/decoded smokes pass. Frozen source-resident observations are reused;
+zero new source-resident calls are claimed. Seven native exclusions and the
+unchanged maintained 680-test result remain inherited. Full hosted CI, a fresh full
+linked/AOT suite, full 6.6 MB input and a fresh full disabled-pipeline emit are not
+claimed. The established compact-entry ordinary managed-contract omissions stay
+explicit. All primary/counter collection finishes before post-change profiling.
+Twelve fresh exact-image captures include both 32 KiB border inputs.
+
+Next retest the archived R235 checked argument-packet read alternative on the
+current outlined architecture. Its old repetitive regression remains evidence;
+no new win is assumed. Prove the current private packet span, retain source-array
+traps/current arguments/aliases/error/retry behavior, and time all 81 again.
+
+## Historical R263 matched cohort
+
+**Historical R263 checkpoint, on R261's correctness repairs.**
 This generic compiler change reuses guarded current-length bounds for masked
 one-based indices. It removes 20 read checks and 15 write checks in each matching
 body. The complete source algorithm, allocation behavior and ordinary contract
