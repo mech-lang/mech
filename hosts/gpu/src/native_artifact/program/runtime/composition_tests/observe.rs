@@ -87,6 +87,16 @@ thread_local! {
     static FIRST_CHANGE_COPY_LIMIT: Cell<Option<u64>> = const { Cell::new(None) };
     static FIRST_CHANGE_COPY_TARGET: Cell<Option<usize>> = const { Cell::new(None) };
 }
+
+pub(in crate::native_artifact::program::runtime) fn decline_numeric_phase() -> bool {
+    crate::native_artifact::program::prepare::readonly_numeric::test_decline_nested_phase()
+}
+
+/// Exercise the maintained parent path when a whole-phase gate declines.
+/// The selected parent code, ordinary calls, and all admission remain real.
+pub(super) fn without_numeric_phase<T>(run: impl FnOnce() -> T) -> T {
+    crate::native_artifact::program::prepare::readonly_numeric::test_without_nested_phase(run)
+}
 pub(in crate::native_artifact::program::runtime) fn prepaid_segment_entry_work(entry: u64) {
     COUNTS.with(|v| v.borrow_mut().prepaid_segment_entry_work = Some(entry));
 }

@@ -46,6 +46,7 @@ mod ordered_reduction_return;
 mod pack;
 mod phase_descendants;
 mod physical_exits;
+mod projection_elements;
 mod read_packs;
 mod record_lookup;
 mod resources;

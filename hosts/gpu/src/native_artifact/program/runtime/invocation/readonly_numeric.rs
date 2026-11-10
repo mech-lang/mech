@@ -7,6 +7,10 @@ use mech_engine::native_artifact::NativeIterationAction as Action;
 
 impl Invocation<'_, '_, '_> {
     pub(super) fn begin_numeric_views(&mut self, id: usize) -> Result<bool, Error> {
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        if super::super::composition_tests::observe::decline_numeric_phase() {
+            return Ok(false);
+        }
         let descriptor = self.descriptor;
         let metadata = descriptor.metadata();
         let region = &metadata.closed_tails.regions[id];
