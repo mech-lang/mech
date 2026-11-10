@@ -1,5 +1,58 @@
 # Current compression scoreboard
 
+**Cases faster than Roc: 22/81 = 27.2%; goal 100%.**
+Retained experimental compiler: **R264**. R265's checked internal argument-read
+alternative is rejected: paired geometric elapsed **+1.812837%**, with both
+primary cohorts adverse (+2.055305% and +1.570945%). Its isolated natural-text
+gain is preserved in the report. No slower candidate is adopted.
+
+| Headline metric | Retained R264 | Rejected R265 | Movement |
+|---|---:|---:|---:|
+| Cases faster than reference | 22/81 (27.1605%) | 22/81 (27.1605%) | 0.0000 percentage points |
+| Target | 100% | 100% | Open |
+| Existing pooled/block 1.05 gates | — | 81/81 each | Unchanged ceilings |
+| Heap/copy/zero/private peaks | Baseline | Equal on all 81 | No saving |
+
+Count a case only when its paired geometric elapsed ratio is strictly below 1.0
+in the same fresh balanced blocks. Ties do not count. The denominator remains
+the fixed 81 complete compression inputs/configurations; this is a case share,
+not byte-weighted throughput or a significance threshold. Future chat updates
+should show this percentage/count, percentage-point movement, and a compact
+frontier. The complete matrix is still measured and saved in the round report.
+
+| Frontier / control | Bytes | Retained R264 / Roc | Rejected R265 / Roc | Time change |
+|---|---:|---:|---:|---:|
+| prefix-repeated-32767 | 32767 | 1.026606x | 1.060901x | +3.3406% |
+| prefix-repeated-32768 | 32768 | 1.031579x | 1.066543x | +3.3893% |
+| prefix-repeated-32769 | 32769 | 1.030045x | 1.059532x | +2.8627% |
+| prefix-repeated-33027 | 33027 | 1.044947x | 1.072964x | +2.6812% |
+| prefix-periodic-32768 | 32768 | 1.059505x | 1.098785x | +3.7074% |
+| prefix-periodic-32769 | 32769 | 1.071074x | 1.102238x | +2.9097% |
+| eight-literals | 8 | 0.422626x | 0.421959x | -0.1578% |
+
+Both columns use the same new reference measurements. R264's source is unchanged;
+its historical ratios below keep their original denominators. There is no new
+parity crossing. The candidate removes static reads but adds about 0.23% retired
+instructions on repeated/periodic 32 KiB. This negative result is preserved.
+
+[All 81 rows, percentage metric, counters, source proof, safety controls and review contract](native-current-packet-reads.md).
+724 candidate native tests pass (seven inherited exclusions), 7384 fresh native
+source calls, 759 fresh resident calls and 324 complete original/decoded smokes
+pass. Eight new candidate profiles follow completion of all four cohorts. R264
+baseline/reference profiles and R230 matching-resident rows are explicitly reused.
+The unchanged maintained 680-test result is inherited; full hosted CI, a fresh full
+linked/AOT suite and full 6.6 MB input are not claimed. The compact entry's ordinary
+managed-contract omissions remain explicit. No source algorithm, buffer, table,
+allocation site or timing boundary changes.
+
+Next map the changed path-loop live ranges/spill sequence and dynamic visits
+before another argument-read experiment; preserve live-value allocation and
+judge the frontier and all 81 elapsed/instruction results. Review requests must
+name exact base/head, linked patch/evidence, metric expectations, safety invariants
+and coverage limits. Goal: 100% of cases faster than the reference.
+
+## Historical R264 matched cohort
+
 **Retained experimental computational baseline: R264 on R263.**
 The compiler branches directly on vector truth while retaining normalized Boolean
 values for observers. The source algorithm and timing boundary stay unchanged.
