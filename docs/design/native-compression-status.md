@@ -6,6 +6,37 @@ shows all25 retained/candidate rows against the same fresh R247 reference;
 its changed ratios do not mean the retained compiler changed. Historical
 reports preserve their original observations. All25 inputs/sizes stay mandatory.
 
+## R248:81 configurations agree on measured work;1MiB scaling complete
+
+Retain R245. Opt-in counters restore its entire normal Object and metadata when
+disabled. All25 original and56 new same-stream prefixes independently agree on
+11 categories of search/skip/tree/cache/path/reduction work, including reason
+and span distributions.50 full Mech,162 filtered Mech and162 reference calls
+repeat exact counters/outputs. The filter matches the full25 censuses exactly.
+
+One unchanged normal executable handles every size through1MiB. New balanced
+primary/CPU/heap cohorts give retained1MiB text2.244033x (361.570ms), random
+3.235679x (93.101ms), periodic1.813792x (56.957ms), repeated1.690176x (58.054ms).
+Source/private memory peaks near10.55MB; initialized copies are8752–40676B.
+Random retires1450.463 instructions/byte versus305.360 in the reference. No new
+speedup is claimed. Original25 retain11 wins; the new56 include5 below-reference
+configurations, with duplicates and one near-parity point explicitly labeled.
+
+Old65K heldout text repeats the original32769-byte prefix; preserve it. New
+text uses the official continuation/checksum. No expected output, source
+algorithm, allowance, allocator or timing boundary changes. OrdinaryIR215 and
+standalone omitted managed contracts remain. Direct Mech per-block history and
+phase-success uniqueness propagation are not claimed. Five focused runtime/
+counter tests pass; the broad parent suite is inherited, not relabeled fresh.
+
+Next minimally reproduce the current private-interval refusal at scalar read
+2602 between skip head writes2596/2598 and2604. A read of the exact current
+buffer creates no alias; preserve the proof only if that is statically shown,
+then test errors/aliases/geometry/original-decoded and time all81 configurations.
+No gain or implementation of that extension is claimed here.
+
+[All numbers, work categories, memory, exact configurations, source/patch and public evidence](native-work-ledger-prefix-scaling.md).
+
 ## R247: phase-only isolation preserves the natural gain and periodic penalty
 
 R245 stays retained, with all11 current wins listed in the [scoreboard](native-compression-scoreboard.md).

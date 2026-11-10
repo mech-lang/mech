@@ -48273,6 +48273,865 @@
           "sha256": "acc956027028d0d4a6deb4baf69635d2d1b84c20ef45d9d508e427b4d50442b1"
         }
       }
+    },
+    "248": {
+      "git_parent": "5999af0df3862775ff1138660db964198b5c574f",
+      "control": "Unchanged retained R245; archived R247 and pinned reference balanced in new prefix cohorts",
+      "decision": {
+        "decision": "Retain R245. R248 is a current work/scaling diagnostic, not a new speedup. Preserve archived R247 natural-text gains.",
+        "git_parent": "5999af0df3862775ff1138660db964198b5c574f",
+        "retained_compiler": "R245",
+        "archived_component": "R247 phase-only threading",
+        "old_cases": 25,
+        "additional_prefix_cases": 56,
+        "total_measured_configurations": 81,
+        "all81_listed_logical_work_equal": true,
+        "normal_Object_metadata_equal_R245": true,
+        "existing25_below_reference": 11,
+        "prefix56_below_reference": 5,
+        "largest_input_bytes": 1048576,
+        "finite_contract_restored": false,
+        "primary_prefix_cohorts": 1,
+        "no_new_optimization": true,
+        "matching_phase_owner_lane_states": {
+          "1279": {
+            "0": 0,
+            "1": 4991396,
+            "2": 0,
+            "3": 0
+          },
+          "3835": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0
+          },
+          "2624": {
+            "0": 0,
+            "1": 3683697,
+            "2": 0,
+            "3": 0
+          }
+        },
+        "next": "Extend the existing short private-write proof only through an owner-free scalar read of the exact current array. First establish a minimal original/decoded read-between-writes witness with bounds/error/alias/retry controls. The real skip head sequence2596/2598 -> read2602 -> store2604 is currently split by that read. Compare all81 configurations after the compiler change; preserve all contrary timings. Phase-success ownership propagation remains a separate unimplemented investigation.",
+        "whole_brief_complete": false
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r248-work-ledger-prefix-scaling-bd9447eb91f2.tar.gz",
+        "sha256": "bd9447eb91f237c11a89fa56af2304f23d9665c938056babb879973d8429c241",
+        "bytes": 12630745,
+        "verified_files": 2115,
+        "numerical_replays": 5,
+        "reconstructed_source_files": 816
+      },
+      "qualification": {
+        "base": "retained R245",
+        "normal_Object_and_metadata_identical": true,
+        "compiler_files_changed_diagnostic_only": 10,
+        "GPU_source_files": 816,
+        "focused_runtime_counter_tests_fresh": 5,
+        "full_Mech_census_correct_calls": 50,
+        "filtered_Mech_census_correct_calls": 162,
+        "reference_census_correct_calls": 162,
+        "all81_work_categories_equal": 11,
+        "full_census_filter_subset_verified_cases": 25,
+        "prefix_oracle_calls": 56,
+        "normal_R245_prefix_smokes": 112,
+        "controlled_prefix_cases": 56,
+        "largest_input_bytes": 1048576,
+        "all_original_inputs_outputs_pins_unchanged": true,
+        "all56_normal_and_instrumented_payload_fields_equal": true,
+        "all56_R245_R247_heap_and_payload_medians_equal": true,
+        "warnings_as_errors_Mech": true,
+        "reference_diagnostic_build_exit": 2,
+        "reference_diagnostic_build_disposition": "Expected optimized dbg warnings; fresh binary emitted and162 exact/inflate/alias calls pass. Mech warnings-as-errors unchanged.",
+        "private_flags": [
+          "MECH_PRIVATE_INDEXED_CHAINS=1",
+          "MECH_PHASE_OWNER_TRANSFER=1",
+          "MECH_PHASE_VECTOR_FAST=1",
+          "MECH_COLLECTOR_CENSUS=1",
+          "MECH_CENSUS_SOURCE_MAP=<owned diagnostic path>"
+        ],
+        "diagnostic_requires_phase_observer": true,
+        "primary_uses_diagnostic_workers": false,
+        "features": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "toolchain": "nightly-2026-03-03-aarch64-apple-darwin",
+        "compiler_opt_level": 3,
+        "ordinary_IR215_unchanged": true,
+        "ordinary_contract_restored": false,
+        "fresh_broad_703_suite": false,
+        "parent_broad_suite": "R245703 maintained/7 inherited exclusions. R247710 threader tests remain separately qualified. Inert diagnostics use exact disabled Object/metadata identity,374 current diagnostic calls,112 normal prefix controls and five focused runtime/counter tests; no broad rerun claimed.",
+        "next_optimization": "Investigate preserving the existing short private-write capability through an owner-free scalar read of the exact current buffer. Skip head writes2596/2598, read2602 and third write2604 identify the real operation. Phase success-edge uniqueness propagation remains separate and unimplemented."
+      },
+      "source_pins": {
+        "source": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/benchmark-source.mec",
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "mbc14": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "normal_object": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/disabled-image/original/object.o",
+          "sha256": "f74cd039e908a7bb502a9c4a703c53e3cc0103cc7ae3d6af7f91819a5b62d4c7"
+        },
+        "diagnostic_object": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/diagnostic-image/original/object.o",
+          "sha256": "c16f9f22dabf3b10df3fa8f0deef781bc8b43f6ce3a9c8942a3645f742050967"
+        },
+        "retained_worker": {
+          "path": "/private/tmp/mech-geometry-identity-round245-20261109/mech-worker",
+          "sha256": "58fa08ee1160db9febd35298f854874572741ba2b6f311b01eb1143d812e44ba"
+        },
+        "phase_only_worker": {
+          "path": "/private/tmp/mech-phase-only-threading-round247-20261109/mech-worker",
+          "sha256": "cb3f028b56a1753ba3cab8b51434208fa4b3c58a8dd968742e7cfdf02b620080"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "reference_census_worker": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/reference-census-worker",
+          "sha256": "b03bf1ee12fdda7e9d2462ceec4b201be9828c601ea29c108acc4280b28efcfa"
+        },
+        "full_census_worker": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/census-worker",
+          "sha256": "ab163efe759d87134b45b725503e98d53c0be132695b8ab26f7568bcc7b614f1"
+        },
+        "filtered_census_worker": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/census-prefix-worker",
+          "sha256": "4f351512f82d524495f67ddca54f1eb754c44101c7505892017c427e1104a6f7"
+        },
+        "runtime": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/array-runtime.rs",
+          "sha256": "bbc12169d120eaa60af57904de32f599d594e24c80201f1173991a05746ff066"
+        },
+        "compiler_patch": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/compiler.patch",
+          "sha256": "a0c485d30c21f6d30c0246ffb2e2864006bab865b3de22f2a5954206bd6120e5"
+        },
+        "compiler_source_manifest": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/compiler-source-manifest.json",
+          "sha256": "1d495de99171b65107f2135135734bc9d4e74cfcf53dffa72b7fcac440bfd936"
+        },
+        "pinned_allocator": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "source_site_map": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/source-site-map.json",
+          "sha256": "55e7035a07c25c7cc00f88bdb24d5eac4ecec1ae2f00a8e09ffe546629fb0695"
+        },
+        "reference_diagnostic_patch": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/reference-diagnostic.patch",
+          "sha256": "29a578afe1caad975d4157e6a7e8135d2dd250189e65a2b4c23281b1d9f1944b"
+        },
+        "frozen_streams": {
+          "path": "/private/tmp/mech-work-ledger-round248-20261109/prefix-streams.json",
+          "sha256": "823c6a9cfb80999384ea4c0823ff3be12ca592330d02f7e3f2a5edf34f4f16a9"
+        }
+      },
+      "work_summary": {
+        "cases": 81,
+        "existing_cases": 25,
+        "controlled_prefix_cases": 56,
+        "categories_compared": 11,
+        "all_listed_logical_work_equal": true,
+        "filtered_delivery_matches_full_current_census_on_all25": true,
+        "fresh_full_Mech_calls": 50,
+        "fresh_filtered_Mech_calls": 162,
+        "fresh_reference_calls": 162,
+        "algorithmic_claim": "Independent current native and source-reference observations agree on searches, skips, tree visits, cache headers/entries, path calls, candidate lengths, reductions, node appends, path reasons and span histograms. This does not equate allocations, instructions or unobserved per-block histories.",
+        "permission_claim": "Observed unique returned lanes are applicability evidence only. They grant no compiler mutation authority, and do not prove no intervening alias or changed identity."
+      },
+      "prefix_summary": {
+        "cases": 56,
+        "sizes": [
+          1024,
+          4096,
+          8192,
+          16384,
+          32767,
+          32768,
+          32769,
+          33027,
+          65535,
+          65536,
+          65537,
+          131072,
+          262144,
+          1048576
+        ],
+        "families": [
+          "natural",
+          "random",
+          "periodic",
+          "repeated"
+        ],
+        "actors": {
+          "before": "retained R245",
+          "after": "archived phase-only R247",
+          "reference": "pinned runtime-input fixed-level12 reference"
+        },
+        "primary_cohorts": 1,
+        "blocks_each": 24,
+        "orders_each": 6,
+        "repetitions_of_each_order": 4,
+        "warmups_ms_each": 200,
+        "retained_primary_calls": 22176,
+        "retained_CPU_calls": 4032,
+        "retained_allocation_calls": 4032,
+        "largest_input_bytes": 1048576,
+        "allowances_increased": false,
+        "separate_cpu_memory_primary": true,
+        "all56_exact_bytes_inflate_aliases_capacity_cleanup": true,
+        "ordinary_contract_restored": false,
+        "timing_scope": "New descriptive controlled-prefix cohort, not a replacement for the original25 fixed two-cohort acceptance gates. Never use instrumented census/allocator timings as primary elapsed.",
+        "memory_scope": "Payload counters exclude allocator/host metadata; whole-heap probes include them. Requested capacity is not initialized copies. RSS/physical/lifetime peaks include the loaded executable, harness, input preparation and allocator retention.",
+        "below_reference": {
+          "before": [
+            "prefix-natural-1024",
+            "prefix-random-1024",
+            "prefix-periodic-1024",
+            "prefix-repeated-1024",
+            "prefix-repeated-4096"
+          ],
+          "after": [
+            "prefix-natural-1024",
+            "prefix-random-1024",
+            "prefix-periodic-1024",
+            "prefix-repeated-1024",
+            "prefix-repeated-4096"
+          ]
+        }
+      },
+      "all56": [
+        {
+          "case": "prefix-natural-1024",
+          "bytes": 1024,
+          "before_reference": 0.9273588694682038,
+          "archived_R247_reference": 0.9050457419114912,
+          "retained_ns_per_byte": 304.40283203125,
+          "reference_ns_per_byte": 328.2470703125,
+          "retained_instructions_per_byte": 4006.6787109375,
+          "reference_instructions_per_byte": 2181.560546875,
+          "private_payload_peak": 8982372
+        },
+        {
+          "case": "prefix-natural-4096",
+          "bytes": 4096,
+          "before_reference": 1.7322052330048008,
+          "archived_R247_reference": 1.6270411116660481,
+          "retained_ns_per_byte": 276.88598632812506,
+          "reference_ns_per_byte": 159.845947265625,
+          "retained_instructions_per_byte": 3757.074462890625,
+          "reference_instructions_per_byte": 1693.80810546875,
+          "private_payload_peak": 8982572
+        },
+        {
+          "case": "prefix-natural-8192",
+          "bytes": 8192,
+          "before_reference": 2.000371689459911,
+          "archived_R247_reference": 1.8963026469186055,
+          "retained_ns_per_byte": 274.28179931640625,
+          "reference_ns_per_byte": 137.11541748046875,
+          "retained_instructions_per_byte": 3836.206787109375,
+          "reference_instructions_per_byte": 1613.0247802734375,
+          "private_payload_peak": 8984613
+        },
+        {
+          "case": "prefix-natural-16384",
+          "bytes": 16384,
+          "before_reference": 2.1829168176198284,
+          "archived_R247_reference": 2.0710868052560456,
+          "retained_ns_per_byte": 289.61053466796875,
+          "reference_ns_per_byte": 132.67135620117188,
+          "retained_instructions_per_byte": 3969.516845703125,
+          "reference_instructions_per_byte": 1516.1401977539062,
+          "private_payload_peak": 8998776
+        },
+        {
+          "case": "prefix-natural-32767",
+          "bytes": 32767,
+          "before_reference": 2.223103878395666,
+          "archived_R247_reference": 2.120104412418782,
+          "retained_ns_per_byte": 297.22550126651817,
+          "reference_ns_per_byte": 133.69843134861293,
+          "retained_instructions_per_byte": 3960.2092196417125,
+          "reference_instructions_per_byte": 1453.092837305826,
+          "private_payload_peak": 9015174
+        },
+        {
+          "case": "prefix-natural-32768",
+          "bytes": 32768,
+          "before_reference": 2.222371703255599,
+          "archived_R247_reference": 2.119048632604241,
+          "retained_ns_per_byte": 297.1312255859375,
+          "reference_ns_per_byte": 133.70005798339844,
+          "retained_instructions_per_byte": 3960.0870971679688,
+          "reference_instructions_per_byte": 1453.0637969970703,
+          "private_payload_peak": 9015175
+        },
+        {
+          "case": "prefix-natural-32769",
+          "bytes": 32769,
+          "before_reference": 2.221505453509896,
+          "archived_R247_reference": 2.116417485405097,
+          "retained_ns_per_byte": 297.5684488388415,
+          "reference_ns_per_byte": 133.94900668314565,
+          "retained_instructions_per_byte": 3967.5239708260856,
+          "reference_instructions_per_byte": 1456.0728127193383,
+          "private_payload_peak": 9533536
+        },
+        {
+          "case": "prefix-natural-33027",
+          "bytes": 33027,
+          "before_reference": 2.223450548522018,
+          "archived_R247_reference": 2.117863031446718,
+          "retained_ns_per_byte": 298.7801647137191,
+          "reference_ns_per_byte": 134.37679777152027,
+          "retained_instructions_per_byte": 3970.5550761498166,
+          "reference_instructions_per_byte": 1456.75005298695,
+          "private_payload_peak": 9533794
+        },
+        {
+          "case": "prefix-natural-65535",
+          "bytes": 65535,
+          "before_reference": 2.234642239446544,
+          "archived_R247_reference": 2.1241374089365888,
+          "retained_ns_per_byte": 365.9637979705501,
+          "reference_ns_per_byte": 163.7684061951629,
+          "retained_instructions_per_byte": 4649.026672770276,
+          "reference_instructions_per_byte": 1754.6543068589303,
+          "private_payload_peak": 9566337
+        },
+        {
+          "case": "prefix-natural-65536",
+          "bytes": 65536,
+          "before_reference": 2.2460423276914647,
+          "archived_R247_reference": 2.139342856586233,
+          "retained_ns_per_byte": 365.90735626220703,
+          "reference_ns_per_byte": 162.91204833984375,
+          "retained_instructions_per_byte": 4649.036949157715,
+          "reference_instructions_per_byte": 1754.6875762939453,
+          "private_payload_peak": 9566338
+        },
+        {
+          "case": "prefix-natural-65537",
+          "bytes": 65537,
+          "before_reference": 2.2412615578593447,
+          "archived_R247_reference": 2.1351432707574487,
+          "retained_ns_per_byte": 366.1624349604041,
+          "reference_ns_per_byte": 163.37336161252423,
+          "retained_instructions_per_byte": 4652.592253231,
+          "reference_instructions_per_byte": 1755.5119093031417,
+          "private_payload_peak": 9566339
+        },
+        {
+          "case": "prefix-natural-131072",
+          "bytes": 131072,
+          "before_reference": 2.2025916876511507,
+          "archived_R247_reference": 2.0956990223224445,
+          "retained_ns_per_byte": 374.74918365478516,
+          "reference_ns_per_byte": 170.14010620117188,
+          "retained_instructions_per_byte": 4766.305477142334,
+          "reference_instructions_per_byte": 1803.5269203186035,
+          "private_payload_peak": 9631939
+        },
+        {
+          "case": "prefix-natural-262144",
+          "bytes": 262144,
+          "before_reference": 2.2041700436952136,
+          "archived_R247_reference": 2.1057802753943458,
+          "retained_ns_per_byte": 381.15731811523443,
+          "reference_ns_per_byte": 172.92555046081543,
+          "retained_instructions_per_byte": 4843.45622253418,
+          "reference_instructions_per_byte": 1829.1738929748535,
+          "private_payload_peak": 9763141
+        },
+        {
+          "case": "prefix-natural-1048576",
+          "bytes": 1048576,
+          "before_reference": 2.2440325826328666,
+          "archived_R247_reference": 2.154004219452924,
+          "retained_ns_per_byte": 344.8196053504944,
+          "reference_ns_per_byte": 153.6606945991516,
+          "retained_instructions_per_byte": 4425.4369440078735,
+          "reference_instructions_per_byte": 1593.3631043434143,
+          "private_payload_peak": 10550358
+        },
+        {
+          "case": "prefix-random-1024",
+          "bytes": 1024,
+          "before_reference": 0.7476543601924146,
+          "archived_R247_reference": 0.7525813784309692,
+          "retained_ns_per_byte": 225.32177734375,
+          "reference_ns_per_byte": 301.37158203125,
+          "retained_instructions_per_byte": 2918.11328125,
+          "reference_instructions_per_byte": 1645.748046875,
+          "private_payload_peak": 8982372
+        },
+        {
+          "case": "prefix-random-4096",
+          "bytes": 4096,
+          "before_reference": 1.4468603912389233,
+          "archived_R247_reference": 1.4015502424343755,
+          "retained_ns_per_byte": 132.04455566406253,
+          "reference_ns_per_byte": 91.2628173828125,
+          "retained_instructions_per_byte": 1717.0445556640625,
+          "reference_instructions_per_byte": 639.478515625,
+          "private_payload_peak": 8982372
+        },
+        {
+          "case": "prefix-random-8192",
+          "bytes": 8192,
+          "before_reference": 1.7949872680411798,
+          "archived_R247_reference": 1.7839757545468515,
+          "retained_ns_per_byte": 99.08551025390624,
+          "reference_ns_per_byte": 55.20123291015625,
+          "retained_instructions_per_byte": 1481.3154296875,
+          "reference_instructions_per_byte": 460.0552978515625,
+          "private_payload_peak": 8984774
+        },
+        {
+          "case": "prefix-random-16384",
+          "bytes": 16384,
+          "before_reference": 2.305160863645205,
+          "archived_R247_reference": 2.3340462944952347,
+          "retained_ns_per_byte": 90.41467285156249,
+          "reference_ns_per_byte": 39.22271728515625,
+          "retained_instructions_per_byte": 1446.0984802246094,
+          "reference_instructions_per_byte": 391.30438232421875,
+          "private_payload_peak": 8991952
+        },
+        {
+          "case": "prefix-random-32767",
+          "bytes": 32767,
+          "before_reference": 2.7350586135831696,
+          "archived_R247_reference": 2.7864859864380436,
+          "retained_ns_per_byte": 87.74770348216192,
+          "reference_ns_per_byte": 32.08256782738731,
+          "retained_instructions_per_byte": 1435.732902005066,
+          "reference_instructions_per_byte": 349.5310068056276,
+          "private_payload_peak": 9008350
+        },
+        {
+          "case": "prefix-random-32768",
+          "bytes": 32768,
+          "before_reference": 2.740593399013187,
+          "archived_R247_reference": 2.779904872211227,
+          "retained_ns_per_byte": 88.02542114257812,
+          "reference_ns_per_byte": 32.119110107421875,
+          "retained_instructions_per_byte": 1435.7272644042969,
+          "reference_instructions_per_byte": 349.529296875,
+          "private_payload_peak": 9008351
+        },
+        {
+          "case": "prefix-random-32769",
+          "bytes": 32769,
+          "before_reference": 2.7087981845762332,
+          "archived_R247_reference": 2.7702013386211095,
+          "retained_ns_per_byte": 87.89876102413866,
+          "reference_ns_per_byte": 32.44935762458421,
+          "retained_instructions_per_byte": 1443.0516646830847,
+          "reference_instructions_per_byte": 352.5291128810766,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-random-33027",
+          "bytes": 33027,
+          "before_reference": 2.734138692618617,
+          "archived_R247_reference": 2.77148112814925,
+          "retained_ns_per_byte": 88.81621097889605,
+          "reference_ns_per_byte": 32.484164471493024,
+          "retained_instructions_per_byte": 1443.1629727192903,
+          "reference_instructions_per_byte": 352.26169497683713,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-random-65535",
+          "bytes": 65535,
+          "before_reference": 2.984825376725338,
+          "archived_R247_reference": 3.042484741040901,
+          "retained_ns_per_byte": 89.91823453116653,
+          "reference_ns_per_byte": 30.125123979552914,
+          "retained_instructions_per_byte": 1457.8704966811626,
+          "reference_instructions_per_byte": 333.27335011825744,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-random-65536",
+          "bytes": 65536,
+          "before_reference": 2.984126565422783,
+          "archived_R247_reference": 3.0456335563235157,
+          "retained_ns_per_byte": 89.76205444335938,
+          "reference_ns_per_byte": 30.07984161376953,
+          "retained_instructions_per_byte": 1457.898094177246,
+          "reference_instructions_per_byte": 333.2758026123047,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-random-65537",
+          "bytes": 65537,
+          "before_reference": 2.9661558892608872,
+          "archived_R247_reference": 3.0329742025401014,
+          "retained_ns_per_byte": 89.90373376871081,
+          "reference_ns_per_byte": 30.309847872194336,
+          "retained_instructions_per_byte": 1461.5380929856417,
+          "reference_instructions_per_byte": 334.7752414666524,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-random-131072",
+          "bytes": 131072,
+          "before_reference": 3.1094313907177114,
+          "archived_R247_reference": 3.193101910103227,
+          "retained_ns_per_byte": 91.20782470703125,
+          "reference_ns_per_byte": 29.332637786865234,
+          "retained_instructions_per_byte": 1482.543270111084,
+          "reference_instructions_per_byte": 327.94647216796875,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-random-262144",
+          "bytes": 262144,
+          "before_reference": 3.162575989338865,
+          "archived_R247_reference": 3.249457133440953,
+          "retained_ns_per_byte": 90.63760566711426,
+          "reference_ns_per_byte": 28.659423828125,
+          "retained_instructions_per_byte": 1481.8154640197754,
+          "reference_instructions_per_byte": 322.5492172241211,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-random-1048576",
+          "bytes": 1048576,
+          "before_reference": 3.235678726215983,
+          "archived_R247_reference": 3.3197742064950657,
+          "retained_ns_per_byte": 88.78757524490356,
+          "reference_ns_per_byte": 27.440170288085938,
+          "retained_instructions_per_byte": 1450.4633984565735,
+          "reference_instructions_per_byte": 305.3602046966553,
+          "private_payload_peak": 10550486
+        },
+        {
+          "case": "prefix-periodic-1024",
+          "bytes": 1024,
+          "before_reference": 0.6601607347876005,
+          "archived_R247_reference": 0.6615629544584769,
+          "retained_ns_per_byte": 210.5712890625,
+          "reference_ns_per_byte": 318.9697265625,
+          "retained_instructions_per_byte": 2644.216796875,
+          "reference_instructions_per_byte": 1918.708984375,
+          "private_payload_peak": 8982372
+        },
+        {
+          "case": "prefix-periodic-4096",
+          "bytes": 4096,
+          "before_reference": 1.0208347384407144,
+          "archived_R247_reference": 1.0211731270596935,
+          "retained_ns_per_byte": 107.1624755859375,
+          "reference_ns_per_byte": 104.97534179687501,
+          "retained_instructions_per_byte": 1567.6170654296875,
+          "reference_instructions_per_byte": 905.298828125,
+          "private_payload_peak": 8982572
+        },
+        {
+          "case": "prefix-periodic-8192",
+          "bytes": 8192,
+          "before_reference": 1.195132743362832,
+          "archived_R247_reference": 1.2247415929203538,
+          "retained_ns_per_byte": 82.42797851562501,
+          "reference_ns_per_byte": 68.9697265625,
+          "retained_instructions_per_byte": 1401.480712890625,
+          "reference_instructions_per_byte": 742.8707275390625,
+          "private_payload_peak": 8986673
+        },
+        {
+          "case": "prefix-periodic-16384",
+          "bytes": 16384,
+          "before_reference": 1.3938672427941492,
+          "archived_R247_reference": 1.4032437563736042,
+          "retained_ns_per_byte": 65.7806396484375,
+          "reference_ns_per_byte": 47.192901611328125,
+          "retained_instructions_per_byte": 1224.3840026855469,
+          "reference_instructions_per_byte": 624.9452514648438,
+          "private_payload_peak": 8994875
+        },
+        {
+          "case": "prefix-periodic-32767",
+          "bytes": 32767,
+          "before_reference": 1.5529078973418247,
+          "archived_R247_reference": 1.594756094671562,
+          "retained_ns_per_byte": 59.00753807184057,
+          "reference_ns_per_byte": 37.99809259315775,
+          "retained_instructions_per_byte": 1183.8014770958587,
+          "reference_instructions_per_byte": 584.5720084231086,
+          "private_payload_peak": 9011273
+        },
+        {
+          "case": "prefix-periodic-32768",
+          "bytes": 32768,
+          "before_reference": 1.5547121861935367,
+          "archived_R247_reference": 1.5928935989466424,
+          "retained_ns_per_byte": 59.25814819335938,
+          "reference_ns_per_byte": 38.115188598632805,
+          "retained_instructions_per_byte": 1183.8060455322266,
+          "reference_instructions_per_byte": 584.5720520019531,
+          "private_payload_peak": 9011274
+        },
+        {
+          "case": "prefix-periodic-32769",
+          "bytes": 32769,
+          "before_reference": 1.552051549503342,
+          "archived_R247_reference": 1.5989758655971726,
+          "retained_ns_per_byte": 59.552595440812965,
+          "reference_ns_per_byte": 38.370243217675245,
+          "retained_instructions_per_byte": 1191.1430315236962,
+          "reference_instructions_per_byte": 587.5721260947847,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-periodic-33027",
+          "bytes": 33027,
+          "before_reference": 1.5508758592439484,
+          "archived_R247_reference": 1.5886839701841515,
+          "retained_ns_per_byte": 59.667726405668105,
+          "reference_ns_per_byte": 38.47356708147879,
+          "retained_instructions_per_byte": 1190.7649801677414,
+          "reference_instructions_per_byte": 587.2325975716838,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-periodic-65535",
+          "bytes": 65535,
+          "before_reference": 1.6837916500171675,
+          "archived_R247_reference": 1.7252358634978417,
+          "retained_ns_per_byte": 56.64721141374838,
+          "reference_ns_per_byte": 33.642648966201264,
+          "retained_instructions_per_byte": 1167.2340352483407,
+          "reference_instructions_per_byte": 565.8922713054093,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-periodic-65536",
+          "bytes": 65536,
+          "before_reference": 1.6815182918865428,
+          "archived_R247_reference": 1.7229791166845827,
+          "retained_ns_per_byte": 56.676231384277344,
+          "reference_ns_per_byte": 33.705390930175774,
+          "retained_instructions_per_byte": 1167.2058715820312,
+          "reference_instructions_per_byte": 565.8919830322266,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-periodic-65537",
+          "bytes": 65537,
+          "before_reference": 1.6824839626877737,
+          "archived_R247_reference": 1.7175113532415345,
+          "retained_ns_per_byte": 56.99992370721883,
+          "reference_ns_per_byte": 33.8784350824725,
+          "retained_instructions_per_byte": 1170.8646184598012,
+          "reference_instructions_per_byte": 567.3912751575446,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-periodic-131072",
+          "bytes": 131072,
+          "before_reference": 1.747570537020466,
+          "archived_R247_reference": 1.7948154278323893,
+          "retained_ns_per_byte": 55.10711669921875,
+          "reference_ns_per_byte": 31.533557891845707,
+          "retained_instructions_per_byte": 1158.97119140625,
+          "reference_instructions_per_byte": 556.5720062255859,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-periodic-262144",
+          "bytes": 262144,
+          "before_reference": 1.7815106662130449,
+          "archived_R247_reference": 1.8342775015362138,
+          "retained_ns_per_byte": 54.46267318725586,
+          "reference_ns_per_byte": 30.571062088012695,
+          "retained_instructions_per_byte": 1154.8405666351318,
+          "reference_instructions_per_byte": 551.9049453735352,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-periodic-1048576",
+          "bytes": 1048576,
+          "before_reference": 1.8137919140940237,
+          "archived_R247_reference": 1.8665059228754617,
+          "retained_ns_per_byte": 54.31838846206665,
+          "reference_ns_per_byte": 29.947420120239265,
+          "retained_instructions_per_byte": 1153.802216053009,
+          "reference_instructions_per_byte": 549.307550907135,
+          "private_payload_peak": 10550486
+        },
+        {
+          "case": "prefix-repeated-1024",
+          "bytes": 1024,
+          "before_reference": 0.6561568627450981,
+          "archived_R247_reference": 0.6553894655901575,
+          "retained_ns_per_byte": 208.3330078125,
+          "reference_ns_per_byte": 317.5048828125,
+          "retained_instructions_per_byte": 2549.0185546875,
+          "reference_instructions_per_byte": 1918.369140625,
+          "private_payload_peak": 8982372
+        },
+        {
+          "case": "prefix-repeated-4096",
+          "bytes": 4096,
+          "before_reference": 0.9942696405739452,
+          "archived_R247_reference": 0.987782355448217,
+          "retained_ns_per_byte": 106.7911376953125,
+          "reference_ns_per_byte": 107.4066162109375,
+          "retained_instructions_per_byte": 1543.9859619140625,
+          "reference_instructions_per_byte": 905.200439453125,
+          "private_payload_peak": 8982572
+        },
+        {
+          "case": "prefix-repeated-8192",
+          "bytes": 8192,
+          "before_reference": 1.1525581693221922,
+          "archived_R247_reference": 1.178996012498441,
+          "retained_ns_per_byte": 83.4808349609375,
+          "reference_ns_per_byte": 72.43090820312499,
+          "retained_instructions_per_byte": 1389.8794555664062,
+          "reference_instructions_per_byte": 742.834716796875,
+          "private_payload_peak": 8986673
+        },
+        {
+          "case": "prefix-repeated-16384",
+          "bytes": 16384,
+          "before_reference": 1.339269175846282,
+          "archived_R247_reference": 1.3696423414749694,
+          "retained_ns_per_byte": 66.9454345703125,
+          "reference_ns_per_byte": 49.986541748046875,
+          "retained_instructions_per_byte": 1218.0424499511719,
+          "reference_instructions_per_byte": 624.7982788085938,
+          "private_payload_peak": 8994875
+        },
+        {
+          "case": "prefix-repeated-32767",
+          "bytes": 32767,
+          "before_reference": 1.4708518682779153,
+          "archived_R247_reference": 1.5137130160180485,
+          "retained_ns_per_byte": 60.525193029572435,
+          "reference_ns_per_byte": 41.14975432599872,
+          "retained_instructions_per_byte": 1180.5107882930997,
+          "reference_instructions_per_byte": 584.4874111148412,
+          "private_payload_peak": 9011273
+        },
+        {
+          "case": "prefix-repeated-32768",
+          "bytes": 32768,
+          "before_reference": 1.4739958757489426,
+          "archived_R247_reference": 1.5120455496981178,
+          "retained_ns_per_byte": 60.489654541015625,
+          "reference_ns_per_byte": 41.037872314453125,
+          "retained_instructions_per_byte": 1180.3847198486328,
+          "reference_instructions_per_byte": 584.4681396484375,
+          "private_payload_peak": 9011274
+        },
+        {
+          "case": "prefix-repeated-32769",
+          "bytes": 32769,
+          "before_reference": 1.47807239578199,
+          "archived_R247_reference": 1.519795547919568,
+          "retained_ns_per_byte": 60.855274802404715,
+          "reference_ns_per_byte": 41.17205285483231,
+          "retained_instructions_per_byte": 1187.7358631633556,
+          "reference_instructions_per_byte": 587.4695291281394,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-repeated-33027",
+          "bytes": 33027,
+          "before_reference": 1.4861058429185796,
+          "archived_R247_reference": 1.5203542091242066,
+          "retained_ns_per_byte": 61.09331758863961,
+          "reference_ns_per_byte": 41.10966784751869,
+          "retained_instructions_per_byte": 1187.389862839495,
+          "reference_instructions_per_byte": 587.1332243316075,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-repeated-65535",
+          "bytes": 65535,
+          "before_reference": 1.591148258215529,
+          "archived_R247_reference": 1.6271159601259901,
+          "retained_ns_per_byte": 58.26340123598077,
+          "reference_ns_per_byte": 36.61720454718853,
+          "retained_instructions_per_byte": 1165.4853284504463,
+          "reference_instructions_per_byte": 565.8405432211795,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-repeated-65536",
+          "bytes": 65536,
+          "before_reference": 1.5948171186533495,
+          "archived_R247_reference": 1.6334767042687526,
+          "retained_ns_per_byte": 57.98975372314453,
+          "reference_ns_per_byte": 36.36138153076172,
+          "retained_instructions_per_byte": 1165.4942474365234,
+          "reference_instructions_per_byte": 565.8414154052734,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-repeated-65537",
+          "bytes": 65537,
+          "before_reference": 1.5934694470391135,
+          "archived_R247_reference": 1.634432944425106,
+          "retained_ns_per_byte": 58.254939957581215,
+          "reference_ns_per_byte": 36.55855470955339,
+          "retained_instructions_per_byte": 1169.167737308696,
+          "reference_instructions_per_byte": 567.3424477775912,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-repeated-131072",
+          "bytes": 131072,
+          "before_reference": 1.664660630271896,
+          "archived_R247_reference": 1.7050844983254778,
+          "retained_ns_per_byte": 57.06930160522462,
+          "reference_ns_per_byte": 34.28284454345703,
+          "retained_instructions_per_byte": 1158.0881156921387,
+          "reference_instructions_per_byte": 556.5422058105469,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-repeated-262144",
+          "bytes": 262144,
+          "before_reference": 1.6849359088799225,
+          "archived_R247_reference": 1.7331500267790192,
+          "retained_ns_per_byte": 56.25486373901367,
+          "reference_ns_per_byte": 33.38694572448731,
+          "retained_instructions_per_byte": 1154.3681087493896,
+          "reference_instructions_per_byte": 551.882568359375,
+          "private_payload_peak": 9500860
+        },
+        {
+          "case": "prefix-repeated-1048576",
+          "bytes": 1048576,
+          "before_reference": 1.690176131711205,
+          "archived_R247_reference": 1.7399050741858122,
+          "retained_ns_per_byte": 55.36456918716431,
+          "reference_ns_per_byte": 32.756686210632324,
+          "retained_instructions_per_byte": 1148.822033405304,
+          "reference_instructions_per_byte": 549.3367147445679,
+          "private_payload_peak": 10550486
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
