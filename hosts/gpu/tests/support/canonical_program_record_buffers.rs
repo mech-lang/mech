@@ -330,7 +330,7 @@ fn record_field_retention_keeps_selected_call_admission_and_zero_copy() {
         let nodes = memory.retained_snapshot_nodes();
         let mut policy = limits().library;
         policy.max_cloned_bytes = Some(0);
-        policy.max_output_elements = Some(1);
+        policy.max_output_elements = Some(3);
         call.admit_buffer_record_field(&selector, 0, &args[0], policy, &work, Default::default())
             .unwrap();
         let (result, requests, bytes) = allocation_probe::measured_with_bytes(|| {

@@ -68,6 +68,18 @@ enum Child<'a> {
     Word(mech_core::SchemaId, NativeScalarValue),
 }
 impl NativePreparedLibraryCall {
+    /// Logical cardinality of a validated private-frame leaf at its selected
+    /// output boundary. A canonical matrix stores exactly its current elements;
+    /// backing capacity and the number of managed handles are not its shape.
+    /// The ordinary canonical field kernel also requires one publication
+    /// element for an empty result; preserve that minimum admission.
+    pub fn buffer_record_output_elements(child: &Value) -> u64 {
+        match child.data() {
+            mech_core::ValueData::Matrix(matrix) => (matrix.elements().len() as u64).max(1),
+            _ => 1,
+        }
+    }
+
     /// Validate the exact selected field operation for a compiler-proved private
     /// record. The pack already checked the complete record shape; its actual
     /// canonical child remains the output owner, without a payload clone.
@@ -209,7 +221,10 @@ impl NativePreparedLibraryCall {
                         port: 0,
                     },
                     ResourceDemand {
-                        output_elements: 1,
+                        output_elements: match child {
+                            Child::Managed(child) => Self::buffer_record_output_elements(child),
+                            Child::Word(..) => 1,
+                        },
                         ..ResourceDemand::default()
                     },
                     footprint.retained_bytes,

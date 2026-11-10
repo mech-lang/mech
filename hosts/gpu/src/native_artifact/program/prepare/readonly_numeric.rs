@@ -12,6 +12,25 @@ use mech_engine::native_artifact::{
     NativeScalarKind, NativeTailLoop,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[cfg(all(test, feature = "canonical-native-program-runtime"))]
+thread_local! {
+    static TEST_DECLINE_NESTED_PHASE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+#[cfg(all(test, feature = "canonical-native-program-runtime"))]
+pub(in crate::native_artifact) fn test_decline_nested_phase() -> bool {
+    TEST_DECLINE_NESTED_PHASE.with(std::cell::Cell::get)
+}
+#[cfg(all(test, feature = "canonical-native-program-runtime"))]
+pub(in crate::native_artifact) fn test_without_nested_phase<T>(run: impl FnOnce() -> T) -> T {
+    struct Reset(bool);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            TEST_DECLINE_NESTED_PHASE.with(|flag| flag.set(self.0));
+        }
+    }
+    let _reset = Reset(TEST_DECLINE_NESTED_PHASE.with(|flag| flag.replace(true)));
+    run()
+}
 #[path = "numeric_exits.rs"]
 mod exits;
 #[path = "numeric_results.rs"]
@@ -305,6 +324,10 @@ fn derive_with_children(
         return Err("nested cold selection requires both Tail children and a cold boundary");
     }
     let nested = forest.loops.len() > 1 || !forest.cold.is_empty() || !forest.stops.is_empty();
+    #[cfg(all(test, feature = "canonical-native-program-runtime"))]
+    if nested && test_decline_nested_phase() {
+        return Err("test declines nested phases to exercise ordinary parent segments");
+    }
     let trips = if forest.loops.len() > 1 {
         forest.validate_child_actions(plan, frames, aggregates, calls)?;
         if forest.checked_children {

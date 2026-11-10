@@ -156,6 +156,9 @@ impl Invocation<'_, '_, '_> {
         };
         let mut alias_work = Some(0u64);
         for alias in &frames.aliases {
+            let Some(owner) = current_source(alias.source)? else {
+                return Ok(Some(0));
+            };
             // The constant/unambiguous selector is proved by the original
             // frame analysis, not looked up again at runtime. Its logical
             // result boundary still requires explicit finite call limits.
@@ -174,7 +177,9 @@ impl Invocation<'_, '_, '_> {
                 ]
                 .iter()
                 .any(Option::is_none)
-                    || self.limits.max_output_elements.is_some_and(|n| n < 1)
+                    || self.limits.max_output_elements.is_some_and(|n| {
+                        n < mech_engine::native_artifact::NativePreparedLibraryCall::buffer_record_output_elements(owner)
+                    })
                     || self
                         .limits
                         .max_output_bytes
@@ -182,9 +187,6 @@ impl Invocation<'_, '_, '_> {
             {
                 return Ok(Some(0));
             }
-            let Some(owner) = current_source(alias.source)? else {
-                return Ok(Some(0));
-            };
             let Some(work) = self.state.arena.native_alias_put_work(
                 alias.value.get(),
                 owner,
