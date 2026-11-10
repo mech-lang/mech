@@ -1,6 +1,18 @@
 # Native compression milestone
 
-**Current retained experimental compiler: R249.** The original25 retain11 below-reference cases; the56 prefixes now have6, including duplicate inputs. All81 have fresh two-cohort measurements in the [scoreboard](native-compression-scoreboard.md). Large-input throughput is the priority; wins reach4KiB only for periodic/repeated inputs.
+**Current retained experimental compiler: R250.** The original 25 retain 11 below-reference cases; the 56 prefixes have five in this fresh cohort, including duplicate inputs. All 81 have two-cohort timings in the [scoreboard](native-compression-scoreboard.md). Large-input throughput remains the priority.
+
+## R250: keep invariant current views across native returns
+
+Retain the one-file compiler change over R249. Existing numeric proofs establish that a non-appending writable view retains its exact six-word descriptor on successful phase return. Reuse those current input words; capture all result sources before parallel destination writes. Contents still change. Growing views, general matrix paths, aliases, errors, cleanup and owner checks stay. All 136 original routines and seven selected vector bodies remain byte-identical; root code shrinks 7,300 bytes and the frame 16 bytes. Disabled Object/metadata restore R249 exactly.
+
+Random 64 KiB improves 2.970036x to 2.940361x Roc (0.9991% lower balanced elapsed), favorable in both cohorts. Periodic33 improves 0.5010%; eight stays 0.502581x. All 81 point/block 1.05 gates pass in both cohorts. Twenty-five adverse block means remain. At 1 MiB, random improves to 3.217791x; text 2.244741x, periodic 1.774171x and repeated 1.659128x have small regressions. Allocation, copying, zeroing and private/heap peaks are unchanged. No parity claim.
+
+703 maintained tests pass with the same seven exclusions. 10,808 fresh dual-view source controls cover reordered results, held aliases and actual prior output, failure publication/cleanup/retry, plus shared fallback followed by native execution in one invocation. Fresh matrix native/resident, 416 boundary controls, 30 original/decoded image pairs, 162 normal smokes and 324 observed phase calls pass. Exact source and all commands accompany the verified 2,542-file public packet; five reports replay identically and all 815 compiler source files reconstruct. Ordinary IR215 and the compact entry's omitted additional contract remain unchanged.
+
+The updated review brief sets the next bounded task: paired zero-trip skip witnesses and source/CLIF/machine attribution of identity-result transport, before changing lowering. Then inspect empty path reduction, recover the current enclosing recurrence refusal and keep the R247 placement experiment separate. Large random/text throughput, all 81 cases and the eight-byte ceiling remain acceptance controls.
+
+[All results, exact patch, commands, profiles, limitations and public evidence](native-phase-view-identity.md).
 
 ## R249: reuse private permission across a checked scalar read
 
