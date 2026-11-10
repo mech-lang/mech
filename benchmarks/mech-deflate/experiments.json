@@ -49252,6 +49252,161 @@
         }
       },
       "report": "docs/design/native-private-read-intervals.md"
+    },
+    "250": {
+      "git_parent": "49547c26e237227105f3d32a2d6c054ade716ac6",
+      "control": "R249 retained 815-file experimental GPU closure; ordinary IR215 unchanged",
+      "decision": {
+        "round": 250,
+        "decision": "Retain R250 over R249: random64 and periodic33 improve in both primary cohorts; all81 gates and eight1x ceiling pass",
+        "git_parent": "49547c26e237227105f3d32a2d6c054ade716ac6",
+        "compiler_base": "R249 archived815-file GPU slice",
+        "changed_compiler_files": 1,
+        "compiler_patch_sha256": "42491fd9dd6c1d77aea657389f35b4fdd9861da6e24e2356e47912277b1294ca",
+        "normal_object_sha256": "12127a7982dd982db282d993895035656da96eace5f151426436cbd5ac2c290f",
+        "random64_after_over_reference": 2.9403613730877765,
+        "random64_elapsed_percent": -0.9991303492485115,
+        "periodic33_after_over_reference": 1.5308507477468556,
+        "eight_after_over_reference": 0.5025810181600437,
+        "all81_point_block_gates_both_cohorts": true,
+        "adverse_block_cases": [
+          "empty",
+          "one-stored",
+          "32-high-entropy-stored",
+          "random-64",
+          "random-256",
+          "random-1024",
+          "repeated-1024",
+          "heldout-window-32768",
+          "heldout-slides-65537",
+          "prefix-natural-32769",
+          "prefix-natural-65535",
+          "prefix-natural-65536",
+          "prefix-natural-131072",
+          "prefix-natural-262144",
+          "prefix-natural-1048576",
+          "prefix-random-1024",
+          "prefix-periodic-1024",
+          "prefix-periodic-4096",
+          "prefix-periodic-262144",
+          "prefix-periodic-1048576",
+          "prefix-repeated-1024",
+          "prefix-repeated-8192",
+          "prefix-repeated-65537",
+          "prefix-repeated-262144",
+          "prefix-repeated-1048576"
+        ],
+        "original25_below_reference": 11,
+        "prefix56_below_reference": 5,
+        "phase_counts_unchanged": true,
+        "ordinary_IR215_unchanged": true,
+        "ordinary_extra_contract_restored": false,
+        "parity_achieved": false,
+        "next": "New brief supersedes archived speculative cold-layout lead: first paired zero-trip identity witnesses and source/CLIF/machine attribution, then empty path reduction; recover the enclosing fixed-view recurrence refusal and separately control R247 placement. No further optimization is claimed."
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r250-phase-view-identity-2dafa325194e.tar.gz",
+        "sha256": "2dafa325194e930c8bee402f924a553f8d2f70ac004c726cc5d1c5e0b36544ff",
+        "bytes": 10722927,
+        "verified_files": 2542,
+        "numerical_replays": 5,
+        "reconstructed_source_files": 815,
+        "downloaded_archive_and_receipt_exact": true
+      },
+      "qualification": {
+        "maintained_tests": 703,
+        "inherited_exclusions": 7,
+        "warnings_as_errors": true,
+        "compiler_opt_level": 3,
+        "test_root_opt_level": 1,
+        "features": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "toolchain": "nightly-2026-03-03-aarch64-apple-darwin",
+        "flags": [
+          "MECH_PRIVATE_INDEXED_CHAINS=1",
+          "MECH_PHASE_OWNER_TRANSFER=1",
+          "MECH_PHASE_VECTOR_FAST=1",
+          "MECH_PRIVATE_READ_INTERVALS=1",
+          "MECH_PHASE_INVARIANT_VIEWS=1"
+        ],
+        "fresh_dual_buffer_controls": 10808,
+        "dual_buffer_summary": {
+          "observed_calls": 5404,
+          "normal_calls": 5404,
+          "normal_observed_semantics_equal": true,
+          "all_parent_candidate_original_decoded_exact": true,
+          "cases_each": 1351,
+          "observed_fallback_then_native_each": 51,
+          "independent_values_geometry_errors_prior_backing_aliases_output_atomicity_cleanup_retry": true
+        },
+        "fresh_parent_minimal_native_resident_calls_each": 100,
+        "fresh_existing_matrix_native": 1700,
+        "fresh_existing_matrix_resident": 1700,
+        "reused_R249_parent_matrix_rows": 1700,
+        "fresh_boundary_calls": 416,
+        "small_original_decoded_image_pairs": 30,
+        "growing_and_fanout_negative_Objects_metadata_exact_R249": true,
+        "original_disabled_full_Object_metadata_exact_R249": true,
+        "full_disabled_decoded_image_not_emitted": true,
+        "normal_complete_smokes": 162,
+        "phase_census_calls": 324,
+        "all81_phase_counts_and_payloads_exact": true,
+        "all81_matched_primary_cohorts": 2,
+        "ordinary_IR215_unchanged": true,
+        "ordinary_extra_contract_restored": false,
+        "new_source_operation_class": false,
+        "no_expected_values_or_allowances_changed": true,
+        "unresolved_introduced_semantic_failures": 0
+      },
+      "source_pins": {
+        "source": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/benchmark-source.mec",
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "mbc14": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "normal_object": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/full-candidate-image/original/object.o",
+          "sha256": "12127a7982dd982db282d993895035656da96eace5f151426436cbd5ac2c290f"
+        },
+        "normal_metadata": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/full-candidate-image/original/metadata.json",
+          "sha256": "642fd888084b5ba6285a0ef4b9afbf0740c71b9f6a559785963ba7d4dc1af13e"
+        },
+        "normal_worker": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/mech-worker",
+          "sha256": "8d9abe2beca132f0d86f1f7119216a0980b5e06b325492ff232b74ce8a1ca81a"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "runtime": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/array-runtime.rs",
+          "sha256": "bbc12169d120eaa60af57904de32f599d594e24c80201f1173991a05746ff066"
+        },
+        "compiler_patch": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/compiler.patch",
+          "sha256": "42491fd9dd6c1d77aea657389f35b4fdd9861da6e24e2356e47912277b1294ca"
+        },
+        "compiler_source_manifest": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/compiler-source-manifest.json",
+          "sha256": "787f115edc0016839ffc88c6bd5db3a0e53f7677bb93ce0585ff3e6dd48ca9be"
+        },
+        "pinned_allocator": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        }
+      },
+      "report": "docs/design/native-phase-view-identity.md"
     }
   },
   "repository": "mech-lang/mech",
