@@ -2,9 +2,37 @@
 
 **Current standings:11 of25 complete compression cases are faster than Roc.**
 Retained experimental compiler remains R245. The [standing scoreboard](native-compression-scoreboard.md)
-shows all25 retained/candidate rows against the same fresh R246 reference;
+shows all25 retained/candidate rows against the same fresh R247 reference;
 its changed ratios do not mean the retained compiler changed. Historical
 reports preserve their original observations. All25 inputs/sizes stay mandatory.
+
+## R247: phase-only isolation preserves the natural gain and periodic penalty
+
+R245 stays retained, with all11 current wins listed in the [scoreboard](native-compression-scoreboard.md).
+The one-file policy change over R246 disables only root threading. Its root
+5630944B/frame55136B and all symbolic relocation targets match R245, while
+all270 original/map/vector bodies match R246. Four original path bodies shorten;
+all7 selected vector bodies remain identical. Disabled Object/metadata match R245.
+
+Same-cohort natural32 is2.248360x->2.145959x (-4.5545% block elapsed), periodic
+1.593197x->1.632102x (+2.4420%), repeated32 1.506688x->1.541355x (+2.3009%),
+random64 2.985697x->3.055233x (+2.3290%), and eight0.503905x->0.507425x (+0.8161%).
+Natural and periodic directions agree in both cohorts. All25 historical timing
+gates pass in both;16 pooled block means worsen. Preserve this useful natural
+component; the periodic-primary criterion still fails. All payload/heap/copy/
+zero/private-peak fields are identical. Root threading is not needed for the
+periodic penalty; phase execution and placement remain possible causes.
+
+710 maintained,7 proof and7076 fresh source controls pass;33 fresh original/
+decoded images match. All25 exact streams/inflate/aliases/capacities/final zero
+ownership pass. Fresh exact R245/random64 profiling places3431/5503 running
+samples in the generated root; no removable-time percentage is inferred.
+All6 natural fixtures through65537 are verified same-stream prefixes; random32
+and heldout random64 are not. Current logical-work comparison and the expanded
+prefix sweep remain next work before a bounded phase-success ownership/transport
+change. OrdinaryIR215 and omitted standalone contracts remain unchanged.
+
+[Full R247 results, every regression, exact commands/pins and verified public evidence](native-phase-only-loop-threading.md).
 
 ## R246: preserve the combined natural-text gain; keep R245 for periodic input
 

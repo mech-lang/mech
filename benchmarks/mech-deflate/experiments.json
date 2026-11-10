@@ -47774,6 +47774,505 @@
           "sha256": "acc956027028d0d4a6deb4baf69635d2d1b84c20ef45d9d508e427b4d50442b1"
         }
       }
+    },
+    "247": {
+      "git_parent": "a08088fa87defbcf47f6efcb29d4cbdf459cedcb",
+      "control": "R245 retained experimental compiler; full R246 balanced comparison",
+      "decision": {
+        "decision": "Archive R247 phase-only threading; retain R245. Preserve the repeatable natural-text gain and all adverse observations.",
+        "git_parent": "a08088fa87defbcf47f6efcb29d4cbdf459cedcb",
+        "compiler_control": "R245 retained experimental closure; archived full R246 is the fourth balanced actor",
+        "retained_experimental_compiler": "R245",
+        "R245_periodic_reference": 1.5931968153381644,
+        "R247_periodic_reference": 1.6321023020256369,
+        "periodic_block_percent": 2.4419761772631166,
+        "periodic_both_cohorts_improve": false,
+        "R245_natural32_reference": 2.2483603510583383,
+        "R247_natural32_reference": 2.145958813744049,
+        "natural32_block_percent": -4.554498448884637,
+        "natural32_both_cohorts_improve": true,
+        "eight_after_reference": 0.5074249525015833,
+        "eight_user1x_ceiling_pass": true,
+        "below_reference_before": 11,
+        "below_reference_after": 11,
+        "new_below_reference": [],
+        "lost_below_reference": [],
+        "adverse_pooled_block_rows": "All16 retained in tracked tables and external full result-decision/primary-results JSON",
+        "parity_complete": false,
+        "ordinary_contract_restored": false,
+        "isolation_result": "The natural gain survives and periodic still regresses with the R245 root body, frame and symbolic relocations restored. Root threading is not required for either observation. Changed phase execution and linked placement remain possible causes; this is not proof of a particular microarchitectural cause.",
+        "next": "Refresh logical work counts and controlled prefix scaling on retained R245; use the fresh random64 root profile to select one bounded ownership/transport experiment. First count eligible phase-success transitions; do not assume a returned owner is unique."
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r247-phase-only-threading-539f1187d629.tar.gz",
+        "sha256": "539f1187d629f4d172f9cd6237a0304a0e467326d9c0f8549e7d3a45a4f5fd5f",
+        "bytes": 6001772,
+        "verified_files": 2117,
+        "numerical_replays": 5,
+        "reconstructed_source_files": 820
+      },
+      "qualification": {
+        "maintained_tests": 710,
+        "inherited_exclusions": 7,
+        "focused_threading_tests": 7,
+        "features": [
+          "aot",
+          "jit",
+          "canonical-native",
+          "canonical-native-runtime",
+          "canonical-native-program",
+          "canonical-native-program-runtime"
+        ],
+        "compiler_optimization": 3,
+        "test_root_optimization": 1,
+        "warnings_as_errors": true,
+        "toolchain": "nightly-2026-03-03-aarch64-apple-darwin",
+        "private_flags": [
+          "MECH_PRIVATE_INDEXED_CHAINS=1",
+          "MECH_PHASE_OWNER_TRANSFER=1",
+          "MECH_PHASE_VECTOR_FAST=1",
+          "MECH_THREAD_LOOP_EDGES=1",
+          "MECH_THREAD_PHASES_ONLY=1"
+        ],
+        "dispatch_native_cases_fresh": 4640,
+        "dispatch_resident_calls_fresh": 1160,
+        "path_native_cases_fresh": 320,
+        "path_resident_rows_reused": 40,
+        "path_inherited_default_work_denials_in_reused_rows": 34,
+        "matrix_native_cases_fresh": 1700,
+        "matrix_native_parent_rows_reused": 1700,
+        "matrix_resident_calls_fresh": 1700,
+        "boundary_native_cases_fresh": 416,
+        "small_original_decoded_pairs_fresh": 33,
+        "complete_smokes": 50,
+        "source_expected_values_allowances_unchanged": true,
+        "all_current_values_errors_origins_aliases_publication_cleanup_retry_agree": true,
+        "ordinary_IR215_unchanged": true,
+        "new_compiler_algorithm": false,
+        "pass_reused_from_R237": true,
+        "policy_changed_from_R246_only_at_root": true,
+        "source_closure_files": 820,
+        "incremental_changed_files": 1,
+        "combined_changed_files_over_R245": 9,
+        "unresolved_introduced_semantic_failures": 0,
+        "primary_cohorts": 2,
+        "balanced_blocks_each": 24,
+        "counter_observed_calls": 5200,
+        "counter_retained_calls": 4800,
+        "no_fresh_ABI_rerun": "The array runtime is byte-identical to R245; its seven ABI controls are inherited by hash, while actual compiled matrix/growth/alias/error controls are fresh."
+      },
+      "image": {
+        "root_code_bytes": 5630944,
+        "root_stack_bytes": 55136,
+        "variants_emitted": 134,
+        "variants_selected": 7,
+        "variant_bytes": 102608,
+        "unused_variant_bytes": 75444,
+        "object_text_before": 5860960,
+        "object_text_after": 5860960,
+        "worker_text_before": 6178864,
+        "worker_text_after": 6178864,
+        "worker_bytes_before": 6640168,
+        "worker_bytes_after": 6640168,
+        "scope": "Static generated instructions, not dynamic executed counts. Generic vector guards skip the matrix division blocks; independent complete-call CPU counters remain necessary.",
+        "root_bytes_before": 5630944,
+        "root_bytes_after": 5630944,
+        "root_stack_before": 55136,
+        "root_stack_after": 55136,
+        "root_threaded_control": null,
+        "root_restored_byte_identical_to_R245": true,
+        "all270_phase_bodies_identical_to_R246": true,
+        "phase_threaded_control": [
+          {
+            "header": 12419,
+            "symbol": "mech_compact_numeric_12419",
+            "candidates": 76,
+            "repair_parameters": 6,
+            "selected_conditions": 6,
+            "threaded_edges": 3
+          },
+          {
+            "header": 15296,
+            "symbol": "mech_compact_numeric_15296",
+            "candidates": 76,
+            "repair_parameters": 6,
+            "selected_conditions": 6,
+            "threaded_edges": 3
+          },
+          {
+            "header": 26895,
+            "symbol": "mech_compact_numeric_26895",
+            "candidates": 76,
+            "repair_parameters": 6,
+            "selected_conditions": 6,
+            "threaded_edges": 3
+          },
+          {
+            "header": 31086,
+            "symbol": "mech_compact_numeric_31086",
+            "candidates": 76,
+            "repair_parameters": 6,
+            "selected_conditions": 6,
+            "threaded_edges": 3
+          }
+        ],
+        "unchanged_existing_bodies": 132,
+        "R245_vector_bodies_unchanged": true,
+        "selected_numeric_phases": 134,
+        "selected_maps": 2,
+        "disabled_full_object_metadata_equal_R245": true
+      },
+      "isolation": {
+        "root_symbolic_relocations_equal_R245": true,
+        "root_relocation_count": 101817,
+        "root_Object_body_identical_to_R245": true,
+        "root_frame_identical_to_R245": true,
+        "all270_outlined_and_variant_bodies_identical_to_R246": true,
+        "selected_phase_threaded_edges": 12,
+        "root_threading_absent": true,
+        "disabled_full_Object_metadata_equal_R245": true,
+        "root_only_source_all_four_forms_identical_to_R245": true,
+        "scope": "Raw Object code bytes; linker relocation addresses may differ. No elapsed claim follows from static identity."
+      },
+      "counter_summary": {
+        "cases": 25,
+        "observed_counter_calls": 5200,
+        "retained_counter_calls": 4800,
+        "instruction_decreases": 22,
+        "instruction_increases": 0,
+        "cycle_decreases": 12,
+        "cycle_increases": 13,
+        "all25_payload_and_heap_fields_identical": true,
+        "scope": "Independent complete-call CPU and allocation cohorts. CPU-time samples are not instruction partitions. RSS/physical are process/lifetime measures, not copied bytes. Allocation-instrumented instructions/cycles are not primary counters."
+      },
+      "primary": {
+        "targets": {
+          "primary_case": "33027-periodic-window",
+          "pooled_periodic_after_reference": 1.6321023020256369,
+          "periodic_both_cohorts_improve": false,
+          "eight_byte_after_reference": 0.5074249525015833,
+          "eight_byte_within_user1x_ceiling": true,
+          "historical1_05_columns": "diagnostic, latest user prioritizes one case toward parity and allows eight to1x"
+        },
+        "both_cohorts": {
+          "primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 25,
+            "large_geomean_after_over_before": 0.9877421693764304
+          },
+          "confirmation-primary": {
+            "cases": 25,
+            "point_pass": 25,
+            "blockmean_pass": 25,
+            "large_geomean_after_over_before": 0.9871947689693342
+          }
+        },
+        "pooled": {
+          "all25_geomean_after_over_before": 0.997850826279917,
+          "large11_geomean_after_over_before": 0.9872213458382527,
+          "point_pass": 25,
+          "blockmean_pass": 25
+        },
+        "all25": [
+          {
+            "case": "empty",
+            "archived_R246_reference": 1.9761904761904763,
+            "block_change_percent": 1.5294400512930073,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 0,
+            "before_reference": 1.9761904761904763,
+            "after_reference": 1.9761904761904763
+          },
+          {
+            "case": "one-stored",
+            "archived_R246_reference": 1.9761904761904763,
+            "block_change_percent": -0.7924281433334679,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 1,
+            "before_reference": 1.9761904761904763,
+            "after_reference": 1.9761904761904763
+          },
+          {
+            "case": "seven-stored-prefix",
+            "archived_R246_reference": 1.9761904761904763,
+            "block_change_percent": 0.38839249778637175,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 7,
+            "before_reference": 1.9761904761904763,
+            "after_reference": 1.9761904761904763
+          },
+          {
+            "case": "eight-literals",
+            "archived_R246_reference": 0.49567236647667295,
+            "block_change_percent": 0.8161212786194749,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 8,
+            "before_reference": 0.5039054253747098,
+            "after_reference": 0.5074249525015833
+          },
+          {
+            "case": "eight-overlap",
+            "archived_R246_reference": 0.5116839913952208,
+            "block_change_percent": 0.1454007348827835,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 8,
+            "before_reference": 0.5087167662976011,
+            "after_reference": 0.5113211183434931
+          },
+          {
+            "case": "320-overlap",
+            "archived_R246_reference": 0.5812723588337835,
+            "block_change_percent": -0.21208475723824005,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 320,
+            "before_reference": 0.5786744351496883,
+            "after_reference": 0.5751610847553636
+          },
+          {
+            "case": "eight-literals-prefix",
+            "archived_R246_reference": 0.5173862068965517,
+            "block_change_percent": 1.123914117129643,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 8,
+            "before_reference": 0.503448275862069,
+            "after_reference": 0.5087655172413793
+          },
+          {
+            "case": "128-biased-dynamic",
+            "archived_R246_reference": 0.527114967462039,
+            "block_change_percent": 0.9321248305243834,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 128,
+            "before_reference": 0.5209700650759219,
+            "after_reference": 0.5216173535791756
+          },
+          {
+            "case": "32-high-entropy-stored",
+            "archived_R246_reference": 0.5386149870801035,
+            "block_change_percent": 0.7785178957169236,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 32,
+            "before_reference": 0.5462962962962964,
+            "after_reference": 0.5429233419465977
+          },
+          {
+            "case": "16384-distribution-change",
+            "archived_R246_reference": 2.707563378198491,
+            "block_change_percent": -0.621364511547029,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 16384,
+            "before_reference": 2.7415080609377314,
+            "after_reference": 2.724473302765863
+          },
+          {
+            "case": "33027-periodic-window",
+            "archived_R246_reference": 1.6488280438097263,
+            "block_change_percent": 2.4419761772631166,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 33027,
+            "before_reference": 1.5931968153381644,
+            "after_reference": 1.6321023020256369
+          },
+          {
+            "case": "random-64",
+            "archived_R246_reference": 0.5754716981132076,
+            "block_change_percent": 0.3529945062025641,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 64,
+            "before_reference": 0.5698970840480275,
+            "after_reference": 0.5706106346483706
+          },
+          {
+            "case": "random-256",
+            "archived_R246_reference": 0.6654045416316233,
+            "block_change_percent": 1.8982156891696578,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 256,
+            "before_reference": 0.6626005046257359,
+            "after_reference": 0.6745164003364171
+          },
+          {
+            "case": "random-1024",
+            "archived_R246_reference": 0.7491564900930044,
+            "block_change_percent": 1.7790344626970045,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 1024,
+            "before_reference": 0.7422822482814396,
+            "after_reference": 0.7565709664375253
+          },
+          {
+            "case": "repeated-1024",
+            "archived_R246_reference": 0.6537992494597233,
+            "block_change_percent": 1.8469004723584703,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 1024,
+            "before_reference": 0.6412699955502165,
+            "after_reference": 0.652534174489224
+          },
+          {
+            "case": "random-32769",
+            "archived_R246_reference": 2.7904185014308243,
+            "block_change_percent": 2.710463191653356,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 32769,
+            "before_reference": 2.7320955440051393,
+            "after_reference": 2.8061479880862
+          },
+          {
+            "case": "repeated-32769",
+            "archived_R246_reference": 1.556664099828362,
+            "block_change_percent": 2.3009099352973683,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 32769,
+            "before_reference": 1.506687943591409,
+            "after_reference": 1.5413554761794312
+          },
+          {
+            "case": "reymont-prefix-1024",
+            "archived_R246_reference": 0.9066145842591441,
+            "block_change_percent": -1.7195681793867323,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 1024,
+            "before_reference": 0.9272920110682523,
+            "after_reference": 0.9091461210753033
+          },
+          {
+            "case": "reymont-prefix-16384",
+            "archived_R246_reference": 2.0928033424008805,
+            "block_change_percent": -5.176911540013862,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 16384,
+            "before_reference": 2.2139070648274677,
+            "after_reference": 2.0992950545032323
+          },
+          {
+            "case": "reymont-prefix-32769",
+            "archived_R246_reference": 2.1453565077726156,
+            "block_change_percent": -4.554498448884637,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 32769,
+            "before_reference": 2.2483603510583383,
+            "after_reference": 2.145958813744049
+          },
+          {
+            "case": "heldout-window-32767",
+            "archived_R246_reference": 2.1456322187475845,
+            "block_change_percent": -4.635162250983782,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 32767,
+            "before_reference": 2.2512945664217523,
+            "after_reference": 2.1469434105205223
+          },
+          {
+            "case": "heldout-window-32768",
+            "archived_R246_reference": 2.142139173527582,
+            "block_change_percent": -4.541127007150026,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 32768,
+            "before_reference": 2.2448754420670287,
+            "after_reference": 2.1429327970904444
+          },
+          {
+            "case": "heldout-slides-65537",
+            "archived_R246_reference": 2.21060591122558,
+            "block_change_percent": -3.9397991284301215,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 65537,
+            "before_reference": 2.306372291338781,
+            "after_reference": 2.215505855906262
+          },
+          {
+            "case": "heldout-random-65537",
+            "archived_R246_reference": 3.0550828973972206,
+            "block_change_percent": 2.3289789005269235,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 65537,
+            "before_reference": 2.985696845213261,
+            "after_reference": 3.055233094771976
+          },
+          {
+            "case": "heldout-mixed-131073",
+            "archived_R246_reference": 2.509036463218374,
+            "block_change_percent": 0.20248186536890866,
+            "point_gate": true,
+            "blockmean_gate": true,
+            "bytes": 131073,
+            "before_reference": 2.5064219930065286,
+            "after_reference": 2.5114970430119845
+          }
+        ]
+      },
+      "source_pins": {
+        "object": {
+          "path": "/private/tmp/mech-phase-only-threading-round247-20261109/full-candidate-image/original/object.o",
+          "sha256": "417d2d637df748a704f37426fcd57a2d11a71dbde97e8bf719dca6a0b46a2710"
+        },
+        "worker": {
+          "path": "/private/tmp/mech-phase-only-threading-round247-20261109/mech-worker",
+          "sha256": "cb3f028b56a1753ba3cab8b51434208fa4b3c58a8dd968742e7cfdf02b620080"
+        },
+        "incremental_patch_over_R246": {
+          "path": "/private/tmp/mech-phase-only-threading-round247-20261109/compiler.patch",
+          "sha256": "a84546373db30eb01ee4e23b92db25fe13188416ece692a12acbe99e84331581"
+        },
+        "combined_patch_over_R245": {
+          "path": "/private/tmp/mech-phase-only-threading-round247-20261109/combined-compiler.patch",
+          "sha256": "8f99668c7e8d065e9c823ac61866f334bd20463e15438faedef2fbb6b6be4c13"
+        },
+        "compiler_source_manifest": {
+          "path": "/private/tmp/mech-phase-only-threading-round247-20261109/compiler-source-manifest.json",
+          "sha256": "1a11e5e831f39c69b6889512e3c66988c6a3191c5f520be8c35d150956fbbe8f"
+        },
+        "source": {
+          "path": "/private/tmp/mech-phase-only-threading-round247-20261109/benchmark-source.mec",
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "mbc14": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "pinned_allocator": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        },
+        "qualification_runtime": {
+          "path": "/private/tmp/mech-phase-only-threading-round247-20261109/array-runtime.rs",
+          "sha256": "bbc12169d120eaa60af57904de32f599d594e24c80201f1173991a05746ff066"
+        },
+        "reference_assembly": {
+          "path": "/private/tmp/mech-phase-only-threading-round247-20261109/reference-matching.asm",
+          "sha256": "acc956027028d0d4a6deb4baf69635d2d1b84c20ef45d9d508e427b4d50442b1"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
