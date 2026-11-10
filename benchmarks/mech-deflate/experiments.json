@@ -50070,6 +50070,192 @@
         "downloaded_archive_and_receipt_exact": true
       },
       "report": "docs/design/native-predicate-forwarding-combination.md"
+    },
+    "255": {
+      "git_parent": "66b787f3370de40909ab0022ffe8da32d558f945",
+      "decision": {
+        "round": 255,
+        "git_parent": "66b787f3370de40909ab0022ffe8da32d558f945",
+        "decision": "Retain experimental backend comparison reuse for lower instructions; no established text1MiB elapsed win",
+        "retained_compiler": "R255: unchanged R253 Mech source plus backend feature experimental-cmp-reuse",
+        "source_algorithm_changed": false,
+        "backend_changed_files": 3,
+        "unchanged_Mech_source_files": 822,
+        "all81_timing_gates_both_cohorts": true,
+        "all81_payload_copy_heap_identical": true,
+        "ordinary_IR215_unchanged": true,
+        "ordinary_extra_contract_restored": false,
+        "large_text_elapsed_after_over_before": 1.0008089691847195,
+        "large_text_instruction_after_over_before": 0.9930259684770637
+      },
+      "primary_summary": {
+        "round": 255,
+        "baseline": "R253",
+        "candidate": "R253 with AArch64 current-register compare reuse",
+        "all81_geomean_after_over_before": 0.9982255494795271,
+        "large_original11_geomean_after_over_before": 0.9963024829856849,
+        "large_controlled_prefix_geomean_after_over_before": 0.997944620923018,
+        "balanced_improvements": 56,
+        "balanced_regressions": 25,
+        "raw_improvements": 52,
+        "raw_ties": 3,
+        "point_gate_pass": 81,
+        "balanced_gate_pass": 81,
+        "cohorts": {
+          "primary-a": {
+            "point_gate_pass": 81,
+            "balanced_gate_pass": 81,
+            "large_prefix_geomean": 0.998042132732876
+          },
+          "primary-b": {
+            "point_gate_pass": 81,
+            "balanced_gate_pass": 81,
+            "large_prefix_geomean": 0.9977829531436617
+          }
+        }
+      },
+      "source_reuse": {
+        "mech_compiler_files": 822,
+        "mech_compiler_changes": 0,
+        "source_packet_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r253-current-predicates-d1a351896db9.tar.gz",
+        "source_packet_sha256": "d1a351896db95a70115194d1583a7b0a3f7271535fe5997ccc2d9a3881b950d7",
+        "backend_package": "cranelift-codegen0.131.3",
+        "backend_changes": [
+          "Cargo.toml",
+          "src/isa/aarch64/inst/compare_reuse.rs",
+          "src/isa/aarch64/inst/emit.rs"
+        ],
+        "backend_feature": "experimental-cmp-reuse",
+        "ordinary_IR215_unchanged": true
+      },
+      "source_pins": {
+        "bytecode": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "bytes": 4138627,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "benchmark_source": {
+          "path": "/private/tmp/mech-shared-compare-round255-20261110/benchmark-source.mec",
+          "bytes": 160857,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "baseline_object": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/full-candidate-image/original/object.o",
+          "bytes": 1255024,
+          "sha256": "380d5e39e9a7e8ea8973adf14bf7c82a912c84e9ea41701c7047f64b036afe3c"
+        },
+        "baseline_worker": {
+          "path": "/private/tmp/mech-current-predicate-round253-20261110/mech-worker",
+          "bytes": 1884504,
+          "sha256": "3e0e37c59693b932f026fd4c317cfb4ebf545827d645dd0275e8a28956a35344"
+        },
+        "candidate_object": {
+          "path": "/private/tmp/mech-shared-compare-round255-20261110/full-candidate-image/original/object.o",
+          "bytes": 1255024,
+          "sha256": "95b6068d392da03301dddac22123bbc1c00bf358803cf09da930f023649205fb"
+        },
+        "candidate_metadata": {
+          "path": "/private/tmp/mech-shared-compare-round255-20261110/full-candidate-image/original/metadata.json",
+          "bytes": 4224948,
+          "sha256": "b48b91b782938a227d677e83576d023878a4b0c4297826225aed7967a4e3c3be"
+        },
+        "candidate_worker": {
+          "path": "/private/tmp/mech-shared-compare-round255-20261110/mech-worker",
+          "bytes": 1884504,
+          "sha256": "37f94af73c6ac33d1edb32a301c05bb5606e122ea6992abfa9817ee530c33a91"
+        },
+        "producer": {
+          "path": "/private/tmp/mech-shared-compare-round255-20261110/backend-on/producer",
+          "bytes": 96887912,
+          "sha256": "e6e7d1c4ce6d6dccc433a7f48735815251aeb033af1fd284eedefffa85efc575"
+        },
+        "control_producer": {
+          "path": "/private/tmp/mech-shared-compare-round255-20261110/backend-off/producer",
+          "bytes": 96887352,
+          "sha256": "2d387bfa16d0c0598f621f8b4fc6b6120dc73ab9cea0ddc20a44d2e8b4293317"
+        },
+        "backend_patch": {
+          "path": "/private/tmp/mech-shared-compare-round255-20261110/backend.patch",
+          "bytes": 8897,
+          "sha256": "83c5fc6c14689ba80238615ae6e75c00103cbc447c8ae6681a62fae97607dc54"
+        },
+        "source_manifest": {
+          "path": "/private/tmp/mech-shared-compare-round255-20261110/compiler-source-manifest.json",
+          "bytes": 163939,
+          "sha256": "83535847961a921ef4a761c8ee9c6e19264fd9632fbc15505b904e0262b7fdff"
+        },
+        "reference_worker": {
+          "path": "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+          "bytes": 758128,
+          "sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+        },
+        "allocator_object": {
+          "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "bytes": 189456,
+          "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+        }
+      },
+      "linked_placement": {
+        "linked_functions": 142,
+        "all_present_linked_function_starts_identical": true,
+        "linked_root_code_identical": true,
+        "initial_diagnostic": "First lookup included unreferenced functions removed by normal link stripping; compare actual retained symbol sets.",
+        "link_stripped_count": 2,
+        "complete_receipt": "linked-placement.json in verified R255 evidence"
+      },
+      "targets": {
+        "eight-literals": {
+          "before_over_reference": 0.4315101369900857,
+          "after_over_reference": 0.4345317232019835,
+          "balanced_elapsed_change": 0.4136994036002095,
+          "instruction_change": 0.0,
+          "cohort_changes": {
+            "primary-a": 4.045919204560899,
+            "primary-b": 0.05880130662427874
+          }
+        },
+        "heldout-random-65537": {
+          "before_over_reference": 2.7979552701183197,
+          "after_over_reference": 2.781194239816178,
+          "balanced_elapsed_change": -0.5990456845806791,
+          "instruction_change": 0.000366146064778583,
+          "cohort_changes": {
+            "primary-a": -0.6615212053433961,
+            "primary-b": -0.48800427852474515
+          }
+        },
+        "prefix-natural-1048576": {
+          "before_over_reference": 2.1728464556054536,
+          "after_over_reference": 2.1746042214311654,
+          "balanced_elapsed_change": 0.08089691847195102,
+          "instruction_change": -0.6974031522936297,
+          "cohort_changes": {
+            "primary-a": 0.08380258289175657,
+            "primary-b": 0.10037728807119617
+          }
+        },
+        "prefix-random-1048576": {
+          "before_over_reference": 3.08627473771779,
+          "after_over_reference": 3.07079935366342,
+          "balanced_elapsed_change": -0.5014260028520123,
+          "instruction_change": -0.08696389563316309,
+          "cohort_changes": {
+            "primary-a": -0.5447479057886007,
+            "primary-b": -0.48901701013251975
+          }
+        }
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r255-shared-compare-dc222e201c8a.tar.gz",
+        "sha256": "dc222e201c8a92f8f5bdd4baffeb0674a164585c8cd4befc73051e821dae55ec",
+        "bytes": 18393131,
+        "verified_files": 1366,
+        "offline_reports": 5,
+        "unchanged_Mech_files": 822,
+        "backend_reconstruction_exact": true,
+        "downloaded_archive_and_receipt_exact": true
+      },
+      "report": "docs/design/native-shared-comparison.md"
     }
   },
   "repository": "mech-lang/mech",
