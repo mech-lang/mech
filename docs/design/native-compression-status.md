@@ -2,6 +2,14 @@
 
 **Current retained experimental compiler: R250.** The original 25 retain 11 below-reference cases; the 56 prefixes have five in this fresh cohort, including duplicate inputs. All 81 have two-cohort timings in the [scoreboard](native-compression-scoreboard.md). Large-input throughput remains the priority.
 
+## R251: identity-route and enclosing-region evidence
+
+Retain R250; the diagnostic compiler emits the same complete normal Object and metadata. The current zero-skip route executes 1,048,576 times on random 1 MiB and 1,048,572 times on natural 1 MiB. Four natural nonzero helper visits are near EOF and outside the earlier qualified matching-skip counter; all 81 route counts reconcile with cache headers. Most record construction is already virtual. A 22-instruction relay (21 stack loads/stores) and a separate 97-instruction continuation corridor (96 loads/stores) survive in the actual image. The latter has 455/5,470 random64 running samples, not an instruction or removable-time budget.
+
+Current header 2398 is the skip recurrence, 837 the enclosing collector. Their complete proofs reject non-Tail children and their selected partial proofs have 25/52 cold exports. A fixed-view writable-child witness separately reaches the current-account visit-funding guard; it must not be bypassed. 3,500 semantic controls (700 zero-trip visits) and 162 complete observed calls pass. The enclosing native-selection acceptance remains explicitly failing on the inherited boundary. Existing maintained qualification is inherited from R250, not rerun.
+
+Next implement generic identity-exit plus continuation forwarding only against the surviving machine relay, preserving logical aliases and error/evaluation order. Empty reduction, multi-position cold handoff and the separate R247 placement control remain outstanding. No new speedup or ordinary integration is claimed. [Exact evidence, refusals, all failure dispositions and remaining work](native-zero-trip-state.md).
+
 ## R250: keep invariant current views across native returns
 
 Retain the one-file compiler change over R249. Existing numeric proofs establish that a non-appending writable view retains its exact six-word descriptor on successful phase return. Reuse those current input words; capture all result sources before parallel destination writes. Contents still change. Growing views, general matrix paths, aliases, errors, cleanup and owner checks stay. All 136 original routines and seven selected vector bodies remain byte-identical; root code shrinks 7,300 bytes and the frame 16 bytes. Disabled Object/metadata restore R249 exactly.

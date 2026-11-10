@@ -49407,6 +49407,99 @@
         }
       },
       "report": "docs/design/native-phase-view-identity.md"
+    },
+    "251": {
+      "git_parent": "4783e9c4d8855119b6fd24e31a917c6cf3eab33a",
+      "control": "Retained R250; ordinary IR215 unchanged",
+      "decision": {
+        "round": 251,
+        "decision": "Retain R250; diagnostic evidence only, no normal code change or new performance claim",
+        "git_parent": "4783e9c4d8855119b6fd24e31a917c6cf3eab33a",
+        "normal_object_sha256": "12127a7982dd982db282d993895035656da96eace5f151426436cbd5ac2c290f",
+        "semantic_source_calls": 3500,
+        "zero_trip_source_calls": 700,
+        "complete_observed_calls": 162,
+        "cases": 81,
+        "source_relay_instructions": 22,
+        "latch_corridor_instructions": 97,
+        "current_selection_acceptance_pass": false,
+        "selection_failure_class": "inherited supported-region/admission boundary; expected failing acceptance, semantic controls pass",
+        "implemented": [
+          "paired identity source witnesses",
+          "source/CLIF/machine attribution",
+          "all81 exact zero-route counts and work-scope reconciliation",
+          "current collector ancestry and exact complete-proof refusals",
+          "fixed-view nested-child witnesses"
+        ],
+        "remaining": [
+          "identity-exit plus continuation forwarding",
+          "empty outer path reduction",
+          "multi-position native region with exact cold handoff",
+          "R247 placement control"
+        ],
+        "ordinary_IR215_unchanged": true,
+        "ordinary_extra_contract_restored": false
+      },
+      "evidence": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r251-zero-trip-state-ca9af7a2eee1.tar.gz",
+        "sha256": "ca9af7a2eee136d0a92f7b1f6ff776cca2887e456d3cb09d7fc031aa8e34d3e4",
+        "bytes": 2492862,
+        "verified_files": 1212,
+        "numerical_replays": 5,
+        "reconstructed_source_files": 815,
+        "downloaded_archive_and_receipt_exact": true
+      },
+      "qualification": {
+        "source_programs": 6,
+        "execution_variants": 7,
+        "forms_each": 2,
+        "cases_each": 250,
+        "semantic_source_calls": 3500,
+        "zero_trip_calls": 700,
+        "complete_observed_calls": 162,
+        "complete_configurations": 81,
+        "current_native_selection_acceptance": "expected fail on inherited boundary",
+        "normal_complete_image_exact_R250": true,
+        "maintained_tests_inherited_from_R250": 703,
+        "inherited_exclusions": 7,
+        "warnings_as_errors": true,
+        "source_allocation_and_timing_boundaries_unchanged": true
+      },
+      "source_pins": {
+        "benchmark_source": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/benchmark-source.mec",
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "mbc14": {
+          "path": "/private/tmp/mech-host-code-round199-20261107/after/source.mbc",
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "normal_object": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/full-candidate-image/original/object.o",
+          "sha256": "12127a7982dd982db282d993895035656da96eace5f151426436cbd5ac2c290f"
+        },
+        "normal_metadata": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/full-candidate-image/original/metadata.json",
+          "sha256": "642fd888084b5ba6285a0ef4b9afbf0740c71b9f6a559785963ba7d4dc1af13e"
+        },
+        "normal_worker": {
+          "path": "/private/tmp/mech-large-root-transport-round250-20261109/mech-worker",
+          "sha256": "8d9abe2beca132f0d86f1f7119216a0980b5e06b325492ff232b74ce8a1ca81a"
+        },
+        "runtime": {
+          "path": "/private/tmp/mech-zero-trip-state-round251-20261109/array-runtime.rs",
+          "sha256": "bbc12169d120eaa60af57904de32f599d594e24c80201f1173991a05746ff066"
+        },
+        "compiler_patch": {
+          "path": "/private/tmp/mech-zero-trip-state-round251-20261109/compiler.patch",
+          "sha256": "bec6c7caef412d8554fc5b4cba6408fd39657ee96ace103cbe1361e5e7a87941"
+        },
+        "compiler_manifest": {
+          "path": "/private/tmp/mech-zero-trip-state-round251-20261109/compiler-source-manifest.json",
+          "sha256": "313efb410f8ae1231c9226cf3dad51a3240a520b629e941bd2eaaed61dc15946"
+        }
+      },
+      "report": "docs/design/native-zero-trip-state.md"
     }
   },
   "repository": "mech-lang/mech",
