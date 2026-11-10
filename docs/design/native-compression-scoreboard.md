@@ -1,12 +1,27 @@
 # Current compression scoreboard
 
-**Retained experimental compiler: R256.** The compiler composes fixed-buffer nested computations into one guarded native phase and hands back exact current state before unsupported operations. The source/algorithm and ordinary funding guard stay unchanged. The all 81 descriptive geometric elapsed improvement is18.2622%; the larger controlled-prefix improvement is22.2123% against the freshly remeasured R255 parent.
+**Retained computational baseline: R256, with R261 correctness repairs.** The compiler composes fixed-buffer nested computations into one guarded native phase and hands back exact current state before unsupported operations. The source/algorithm and ordinary funding guard stay unchanged. The historical R256 all 81 descriptive geometric elapsed improvement is18.2622%; the larger controlled-prefix improvement is22.2123% against the freshly remeasured R255 parent.
 
 All 81 pooled point/balanced1.05 gates pass. Primary A passes 81/81; Primary B passes 81/81 point and 78/81 balanced, with explicit misses for empty, one-stored and eight-literals-prefix. No allowances change. Their contrary observations remain in the report. Heap requests, initialized copying, zeroing and private peaks remain equal on all 81. Root code/frame and executable size increase; this is not a memory-size reduction.
 
 There are22 measured below-reference configurations. The largest controlled wins are now16 KiB: periodic0.980901x, repeated0.949197x; random4 KiB0.947134x. At 32 KiB:text1.837344x, random1.828522x, periodic1.090658x, repeated1.048871x. At 1 MiB:text1.908252x, random2.170161x, periodic1.267271x, repeated1.222946x. Eight stays0.414364x. These use a fresh shared reference denominator; historical tables retain their original denominators.
 
 [Compiler patch, exact qualification, profiles, limits and verified evidence](native-private-nested-phases.md). [R255 historical measurements](native-shared-comparison.md). Ordinary IR215 and the compact entry’s additional omitted managed contract remain unchanged. Large-input parity remains incomplete.
+
+## R261 interaction repairs
+
+The four review findings are repaired and qualified. The complete compressor
+Object and linked worker remain byte-identical to R256; no new optimization is
+enabled. Fresh all81 paired measurements pass every existing point/block 1.05
+gate, with identical heap/copy/zero/private-peak fields. The geometric change is
+−0.5828%, with the largest slower row +1.1520%; these are measurements of identical
+code, not attributable performance effects. Fresh reference multiples are eight
+0.417756x; at32KiB text/random/periodic/repeated
+1.837612x/1.816686x/1.081951x/1.051936x; at1MiB
+1.901775x/2.169105x/1.265729x/1.221235x. The historical R256 table below remains
+unchanged. Maintained projection correctness is tested separately; its added
+admission cost is not established by compact-entry timings.
+[Repairs, native regressions, coverage limits and verified packet](native-review-interactions.md).
 
 ## R260 empty-path and fixed-placement control
 

@@ -51586,6 +51586,229 @@
         "OPT-04": "maintained replay schema dispatch defect",
         "performance_baseline_is_not_broad_compiler_adoption": true
       }
+    },
+    "261": {
+      "git_parent": "9dbdf42d2157715941e3b6cd75421eb01442d1d7",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R261 repairs on R256",
+      "retained_source": "608ed69aedb98bb8c9d61b0bf6364580b304a6d1",
+      "maintained_runtime": "0fae50df8ebc518356ccf753e568271cc2c0604a",
+      "replay_cli": "b29753d0842623e85cc480de482c05421ca7d7c1",
+      "decision": {
+        "round": 261,
+        "decision": "retain correctness repairs; compressor Object and elapsed worker unchanged",
+        "findings_closed": [
+          "OPT-01",
+          "OPT-02",
+          "OPT-03",
+          "OPT-04"
+        ],
+        "new_performance_claim": false,
+        "new_optimization_enabled": false,
+        "compressor_binary_identical": true,
+        "benchmark_source_unchanged": true,
+        "all81_heap_families_identical": true,
+        "next": "Review this checkpoint before further semantic compiler work.",
+        "coverage_limit": "The monolithic integration test compilation was not completed: its manually reconstructed rustc profile lacked mech_build. The exact existing zero-allocation record test and its unmodified shared helpers were extracted and executed instead, with a live allocation-probe control; no warnings were disabled. The maintained 680-test and compact 715-test matrices ran separately."
+      },
+      "source": {
+        "files": 825,
+        "modified": 3,
+        "new": 0,
+        "ordinary_IR215_unchanged": true,
+        "manifest_sha256": "d8807c708f97027316099fa27a8d33ea88730e7141e513414f71ab87f5dd8a15",
+        "patch_sha256": "dc92f0f822aeebfdcb588bf5209eb787a15f76b7ccc681314458ad641cd3faaf"
+      },
+      "qualification": {
+        "round": 261,
+        "tests": {
+          "compact-qualified-tests": {
+            "passed": 715,
+            "failed": 0,
+            "filtered_out": 7,
+            "command": [
+              "/private/tmp/mech-review-interactions-round261-20261110/candidate-tests",
+              "--test-threads=1",
+              "--skip",
+              "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+              "--skip",
+              "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+              "--skip",
+              "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+              "--skip",
+              "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+              "--skip",
+              "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+              "--skip",
+              "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+              "--skip",
+              "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+            ]
+          },
+          "maintained-qualified-tests": {
+            "passed": 680,
+            "failed": 0,
+            "filtered_out": 7,
+            "command": [
+              "/private/tmp/mech-review-interactions-round261-20261110/maintained-tests",
+              "--test-threads=1",
+              "--skip",
+              "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+              "--skip",
+              "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+              "--skip",
+              "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+              "--skip",
+              "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+              "--skip",
+              "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+              "--skip",
+              "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+              "--skip",
+              "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+            ]
+          },
+          "opt02-final-native-tests": {
+            "passed": 2,
+            "failed": 0,
+            "filtered_out": 685,
+            "command": [
+              "./maintained-tests",
+              "projection_elements",
+              "--nocapture",
+              "--test-threads=1"
+            ]
+          },
+          "existing-record-qualification": {
+            "passed": 2,
+            "failed": 0,
+            "filtered_out": 0,
+            "command": [
+              "/private/tmp/mech-review-interactions-round261-20261110/existing-record-tests",
+              "--nocapture",
+              "--test-threads=1"
+            ]
+          }
+        },
+        "opt01_native_calls": 75600,
+        "opt01_exact_review_witness_also_passed": true,
+        "opt01_pack_and_unpacked_reuse_selected": true,
+        "opt03_real_owner_controls": 12,
+        "opt04_real_archives": 5,
+        "opt04_file_occurrences": 11647,
+        "opt04_exact_reports": 33,
+        "compression_cases_each_form": 81,
+        "compression_smoke_calls_both_forms": 324,
+        "compressor_artifacts": [
+          {
+            "before": "/private/tmp/mech-private-nested-round256-20261110/full-candidate-image/original/object.o",
+            "after": "/private/tmp/mech-review-interactions-round261-20261110/full-candidate-image/original/object.o",
+            "before_sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631",
+            "after_sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631",
+            "byte_identical": true
+          },
+          {
+            "before": "/private/tmp/mech-private-nested-round256-20261110/mech-worker",
+            "after": "/private/tmp/mech-review-interactions-round261-20261110/mech-worker",
+            "before_sha256": "96091f758139371d0f8455d18be30c2086af70904c5604a0b11307c651648297",
+            "after_sha256": "96091f758139371d0f8455d18be30c2086af70904c5604a0b11307c651648297",
+            "byte_identical": true
+          }
+        ],
+        "inherited_exclusions": {
+          "inherited_exclusions": [
+            "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+            "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+            "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+            "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+            "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+            "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+            "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+          ],
+          "inherited_exclusion_scope": "Exactly the retained R256 command, not new waivers; 722 executed pass, seven filtered out"
+        },
+        "coverage_limit": "The monolithic integration test compilation was not completed: its manually reconstructed rustc profile lacked mech_build. The exact existing zero-allocation record test and its unmodified shared helpers were extracted and executed instead, with a live allocation-probe control; no warnings were disabled. The maintained 680-test and compact 715-test matrices ran separately."
+      },
+      "summary": {
+        "cases": 81,
+        "blocks_per_case": 48,
+        "actors": 3,
+        "method": "Two fresh cohorts; all six balanced actor orders repeated four times per cohort. Ratios formed within each balanced block before geometric aggregation. The old pooled median and block-median 1.05 gates are reported unchanged. All adverse observations retained.",
+        "all81_paired_after_over_before": 0.9941718096652078,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81
+      },
+      "compressor_artifacts": [
+        {
+          "before": "/private/tmp/mech-private-nested-round256-20261110/full-candidate-image/original/object.o",
+          "after": "/private/tmp/mech-review-interactions-round261-20261110/full-candidate-image/original/object.o",
+          "before_sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631",
+          "after_sha256": "1f4b7d43df21629b96e3c955fe6a52f9a2b2f75ea81d506450b490c81699e631",
+          "byte_identical": true
+        },
+        {
+          "before": "/private/tmp/mech-private-nested-round256-20261110/mech-worker",
+          "after": "/private/tmp/mech-review-interactions-round261-20261110/mech-worker",
+          "before_sha256": "96091f758139371d0f8455d18be30c2086af70904c5604a0b11307c651648297",
+          "after_sha256": "96091f758139371d0f8455d18be30c2086af70904c5604a0b11307c651648297",
+          "byte_identical": true
+        }
+      ],
+      "artifacts": [
+        {
+          "name": "r261-interaction-repairs-a46590f0db68.tar.gz",
+          "bytes": 7668763,
+          "sha256": "a46590f0db68b06cb2bbeeef81cedee332f1f771ade27d774bd104c5812bb991",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r261-interaction-repairs-a46590f0db68.tar.gz"
+        },
+        {
+          "name": "r261-interaction-repairs-a46590f0db68.tar.gz.sha256",
+          "bytes": 111,
+          "sha256": "44c3ac224ac6c7be66829133feaf5e35993c8d230adc1a817662f3a353aabf6e",
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r261-interaction-repairs-a46590f0db68.tar.gz.sha256"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "a46590f0db68b06cb2bbeeef81cedee332f1f771ade27d774bd104c5812bb991",
+        "verified_files": 2042,
+        "offline_reports": 5,
+        "current_source_files": 825,
+        "reversed_base_source_files": 825,
+        "source_reconstruction_exact": true,
+        "replayed_output_hashes": {
+          "primary-results.json": "e411617e7dafb60b9fceedb123ba573e3a28f8367d4d41a6f277e7e8622a30b4",
+          "counter-results.json": "fd0ab4768285be7ffd6dedf2f30dcc54d6517a7559df578c51af759192e5b700",
+          "qualification-results.json": "6c0efa9fa0bbca5ebba98f4b2e98d1d2c96c4f847d703127f76d2738c0413b17",
+          "REPORT.md": "5c5b6f59eeaae9467af5e9a4d449092d9b218803b04d8eb5962434a5ade65a71",
+          "result-decision.json": "9456ba99ac20554824b44787c82387a349cf8fa9be94bf5d41f73908a0b0aba3"
+        },
+        "stdout": "Five reports replay byte-identically; 825-file source reconstructed in both directions; no compiler/compressor executed.\n"
+      },
+      "report": "docs/design/native-review-interactions.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r261-interaction-repairs-a46590f0db68.tar.gz",
+        "bytes": 7668763,
+        "sha256": "a46590f0db68b06cb2bbeeef81cedee332f1f771ade27d774bd104c5812bb991",
+        "files": 2042,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "e411617e7dafb60b9fceedb123ba573e3a28f8367d4d41a6f277e7e8622a30b4",
+            "counter-results.json": "fd0ab4768285be7ffd6dedf2f30dcc54d6517a7559df578c51af759192e5b700",
+            "qualification-results.json": "6c0efa9fa0bbca5ebba98f4b2e98d1d2c96c4f847d703127f76d2738c0413b17",
+            "REPORT.md": "5c5b6f59eeaae9467af5e9a4d449092d9b218803b04d8eb5962434a5ade65a71",
+            "result-decision.json": "9456ba99ac20554824b44787c82387a349cf8fa9be94bf5d41f73908a0b0aba3"
+          }
+        }
+      },
+      "remaining": [
+        "Review correctness checkpoint before further semantic compiler work",
+        "Parity across all compression families and sizes"
+      ],
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
