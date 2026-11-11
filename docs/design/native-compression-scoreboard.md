@@ -1,5 +1,26 @@
 # Current compression scoreboard
 
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R278 specializes the checked empty append run. Paired elapsed changes -4.382% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R276 / Roc | R278 / Roc | R276 / libdeflate | R278 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.198646× | 0.198668× | 2.523829× | 2.524102× |
+| prefix-random-8192 | 1.040506× | 0.971396× | 3.726015× | 3.478534× |
+| prefix-periodic-131072 | 1.032247× | 0.947082× | 1.878022× | 1.723077× |
+| prefix-periodic-1048576 | 1.062911× | 0.976064× | 1.798539× | 1.651587× |
+| prefix-repeated-131072 | 1.012677× | 0.938080× | 1.700352× | 1.575098× |
+| prefix-repeated-1048576 | 1.034364× | 0.954039× | 1.625450× | 1.499224× |
+| prefix-natural-4096 | 1.083503× | 1.099890× | 1.865332× | 1.893543× |
+| prefix-natural-1048576 | 1.501933× | 1.527530× | 1.210507× | 1.231137× |
+| prefix-random-1048576 | 2.124785× | 1.983389× | 3.000450× | 2.800781× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R278 timing, proof and replay evidence](native-checked-append-run.md).
+
+## Historical R276 measured comparison
+
 **38/81 cases faster than Roc (46.91%).** Goal 100%.
 R276 evaluates the first short ordered-reduction visit directly. Paired elapsed changes -0.289% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
