@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R287 carries checked view lengths through loop indices. Paired elapsed changes -0.463% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R286 / Roc | R287 / Roc | R286 / libdeflate | R287 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.198129× | 0.198445× | 2.519734× | 2.523749× |
+| prefix-random-8192 | 0.859466× | 0.857887× | 3.082899× | 3.077236× |
+| prefix-periodic-131072 | 0.830982× | 0.827618× | 1.507813× | 1.501709× |
+| prefix-periodic-1048576 | 0.846272× | 0.868962× | 1.410258× | 1.448070× |
+| prefix-repeated-131072 | 0.824455× | 0.823755× | 1.382717× | 1.381542× |
+| prefix-repeated-1048576 | 0.836137× | 0.836853× | 1.314402× | 1.315527× |
+| prefix-natural-4096 | 1.075146× | 1.067306× | 1.832369× | 1.819007× |
+| prefix-natural-1048576 | 1.479486× | 1.466281× | 1.195625× | 1.184954× |
+| prefix-random-1048576 | 1.780821× | 1.764568× | 2.518956× | 2.495966× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R287 timing, proof and replay evidence](native-current-matcher-lengths.md).
+
+## Historical R286 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R286 retains copy facts over single-predecessor block chains. Paired elapsed changes -3.002% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R285 / Roc | R286 / Roc | R285 / libdeflate | R286 / libdeflate |

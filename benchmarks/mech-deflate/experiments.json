@@ -57282,6 +57282,176 @@
         }
       },
       "complete_goal": false
+    },
+    "287": {
+      "git_parent": "e29b33e7836b9af8ba77d9d6ddc1dd0b95a849bc",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "e29b33e7836b9af8ba77d9d6ddc1dd0b95a849bc",
+      "retained_compiler": "R287",
+      "retained_source_packet_round": 287,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain checked current length bounds through loop indices.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "0709fc6d608b9a0506b0c85e50f2b39e5d533bfac1ba00a089cd107e3e6cb745",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/known_widths.rs": {
+            "before": "8aa3e28242aa8588a11c3155fb1cc287647c57f420d2f6e9eda564e7a2d213a8",
+            "after": "24dde6f3630e3ddfd14ac721381ea3491d1551204bbaeccd17ba3fb987701b14"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/known_widths_tests.rs": {
+            "before": "6a5f9fbb0b5bbaea2a275952a0507e9cc6e629e1f7bd8229b2da986cb0a5680e",
+            "after": "d0b92d2a8a028a932cdd02a3792543904f5ca5ecb5a10fbe4f8b2acd54afbc42"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "6d1507450719cd260ea26bed63b5692c906020cdc29871a855459d49d93d873c",
+            "after": "4df5ad526040199066c5b3f97eb9af2873c4b30d4436d10f8cc451284a26bb7e"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/selected_ranges.rs": {
+            "before": "9dce5535454694f24c94d10ffb87a2b7568f64f431d49f6d78f5efdba3dd623b",
+            "after": "8de2536ff2080c4259d6f75eb9955f43a5ae508e3410c1f37dc9227b699b56bb"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435"
+            }
+          },
+          "patch_sha256": "4129af708d08971fe429dd74d9217ba7d5e077d5c4276520b158637a3d71a119",
+          "library_sha256": "234c1bbb30921cc813e74f1317394306626cf56124800ad78e2fe954c5d7214b"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "c8096907f28c5301c6c70b1e2c4edc18f94dc3bb698e4902ae748db8a1628e8c",
+        "worker_sha256": "f34f7b0cc65c59d4a87dbe1513c820b7ff06dff2c2339d3806936f54396a4795"
+      },
+      "summary": {
+        "published_parent": "e29b33e7836b9af8ba77d9d6ddc1dd0b95a849bc",
+        "measured_parent": "e29b33e7836b9af8ba77d9d6ddc1dd0b95a849bc",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 287,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 287,
+        "selected_mode": "current-lengths",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9953720628679176,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r286": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "prefix-periodic-8192",
+          "ratio": 1.002617785228078
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.0764377773236944
+        },
+        "next_experiment": "Emit one copy of each required predicate in a captured-window gate. Two reached matcher entries repeat the same overflow and flat-view checks for their paired captures. Keep distinct current operands and the checked fallback."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "c8096907f28c5301c6c70b1e2c4edc18f94dc3bb698e4902ae748db8a1628e8c",
+            "metadata.json": "aa71dce0391fbe718a5932bef70eaadf3b1091ef5d122a95a2f44fb4b978275e"
+          },
+          "decoded": {
+            "object.o": "c8096907f28c5301c6c70b1e2c4edc18f94dc3bb698e4902ae748db8a1628e8c",
+            "metadata.json": "aa71dce0391fbe718a5932bef70eaadf3b1091ef5d122a95a2f44fb4b978275e"
+          }
+        },
+        "cleanup_tests_passed": 43,
+        "compiled_length_controls": 500,
+        "changed_machine_bodies": 1,
+        "all_other_machine_bodies_exact": true,
+        "removed_tree_write_guards": 12,
+        "retained_tree_floor_checks": 2
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r286": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-current-matcher-lengths.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r287-current-matcher-lengths-9737d0b95997.tar.gz",
+        "bytes": 5335748,
+        "sha256": "9737d0b959977f3f7c8a579212e7bfe440ddee5375d94bc7d88f63aea3b3a65c",
+        "files": 925,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "2c4dffeae6827ff1f4b63a079c3e8bc16f17cfe5d5ea2b7a00549d9e702efef6",
+            "counter-results.json": "d83132b998084087c4b87d256fc30a7fb8102d457d63775f1949bf5558b106d6",
+            "REPORT.md": "9363155e40aec8967ad22086cca52fe03936630f1356023075d82899d2ccab57",
+            "library-results.json": "5dc0886a7c3501cfe17f896f36bf70f9c3e85f7775baf5f76d358954d3070184",
+            "result-decision.json": "da0ea62fb8c1138eb8b5d26e07407926b9ba8a511a102136cc39b197cec18450",
+            "screen-results.json": "e4a30cefe5ad8a0e34afdd36475be5e3424e017b9b84f58707f73214240e5b13",
+            "current-lengths-profile-results.json": "997948615989dd99b63b3f044343ccff64af5a8f3062f5bffa1ec2fb3370a84f",
+            "matcher-profile-analysis.json": "071faf9235d62a484c26e441acc89a08aaa4252fc0d0bb6c92a450dec8dd9822"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
