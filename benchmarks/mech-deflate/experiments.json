@@ -55104,6 +55104,169 @@
         }
       },
       "complete_goal": false
+    },
+    "272": {
+      "git_parent": "5c4b281a2e4e8e4539035acb27abf7b43de496e6",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "8830db78789aee692d89583d25458bcc32f300b3",
+      "retained_compiler": "R270",
+      "retained_source_packet_round": 270,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain private page-backed zero allocation in the experimental benchmark runtime.",
+      "source": {
+        "runtime_changed": true,
+        "compiler_source_changed": false,
+        "source_program_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_object_unchanged": true
+      },
+      "summary": {
+        "round": 272,
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "published_parent": "5c4b281a2e4e8e4539035acb27abf7b43de496e6",
+        "measured_parent": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_source_packet_round": 270,
+        "compiler_object_unchanged": true,
+        "retain_allocation_policy": true,
+        "retained_runtime_packet_round": 272,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 27,
+          "after_count": 31,
+          "denominator": 81,
+          "before_percent": 33.333333333333336,
+          "after_percent": 38.27160493827161,
+          "change_percentage_points": 4.938271604938272
+        },
+        "faster_than_libdeflate_in_separate_cohort": {
+          "mech-r270": 3,
+          "mech-r272": 3
+        },
+        "all81_paired_after_over_before": 0.897470744264574,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 0.8956852744244393,
+          "primary-b": 0.8992597732818448
+        },
+        "pooled_gate_passed": 81,
+        "block_gate_passed": 81,
+        "gate_misses": {
+          "pooled": [],
+          "block": []
+        },
+        "crossed_below": [
+          "33027-periodic-window",
+          "prefix-periodic-32767",
+          "prefix-periodic-32768",
+          "prefix-periodic-32769"
+        ],
+        "crossed_above": [],
+        "logical_heap_families_identical": true,
+        "new_memory_policy": "Private anonymous zero-filled pages for non-byte zero requests spanning at least four OS pages",
+        "implementation_scope": "Experimental compact allocation helper on macOS; source program and generated compressor unchanged",
+        "complete_goal": false
+      },
+      "qualification": {
+        "verified": true,
+        "new_runtime_tests_original_and_decoded": 16,
+        "linked_calls": 10,
+        "complete_smokes": 324,
+        "original_decoded_compiler_objects_identical": true,
+        "compiler_object_identical_to_R270": true,
+        "primary_timing_wrapper_identical_to_R270": true,
+        "primary_counter_fields_identical_to_R270": true,
+        "owner_descriptor_words": 6,
+        "runtime_primitive": "fresh private anonymous zero-filled pages",
+        "selection": "zeroed non-byte numeric allocation spanning at least four system pages with page-compatible alignment",
+        "finite_ordinary_managed_contract_in_timing": false
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "balanced_blocks_per_case": 24,
+        "timed_calls": 245664,
+        "reference_capacity_matches": 81,
+        "libdeflate_exact_bytes_cases": 81,
+        "fresh_compression_all_cases": true,
+        "all_outputs_independently_inflated": true,
+        "all_input_and_output_aliases_preserved": true
+      },
+      "pins": {
+        "candidate_object": {
+          "sha256": "45d15c211dfc8b125d57be6409aee506fdb9f8df71f7c127fb544bdc1b05ebe5"
+        },
+        "candidate_worker": {
+          "sha256": "592c9dc3bf148fa74bdd123976425f249b103eb4f77427caf6800054268876e1"
+        },
+        "source": {
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "bytecode": {
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "original_decoded_exact": true,
+        "retained_object": {
+          "sha256": "45d15c211dfc8b125d57be6409aee506fdb9f8df71f7c127fb544bdc1b05ebe5"
+        },
+        "retained_worker": {
+          "sha256": "17349a3b1d31ffcdd6de1407b7d93e1fa9202a16e24583e49c9c1339ce8b9e1e"
+        }
+      },
+      "artifacts": [
+        {
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r272-private-zero-page-scratch-352cd43a9a80.tar.gz",
+          "bytes": 5722181,
+          "sha256": "352cd43a9a80a41ea341de16286aa9ec87b4b86959f86fec701dde05a767745c"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "352cd43a9a80a41ea341de16286aa9ec87b4b86959f86fec701dde05a767745c",
+        "verified_files": 1011,
+        "offline_reports": 6,
+        "compiler_source_packet_round": 270,
+        "retained_runtime_packet_round": 272,
+        "backend_source_files": 200,
+        "changed_backend_source_files": 0,
+        "runtime_source_files": 8,
+        "compiler_source_unchanged": true,
+        "replayed_output_hashes": {
+          "primary-results.json": "7cec29a7666be8036b777faeadcdf2f263ddc41361510f4b600fbbd1eb3d1ea8",
+          "counter-results.json": "1ab216bfd46723535efcf2152a5770f5f736e0b60ea8bbdee926aa04ceea80a5",
+          "REPORT.md": "eb974206d7a0ccd701bafed50b1d474c1b89c97af083c9699a162c743aca3678",
+          "mapped-compact-profile-results.json": "70bddefb5b56fc798ee503d6646875aa9fa6d1040c3f0fd018b6ce0cf1d72e42",
+          "library-results.json": "36acb29b388e3310d4c3ec2e5fce0f53a197caa1af35525259775a353e7df8c7",
+          "result-decision.json": "f664ee91643c0bd6431c537e26364d02e774a603f79eadc10e3b983d88450e66"
+        },
+        "stdout": "{\n  \"round\": 272,\n  \"cases\": 81,\n  \"blocks_per_case\": 48,\n  \"actors\": 3,\n  \"method\": \"Two fresh cohorts; all six balanced actor orders repeated four times per cohort. Ratios formed within each balanced block before geometric aggregation. The old pooled median and block-median 1.05 gates are reported unchanged. All adverse observations retained.\",\n  \"all81_paired_after_over_before\": 0.897470744264574,\n  \"cohort_all81_paired_after_over_before\": {\n    \"primary-a\": 0.8956852744244393,\n    \"primary-b\": 0.8992597732818448\n  },\n  \"original_1_05_gates_passed\": 81,\n  \"blockmean_1_05_gates_passed\": 81,\n  \"faster_than_reference\": {\n    \"case_inventory\": \"Fixed 81 complete compression cases, unchanged from R270\",\n    \"criterion\": \"Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count\",\n    \"goal_percent\": 100.0,\n    \"before_count\": 27,\n    \"after_count\": 31,\n    \"denominator\": 81,\n    \"before_percent\": 33.333333333333336,\n    \"after_percent\": 38.27160493827161,\n    \"change_percentage_points\": 4.938271604938272\n  }\n}\nCounter cohorts reconstructed; identical Mech heap families: True\nVerified all three library cohorts {'library-core': 5, 'library-frontier': 5, 'library-all': 81}\neight-literals 5493 {'other current image / harness / library': 1396, 'root': 1793, 'numeric phases': 2304}\nprefix-natural-1048576 5351 {'numeric phases': 5225, 'root': 67, 'other current image / harness / library': 59}\nprefix-periodic-32768 5379 {'numeric phases': 5147, 'root': 109, 'other current image / harness / library': 123}\nprefix-repeated-33027 5558 {'numeric phases': 5107, 'other current image / harness / library': 255, 'root': 196}\n{\n  \"round\": 272,\n  \"pr_base\": \"92f75db84e2523693648084bea16cd52ad60777a\",\n  \"published_parent\": \"5c4b281a2e4e8e4539035acb27abf7b43de496e6\",\n  \"measured_parent\": \"8830db78789aee692d89583d25458bcc32f300b3\",\n  \"compiler_source_packet_round\": 270,\n  \"compiler_object_unchanged\": true,\n  \"retain_allocation_policy\": true,\n  \"retained_runtime_packet_round\": 272,\n  \"faster_than_reference\": {\n    \"case_inventory\": \"Fixed 81 complete compression cases, unchanged from R270\",\n    \"criterion\": \"Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count\",\n    \"goal_percent\": 100.0,\n    \"before_count\": 27,\n    \"after_count\": 31,\n    \"denominator\": 81,\n    \"before_percent\": 33.333333333333336,\n    \"after_percent\": 38.27160493827161,\n    \"change_percentage_points\": 4.938271604938272\n  },\n  \"faster_than_libdeflate_in_separate_cohort\": {\n    \"mech-r270\": 3,\n    \"mech-r272\": 3\n  },\n  \"all81_paired_after_over_before\": 0.897470744264574,\n  \"cohort_all81_paired_after_over_before\": {\n    \"primary-a\": 0.8956852744244393,\n    \"primary-b\": 0.8992597732818448\n  },\n  \"pooled_gate_passed\": 81,\n  \"block_gate_passed\": 81,\n  \"gate_misses\": {\n    \"pooled\": [],\n    \"block\": []\n  },\n  \"crossed_below\": [\n    \"33027-periodic-window\",\n    \"prefix-periodic-32767\",\n    \"prefix-periodic-32768\",\n    \"prefix-periodic-32769\"\n  ],\n  \"crossed_above\": [],\n  \"logical_heap_families_identical\": true,\n  \"new_memory_policy\": \"Private anonymous zero-filled pages for non-byte zero requests spanning at least four OS pages\",\n  \"implementation_scope\": \"Experimental compact allocation helper on macOS; source program and generated compressor unchanged\",\n  \"complete_goal\": false\n}\nReplayed all 81 primary, counter and library results, profiles and source pins.\n"
+      },
+      "report": "docs/design/native-zero-page-scratch.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r272-private-zero-page-scratch-352cd43a9a80.tar.gz",
+        "bytes": 5722181,
+        "sha256": "352cd43a9a80a41ea341de16286aa9ec87b4b86959f86fec701dde05a767745c",
+        "files": 1011,
+        "reports_replayed": 6,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "7cec29a7666be8036b777faeadcdf2f263ddc41361510f4b600fbbd1eb3d1ea8",
+            "counter-results.json": "1ab216bfd46723535efcf2152a5770f5f736e0b60ea8bbdee926aa04ceea80a5",
+            "REPORT.md": "eb974206d7a0ccd701bafed50b1d474c1b89c97af083c9699a162c743aca3678",
+            "mapped-compact-profile-results.json": "70bddefb5b56fc798ee503d6646875aa9fa6d1040c3f0fd018b6ce0cf1d72e42",
+            "library-results.json": "36acb29b388e3310d4c3ec2e5fce0f53a197caa1af35525259775a353e7df8c7",
+            "result-decision.json": "f664ee91643c0bd6431c537e26364d02e774a603f79eadc10e3b983d88450e66"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
