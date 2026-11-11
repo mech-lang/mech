@@ -59289,6 +59289,89 @@
         }
       },
       "complete_goal": false
+    },
+    "299": {
+      "git_parent": "e90b7f3701a15b0a0bcc091b851f85caa8583678",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "e90b7f3701a15b0a0bcc091b851f85caa8583678",
+      "retained_compiler": "R297",
+      "retained_source_packet_round": 297,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after screening the checked end for paired immutable windows.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "compiler_patch_sha256": "fecb6bd0af760981652879580cab98dc1b5312475c07d8d64115032525fed159",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs": {
+            "before": "0365b5eb5de9c81dca0633301c0e06b51dac394b0018da748da1a15a577b9d6c",
+            "after": "d7117fabf21e8a6a0f1d178b534f380fc83964d70d2070c22f566426d31cf79d"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "before": "f52f1991f4a9ddedaf9ae5e2d720448d9da90274f37e394e3bfb995ba4236084",
+            "after": "a33b03bdfd9422a2e2dd0eecd542b4aa5a68dbd8471d68a21c2efcc20a89ac15"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs": {
+            "before": "b161dea1f8e3f11bdc80f38e2406440a97d8abca44e9920f24560e8998af2616",
+            "after": "985efe844c8dce015505847cc312c77bea4768f60f5c20ccf96d1878fb04b443"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_capture_windows.rs": {
+            "before": "d0744cd411a9397a4fbfe61ffde09564ce1af452c6a62a1a2702cdde11dae18a",
+            "after": "9d392fd8d1dae64b2ca1d3c3537f236864ccf8d860ebd3bdad3e53c5fbd267fe"
+          }
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "candidate_object_sha256": "46f75411ff4a6854af577a93de16e20f0f147fa34e783b7d2dbb805e3df80770",
+        "candidate_worker_sha256": "9b98248eadc1187517496e99fc26fbb7451545f8d87ce630a403a99412a73a27"
+      },
+      "summary": {
+        "round": 299,
+        "measured_parent": "c2aa0ebc8984e608791e0fca42fcc0ea8f44d7b9",
+        "published_parent": "e90b7f3701a15b0a0bcc091b851f85caa8583678",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retained_source_packet_round": 297,
+        "retained_runtime_packet_round": 272,
+        "retain_experimental_compiler": false,
+        "experiment": "checked end of paired immutable comparison windows",
+        "compiler_patch_sha256": "fecb6bd0af760981652879580cab98dc1b5312475c07d8d64115032525fed159",
+        "screen": 27,
+        "timed_calls": 151968,
+        "paired_elapsed_ratio": 0.9985251088101604,
+        "gates": {
+          "pooled_gate": 27,
+          "block_gate": 27
+        },
+        "source_program_changed": false,
+        "full_adoption_campaign": false,
+        "complete_smoke_calls": 162,
+        "compiled_gate_calls": 39366,
+        "focused_tests": 3,
+        "current_binary_profiles": 2,
+        "separate_counter_cohort": false,
+        "decoded_candidate": false,
+        "reason": "The measured repetitive 1 MiB cases are flat and the hot guard has six stack loads."
+      },
+      "report": "docs/design/native-checked-capture-ends.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r299-checked-capture-ends-4bc9d12dd8ac.tar.gz",
+        "bytes": 812505,
+        "sha256": "4bc9d12dd8aca8ab9ef552aec038f785924dc756f9dd407c9e7e70ad7f7db2ba",
+        "files": 92,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "screen-results.json": "4095f4fd56407def253e1c8935b0f523c2a472f287b15d6d649e3f4c481a579e",
+            "capture-route-analysis.json": "0c58c60ce5dd1e998cbd1490f4234fd797de29757d4a34ac40c3b4b1830540bd",
+            "checked-capture-ends-profile-results.json": "bcfeb89bff531a7d73521e805147c3c7ee93cc4132f0c7b015488a0d7dab7af3",
+            "result-decision.json": "8d90c259ef54b502f06c7580640542f6a9b894082889d357864f2b4c802e77cd",
+            "REPORT.md": "eaaaaf0ba75ac19f4cfb08a3c986e66afb930a226b42e12f90998c44a88d6a84"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
