@@ -144,7 +144,7 @@ fn selected(
     constrain(f, word, range, facts);
 }
 
-fn incoming(
+pub(super) fn incoming(
     f: &Function,
     cfg: &ControlFlowGraph,
     block: Block,
