@@ -14,6 +14,8 @@ R270 is retained. Paired elapsed improves 0.737% over R268, with 81/81 passes on
 
 [R270 timings, qualification and compiler patch](native-equality-loop-tiers.md). [Mech against libdeflate and Roc](native-libdeflate-comparison.md).
 
+R271 removes the recurring previous-node load and changes paired elapsed by -0.149%. The timing gates miss seven-stored-prefix. R270 remains retained. [R271 measurements and proof](native-append-tail-forwarding.md).
+
 ## Historical R268 measured comparison
 
 **Cases faster than Roc: 26/81 = 32.1%. Goal 100%.**

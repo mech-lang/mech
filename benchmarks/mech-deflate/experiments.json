@@ -54906,6 +54906,204 @@
         }
       },
       "complete_goal": false
+    },
+    "271": {
+      "git_parent": "8830db78789aee692d89583d25458bcc32f300b3",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "8830db78789aee692d89583d25458bcc32f300b3",
+      "retained_compiler": "R270",
+      "retained_source_packet_round": 270,
+      "decision": "Keep the prior compiler after measuring exact last-append forwarding.",
+      "source": {
+        "evaluated_only": true,
+        "files": 832,
+        "baseline": "R270",
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ]
+      },
+      "backend_source": {
+        "files": 200,
+        "changed": false,
+        "version": "Cranelift 0.131.3",
+        "register_allocator": "regalloc2 0.15.2"
+      },
+      "summary": {
+        "round": 271,
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "published_parent": "8830db78789aee692d89583d25458bcc32f300b3",
+        "measured_parent": "8830db78789aee692d89583d25458bcc32f300b3",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 270,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 27,
+          "after_count": 28,
+          "denominator": 81,
+          "before_percent": 33.333333333333336,
+          "after_percent": 34.5679012345679,
+          "change_percentage_points": 1.2345679012345627
+        },
+        "crossed_below": [
+          "prefix-periodic-32768"
+        ],
+        "crossed_above": [],
+        "gate_misses": {
+          "pooled": [],
+          "block": [
+            "seven-stored-prefix"
+          ]
+        },
+        "pooled_gate_passed": 81,
+        "block_gate_passed": 80,
+        "all81_paired_after_over_before": 0.9985064192298364,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 0.9963906118293318,
+          "primary-b": 1.0006267194877634
+        },
+        "identical_heap_families": true,
+        "next_frontier": [
+          {
+            "case": "33027-periodic-window",
+            "ratio": 1.0024544479457875
+          },
+          {
+            "case": "prefix-periodic-32769",
+            "ratio": 1.0063959265399918
+          },
+          {
+            "case": "prefix-periodic-32767",
+            "ratio": 1.006863563425254
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "ratio": 1.0084178598984719
+          },
+          {
+            "case": "prefix-repeated-65535",
+            "ratio": 1.0397103980431128
+          }
+        ],
+        "screens": {
+          "tail-word": {
+            "cases": 19,
+            "pooled_misses": [
+              "eight-literals"
+            ],
+            "block_misses": [
+              "seven-stored-prefix",
+              "eight-literals"
+            ],
+            "paired_elapsed": 0.9922546418566421
+          },
+          "tail-exact": {
+            "cases": 19,
+            "pooled_misses": [],
+            "block_misses": [
+              "seven-stored-prefix"
+            ],
+            "paired_elapsed": 0.9936113994971209
+          }
+        },
+        "exact_image_profiles": 4,
+        "library_followup_cases": 5,
+        "complete_goal": false
+      },
+      "qualification": {
+        "verified": true,
+        "native_tests_passed": 729,
+        "inherited_exclusions": 7,
+        "complete_smokes": 324,
+        "matching_calls_current": 2894,
+        "matching_calls_identical_prior": 2894,
+        "linked_path_alias_seed_controls": 108,
+        "fresh_resident_seed_checks": 10,
+        "resident_seed_default_work_denials": 4,
+        "machine_receipt": "machine-audit.json"
+      },
+      "libdeflate_followup": {
+        "cases": 5,
+        "balanced_blocks_per_case": 24,
+        "timed_calls": 6528,
+        "reference_capacity_matches": 5,
+        "libdeflate_exact_bytes_cases": 5,
+        "fresh_compression_all_cases": true,
+        "all_outputs_independently_inflated": true,
+        "all_input_and_output_aliases_preserved": true
+      },
+      "pins": {
+        "candidate_object": {
+          "sha256": "442aabc30e0454bc58b2ca61d300042cb24e4378c5ba21fb884bd3a740dfd543"
+        },
+        "candidate_worker": {
+          "sha256": "cb4f65865b9951e1359735891cef591064c02b6ecb13089c904262aac76c602d"
+        },
+        "source": {
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "bytecode": {
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "original_decoded_exact": true,
+        "retained_object": {
+          "sha256": "45d15c211dfc8b125d57be6409aee506fdb9f8df71f7c127fb544bdc1b05ebe5"
+        },
+        "retained_worker": {
+          "sha256": "17349a3b1d31ffcdd6de1407b7d93e1fa9202a16e24583e49c9c1339ce8b9e1e"
+        }
+      },
+      "artifacts": [
+        {
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r271-append-tail-forwarding-6d46e68498eb.tar.gz",
+          "bytes": 8600303,
+          "sha256": "6d46e68498ebfea413827efdd77a18059b86c43ba15d1e16bd2020947f1bf177"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "6d46e68498ebfea413827efdd77a18059b86c43ba15d1e16bd2020947f1bf177",
+        "verified_files": 2190,
+        "offline_reports": 6,
+        "retained_source_packet_round": 270,
+        "backend_source_files": 200,
+        "changed_backend_source_files": 0,
+        "candidate_compiler_source_files": 832,
+        "replayed_output_hashes": {
+          "primary-results.json": "50a6abdc9d59bd563eed33c77e5a91d6c10b0a36b3f5662fe36794688772bb52",
+          "counter-results.json": "13fd083b92c580e06d227dd312b4c63d412067b135bdb82acf3ebd66b4b24803",
+          "REPORT.md": "612c9a4c1c8ef8eaf451add700ad2520b490430b84865c812b052281207036de",
+          "tail-word-profile-results.json": "fb4b2899067501037fd50deaf549f0f2e3b4ddc14c396375d158e2e7476adead",
+          "tail-exact-profile-results.json": "1352fd4a83c187a696e8d56265e4edf979ad17ab2ca83ca5135e67a2d64d4114",
+          "result-decision.json": "4e2810c48a70a01eb4ce0d12a5d2883a5bc3e796579905d6c42c77a8c833fca3"
+        },
+        "stdout": "{\n  \"round\": 271,\n  \"cases\": 81,\n  \"blocks_per_case\": 48,\n  \"actors\": 3,\n  \"method\": \"Two fresh cohorts; all six balanced actor orders repeated four times per cohort. Ratios formed within each balanced block before geometric aggregation. The old pooled median and block-median 1.05 gates are reported unchanged. All adverse observations retained.\",\n  \"all81_paired_after_over_before\": 0.9985064192298364,\n  \"cohort_all81_paired_after_over_before\": {\n    \"primary-a\": 0.9963906118293318,\n    \"primary-b\": 1.0006267194877634\n  },\n  \"original_1_05_gates_passed\": 81,\n  \"blockmean_1_05_gates_passed\": 80,\n  \"faster_than_reference\": {\n    \"case_inventory\": \"Fixed 81 complete compression cases, unchanged from R270\",\n    \"criterion\": \"Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count\",\n    \"goal_percent\": 100.0,\n    \"before_count\": 27,\n    \"after_count\": 28,\n    \"denominator\": 81,\n    \"before_percent\": 33.333333333333336,\n    \"after_percent\": 34.5679012345679,\n    \"change_percentage_points\": 1.2345679012345627\n  }\n}\nCounter cohorts reconstructed; identical Mech heap families: True\nprefix-repeated-33027 5585 {'numeric phases': 4944, 'other current image / harness / library': 505, 'root': 136}\neight-literals 5509 {'other current image / harness / library': 3812, 'root': 852, 'numeric phases': 845}\nprefix-natural-1048576 5597 {'numeric phases': 5459, 'root': 71, 'other current image / harness / library': 67}\nprefix-periodic-32768 5348 {'numeric phases': 4835, 'root': 94, 'other current image / harness / library': 419}\nprefix-repeated-33027 5559 {'numeric phases': 4921, 'other current image / harness / library': 455, 'root': 183}\n{\n  \"round\": 271,\n  \"pr_base\": \"92f75db84e2523693648084bea16cd52ad60777a\",\n  \"published_parent\": \"8830db78789aee692d89583d25458bcc32f300b3\",\n  \"measured_parent\": \"8830db78789aee692d89583d25458bcc32f300b3\",\n  \"retain_experimental_compiler\": false,\n  \"retained_source_packet_round\": 270,\n  \"faster_than_reference\": {\n    \"case_inventory\": \"Fixed 81 complete compression cases, unchanged from R270\",\n    \"criterion\": \"Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count\",\n    \"goal_percent\": 100.0,\n    \"before_count\": 27,\n    \"after_count\": 28,\n    \"denominator\": 81,\n    \"before_percent\": 33.333333333333336,\n    \"after_percent\": 34.5679012345679,\n    \"change_percentage_points\": 1.2345679012345627\n  },\n  \"crossed_below\": [\n    \"prefix-periodic-32768\"\n  ],\n  \"crossed_above\": [],\n  \"gate_misses\": {\n    \"pooled\": [],\n    \"block\": [\n      \"seven-stored-prefix\"\n    ]\n  },\n  \"pooled_gate_passed\": 81,\n  \"block_gate_passed\": 80,\n  \"all81_paired_after_over_before\": 0.9985064192298364,\n  \"cohort_all81_paired_after_over_before\": {\n    \"primary-a\": 0.9963906118293318,\n    \"primary-b\": 1.0006267194877634\n  },\n  \"identical_heap_families\": true,\n  \"next_frontier\": [\n    {\n      \"case\": \"33027-periodic-window\",\n      \"ratio\": 1.0024544479457875\n    },\n    {\n      \"case\": \"prefix-periodic-32769\",\n      \"ratio\": 1.0063959265399918\n    },\n    {\n      \"case\": \"prefix-periodic-32767\",\n      \"ratio\": 1.006863563425254\n    },\n    {\n      \"case\": \"prefix-periodic-33027\",\n      \"ratio\": 1.0084178598984719\n    },\n    {\n      \"case\": \"prefix-repeated-65535\",\n      \"ratio\": 1.0397103980431128\n    }\n  ],\n  \"screens\": {\n    \"tail-word\": {\n      \"cases\": 19,\n      \"pooled_misses\": [\n        \"eight-literals\"\n      ],\n      \"block_misses\": [\n        \"seven-stored-prefix\",\n        \"eight-literals\"\n      ],\n      \"paired_elapsed\": 0.9922546418566421\n    },\n    \"tail-exact\": {\n      \"cases\": 19,\n      \"pooled_misses\": [],\n      \"block_misses\": [\n        \"seven-stored-prefix\"\n      ],\n      \"paired_elapsed\": 0.9936113994971209\n    }\n  },\n  \"exact_image_profiles\": 4,\n  \"library_followup_cases\": 5,\n  \"complete_goal\": false\n}\nReplayed timings, counters, exact-image samples and library comparison. Verified compiler source closure.\n"
+      },
+      "report": "docs/design/native-append-tail-forwarding.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r271-append-tail-forwarding-6d46e68498eb.tar.gz",
+        "bytes": 8600303,
+        "sha256": "6d46e68498ebfea413827efdd77a18059b86c43ba15d1e16bd2020947f1bf177",
+        "files": 2190,
+        "reports_replayed": 6,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "50a6abdc9d59bd563eed33c77e5a91d6c10b0a36b3f5662fe36794688772bb52",
+            "counter-results.json": "13fd083b92c580e06d227dd312b4c63d412067b135bdb82acf3ebd66b4b24803",
+            "REPORT.md": "612c9a4c1c8ef8eaf451add700ad2520b490430b84865c812b052281207036de",
+            "tail-word-profile-results.json": "fb4b2899067501037fd50deaf549f0f2e3b4ddc14c396375d158e2e7476adead",
+            "tail-exact-profile-results.json": "1352fd4a83c187a696e8d56265e4edf979ad17ab2ca83ca5135e67a2d64d4114",
+            "result-decision.json": "4e2810c48a70a01eb4ce0d12a5d2883a5bc3e796579905d6c42c77a8c833fca3"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
