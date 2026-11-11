@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R290 proves readable bounds at empty-run entry. Paired elapsed changes -0.308% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R288 / Roc | R290 / Roc | R288 / libdeflate | R290 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.198503× | 0.198765× | 2.514570× | 2.517892× |
+| prefix-random-8192 | 0.862860× | 0.863339× | 3.104736× | 3.106458× |
+| prefix-periodic-131072 | 0.811379× | 0.807536× | 1.469276× | 1.462316× |
+| prefix-periodic-1048576 | 0.826206× | 0.820947× | 1.396533× | 1.387645× |
+| prefix-repeated-131072 | 0.807803× | 0.805485× | 1.353858× | 1.349972× |
+| prefix-repeated-1048576 | 0.817260× | 0.813896× | 1.286007× | 1.280713× |
+| prefix-natural-4096 | 1.063857× | 1.058589× | 1.821370× | 1.812350× |
+| prefix-natural-1048576 | 1.467280× | 1.472776× | 1.183473× | 1.187906× |
+| prefix-random-1048576 | 1.782865× | 1.771598× | 2.520355× | 2.504427× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R290 timing, proof and replay evidence](native-empty-window.md).
+
+## Historical R288 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R288 emits each current window check once. Paired elapsed changes -0.799% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R287 / Roc | R288 / Roc | R287 / libdeflate | R288 / libdeflate |
