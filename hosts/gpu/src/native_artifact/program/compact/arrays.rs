@@ -140,6 +140,19 @@ impl Arrays {
         b.ins().jump(done, &[]);
         b.switch_to_block(done);
     }
+    /// Private scratch has no language-value reference. Its concrete heap
+    /// registration owns it until this explicit release or invocation cleanup.
+    pub(super) fn free_private(&self, b: &mut FunctionBuilder<'_>, owner: Value, error: Block) {
+        let present = b.create_block();
+        let done = b.create_block();
+        b.ins().brif(owner, present, &[], done, &[]);
+        b.switch_to_block(present);
+        let call = b.ins().call(self.free, &[self.heap, owner]);
+        let status = b.inst_results(call)[0];
+        success(b, status, error);
+        b.ins().jump(done, &[]);
+        b.switch_to_block(done);
+    }
     pub fn release(&self, b: &mut FunctionBuilder<'_>, owner: Value, error: Block) {
         let yes = b.create_block();
         let deallocate = b.create_block();

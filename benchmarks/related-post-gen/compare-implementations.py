@@ -127,6 +127,17 @@ def add_timing_comparisons(report):
         'Secondary post-JSON ratios require explicit compatible boundary declarations and one continuous interval including Mech admission and intervening setup. '
         'Unknown or preinitialized processing timers never qualify as matched references. '
         'Neither an excluded startup cost nor a favorable partial interval establishes complete-task parity.')
+    if report.get('primary_timing_metric') == 'post_json':
+        if not matched:
+            raise ValueError('Post-JSON primary timing requires an eligible matched reference')
+        report['primary_metric'] = 'post_json_over_fastest_matched_native'
+        report['primary_reference'] = report['matched_native_reference']
+        report['secondary_metric'] = 'whole_process_over_fastest'
+        report['primary_metric_definition'] = (
+            'Lower is faster. One continuous interval after JSON decoding includes input '
+            'preparation, allocation, worker creation/run/join, internal cleanup and result '
+            'materialization. Preinitialized workers and undocumented timers are ineligible. '
+            'Whole-process latency remains visible as a secondary diagnostic, not an acceptance gate.')
 
 
 def main():
@@ -143,6 +154,8 @@ def main():
     parser.add_argument('--seed', type=int, help='Required with --order randomized; the full generated order is retained.')
     args = parser.parse_args()
     config = json.loads(args.config.read_text())
+    if config.get('primary_timing_metric', 'whole_process') not in ('whole_process', 'post_json'):
+        raise ValueError('Unknown primary timing metric')
     if args.resources and platform.system() != 'Darwin':
         raise SystemExit('--resources currently requires macOS /usr/bin/time')
     variants = config['implementations']
@@ -172,6 +185,7 @@ def main():
         ],
         'timing_boundaries': config.get('timing_boundaries'),
         'reference': config['reference'],
+        'primary_timing_metric': config.get('primary_timing_metric', 'whole_process'),
         'input': {'path': str(input_path), 'sha256': sha(input_path), 'posts': len(json.loads(input_path.read_text()))},
         'implementations': [], 'samples': [], 'summary': {},
     }

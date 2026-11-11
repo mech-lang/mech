@@ -32,8 +32,7 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{Linkage, Module};
 use mech_engine::native_artifact::{
     NativeControlLoop as Loop, NativeIterationAction as Action, NativeIterationTerminator as Term,
-    NativeMatchAction as Scalar, NativeMatchTerminator as Branch,
-    NativeScalarAggregateAction as Aggregate,
+    NativeMatchAction as Scalar, NativeScalarAggregateAction as Aggregate,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -58,10 +57,78 @@ fn seal_auxiliary(
         next = b.func.layout.next_block(block);
     }
 }
+pub(super) struct Shared {
+    pub layout: Layout,
+    pub actions: Vec<Recipe>,
+    pub phases: Vec<phases::Phase>,
+    pub kernels: Vec<word_collections::Kernel>,
+    pub initial: BTreeMap<usize, Initial>,
+    pub histogram: Option<cranelift_module::FuncId>,
+    pub classified_histogram: Option<cranelift_module::FuncId>,
+    pub classes: Vec<super::utf8_classes::Proof>,
+}
+
 pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
     observe: bool,
+) -> Result<serde_json::Value, NativeCompileError> {
+    let plan = prepared.plan();
+    let layout = Layout::derive(plan)?;
+    let actions = (0..plan.blocks().len())
+        .map(|site| recipes::derive(plan, &layout, site))
+        .collect::<Result<Vec<_>, _>>()?;
+    let phases = phases::define(module, prepared, &layout, observe)?;
+    let kernels = word_collections::define(module, prepared, &layout, observe)?;
+    let initial = constants::prepare(module, plan, &layout)?;
+    let histogram = super::histogram::define(module, &actions)?;
+    let classes = super::utf8_classes::Proof::derive(prepared, &layout);
+    let classified_histogram = if classes.is_empty() {
+        None
+    } else {
+        Some(
+            crate::native_artifact::program::codegen::utf8_histogram::define(
+                module,
+                "mech_compact_classified_histogram",
+                true,
+                crate::native_artifact::program::codegen::utf8_histogram::Funding::Unmetered,
+                true,
+                true,
+            )?
+            .0,
+        )
+    };
+    let shared = Shared {
+        layout,
+        actions,
+        phases,
+        kernels,
+        initial,
+        histogram,
+        classified_histogram,
+        classes,
+    };
+    let mut workers = Vec::new();
+    for region in &prepared.metadata().parallel.regions {
+        let entry = super::parallel::Entry::derive(plan, region)?;
+        let report = define_entry(module, prepared, observe, &shared, Some(&entry), &[])?;
+        workers.push(super::parallel::Worker::new(
+            module, plan, region, entry, report,
+        )?);
+    }
+    let mut report = define_entry(module, prepared, observe, &shared, None, &workers)?;
+    report["native_worker_entries"] =
+        serde_json::json!(workers.iter().map(|w| &w.report).collect::<Vec<_>>());
+    Ok(report)
+}
+
+pub(super) fn define_entry<M: Module>(
+    module: &mut M,
+    prepared: &PreparedNativeProgram,
+    observe: bool,
+    shared: &Shared,
+    worker: Option<&super::parallel::Entry>,
+    workers: &[super::parallel::Worker],
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let endian = module.isa().endianness();
@@ -82,18 +149,20 @@ pub(in crate::native_artifact) fn define<M: Module>(
     }
     let route_locations = std::env::var_os("MECH_COMPACT_ROUTE_SOURCELOCS").is_some();
     eprintln!("compact-stage: typed layout");
-    let layout = Layout::derive(plan)?;
+    let layout = &shared.layout;
     eprintln!("compact-stage: flow proof");
-    let flow = Flow::derive(plan)?;
+    let flow = if let Some(worker) = worker {
+        worker.flow(plan)?
+    } else {
+        Flow::derive(plan)?
+    };
     eprintln!("compact-stage: operation recipes");
     if !plan.observations().is_empty() || !plan.effects().is_empty() {
         return Err(backend(
             "compact closed entry does not admit provider/effect boundaries",
         ));
     }
-    let actions = (0..plan.blocks().len())
-        .map(|site| recipes::derive(plan, &layout, site))
-        .collect::<Result<Vec<_>, _>>()?;
+    let actions = &shared.actions;
     let memory = actions
         .iter()
         .enumerate()
@@ -108,14 +177,23 @@ pub(in crate::native_artifact) fn define<M: Module>(
             }
         }
     }
-    let phases = if memory {
-        phases::define(module, prepared, &layout, observe)?
-    } else {
-        Vec::new()
-    };
-    let packs = word_packs::derive(prepared)?;
+    let phases = shared
+        .phases
+        .iter()
+        .filter(|p| {
+            flow.reachable[p.header] && p.destinations().iter().all(|&site| flow.reachable[site])
+        })
+        .collect::<Vec<_>>();
+    let packs = word_packs::derive(prepared)?
+        .into_iter()
+        .filter(|p| {
+            flow.reachable[p.first as usize]
+                && flow.reachable[p.last as usize]
+                && flow.reachable[p.next as usize]
+        })
+        .collect::<Vec<_>>();
     let phase_geometry = phase_storage::Geometry::derive(phases.iter().map(|p| p.packet_words()))?;
-    let word_kernels = word_collections::define(module, prepared, &layout, observe)?;
+    let word_kernels = &shared.kernels;
     let owner_flow = OwnerFlow::derive(plan, &layout, &flow, &actions)?;
     let guards = Guards::derive(plan, &flow);
     let transfers = owner_flow.transfers(&flow, &guards);
@@ -211,7 +289,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     } else {
         Vec::new()
     };
-    let initial = constants::prepare(module, plan, &layout)?;
+    let initial = &shared.initial;
     let reductions = if memory {
         widening_reduction::derive(prepared, &layout, &flow, &actions, &initial)
     } else {
@@ -223,20 +301,19 @@ pub(in crate::native_artifact) fn define<M: Module>(
     let mut inputs = BTreeMap::new();
     let mut input_words = 0;
     let mut ports = vec![];
-    for port in plan.inputs() {
-        let id = port.value().get();
+    for &id in &flow.inputs {
         let ty = layout.ty(id);
-        ports.push(serde_json::json!({"name":port.name(),"value":id,"input_offset":input_words,"type":ty.summary()}));
+        ports.push(serde_json::json!({"name":plan.inputs().iter().find(|p|p.value().get()==id).map(|p|p.name()),"value":id,"input_offset":input_words,"type":ty.summary()}));
         for index in 0..ty.words {
             inputs.insert(layout.slot(id) + index, input_words + index);
         }
         input_words += ty.words;
     }
-    let symbol = if memory {
+    let symbol = worker.map(|w| w.symbol.as_str()).unwrap_or(if memory {
         "mech_compact_closed_v2"
     } else {
         "mech_compact_closed_v1"
-    };
+    });
     let mut signature = module.make_signature();
     signature.params = vec![AbiParam::new(types::I64); if memory { 3 } else { 2 }];
     signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -260,6 +337,13 @@ pub(in crate::native_artifact) fn define<M: Module>(
         } else {
             None
         };
+        let histogram = shared
+            .histogram
+            .map(|id| module.declare_func_in_func(id, b.func));
+        let classified_histogram = shared
+            .classified_histogram
+            .map(|id| module.declare_func_in_func(id, b.func));
+        let classes = super::utf8_classes::State::reserve(&mut b, &shared.classes, &flow);
         let collections = Collections::new(&mut b, plan, zero)?;
         let phase_packets = phase_geometry
             .map(|geometry| geometry.reserve(&mut b))
@@ -297,10 +381,10 @@ pub(in crate::native_artifact) fn define<M: Module>(
             |_| MemFlags::new(),
         )?;
         if let Some(arrays) = &arrays {
-            for port in plan.inputs() {
-                for &lane in &layout.ty(port.value().get()).owners {
-                    let slot = layout.slot(port.value().get()) + lane;
-                    if owner_flow.live_at_entry(plan.entry() as usize, slot) {
+            for &value in &flow.inputs {
+                for &lane in &layout.ty(value).owners {
+                    let slot = layout.slot(value) + lane;
+                    if owner_flow.live_at_entry(flow.entry, slot) {
                         let owner = words.read(&mut b, slot);
                         arrays.retain(&mut b, owner);
                     } else {
@@ -341,9 +425,9 @@ pub(in crate::native_artifact) fn define<M: Module>(
             remaining[chain.exit()] += 1;
         }
         let mut last_layout = None;
-        b.ins().jump(blocks[plan.entry() as usize].unwrap(), &[]);
-        if remaining[plan.entry() as usize] == 0 {
-            b.seal_block(blocks[plan.entry() as usize].unwrap());
+        b.ins().jump(blocks[flow.entry].unwrap(), &[]);
+        if remaining[flow.entry] == 0 {
+            b.seal_block(blocks[flow.entry].unwrap());
         }
         seal_auxiliary(&mut b, &source_blocks, entry, &mut last_layout);
         // One shared action/settlement implementation serves both the
@@ -354,6 +438,9 @@ pub(in crate::native_artifact) fn define<M: Module>(
                                private: Option<&super::private_chains::Admitted<'_>>|
          -> Result<(), NativeCompileError> {
             let block = &plan.blocks()[site];
+            if flow.skip_action[site] {
+                return Ok(());
+            }
             let mut previous = vec![];
             if memory {
                 for &value in &flow.defs[site] {
@@ -461,6 +548,16 @@ pub(in crate::native_artifact) fn define<M: Module>(
                     *output,
                     error,
                     endian,
+                    histogram,
+                    classes
+                        .iter()
+                        .find(|state| state.proof.producer == site)
+                        .map(|state| {
+                            (
+                                classified_histogram.expect("proved native classifier"),
+                                state,
+                            )
+                        }),
                 )?,
                 Recipe::Buffer {
                     operation,
@@ -794,18 +891,18 @@ pub(in crate::native_artifact) fn define<M: Module>(
                 b.set_srcloc(cranelift_codegen::ir::SourceLoc::new(site as u32));
             }
             emit_action(&mut b, site, error, None)?;
-            if block.terminator() == Term::Scalar(Branch::Complete) {
+            if flow.complete[site] {
                 let mut results = vec![];
-                for port in plan.outputs() {
-                    let base = layout.slot(port.value().get());
-                    for field in 0..layout.ty(port.value().get()).words {
+                for &value in &flow.outputs {
+                    let base = layout.slot(value);
+                    for field in 0..layout.ty(value).words {
                         results.push(words.read(&mut b, base + field));
                     }
                 }
                 if let Some(arrays) = &arrays {
-                    for port in plan.outputs() {
-                        for &lane in &layout.ty(port.value().get()).owners {
-                            let owner = words.read(&mut b, layout.slot(port.value().get()) + lane);
+                    for &value in &flow.outputs {
+                        for &lane in &layout.ty(value).owners {
+                            let owner = words.read(&mut b, layout.slot(value) + lane);
                             arrays.retain(&mut b, owner);
                         }
                     }
@@ -815,6 +912,11 @@ pub(in crate::native_artifact) fn define<M: Module>(
                     b.ins().store(MemFlags::new(), value, output, offset(at)?);
                 }
                 output_words = results.len();
+                if let Some(arrays) = &arrays {
+                    for state in &classes {
+                        state.finish(&mut b, arrays, error);
+                    }
+                }
                 b.ins().return_(&[zero, zero]);
             } else {
                 let mut edges = BTreeMap::new();
@@ -837,6 +939,34 @@ pub(in crate::native_artifact) fn define<M: Module>(
                     exit,
                 } = block.terminator()
                 {
+                    for state in &classes {
+                        if let Some(region) = state.at_header(site) {
+                            state.emit_lookup(
+                                &mut b,
+                                &words,
+                                layout,
+                                arrays.as_ref().unwrap(),
+                                &collections,
+                                region,
+                                target(exit),
+                                error,
+                                endian,
+                            )?;
+                        }
+                    }
+                    if let Some(worker) = workers.iter().find(|w| w.iteration == iteration) {
+                        worker.emit(
+                            module,
+                            &mut b,
+                            &words,
+                            layout,
+                            arrays.as_ref().unwrap(),
+                            &collections,
+                            plan,
+                            target(exit),
+                            error,
+                        )?;
+                    }
                     collections.header(
                         module,
                         &mut b,
@@ -975,7 +1105,15 @@ pub(in crate::native_artifact) fn define<M: Module>(
     }
     eprintln!("compact-stage: machine code");
     let function = module
-        .declare_function(symbol, Linkage::Export, &signature)
+        .declare_function(
+            symbol,
+            if worker.is_some() {
+                Linkage::Local
+            } else {
+                Linkage::Export
+            },
+            &signature,
+        )
         .map_err(backend)?;
     module
         .define_function(function, &mut context)
@@ -1010,7 +1148,15 @@ pub(in crate::native_artifact) fn define<M: Module>(
         widening_reduction::define(module, function)?;
     }
     Ok({
-        let mut report = serde_json::json!({"private_indexed_chains":chains.iter().map(|chain|chain.summary()).collect::<Vec<_>>(),"phase_call_storage":phase_geometry.map(|g|g.summary()),"symbol":symbol,"buffer_result_sites":buffer_results.iter().enumerate().filter_map(|(site, value)|value.map(|(source, destination, allowed)|serde_json::json!({"site":site,"source_owner_slot":source,"result_owner_slot":destination,"consume":consuming[site],"can_finish_source":allowed}))).collect::<Vec<_>>(),"omitted_copy_owner_lanes":omitted_copy_owners,"prechange_retirement_sites":retire_before_change.iter().enumerate().filter_map(|(site, slots)|(!slots.is_empty()).then_some(serde_json::json!({"site":site,"slots":slots}))).collect::<Vec<_>>(),"source_error_origins":"cold-return constants","owner_transfer_lanes":transfers.iter().map(Vec::len).sum::<usize>(),"owner_transfer_sites":transfers.iter().enumerate().filter_map(|(site, lanes)|(!lanes.is_empty()).then_some(serde_json::json!({"site":site,"lanes":lanes}))).collect::<Vec<_>>(),"phase_observer":observe,"word_pack_sites":packs.iter().map(|p|serde_json::json!({"first":p.first,"last":p.last,"width":p.width,"next":p.next})).collect::<Vec<_>>(),"word_collections":word_kernels.iter().map(|k|&k.summary).collect::<Vec<_>>(),"numeric_phases":phases.iter().map(|p|p.summary(&owner_flow)).collect::<Vec<_>>(),"concrete_heap_context":memory,"inputs":ports,"input_words":input_words,"output_words":output_words,"output_types":plan.outputs().iter().map(|p|layout.ty(p.value().get()).summary()).collect::<Vec<_>>(),"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"source_blocks":plan.blocks().len(),"reachable_blocks":flow.reachable.iter().filter(|&&v|v).count(),"all_path_initialization_proved":true,"calls":calls,"guarded_consuming_sites":consuming.iter().enumerate().filter_map(|(site, &yes)| yes.then_some(site)).collect::<Vec<_>>(),"cleanup":cleanup,"origins":plan.blocks().iter().map(|b|b.origin()).collect::<Vec<_>>(),"typed_ir_version":crate::native_artifact::program::image::identity::NATIVE_PROGRAM_TYPED_IR_VERSION,"contract":"Diagnostic typed closed computation; ordinary exact resource/admission/recovery contract omitted. Not NoLimits or qualified ordinary entry."});
+        let mut report = serde_json::json!({"private_indexed_chains":chains.iter().map(|chain|chain.summary()).collect::<Vec<_>>(),"phase_call_storage":phase_geometry.map(|g|g.summary()),"symbol":symbol,"buffer_result_sites":buffer_results.iter().enumerate().filter_map(|(site, value)|value.map(|(source, destination, allowed)|serde_json::json!({"site":site,"source_owner_slot":source,"result_owner_slot":destination,"consume":consuming[site],"can_finish_source":allowed}))).collect::<Vec<_>>(),"omitted_copy_owner_lanes":omitted_copy_owners,"prechange_retirement_sites":retire_before_change.iter().enumerate().filter_map(|(site, slots)|(!slots.is_empty()).then_some(serde_json::json!({"site":site,"slots":slots}))).collect::<Vec<_>>(),"source_error_origins":"cold-return constants","owner_transfer_lanes":transfers.iter().map(Vec::len).sum::<usize>(),"owner_transfer_sites":transfers.iter().enumerate().filter_map(|(site, lanes)|(!lanes.is_empty()).then_some(serde_json::json!({"site":site,"lanes":lanes}))).collect::<Vec<_>>(),"phase_observer":observe,"word_pack_sites":packs.iter().map(|p|serde_json::json!({"first":p.first,"last":p.last,"width":p.width,"next":p.next})).collect::<Vec<_>>(),"word_collections":word_kernels.iter().map(|k|&k.summary).collect::<Vec<_>>(),"numeric_phases":phases.iter().map(|p|p.summary(&owner_flow)).collect::<Vec<_>>(),"concrete_heap_context":memory,"inputs":ports,"input_words":input_words,"output_words":output_words,"output_types":flow.outputs.iter().map(|&v|layout.ty(v).summary()).collect::<Vec<_>>(),"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"source_blocks":plan.blocks().len(),"reachable_blocks":flow.reachable.iter().filter(|&&v|v).count(),"all_path_initialization_proved":true,"calls":calls,"guarded_consuming_sites":consuming.iter().enumerate().filter_map(|(site, &yes)| yes.then_some(site)).collect::<Vec<_>>(),"cleanup":cleanup,"origins":plan.blocks().iter().map(|b|b.origin()).collect::<Vec<_>>(),"typed_ir_version":crate::native_artifact::program::image::identity::NATIVE_PROGRAM_TYPED_IR_VERSION,"contract":"Diagnostic typed closed computation; ordinary exact resource/admission/recovery contract omitted. Not NoLimits or qualified ordinary entry."});
+        report["native_string_classes"] = serde_json::json!(
+            shared
+                .classes
+                .iter()
+                .filter(|p| flow.reachable[p.producer])
+                .map(|p| p.summary())
+                .collect::<Vec<_>>()
+        );
         if let Some(current_predicates) = current_predicates {
             report["current_predicates"] = serde_json::json!(current_predicates);
         }

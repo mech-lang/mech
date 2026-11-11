@@ -125,6 +125,29 @@ impl Collections {
         self.set(b, id, view);
         arrays.release(b, previous, error);
     }
+    pub(super) fn parallel_cursor(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        iteration: u32,
+    ) -> Result<(Value, Value), NativeCompileError> {
+        let cursor = self.cursor(iteration)?;
+        Ok((b.use_var(cursor.index), b.use_var(cursor.count)))
+    }
+    pub(super) fn parallel_result(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        arrays: &Arrays,
+        collection: u32,
+        iteration: u32,
+        view: &[Value],
+        count: Value,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        self.replace(b, arrays, collection, view, error);
+        let cursor = self.cursor(iteration)?;
+        b.def_var(cursor.index, count);
+        Ok(())
+    }
     pub fn after(
         &self,
         b: &mut FunctionBuilder<'_>,

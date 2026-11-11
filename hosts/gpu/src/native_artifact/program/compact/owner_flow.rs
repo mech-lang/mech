@@ -8,8 +8,7 @@ use super::{flow::Flow, guards::Guards, layout::Layout, recipes::Recipe};
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use mech_engine::native_artifact::{
     NativeAggregateWord as Word, NativeCollectionSource as Source, NativeControlLoop as Loop,
-    NativeIterationAction as Action, NativeIterationTerminator as Term,
-    NativeMatchTerminator as Branch, NativeProgramArtifactPlan as Plan,
+    NativeIterationAction as Action, NativeProgramArtifactPlan as Plan,
     NativeScalarAggregateAction as Aggregate,
 };
 use std::collections::BTreeMap;
@@ -87,82 +86,89 @@ impl OwnerFlow {
                     }
                     Ok(())
                 };
-            match recipe {
-                Recipe::Aggregate(Aggregate::Copy { source, output }) => {
-                    copy(source.get(), output.get(), 0)?
-                }
-                Recipe::Aggregate(Aggregate::Project {
-                    source,
-                    offset,
-                    output,
-                    ..
-                }) => copy(source.get(), output.get(), *offset)?,
-                Recipe::Aggregate(Aggregate::Pack { output, words }) => {
-                    for &lane in &layout.ty(output.get()).owners {
-                        let from = match words.get(lane) {
-                            Some(Word::Field(source, field)) => Some(owner(source.get(), *field)?),
-                            Some(Word::Constant(0)) => None,
-                            _ => {
-                                return Err(backend(
-                                    "compact aggregate owner has no checked owner-word source",
-                                ));
-                            }
-                        };
-                        if let Some(from) = from {
-                            copies[site].push((owner(output.get(), lane)?, from));
-                        }
+            if !flow.skip_action[site] {
+                match recipe {
+                    Recipe::Aggregate(Aggregate::Copy { source, output }) => {
+                        copy(source.get(), output.get(), 0)?
                     }
-                }
-                Recipe::Read { source, .. } => uses[site].extend(owners(source.get())),
-                Recipe::Buffer { operands, .. } => {
-                    // Includes the helper's owner inspection and all source
-                    // payloads, even when the resulting value is unused.
-                    for value in operands {
-                        uses[site].extend(owners(value.get()));
-                    }
-                }
-                Recipe::None => match plan.blocks()[site].action() {
-                    Action::Initialize { iteration } | Action::Latch { iteration } => {
-                        if let Loop::Tail(tail) = &plan.iterations()[*iteration as usize] {
-                            let source = if matches!(
-                                plan.blocks()[site].action(),
-                                Action::Initialize { .. }
-                            ) {
-                                tail.seed()
-                            } else {
-                                tail.next()
+                    Recipe::Aggregate(Aggregate::Project {
+                        source,
+                        offset,
+                        output,
+                        ..
+                    }) => copy(source.get(), output.get(), *offset)?,
+                    Recipe::Aggregate(Aggregate::Pack { output, words }) => {
+                        for &lane in &layout.ty(output.get()).owners {
+                            let from = match words.get(lane) {
+                                Some(Word::Field(source, field)) => {
+                                    Some(owner(source.get(), *field)?)
+                                }
+                                Some(Word::Constant(0)) => None,
+                                _ => {
+                                    return Err(backend(
+                                        "compact aggregate owner has no checked owner-word source",
+                                    ));
+                                }
                             };
-                            copy(source.get(), tail.carrier().get(), 0)?;
-                        }
-                        // Collection initialization reads length only; its
-                        // selected element actions below hold the payload.
-                    }
-                    Action::CollectionElement { iteration } => {
-                        let Loop::Collection(generator) = &plan.iterations()[*iteration as usize]
-                        else {
-                            return Err(backend("compact owner element lacks collection"));
-                        };
-                        if generator.element().is_some() {
-                            if let Source::Value(source) = generator.source() {
-                                uses[site].extend(owners(source.get()));
+                            if let Some(from) = from {
+                                copies[site].push((owner(output.get(), lane)?, from));
                             }
                         }
                     }
-                    Action::CollectionPush { value, .. } => uses[site].extend(owners(value.get())),
-                    _ => {}
-                },
-                Recipe::Aggregate(Aggregate::Observe { .. })
-                | Recipe::Length { .. }
-                | Recipe::StringEqual { .. } => {}
-                Recipe::Pending(_) => {
-                    return Err(backend(
-                        "compact owner proof encountered an unresolved operation",
-                    ));
+                    Recipe::Read { source, .. } => uses[site].extend(owners(source.get())),
+                    Recipe::Buffer { operands, .. } => {
+                        // Includes the helper's owner inspection and all source
+                        // payloads, even when the resulting value is unused.
+                        for value in operands {
+                            uses[site].extend(owners(value.get()));
+                        }
+                    }
+                    Recipe::None => match plan.blocks()[site].action() {
+                        Action::Initialize { iteration } | Action::Latch { iteration } => {
+                            if let Loop::Tail(tail) = &plan.iterations()[*iteration as usize] {
+                                let source = if matches!(
+                                    plan.blocks()[site].action(),
+                                    Action::Initialize { .. }
+                                ) {
+                                    tail.seed()
+                                } else {
+                                    tail.next()
+                                };
+                                copy(source.get(), tail.carrier().get(), 0)?;
+                            }
+                            // Collection initialization reads length only; its
+                            // selected element actions below hold the payload.
+                        }
+                        Action::CollectionElement { iteration } => {
+                            let Loop::Collection(generator) =
+                                &plan.iterations()[*iteration as usize]
+                            else {
+                                return Err(backend("compact owner element lacks collection"));
+                            };
+                            if generator.element().is_some() {
+                                if let Source::Value(source) = generator.source() {
+                                    uses[site].extend(owners(source.get()));
+                                }
+                            }
+                        }
+                        Action::CollectionPush { value, .. } => {
+                            uses[site].extend(owners(value.get()))
+                        }
+                        _ => {}
+                    },
+                    Recipe::Aggregate(Aggregate::Observe { .. })
+                    | Recipe::Length { .. }
+                    | Recipe::StringEqual { .. } => {}
+                    Recipe::Pending(_) => {
+                        return Err(backend(
+                            "compact owner proof encountered an unresolved operation",
+                        ));
+                    }
                 }
             }
-            if plan.blocks()[site].terminator() == Term::Scalar(Branch::Complete) {
-                for port in plan.outputs() {
-                    post_uses[site].extend(owners(port.value().get()));
+            if flow.complete[site] {
+                for &value in &flow.outputs {
+                    post_uses[site].extend(owners(value));
                 }
             }
         }

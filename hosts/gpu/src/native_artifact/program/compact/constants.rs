@@ -203,7 +203,7 @@ fn flatten<M: Module>(
                 module.define_data(id, &description).map_err(backend)?;
                 out[0] = Initial::Table(id);
             }
-            for (at, n) in [(1, length), (2, length), (3, 1), (4, length)] {
+            for (at, n) in [(1, length), (2, length), (3, 0), (4, 0)] {
                 out[at] = Initial::Bits(n as u64);
             }
         }

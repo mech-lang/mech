@@ -8,6 +8,11 @@ mod abi;
 mod application;
 #[cfg(feature = "canonical-native-benchmark-policy-runtime")]
 mod benchmark_policy;
+#[cfg(any(
+    feature = "canonical-native-program",
+    feature = "canonical-native-program-runtime"
+))]
+pub mod compact_runtime;
 #[cfg(feature = "canonical-native")]
 mod compiler;
 mod identity;
