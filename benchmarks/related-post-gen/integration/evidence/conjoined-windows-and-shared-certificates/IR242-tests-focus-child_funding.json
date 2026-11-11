@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-conjoined-window-integration-tests-20261107-v2/mech_gpu-tests",
+    "child_funding",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 8.986535457894206
+}

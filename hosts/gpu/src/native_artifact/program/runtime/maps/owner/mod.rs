@@ -13,15 +13,21 @@ use crate::native_artifact::{
 use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation, Value};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMapOwnerRegion};
 
+pub(in crate::native_artifact::program::runtime) mod borrowed_records;
 mod caller_geometry;
 mod closed;
 pub(in crate::native_artifact::program::runtime) mod frozen;
+pub(in crate::native_artifact::program::runtime) mod generic_dictionary;
+mod map_key_views;
+mod matrix_keys;
+pub(in crate::native_artifact::program::runtime) mod seed_frames;
 mod spans;
 use crate::native_artifact::program::runtime::maps::owner::frozen::FrozenSlot;
 
 pub(in crate::native_artifact::program::runtime) enum Publication {
     Canonical(Value),
     Frozen(u64),
+    Dictionary(super::string::frozen::FrozenStringMap),
 }
 
 /// Lazy owning-session lane. No table metadata is allocated merely because a
@@ -170,6 +176,36 @@ impl Slot<'_> {
         }
     }
 }
+impl Session<'_> {
+    #[cfg(test)]
+    pub(in crate::native_artifact::program::runtime) fn has_borrowed_dictionary(
+        &self,
+        index: usize,
+    ) -> bool {
+        self.state
+            .as_ref()
+            .is_some_and(|state| state.has_borrowed_dictionary(index))
+    }
+
+    pub(in crate::native_artifact::program::runtime) fn matrix_key_retained_nodes(
+        &self,
+        work: &mut NativeWorkMeter,
+    ) -> Result<u64, Error> {
+        self.state.as_ref().map_or(Ok(0), |state| {
+            if !state.matrix_keys.is_empty() {
+                work.charge(Phase::Setup, amount(state.matrix_keys.len(), 64, 0)?)?;
+            }
+            add(
+                state.matrix_key_nodes()?,
+                amount(
+                    state.matrix_keys.len(),
+                    (2 * core::mem::size_of::<matrix_keys::Lane>()) as u64,
+                    0,
+                )?,
+            )
+        })
+    }
+}
 #[cfg(test)]
 impl Session<'_> {
     pub(in crate::native_artifact::program::runtime) fn slot_phase(
@@ -184,6 +220,9 @@ pub(in crate::native_artifact::program::runtime) struct State<'plan> {
     // Tables/keys retire before the enclosing admitted fixed lane.
     slots: Box<[Slot<'plan>]>,
     spans: Box<[Option<spans::Lane>]>,
+    matrix_keys: Box<[matrix_keys::Lane]>,
+    dictionaries: Box<[Option<generic_dictionary::Dictionary>]>,
+    seeds: Box<[Option<seed_frames::Seed>]>,
     descriptor: &'plan NativeProgramDescriptor,
     work_identity: u64,
     active_tables: u64,
@@ -191,9 +230,10 @@ pub(in crate::native_artifact::program::runtime) struct State<'plan> {
     caller: Option<caller_geometry::Caller>,
     reservation: ManagedMemoryReservation,
     _nodes: ManagedNodeReservation,
+    borrowed_records: borrowed_records::Lanes,
 }
 
-fn storage_error(error: StorageError) -> Error {
+pub(in crate::native_artifact::program::runtime) fn storage_error(error: StorageError) -> Error {
     match error {
         StorageError::Memory(error) => NativeExecutionError::Memory { error }.into(),
         StorageError::Work(error) => NativeExecutionError::LibraryWork {
@@ -213,6 +253,32 @@ fn add(a: u64, b: u64) -> Result<u64, Error> {
 }
 
 impl<'plan> State<'plan> {
+    fn private_geometry_nodes(&self, ctx: &mut MapExecution<'_, '_, '_, '_>) -> Result<u64, Error> {
+        let mut nodes = self.reservation.capacity_bytes();
+        for slot in &self.slots {
+            if let Some(frozen) = &slot.frozen {
+                nodes = add(nodes, frozen.map.retained_nodes())?;
+            }
+            if let Some(binding) = &slot.binding {
+                nodes = add(nodes, binding.retained_nodes().map_err(storage_error)?)?;
+            }
+        }
+        for dictionary in self.dictionaries.iter().flatten() {
+            nodes = add(nodes, dictionary.map.retained_nodes())?;
+        }
+        ctx.work()
+            .charge(Phase::Setup, amount(self.seeds.len(), 64, 0)?)?;
+        for seed in self.seeds.iter().flatten() {
+            nodes = add(nodes, seed.frame.metadata_demand().retained_nodes)?;
+        }
+        for span in &self.spans {
+            if matches!(span, Some(spans::Lane::Span { .. })) {
+                nodes = add(nodes, 2)?;
+            }
+        }
+        nodes = add(nodes, self.matrix_key_nodes()?)?;
+        Ok(nodes)
+    }
     #[cfg(test)]
     pub(in crate::native_artifact::program::runtime) fn new(
         descriptor: &'plan NativeProgramDescriptor,
@@ -245,11 +311,41 @@ impl<'plan> State<'plan> {
             amount(
                 count,
                 (2 * core::mem::size_of::<Slot<'plan>>()) as u64,
-                (core::mem::size_of::<Self>() + 128) as u64,
+                // Two generation/visit witnesses fit the existing fixed
+                // header slack; they retain no payload or allocation.
+                (core::mem::size_of::<Self>() - core::mem::size_of::<borrowed_records::Lanes>()
+                    + 128) as u64,
             )?,
             amount(
                 span_count,
                 (2 * core::mem::size_of::<Option<spans::Lane>>()) as u64,
+                0,
+            )?,
+        )?;
+        let matrix_key_count = descriptor.metadata().matrix_map_keys.regions.len();
+        let bytes = add(
+            bytes,
+            amount(
+                matrix_key_count,
+                (2 * core::mem::size_of::<matrix_keys::Lane>()) as u64,
+                0,
+            )?,
+        )?;
+        let dictionary_count = descriptor.metadata().generic_dictionary.regions.len();
+        let bytes = add(
+            bytes,
+            amount(
+                dictionary_count,
+                (2 * core::mem::size_of::<Option<generic_dictionary::Dictionary>>()) as u64,
+                0,
+            )?,
+        )?;
+        let seed_count = descriptor.metadata().dictionary_seed_frames.regions.len();
+        let bytes = add(
+            bytes,
+            amount(
+                seed_count,
+                (2 * core::mem::size_of::<Option<seed_frames::Seed>>()) as u64,
                 0,
             )?,
         )?;
@@ -261,6 +357,9 @@ impl<'plan> State<'plan> {
             amount(
                 count
                     .checked_add(span_count)
+                    .and_then(|n| n.checked_add(matrix_key_count))
+                    .and_then(|n| n.checked_add(dictionary_count))
+                    .and_then(|n| n.checked_add(seed_count))
                     .ok_or_else(|| invalid("map lane count overflow"))?,
                 512,
                 512,
@@ -282,9 +381,31 @@ impl<'plan> State<'plan> {
             return Ok(None);
         }
         spans.resize_with(span_count, || None);
+        let mut matrix_keys = Vec::new();
+        if matrix_keys.try_reserve_exact(matrix_key_count).is_err()
+            || matrix_keys.capacity() != matrix_key_count
+        {
+            return Ok(None);
+        }
+        matrix_keys.resize_with(matrix_key_count, matrix_keys::Lane::default);
+        let mut dictionaries = Vec::new();
+        if dictionaries.try_reserve_exact(dictionary_count).is_err()
+            || dictionaries.capacity() != dictionary_count
+        {
+            return Ok(None);
+        }
+        dictionaries.resize_with(dictionary_count, || None);
+        let mut seeds = Vec::new();
+        if seeds.try_reserve_exact(seed_count).is_err() || seeds.capacity() != seed_count {
+            return Ok(None);
+        }
+        seeds.resize_with(seed_count, || None);
         Ok(Some(Self {
             slots: slots.into_boxed_slice(),
             spans: spans.into_boxed_slice(),
+            matrix_keys: matrix_keys.into_boxed_slice(),
+            dictionaries: dictionaries.into_boxed_slice(),
+            seeds: seeds.into_boxed_slice(),
             descriptor,
             work_identity: work.identity(),
             active_tables: 0,
@@ -292,6 +413,7 @@ impl<'plan> State<'plan> {
             caller: None,
             reservation,
             _nodes: nodes,
+            borrowed_records: borrowed_records::Lanes::default(),
         }))
     }
 
@@ -338,38 +460,60 @@ impl<'plan> State<'plan> {
             Phase::Setup,
             add(
                 amount(self.slots.len(), 128, 128)?,
-                amount(self.spans.len(), 64, 64)?,
+                add(
+                    amount(self.spans.len(), 64, 64)?,
+                    add(
+                        amount(self.matrix_keys.len(), 64, 0)?,
+                        amount(self.dictionaries.len(), 64, 0)?,
+                    )?,
+                )?,
             )?,
         )?;
-        geometry.live_nodes = add(geometry.live_nodes, self.reservation.capacity_bytes())?;
-        for slot in &self.slots {
-            if let Some(frozen) = &slot.frozen {
-                geometry.live_nodes = add(geometry.live_nodes, frozen.map.retained_nodes())?;
-            }
-            if let Some(binding) = &slot.binding {
-                geometry.live_nodes = add(
-                    geometry.live_nodes,
-                    binding.retained_nodes().map_err(storage_error)?,
-                )?;
-            }
-        }
-        for span in &self.spans {
-            if matches!(span, Some(spans::Lane::Span { .. })) {
-                geometry.live_nodes = add(geometry.live_nodes, 2)?;
-            }
-        }
+        geometry.live_nodes = add(geometry.live_nodes, self.private_geometry_nodes(ctx)?)?;
         // Every table/key/lane reservation shares this exact account. Snapshot
         // nodes come from the base view; private table nodes are added above.
         geometry.live_bytes = ctx.library().memory_budget().used_bytes();
         Ok(Some(geometry))
     }
 
+    #[cfg(test)]
+    pub(in crate::native_artifact::program::runtime) fn has_borrowed_dictionary(
+        &self,
+        index: usize,
+    ) -> bool {
+        self.slots
+            .get(index)
+            .and_then(|slot| slot.binding.as_ref())
+            .is_some_and(Binding::has_borrowed_keys)
+    }
     pub(in crate::native_artifact::program::runtime) fn try_begin_retained(
         &mut self,
         ctx: &mut MapExecution<'_, '_, '_, '_>,
         site: usize,
     ) -> Result<Option<InitialWords>, Error> {
+        self.try_begin_retained_seed(ctx, site, None)
+    }
+    pub(in crate::native_artifact::program::runtime) fn try_begin_retained_seed(
+        &mut self,
+        ctx: &mut MapExecution<'_, '_, '_, '_>,
+        site: usize,
+        seed: Option<&mech_engine::native_artifact::NativeMapSeedFrame>,
+    ) -> Result<Option<InitialWords>, Error> {
+        self.try_begin_retained_seed_with_keys(ctx, site, seed, false)
+    }
+    pub(in crate::native_artifact::program::runtime) fn try_begin_retained_seed_with_keys(
+        &mut self,
+        ctx: &mut MapExecution<'_, '_, '_, '_>,
+        site: usize,
+        seed: Option<&mech_engine::native_artifact::NativeMapSeedFrame>,
+        prefer_borrowed: bool,
+    ) -> Result<Option<InitialWords>, Error> {
         self.guard(ctx, site)?;
+        #[cfg(test)]
+        if REFUSE_BORROWED_ENTRY.with(|v| v.get()) {
+            return Ok(None);
+        }
+
         let index = self
             .descriptor
             .metadata()
@@ -384,20 +528,105 @@ impl<'plan> State<'plan> {
         {
             return Err(invalid("retained map entry overlaps another live owner"));
         }
-        let Some(geometry) = self.geometry(ctx, site)? else {
+        let keys = if prefer_borrowed {
+            let metadata = self.descriptor.metadata();
+            ctx.work().charge(
+                Phase::Setup,
+                amount(metadata.borrowed_dictionary_values.regions.len(), 64, 128)?,
+            )?;
+            let proof = metadata
+                .borrowed_dictionary_values
+                .initializer(site)
+                .ok_or_else(|| invalid("borrowed dictionary outside complete key-set proof"))?;
+            if proof.owner != index {
+                return Err(invalid("borrowed dictionary owner differs"));
+            }
+            let (lane_id, cell) = metadata
+                .matrix_map_keys
+                .consumer(proof.insert)
+                .ok_or_else(|| invalid("borrowed dictionary lost key producer"))?;
+            if cell.source != proof.key_source {
+                return Err(invalid("borrowed dictionary key source differs"));
+            }
+            let lane = &self.matrix_keys[lane_id];
+            if let Some(view) = &lane.view {
+                ctx.arena_check_virtual(
+                    lane.view_handle
+                        .ok_or_else(|| invalid("borrowed dictionary lost key generation"))?,
+                )?;
+                Some(view.snapshot().clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        // Refuse optional ownership before any private mutation if a later
+        // selected constructor's fixed arity cannot fit. The canonical path
+        // then preserves that constructor's original denial and origin.
+        let plan = &self.descriptor.metadata().plan;
+        let layout = self.descriptor.metadata().map_owner_words.as_ref().unwrap();
+        let max_elements = ctx.limits().max_output_elements.unwrap_or(0);
+        let compound_result = !matches!(
+            plan.values()[region.tail().returned().get() as usize]
+                .definition()
+                .body(),
+            mech_core::SchemaBody::Map { .. }
+        );
+        if compound_result {
+            ctx.work()
+                .charge(Phase::Setup, amount(plan.blocks().len(), 64, 128)?)?;
+        }
+        if compound_result && plan.blocks().iter().enumerate().any(|(site, block)| {
+            layout.action_region(site) == Some(index)
+                && matches!(block.action(), Action::LibraryCall { template, .. }
+                    if matches!(template.primitive(),
+                        mech_engine::native_artifact::NativeCollectionPrimitive::CompositePack(arity)
+                        if arity as u64 > max_elements))
+        }) {
+            self.last_owned_visit = Some(ctx.control().visits);
+            return Ok(None);
+        }
+        let Some(mut geometry) = self.geometry(ctx, site)? else {
             self.last_owned_visit = Some(ctx.control().visits);
             return Ok(None);
         };
-        let source = ctx.arena_copy_current(region.tail().seed().get())?;
-        let imported = Binding::import(
-            &self.descriptor.metadata().plan,
-            region,
-            &self.descriptor.metadata().schemas,
-            &source,
-            ctx.library().clone(),
-            geometry,
-            ctx.limits(),
-        );
+        let imported = if let Some(seed) = seed {
+            geometry.live_nodes = add(geometry.live_nodes, seed.metadata_demand().retained_nodes)?;
+            if let Some(keys) = keys.as_ref() {
+                Binding::import_frame_with_keys(
+                    &self.descriptor.metadata().plan,
+                    region,
+                    &self.descriptor.metadata().schemas,
+                    seed,
+                    keys,
+                    ctx.library().clone(),
+                    geometry,
+                    ctx.limits(),
+                )
+            } else {
+                Binding::import_frame(
+                    &self.descriptor.metadata().plan,
+                    region,
+                    &self.descriptor.metadata().schemas,
+                    seed,
+                    ctx.library().clone(),
+                    geometry,
+                    ctx.limits(),
+                )
+            }
+        } else {
+            let source = ctx.arena_copy_current(region.tail().seed().get())?;
+            Binding::import(
+                &self.descriptor.metadata().plan,
+                region,
+                &self.descriptor.metadata().schemas,
+                &source,
+                ctx.library().clone(),
+                geometry,
+                ctx.limits(),
+            )
+        };
         match imported {
             Ok((binding, words)) => {
                 let caller = self.capture_caller(ctx, index)?;
@@ -476,6 +705,16 @@ impl<'plan> State<'plan> {
         let geometry = self
             .geometry(ctx, site)?
             .ok_or_else(|| invalid("retained map call lost caller geometry"))?;
+        let matrix_result = if write && words.len() == 3 {
+            self.insert_matrix_key(ctx, site, words[0], words[2], geometry)?
+        } else {
+            None
+        };
+        if let Some(result) = matrix_result {
+            ctx.stats().hash_table_updates = add(ctx.stats().hash_table_updates, 1)?;
+            self.last_owned_visit = Some(ctx.control().visits);
+            return Ok(result);
+        }
         let canonical;
         let key = if let Some(span) = layout.call_span(site) {
             let proof = &layout.spans()[span];
@@ -525,11 +764,54 @@ impl<'plan> State<'plan> {
         Ok(result)
     }
 
+    pub(in crate::native_artifact::program::runtime) fn constructor_statistics(
+        &mut self,
+        ctx: &mut MapExecution<'_, '_, '_, '_>,
+        site: usize,
+        token: u64,
+    ) -> Result<(u64, u64), Error> {
+        self.guard(ctx, site)?;
+        let layout = self
+            .descriptor
+            .metadata()
+            .map_owner_words
+            .as_ref()
+            .ok_or_else(|| invalid("retained constructor layout missing"))?;
+        let index = layout
+            .action_region(site)
+            .ok_or_else(|| invalid("retained constructor is not selected"))?;
+        if ctx.control().current != Some(layout.regions()[index].iteration()) {
+            return Err(invalid("retained constructor outside owning iteration"));
+        }
+        ctx.work()
+            .charge(Phase::Setup, amount(layout.regions().len(), 128, 128)?)?;
+        let result = self.slots[index]
+            .binding
+            .as_ref()
+            .ok_or_else(|| invalid("retained constructor lacks current owner"))?
+            .constructor_statistics(site, token)
+            .map_err(storage_error)?;
+        self.last_owned_visit = Some(ctx.control().visits);
+        Ok(result)
+    }
+
     pub(in crate::native_artifact::program::runtime) fn publish_retained(
         &mut self,
         ctx: &mut MapExecution<'_, '_, '_, '_>,
         site: usize,
         token: u64,
+        words: &[u64],
+    ) -> Result<Publication, Error> {
+        self.publish_retained_choice(ctx, site, token, words, false)
+    }
+
+    pub(in crate::native_artifact::program::runtime) fn publish_retained_choice(
+        &mut self,
+        ctx: &mut MapExecution<'_, '_, '_, '_>,
+        site: usize,
+        token: u64,
+        words: &[u64],
+        dictionary: bool,
     ) -> Result<Publication, Error> {
         self.guard(ctx, site)?;
         let index = self
@@ -574,12 +856,40 @@ impl<'plan> State<'plan> {
             slot.mark_frozen_published(token);
             ctx.stats().frozen_map_regions = add(ctx.stats().frozen_map_regions, 1)?;
             Publication::Frozen(token)
+        } else if dictionary && ctx.private_dictionary_eligible() {
+            let proof = self
+                .descriptor
+                .metadata()
+                .generic_dictionary
+                .exit(site)
+                .ok_or_else(|| invalid("dictionary publication lost complete uses"))?;
+            if proof.owner != index {
+                return Err(invalid("dictionary publication owner differs"));
+            }
+            match binding
+                .finish_words_choice(
+                    site,
+                    token,
+                    words,
+                    &self.descriptor.metadata().schemas,
+                    geometry,
+                    ctx.limits(),
+                    true,
+                )
+                .map_err(storage_error)?
+            {
+                super::string::frozen::FreezeChoice::Frozen(map) => Publication::Dictionary(map),
+                super::string::frozen::FreezeChoice::Canonical(value) => {
+                    Publication::Canonical(value)
+                }
+            }
         } else {
             Publication::Canonical(
                 binding
-                    .finish(
+                    .finish_words(
                         site,
                         token,
+                        words,
                         &self.descriptor.metadata().schemas,
                         geometry,
                         ctx.limits(),
@@ -607,6 +917,22 @@ impl<'plan> State<'plan> {
                 drop(self.spans[id].take());
             }
         }
+        if !self.matrix_keys.is_empty() {
+            ctx.work()
+                .charge(Phase::Setup, amount(self.matrix_keys.len(), 128, 0)?)?;
+        }
+        for (id, proof) in self
+            .descriptor
+            .metadata()
+            .matrix_map_keys
+            .regions
+            .iter()
+            .enumerate()
+        {
+            if proof.owner == index {
+                self.matrix_keys[id].clear();
+            }
+        }
         self.last_owned_visit = Some(ctx.control().visits);
         Ok(value)
     }
@@ -617,8 +943,21 @@ pub(in crate::native_artifact::program::runtime) mod tests;
 
 #[test]
 fn map_slot_consolidation_preserves_the_option_backing_layout() {
-    assert_eq!(core::mem::size_of::<Slot<'_>>(), 968);
+    // The three Option lanes remain the whole backing. Two map owners now
+    // each carry one optional pointer to a separately funded value bank.
+    let fields = core::mem::size_of::<Option<Binding<'_>>>()
+        + core::mem::size_of::<Option<Box<closed::Owner<'_>>>>()
+        + core::mem::size_of::<Option<FrozenSlot>>();
+    assert_eq!(core::mem::size_of::<Slot<'_>>(), fields);
+    assert_eq!(fields, 976); // IR305: 968; first inline prototype: 1160.
 }
 
 #[path = "../../invocation/map_calls.rs"]
 mod map_calls;
+
+#[cfg(test)]
+thread_local! { static REFUSE_BORROWED_ENTRY:std::cell::Cell<bool>=const{std::cell::Cell::new(false)}; }
+#[cfg(test)]
+pub(in crate::native_artifact::program::runtime) fn set_borrowed_entry_refusal(value: bool) {
+    REFUSE_BORROWED_ENTRY.with(|v| v.set(value));
+}

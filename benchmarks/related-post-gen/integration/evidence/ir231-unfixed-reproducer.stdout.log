@@ -1,0 +1,11 @@
+
+running 1 test
+test native_artifact::program::runtime::composition_tests::ordered_reduction_terminal::numeric_ordered_reduction_preserves_exhausted_payload_updates ... FAILED
+
+failures:
+
+failures:
+    native_artifact::program::runtime::composition_tests::ordered_reduction_terminal::numeric_ordered_reduction_preserves_exhausted_payload_updates
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 842 filtered out; finished in 0.39s
+

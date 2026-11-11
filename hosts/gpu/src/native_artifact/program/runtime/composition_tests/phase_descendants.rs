@@ -146,6 +146,7 @@ fn tracked_grandchild_fuel_handoffs_keep_active_edges_and_failure_recovery() {
         let leaf = phase
             .loops
             .iter()
+            .rev()
             .find(|d| {
                 metadata
                     .compositions

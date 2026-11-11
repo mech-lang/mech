@@ -339,7 +339,7 @@ fn nested_cold_images_reconstruct_exact_edges_and_buffer_bindings() {
                 "phase/loops/1/parent".to_owned(),
                 serde_json::json!(u32::MAX),
             ),
-            ("arrays/0/field".to_owned(), serde_json::json!(u32::MAX)),
+            ("arrays/0/root".to_owned(), serde_json::json!(u32::MAX)),
             (format!("exits/{exit}/from"), serde_json::json!(u32::MAX)),
             (format!("exits/{exit}/to"), serde_json::json!(0)),
         ] {

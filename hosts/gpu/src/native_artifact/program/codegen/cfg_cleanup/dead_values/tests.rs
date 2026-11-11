@@ -84,6 +84,39 @@ fn dead_values_retire_unused_cycles_and_nontrapping_loads_at_all_scalar_widths()
 }
 
 #[test]
+fn dead_values_keep_aliases_used_by_current_extent_proofs_and_branch_arguments() {
+    let (mut function, header) = cycle(types::I64);
+    let entry = function.layout.entry_block().unwrap();
+    let count = function.dfg.block_params(entry)[1];
+    // A previous phi/identity pass leaves a detached alias, which is also
+    // retained outside the IR by the current extent proof's range metadata.
+    let detached = function.dfg.make_block();
+    let alias = function.dfg.append_block_param(detached, types::I64);
+    function.dfg.remove_block_param(alias);
+    function.dfg.change_to_alias(alias, count);
+    for block in function.layout.blocks().collect::<Vec<_>>() {
+        for inst in function.layout.block_insts(block).collect::<Vec<_>>() {
+            function
+                .dfg
+                .map_inst_values(inst, |value| if value == count { alias } else { value });
+        }
+    }
+    verify(&function);
+    let removed = eliminate(&mut function);
+    assert_eq!((removed.parameters, removed.loads), (1, 1));
+    assert_eq!(function.dfg.block_params(header).len(), 2);
+    assert_eq!(function.dfg.resolve_aliases(alias), count);
+    verify(&function);
+    let mut context = Context::for_function(function);
+    crate::native_artifact::codegen::common::unsigned_guard_facts::optimize_with_bounds(
+        &mut context,
+        &[(alias, i64::MAX as u64 / 8)],
+    );
+    verify(&context.func);
+    assert_eq!(eliminate(&mut context.func).instructions, 0);
+}
+
+#[test]
 fn dead_values_keep_trapping_reads_arithmetic_calls_stores_and_their_order() {
     let mut function = Function::new();
     function.signature.params = vec![AbiParam::new(types::I64); 3];

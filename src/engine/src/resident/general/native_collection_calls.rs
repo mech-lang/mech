@@ -18,11 +18,22 @@ use mech_core::{
 #[path = "native_collection_invocation.rs"]
 mod invocation;
 pub use invocation::NativeCollectionInvocationError;
+#[path = "native_collection_cache_capacity.rs"]
+mod cache_capacity;
+#[path = "native_collection_headroom.rs"]
+mod headroom;
 #[path = "native_collection_prepared.rs"]
 mod prepared;
+#[cfg(feature = "sequence_buffers")]
 pub use prepared::{
-    NativePreparedLibraryCall, NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
-    prepare_native_program_library_call,
+    NativeBorrowedMapKeys, NativeBorrowedMapKeysChoice, NativeMapSeedChoice, NativeMapSeedFrame,
+    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeStringMatrixKeyView,
+};
+pub use prepared::{
+    NativeDescriptorTemplatePool, NativePreparedLibraryCall, NativePreparedLibraryCallCache,
+    NativeSelectedStringSpanSelector, prepare_native_program_library_call,
+    prepare_native_program_library_call_with_descriptors,
 };
 #[cfg(feature = "pure_text")]
 pub use prepared::{

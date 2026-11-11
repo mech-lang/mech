@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-integration-source-tests-20261106-v1/mech_engine-tests",
+    "native_artifact::",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 6.873222041875124
+}

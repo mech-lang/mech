@@ -9,9 +9,13 @@ use super::{
 use mech_core::{IntegerWidth, SchemaBody, ValueData};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
+#[path = "map_write_predicates.rs"]
+mod predicates;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 enum Step {
     Tuple(u32),
+    Record(u32),
     Variant(u32),
 }
 #[derive(Clone, Debug)]
@@ -70,6 +74,13 @@ fn paths(
                 path.pop();
             }
         }
+        SchemaBody::Record(fields) => {
+            for (index, field) in fields.iter().enumerate() {
+                path.push(Step::Record(index as u32));
+                paths(&field.schema, path, out, depth + 1)?;
+                path.pop();
+            }
+        }
         SchemaBody::Enum { variants, .. } => {
             for (index, variant) in variants.iter().enumerate() {
                 if let Some(body) = &variant.payload {
@@ -117,6 +128,18 @@ struct Transfer {
     pairs: Vec<(usize, usize)>,
 }
 fn transfer(plan: &Plan, fields: &Fields, action: &Action) -> Option<Transfer> {
+    if let Some((source, ordinal, output)) = super::record_projection::constant_field(plan, action)
+    {
+        let mut pairs = Vec::new();
+        for (path, &to) in &fields.by_value[output.get() as usize] {
+            let mut from = vec![Step::Record(ordinal as u32)];
+            from.extend_from_slice(path);
+            if let Some(&from) = fields.by_value[source.get() as usize].get(&from) {
+                pairs.push((from, to));
+            }
+        }
+        return Some(Transfer { output, pairs });
+    }
     match action {
         Action::Scalar(Scalar::Copy { source, output }) => {
             let mut pairs = Vec::new();
@@ -162,6 +185,11 @@ fn transfer(plan: &Plan, fields: &Fields, action: &Action) -> Option<Transfer> {
                 (Primitive::CompositePack(_), SchemaBody::Tuple(_)) => {
                     for (index, &source) in operands.iter().enumerate() {
                         fields.link(source, *output, &[Step::Tuple(index as u32)], &mut pairs);
+                    }
+                }
+                (Primitive::CompositePack(_), SchemaBody::Record(_)) => {
+                    for (index, &source) in operands.iter().enumerate() {
+                        fields.link(source, *output, &[Step::Record(index as u32)], &mut pairs);
                     }
                 }
                 (Primitive::EnumPack, SchemaBody::Enum { variants, .. }) if operands.len() == 2 => {
@@ -364,15 +392,22 @@ impl Plan {
             let Some(iteration) = self.blocks()[site].iteration() else {
                 continue;
             };
-            let (carrier, latch) = match &self.iterations()[iteration as usize] {
-                NativeControlLoop::Tail(loop_) => (loop_.carrier(), loop_.latch()),
-                NativeControlLoop::Iteration(loop_) => (loop_.carrier(), loop_.latch()),
+            let (carrier, body, latch) = match &self.iterations()[iteration as usize] {
+                NativeControlLoop::Tail(loop_) => (loop_.carrier(), loop_.body(), loop_.latch()),
+                NativeControlLoop::Iteration(loop_) => {
+                    (loop_.carrier(), loop_.body(), loop_.latch())
+                }
                 _ => continue,
             };
             let root = roots[base_leaf];
             let carrier_derived = fields.by_value[carrier.get() as usize]
                 .values()
                 .any(|&leaf| roots[leaf] == root);
+            let excluded = if carrier_derived {
+                predicates::implied_edges(self, iteration, body, latch, site)
+            } else {
+                BTreeSet::new()
+            };
             let mut initial = roots
                 .iter()
                 .map(|&candidate| candidate == root)
@@ -383,6 +418,9 @@ impl Plan {
             let mut inputs = vec![None::<Vec<bool>>; self.blocks().len()];
             let mut queue = VecDeque::new();
             for next in successors(self, site) {
+                if excluded.contains(&(site, next)) {
+                    continue;
+                }
                 inputs[next] = Some(initial.clone());
                 queue.push_back(next);
             }
@@ -413,6 +451,9 @@ impl Plan {
                     }
                 }
                 for next in successors(self, at) {
+                    if excluded.contains(&(at, next)) {
+                        continue;
+                    }
                     let mut changed = false;
                     match &mut inputs[next] {
                         Some(current) => {

@@ -1,5 +1,7 @@
 //! Canonical managed-program owners.
 #[cfg(feature = "canonical-native-program-runtime")]
+pub(in crate::native_artifact) mod compiled_module;
+#[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod prepare;
 pub(in crate::native_artifact) mod protocol;
 
@@ -13,6 +15,8 @@ pub(in crate::native_artifact) mod image;
 pub(in crate::native_artifact) mod limits;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod linked;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod llvm_backend;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod runtime;
 

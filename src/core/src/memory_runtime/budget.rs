@@ -18,6 +18,17 @@ struct ManagedMemoryBudgetAccount {
     snapshot_import_failure_countdown: AtomicU64,
 }
 
+/// Read-only native observation addresses in one pinned memory account.
+/// These counters describe current usage, not quota, reservation, source,
+/// execution or publication authority. Generated code must use atomic loads
+/// and retain a clone of this exact account throughout every observation.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct NativeMemoryBudgetCounters {
+    pub used_bytes: u64,
+    pub snapshot_nodes: u64,
+}
+
 /// A configured limit on admitted Mech-owned backing, including unconsumed
 /// reservations and retained owners. Clones share one account across domains,
 /// so replacement activation includes the old and candidate storage together.
@@ -49,6 +60,16 @@ impl ManagedMemoryBudget {
             }),
             byte_limit: limit_bytes,
             node_limit: u64::MAX,
+        }
+    }
+
+    /// Descriptive counter geometry for a synchronous native loan. The Arc
+    /// account stays immovable while this budget (or any clone) is retained.
+    /// No source Value or serialized descriptor can supply these addresses.
+    pub fn native_counters(&self) -> NativeMemoryBudgetCounters {
+        NativeMemoryBudgetCounters {
+            used_bytes: self.account.used.as_ptr() as u64,
+            snapshot_nodes: self.account.snapshot_nodes.as_ptr() as u64,
         }
     }
 

@@ -1,0 +1,9 @@
+{
+  "actual_failed_toolchain_exit": 0,
+  "actual_corrupt_executable_sha256": "62b7ffe00a7dac31debe9f013320a45bf42409314ca7dcb02464ef5a4ba38e8a",
+  "postprocessing_failure_rejected": true,
+  "corrupt_header_rejected": true,
+  "missing_output_rejected": true,
+  "current_valid_output_accepted": true,
+  "compiler_and_executable_validation_status_recorded_separately": true
+}

@@ -24,6 +24,9 @@ pub(in crate::native_artifact) const fn primitive_work(op: NativeScalarOp) -> u6
         NativeScalarOp::U8Add
         | NativeScalarOp::U32Sub
         | NativeScalarOp::U32Add
+        | NativeScalarOp::U32Mul
+        | NativeScalarOp::U32Div
+        | NativeScalarOp::U32Rem
         | NativeScalarOp::U64Add
         | NativeScalarOp::U64BitAnd
         | NativeScalarOp::U64BitOr

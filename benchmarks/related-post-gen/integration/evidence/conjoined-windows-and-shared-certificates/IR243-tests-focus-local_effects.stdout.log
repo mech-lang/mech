@@ -1,0 +1,32 @@
+
+running 3 tests
+test native_artifact::program::runtime::composition_tests::local_effects::numeric_local_fact_errors_keep_order_publication_aliases_and_recovery ... ok
+test native_artifact::program::runtime::composition_tests::local_effects::numeric_local_fact_finite_boundaries_preserve_publication_and_retry ... {"dimension":"control","exact_selected_fragments":0,"minimum":43006932,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":21546816,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":8,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2597347,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3326,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":7912,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":0,"minimum":43006932,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":21546816,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":8,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2597347,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3326,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":7912,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":4,"minimum":45413964,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":21549088,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":4,"minimum":4,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2614483,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3858,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":13104,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":4,"minimum":45413964,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":21549088,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":4,"minimum":4,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2614483,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3858,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":13104,"witness":"composition-finite-boundary","zero_spending":false}
+ok
+test native_artifact::program::runtime::composition_tests::local_effects::numeric_local_facts_keep_replacement_bounds_and_stop_at_child_continuations ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 862 filtered out; finished in 2.27s
+

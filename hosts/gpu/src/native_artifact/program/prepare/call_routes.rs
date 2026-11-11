@@ -4,14 +4,18 @@ use mech_engine::native_artifact::{
     NativeProgramArtifactPlan, NativeUnsignedBufferCall,
 };
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub(in crate::native_artifact) enum LibraryCallRoute {
     Canonical,
     BufferFrame,
+    BorrowedMapKeysFrame,
+    BorrowedMapKeysLength,
     UnsignedBuffer,
     RecordScalarField,
     UnsignedMatrixLength,
+    MatrixLength,
     UnsignedMatrixElement,
+    StringMatrixElement,
     UnsignedMatrixReplace,
 }
 
@@ -20,6 +24,7 @@ pub(in crate::native_artifact) fn derive(
     frames: &NativeBufferFrames,
     buffers: &[Option<NativeUnsignedBufferCall>],
     calls: &[Option<NativePreparedLibraryCall>],
+    keys: &super::borrowed_map_keys::Layout,
 ) -> Box<[LibraryCallRoute]> {
     plan.blocks()
         .iter()
@@ -27,6 +32,12 @@ pub(in crate::native_artifact) fn derive(
         .map(|(site, block)| {
             if !matches!(block.action(), NativeIterationAction::LibraryCall { .. }) {
                 return LibraryCallRoute::Canonical;
+            }
+            if keys.frame(site).is_some() {
+                return LibraryCallRoute::BorrowedMapKeysFrame;
+            }
+            if keys.length(site).is_some() {
+                return LibraryCallRoute::BorrowedMapKeysLength;
             }
             // Preserve the established priority when a private frame projection
             // also has the selected record-field scalar strategy.
@@ -48,8 +59,12 @@ pub(in crate::native_artifact) fn derive(
                 LibraryCallRoute::RecordScalarField
             } else if call.supports_unsigned_matrix_length() {
                 LibraryCallRoute::UnsignedMatrixLength
+            } else if call.supports_matrix_length() {
+                LibraryCallRoute::MatrixLength
             } else if call.supports_unsigned_matrix_element() {
                 LibraryCallRoute::UnsignedMatrixElement
+            } else if call.supports_string_matrix_element() {
+                LibraryCallRoute::StringMatrixElement
             } else {
                 LibraryCallRoute::Canonical
             }

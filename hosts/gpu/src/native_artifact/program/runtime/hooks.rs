@@ -79,7 +79,17 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
+    let fused_numeric = GlobalHelper::decode(operation) == GlobalHelper::AdmitNumericSegmentBegin;
+    let mut scalar_ready = 0;
     let operation = match GlobalHelper::decode(operation) {
+        GlobalHelper::AdmitNumericSegmentBegin => {
+            let status = admit_current(context, site);
+            if status != STATUS_OK {
+                return status;
+            }
+            scalar_ready = context.scalar_admission_word(site).unwrap_or(0);
+            GlobalHelper::NumericSegmentBegin.raw()
+        }
         GlobalHelper::AdmitMove => {
             let status = admit_current(context, site);
             if status != STATUS_OK {
@@ -100,6 +110,16 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
         Err(invalid("helper result pointer mismatch"))
     } else {
         context.helper(site, operation, [first, second, third])
+    };
+    let outcome = if fused_numeric {
+        outcome.and_then(|word| match word {
+            Some(selected @ 0..=1) => Ok(Some((selected << 1) | scalar_ready)),
+            _ => Err(invalid(
+                "fused numeric entry did not return a selection bit",
+            )),
+        })
+    } else {
+        outcome
     };
     finish_callback(context, outcome)
 }

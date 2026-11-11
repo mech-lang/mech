@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-owned-shape-metadata-runners-20261107-v1/ablation-comparison-config.json",
+    "--out",
+    "/private/tmp/mech-related-owned-shape-metadata-runners-20261107-v1/ablation-metrics",
+    "--variant",
+    "mech-ir237-reuse-borrowed-json-4"
+  ],
+  "exit": 0,
+  "seconds": 5.538736500078812,
+  "stdout": "{\"variant\": \"mech-ir237-reuse-borrowed-json-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n",
+  "stderr": ""
+}

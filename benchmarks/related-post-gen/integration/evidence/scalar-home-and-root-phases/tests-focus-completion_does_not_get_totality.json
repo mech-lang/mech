@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-scalar-home-retirement-tests-20261107-v1/mech_gpu-tests",
+    "completion_does_not_get_totality",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 0.01684537506662309
+}

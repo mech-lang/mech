@@ -9,6 +9,18 @@ impl NativeMatchValue {
     pub const fn get(self) -> u32 {
         self.0
     }
+
+    /// Restore a value identity from a confined compiler-owned image reader.
+    ///
+    /// # Safety
+    /// Keep the result confined until the enclosing loader establishes exact
+    /// provenance from the same checked compiler build and linked Object.
+    /// A decoded ordinal alone proves neither source association nor liveness.
+    pub unsafe fn from_build_owned_image_reader<'de, D: serde::Deserializer<'de>>(
+        image: D,
+    ) -> Result<Self, D::Error> {
+        <Self as super::program_image_proofs::ImageRead>::read(image)
+    }
 }
 
 /// Source identity for errors and admissions, including lexical block locals.

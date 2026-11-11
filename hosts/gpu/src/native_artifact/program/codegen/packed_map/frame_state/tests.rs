@@ -23,7 +23,7 @@ fn actual_call_emission_keeps_unknown_ops_and_terminal_spills_conservative() {
     let module = cranelift_jit::JITModule::new(
         cranelift_jit::JITBuilder::with_flags(&[], default_libcall_names()).unwrap(),
     );
-    for op in [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, u64::MAX] {
+    for op in [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, u64::MAX] {
         // All three paths use the real call emitter, including its status
         // branch. This test inspects IR; the end-to-end fixtures execute it.
         for mode in 0..3 {
@@ -148,7 +148,7 @@ fn private_effect_masks_cover_validation_growth_and_all_generated_writes() {
             })
         );
     }
-    for op in [1, 2, 3, 4, 5, 13, 14, u64::MAX] {
+    for op in [1, 2, 3, 4, 5, 13, 14, 15, u64::MAX] {
         assert_eq!(effects(OwnerOperation::decode(op)), None);
     }
 }

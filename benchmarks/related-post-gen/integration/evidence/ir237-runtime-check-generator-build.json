@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-owned-shape-metadata-runtime-check-20261107-v1/hosted-build.json",
+    "--source",
+    "/private/tmp/mech-related-owned-shape-metadata-runtime-check-20261107-v1/generate-standard-app.rs",
+    "--out",
+    "/private/tmp/mech-related-owned-shape-metadata-runtime-check-20261107-v1/generate-standard-app"
+  ],
+  "exit": 0,
+  "seconds": 1.9284494169987738,
+  "stdout": "{\"seconds\": 1.3684492078609765, \"exit\": 0}\n",
+  "stderr": "",
+  "compiler_source_sha256": "cd5f1b6b260c87297d38baa3e571d9fc86b904ac1aeb3eee02b1d8f2483053d1"
+}

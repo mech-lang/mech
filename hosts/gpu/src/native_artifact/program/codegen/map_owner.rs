@@ -94,10 +94,55 @@ pub(in crate::native_artifact) fn emit(
     hooks: Option<&Hooks>,
     code: CodePlan<'_>,
     error: Block,
+    matrix_keys: bool,
+    key_views: bool,
+    dictionary_views: bool,
+    seed_frames: bool,
+    borrowed_values: bool,
 ) -> Result<(Option<Block>, bool), NativeCompileError> {
     let Some(owner) = owner else {
         return Ok((None, false));
     };
+    if seed_frames
+        && matches!(code,CodePlan::Program(program) if program.metadata().dictionary_seed_frames.producer(site).is_some())
+    {
+        let NativeIterationAction::LibraryCall { operands, .. } = code.blocks()[site].action()
+        else {
+            return Err(backend("native seed outside producer"));
+        };
+        let hooks = hooks.ok_or_else(|| backend("native seed lacks checked hooks"))?;
+        hooks.library_operation(
+            b,
+            site,
+            GlobalHelper::MapSeedFrame.raw(),
+            operands,
+            locals,
+            |value| code.kind(value).is_some(),
+            error,
+        )?;
+        return Ok((None, true));
+    }
+    if key_views
+        && matrix_keys
+        && matches!(code, CodePlan::Program(program)
+        if program.metadata().borrowed_map_keys.producer(site).is_some())
+    {
+        let NativeIterationAction::LibraryCall { operands, .. } = code.blocks()[site].action()
+        else {
+            return Err(backend("borrowed map keys outside selected producer"));
+        };
+        let hooks = hooks.ok_or_else(|| backend("borrowed map keys lacks checked hooks"))?;
+        hooks.library_operation(
+            b,
+            site,
+            GlobalHelper::MapKeys.raw(),
+            operands,
+            locals,
+            |value| code.kind(value).is_some(),
+            error,
+        )?;
+        return Ok((None, true));
+    }
     let frozen_copy = frozen.copies.get(site).copied().flatten();
     let frozen_read = frozen.reads.get(site).copied().flatten();
     let frozen_id = frozen_copy.or(frozen_read);
@@ -106,11 +151,20 @@ pub(in crate::native_artifact) fn emit(
     let call = layout::call_region(owner, site);
     let action = layout::action_region(owner, site);
     let span = owner.span_site(site).map(|index| &owner.spans()[index]);
+    let matrix_key = match code {
+        CodePlan::Program(program) if matrix_keys => program
+            .metadata()
+            .matrix_map_keys
+            .producer(site)
+            .map(|(_, r)| r),
+        _ => None,
+    };
     let Some(index) = entry
         .or(exit)
         .or(call)
         .or(action)
         .or(span.map(|span| span.region()))
+        .or(matrix_key.map(|key| key.owner))
         .or(frozen_id.map(|id| frozen.regions[id].owner))
     else {
         return Ok((None, false));
@@ -126,7 +180,18 @@ pub(in crate::native_artifact) fn emit(
     let ordinary = b.create_block();
     let joined = b.create_block();
     if entry.is_some() {
-        hooks.call(b, site, GlobalHelper::MapOwnerBegin, [zero; 3], error);
+        let operation = if borrowed_values
+            && seed_frames
+            && matrix_keys
+            && key_views
+            && dictionary_views
+            && matches!(code, CodePlan::Program(program) if program.metadata().borrowed_dictionary_values.initializer(site).is_some())
+        {
+            GlobalHelper::MapOwnerBeginBorrowedValues
+        } else {
+            GlobalHelper::MapOwnerBegin
+        };
+        hooks.call(b, site, operation, [zero; 3], error);
         let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, flag, ready)?;
         let selected = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
@@ -158,6 +223,55 @@ pub(in crate::native_artifact) fn emit(
     let active = b.ins().icmp_imm(IntCC::NotEqual, active, 0);
     b.ins().brif(active, native, &[], ordinary, &[]);
     b.switch_to_block(native);
+    if let CodePlan::Program(program) = code
+        && let Some(fixed) = program.metadata().fixed_key_loops.owner(index)
+        && (site == fixed.cell || site == fixed.insert)
+        && let Some(closed_id) = closed.sites.get(site).copied().flatten()
+        && closed.regions[closed_id].map == Some(index)
+    {
+        let proof = &closed.regions[closed_id];
+        let ready = load(b, locals, proof.words)?;
+        let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
+        let direct = b.create_block();
+        let retained = b.create_block();
+        b.ins().brif(ready, direct, &[], retained, &[]);
+        b.switch_to_block(direct);
+        let function = load(b, locals, proof.words + 3)?;
+        let context = load(b, locals, proof.words + 4)?;
+        let frame = b.ins().load(types::I64, MemFlags::new(), context, 0);
+        crate::native_artifact::program::codegen::fixed_keys::emit(
+            b,
+            locals,
+            frame,
+            function,
+            context,
+            site,
+            site == fixed.cell,
+            code.blocks()[site].action(),
+            hooks,
+            error,
+        )?;
+        b.ins().jump(joined, &[]);
+        b.switch_to_block(retained);
+    }
+    if matrix_key.is_some() {
+        let NativeIterationAction::LibraryCall { operands, .. } = code.blocks()[site].action()
+        else {
+            return Err(backend("borrowed matrix key is not a selected call"));
+        };
+        hooks.library_operation(
+            b,
+            site,
+            GlobalHelper::MapMatrixKey.raw(),
+            operands,
+            locals,
+            |value| code.kind(value).is_some(),
+            error,
+        )?;
+        b.ins().jump(joined, &[]);
+        b.switch_to_block(ordinary);
+        return Ok((Some(joined), false));
+    }
     if let Some(id) = frozen_id {
         let proof = &frozen.regions[id];
         let (source, output, operation) = match code.blocks()[site].action() {
@@ -336,14 +450,45 @@ pub(in crate::native_artifact) fn emit(
         };
         hooks.call(b, site, GlobalHelper::MapOwnerSpan, args, error);
     } else if exit.is_some() {
-        let token = load(b, locals, region.tail().returned().get() as usize)?;
-        hooks.call(
-            b,
-            site,
-            GlobalHelper::MapOwnerEnd,
-            [token, zero, zero],
-            error,
-        );
+        let (base, count) = owner
+            .aggregates()
+            .slot(region.tail().returned())
+            .ok_or_else(|| backend("map owner returned value has no fixed slice"))?;
+        let CodePlan::Program(program) = code else {
+            return Err(backend("map owner exit outside canonical program"));
+        };
+        let schema = program.plan().values()[region.tail().returned().get() as usize]
+            .definition()
+            .body();
+        let map_word = match schema {
+            mech_core::SchemaBody::Map { .. } => Some(0),
+            mech_core::SchemaBody::Tuple(fields) => fields
+                .iter()
+                .position(|field| matches!(field, mech_core::SchemaBody::Map { .. })),
+            mech_core::SchemaBody::Record(fields) => fields
+                .iter()
+                .position(|field| matches!(field.schema, mech_core::SchemaBody::Map { .. })),
+            _ => None,
+        }
+        .ok_or_else(|| backend("map owner result map field missing"))?;
+        let token = load(b, locals, base + map_word)?;
+        let args = if matches!(schema, mech_core::SchemaBody::Map { .. }) {
+            [token, zero, zero]
+        } else {
+            for word in 0..count {
+                let value = load(b, locals, base + word)?;
+                store(b, hooks.arguments, word, value)?;
+            }
+            let count = b.ins().iconst(types::I64, count as i64);
+            [token, hooks.arguments, count]
+        };
+        let operation =
+            if dictionary_views && program.metadata().generic_dictionary.exit(site).is_some() {
+                GlobalHelper::MapDictionaryEnd
+            } else {
+                GlobalHelper::MapOwnerEnd
+            };
+        hooks.call(b, site, operation, args, error);
         let token = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, flag, token)?;
         // Canonical publication returns zero; private publication returns the
@@ -374,14 +519,71 @@ pub(in crate::native_artifact) fn emit(
         )?;
         let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, output.get() as usize, word)?;
-    } else if !crate::native_artifact::codegen::common::aggregates::emit_memory(
-        b,
-        locals,
-        owner.aggregates(),
-        site,
-        error,
-    )? {
-        return Err(backend("map owner action lacks word transport"));
+    } else {
+        if let NativeIterationAction::LibraryCall {
+            template, operands, ..
+        } = code.blocks()[site].action()
+            && matches!(
+                template.primitive(),
+                mech_engine::native_artifact::NativeCollectionPrimitive::CompositePack(_)
+                    | mech_engine::native_artifact::NativeCollectionPrimitive::EnumPack
+            )
+        {
+            let CodePlan::Program(program) = code else {
+                return Err(backend("map owner constructor outside program"));
+            };
+            let compound_result = !matches!(
+                program.plan().values()[region.tail().returned().get() as usize]
+                    .definition()
+                    .body(),
+                mech_core::SchemaBody::Map { .. }
+            );
+            if compound_result {
+                let token = operands
+                    .iter()
+                    .find_map(|value| {
+                        let body = program.plan().values()[value.get() as usize]
+                            .definition()
+                            .body();
+                        let ordinal = match body {
+                            mech_core::SchemaBody::Map { .. } => Some(0),
+                            mech_core::SchemaBody::Tuple(fields) => {
+                                fields.iter().position(|field| {
+                                    matches!(field, mech_core::SchemaBody::Map { .. })
+                                })
+                            }
+                            mech_core::SchemaBody::Record(fields) => {
+                                fields.iter().position(|field| {
+                                    matches!(field.schema, mech_core::SchemaBody::Map { .. })
+                                })
+                            }
+                            _ => None,
+                        }?;
+                        owner
+                            .aggregates()
+                            .slot(*value)
+                            .map(|(base, _)| base + ordinal)
+                    })
+                    .ok_or_else(|| backend("map owner constructor token source missing"))?;
+                let token = load(b, locals, token)?;
+                hooks.call(
+                    b,
+                    site,
+                    GlobalHelper::MapOwnerConstructorCheck,
+                    [token, zero, zero],
+                    error,
+                );
+            }
+        }
+        if !crate::native_artifact::codegen::common::aggregates::emit_memory(
+            b,
+            locals,
+            owner.aggregates(),
+            site,
+            error,
+        )? {
+            return Err(backend("map owner action lacks word transport"));
+        }
     }
     b.ins().jump(joined, &[]);
     b.switch_to_block(ordinary);

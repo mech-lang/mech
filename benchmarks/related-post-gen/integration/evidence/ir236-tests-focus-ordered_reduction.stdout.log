@@ -1,0 +1,40 @@
+
+running 11 tests
+test native_artifact::program::codegen::ordered_reduction::tests::ordered_reduction_keeps_reverse_length_bound_to_its_current_array ... ok
+test native_artifact::program::codegen::ordered_reduction::tests::ordered_reduction_refuses_overwritten_captures_and_recursive_expressions ... ok
+test native_artifact::program::codegen::ordered_reduction::tests::ordered_reduction_requires_every_exhausted_payload_on_every_path ... ok
+test native_artifact::program::codegen::ordered_reduction::tests::ordered_reduction_requires_every_terminal_dependency_to_survive_elision ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction::numeric_ordered_reduction_preserves_prefix_remainders_wrapping_and_global_ties ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction::numeric_ordered_reduction_refuses_changed_ties_predicates_and_carried_dependencies ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction::numeric_ordered_reduction_selects_current_total_source_recipe ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction_exhaustion::numeric_ordered_reduction_exhausted_payloads_follow_source_edges ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction_exhaustion::numeric_ordered_reduction_exhaustion_denials_preserve_publication_and_retry ... {"dimension":"control","exact_selected_fragments":0,"minimum":37213837,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":22372008,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2931738,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":4128,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":13184,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":0,"minimum":37213837,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":22372008,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2931738,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":4128,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":13184,"witness":"composition-finite-boundary","zero_spending":false}
+ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction_terminal::numeric_ordered_reduction_exhausted_payload_keeps_finite_publication_and_retry ... {"dimension":"control","exact_selected_fragments":0,"minimum":37235273,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":22372008,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2932122,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":4128,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":13264,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":0,"minimum":37235273,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":22372008,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2932122,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":4128,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":13264,"witness":"composition-finite-boundary","zero_spending":false}
+ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction_terminal::numeric_ordered_reduction_preserves_exhausted_payload_updates ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 844 filtered out; finished in 19.99s
+

@@ -138,7 +138,7 @@ fn fill(
                 frames.inner.as_mut().unwrap().owners.values_mut()[at] =
                     Some(raw.into_memory_budget(&mut reservation).unwrap());
             }
-            Lane::Composite { .. } => unreachable!(),
+            Lane::Composite { .. } | Lane::Tagged { .. } => unreachable!(),
         }
     }
 }
@@ -183,7 +183,7 @@ fn copied(
                     .shares_frozen_storage(old.1[at].as_ref().unwrap())
             ),
             Lane::Scalar { at, .. } => assert_eq!(bits, old.0[at * 2]),
-            Lane::Composite { .. } => unreachable!(),
+            Lane::Composite { .. } | Lane::Tagged { .. } => unreachable!(),
         }
     }
 }
@@ -362,7 +362,7 @@ fn live_and_identity_frame_copies_retain_owners_and_selected_lanes_are_disjoint(
                         let key = match field.lane() {
                             Lane::Managed { at } => (false, at),
                             Lane::Scalar { at, .. } => (true, at),
-                            Lane::Composite { .. } => unreachable!(),
+                            Lane::Composite { .. } | Lane::Tagged { .. } => unreachable!(),
                         };
                         assert!(seen.insert(key), "selected root layouts must not overlap");
                     }

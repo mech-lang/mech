@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-owned-shape-metadata-runners-20261107-v1/qualify-loaders.py"
+  ],
+  "exit": 0,
+  "seconds": 125.27966200001538,
+  "stdout": "after-4 original and decoded all13 bundle files exact\nafter-8 original and decoded all13 bundle files exact\ncompact-4 original and decoded all13 bundle files exact\ncompact-8 original and decoded all13 bundle files exact\nafter-4-independent built, native link audited,31 exact edges\nafter-8-independent built, native link audited,31 exact edges\nafter-4-json built, native link audited,31 exact edges\nafter-8-json built, native link audited,31 exact edges\nafter-4-full-catalog built, native link audited,31 exact edges\ncompact-4-independent built, native link audited,31 exact edges\ncompact-8-independent built, native link audited,31 exact edges\ncompact-4-json built, native link audited,31 exact edges\ncompact-8-json built, native link audited,31 exact edges\ncompact-4-full-catalog built, native link audited,31 exact edges\n",
+  "stderr": ""
+}
