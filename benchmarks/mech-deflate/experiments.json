@@ -58475,6 +58475,182 @@
         }
       },
       "complete_goal": false
+    },
+    "294": {
+      "git_parent": "a499471188a0f9f3a2662d11ad9883ae460aa657",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "a499471188a0f9f3a2662d11ad9883ae460aa657",
+      "retained_compiler": "R294",
+      "retained_source_packet_round": 294,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Reuse geometry facts for immutable captures.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "f3ed72d0feb9747322517424c5bb1b459ccdd9c923ebf95f288fe3c88360828a",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_capture_windows.rs": {
+            "before": "edb3d5355eb243ba2304c74574de335381f0aa404872faa93bcc284adc63fa93",
+            "after": "d0744cd411a9397a4fbfe61ffde09564ce1af452c6a62a1a2702cdde11dae18a"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "5f87e5b70c2944c2d6a791b970d46422e738b216d038415fd054948c7c21b3d3",
+        "worker_sha256": "fc03e57157bd3659c7bfa73a885a66a8fa5731702867f3e302b351c1ce44cd11"
+      },
+      "summary": {
+        "published_parent": "a499471188a0f9f3a2662d11ad9883ae460aa657",
+        "measured_parent": "a499471188a0f9f3a2662d11ad9883ae460aa657",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 294,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 294,
+        "selected_mode": "captured-flat-facts",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.99271251285055,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r293": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "seven-stored-prefix",
+          "ratio": 1.006579943414228
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.0375132136609868
+        },
+        "next_experiment": "Preserve an exact Boolean value when all incoming edges pass the same literal. In the current capacity-proved parser, the seed and latch both pass zero to the tag argument using distinct SSA definitions. The generated code still checks it twice. A focused rule should retire the tag and keep the current cursor branch and publication."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "5f87e5b70c2944c2d6a791b970d46422e738b216d038415fd054948c7c21b3d3",
+            "metadata.json": "72a42f8296f830c73ca73a7e576d56d4957104c2c429e623981128cf7ed428e3"
+          },
+          "decoded": {
+            "object.o": "5f87e5b70c2944c2d6a791b970d46422e738b216d038415fd054948c7c21b3d3",
+            "metadata.json": "72a42f8296f830c73ca73a7e576d56d4957104c2c429e623981128cf7ed428e3"
+          }
+        },
+        "cleanup_tests_passed": 44,
+        "compiled_window_calls": 43923,
+        "compiled_route_calls": 3840,
+        "packed_source_window_tests": 1,
+        "direct_linked_phase_calls": 87,
+        "focused_window_gate_calls": 3443,
+        "composed_captured_window_tests": 6,
+        "changed_machine_bodies": 2,
+        "geometry_guard_pairs_removed_in_vector": 8
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r293": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-captured-view-geometry.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r294-captured-flat-facts-1bb98517f870.tar.gz",
+        "bytes": 5711964,
+        "sha256": "1bb98517f870584bd60305f1775a2946b457e4c2a3a477f7a4c0c027de7752d8",
+        "files": 1155,
+        "reports_replayed": 9,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "e4bbe0f105225ff6a1f2d645abeba96f6a47747b2b1f92bb57ac82d361556d60",
+            "counter-results.json": "5204a773823eaa8dd0d3422773846cedf4ecd405af860b2b46255c02bc3edec6",
+            "counter-isolated-results.json": "7cc21cfa5370f8d5204d8973c28f05c469b0df8bf7c9cc1c49e430cc02e3d35b",
+            "REPORT.md": "94539af64936c6c0d22bf3affa52fb17cd038166209edd2765e149b1125837db",
+            "library-results.json": "466420900bd4a3bb9ad1342283707e27aba17dc88430734d0ffcb914e5cfb743",
+            "result-decision.json": "f3e41fb6df3cc9e051e078ddd6f8ad77791847dfff03269efd9307ed8ea60ef3",
+            "screen-results.json": "42eaad65af32df298e5ab30bb1a4d878c98e60eeba573bca4f0fce1ec7ac7695",
+            "captured-flat-facts-profile-results.json": "6bd42f78943a34eb6fd4f54cbbfeab83c8288663dcfc6175d8bb98c2a896fdc5",
+            "matcher-profile-analysis.json": "9a9dd45f8b782ef0a021357cc0a098d26a17c6d8c24bf9753aaedcbd9542f0e5"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
