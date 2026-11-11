@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R280 narrows wrapping operations whose users keep only the low 32 bits. Paired elapsed changes -1.900% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R279 / Roc | R280 / Roc | R279 / libdeflate | R280 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.196939× | 0.197073× | 2.512061× | 2.513758× |
+| prefix-random-8192 | 0.961595× | 0.935451× | 3.463437× | 3.369271× |
+| prefix-periodic-131072 | 0.946320× | 0.910440× | 1.718917× | 1.653743× |
+| prefix-periodic-1048576 | 0.968052× | 0.933103× | 1.640215× | 1.581000× |
+| prefix-repeated-131072 | 0.932557× | 0.902623× | 1.561801× | 1.511669× |
+| prefix-repeated-1048576 | 0.949175× | 0.917297× | 1.490858× | 1.440788× |
+| prefix-natural-4096 | 1.098251× | 1.109993× | 1.864200× | 1.884130× |
+| prefix-natural-1048576 | 1.520798× | 1.527103× | 1.226933× | 1.232019× |
+| prefix-random-1048576 | 1.975834× | 1.916228× | 2.790917× | 2.706722× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R280 timing, proof and replay evidence](native-masked-wrapping-arithmetic.md).
+
+## Historical R279 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R279 separates packet descriptor lifetimes across the checked append run. Paired elapsed changes -0.509% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R278 / Roc | R279 / Roc | R278 / libdeflate | R279 / libdeflate |

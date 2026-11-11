@@ -56353,6 +56353,162 @@
         }
       },
       "complete_goal": false
+    },
+    "280": {
+      "git_parent": "344cc850f2e59b482abd0fb97090dcdc6054260b",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "344cc850f2e59b482abd0fb97090dcdc6054260b",
+      "retained_compiler": "R280",
+      "retained_source_packet_round": 280,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain the masked wrapping arithmetic pass in the experimental compiler.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "6a286a2bd4b9d5bcec17b07f73b6eea93af3c1e861e7f718146dd76123bceaab",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/low_word.rs": {
+            "baseline": null,
+            "candidate": "5034f3d42f476d799fef1fbdbea879efc4cbacc11b59cf0e73651a9725cbdb65"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+            "baseline": "c0b3e1c383ae73ab2afc2d96dfdf0d053a94ecfba77b4a55ce1fffcaabc2891b",
+            "candidate": "ca7a060d75dd5a61aa65d6784e1642b9903fcc87f469a2826d7674bd43e701c8"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "baseline": "61a73dfefaf50a377b82824b7f97061b5c750f136d79119c04dd6e8b805c8f7e",
+            "candidate": "49f15359c35cd497af61637be48f27e5b4a58a9acc666a18e27047ab48a8f00a"
+          }
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "7ba9b9a1f411e37f014ae85d69b4ea3277082b53e09cb39360f11605355dca2e",
+        "worker_sha256": "4893a42daa7ef2a340d195ed90658e94d67c0aaac6b6e194a2efc602a98489df"
+      },
+      "summary": {
+        "published_parent": "344cc850f2e59b482abd0fb97090dcdc6054260b",
+        "measured_parent": "344cc850f2e59b482abd0fb97090dcdc6054260b",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 280,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 280,
+        "selected_mode": "narrow",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9809976721313655,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r279": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "largest_paired_slowdown": {
+          "case": "seven-stored-prefix",
+          "ratio": 1.0158909292528386
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.1080725107524807
+        },
+        "next_experiment": "Isolate the four matched library prefetch hints at fixed instruction addresses. Use the measured effect and current matcher samples to decide whether to emit a bounded hint."
+      },
+      "qualification": {
+        "verified": true,
+        "candidate": "narrow",
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "narrow-original": 162,
+          "narrow-decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "7ba9b9a1f411e37f014ae85d69b4ea3277082b53e09cb39360f11605355dca2e",
+            "metadata.json": "ae2a1672d0603705936a1967e06f569b4d1a853641eb11f0d8e531ee9cb7c5b6"
+          },
+          "decoded": {
+            "object.o": "7ba9b9a1f411e37f014ae85d69b4ea3277082b53e09cb39360f11605355dca2e",
+            "metadata.json": "ae2a1672d0603705936a1967e06f569b4d1a853641eb11f0d8e531ee9cb7c5b6"
+          }
+        },
+        "linked_phase_checks": {
+          "baseline": {
+            "source_object_sha256": "eebf3595af2572cbd9a13c8f8b46c9cc6238eb0b31be2a227f32c7e0f2274c73",
+            "test_worker_sha256": "6a7a8a60db5fd99772a1613a2aefb27c3a99e1ca32f5529d7b906ba818344f99",
+            "body_encodings_match_source": true,
+            "cases": 12
+          },
+          "narrow-original": {
+            "source_object_sha256": "7ba9b9a1f411e37f014ae85d69b4ea3277082b53e09cb39360f11605355dca2e",
+            "test_worker_sha256": "c1e2af7b64f0852fd089724e5a748548542d96bc9309e49b5b6399605c3e29f5",
+            "body_encodings_match_source": true,
+            "cases": 12
+          },
+          "narrow-decoded": {
+            "source_object_sha256": "7ba9b9a1f411e37f014ae85d69b4ea3277082b53e09cb39360f11605355dca2e",
+            "test_worker_sha256": "0d13d57914f5325664edb1e0c8a2424925f296faae56da6fa891ef9c7165aa4c",
+            "body_encodings_match_source": true,
+            "cases": 12
+          }
+        },
+        "checked_arithmetic_jit_calls": 768,
+        "root_and_other_machine_bodies_exact": true,
+        "scope": "Exact closed linked compressor and direct production phase. Original and decoded are identical. Only four no-growth bodies change, and their whole linked phase agrees with the independently computed oracle and retained body."
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r279": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-masked-wrapping-arithmetic.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r280-low-word-arithmetic-bdb9996eb6b8.tar.gz",
+        "bytes": 5292552,
+        "sha256": "bdb9996eb6b82e3e4cfce42576e2234913000889954b7018761fecfc51249d0a",
+        "files": 942,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "4a4a0d3521c11c3b7cd442dc51c6d6dc95868df60d35d3f650e6f68bd1146342",
+            "counter-results.json": "0513eee1681cae065b516ca3607957955ad8e8e949ed45d395f65851ba3cd62b",
+            "REPORT.md": "246ca2c9e9b26b6753c3d4f9fae288b7e27e095542c4cba1c538e1ddca6276df",
+            "library-results.json": "e51e80d63db258a26c6edb4433dcd35cdb57e7bc51137cf8552b54a211c51769",
+            "result-decision.json": "dbb8da2f95e75544cb03e3592db90d3a2d0a339ac11419ee54ac1deac52cf074",
+            "screen-results.json": "48a69a9f665fc8058530739b96a814a63e22b35104a041a70668c3b7d34d3770",
+            "narrow-profile-results.json": "46e0c80dc6249b97a13b993d946cdaff8bd9a666d4467596d5952cc5e45d6027",
+            "current-matcher-samples.json": "f8a16aed0c96514f47fe2f9e84a6d8240df1caff97cbeb72228d1db99c3df907"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
