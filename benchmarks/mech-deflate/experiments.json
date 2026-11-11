@@ -60112,6 +60112,122 @@
         }
       },
       "complete_goal": false
+    },
+    "305": {
+      "git_parent": "9283b56817d59042eb73420d0e05a3bc9ec2216f",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "9283b56817d59042eb73420d0e05a3bc9ec2216f",
+      "retained_compiler": "R304",
+      "retained_source_packet_round": 304,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after screening bounded indexed updates.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "compiler_patch_sha256": "898b86b5c803bf94206c2def8f1f4b46c46e22561d3e9270a8a2edfc7a30ea86",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_bounds.rs": {
+            "before": "75d9aa704b4cfcdad12d32cd6614dbb0076443f8fc4099a377dd369d22e88522",
+            "after": "a18ad99f9ac3050319b4973aaa56688ef63ed3470beb9d4f6e3195e0825cdc55"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_traversal.rs": {
+            "before": "3ba06604fe5c8e47994151dbe22085eb0fa6f23c0a1af4366c3da54571b2584e",
+            "after": "352728cd04f9ec6874998b07c9428093b44c35733afff7645aa288c29613db51"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "before": "f52f1991f4a9ddedaf9ae5e2d720448d9da90274f37e394e3bfb995ba4236084",
+            "after": "ec4784c04bd8546b98a011c42b2046619b9a268b7d78602d5a43c8180b6adfbf"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/flow.rs": {
+            "before": "9dc1adbffd43e743e03725721819f03798bd1677266569aa0fe9284ecec4acb6",
+            "after": "694ec2223ccdd9ce8ed3763e920c0a84b9c1797f2501a5a7fc7570ffff2123c9"
+          }
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "candidate_object_sha256": "1f27beb61bddadef6792c935effc2f9c4e20754c4ed4663db73d3ad367314397",
+        "candidate_worker_sha256": "f3a296a16c0229a178565bedcceaf684f75cafc8eea7b95a7110c29a6ef03d67"
+      },
+      "summary": {
+        "published_parent": "9283b56817d59042eb73420d0e05a3bc9ec2216f",
+        "measured_parent": "9283b56817d59042eb73420d0e05a3bc9ec2216f",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 304,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 305,
+        "source_program_changed": false,
+        "paired_elapsed_ratio": 0.9950233623574805,
+        "screen_cases": 27,
+        "screen_pooled_gate_misses": [],
+        "screen_block_gate_misses": [
+          "empty",
+          "one-stored",
+          "seven-stored-prefix"
+        ],
+        "compiler_patch_sha256": "898b86b5c803bf94206c2def8f1f4b46c46e22561d3e9270a8a2edfc7a30ea86",
+        "unchanged_pinned_benchmark_source": true,
+        "linked_witness": {
+          "cases": 36,
+          "phase": 24,
+          "current_floor": 256,
+          "short_views_select_source": true,
+          "successes_and_failures_match_control": true,
+          "prior_publication_preserved": true,
+          "final_cleanup": true,
+          "heap_families_agree": true,
+          "artifacts": {
+            "before": {
+              "original": {
+                "object": "8d9801a06b21829f96f55464ee01cabb5001aa6dcf6a167768a71b3d6fa57bc7",
+                "metadata": "5aabd216f660980c0c8d5936939bbaec5cf16ba0b2f6cd5a1d509d0c3740a2c8",
+                "worker": "c85c75b9f1c2b10694e3a77f29c380045b17da1286b7de27695c8157075dfbe9",
+                "calls": 12
+              }
+            },
+            "after": {
+              "original": {
+                "object": "1f50d02ac3121f8a3fd950da8f2ab2541e3af10b2e84642d6a00da34892923b0",
+                "metadata": "101ab38aed8fd1bae76b3fb4cd2ef4ef6026d885fbf879ce2cd67200d5a3b4d6",
+                "worker": "60f501a329d88870f268c484e1be8811debfe1bbe7f5098db04b7cc5bae2fa42",
+                "calls": 12
+              },
+              "decoded": {
+                "object": "1f50d02ac3121f8a3fd950da8f2ab2541e3af10b2e84642d6a00da34892923b0",
+                "metadata": "101ab38aed8fd1bae76b3fb4cd2ef4ef6026d885fbf879ce2cd67200d5a3b4d6",
+                "worker": "6fdcf77726df2e3db03e53799fe0865c1473fa57349b71b65dffc47d3ee63203",
+                "calls": 12
+              }
+            }
+          }
+        },
+        "peer_cases": 10,
+        "memory_cases": 10,
+        "profile_cases": 4,
+        "next_experiment": "Put the same bound check in the outlined numeric function. Its successful branch uses the current length proof and the other branch calls the existing checked body. Qualify the unchanged root machine body before screening and retest the three short inputs along with the full performance frontier."
+      },
+      "report": "docs/design/native-bounded-indexed-updates.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r305-tally-entry-bounds-dc859a429827.tar.gz",
+        "bytes": 1176113,
+        "sha256": "dc859a429827d4c60c0ae3fd03948a38408b495004b49e90ee41c5b2b32a24d1",
+        "files": 255,
+        "reports_replayed": 7,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "screen-results.json": "ab25924e04693b7b67f93fede03372036094fb0d9a9220a9a052ae577a756dd1",
+            "peer-results.json": "48a9b1efd82419a01dfd1a2e52b0280633222edacca86e6b87da6fe7291c123b",
+            "counter-results.json": "44c3c00562403a09f535fc5ad63cae2c0c31938442f5fcf644896985b00dc49e",
+            "memory-results.json": "9e4f6dc8333a05d87b8ec64c0a528ed12736447da5474064f330f85ea4adf6d9",
+            "tally-entry-bounds-profile-results.json": "5f164973f54c8a71d04ea18074df636e9f09ae84e956a402c12d5ea099b768b0",
+            "result-decision.json": "994811c987ab1c03ab583ea328fe6493053a4d65bfcf351fabeb6ccb7e2621f3",
+            "REPORT.md": "44f110e35033e592252013c8b27d725468c5858c14f8d0032284b250ee7933eb"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",

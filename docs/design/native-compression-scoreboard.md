@@ -19,6 +19,8 @@ Ratios use the same fresh four-actor comparison. The parity score and gates use 
 
 [R304 timing, proof and replay evidence](native-adjacent-typed-addresses.md).
 
+R305 screens bounded indexed updates at the phase entry. Paired elapsed changes -0.498% across 27 cases. Three short-input block gates miss. R304 is the retained baseline. [R305 timing, code and replay](native-bounded-indexed-updates.md).
+
 ## Historical R303 measured comparison
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
