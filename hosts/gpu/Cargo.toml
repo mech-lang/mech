@@ -81,7 +81,7 @@ sha2 = { version = "0.11.0", default-features = false }
 toml_edit = { version = "0.23", optional = true }
 wgpu = { version = "0.20.1", optional = true }
 wide = "0.7.33"
-cranelift-codegen = { version = "=0.131.3", optional = true }
+cranelift-codegen = { version = "=0.131.3", optional = true, features = ["experimental-cmp-reuse"] }
 cranelift-frontend = { version = "=0.131.3", optional = true }
 cranelift-jit = { version = "=0.131.3", optional = true }
 cranelift-module = { version = "=0.131.3", optional = true }
