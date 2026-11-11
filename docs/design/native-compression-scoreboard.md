@@ -23,6 +23,8 @@ R298 screens shared immutable comparison window bounds. Paired elapsed changes -
 
 R299 screens the checked end for paired immutable windows. Paired elapsed changes -0.147% across 27 cases. The current baseline remains R297. [R299 timing, code and replay](native-checked-capture-ends.md).
 
+R300 screens reuse of a checked span for fixed-width reads. Paired elapsed changes +1.153% across 27 cases. The current baseline remains R297. [R300 timing, code and replay](native-checked-span-guards.md).
+
 ## Historical R296 measured comparison
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.

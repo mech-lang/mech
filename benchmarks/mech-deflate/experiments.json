@@ -59372,6 +59372,91 @@
         }
       },
       "complete_goal": false
+    },
+    "300": {
+      "git_parent": "c29fcbaf9acc6e7b87d96a0a92ccdabfc5d8bc99",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "c29fcbaf9acc6e7b87d96a0a92ccdabfc5d8bc99",
+      "retained_compiler": "R297",
+      "retained_source_packet_round": 297,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after screening reuse of a checked span for fixed-width reads.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "compiler_patch_sha256": "78a43e0ef24e8762c72195ad2993cb8a21196560562da9ed38f79cfdc8bc9147",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "f9c42a01a1136009b0ecf64692cec165e1616884e0f66a6826890388f3491479",
+            "after": "fccc7c8dde290d12435ce499b3a98e1e0a197cd3bf13e940dcf3547ab163b648"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/window_bounds.rs": {
+            "before": "5e124bac84eaf7baca5aacad4d0afe6a49de9265264946403f89e6c0b8c455db",
+            "after": "4741d5eec80fdf2603f3bb2fac17c521ed7a6435df45d7766eec71a8e0a19cb0"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/window_bounds/checked_spans.rs": {
+            "before": null,
+            "after": "4c3c0a96e323317a301ac69c3e8a92a341a42d19d5e2df9672245a24cefcb919"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "af8eb5f8d715a6e5cea90187edad11358b173104143cb73f591c26153eb3f839",
+            "after": "bf529aa9f3a0b4b06d2ee3786aa9b216a316e9908fac96a57db3fd55d83cf6bf"
+          }
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "candidate_object_sha256": "d5255ad1818d28f2b18298328b79c475d8872946360efd8755101303fc73d663",
+        "candidate_worker_sha256": "47ddbe1a6fbbb78f8a29fdc87e39a6020a1cdd3acbcfa7bad3e5c17d05fe6c41"
+      },
+      "summary": {
+        "round": 300,
+        "measured_parent": "c2aa0ebc8984e608791e0fca42fcc0ea8f44d7b9",
+        "published_parent": "c29fcbaf9acc6e7b87d96a0a92ccdabfc5d8bc99",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retained_source_packet_round": 297,
+        "retained_runtime_packet_round": 272,
+        "retain_experimental_compiler": false,
+        "experiment": "reuse a checked entry span for fixed-width reads",
+        "compiler_patch_sha256": "78a43e0ef24e8762c72195ad2993cb8a21196560562da9ed38f79cfdc8bc9147",
+        "screen": 27,
+        "timed_calls": 56988,
+        "paired_elapsed_ratio": 1.0115295619342028,
+        "gates": {
+          "pooled_gate": 27,
+          "block_gate": 27
+        },
+        "source_program_changed": false,
+        "full_adoption_campaign": false,
+        "complete_smoke_calls": 162,
+        "compiled_gate_calls": 117128,
+        "focused_tests": 1,
+        "current_binary_profiles": 4,
+        "initial_profile_export_status": 10,
+        "same_capture_export_recovered": true,
+        "separate_counter_cohort": false,
+        "decoded_candidate": false,
+        "reason": "The 27-case paired aggregate increases 1.153% and multiple repetitive inputs regress by 2–3%."
+      },
+      "report": "docs/design/native-checked-span-guards.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r300-checked-span-guards-78b2fdbc00fd.tar.gz",
+        "bytes": 545181,
+        "sha256": "78b2fdbc00fd8990603bb1b4c64282c33438214285042ef89f3bfba0e70eb668",
+        "files": 109,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "screen-results.json": "0d2324c7ca57bd8129938f6c6b9eec0ddc3bea1bf99a81c6f658f11842f9cdda",
+            "span-profile-analysis.json": "ede2225c13456dba6b478acf23e0a7dd3a966827b6779be2eddcfc2cd3dbd607",
+            "checked-span-guards-profile-results.json": "f72f20733e0b2b95bd38299eff97faf925385929828ec1023355adaac5976d62",
+            "result-decision.json": "02a680ff039aee47aea42bc86589e4f7c12a3dd4c19b583149c0c15776e3d08a",
+            "REPORT.md": "4988d8eef4c7bba679b7c3daab28b26e9c1c932a6da1c23366a2f659c030d23a"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
