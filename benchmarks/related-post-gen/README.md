@@ -1,9 +1,8 @@
 # Related-post native compiler review
 
-Current integration: [IR314 on #973 at ac79c1c365](integration/README.md), **work126 / ABI42 / image11**, production Cranelift with the checked DEFLATE backend and SSA-width work. Fresh maintained-source time is **1.697375 ms / 1.133725× fastest eligible Rust** (1.497167 ms). The new readonly-tree selection closes a host-return compiler gap exposed by U32 counters; 505 compiler contracts and all 133 scalar/DEFLATE resource controls pass. Narrow-storage source variants save memory but show no reliable latency gain and remain experiments. [Full current measurements and evidence](integration/complete-tree-selection-20261111/REPORT.md).
+Current integration: [IR315 on #973 through 6f50ac6d77](integration/README.md), **work126 / ABI42 / image11**, production Cranelift with the checked DEFLATE compiler work. The selected source combines U32 counters/postings with a fixed checked-update compiler gap. Independent confirmation: **1.675500 ms / 1.118055× fastest eligible Rust** (1.498584 ms), with favorable paired intervals against the published source, same-source parent and same-compiler control. [Full report](integration/narrow-checked-updates-20261111/REPORT.md) · [all timings](integration/narrow-checked-updates-20261111/ALL-TIMINGS.md).
 
-The maintained source remains four native workers. Whole-process and restoration remain visible, but are not acceptance gates. Parity is unmet. Older checkpoints and stricter historical gates below are retained history and do not describe the current compiler.
-
+The source retains four native workers, checked larger-input fallback and all preparation/worker lifecycle inside the post-JSON timer. Peak additional heap falls 9.063%, while allocation requests rise 720→735. All 508 selected compiler contracts and 133 scalar/DEFLATE controls pass. Parity remains unmet; whole-process/restoration remain visible, not acceptance gates. Older checkpoints and stricter historical gates below are retained history.
 
 This branch contains the accepted compiler optimization series for
 [zupat/related_post_gen](https://github.com/zupat/related_post_gen), starting from
