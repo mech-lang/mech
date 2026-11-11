@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R303 forwards a proved equality endpoint. Paired elapsed changes -1.436% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R301 / Roc | R303 / Roc | R301 / libdeflate | R303 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.195000× | 0.195287× | 2.487166× | 2.490820× |
+| prefix-random-8192 | 0.810979× | 0.813350× | 2.946582× | 2.955200× |
+| prefix-periodic-131072 | 0.766247× | 0.738613× | 1.394381× | 1.344093× |
+| prefix-periodic-1048576 | 0.779972× | 0.751472× | 1.321756× | 1.273459× |
+| prefix-repeated-131072 | 0.766513× | 0.741732× | 1.286632× | 1.245037× |
+| prefix-repeated-1048576 | 0.777212× | 0.751014× | 1.221658× | 1.180478× |
+| prefix-natural-4096 | 1.002560× | 0.997365× | 1.722593× | 1.713668× |
+| prefix-natural-1048576 | 1.408331× | 1.405020× | 1.136660× | 1.133988× |
+| prefix-random-1048576 | 1.719274× | 1.711657× | 2.428797× | 2.418036× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R303 timing, proof and replay evidence](native-forwarded-equality-end.md).
+
+## Historical R301 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R301 reuses checked spans for ordered captures. Paired elapsed changes -0.475% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R297 / Roc | R301 / Roc | R297 / libdeflate | R301 / libdeflate |
