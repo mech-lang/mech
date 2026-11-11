@@ -1,5 +1,6 @@
 //! Actual parent/child admissions, current roots, finite funding and recovery.
 use super::*;
+mod narrow_numeric_tree;
 mod checked_increment;
 use crate::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 use mech_core::ValueDataDraft as Data;
