@@ -1,5 +1,23 @@
 # Current compression scoreboard
 
+**31/81 cases faster than Roc (38.27%).** Goal 100%.
+R272 supplies large zero-filled buffers through private pages. The compressor Object and program stay at R270. Paired elapsed falls 10.25% across all 81. Both timing gates pass 81/81. Four periodic inputs cross below Roc parity. The separate libdeflate cohort has 3/81 faster cases.
+
+| Input | R270 / Roc | R272 / Roc | R270 / libdeflate | R272 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.416211× | 0.197800× | 5.324992× | 2.530654× |
+| prefix-repeated-4096 | 0.673301× | 0.528675× | 2.543811× | 1.997397× |
+| prefix-repeated-33027 | 1.001379× | 0.982016× | 1.946909× | 1.909263× |
+| prefix-periodic-32768 | 1.012630× | 0.988405× | 2.170907× | 2.118972× |
+| prefix-natural-1048576 | 1.765329× | 1.756943× | 1.425009× | 1.418240× |
+| prefix-random-1048576 | 2.117091× | 2.106640× | 2.992581× | 2.977810× |
+
+Ratios in this table use the same fresh four-actor cohort. The 31-case score comes from the two primary cohorts.
+
+[R272 full timings, memory policy, qualification and profiles](native-zero-page-scratch.md).
+
+## Historical R270 measured comparison
+
 **27/81 cases faster than Roc (33.3%).** Goal 100%.
 R270 is retained. Paired elapsed improves 0.737% over R268, with 81/81 passes on both gates. Repeated 33,027 bytes crosses parity. All previously faster cases stay below 1× in the paired comparison.
 
