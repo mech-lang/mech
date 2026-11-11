@@ -60435,6 +60435,192 @@
         }
       },
       "complete_goal": false
+    },
+    "308": {
+      "git_parent": "d09e3a4b78126b888e241599752b13a514e089d7",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "9283b56817d59042eb73420d0e05a3bc9ec2216f",
+      "retained_compiler": "R308",
+      "retained_source_packet_round": 308,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Widen complete read-only unsigned dot products.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "c16bba7ddb0f4e480c5a8e8a83db0b86d273861cc37f0ef22d389c6d1b852061",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/compact/mod.rs": {
+            "before": "6ec430227458385e7576b4b4e4934d73ca50c3f5db1b2f1193e6ddd33c3e612a",
+            "after": "74689daf48f4e724e7f1cc668e3cf698693b464f309d2a6532170341258d7d26"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/emit.rs": {
+            "before": "91d81515e0061fdd4b17e05a805d8218ea3434e26b206bc416a2ac88384c10ed",
+            "after": "e2b34201017033e6f76e3188ccae20b12594ec79fe679b531cd94a10d89081bf"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/widening_reduction.rs": {
+            "before": null,
+            "after": "4a195a36998461b540d6f8ad4f1794f9c3867e777851c9b4c0695cf0622717bd"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "66e68c66a0da2355440def50178f4ba0de17ef0d4f835847d8082bb7bd2ed60e",
+        "worker_sha256": "acf796f04a366a3225a25b526429af4daeaaf356433b28f538bcf45a4cdc58a9"
+      },
+      "summary": {
+        "published_parent": "d09e3a4b78126b888e241599752b13a514e089d7",
+        "measured_parent": "9283b56817d59042eb73420d0e05a3bc9ec2216f",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 308,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 308,
+        "selected_mode": "widening-reduction",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9883021821169776,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 46,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 56.79012345679013,
+          "change_percentage_points": 1.2345679012345698
+        },
+        "faster_than_libdeflate": {
+          "mech-r304": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc_in_peer_cohort": {
+          "mech-r304": 45,
+          "mech-candidate": 46
+        },
+        "crossed_below": [
+          "prefix-natural-4096"
+        ],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "seven-stored-prefix",
+          "ratio": 1.019997861666266
+        },
+        "candidate_frontier": {
+          "case": "prefix-random-16384",
+          "x_reference": 1.1085216714472084
+        }
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "witness_calls": 45,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "66e68c66a0da2355440def50178f4ba0de17ef0d4f835847d8082bb7bd2ed60e",
+            "metadata.json": "009f571c1e7852551e850445010c1a2310cb8ba3a255ec09107e1a9233eda410"
+          },
+          "decoded": {
+            "object.o": "66e68c66a0da2355440def50178f4ba0de17ef0d4f835847d8082bb7bd2ed60e",
+            "metadata.json": "009f571c1e7852551e850445010c1a2310cb8ba3a255ec09107e1a9233eda410"
+          }
+        },
+        "headers": [
+          11763,
+          22093
+        ],
+        "worker_sha256": "acf796f04a366a3225a25b526429af4daeaaf356433b28f538bcf45a4cdc58a9",
+        "root_bytes": 979776,
+        "root_stack_bytes": 57440
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r304": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc": {
+          "mech-r304": 45,
+          "mech-candidate": 46
+        }
+      },
+      "report": "docs/design/native-widening-reductions.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r308-widening-reduction-5bb6b1a20290.tar.gz",
+        "bytes": 8460320,
+        "sha256": "5bb6b1a20290792c94ecb77e24fcf4ea755161d66aad2437c30845a16cd7958a",
+        "files": 990,
+        "reports_replayed": 7,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "2dc79d848795e7608ebb918992c676f3088099792a1e1eab712247e76f852445",
+            "counter-results.json": "1ce7ec3d3f629f1bf7ec964275bc5a6383d9d5eb1cdcdb9d798050323c19a6d7",
+            "REPORT.md": "6276c90bd7ad6cf36bfe8524e1c713ef401d992d999e8e8ca9334878713c7c97",
+            "library-results.json": "4a9c1c79bcf40a6efc172ffc15b58d5e3b5c16835e89d1f710a3df130f824b05",
+            "result-decision.json": "c3b5d4b4fa29fa6395baa5c2079a7b58022fbe1fdeb1bdf9bbdf08e716fd9e83",
+            "screen-disposition.json": "272bf151cd414434ced0289ae7d31d34d175922862a4795101b9e1467468ae66",
+            "widening-reduction-profile-results.json": "19fcdf881ee62adad9cbece46dac9d2c91f923bc5b52307291c247caf72de129"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
