@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R283 reuses selected-edge facts in private vector bodies. Paired elapsed changes -1.947% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R280 / Roc | R283 / Roc | R280 / libdeflate | R283 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.197765× | 0.199712× | 2.546495× | 2.571557× |
+| prefix-random-8192 | 0.934169× | 0.902508× | 3.336731× | 3.223645× |
+| prefix-periodic-131072 | 0.912240× | 0.883808× | 1.653662× | 1.602122× |
+| prefix-periodic-1048576 | 0.933312× | 0.903041× | 1.580701× | 1.529433× |
+| prefix-repeated-131072 | 0.895066× | 0.870938× | 1.503917× | 1.463377× |
+| prefix-repeated-1048576 | 0.916928× | 0.889635× | 1.442804× | 1.399858× |
+| prefix-natural-4096 | 1.110450× | 1.088399× | 1.904977× | 1.867148× |
+| prefix-natural-1048576 | 1.526360× | 1.509112× | 1.231512× | 1.217595× |
+| prefix-random-1048576 | 1.919229× | 1.866758× | 2.715268× | 2.641033× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R283 timing, proof and replay evidence](native-vector-predicate-reuse.md).
+
+## Historical R280 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R280 narrows wrapping operations whose users keep only the low 32 bits. Paired elapsed changes -1.900% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R279 / Roc | R280 / Roc | R279 / libdeflate | R280 / libdeflate |
