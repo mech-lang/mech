@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R304 shares adjacent typed addresses. Paired elapsed changes -0.810% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R303 / Roc | R304 / Roc | R303 / libdeflate | R304 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.194810× | 0.193882× | 2.499098× | 2.487201× |
+| prefix-random-8192 | 0.820479× | 0.812653× | 2.918651× | 2.890812× |
+| prefix-periodic-131072 | 0.740361× | 0.728603× | 1.341911× | 1.320600× |
+| prefix-periodic-1048576 | 0.751401× | 0.740975× | 1.274684× | 1.256997× |
+| prefix-repeated-131072 | 0.743454× | 0.738084× | 1.241343× | 1.232377× |
+| prefix-repeated-1048576 | 0.752914× | 0.742142× | 1.184204× | 1.167260× |
+| prefix-natural-4096 | 1.001705× | 0.996317× | 1.719334× | 1.710086× |
+| prefix-natural-1048576 | 1.403966× | 1.404636× | 1.132615× | 1.133156× |
+| prefix-random-1048576 | 1.713010× | 1.700575× | 2.422950× | 2.405362× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R304 timing, proof and replay evidence](native-adjacent-typed-addresses.md).
+
+## Historical R303 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R303 forwards a proved equality endpoint. Paired elapsed changes -1.436% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R301 / Roc | R303 / Roc | R301 / libdeflate | R303 / libdeflate |
