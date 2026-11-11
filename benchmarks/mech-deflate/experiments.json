@@ -58301,6 +58301,180 @@
         }
       },
       "complete_goal": false
+    },
+    "293": {
+      "git_parent": "3c70684d55aa921ead329567d7d87d7f5d5ad4f5",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "3c70684d55aa921ead329567d7d87d7f5d5ad4f5",
+      "retained_compiler": "R293",
+      "retained_source_packet_round": 293,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Reuse the current flat-view proof in packed reads.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "b43241e04733a19afd59061b50e17303da93a36b42aa872681d7723215bcf801",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "before": "f495fdc2a99e734e29ff746f252f429f3a3a578dd19f44a9dd19cdf9bfbf06bb",
+            "after": "f52f1991f4a9ddedaf9ae5e2d720448d9da90274f37e394e3bfb995ba4236084"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "0b3eb218a6b863b5423ac842bfcd872f6983865886b3c284ec8e2630a5086ae6",
+        "worker_sha256": "0679d71d69c78c3b8211c779ed917e9d30798065f009700745298d0f25505e9b"
+      },
+      "summary": {
+        "published_parent": "3c70684d55aa921ead329567d7d87d7f5d5ad4f5",
+        "measured_parent": "3c70684d55aa921ead329567d7d87d7f5d5ad4f5",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 293,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 293,
+        "selected_mode": "flat-packed-reads",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9907676099964278,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r292": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "prefix-periodic-1048576",
+          "ratio": 1.0132189917474506
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.045575783825284
+        },
+        "next_experiment": "Reuse a proved current flat view at captured-window entry. The eight remaining row and column tests are part of captured-window admission. Keep current lengths, offset checks, source fallback and funding. Measure the selected-body result separately."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "0b3eb218a6b863b5423ac842bfcd872f6983865886b3c284ec8e2630a5086ae6",
+            "metadata.json": "d98825865e49f480852c9f1fe633b78e2617f40be59ec7549dd9ac9bb78b6bc1"
+          },
+          "decoded": {
+            "object.o": "0b3eb218a6b863b5423ac842bfcd872f6983865886b3c284ec8e2630a5086ae6",
+            "metadata.json": "d98825865e49f480852c9f1fe633b78e2617f40be59ec7549dd9ac9bb78b6bc1"
+          }
+        },
+        "cleanup_tests_passed": 44,
+        "compiled_window_calls": 43923,
+        "compiled_route_calls": 3840,
+        "packed_source_window_tests": 1,
+        "direct_linked_phase_calls": 87,
+        "focused_dispatch_calls": 5760,
+        "changed_machine_bodies": 1,
+        "geometry_guard_pairs_removed": 17
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r292": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-admitted-packed-reads.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r293-flat-packed-reads-d99feb9eddd7.tar.gz",
+        "bytes": 5461734,
+        "sha256": "d99feb9eddd7f0a3e37a3d1242c8f40e02837ac67ea151c65bd74bebd106991b",
+        "files": 1024,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "df9016c23b1317dab6bd0a6b882051dc410ff933a552af1b81d748f111a48898",
+            "counter-results.json": "0868ac77c28a080a5bd0e080c956b9611803fb25d0261569043ad2801d2e7cad",
+            "REPORT.md": "5613b01fc987dab5a0cb9de961bcc1c089a373e78c89b2ea29cbf30ceca3c815",
+            "library-results.json": "968e25f769465ef6f125ca61e5b219f06bc40b6d3face2c4c9c4511daadbd8e2",
+            "result-decision.json": "1bad344913362058c766e74a8b5f23ca31a70e5bf5bda221352cbbbef3bc8380",
+            "screen-results.json": "6c55c335827519cacf46c55f74ed5a59ba957ae0ad0d6e7ef3d37d552c3627f9",
+            "flat-packed-reads-profile-results.json": "7f893acbfa566d1a0b4332a7a6fd4f240b11dbeff13000f0bd3113b921d91dc7",
+            "matcher-profile-analysis.json": "c7eab31926ee74f6115b6b75a10954e3a04747a1f61a0e5e6dac20c4aaf6cfd5"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
