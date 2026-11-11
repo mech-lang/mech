@@ -57121,6 +57121,167 @@
         }
       },
       "complete_goal": false
+    },
+    "286": {
+      "git_parent": "a50d4f5b20fdd19aaf6063614bd7834e5632f376",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "a50d4f5b20fdd19aaf6063614bd7834e5632f376",
+      "retained_compiler": "R286",
+      "retained_source_packet_round": 286,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain spill copy facts along adjacent single-predecessor blocks.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "4129af708d08971fe429dd74d9217ba7d5e077d5c4276520b158637a3d71a119",
+        "changed_sources": {},
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435"
+            }
+          },
+          "patch_sha256": "4129af708d08971fe429dd74d9217ba7d5e077d5c4276520b158637a3d71a119",
+          "library_sha256": "234c1bbb30921cc813e74f1317394306626cf56124800ad78e2fe954c5d7214b"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "fc207bbc7c6de1afd2e5a2b74e7179a53dc9927ca5ae2a2849ba9329a94d901e",
+        "worker_sha256": "75df653fb72d6a497d13bc14483a83025f16b0259d0b01db1d21cad791cd1719"
+      },
+      "summary": {
+        "published_parent": "a50d4f5b20fdd19aaf6063614bd7834e5632f376",
+        "measured_parent": "a50d4f5b20fdd19aaf6063614bd7834e5632f376",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 286,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 286,
+        "selected_mode": "adjacent-reloads",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9699797020167916,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r285": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "eight-literals",
+          "ratio": 0.9976791627964021
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.0775475337120755
+        },
+        "next_experiment": "Carry bounds on every incoming loop index to a comparison against the same current view length. The two existing length assertions establish the floor for twelve surviving tree write checks. Preserve both assertions and prove all loop entries and backedges before changing the generated branches."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "fc207bbc7c6de1afd2e5a2b74e7179a53dc9927ca5ae2a2849ba9329a94d901e",
+            "metadata.json": "7709a7e7f6fa047ea08572f40b9fcd74a1c8522dcfcd7c449d832e6ec9dbd80e"
+          },
+          "decoded": {
+            "object.o": "fc207bbc7c6de1afd2e5a2b74e7179a53dc9927ca5ae2a2849ba9329a94d901e",
+            "metadata.json": "7709a7e7f6fa047ea08572f40b9fcd74a1c8522dcfcd7c449d832e6ec9dbd80e"
+          }
+        },
+        "allocator_edit_tests_passed": 5,
+        "upstream_positive_test_reproduces_reload": true,
+        "cleanup_tests_passed": 42,
+        "changed_machine_bodies": 3,
+        "all_other_machine_bodies_exact": true,
+        "checker_attempt": {
+          "nonroot_emission_passed_checker": true,
+          "root_machine_code_exit": -9,
+          "root_checker_completed": false,
+          "seconds": 108.3268809998408,
+          "termination_cause": "SIGKILL. The sender and resource cause were not established."
+        }
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r285": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-adjacent-spill-reloads.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r286-adjacent-spill-reloads-b72b8eab23ff.tar.gz",
+        "bytes": 5359215,
+        "sha256": "b72b8eab23ff1cebc1ef7c312773fb468046fb6fa3fefe16ca0f7c30385ebe48",
+        "files": 1019,
+        "reports_replayed": 10,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "6053637a3ba82ee21550cbb33c749c2237df7d2cb28a447b58841b4ce00d171f",
+            "counter-results.json": "7f4fa130f2aaf75b28076e73072692d502c097c92199bc790a3b1a22d5ef59d2",
+            "REPORT.md": "5164228e45f55f23cb55d040cb640b5ce7870519150e017f825e09341d6a90aa",
+            "library-results.json": "4040d784d01af3c5c759041da5628f4f0d5e08b09359a63a2a6cc1cb8db3c3fe",
+            "result-decision.json": "671089618c8d7e79f1bdcafb3495ae5516119d131eff824cfcaa59cebbfa803e",
+            "screen-results.json": "31bb21096411dae5262dc012cce950d9d0a61e8b55e0cf543821d8e730b3e15e",
+            "adjacent-reloads-profile-results.json": "1987b317916da8ebc06a7e217a8439169f60e4b2ddf19153d7cee35dccc917c0",
+            "matcher-profile-analysis.json": "91f52a06ddf95a9118a60587c3cdce89b3c6a69e3d22eb572f86e959bc6dae56",
+            "parser-route-analysis.json": "5f4cb1df6af526c5319fc796f47e8edcec51260c9707503d95f3f97dc9111da1",
+            "tree-floor-analysis.json": "1fb0e76f4da54a32a429e0dc2d24525066fd6a46c14e072d4a2c4a2660595fc3"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
