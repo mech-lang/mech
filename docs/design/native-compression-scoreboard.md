@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R295 preserves agreeing Boolean literals at joins. Paired elapsed changes -0.525% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R294 / Roc | R295 / Roc | R294 / libdeflate | R295 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.194175× | 0.193589× | 2.480856× | 2.473371× |
+| prefix-random-8192 | 0.828606× | 0.836781× | 2.966367× | 2.995631× |
+| prefix-periodic-131072 | 0.794833× | 0.794195× | 1.443559× | 1.442401× |
+| prefix-periodic-1048576 | 0.811171× | 0.810991× | 1.373230× | 1.372925× |
+| prefix-repeated-131072 | 0.793214× | 0.799196× | 1.326188× | 1.336189× |
+| prefix-repeated-1048576 | 0.804349× | 0.805647× | 1.263745× | 1.265784× |
+| prefix-natural-4096 | 1.037621× | 1.019462× | 1.754280× | 1.723580× |
+| prefix-natural-1048576 | 1.450186× | 1.424209× | 1.168464× | 1.147533× |
+| prefix-random-1048576 | 1.711824× | 1.713373× | 2.418634× | 2.420824× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R295 timing, proof and replay evidence](native-agreeing-boolean-literals.md).
+
+## Historical R294 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R294 reuses geometry facts for immutable captures. Paired elapsed changes -0.729% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R293 / Roc | R294 / Roc | R293 / libdeflate | R294 / libdeflate |

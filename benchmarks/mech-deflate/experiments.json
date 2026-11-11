@@ -58651,6 +58651,190 @@
         }
       },
       "complete_goal": false
+    },
+    "295": {
+      "git_parent": "fc5b9d69b91ef9da037a89a4f827b38f5f91c824",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "fc5b9d69b91ef9da037a89a4f827b38f5f91c824",
+      "retained_compiler": "R295",
+      "retained_source_packet_round": 295,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Preserve agreeing Boolean literals at joins.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "10bc462d6d9d82e04bb1447b2e9f7e66216cb8742a9bb1beaff1288631481ca1",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/selected_ranges.rs": {
+            "before": "8de2536ff2080c4259d6f75eb9955f43a5ae508e3410c1f37dc9227b699b56bb",
+            "after": "1a07284ce158dad99ed704b09ce5e3f396b2ca33156696f617143d2f07fb0fa0"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/boolean_words.rs": {
+            "before": "d632cc67965b721e66a7c94426370c4ce216df47bb41b68c369cc0bf2dd84b9b",
+            "after": "c24246ef3b64877d8b4e5c4004bb15f598ddbf8ee1e02d573799ce58d26389cf"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/word_ranges/mod.rs": {
+            "before": "4a039bc42877911b580e007025e68b164eb3b902ae92bab22e6c5dae0b2e77d0",
+            "after": "6d308d48b306c4fb7fe6a35dc8f3feede99f0330156943fb8e19c29dff49cef6"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "a2c68f0e7c5b3809ac2544d69dcd9ae5d7ba335ff7c4a83a46d63d6eb9befb99",
+        "worker_sha256": "74fe4a16390c33f388c32587478d16b138afa7bf3893644eaf441a377153f747"
+      },
+      "summary": {
+        "published_parent": "fc5b9d69b91ef9da037a89a4f827b38f5f91c824",
+        "measured_parent": "fc5b9d69b91ef9da037a89a4f827b38f5f91c824",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 295,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 295,
+        "selected_mode": "agreeing-literal-phis",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9947526026904288,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r294": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "empty",
+          "ratio": 1.0269123383278116
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.0254660549247057
+        },
+        "next_experiment": "Share an exclusive valid start for fixed-width reads from the same entry-defined length. The retained vector matcher still checks the input length before each width-four window and then separately checks its start. Both misses reach the same zero result. Prove the common continuation and share one total length calculation per immutable view and width."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "a2c68f0e7c5b3809ac2544d69dcd9ae5d7ba335ff7c4a83a46d63d6eb9befb99",
+            "metadata.json": "d393403ef9b15fef4f8570378a2613ed18734143556f6e9b550f02c1e7a9d225"
+          },
+          "decoded": {
+            "object.o": "a2c68f0e7c5b3809ac2544d69dcd9ae5d7ba335ff7c4a83a46d63d6eb9befb99",
+            "metadata.json": "d393403ef9b15fef4f8570378a2613ed18734143556f6e9b550f02c1e7a9d225"
+          }
+        },
+        "cleanup_tests_passed": 45,
+        "compiled_window_calls": 43923,
+        "compiled_route_calls": 3840,
+        "packed_source_window_tests": 1,
+        "direct_linked_phase_calls": 87,
+        "focused_window_gate_calls": 3443,
+        "composed_captured_window_tests": 6,
+        "changed_machine_bodies": 5,
+        "agreeing_literal_control_calls": 48,
+        "parser_tag_tests_removed": 2
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r294": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-agreeing-boolean-literals.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r295-agreeing-literal-phis-a0dcfa888024.tar.gz",
+        "bytes": 5147152,
+        "sha256": "a0dcfa888024ab0f671ea2daf04241c39843a38c613bdfecf32c894bf2cc8328",
+        "files": 976,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "615ddaf436e28a6b1ee676849c3d03338459646e1e34eca3baae4876306ec490",
+            "counter-results.json": "04ce862378df9472da55eddb5ecfc5b473218df9a0456799554e777cce60becd",
+            "REPORT.md": "aa3c2c45e4a8e6cd1a07bf4aa31007c22823e0cac1dfb0e292c2d086725759ad",
+            "library-results.json": "863c5fc4cde2b2239635e02c422d9bcc8d178aa72a7d2e343e6787134f1fa002",
+            "result-decision.json": "8c4a67e8c47078d800221d3baef2fbf67fdbabb59225ca5eaefbfafe1f37fa4a",
+            "screen-results.json": "25e8928f4ef0c1d1b6627bc7c5b2d977b4eb2b9720fd8533b1398a52ba925bfc",
+            "agreeing-literal-phis-profile-results.json": "140614b4f8cafb0eaa8629c32330804213d9a738a2b7443c7d41580fe1aa1bef",
+            "parser-profile-analysis.json": "8afaa55046dec6bebdbf03b9def53de4bd1c3bc4d99e2fbf83a13cc21e50ef0f"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
