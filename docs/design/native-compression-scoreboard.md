@@ -1,6 +1,25 @@
 # Current compression scoreboard
 
 **38/81 cases faster than Roc (46.91%).** Goal 100%.
+R276 evaluates the first short ordered-reduction visit directly. Paired elapsed changes -0.289% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R275 / Roc | R276 / Roc | R275 / libdeflate | R276 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.197751× | 0.198232× | 2.520126× | 2.526258× |
+| prefix-repeated-131072 | 1.012775× | 1.012343× | 1.699752× | 1.699029× |
+| prefix-repeated-1048576 | 1.034131× | 1.035177× | 1.626138× | 1.627783× |
+| prefix-periodic-1048576 | 1.062649× | 1.066074× | 1.801070× | 1.806875× |
+| prefix-natural-32768 | 1.478091× | 1.471887× | 1.341623× | 1.335991× |
+| prefix-natural-1048576 | 1.508769× | 1.499167× | 1.219665× | 1.211903× |
+| prefix-random-1048576 | 2.117142× | 2.124698× | 2.999997× | 3.010703× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R276 timing, proof and replay evidence](native-short-reduction-first-visit.md).
+
+## Historical R275 measured comparison
+
+**38/81 cases faster than Roc (46.91%).** Goal 100%.
 R275 reuses proved byte equality across shifted immutable input windows and keeps the R272 runtime. Paired elapsed falls 2.55% across all 81. Both timing gates pass 81/81. 6 cases move below Roc parity. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R274 / Roc | R275 / Roc | R274 / libdeflate | R275 / libdeflate |
