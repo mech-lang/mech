@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R292 retains spill copy facts across taken branches. Paired elapsed changes -0.765% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R291 / Roc | R292 / Roc | R291 / libdeflate | R292 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.197142× | 0.194734× | 2.528726× | 2.497838× |
+| prefix-random-8192 | 0.861287× | 0.847291× | 3.109778× | 3.059246× |
+| prefix-periodic-131072 | 0.805428× | 0.792766× | 1.463627× | 1.440618× |
+| prefix-periodic-1048576 | 0.824648× | 0.812344× | 1.396811× | 1.375970× |
+| prefix-repeated-131072 | 0.803174× | 0.793762× | 1.344800× | 1.329040× |
+| prefix-repeated-1048576 | 0.815422× | 0.804040× | 1.281453× | 1.263566× |
+| prefix-natural-4096 | 1.063860× | 1.055261× | 1.817828× | 1.803135× |
+| prefix-natural-1048576 | 1.473780× | 1.479314× | 1.188070× | 1.192531× |
+| prefix-random-1048576 | 1.775667× | 1.765666× | 2.510527× | 2.496386× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R292 timing, proof and replay evidence](native-forward-spill-copies.md).
+
+## Historical R291 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R291 combines checked empty runs and reduction handoffs. Paired elapsed changes -0.262% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R290 / Roc | R291 / Roc | R290 / libdeflate | R291 / libdeflate |
