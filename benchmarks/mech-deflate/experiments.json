@@ -54745,6 +54745,167 @@
         }
       },
       "complete_goal": false
+    },
+    "270": {
+      "git_parent": "962a8273a6c4fb42e7439746be0e674fb101c016",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "1e6459bee97ef35b55794c95df9fb72cbf455bb2",
+      "retained_compiler": "R270",
+      "retained_source_packet_round": 270,
+      "decision": "Retain separate equality loop tiers after full qualification.",
+      "source": {
+        "evaluated_only": false,
+        "files": 831,
+        "baseline": "R268",
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ]
+      },
+      "backend_source": {
+        "files": 200,
+        "changed": false,
+        "version": "Cranelift 0.131.3",
+        "register_allocator": "regalloc2 0.15.2"
+      },
+      "summary": {
+        "round": 270,
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "published_parent": "962a8273a6c4fb42e7439746be0e674fb101c016",
+        "measured_parent": "1e6459bee97ef35b55794c95df9fb72cbf455bb2",
+        "retained_source_packet_round": 270,
+        "retain_experimental_compiler": true,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R268",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 26,
+          "after_count": 27,
+          "denominator": 81,
+          "before_percent": 32.098765432098766,
+          "after_percent": 33.333333333333336,
+          "change_percentage_points": 1.2345679012345698
+        },
+        "all81_paired_after_over_before": 0.9926320380983557,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 0.9956442096415765,
+          "primary-b": 0.9896289794262969
+        },
+        "pooled_gate_passed": 81,
+        "block_gate_passed": 81,
+        "gate_misses": {
+          "pooled": [],
+          "block": []
+        },
+        "crossed_below": [
+          "prefix-repeated-33027"
+        ],
+        "crossed_above": [],
+        "repeated_33027": {
+          "before": 1.0158795157345288,
+          "after": 0.9920472477704915
+        },
+        "next_frontier": {
+          "case": "prefix-periodic-32768",
+          "ratio": 1.002206629498333
+        },
+        "complete_goal": false
+      },
+      "qualification": {
+        "native_tests": 728,
+        "inherited_exclusions": 7,
+        "complete_smokes": 324,
+        "matching_controls": 5788,
+        "path_capacity_alias_controls": 98,
+        "full_image_profiles": 8
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "balanced_blocks_per_case": 24,
+        "timed_calls": 245664,
+        "reference_capacity_matches": 81,
+        "libdeflate_exact_bytes_cases": 81,
+        "fresh_compression_all_cases": true,
+        "all_outputs_independently_inflated": true,
+        "all_input_and_output_aliases_preserved": true,
+        "source": {
+          "version": "1.26",
+          "git_revision": "92e6a0db9fa848d742f9eb286c92afc60f2c3dda",
+          "source_archive_sha256": "af56498149827f5a5e3f1ffb653c79c8c75557f3dc2caf6002cac38a59b844b7",
+          "source_bytes": 198808,
+          "source_url": "https://codeload.github.com/ebiggers/libdeflate/tar.gz/92e6a0db9fa848d742f9eb286c92afc60f2c3dda"
+        },
+        "report": "docs/design/native-libdeflate-comparison.md",
+        "exact_image_profiles": 2
+      },
+      "pins": {
+        "candidate_object": {
+          "sha256": "45d15c211dfc8b125d57be6409aee506fdb9f8df71f7c127fb544bdc1b05ebe5"
+        },
+        "candidate_worker": {
+          "sha256": "17349a3b1d31ffcdd6de1407b7d93e1fa9202a16e24583e49c9c1339ce8b9e1e"
+        },
+        "source": {
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "bytecode": {
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "original_decoded_exact": true,
+        "retained_object": {
+          "sha256": "96b3e7ce89956adfd600b36b389047455a47d3e88c599155b2f936ad98f12d3a"
+        },
+        "retained_worker": {
+          "sha256": "e570897a8f7f4fafd3fb3160a4c060b40a8b7ee46f3c7c2db6f5628cec0fc80d"
+        }
+      },
+      "artifacts": [
+        {
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r270-equality-tiers-and-library-comparison-11d6708c6ba7.tar.gz",
+          "bytes": 9765417,
+          "sha256": "11d6708c6ba7497587cab1ab6cab518e0a80d9900c535ba07c9d07272f8f26d1"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "11d6708c6ba7497587cab1ab6cab518e0a80d9900c535ba07c9d07272f8f26d1",
+        "verified_files": 2263,
+        "offline_reports": 5,
+        "retained_source_packet_round": 270,
+        "backend_source_files": 200,
+        "changed_backend_source_files": 0,
+        "candidate_compiler_source_files": 831,
+        "replayed_output_hashes": {
+          "primary-results.json": "73b2f0c006875ea4c558e868448c201d1fb2c3c997f73a9d35060b869ce4abed",
+          "counter-results.json": "db7b1621b5423d1834bab860f500d4b8ebb42aefd15931d3fcd350da99480f8b",
+          "REPORT.md": "12abb51849a29aca5624553be81b4b0f24acf59753e1a1af77477fe707ed41d5",
+          "libdeflate-comparison/timing/summary.json": "5fd8c38be74729ae1639d6be92f07943eef738af9d76706a607bdea674b4b61c",
+          "libdeflate-comparison/LIBDEFLATE.md": "9271b67cafc84ebce2de5dcadf4ea0c565f68341d8f6c8fe6a00001837318d69"
+        },
+        "stdout": "Replayed source closure, both qualification reports, and full four-actor libdeflate comparison.\n"
+      },
+      "report": "docs/design/native-equality-loop-tiers.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r270-equality-tiers-and-library-comparison-11d6708c6ba7.tar.gz",
+        "bytes": 9765417,
+        "sha256": "11d6708c6ba7497587cab1ab6cab518e0a80d9900c535ba07c9d07272f8f26d1",
+        "files": 2263,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "73b2f0c006875ea4c558e868448c201d1fb2c3c997f73a9d35060b869ce4abed",
+            "counter-results.json": "db7b1621b5423d1834bab860f500d4b8ebb42aefd15931d3fcd350da99480f8b",
+            "REPORT.md": "12abb51849a29aca5624553be81b4b0f24acf59753e1a1af77477fe707ed41d5",
+            "libdeflate-comparison/timing/summary.json": "5fd8c38be74729ae1639d6be92f07943eef738af9d76706a607bdea674b4b61c",
+            "libdeflate-comparison/LIBDEFLATE.md": "9271b67cafc84ebce2de5dcadf4ea0c565f68341d8f6c8fe6a00001837318d69"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
