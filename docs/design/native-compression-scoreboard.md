@@ -1,6 +1,31 @@
 # Current compression scoreboard
 
 **46/81 cases faster than Roc (56.79%).** Goal 100%.
+R309 reuses a dominating unsigned bounds comparison. Paired elapsed changes -0.525% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.112643× Roc. The closest above libdeflate parity is 256 KiB natural at 1.124730×.
+
+| Input | R308 / Roc | R309 / Roc | R308 / libdeflate | R309 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.182902× | 0.182504× | 2.336349× | 2.331272× |
+| prefix-random-8192 | 0.817676× | 0.812088× | 2.929162× | 2.909144× |
+| prefix-random-16384 | 1.114838× | 1.100570× | 3.033896× | 2.995069× |
+| prefix-periodic-131072 | 0.730498× | 0.730658× | 1.321621× | 1.321910× |
+| prefix-periodic-1048576 | 0.740463× | 0.740256× | 1.253161× | 1.252810× |
+| prefix-repeated-131072 | 0.729754× | 0.721587× | 1.251530× | 1.237524× |
+| prefix-repeated-1048576 | 0.739780× | 0.739540× | 1.162214× | 1.161836× |
+| prefix-natural-4096 | 1.000205× | 0.996521× | 1.709546× | 1.703248× |
+| prefix-natural-262144 | 1.389048× | 1.387369× | 1.126092× | 1.124730× |
+| prefix-natural-1048576 | 1.403890× | 1.402181× | 1.131306× | 1.129929× |
+| prefix-random-1048576 | 1.694342× | 1.674439× | 2.397382× | 2.369221× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R309 timing, proof and replay evidence](native-repeated-bounds-checks.md).
+
+## Historical R308 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
 R308 widens unsigned dot products in two Huffman cost loops. Paired elapsed changes -1.170% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 The closest primary case above parity is prefix-random-16384 at 1.108522× Roc.
