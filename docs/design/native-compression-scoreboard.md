@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R297 folds exact flags in selected reductions. Paired elapsed changes -0.635% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R296 / Roc | R297 / Roc | R296 / libdeflate | R297 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.193690× | 0.194091× | 2.477664× | 2.482799× |
+| prefix-random-8192 | 0.817598× | 0.821070× | 2.941261× | 2.953750× |
+| prefix-periodic-131072 | 0.773035× | 0.775008× | 1.402558× | 1.406138× |
+| prefix-periodic-1048576 | 0.790692× | 0.790694× | 1.339846× | 1.339850× |
+| prefix-repeated-131072 | 0.775135× | 0.774328× | 1.296669× | 1.295319× |
+| prefix-repeated-1048576 | 0.786961× | 0.786132× | 1.235358× | 1.234056× |
+| prefix-natural-4096 | 1.013778× | 1.004644× | 1.727450× | 1.711885× |
+| prefix-natural-1048576 | 1.421741× | 1.406241× | 1.146626× | 1.134125× |
+| prefix-random-1048576 | 1.707312× | 1.710297× | 2.418515× | 2.422743× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R297 timing, proof and replay evidence](native-scoped-bitwise-guards.md).
+
+## Historical R296 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R296 shares fixed-width readable window bounds. Paired elapsed changes -1.015% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R295 / Roc | R296 / Roc | R295 / libdeflate | R296 / libdeflate |
