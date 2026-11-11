@@ -593,16 +593,21 @@ pub(super) fn define<M: Module>(
         } else {
             None
         };
-        let computation = proof.phase.as_ref().map_or_else(
-            || {
-                !proof.arrays.iter().any(|a| a.appends)
-                    && proof
-                        .actions
-                        .iter()
-                        .any(|(_, a)| matches!(a, Operation::Write { .. }))
-            },
-            |phase| phase.loops.len() > 1 && !phase.checked_children,
-        );
+        let complete_readonly_frame = !proof.writes()
+            && proof.exits.is_empty()
+            && proof.result.frame().is_some()
+            && !proof.arrays.iter().any(|a| a.appends);
+        let computation = complete_readonly_frame
+            || proof.phase.as_ref().map_or_else(
+                || {
+                    !proof.arrays.iter().any(|a| a.appends)
+                        && proof
+                            .actions
+                            .iter()
+                            .any(|(_, a)| matches!(a, Operation::Write { .. }))
+                },
+                |phase| phase.loops.len() > 1 && !phase.checked_children,
+            );
         if ((proof.exits.is_empty() && computation) || private.is_some())
             && (proof.result.direct_array().is_some() || proof.result.frame().is_some())
             && !proof
