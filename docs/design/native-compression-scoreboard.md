@@ -19,6 +19,8 @@ Ratios use the same fresh four-actor comparison. The parity score and gates use 
 
 [R288 timing, proof and replay evidence](native-shared-window-checks.md).
 
+R289 measures selected completion forwarding in ordered reductions. The 81-case paired elapsed changes +0.149%. [R289 timing, proof and replay evidence](native-reduction-handoff.md).
+
 ## Historical R287 measured comparison
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
