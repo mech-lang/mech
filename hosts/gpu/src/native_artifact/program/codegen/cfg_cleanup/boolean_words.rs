@@ -2,7 +2,7 @@
 //! Start with candidates and remove every node fed by an unproved value. This
 //! greatest fixed point accepts copy cycles with Boolean seeds, but never an
 //! unrestricted entry argument, fresh load, arithmetic or unsupported edge.
-use super::word_ranges::Range;
+use super::word_ranges::{Range, literal};
 use cranelift_codegen::flowgraph::ControlFlowGraph;
 use cranelift_codegen::ir::{Function, InstructionData as Data, Opcode, Value, ValueDef};
 use std::collections::{BTreeMap, VecDeque};
@@ -97,11 +97,8 @@ pub(super) fn derive(f: &Function, cfg: &ControlFlowGraph) -> BTreeMap<Value, Ra
             match f.dfg.insts[inst] {
                 Data::UnaryImm {
                     opcode: Opcode::Iconst,
-                    imm,
-                } => {
-                    let mask = u64::MAX >> (64 - f.dfg.value_type(value).bits());
-                    Some((imm.bits() as u64 & mask) <= 1)
-                }
+                    ..
+                } => Some(literal(f, value).is_some_and(|word| word <= 1)),
                 Data::IntCompare { .. } | Data::IntCompareImm { .. } => Some(true),
                 Data::Unary {
                     opcode: Opcode::Uextend | Opcode::Ireduce,
@@ -176,7 +173,17 @@ pub(super) fn derive(f: &Function, cfg: &ControlFlowGraph) -> BTreeMap<Value, Ra
     }
     nodes
         .into_iter()
-        .filter(|n| n.possible && matches!(f.dfg.value_def(n.value), ValueDef::Param(_, _)))
-        .map(|n| (n.value, Range(0, 1)))
+        .filter_map(|node| {
+            if !node.possible {
+                return None;
+            }
+            // Distinct definitions of the same literal agree on every entry
+            // to this block, including fresh visits through a loop latch.
+            let (first, rest) = inputs.get(&node.value)?.split_first()?;
+            let exact = literal(f, *first)
+                .filter(|&word| rest.iter().all(|&value| literal(f, value) == Some(word)));
+            let range = exact.map_or(Range(0, 1), |word| Range(word, word));
+            Some((node.value, range))
+        })
         .collect()
 }

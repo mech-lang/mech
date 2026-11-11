@@ -18,6 +18,14 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Propagate unsigned widths through every current SSA input and fold only
     /// guards proved by those bounds and a dominating selected length floor.
     ProvedWordWidths,
+    /// Retained DEFLATE structural SSA passes; every option is emission-only.
+    CurrentPredicates,
+    IdentityRoutes,
+    LoopEdgeThreading,
+    ScopedBitwiseConstants,
+    FixedWindowBounds,
+    OrderedCaptureSpans,
+    AdjacentAddresses,
     EarlyIdentities,
     BooleanConditions,
     LoopOutlining,
