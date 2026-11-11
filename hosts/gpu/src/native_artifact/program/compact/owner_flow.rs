@@ -345,34 +345,39 @@ impl OwnerFlow {
     ) -> bool {
         let id = self.ids[&slot];
         let known = guards.known(frontier);
-        if known.is_empty()
-            || self.post_uses[frontier].contains(&id)
-            || flow.defs[frontier]
-                .iter()
-                .any(|value| known.contains_key(value))
-        {
+        if known.is_empty() || self.post_uses[frontier].contains(&id) {
             return false;
         }
-        let mut seen = vec![false; flow.reachable.len()];
-        let mut pending = guards.successors(flow, frontier, known);
-        while let Some(site) = pending.pop() {
-            if std::mem::replace(&mut seen[site], true) {
-                continue;
+        let mut after = known.clone();
+        guards.advance(flow, frontier, &mut after);
+        let mut pending = guards
+            .successors(flow, frontier, &after)
+            .into_iter()
+            .map(|next| (next, guards.edge(frontier, next, &after)))
+            .collect::<Vec<_>>();
+        let mut states = vec![None::<super::guards::State>; flow.reachable.len()];
+        while let Some((site, state)) = pending.pop() {
+            if let Some(existing) = &mut states[site] {
+                if !existing.merge(&state) {
+                    continue;
+                }
+            } else {
+                states[site] = Some(state);
             }
-            if self.reads[site].contains(&id) {
+            if self.reads[site].contains(&id) || self.post_uses[site].contains(&id) {
                 return false;
             }
             if self.definitions[site].contains(&id) {
                 continue;
             }
-            if self.post_uses[site].contains(&id)
-                || flow.defs[site]
-                    .iter()
-                    .any(|value| known.contains_key(value))
-            {
-                return false;
-            }
-            pending.extend(guards.successors(flow, site, known));
+            let mut after = states[site].as_ref().unwrap().clone();
+            guards.advance(flow, site, &mut after);
+            pending.extend(
+                guards
+                    .successors(flow, site, &after)
+                    .into_iter()
+                    .map(|next| (next, guards.edge(site, next, &after))),
+            );
         }
         true
     }
