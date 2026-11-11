@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R294 reuses geometry facts for immutable captures. Paired elapsed changes -0.729% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R293 / Roc | R294 / Roc | R293 / libdeflate | R294 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.199245× | 0.197678× | 2.509578× | 2.489839× |
+| prefix-random-8192 | 0.827767× | 0.834092× | 2.911053× | 2.933296× |
+| prefix-periodic-131072 | 0.802801× | 0.791278× | 1.460179× | 1.439221× |
+| prefix-periodic-1048576 | 0.822271× | 0.811852× | 1.389592× | 1.371985× |
+| prefix-repeated-131072 | 0.801409× | 0.795662× | 1.342055× | 1.332432× |
+| prefix-repeated-1048576 | 0.813534× | 0.804603× | 1.278850× | 1.264811× |
+| prefix-natural-4096 | 1.044694× | 1.037683× | 1.794161× | 1.782121× |
+| prefix-natural-1048576 | 1.453693× | 1.446452× | 1.172063× | 1.166225× |
+| prefix-random-1048576 | 1.707284× | 1.711133× | 2.410358× | 2.415792× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R294 timing, proof and replay evidence](native-captured-view-geometry.md).
+
+## Historical R293 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R293 reuses the flat-view proof in packed reads. Paired elapsed changes -0.923% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R292 / Roc | R293 / Roc | R292 / libdeflate | R293 / libdeflate |
