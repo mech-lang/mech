@@ -166,25 +166,43 @@ impl Layout {
                 })
                 .flatten()
                 .filter(|proof| proof.phase.is_some() || !proof.exits.is_empty());
-            let mut numeric = if phase.is_some() {
+            // A readonly partial phase may escape to an ordinary child on
+            // every visit. A complete readonly tree can share one loan without
+            // adding first-change ownership or publication state. Mutable and
+            // current-funded phases keep their established compact transport.
+            let partial_phase = phase.as_ref().is_some_and(|proof| {
+                !proof.writes()
+                    && proof
+                        .exits
+                        .iter()
+                        .any(|exit| matches!(exit.kind, super::numeric_plan::ExitKind::Unsupported))
+            });
+            let mut numeric = if phase.is_some() && !partial_phase {
                 phase
             } else if map.is_none() {
                 if let Ok(tree) = discovery.discover(tail) {
                     match super::readonly_numeric::derive_tree(
                         plan, tail, frames, aggregates, calls, &tree,
                     ) {
-                        Ok(proof) => {
+                        Ok(proof) if !partial_phase || !proof.writes() => {
                             numeric_tree = Some(tree);
                             Some(proof)
                         }
-                        Err(_) => super::readonly_numeric::derive(
-                            plan, tail, frames, aggregates, calls, visits,
-                        )
-                        .ok(),
+                        Ok(_) => phase,
+                        Err(_) => phase.or_else(|| {
+                            super::readonly_numeric::derive(
+                                plan, tail, frames, aggregates, calls, visits,
+                            )
+                            .ok()
+                        }),
                     }
                 } else {
-                    super::readonly_numeric::derive(plan, tail, frames, aggregates, calls, visits)
+                    phase.or_else(|| {
+                        super::readonly_numeric::derive(
+                            plan, tail, frames, aggregates, calls, visits,
+                        )
                         .ok()
+                    })
                 }
             } else {
                 None
