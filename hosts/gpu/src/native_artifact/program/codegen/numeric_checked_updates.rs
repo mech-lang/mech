@@ -66,7 +66,9 @@ pub(super) fn derive(code: CodePlan<'_>, numeric: &Numeric, shadow: usize) -> Pr
             | Operation::Frame
             | Operation::Aggregate,
         ) => true,
-        Some(Operation::Write { array, .. }) => numeric.arrays[*array].width == 8,
+        Some(Operation::Write { array, .. }) => {
+            matches!(numeric.arrays[*array].width, 1 | 2 | 4 | 8)
+        }
         None => matches!(code.blocks()[site].action(), Action::Scalar(_)),
         // Even an otherwise transparent array-copy recipe is a conservative
         // boundary here. Growth, copies and callbacks are not crossed. A
@@ -75,7 +77,8 @@ pub(super) fn derive(code: CodePlan<'_>, numeric: &Numeric, shadow: usize) -> Pr
     };
     let mut facts = Proof::default();
     for &(site, _) in numeric.actions.iter().filter(|(_, action)| {
-        matches!(action, Operation::Write { array, .. } if numeric.arrays[*array].width == 8)
+        matches!(action, Operation::Write { array, .. }
+            if matches!(numeric.arrays[*array].width, 1 | 2 | 4 | 8))
     }).take(MAX_LOCAL_WRITES) {
         let Some(exit) = jump(site) else { continue; };
         let mut sites = vec![site];

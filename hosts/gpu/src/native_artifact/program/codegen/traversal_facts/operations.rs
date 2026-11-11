@@ -106,8 +106,13 @@ pub(super) fn scalar(
                         terms.intern(Expr::Wrapping(arithmetic, *a, *b))?
                     }
                 }
-                Op::U64Add | Op::U64Sub => {
-                    let op = if *op == Op::U64Add {
+                Op::U8Add | Op::U32Add | Op::U32Sub | Op::U64Add | Op::U64Sub => {
+                    // Facts describe the successful continuation of the source
+                    // operation. A checked narrow result is the same exact
+                    // mathematical sum/difference in our U64 fact domain.
+                    // This does not prove that a later narrow operation fits:
+                    // flow's arithmetic-guard removal remains U64-only.
+                    let op = if matches!(op, Op::U8Add | Op::U32Add | Op::U64Add) {
                         Arithmetic::Add
                     } else {
                         Arithmetic::Sub
