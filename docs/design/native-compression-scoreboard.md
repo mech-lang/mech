@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R285 shares the comparison for cost and item selection. Paired elapsed changes -0.328% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R284 / Roc | R285 / Roc | R284 / libdeflate | R285 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.206688× | 0.205531× | 2.655055× | 2.640191× |
+| prefix-random-8192 | 0.895898× | 0.897192× | 3.244231× | 3.248917× |
+| prefix-periodic-131072 | 0.877310× | 0.874936× | 1.593823× | 1.589509× |
+| prefix-periodic-1048576 | 0.898477× | 0.898940× | 1.519825× | 1.520608× |
+| prefix-repeated-131072 | 0.870946× | 0.868062× | 1.457709× | 1.452882× |
+| prefix-repeated-1048576 | 0.885730× | 0.887026× | 1.391239× | 1.393273× |
+| prefix-natural-4096 | 1.085670× | 1.082966× | 1.857962× | 1.853335× |
+| prefix-natural-1048576 | 1.493619× | 1.486272× | 1.203342× | 1.197423× |
+| prefix-random-1048576 | 1.816989× | 1.818336× | 2.567494× | 2.569397× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R285 timing, proof and replay evidence](native-item-selection-flags.md).
+
+## Historical R284 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R284 carries integer widths through packed-load joins. Paired elapsed changes -1.132% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R283 / Roc | R284 / Roc | R283 / libdeflate | R284 / libdeflate |
