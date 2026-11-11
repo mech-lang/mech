@@ -1,5 +1,23 @@
 # Current compression scoreboard
 
+**Cases faster than Roc: 22/81 = 27.2%. Goal 100%.**
+R264 remains the retained experimental compiler. The separate no-growth body improved paired elapsed 2.1243% across the matrix. Empty and one-byte inputs missed the block timing gate. Both counter cohorts and all adverse observations are preserved.
+
+| Frontier | R264 / Roc | No-growth candidate / Roc |
+|---|---:|---:|
+| prefix-repeated-32767 | 1.02345× | 1.00157× |
+| prefix-repeated-32768 | 1.02433× | 1.00468× |
+| prefix-repeated-32769 | 1.03258× | 1.00284× |
+| prefix-periodic-32768 | 1.05766× | 1.03260× |
+| eight-literals | 0.41593× | 0.41354× |
+| prefix-natural-1048576 | 1.89164× | 1.81871× |
+
+In the separate 13-case screen, applying R260 after growth-state isolation moves repeated 32,768 bytes from 1.0055× to 0.9945× Roc. Repeated 32,767 bytes reaches 0.9951×. Both gates pass for all 13 cases. The full 81-case acceptance follows separately.
+
+[Full R267 matrix, allocator trace, capacity proof and pilots](native-loop-state.md).
+
+## Historical R266 measured rejection
+
 **Cases faster than Roc: 22/81 = 27.2%; goal 100%.**
 Retained experimental compiler: **R264**. R266 is rejected globally: direct
 extending loads reduce instructions but slow the near-parity frontier. Its

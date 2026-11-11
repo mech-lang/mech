@@ -54382,6 +54382,141 @@
         "Parity across all compression families/sizes and additional ordinary managed contract integration."
       ],
       "complete_goal": false
+    },
+    "267": {
+      "git_parent": "8fb68d5649a0c85f5bbafb19cea53ffb387f29c5",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R264",
+      "retained_source_packet_round": 264,
+      "decision": "Retain R264 after two block gate misses. Advance the separate growth-isolated threading pilot to full qualification.",
+      "source": {
+        "evaluated_only": true,
+        "files": 826,
+        "modified": 9,
+        "new": 1,
+        "baseline": "R264",
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ]
+      },
+      "backend_source": {
+        "files": 200,
+        "changed": false,
+        "version": "Cranelift 0.131.3",
+        "register_allocator": "regalloc2 0.15.2"
+      },
+      "summary": {
+        "round": 267,
+        "published_parent": "8fb68d5649a0c85f5bbafb19cea53ffb387f29c5",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 264,
+        "retained_faster_count": 22,
+        "retained_faster_percent": 27.160493827160494,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R264",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 22,
+          "after_count": 22,
+          "denominator": 81,
+          "before_percent": 27.160493827160494,
+          "after_percent": 27.160493827160494,
+          "change_percentage_points": 0.0
+        },
+        "all81_paired_after_over_before": 0.9787567008280721,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 0.9767272240135187,
+          "primary-b": 0.9807903945580954
+        },
+        "pooled_gate_passed": 81,
+        "block_gate_passed": 79,
+        "scope": "The candidate is qualified for the compact executable. Its measurement boundary covers complete level-12 compression, scratch construction, output transfer and private cleanup. Ordinary managed admission, accounting and recovery are outside this boundary. The maintained compiler has a separate managed execution contract.",
+        "complete_goal": false,
+        "repeated_32768_candidate_x_reference": 1.0046797727935797,
+        "separate_threaded_screen_13_cases_passed": 13,
+        "threaded_repeated_32768_x_reference": 0.9945435237829263
+      },
+      "qualification": {
+        "native_tests": 720,
+        "inherited_exclusions": 7,
+        "complete_smokes": 324,
+        "entry_diagnostic_calls": 162,
+        "current_no_growth_entries_per_case_matrix": 404,
+        "full_image_profiles": 8,
+        "separate_pilot_profiles": 4,
+        "source_path_cases_each_artifact_form": 40,
+        "focused_capacity_cases_each_form": 7,
+        "alias_cases_each_form": 2
+      },
+      "pins": {
+        "candidate_object": {
+          "sha256": "f414e19bb43f0d9e8c4f154b5f658067dbc7befbfc2fb755456de09f743dea66"
+        },
+        "candidate_worker": {
+          "sha256": "16bb848054545ade82b559992e0d1909c29b9e08ab5fde485c8dbdbbe1381d6d"
+        },
+        "source": {
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "bytecode": {
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "original_decoded_exact": true
+      },
+      "artifacts": [
+        {
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r267-loop-state-fc9a8770f4b1.tar.gz",
+          "bytes": 10154928,
+          "sha256": "fc9a8770f4b1bb80af8fa9d8d73810bf879d6012e7bfbbb6362c5a02c4372a49"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "fc9a8770f4b1bb80af8fa9d8d73810bf879d6012e7bfbbb6362c5a02c4372a49",
+        "verified_files": 2416,
+        "offline_reports": 5,
+        "current_source_files": 826,
+        "reversed_base_source_files": 825,
+        "current_backend_source_files": 200,
+        "reversed_backend_source_files": 200,
+        "source_reconstruction_exact": true,
+        "replayed_output_hashes": {
+          "qualification/primary-results.json": "e2dd87c219010f4898f0cfd0ba5c9044fefa7dbd060231bb52dd45ae38260e8e",
+          "qualification/counter-results.json": "0da189cc0298f70adf8fb8fdcf1538a38a6e1d0528db4d6261defe7c9f8f44ca",
+          "REPORT.md": "7084ccbb4f5f69df884cc33bc80f4a434feaf09a0e73feb579d8eaf18f03abb5",
+          "result-decision.json": "bba539b02063926490848b0d17da6343a64536c86d252f7a6fda669ae043520f",
+          "empty-visit-audit.json": "649d0faf9842d6c861bf37db8679e46453c8ea365b4d332ddc16aed99a0c88b9"
+        },
+        "stdout": "Verified 826 source files, reversible R264 baseline, 200 backend files, both numerical reports and route receipts.\n"
+      },
+      "report": "docs/design/native-loop-state.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r267-loop-state-fc9a8770f4b1.tar.gz",
+        "bytes": 10154928,
+        "sha256": "fc9a8770f4b1bb80af8fa9d8d73810bf879d6012e7bfbbb6362c5a02c4372a49",
+        "files": 2416,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "qualification/primary-results.json": "e2dd87c219010f4898f0cfd0ba5c9044fefa7dbd060231bb52dd45ae38260e8e",
+            "qualification/counter-results.json": "0da189cc0298f70adf8fb8fdcf1538a38a6e1d0528db4d6261defe7c9f8f44ca",
+            "REPORT.md": "7084ccbb4f5f69df884cc33bc80f4a434feaf09a0e73feb579d8eaf18f03abb5",
+            "result-decision.json": "bba539b02063926490848b0d17da6343a64536c86d252f7a6fda669ae043520f",
+            "empty-visit-audit.json": "649d0faf9842d6c861bf37db8679e46453c8ea365b4d332ddc16aed99a0c88b9"
+          }
+        }
+      },
+      "remaining": [
+        "Full 81-case qualification of isolated threading after growth-state separation.",
+        "100% of the fixed matrix faster than the reference."
+      ],
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
