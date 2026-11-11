@@ -17,6 +17,8 @@ Cases moving below 1× in the fresh comparison repeated-32769, prefix-repeated-3
 
 [All 81 results, proof, counters, safety gates and profiles](native-thread-after-growth-isolation.md).
 
+The R269 vector address pilot missed both eight-literal timing gates and moved three cases above parity in its screen. R268 remains the measured baseline. [R269 screen and executable evidence](native-shared-vector-addresses.md).
+
 ## Historical R267 measured comparison
 
 **Cases faster than Roc: 22/81 = 27.2%. Goal 100%.**

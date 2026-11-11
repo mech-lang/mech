@@ -54656,6 +54656,95 @@
         "100% of the fixed matrix faster than the reference. Preserve full gates and revisit the closest repeated and periodic cases."
       ],
       "complete_goal": false
+    },
+    "269": {
+      "git_parent": "1e6459bee97ef35b55794c95df9fb72cbf455bb2",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R268",
+      "retained_source_packet_round": 268,
+      "decision": "Reject the shared vector address selector at the native screen.",
+      "source": {
+        "evaluated_only": true,
+        "baseline": "R268",
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ]
+      },
+      "backend_source": {
+        "version": "Cranelift 0.131.3",
+        "register_allocator": "regalloc2 0.15.2",
+        "files": 200,
+        "changed_files": 2,
+        "base_source_packet_round": 268
+      },
+      "summary": {
+        "round": 269,
+        "git_parent": "1e6459bee97ef35b55794c95df9fb72cbf455bb2",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retained_source_packet_round": 268,
+        "retained_cases_faster": 26,
+        "retained_cases": 81,
+        "candidate_adopted": false,
+        "screen_cases": 19,
+        "screen_timed_calls": 56700,
+        "screen_pooled_gates_passed": 18,
+        "screen_block_gates_passed": 18,
+        "screen_faster_before": 5,
+        "screen_faster_after": 2,
+        "screen_geomean_candidate_over_retained": 1.0001940113219037,
+        "regressions_past_parity": [
+          "prefix-repeated-32767",
+          "prefix-repeated-32768",
+          "prefix-repeated-32769"
+        ],
+        "closest_paired_change": 1.0005853500773076,
+        "counter_cases": 5,
+        "diagnostic_profile_images": 3,
+        "full_acceptance_campaign": false,
+        "compiler_source_changed": false,
+        "backend_selector_files_changed": 2
+      },
+      "artifacts": [
+        {
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r269-shared-vector-addresses-e3fd1a6b06ba.tar.gz",
+          "bytes": 340131,
+          "sha256": "e3fd1a6b06bad7212ec0cbb610cbbe1f5e35d2663b03e35b29b81fba26057843"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "e3fd1a6b06bad7212ec0cbb610cbbe1f5e35d2663b03e35b29b81fba26057843",
+        "verified_files": 105,
+        "offline_reports": 2,
+        "retained_source_packet_round": 268,
+        "backend_source_files": 200,
+        "changed_backend_source_files": 2,
+        "replayed_output_hashes": {
+          "screen-result.json": "774895860a94d5105bb202e1649739bfed8e3d3b1c93be248616eddfb8a9dc4d",
+          "focused-cpu-result.json": "7ba0dece30774189e9c1cbea9d0f9ae306677b4c981c6b403aca856f2e418ce2"
+        },
+        "stdout": ""
+      },
+      "report": "docs/design/native-shared-vector-addresses.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r269-shared-vector-addresses-e3fd1a6b06ba.tar.gz",
+        "bytes": 340131,
+        "sha256": "e3fd1a6b06bad7212ec0cbb610cbbe1f5e35d2663b03e35b29b81fba26057843",
+        "files": 105,
+        "reports_replayed": 2,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "screen-result.json": "774895860a94d5105bb202e1649739bfed8e3d3b1c93be248616eddfb8a9dc4d",
+            "focused-cpu-result.json": "7ba0dece30774189e9c1cbea9d0f9ae306677b4c981c6b403aca856f2e418ce2"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
