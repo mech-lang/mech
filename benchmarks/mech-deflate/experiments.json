@@ -61165,6 +61165,191 @@
         }
       },
       "complete_goal": false
+    },
+    "312": {
+      "git_parent": "cac3b50fff3fdeb5cbe30b44d970341945e5793b",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "6120aba1263cab886cd1d66c3c3c8d610c590172",
+      "retained_compiler": "R312",
+      "retained_source_packet_round": 312,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Defer private phase packet loads to their terminal copy.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "a2f12b37e1903949540a25ed83fa2d1e8f6f01775c3aa690a5e4d02a7e0658df",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "361debc3126921b30f3b9222c4b51bfecabe352028930008e93e6d9d4319d704",
+            "after": "fd1049a9fa040490eabebd8b5610743de57496cedab62929948ce6e27f285fcb"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs": {
+            "before": "6ea06f112d5f899020cac6551968b148eced39b6108e621a764f4c54722dd418",
+            "after": "59ec37de804c64bfe4e6eb0e6815696406c7e738947a83779bf472871ff1d209"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "48778b29a11ba97afeaced851c33e04fd5b190d9bd34e37290afa840e3509cb4",
+        "worker_sha256": "f035661c24832541fa1f510b5166fee180732760c7c94d5f1c133627655bda5e"
+      },
+      "summary": {
+        "published_parent": "cac3b50fff3fdeb5cbe30b44d970341945e5793b",
+        "measured_parent": "6120aba1263cab886cd1d66c3c3c8d610c590172",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 312,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 312,
+        "selected_mode": "exit-packet-words",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9966984339823818,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 46,
+          "after_count": 46,
+          "denominator": 81,
+          "before_percent": 56.79012345679013,
+          "after_percent": 56.79012345679013,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r309": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc_in_peer_cohort": {
+          "mech-r309": 46,
+          "mech-candidate": 46
+        },
+        "faster_than_both_in_peer_cohort": {
+          "mech-r309": 0,
+          "mech-candidate": 0
+        },
+        "roc_faster_than_libdeflate": 17,
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "random-64",
+          "ratio": 1.0099362105132683
+        },
+        "candidate_frontier": {
+          "case": "prefix-random-16384",
+          "x_reference": 1.0883875227994169
+        },
+        "dual_peer_frontier": "prefix-natural-32767",
+        "heap_families_identical": true
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "48778b29a11ba97afeaced851c33e04fd5b190d9bd34e37290afa840e3509cb4",
+            "metadata.json": "45cd4d68bef7270d3788d1ceb1554c54601f3167940913dee9ee3983f3c32b5c"
+          },
+          "decoded": {
+            "object.o": "48778b29a11ba97afeaced851c33e04fd5b190d9bd34e37290afa840e3509cb4",
+            "metadata.json": "45cd4d68bef7270d3788d1ceb1554c54601f3167940913dee9ee3983f3c32b5c"
+          }
+        },
+        "worker_sha256": "f035661c24832541fa1f510b5166fee180732760c7c94d5f1c133627655bda5e",
+        "cfg_cleanup_tests": 51,
+        "packet_word_tests": 2,
+        "warnings_as_errors": true,
+        "focused_tests_patch_sha256": "c884943a2d2786337dcfd2d3b3d185b80aa1c4449b6c6eee46f049623951c146"
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r309": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc": {
+          "mech-r309": 46,
+          "mech-candidate": 46
+        }
+      },
+      "report": "docs/design/native-exit-packet-loads.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r312-exit-packet-loads-d154750225b4.tar.gz",
+        "bytes": 6085740,
+        "sha256": "d154750225b40930f2e3941204e143234dbdd7cbedd75a11321a784ac5bfcbde",
+        "files": 1068,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "694318a18fd3b9ef6e6fa7cb9d6b323bdfeaab4cc1abe297d0f4f5778d0a75bd",
+            "counter-results.json": "320d2b4c5e00dcc03b22043cdbb8be7c69f57252c6da5e84eead725b5ed3a25d",
+            "REPORT.md": "417288f83b3c031146d5b7ea39d659730b9af1be2527d775c6bb4b6ad931b5a0",
+            "library-results.json": "e5040e63a12c4f47b0ea102f476758cf9b4380235780471a39aadaa992e236b9",
+            "result-decision.json": "ce1c69faa36024384d9d48e133bdb1b8fdfa1cba90fed1093ba57fbc19938f03",
+            "screen-disposition.json": "5d352662915e02250f4f61daf535087e6d8fa9ebce1a37205f1febbab9cb2feb",
+            "profile-summary.json": "d7531262d49e53d7ef14b5aa98ed9d952d3a3fc9110458bd2d17197eb3cae3f2",
+            "dual-peer-frontier.json": "92bc012d0946f68a0a69fe15aa86c01e61c3087258b64b9734d157336e57d6fe"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",

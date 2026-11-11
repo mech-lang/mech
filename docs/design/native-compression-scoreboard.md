@@ -1,6 +1,36 @@
 # Current compression scoreboard
 
 **46/81 cases faster than Roc (56.79%).** Goal 100%.
+R312 defers phase packet loads with a single use on an exit. Paired elapsed changes -0.330% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.088388× Roc. The closest above libdeflate parity is 256 KiB natural at 1.121742×.
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 KiB. The closest case is prefix-natural-32767 at 1.351416× Roc and 1.232441× libdeflate, requiring a 26.00% elapsed reduction to match Roc.
+
+
+| Input | R309 / Roc | R312 / Roc | R309 / libdeflate | R312 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.182481× | 0.181236× | 2.321540× | 2.305701× |
+| prefix-random-8192 | 0.782918× | 0.784815× | 2.797741× | 2.804520× |
+| prefix-random-16384 | 1.090115× | 1.081763× | 2.965464× | 2.942743× |
+| prefix-periodic-131072 | 0.728591× | 0.727434× | 1.323311× | 1.321210× |
+| prefix-periodic-1048576 | 0.739356× | 0.738884× | 1.254795× | 1.253994× |
+| prefix-repeated-131072 | 0.731382× | 0.734421× | 1.222635× | 1.227714× |
+| prefix-repeated-1048576 | 0.739931× | 0.739725× | 1.163443× | 1.163118× |
+| prefix-natural-4096 | 0.985796× | 0.983635× | 1.683414× | 1.679723× |
+| prefix-natural-32767 | 1.358774× | 1.351416× | 1.239151× | 1.232441× |
+| reymont-prefix-32769 | 1.359593× | 1.351458× | 1.243343× | 1.235904× |
+| heldout-window-32768 | 1.363360× | 1.355723× | 1.242120× | 1.235162× |
+| prefix-natural-262144 | 1.390089× | 1.385044× | 1.125828× | 1.121742× |
+| prefix-natural-1048576 | 1.403100× | 1.400530× | 1.131102× | 1.129031× |
+| prefix-random-1048576 | 1.681196× | 1.661670× | 2.377852× | 2.350235× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R312 timing, proof and replay evidence](native-exit-packet-loads.md).
+
+## Historical R309 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
 R309 reuses a dominating unsigned bounds comparison. Paired elapsed changes -0.525% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 The closest primary case above parity is prefix-random-16384 at 1.112643× Roc. The closest above libdeflate parity is 256 KiB natural at 1.124730×.
