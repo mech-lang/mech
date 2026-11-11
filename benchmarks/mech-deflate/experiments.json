@@ -57787,6 +57787,169 @@
         }
       },
       "complete_goal": false
+    },
+    "290": {
+      "git_parent": "74dcb741f5e0d5cfc6ddc5aed0b2f4d31e18a3ff",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "de538c6e63a69bc16d03f5c03d4b4a37130a7385",
+      "retained_compiler": "R290",
+      "retained_source_packet_round": 290,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Prove readable bounds at empty-run entry.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "664aa5d4bfb8094963c38037fa6633b550fcc4b4d728c11c95001c1d52cf6390",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/append_run.rs": {
+            "before": "56a9b467229eec783e66b55dd4cb44ba39230dd2690e6638f188e052126b0081",
+            "after": "87dae32f41e6f3aaf06d83d34a0ce4c94f42b1ff7e7614802d12e7dfc919ee0b"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/append_run_trace.rs": {
+            "before": "6fa65bf4cc2f16b8b3dc9ac868360fde91dd2296fcfa9a97863b01dfcc3cc9bc",
+            "after": "f5d00be2cdf0922106777454e146121188abc9bbc8cd4407060e9c0732a1d410"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435"
+            }
+          },
+          "patch_sha256": "4129af708d08971fe429dd74d9217ba7d5e077d5c4276520b158637a3d71a119",
+          "library_sha256": "234c1bbb30921cc813e74f1317394306626cf56124800ad78e2fe954c5d7214b"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "5d495934bd112379621a684f907b49df3858d4de1caf8ffcb034f0e6b5181e11",
+        "worker_sha256": "ad24efe91a786dbaf773b06f31e5e74fff44a1972925bcd0b7c362d4e4356e81"
+      },
+      "summary": {
+        "published_parent": "74dcb741f5e0d5cfc6ddc5aed0b2f4d31e18a3ff",
+        "measured_parent": "de538c6e63a69bc16d03f5c03d4b4a37130a7385",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 290,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 290,
+        "selected_mode": "empty-window",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9969200003844451,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r288": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "seven-stored-prefix",
+          "ratio": 1.01474046364409
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.066012455485619
+        },
+        "next_experiment": "Test the measured completion forwarding from R289 on the shorter checked empty route. Compare the two route bodies and require fresh paired timings before combining the optimizations."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "5d495934bd112379621a684f907b49df3858d4de1caf8ffcb034f0e6b5181e11",
+            "metadata.json": "06606bff92199e34bc96168f441173f54ea7adce497c4222a08647d317a22b84"
+          },
+          "decoded": {
+            "object.o": "5d495934bd112379621a684f907b49df3858d4de1caf8ffcb034f0e6b5181e11",
+            "metadata.json": "06606bff92199e34bc96168f441173f54ea7adce497c4222a08647d317a22b84"
+          }
+        },
+        "cleanup_tests_passed": 43,
+        "compiled_window_calls": 43923,
+        "direct_linked_phase_calls": 87,
+        "changed_machine_bodies": 4,
+        "all_other_machine_bodies_exact": true,
+        "guarded_empty_run_bodies": 4,
+        "entry_proved_guards_per_body": 2
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r288": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-empty-window.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r290-empty-window-ae112b5e355f.tar.gz",
+        "bytes": 5146981,
+        "sha256": "ae112b5e355fccf8aa2ce21423773215f97e203e802d82072ce47daa022a7bb5",
+        "files": 958,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "4d1e1dc336a430ad5513a49d9a087864aaf2a3261687686e076aead8ad0327ec",
+            "counter-results.json": "5de6fea487622a708ce8294abc1203bbbde99b26410744de3d29484ec46410b1",
+            "REPORT.md": "5fe9d5bad7814847ed410c0bcfa265d5ba472f08659fc2a20d6224423c863b77",
+            "library-results.json": "c0b7fba0729b6e9adf2c6fe16f6008dd906a122ccf260e4bbf3790410b9319a8",
+            "result-decision.json": "531101be36005719f8c7d5fd54bd6761cbf72d0fcc4110101f22c4dd06d14749",
+            "screen-results.json": "b2cd887373d7edf56131aa03322380d083fa6c7c084ab7cbd5996eb02054d093",
+            "empty-window-profile-results.json": "cc38b1f929442ccf0fba3e97e66bb094bba3d2e9b33c3d42738aedbfa7eb9dbd",
+            "parser-profile-analysis.json": "9285003b3f4f6bbf03a0fc45c557681241abca9aaf58e5434e34548a86668ff0"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
