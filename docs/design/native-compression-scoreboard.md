@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R293 reuses the flat-view proof in packed reads. Paired elapsed changes -0.923% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R292 / Roc | R293 / Roc | R292 / libdeflate | R293 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.196668× | 0.196441× | 2.516293× | 2.513395× |
+| prefix-random-8192 | 0.840841× | 0.809658× | 3.051630× | 2.938457× |
+| prefix-periodic-131072 | 0.794514× | 0.805471× | 1.443464× | 1.463370× |
+| prefix-periodic-1048576 | 0.811491× | 0.823094× | 1.373233× | 1.392868× |
+| prefix-repeated-131072 | 0.793000× | 0.804301× | 1.323310× | 1.342169× |
+| prefix-repeated-1048576 | 0.804555× | 0.814135× | 1.264046× | 1.279097× |
+| prefix-natural-4096 | 1.059592× | 1.040108× | 1.820329× | 1.786857× |
+| prefix-natural-1048576 | 1.469640× | 1.452843× | 1.186922× | 1.173356× |
+| prefix-random-1048576 | 1.768916× | 1.707633× | 2.504031× | 2.417281× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R293 timing, proof and replay evidence](native-admitted-packed-reads.md).
+
+## Historical R292 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R292 retains spill copy facts across taken branches. Paired elapsed changes -0.765% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R291 / Roc | R292 / Roc | R291 / libdeflate | R292 / libdeflate |
