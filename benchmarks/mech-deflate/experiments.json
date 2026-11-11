@@ -58835,6 +58835,190 @@
         }
       },
       "complete_goal": false
+    },
+    "296": {
+      "git_parent": "ae6bd4815b98455ed5820a2f9b25ef968054d38f",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ae6bd4815b98455ed5820a2f9b25ef968054d38f",
+      "retained_compiler": "R296",
+      "retained_source_packet_round": 296,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Share fixed-width readable window bounds.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "a9419c478c62303cb2f37f4136dde8712b08ab88bd7e0b095e2f976fa4502ffc",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "1d704f75f2432987722322182628f43be6859662d977d6edc52a11949c48f127",
+            "after": "ed3ef4d914bf78ee95b97c50e343886fa6731a454e36445fe78bdfa7f1dfaa62"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "3de4353145c2bafeef098752380c323686ae839a1bdda1738f2b15622e5b3cdd",
+            "after": "17a90d39afc87b07a82956464d67cfd0c75353516f8095b3585c455af234a533"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/window_bounds.rs": {
+            "before": null,
+            "after": "5e124bac84eaf7baca5aacad4d0afe6a49de9265264946403f89e6c0b8c455db"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "719438727998b960e90b3b79a2624f466afea651f34bab21cd0cdc7811132967",
+        "worker_sha256": "6c7f6f783fa5b8fb3777b11686c697d040d876f5f1a80f50639036d9d919951d"
+      },
+      "summary": {
+        "published_parent": "ae6bd4815b98455ed5820a2f9b25ef968054d38f",
+        "measured_parent": "ae6bd4815b98455ed5820a2f9b25ef968054d38f",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 296,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 296,
+        "selected_mode": "shared-window-limits",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9898480827874574,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r295": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "empty",
+          "ratio": 1.017125257018626
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.025017394819292
+        },
+        "next_experiment": "Preserve exact scalar bitwise guard values before register allocation. The current capacity-proved parser reaches a reduction admission that combines known true flags with AND and OR. The final binary still materializes one and branches on it in each admitted segment. Measure early removal with the original dynamic admission and error paths."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "719438727998b960e90b3b79a2624f466afea651f34bab21cd0cdc7811132967",
+            "metadata.json": "c1bde7b8f79e8989cdd36d7c9d044dff1baab9eb44c2b63cef1a91eb8ea45928"
+          },
+          "decoded": {
+            "object.o": "719438727998b960e90b3b79a2624f466afea651f34bab21cd0cdc7811132967",
+            "metadata.json": "c1bde7b8f79e8989cdd36d7c9d044dff1baab9eb44c2b63cef1a91eb8ea45928"
+          }
+        },
+        "cleanup_tests_passed": 46,
+        "compiled_window_calls": 43923,
+        "compiled_route_calls": 3840,
+        "packed_source_window_tests": 1,
+        "direct_linked_phase_calls": 87,
+        "focused_window_gate_calls": 3443,
+        "composed_captured_window_tests": 6,
+        "changed_machine_bodies": 1,
+        "shared_window_limit_control_calls": 5184,
+        "width_tests_replaced": 17
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r295": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-shared-window-limits.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r296-shared-window-limits-9948e46eb542.tar.gz",
+        "bytes": 5418036,
+        "sha256": "9948e46eb542279f6c8ef9077fcf6ce2ff79889d99d643858145318332c11582",
+        "files": 1014,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "021682a317a6cb8031e4661349fccead2db36c7114bbc6f6aaf03a4416dc667c",
+            "counter-results.json": "7a6b322af746b8d095aff3a199fb59d8c3f24c95184e8db03761f6f20b21d55f",
+            "REPORT.md": "80053ee9305785800ba9901dc51a432477ec88e1b4b97bba29963d7dd49f5e38",
+            "library-results.json": "fed310ab331f23187998c7e3723e8a0ca672b5f83d5271d54838c9edb248bf42",
+            "result-decision.json": "a57218870d5219602b161e6ff5c646e92aa2ee728bb5fb87778d3741721af9e6",
+            "screen-results.json": "9eed44f18cb179d1b226a0138f95b30f56748310f9275a33c72676efc660913b",
+            "shared-window-limits-profile-results.json": "f17e5b19a019cb2090137bf51adf7c5132c2ebdb315ca3f87a51dd9f6c1dc9af",
+            "window-profile-analysis.json": "bd980bd610b1e06f6060ae4106c5cfaa2624c4362d619358be40261e0ebabda0"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",

@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R296 shares fixed-width readable window bounds. Paired elapsed changes -1.015% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R295 / Roc | R296 / Roc | R295 / libdeflate | R296 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.197683× | 0.198009× | 2.473054× | 2.477136× |
+| prefix-random-8192 | 0.822424× | 0.824442× | 2.954963× | 2.962213× |
+| prefix-periodic-131072 | 0.790865× | 0.771082× | 1.439575× | 1.403566× |
+| prefix-periodic-1048576 | 0.810910× | 0.790040× | 1.375087× | 1.339696× |
+| prefix-repeated-131072 | 0.794293× | 0.777072× | 1.322201× | 1.293535× |
+| prefix-repeated-1048576 | 0.804576× | 0.786582× | 1.265708× | 1.237401× |
+| prefix-natural-4096 | 1.006309× | 1.003424× | 1.746063× | 1.741056× |
+| prefix-natural-1048576 | 1.425235× | 1.424104× | 1.149017× | 1.148105× |
+| prefix-random-1048576 | 1.709757× | 1.712933× | 2.420899× | 2.425396× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R296 timing, proof and replay evidence](native-shared-window-limits.md).
+
+## Historical R295 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R295 preserves agreeing Boolean literals at joins. Paired elapsed changes -0.525% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R294 / Roc | R295 / Roc | R294 / libdeflate | R295 / libdeflate |
