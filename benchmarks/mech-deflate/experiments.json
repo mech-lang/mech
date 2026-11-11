@@ -62144,6 +62144,241 @@
         }
       },
       "complete_goal": false
+    },
+    "317": {
+      "git_parent": "31349f67fb5f4fa2fd96c274e04f13608e4f4c74",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "78eaf501bf8d899dc4e058a9bce6580871630864",
+      "retained_compiler": "R317",
+      "retained_source_packet_round": 317,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Allocate the saved link register in framed leaf functions.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "04eec5f0bca9f502c9b1cb98706f37ab2adbf21b62dabcac11d9ab2cf5904809",
+        "changed_sources": {},
+        "changed_backend_sources": {
+          "src/isa/aarch64/abi.rs": {
+            "before": "bec59cd7dee83a0df3b6df8ec5580643e47131ebcc7a5cfd8ddc3b9a30a736ca",
+            "after": "4497bcf0cb28aa3eebc0049de78d167e72c92785f73952e8384580eb329197c4"
+          },
+          "src/isa/aarch64/inst/mod.rs": {
+            "before": "0928d4d4aed3f84f0f9902696144b91ddf9c7985d889b573829e2dccf2343f26",
+            "after": "9782170a2ac16720ef9e310e81dd8afc33e8978ddb3faa60716443a68e190550"
+          },
+          "src/machinst/abi.rs": {
+            "before": "d5a72702d6bc450c3c7d4767abd7de1c61209335e553193e1fa98727d9502bff",
+            "after": "48d552706a6d129ff9afd5081de46da3942a62ca31957e3c407ccf99722b7283"
+          },
+          "src/machinst/mod.rs": {
+            "before": "0f7ddf325b1507d1ed329a7d9901a3912af3565911d98715c6ac773a632d5266",
+            "after": "c2800b581256ba8dc58b3b4e54fb5d0dc968b1528e0a85072962e19d031bfefd"
+          },
+          "src/machinst/vcode.rs": {
+            "before": "c68196fbc28d100e2ab96af7dd1f59390de2d203c9b6dd3cb42e5bc28878df79",
+            "after": "588fdad0982a954e03cba8b036868e90134d985ac48bc17c0741d69ad46d7eb8"
+          }
+        },
+        "backend_patch_sha256": "04eec5f0bca9f502c9b1cb98706f37ab2adbf21b62dabcac11d9ab2cf5904809",
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "b07af4b45d3a070186e34e2a4f7e750fcf16d88c8725810f0cded636beea17aa",
+        "worker_sha256": "4beb8fa8c563d5e6aa0d2999fdb0e4b5ea7c989d37030eaf00a23358483e3fc0"
+      },
+      "summary": {
+        "published_parent": "31349f67fb5f4fa2fd96c274e04f13608e4f4c74",
+        "measured_parent": "78eaf501bf8d899dc4e058a9bce6580871630864",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 317,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 317,
+        "selected_mode": "framed-leaf",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 1.000102568065062,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 46,
+          "after_count": 46,
+          "denominator": 81,
+          "before_percent": 56.79012345679013,
+          "after_percent": 56.79012345679013,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r315": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc_in_peer_cohort": {
+          "mech-r315": 46,
+          "mech-candidate": 46
+        },
+        "faster_than_both_in_peer_cohort": {
+          "mech-r315": 0,
+          "mech-candidate": 0
+        },
+        "roc_faster_than_libdeflate": 17,
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "cohort_block_gate_misses": [],
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 0.9861019944536961,
+            "primary_block_means": {
+              "primary-a": 0.9885492849647436,
+              "primary-b": 0.9857312808415629
+            },
+            "matched": 0.9895566918627038
+          },
+          "heldout-window-32768": {
+            "primary": 0.9866500846699185,
+            "primary_block_means": {
+              "primary-a": 0.988415530118718,
+              "primary-b": 0.9849794691536405
+            },
+            "matched": 0.989855595798685
+          },
+          "prefix-natural-65537": {
+            "primary": 0.9866215850662179,
+            "primary_block_means": {
+              "primary-a": 0.9886272668548339,
+              "primary-b": 0.985601207175409
+            },
+            "matched": 0.9872296397345335
+          },
+          "prefix-natural-262144": {
+            "primary": 0.985062599639666,
+            "primary_block_means": {
+              "primary-a": 0.9851814136109979,
+              "primary-b": 0.9855799913702662
+            },
+            "matched": 0.9846514939711396
+          }
+        },
+        "retention_reason": "Both gates pass and the priority natural inputs improve in the matched cohorts.",
+        "highest_paired_ratio": {
+          "case": "prefix-periodic-1048576",
+          "ratio": 1.0144155865915312
+        },
+        "candidate_frontier": {
+          "case": "prefix-random-16384",
+          "x_reference": 1.074052113252447
+        },
+        "dual_peer_frontier": "heldout-window-32768",
+        "heap_families_identical": true
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "b07af4b45d3a070186e34e2a4f7e750fcf16d88c8725810f0cded636beea17aa",
+            "metadata.json": "047ca36bef6f75a2e2d951838b209aed321e9484aa1c1910e0735463243aa624"
+          },
+          "decoded": {
+            "object.o": "b07af4b45d3a070186e34e2a4f7e750fcf16d88c8725810f0cded636beea17aa",
+            "metadata.json": "047ca36bef6f75a2e2d951838b209aed321e9484aa1c1910e0735463243aa624"
+          }
+        },
+        "worker_sha256": "4beb8fa8c563d5e6aa0d2999fdb0e4b5ea7c989d37030eaf00a23358483e3fc0",
+        "cfg_cleanup_tests": 54,
+        "backend_jit_calls": 200,
+        "regalloc_checker_enabled_in_jit_controls": true,
+        "warnings_as_errors": true
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r315": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc": {
+          "mech-r315": 46,
+          "mech-candidate": 46
+        }
+      },
+      "report": "docs/design/native-framed-leaf-register.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r317-framed-leaf-44707104f86d.tar.gz",
+        "bytes": 6038591,
+        "sha256": "44707104f86dcca75c30062bd0e4b9cf1938c8d0575a037261d12d9f69070dcf",
+        "files": 1101,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "87b23d5af7b6d4e75105c94e73e9576cafe43939db184f92976f617e68656e6c",
+            "counter-results.json": "0e5e3d13708d8592583994052f00ad925648025fa2424a39b88089295ad4d80f",
+            "REPORT.md": "4becbdbd751d2d6bf4b543082110be3030f9c224c2f60149fd72a52996c85f7c",
+            "library-results.json": "114b0814b8883dec48f6358f73dcd7730fc8604b76bcf52027dd64bd21760a87",
+            "result-decision.json": "28047d05717b5ab11426f5a6ca9ccbf3e9780955b575e7fea3d0873471528cd6",
+            "screen-disposition.json": "7bc21e877da2d453a309df60327bcf0dd0df782b44328c16b1aecc24871dae05",
+            "profile-summary.json": "2e3f4d0106f48ad1b7f758962ba8b8641667b62a7112ba55a10e0844b0cb3a0f",
+            "dual-peer-frontier.json": "603e6e78adf3bce931a021a075dc20d6bbd7985ee0f5c260baf0146b0b84c8a5"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
