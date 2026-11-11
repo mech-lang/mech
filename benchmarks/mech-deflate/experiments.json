@@ -57950,6 +57950,187 @@
         }
       },
       "complete_goal": false
+    },
+    "291": {
+      "git_parent": "5f04a33851bb4038310d29c63712a184368a5d90",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "5f04a33851bb4038310d29c63712a184368a5d90",
+      "retained_compiler": "R291",
+      "retained_source_packet_round": 291,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Combine checked empty runs and reduction handoffs.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "94261d8da8bfbb57b93df01181efcc0f6c74c44272c7b19250c4bf3aa8d347f1",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/identity_routes/mod.rs": {
+            "before": "bfd0a48ed706016ffa0e67ae598de169a026ca24f888bfa578abcba5bd7e181e",
+            "after": "951eeec89106be38216cc0014688e83ee31f6c6ada5d9b8743d965e89b00421f"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "4df5ad526040199066c5b3f97eb9af2873c4b30d4436d10f8cc451284a26bb7e",
+            "after": "3de4353145c2bafeef098752380c323686ae839a1bdda1738f2b15622e5b3cdd"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs": {
+            "before": "2635489c1bb1d6b06a7d44204182d5cbc48001be58093c8593798bc4ebbfb36d",
+            "after": "b161dea1f8e3f11bdc80f38e2406440a97d8abca44e9920f24560e8998af2616"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+            "before": "f2542b0b686ab5a81c32b1de939bdefa9e5b33a8d064379c93ff09d8abba212e",
+            "after": "4c1e60a6d2f9597a450292a30d4ff3080df4a6698c792fa24dcab3489e56e0f0"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "before": "ab8cbf6a411e5639dcc22b34b04587dbfcc9c943d5d58e5be41e8b21521c0bff",
+            "after": "f495fdc2a99e734e29ff746f252f429f3a3a578dd19f44a9dd19cdf9bfbf06bb"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "a089b3a8d68ba2cecffd8d6dff19c7b01a6f0b237cbaf582812a7cd4bc3f1c14",
+            "after": "1d704f75f2432987722322182628f43be6859662d977d6edc52a11949c48f127"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435"
+            }
+          },
+          "patch_sha256": "4129af708d08971fe429dd74d9217ba7d5e077d5c4276520b158637a3d71a119",
+          "library_sha256": "234c1bbb30921cc813e74f1317394306626cf56124800ad78e2fe954c5d7214b"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "220a5af2d3c825e39fbff47365fc6ba946240349215ff34aec1f9623ea21bb72",
+        "worker_sha256": "7387a416f97a5423f42f53ad614dabe675ea8fa0f5130d791fef5eb94f3f0903"
+      },
+      "summary": {
+        "published_parent": "5f04a33851bb4038310d29c63712a184368a5d90",
+        "measured_parent": "5f04a33851bb4038310d29c63712a184368a5d90",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 291,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 291,
+        "selected_mode": "empty-and-handoff",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9973823345227353,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r290": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "prefix-repeated-65537",
+          "ratio": 1.0196699674155425
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.0680773110890018
+        },
+        "next_experiment": "Test spill-copy reuse across a nonadjacent unique predecessor. Count the verified reloads removed from the linked matcher and measure the whole-call effect."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "220a5af2d3c825e39fbff47365fc6ba946240349215ff34aec1f9623ea21bb72",
+            "metadata.json": "c84c6422297a93288d096e5f7589d9e5a200df924377ba4906ed27f7c0c54b0d"
+          },
+          "decoded": {
+            "object.o": "220a5af2d3c825e39fbff47365fc6ba946240349215ff34aec1f9623ea21bb72",
+            "metadata.json": "c84c6422297a93288d096e5f7589d9e5a200df924377ba4906ed27f7c0c54b0d"
+          }
+        },
+        "cleanup_tests_passed": 44,
+        "compiled_window_calls": 43923,
+        "compiled_route_calls": 3840,
+        "direct_linked_phase_calls": 87,
+        "changed_machine_bodies": 4,
+        "all_other_machine_bodies_exact": true,
+        "guarded_empty_run_bodies": 4,
+        "entry_proved_guards_per_body": 2,
+        "selected_completion_edges": 4
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r290": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-empty-and-handoff.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r291-empty-and-handoff-385cd6a1d97b.tar.gz",
+        "bytes": 5276822,
+        "sha256": "385cd6a1d97b05b1b6dd6322e84537bdb208096df0ff50a97ed685a8455fb482",
+        "files": 980,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "94256512df0acbf0a79ad132e78ba7ea9a3e81e6e0c1d3a5aca02e88e29eee90",
+            "counter-results.json": "51bd7a63367099c2cef0a72265e4ee4fe3be9019d240d244dd82bc7d4b52d992",
+            "REPORT.md": "80931b9c4b955bed8d294322435c07dac93ece24245bab27f33ace5d6b7319cc",
+            "library-results.json": "f1bacfcae2f9e790c45bac0ac7295754163cb989da42ecf318b0877bf88cc581",
+            "result-decision.json": "165b1f4cfb21a8d65efe3a7923a7cae894521ee951ec73a78b54714389cd2c2d",
+            "screen-results.json": "4d91beb264f37f84ea5b7c35eb025963c66a2d9a712a2f22bd42b8c35de8d181",
+            "empty-and-handoff-profile-results.json": "fd178d2440a01e8b008e10efd5c96ffd571f36c6f0f946ea785b60ca1e5b6abb",
+            "parser-profile-analysis.json": "9d20e3cd196989adc60999e1d5d38d0f9cf8931260d3bdf7ae5b92c70ae81786"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
