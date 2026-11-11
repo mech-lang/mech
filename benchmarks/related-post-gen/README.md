@@ -1,6 +1,8 @@
 # Related-post native compiler review
 
-Current integration: [related-post compiler plus latest pinned #973](integration/README.md), **IR240 / work115 / ABI41 / image9**. Selected speed checkpoint: **IR238 original/four**, **2.934250ms /1.828289× fastest matched Rust**, **36.674708ms /1.490249× fastest full-process Rust**. Current integration has its own fully qualified source pin and cohort. The schema change reduces restoration allocations; native query instructions remain the main processing gap. Mask reuse, Rust-style insertion and IR239 Boolean lowering remain unselected. Parity is unmet; two inherited GPU failures remain; draft and no merge requested.
+Current integration: [IR314 on #973 at 4debec08de](integration/README.md), **work126 / ABI42 / image11**, production Cranelift with the checked DEFLATE backend and SSA-width work. Fresh maintained-source time is **1.697375 ms / 1.133725× fastest eligible Rust** (1.497167 ms). The new readonly-tree selection closes a host-return compiler gap exposed by U32 counters; 505 compiler contracts and all 133 scalar/DEFLATE resource controls pass. Narrow-storage source variants save memory but show no reliable latency gain and remain experiments. [Full current measurements and evidence](integration/complete-tree-selection-20261111/REPORT.md).
+
+The maintained source remains four native workers. Whole-process and restoration remain visible, but are not acceptance gates. Parity is unmet. Older checkpoints and stricter historical gates below are retained history and do not describe the current compiler.
 
 
 This branch contains the accepted compiler optimization series for
@@ -9,7 +11,7 @@ the DEFLATE compiler. The review targets the branch behind
 [PR #973](https://github.com/mech-lang/mech/pull/973):
 `codex/level12-compression-consolidated`.
 
-The measured compiler is **5925a2b3a4fd4dfcca7ada541e37a69d514171f8**
+The retained IR223 measurement used compiler **5925a2b3a4fd4dfcca7ada541e37a69d514171f8**
 (IR223, work114, ABI40, image8). The selected overall speed checkpoint remains
 **c3a6925108ad3523f4e29022b66f1c17b92c9878** (IR208). Neither meets the goal of
 matching the fastest eligible Rust implementation in both processing and
