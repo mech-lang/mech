@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R279 separates packet descriptor lifetimes across the checked append run. Paired elapsed changes -0.509% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R278 / Roc | R279 / Roc | R278 / libdeflate | R279 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.201945× | 0.201739× | 2.532281× | 2.529701× |
+| prefix-random-8192 | 0.968319× | 0.973673× | 3.468744× | 3.487925× |
+| prefix-periodic-131072 | 0.953066× | 0.946454× | 1.720157× | 1.708223× |
+| prefix-periodic-1048576 | 0.975436× | 0.969030× | 1.649626× | 1.638792× |
+| prefix-repeated-131072 | 0.933553× | 0.929834× | 1.566924× | 1.560683× |
+| prefix-repeated-1048576 | 0.954446× | 0.948688× | 1.501559× | 1.492502× |
+| prefix-natural-4096 | 1.103297× | 1.093769× | 1.886769× | 1.870476× |
+| prefix-natural-1048576 | 1.527874× | 1.522098× | 1.232274× | 1.227616× |
+| prefix-random-1048576 | 1.976420× | 1.975365× | 2.793264× | 2.791773× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R279 timing, proof and replay evidence](native-append-descriptor-lifetimes.md).
+
+## Historical R278 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R278 specializes the checked empty append run. Paired elapsed changes -4.382% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R276 / Roc | R278 / Roc | R276 / libdeflate | R278 / libdeflate |
