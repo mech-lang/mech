@@ -59204,6 +59204,91 @@
         }
       },
       "complete_goal": false
+    },
+    "298": {
+      "git_parent": "c2aa0ebc8984e608791e0fca42fcc0ea8f44d7b9",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "c2aa0ebc8984e608791e0fca42fcc0ea8f44d7b9",
+      "retained_compiler": "R297",
+      "retained_source_packet_round": 297,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after screening shared immutable comparison window bounds.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "compiler_patch_sha256": "e3fbe2ce26fa34e18785a5bc7b523d1bf04fcc528cd5d5af37d10d8a56326197",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs": {
+            "before": "0365b5eb5de9c81dca0633301c0e06b51dac394b0018da748da1a15a577b9d6c",
+            "after": "d7117fabf21e8a6a0f1d178b534f380fc83964d70d2070c22f566426d31cf79d"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "before": "f52f1991f4a9ddedaf9ae5e2d720448d9da90274f37e394e3bfb995ba4236084",
+            "after": "a33b03bdfd9422a2e2dd0eecd542b4aa5a68dbd8471d68a21c2efcc20a89ac15"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs": {
+            "before": "b161dea1f8e3f11bdc80f38e2406440a97d8abca44e9920f24560e8998af2616",
+            "after": "985efe844c8dce015505847cc312c77bea4768f60f5c20ccf96d1878fb04b443"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_capture_windows.rs": {
+            "before": "d0744cd411a9397a4fbfe61ffde09564ce1af452c6a62a1a2702cdde11dae18a",
+            "after": "66804cfa3638e0fb87ba9233173235eb3ae8b152fbd906323b4d912aecf0281c"
+          }
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "candidate_object_sha256": "113c2fd362f0ff5fe0f324ff5b33c48bfe97c28fcb081f14c73118ef69b70133",
+        "candidate_worker_sha256": "2baf0d129be6620da56684bc1a35d31c10d67ed7a2a57a69f98d3c460a30d756"
+      },
+      "summary": {
+        "round": 298,
+        "measured_parent": "c2aa0ebc8984e608791e0fca42fcc0ea8f44d7b9",
+        "published_parent": "c2aa0ebc8984e608791e0fca42fcc0ea8f44d7b9",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retained_source_packet_round": 297,
+        "retained_runtime_packet_round": 272,
+        "retain_experimental_compiler": false,
+        "experiment": "shared immutable comparison window bounds",
+        "compiler_patch_sha256": "e3fbe2ce26fa34e18785a5bc7b523d1bf04fcc528cd5d5af37d10d8a56326197",
+        "screen": 27,
+        "timed_calls": 56988,
+        "paired_elapsed_ratio": 0.9977737466581836,
+        "gates": {
+          "pooled_gate": 27,
+          "block_gate": 27
+        },
+        "source_program_changed": false,
+        "full_adoption_campaign": false,
+        "complete_smoke_calls": 162,
+        "compiled_gate_calls": 39366,
+        "focused_tests": 3,
+        "current_binary_profiles": 2,
+        "initial_test_link_denial": "ld: write() failed, errno=28",
+        "initial_test_link_recovered": true,
+        "separate_counter_cohort": false,
+        "decoded_candidate": false,
+        "reason": "The measured repetitive 1 MiB cases are essentially flat and the hot route adds two stack reloads."
+      },
+      "report": "docs/design/native-paired-capture-bounds.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r298-paired-capture-bounds-b4feef6b0d2d.tar.gz",
+        "bytes": 483264,
+        "sha256": "b4feef6b0d2db753d309ff07abaa6939a559c12b9c44408e941957c91a49484c",
+        "files": 92,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "screen-results.json": "fade5968f2429d4a7fb31e31cb362eb56b70030ed68c161f055cbc0df409a4c6",
+            "capture-route-analysis.json": "532702857b9a57e36880aa5a8dc078204cbe16026482aea03b9a9a6a508f572e",
+            "paired-capture-bounds-profile-results.json": "f8cbbc0023de28db133f78e21f7855c0f732de1161a2a30600ed74fe2824878e",
+            "result-decision.json": "fbc7b52cb7277f94e0126141a977610de73a2588cc045071f889064002d75961",
+            "REPORT.md": "8e1a293aa2e340c5cbc412acc5a6ca2e4f0c8bee5c306c73de1b134400096734"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
