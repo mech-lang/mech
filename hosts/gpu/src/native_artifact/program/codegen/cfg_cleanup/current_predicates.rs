@@ -6,6 +6,9 @@ use cranelift_codegen::flowgraph::ControlFlowGraph;
 use cranelift_codegen::ir::{Block, Function, InstBuilder, InstructionData as Data, Value};
 use std::collections::BTreeMap;
 
+pub(super) mod relations;
+pub(super) mod scalar_spans;
+
 #[derive(Default, serde::Serialize)]
 pub(in crate::native_artifact) struct Report {
     pub removed_branches: usize,

@@ -94,6 +94,7 @@ fn generated_histogram_scalar_and_wide_reads_preserve_utf8_counts_and_every_tail
     let scalar = Kernel::new(false);
     let wide = Kernel::new(true);
     let prepaid = Kernel::funded(true, Funding::Prepaid);
+    let unmetered = Kernel::funded(true, Funding::Unmetered);
     let mut owned = vec![
         "".to_owned(),
         "a\0".into(),
@@ -112,7 +113,7 @@ fn generated_histogram_scalar_and_wide_reads_preserve_utf8_counts_and_every_tail
             .map(|i| owned[(i * 37 + i / 7) % owned.len()].as_str())
             .collect::<Vec<_>>();
         let cells = cells(&texts);
-        for kernel in [&scalar, &wide, &prepaid] {
+        for kernel in [&scalar, &wide, &prepaid, &unmetered] {
             let guard = Slot {
                 hash: 0x123456789,
                 count: 17,
@@ -122,6 +123,10 @@ fn generated_histogram_scalar_and_wide_reads_preserve_utf8_counts_and_every_tail
             bank[0] = guard;
             bank[257] = guard;
             let mut f = frame(&cells, &mut bank[1..257]);
+            if std::ptr::eq(kernel, &unmetered) {
+                f.fuel = 0;
+                f.comparison = 0;
+            }
             // SAFETY: both disjoint banks and every string owner remain live.
             assert_eq!(unsafe { (kernel.entry)(&mut f) }, COMPLETE);
             assert_eq!(f.completed, count as u64);

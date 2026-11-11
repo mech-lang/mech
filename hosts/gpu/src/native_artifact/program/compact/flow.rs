@@ -7,6 +7,11 @@ use mech_engine::native_artifact::{
 };
 
 pub(super) struct Flow {
+    pub entry: usize,
+    pub inputs: Vec<u32>,
+    pub outputs: Vec<u32>,
+    pub complete: Vec<bool>,
+    pub skip_action: Vec<bool>,
     pub reachable: Vec<bool>,
     pub uses: Vec<Vec<u32>>,
     action_uses: Vec<Vec<u32>>,
@@ -28,119 +33,161 @@ fn add(out: &mut Vec<u32>, value: Value) {
 }
 impl Flow {
     pub fn derive(plan: &Plan) -> Result<Self, NativeCompileError> {
+        Self::derive_entry(
+            plan,
+            plan.entry() as usize,
+            plan.inputs().iter().map(|p| p.value().get()).collect(),
+            plan.outputs().iter().map(|p| p.value().get()).collect(),
+            None,
+            None,
+        )
+    }
+    pub fn derive_entry(
+        plan: &Plan,
+        entry: usize,
+        inputs: Vec<u32>,
+        outputs: Vec<u32>,
+        stop: Option<usize>,
+        element: Option<usize>,
+    ) -> Result<Self, NativeCompileError> {
+        let complete = plan
+            .blocks()
+            .iter()
+            .enumerate()
+            .map(|(site, b)| {
+                stop.map_or(b.terminator() == Term::Scalar(Branch::Complete), |end| {
+                    site == end
+                })
+            })
+            .collect::<Vec<_>>();
+        let skip_action = (0..plan.blocks().len())
+            .map(|site| Some(site) == stop || Some(site) == element)
+            .collect::<Vec<_>>();
         let mut uses = vec![];
         let mut defs = vec![];
         let mut action_uses = vec![];
-        for block in plan.blocks() {
+        for (site, block) in plan.blocks().iter().enumerate() {
             let mut reads = vec![];
             let mut writes = vec![];
-            match block.action() {
-                Action::Scalar(Scalar::Primitive {
-                    operands, output, ..
-                })
-                | Action::LibraryCall {
-                    operands, output, ..
-                } => {
-                    reads.extend(operands.iter().map(|v| v.get()));
-                    add(&mut writes, *output)
-                }
-                Action::Scalar(Scalar::Copy { source, output }) => {
-                    add(&mut reads, *source);
-                    add(&mut writes, *output)
-                }
-                Action::Structural {
-                    source,
-                    observation,
-                    output,
-                    ..
-                } => {
-                    add(&mut reads, *source);
-                    if let mech_engine::native_artifact::NativeStructuralObservation::StringEqual { peer } = observation {
+            if !skip_action[site] {
+                match block.action() {
+                    Action::Scalar(Scalar::Primitive {
+                        operands, output, ..
+                    })
+                    | Action::LibraryCall {
+                        operands, output, ..
+                    } => {
+                        reads.extend(operands.iter().map(|v| v.get()));
+                        add(&mut writes, *output)
+                    }
+                    Action::Scalar(Scalar::Copy { source, output }) => {
+                        add(&mut reads, *source);
+                        add(&mut writes, *output)
+                    }
+                    Action::Structural {
+                        source,
+                        observation,
+                        output,
+                        ..
+                    } => {
+                        add(&mut reads, *source);
+                        if let mech_engine::native_artifact::NativeStructuralObservation::StringEqual { peer } = observation {
                         add(&mut reads, *peer);
                     }
-                    add(&mut writes, *output)
-                }
-                Action::Initialize { iteration } | Action::Latch { iteration } => {
-                    match &plan.iterations()[*iteration as usize] {
-                        Loop::Tail(tail) => {
-                            let source = if matches!(block.action(), Action::Initialize { .. }) {
-                                tail.seed()
-                            } else {
-                                tail.next()
-                            };
-                            add(&mut reads, source);
-                            add(&mut writes, tail.carrier());
-                        }
-                        Loop::Collection(generator) => {
-                            if matches!(block.action(), Action::Initialize { .. }) {
-                                if let Source::Value(source) = generator.source() {
-                                    add(&mut reads, *source)
+                        add(&mut writes, *output)
+                    }
+                    Action::Initialize { iteration } | Action::Latch { iteration } => {
+                        match &plan.iterations()[*iteration as usize] {
+                            Loop::Tail(tail) => {
+                                let source = if matches!(block.action(), Action::Initialize { .. })
+                                {
+                                    tail.seed()
+                                } else {
+                                    tail.next()
+                                };
+                                add(&mut reads, source);
+                                add(&mut writes, tail.carrier());
+                            }
+                            Loop::Collection(generator) => {
+                                if matches!(block.action(), Action::Initialize { .. }) {
+                                    if let Source::Value(source) = generator.source() {
+                                        add(&mut reads, *source)
+                                    }
                                 }
                             }
+                            Loop::Iteration(_) => {
+                                return Err(backend(
+                                    "compact counted source loop remains unsupported",
+                                ));
+                            }
                         }
-                        Loop::Iteration(_) => {
-                            return Err(backend("compact counted source loop remains unsupported"));
-                        }
                     }
-                }
-                Action::PrepareU64Range { iteration } => {
-                    let Loop::Collection(generator) = &plan.iterations()[*iteration as usize]
-                    else {
-                        return Err(backend("compact range lacks collection generator"));
-                    };
-                    let Source::U64Range(cursor) = generator.source() else {
-                        return Err(backend("compact range lacks checked source cursor"));
-                    };
-                    reads.extend(cursor.operands().iter().map(|v| v.get()));
-                }
-                Action::CollectionBegin { .. } => {}
-                Action::CollectionElement { iteration } => {
-                    let Loop::Collection(generator) = &plan.iterations()[*iteration as usize]
-                    else {
-                        return Err(backend("compact element lacks collection generator"));
-                    };
-                    if let Source::Value(source) = generator.source() {
-                        add(&mut reads, *source)
-                    }
-                    if let Some(element) = generator.element() {
-                        add(&mut writes, element)
-                    }
-                }
-                Action::CollectionPush { value, .. } => add(&mut reads, *value),
-                Action::CollectionFinish { collection } => {
-                    let definition = &plan.collections()[*collection as usize];
-                    add(&mut writes, definition.output());
-                    if definition.kind() == mech_engine::ComprehensionKind::MatrixPreserveShape {
-                        let Loop::Collection(generator) =
-                            &plan.iterations()[definition.generators()[0] as usize]
+                    Action::PrepareU64Range { iteration } => {
+                        let Loop::Collection(generator) = &plan.iterations()[*iteration as usize]
                         else {
-                            return Err(backend("compact shape-preserving source lacks generator"));
+                            return Err(backend("compact range lacks collection generator"));
+                        };
+                        let Source::U64Range(cursor) = generator.source() else {
+                            return Err(backend("compact range lacks checked source cursor"));
+                        };
+                        reads.extend(cursor.operands().iter().map(|v| v.get()));
+                    }
+                    Action::CollectionBegin { .. } => {}
+                    Action::CollectionElement { iteration } => {
+                        let Loop::Collection(generator) = &plan.iterations()[*iteration as usize]
+                        else {
+                            return Err(backend("compact element lacks collection generator"));
                         };
                         if let Source::Value(source) = generator.source() {
                             add(&mut reads, *source)
                         }
+                        if let Some(element) = generator.element() {
+                            add(&mut writes, element)
+                        }
                     }
-                }
-                Action::Scalar(Scalar::None) => {}
-                _ => {
-                    return Err(backend(format!(
-                        "compact emitter has an unimplemented source action at {:?}: {:?}",
-                        block.origin(),
-                        block.action()
-                    )));
+                    Action::CollectionPush { value, .. } => add(&mut reads, *value),
+                    Action::CollectionFinish { collection } => {
+                        let definition = &plan.collections()[*collection as usize];
+                        add(&mut writes, definition.output());
+                        if definition.kind() == mech_engine::ComprehensionKind::MatrixPreserveShape
+                        {
+                            let Loop::Collection(generator) =
+                                &plan.iterations()[definition.generators()[0] as usize]
+                            else {
+                                return Err(backend(
+                                    "compact shape-preserving source lacks generator",
+                                ));
+                            };
+                            if let Source::Value(source) = generator.source() {
+                                add(&mut reads, *source)
+                            }
+                        }
+                    }
+                    Action::Scalar(Scalar::None) => {}
+                    _ => {
+                        return Err(backend(format!(
+                            "compact emitter has an unimplemented source action at {:?}: {:?}",
+                            block.origin(),
+                            block.action()
+                        )));
+                    }
                 }
             }
             action_uses.push(reads.clone());
-            match block.terminator() {
-                Term::Scalar(Branch::Branch { condition, .. }) => add(&mut reads, condition),
-                Term::Scalar(Branch::LiteralBranch { left, right, .. }) => {
-                    add(&mut reads, left);
-                    add(&mut reads, right)
+            if complete[site] {
+                reads.extend(&outputs);
+            } else {
+                match block.terminator() {
+                    Term::Scalar(Branch::Branch { condition, .. }) => add(&mut reads, condition),
+                    Term::Scalar(Branch::LiteralBranch { left, right, .. }) => {
+                        add(&mut reads, left);
+                        add(&mut reads, right)
+                    }
+                    Term::Scalar(Branch::Complete) => {
+                        reads.extend(plan.outputs().iter().map(|o| o.value().get()))
+                    }
+                    _ => {}
                 }
-                Term::Scalar(Branch::Complete) => {
-                    reads.extend(plan.outputs().iter().map(|o| o.value().get()))
-                }
-                _ => {}
             }
             reads.sort_unstable();
             reads.dedup();
@@ -152,10 +199,17 @@ impl Flow {
         let successors = plan
             .blocks()
             .iter()
-            .map(|b| successors(b.terminator()))
+            .enumerate()
+            .map(|(site, b)| {
+                if complete[site] {
+                    vec![]
+                } else {
+                    successors(b.terminator())
+                }
+            })
             .collect::<Vec<_>>();
         let mut reachable = vec![false; plan.blocks().len()];
-        let mut todo = vec![plan.entry() as usize];
+        let mut todo = vec![entry];
         while let Some(site) = todo.pop() {
             if !reachable[site] {
                 reachable[site] = true;
@@ -163,6 +217,11 @@ impl Flow {
             }
         }
         let flow = Self {
+            entry,
+            inputs,
+            outputs,
+            complete,
+            skip_action,
             reachable,
             uses,
             action_uses,
@@ -185,13 +244,13 @@ impl Flow {
             }
         }
         let mut entry = vec![0; width];
-        for value in plan
-            .inputs()
+        for value in self
+            .inputs
             .iter()
-            .map(|v| v.value())
-            .chain(plan.constants().iter().map(|v| v.value()))
+            .copied()
+            .chain(plan.constants().iter().map(|v| v.value().get()))
         {
-            let v = value.get() as usize;
+            let v = value as usize;
             entry[v / 64] |= 1u64 << (v % 64);
         }
         let mut todo = (0..plan.blocks().len())
@@ -201,7 +260,7 @@ impl Flow {
         let mut queued = self.reachable.clone();
         while let Some(site) = todo.pop() {
             queued[site] = false;
-            let mut words = if site == plan.entry() as usize {
+            let mut words = if site == self.entry {
                 entry.clone()
             } else {
                 vec![u64::MAX; width]

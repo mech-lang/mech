@@ -20,6 +20,9 @@ pub(in crate::native_artifact) enum Funding {
     // Only the genuine original-call loan may choose this specialization.
     // Its checked pass_work bound has already been spent on the same account.
     Prepaid,
+    // The compact native contract has no finite work account. This is a real
+    // unmetered specialization, not prepaid managed execution authority.
+    Unmetered,
 }
 
 /// Static eligibility is the exact same maintained selected-call proof that
@@ -101,7 +104,7 @@ fn spend(
     cold: cranelift_codegen::ir::Block,
     funding: Funding,
 ) {
-    if funding == Funding::Prepaid {
+    if matches!(funding, Funding::Prepaid | Funding::Unmetered) {
         return;
     }
     let available = b.use_var(variable);
@@ -121,6 +124,8 @@ fn spend(
 /// they do not establish the provenance of arbitrary native pointers.
 /// Prepaid emission additionally requires the complete checked pass allowance
 /// to have been spent before entry. Its frame counters are not reusable credit.
+/// Unmetered emission belongs only to the compact contract, which provides no
+/// finite-work guarantees and obtains no managed execution authority here.
 pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     symbol: &str,
@@ -271,9 +276,6 @@ fn emit(
 
     let header = b.create_block();
     let query = b.create_block();
-    let hash_head = b.create_block();
-    let hash_read = b.create_block();
-    let hashed = b.create_block();
     let probe = b.create_block();
     let inspect = b.create_block();
     let occupied = b.create_block();
@@ -300,56 +302,64 @@ fn emit(
     let cell = b.ins().iadd(cells, offset);
     let address = get(b, cell, offset_of!(Cell, address));
     let bytes = get(b, cell, offset_of!(Cell, bytes));
-    let seed = b.ins().iconst(types::I64, HASH_OFFSET as i64);
-    let first = b.ins().bxor(seed, bytes);
-    b.def_var(hash, first);
-    b.def_var(byte_at, zero);
-    b.ins().jump(hash_head, &[]);
-    b.switch_to_block(hash_head);
-    let at_byte = b.use_var(byte_at);
-    let more = b.ins().icmp(IntCC::UnsignedLessThan, at_byte, bytes);
-    b.ins().brif(more, hash_read, &[], hashed, &[]);
-    b.switch_to_block(hash_read);
-    let remaining = b.ins().isub(bytes, at_byte);
-    for (width, ty) in [
-        (8i64, types::I64),
-        (4, types::I32),
-        (2, types::I16),
-        (1, types::I8),
-    ] {
-        let read = b.create_block();
-        let next = b.create_block();
-        let enough = b
-            .ins()
-            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, width);
-        b.ins().brif(enough, read, &[], next, &[]);
-        b.switch_to_block(read);
-        spend(b, fuel, width * 2, cold, funding);
-        let pointer = b.ins().iadd(address, at_byte);
-        let word = b.ins().load(ty, MemFlags::new(), pointer, 0);
-        let word = if width == 8 {
-            word
-        } else {
-            b.ins().uextend(types::I64, word)
-        };
-        let prior = b.use_var(hash);
-        let mixed = b.ins().bxor(prior, word);
-        let mixed = b.ins().imul_imm(mixed, 0x9e3779b185ebca87u64 as i64);
-        let mixed = b.ins().rotl_imm(mixed, 27);
-        b.def_var(hash, mixed);
-        let after = b.ins().iadd_imm(at_byte, width);
-        b.def_var(byte_at, after);
+    let word = if matches!(funding, Funding::Prepaid | Funding::Unmetered) {
+        emit_hash(b, address, bytes)
+    } else {
+        let hash_head = b.create_block();
+        let hash_read = b.create_block();
+        let hashed = b.create_block();
+        let seed = b.ins().iconst(types::I64, HASH_OFFSET as i64);
+        let first = b.ins().bxor(seed, bytes);
+        b.def_var(hash, first);
+        b.def_var(byte_at, zero);
         b.ins().jump(hash_head, &[]);
-        b.switch_to_block(next);
-    }
-    b.ins().jump(invalid, &[]);
-    b.switch_to_block(hashed);
-    let word = b.use_var(hash);
-    let upper = b.ins().ushr_imm(word, 33);
-    let word = b.ins().bxor(word, upper);
-    let word = b.ins().imul_imm(word, 0xff51afd7ed558ccdu64 as i64);
-    let upper = b.ins().ushr_imm(word, 33);
-    let word = b.ins().bxor(word, upper);
+        b.switch_to_block(hash_head);
+        let at_byte = b.use_var(byte_at);
+        let more = b.ins().icmp(IntCC::UnsignedLessThan, at_byte, bytes);
+        b.ins().brif(more, hash_read, &[], hashed, &[]);
+        b.switch_to_block(hash_read);
+        let remaining = b.ins().isub(bytes, at_byte);
+        for (width, ty) in [
+            (8i64, types::I64),
+            (4, types::I32),
+            (2, types::I16),
+            (1, types::I8),
+        ] {
+            let read = b.create_block();
+            let next = b.create_block();
+            let enough = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, width);
+            b.ins().brif(enough, read, &[], next, &[]);
+            b.switch_to_block(read);
+            spend(b, fuel, width * 2, cold, funding);
+            let pointer = b.ins().iadd(address, at_byte);
+            let word = b.ins().load(ty, MemFlags::new(), pointer, 0);
+            let word = if width == 8 {
+                word
+            } else {
+                b.ins().uextend(types::I64, word)
+            };
+            let prior = b.use_var(hash);
+            let mixed = b.ins().bxor(prior, word);
+            let mixed = b.ins().imul_imm(mixed, 0x9e3779b185ebca87u64 as i64);
+            let mixed = b.ins().rotl_imm(mixed, 27);
+            b.def_var(hash, mixed);
+            let after = b.ins().iadd_imm(at_byte, width);
+            b.def_var(byte_at, after);
+            b.ins().jump(hash_head, &[]);
+            b.switch_to_block(next);
+        }
+        b.ins().jump(invalid, &[]);
+        b.switch_to_block(hashed);
+        let word = b.use_var(hash);
+        let upper = b.ins().ushr_imm(word, 33);
+        let word = b.ins().bxor(word, upper);
+        let word = b.ins().imul_imm(word, 0xff51afd7ed558ccdu64 as i64);
+        let upper = b.ins().ushr_imm(word, 33);
+        let word = b.ins().bxor(word, upper);
+        word
+    };
     let first = b.ins().band(word, mask);
     b.def_var(probe_at, first);
     b.def_var(probes, zero);
@@ -540,3 +550,66 @@ fn emit(
 
 #[cfg(test)]
 mod tests;
+
+/// Shared chunked UTF8 hash instructions for compact Map indexing and the
+/// prepaid/unmetered histogram. Each load is bounded by the current byte span.
+pub(in crate::native_artifact) fn emit_hash(
+    b: &mut FunctionBuilder<'_>,
+    address: Value,
+    bytes: Value,
+) -> Value {
+    let zero = b.ins().iconst(types::I64, 0);
+    let seed = b.ins().iconst(types::I64, HASH_OFFSET as i64);
+    let seed = b.ins().bxor(seed, bytes);
+    let head = b.create_block();
+    b.append_block_param(head, types::I64);
+    b.append_block_param(head, types::I64);
+    let body = b.create_block();
+    let done = b.create_block();
+    b.append_block_param(done, types::I64);
+    b.ins().jump(head, &[zero.into(), seed.into()]);
+    b.switch_to_block(head);
+    let at = b.block_params(head)[0];
+    let prior = b.block_params(head)[1];
+    let more = b.ins().icmp(IntCC::UnsignedLessThan, at, bytes);
+    b.ins().brif(more, body, &[], done, &[prior.into()]);
+    b.switch_to_block(body);
+    let remaining = b.ins().isub(bytes, at);
+    for (width, ty) in [
+        (8, types::I64),
+        (4, types::I32),
+        (2, types::I16),
+        (1, types::I8),
+    ] {
+        let read = b.create_block();
+        let next = b.create_block();
+        let enough = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, width);
+        b.ins().brif(enough, read, &[], next, &[]);
+        b.switch_to_block(read);
+        let pointer = b.ins().iadd(address, at);
+        let word = b.ins().load(ty, MemFlags::new(), pointer, 0);
+        let word = if width == 8 {
+            word
+        } else {
+            b.ins().uextend(types::I64, word)
+        };
+        let mixed = b.ins().bxor(prior, word);
+        let mixed = b.ins().imul_imm(mixed, 0x9e3779b185ebca87u64 as i64);
+        let mixed = b.ins().rotl_imm(mixed, 27);
+        let after = b.ins().iadd_imm(at, width);
+        b.ins().jump(head, &[after.into(), mixed.into()]);
+        b.switch_to_block(next);
+    }
+    // At least one width succeeds for every nonempty remaining byte span.
+    b.ins()
+        .trap(cranelift_codegen::ir::TrapCode::unwrap_user(1));
+    b.switch_to_block(done);
+    let word = b.block_params(done)[0];
+    let upper = b.ins().ushr_imm(word, 33);
+    let word = b.ins().bxor(word, upper);
+    let word = b.ins().imul_imm(word, 0xff51afd7ed558ccdu64 as i64);
+    let upper = b.ins().ushr_imm(word, 33);
+    b.ins().bxor(word, upper)
+}

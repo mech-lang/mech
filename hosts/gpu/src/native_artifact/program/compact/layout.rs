@@ -25,7 +25,9 @@ pub(super) enum Kind {
     Array {
         element: Arc<Type>,
     },
-    /// Sorted canonical entries; keys are immutable invocation UTF8 borrows.
+    /// Sorted canonical entries and an optional native ordinal hash index.
+    /// Map lanes are entries/count/capacity/index/mask/owner. Immutable Object
+    /// constants have no index; keys borrow invocation UTF8 storage.
     SortedMap {
         entry: Arc<Type>,
     },
@@ -293,7 +295,9 @@ impl Type {
                 serde_json::json!({"tagged":variants.iter().map(|v|serde_json::json!({"name":v.name,"offset":v.offset,"payload":v.ty.as_ref().map(|t|t.summary())})).collect::<Vec<_>>()})
             }
             Kind::Array { element } => serde_json::json!({"array_element":element.summary()}),
-            Kind::SortedMap { entry } => serde_json::json!({"sorted_map_entry":entry.summary()}),
+            Kind::SortedMap { entry } => {
+                serde_json::json!({"sorted_map_entry":entry.summary(),"lanes":["entries","count","entry_capacity","index","index_mask","owner"]})
+            }
         };
         serde_json::json!({"kind":kind,"words":self.words,"owners":self.owners,"packed_bytes":self.packed_bytes,"packed_align":self.packed_align})
     }

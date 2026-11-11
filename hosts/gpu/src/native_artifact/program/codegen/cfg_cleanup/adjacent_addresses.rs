@@ -1,6 +1,6 @@
 //! Use one current address for adjacent typed accesses on a straight-line path.
 use super::window_bounds::sole_predecessor;
-use super::word_ranges::literal;
+use super::word_ranges::constant_offset;
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::flowgraph::ControlFlowGraph;
 use cranelift_codegen::ir::immediates::Offset32;
@@ -13,32 +13,6 @@ fn definition(f: &Function, value: Value) -> Option<Data> {
         return None;
     };
     Some(f.dfg.insts[inst])
-}
-
-fn constant_offset(f: &Function, mut value: Value) -> (Value, u64) {
-    let mut offset = 0u64;
-    loop {
-        value = f.dfg.resolve_aliases(value);
-        let step = match definition(f, value) {
-            Some(Data::BinaryImm64 {
-                opcode: Opcode::IaddImm,
-                arg,
-                imm,
-            }) => Some((arg, imm.bits() as u64)),
-            Some(Data::Binary {
-                opcode: Opcode::Iadd,
-                args: [left, right],
-            }) => literal(f, right)
-                .map(|constant| (left, constant))
-                .or_else(|| literal(f, left).map(|constant| (right, constant))),
-            _ => None,
-        };
-        let Some((next, constant)) = step else {
-            return (value, offset);
-        };
-        offset = offset.wrapping_add(constant);
-        value = next;
-    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

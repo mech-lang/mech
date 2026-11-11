@@ -9,6 +9,7 @@ mod identity_routes;
 mod known_widths;
 mod local_phis;
 mod preheaders;
+mod repeated_bounds;
 mod selected_ranges;
 mod threaded_edges;
 mod unsigned_intervals;
@@ -469,6 +470,52 @@ pub(in crate::native_artifact) fn refine_current_predicates(
     }
     Ok(report)
 }
+pub(in crate::native_artifact) fn reuse_dominating_window_facts(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup) {
+        return Ok(0);
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let replaced =
+        current_predicates::relations::fold(&mut context.func, &context.cfg, &context.domtree);
+    if replaced != 0 {
+        context.compute_cfg();
+        context.compute_domtree();
+        context.eliminate_unreachable_code(isa).map_err(backend)?;
+        context.remove_constant_phis(isa).map_err(backend)?;
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(replaced)
+}
+
+pub(in crate::native_artifact) fn prove_scalar_spans(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup) {
+        return Ok(0);
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let replaced =
+        current_predicates::scalar_spans::fold(&mut context.func, &context.cfg, &context.domtree);
+    if replaced != 0 {
+        context.compute_cfg();
+        context.compute_domtree();
+        context.eliminate_unreachable_code(isa).map_err(backend)?;
+        context.remove_constant_phis(isa).map_err(backend)?;
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(replaced)
+}
+
 pub(in crate::native_artifact) fn fold_proved_widths(
     controls: &CompilationControls,
     context: &mut Context,
@@ -637,4 +684,27 @@ pub(in crate::native_artifact) fn fold_bitwise_constants(
         function.dfg.replace(*inst).jump(*target, args);
     }
     changes.len()
+}
+
+/// Route a repeated unsigned check to its original rejection on the first false edge.
+pub(in crate::native_artifact) fn share_repeated_bounds(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup) {
+        return Ok(0);
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let changed = repeated_bounds::fold(&mut context.func, &context.domtree);
+    if changed != 0 {
+        context.compute_cfg();
+        context.compute_domtree();
+        context.eliminate_unreachable_code(isa).map_err(backend)?;
+        context.remove_constant_phis(isa).map_err(backend)?;
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(changed)
 }
