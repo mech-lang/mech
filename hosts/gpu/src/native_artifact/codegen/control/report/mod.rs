@@ -13,8 +13,14 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub guarded_loops: GuardedLoops,
     pub lookup_facts: LookupFacts,
     pub cfg_cleanup: Option<CfgCleanup>,
+    pub scalar_selects: usize,
+    pub unsigned_guards: usize,
+    pub utf8_histogram: Option<Utf8Histogram>,
+    pub utf8_word_chunk_sites: Vec<usize>,
     pub outlined_loops: Vec<OutlinedLoop>,
     pub numeric_outlines: Vec<crate::native_artifact::program::codegen::numeric_outlined::Report>,
+    pub numeric_functions:
+        Vec<crate::native_artifact::program::codegen::readonly_numeric::outlined::OutlinedReport>,
     pub loop_invariants: Vec<InvariantLoop>,
     pub bound_call_shim: Option<BoundCallShim>,
     pub preserving_call_regions: Vec<PreservingCallRegion>,
@@ -24,6 +30,8 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub steady_loops: Vec<SteadyLoop>,
     pub join_map_copies: Vec<JoinMapCopy>,
     pub scalar_loops: Vec<ScalarLoop>,
+    pub captured_numeric_loops:
+        Vec<crate::native_artifact::program::codegen::captured_numeric::Report>,
     pub readonly_numeric_loops:
         Vec<crate::native_artifact::program::codegen::readonly_numeric::Report>,
     pub numeric_write_loops:
@@ -148,6 +156,8 @@ pub(in crate::native_artifact) struct CfgCleanup {
     pub enabled: bool,
     pub rounds: usize,
     pub constant_branches_removed: usize,
+    pub neutral_operations_removed: usize,
+    pub boolean_conditions_simplified: usize,
     pub unsigned_intervals_combined: usize,
     pub selected_range_branches_removed: usize,
     pub boolean_phi_values: usize,
@@ -573,6 +583,8 @@ impl CodegenReport {
             "truncated emission report cannot qualify an ablation"
         );
         let mut counts = EmissionCounters::default();
+        counts.scalar_selects = self.scalar_selects;
+        counts.unsigned_guards = self.unsigned_guards;
         counts.edge_facts = (
             self.source_edge_facts
                 .regions
@@ -687,4 +699,28 @@ impl CodegenReport {
         }
         counts
     }
+}
+
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct Utf8Histogram {
+    pub symbol: String,
+    pub stack_bytes: u64,
+    pub code_bytes: u64,
+    pub sites: Vec<usize>,
+    pub funding: &'static str,
+    pub hash: &'static str,
+    pub bank: &'static str,
+    pub halfword_equality: bool,
+    pub classified: Option<ClassifiedHistogram>,
+}
+
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct ClassifiedHistogram {
+    /// This receipt describes the primary leaf when true; its bytes are
+    /// counted once. Mixed producer plans emit a separate classified leaf.
+    pub shared_primary: bool,
+    pub symbol: String,
+    pub stack_bytes: u64,
+    pub code_bytes: u64,
+    pub sites: Vec<usize>,
 }

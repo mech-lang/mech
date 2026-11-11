@@ -4,7 +4,7 @@ use super::*;
 use crate::native_artifact::iteration_abi::NativeIterationVisit;
 use crate::native_artifact::program::prepare::tail::{FIXED_OVERHEAD, OVERHEAD};
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Debit")]
 pub(in crate::native_artifact) struct Debit {
     pub iteration: u32,
     pub header: usize,
@@ -20,7 +20,7 @@ pub(in crate::native_artifact) struct Debit {
     pub trips: Option<bounds::Trips>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Schedule")]
 pub(in crate::native_artifact) struct Schedule {
     pub loops: Vec<Debit>,
     pub cold: Vec<ColdChild>,

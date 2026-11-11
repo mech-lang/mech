@@ -2,10 +2,11 @@
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::common::{aggregates, ssa_words::Words};
 use crate::native_artifact::codegen::control::plan::CodePlan;
+use crate::native_artifact::codegen::options::{OptimizationOptions, OptimizationPass};
 use crate::native_artifact::compiler::backend;
-use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation};
+use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation, Proof};
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{InstBuilder, Value, types};
+use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
     NativeBufferFrameOperation as Frame, NativeIterationAction as Action,
@@ -13,6 +14,46 @@ use mech_engine::native_artifact::{
     NativeMatchTerminator as Branch,
 };
 use std::collections::BTreeSet;
+
+/// The entry witness validates these exact dimensions before lending a view.
+/// Replacements preserve its shape; an append changes its logical length and
+/// must never use this certificate, even if an earlier schema was fixed.
+pub(super) fn fixed_length(code: CodePlan<'_>, proof: &Proof, array: usize) -> Option<u64> {
+    let array = proof.arrays.get(array)?;
+    if array.appends {
+        return None;
+    }
+    let Action::LibraryCall { template, .. } = code.blocks().get(array.witness)?.action() else {
+        return None;
+    };
+    let mech_core::SchemaBody::Matrix { dimensions, .. } = template.inputs().first()?.body() else {
+        return None;
+    };
+    if dimensions.len() != 2 {
+        return None;
+    }
+    dimensions.iter().try_fold(1u64, |size, dimension| {
+        let mech_core::DimensionExpr::Constant(value) = dimension else {
+            return None;
+        };
+        size.checked_mul(*value)
+    })
+}
+
+/// Only for a packed cell load AFTER the original logical bounds check (or
+/// its current-window proof) and the row-major address translation. Entry
+/// validated the exact typed slice and dimensions and retains its owner for
+/// this synchronous loan. Packed reads independently check their whole window.
+/// Thus this access cannot fault at this point. It is still dependent on
+/// control and mutable memory: no readonly, can_move, alignment or alias claim.
+pub(super) fn guarded_load_flags(options: OptimizationOptions) -> MemFlags {
+    if options.enabled(OptimizationPass::GuardedNumericLoads) {
+        MemFlags::new().with_notrap()
+    } else {
+        MemFlags::new()
+    }
+}
+
 pub(super) fn source_slots(
     code: CodePlan<'_>,
     sites: impl IntoIterator<Item = usize>,
@@ -117,11 +158,10 @@ pub(super) fn frame_word_moves(
     let CodePlan::Program(program) = code else {
         return Err(backend("numeric frame lacks managed plan"));
     };
-    let fields = |value| {
+    let recipe = |value| {
         recipes
             .iter()
             .find(|f| f.value == value)
-            .map(|f| f.fields.as_slice())
             .ok_or_else(|| backend("numeric frame lost exact scalar fields"))
     };
     let operation = program
@@ -131,40 +171,83 @@ pub(super) fn frame_word_moves(
         .ok_or_else(|| backend("numeric frame lost fields"))?
         .operation();
     let assignments = match operation {
+        Frame::EnumPack { .. } | Frame::Observe { .. } => {
+            return Err(backend("tagged frame outside numeric word emitter"));
+        }
         Frame::Pack { output } => {
             let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
                 return Err(backend("numeric pack lost operands"));
             };
-            fields(output.get())?
-                .iter()
-                .zip(operands)
-                .filter_map(|(field, operand)| {
-                    field.map(|field| (shadow + field, operand.get() as usize))
-                })
-                .collect()
+            let mut copied = Vec::new();
+            for (ordinal, operand) in operands.iter().enumerate() {
+                let target = recipe(output.get())?
+                    .field_slots(ordinal)
+                    .collect::<Vec<_>>();
+                if target.is_empty() {
+                    continue;
+                }
+                if code.kind(*operand).is_some() {
+                    if target.len() != 1 {
+                        return Err(backend("numeric scalar pack span differs"));
+                    }
+                    copied.push((shadow + target[0], operand.get() as usize));
+                } else {
+                    let source = recipe(operand.get())?.scalar_slots().collect::<Vec<_>>();
+                    if source.len() != target.len() {
+                        return Err(backend("numeric composite pack span differs"));
+                    }
+                    copied.extend(
+                        source
+                            .into_iter()
+                            .zip(target)
+                            .map(|(from, to)| (shadow + to, shadow + from)),
+                    );
+                }
+            }
+            copied
         }
-        Frame::Copy { source, output } => fields(source.get())?
-            .iter()
-            .zip(fields(output.get())?)
-            .filter_map(|(from, to)| from.zip(*to))
+        Frame::Copy { source, output } => recipe(source.get())?
+            .scalar_slots()
+            .zip(recipe(output.get())?.scalar_slots())
             .map(|(from, to)| (shadow + to, shadow + from))
             .collect(),
         Frame::Project {
             source,
             ordinal,
             output,
-        } => fields(source.get())?[*ordinal]
-            .map(|field| (output.get() as usize, shadow + field))
-            .into_iter()
-            .collect(),
+        } => {
+            if let Some(field) = recipe(source.get())?.fields[*ordinal] {
+                vec![(output.get() as usize, shadow + field)]
+            } else {
+                let source = recipe(source.get())?
+                    .field_slots(*ordinal)
+                    .collect::<Vec<_>>();
+                if source.is_empty() {
+                    return Ok(FrameWordMoves {
+                        assignments: Vec::new(),
+                        parallel: true,
+                    });
+                }
+                let target = recipe(output.get())?.scalar_slots().collect::<Vec<_>>();
+                if source.len() != target.len() {
+                    return Err(backend("numeric composite projection span differs"));
+                }
+                source
+                    .into_iter()
+                    .zip(target)
+                    .map(|(from, to)| (shadow + to, shadow + from))
+                    .collect()
+            }
+        }
     };
+    // Composite spans may overlap. Match the existing read-all/write-all
+    // emission, and expose that ordering to current-traversal proofs.
     Ok(FrameWordMoves {
         assignments,
-        parallel: matches!(operation, Frame::Copy { .. }),
+        parallel: true,
     })
 }
 
-/// Preserve the original Pack/Project and overlapping Copy emission order.
 pub(super) fn frame_words(
     b: &mut FunctionBuilder<'_>,
     words: &Words,
@@ -174,21 +257,13 @@ pub(super) fn frame_words(
     recipes: &[FrameWords],
 ) -> Result<(), NativeCompileError> {
     let moves = frame_word_moves(shadow, code, site, recipes)?;
-    if moves.parallel {
-        // Copy must read every old scalar before writing any next-state lane.
-        let copied = moves
-            .assignments
-            .into_iter()
-            .map(|(to, from)| (to, words.read(b, from)))
-            .collect::<Vec<_>>();
-        for (to, value) in copied {
-            words.write(b, to, value);
-        }
-    } else {
-        for (to, from) in moves.assignments {
-            let value = words.read(b, from);
-            words.write(b, to, value);
-        }
+    let copied = moves
+        .assignments
+        .into_iter()
+        .map(|(to, from)| (to, words.read(b, from)))
+        .collect::<Vec<_>>();
+    for (to, value) in copied {
+        words.write(b, to, value);
     }
     Ok(())
 }

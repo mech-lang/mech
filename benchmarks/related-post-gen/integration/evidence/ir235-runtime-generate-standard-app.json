@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/generate-standard-app",
+    "/private/tmp/mech-related-native-boolean-implication-freshness-compiler-20261106",
+    "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/managed-app"
+  ],
+  "exit": 0,
+  "seconds": 1.145989165874198,
+  "stdout": "generated\n",
+  "stderr": "",
+  "compiler_source_sha256": "4440e23b8e0f7b778341e0ac9a1d6927463b1324767fd72df46a033ebab8305d"
+}

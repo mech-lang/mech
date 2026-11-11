@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-conjoined-window-integration-opt-20261107-v1/compiler-decoded",
+    "/private/tmp/mech-related-conjoined-window-integration-runners-20261107-v1/compact-4/build/source.mec",
+    "/private/tmp/mech-related-conjoined-window-integration-runners-20261107-v1/compact-4-decoded-bundle"
+  ],
+  "exit": 0,
+  "seconds": 5.023864416172728,
+  "stdout": "{\"code_bytes\":902288,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1536}\n",
+  "stderr": ""
+}

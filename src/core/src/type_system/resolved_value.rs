@@ -46,6 +46,30 @@ pub struct ResolvedValueDescriptor {
 }
 
 impl ResolvedValueDescriptor {
+    /// Restore immutable neutral-shape metadata emitted by the checked compiler.
+    /// Current Values must still pass ordinary fresh-shape construction and all
+    /// runtime admission; this constructor grants neither.
+    ///
+    /// # Safety
+    /// The complete normalized type, including predicate evidence, must be
+    /// established as this exact canonical schema's compiler-derived type under
+    /// the same genuine checked Object provenance as the enclosing descriptor.
+    /// Confine both inputs until that association is established. An ID, digest
+    /// or successful wire parse is not semantic authority.
+    pub unsafe fn from_build_owned_neutral_type(
+        schema: Schema,
+        resolved_type: ResolvedType,
+    ) -> Result<Self, TypeResolutionError> {
+        let shape = schema
+            .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
+            .map_err(TypeResolutionError::semantic)?;
+        Ok(Self {
+            resolved_type,
+            schema,
+            shape,
+        })
+    }
+
     pub fn new(
         resolved_type: ResolvedType,
         schema: Schema,
@@ -66,8 +90,18 @@ impl ResolvedValueDescriptor {
     }
 
     pub fn from_schema(schema: Schema, shape: ShapeInstance) -> Result<Self, TypeResolutionError> {
+        // The schema is this constructor's sole type authority. Canonicalize
+        // the supplied shape and derive its type once; `new` must instead
+        // rederive and compare because it also accepts an independent type.
+        let shape = schema
+            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+            .map_err(TypeResolutionError::semantic)?;
         let resolved_type = ResolvedType::from_schema(&schema, &shape)?;
-        Self::new(resolved_type, schema, shape)
+        Ok(Self {
+            resolved_type,
+            schema,
+            shape,
+        })
     }
 
     /// Reuse this schema's validated semantic type with a fresh shape. Type

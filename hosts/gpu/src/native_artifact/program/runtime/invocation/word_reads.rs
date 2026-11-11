@@ -65,11 +65,31 @@ impl Invocation<'_, '_, '_> {
         site: usize,
         words: &[u64],
     ) -> Result<Option<u64>, Error> {
+        self.matrix_length_call_impl::<true>(site, words)
+    }
+
+    pub(in crate::native_artifact::program::runtime) fn matrix_length_call(
+        &mut self,
+        site: usize,
+        words: &[u64],
+    ) -> Result<Option<u64>, Error> {
+        self.matrix_length_call_impl::<false>(site, words)
+    }
+
+    fn matrix_length_call_impl<const UNSIGNED_ONLY: bool>(
+        &mut self,
+        site: usize,
+        words: &[u64],
+    ) -> Result<Option<u64>, Error> {
         let descriptor = self.descriptor;
         let Some(call) = descriptor.metadata().calls[site].as_ref() else {
             return Ok(None);
         };
-        if !call.supports_unsigned_matrix_length() {
+        if !(if UNSIGNED_ONLY {
+            call.supports_unsigned_matrix_length()
+        } else {
+            call.supports_matrix_length()
+        }) {
             return Ok(None);
         }
         let Action::LibraryCall {
@@ -97,7 +117,7 @@ impl Invocation<'_, '_, '_> {
             .arena
             .copy_current(operands[0].get(), &mut self.state.control.work)?;
         let word = call
-            .unsigned_matrix_length(&source, self.limits, &self.state.library, coexistence)
+            .matrix_length(&source, self.limits, &self.state.library, coexistence)
             .map_err(|error| Error::Library {
                 origin: descriptor.metadata().plan.blocks()[site].origin(),
                 error,

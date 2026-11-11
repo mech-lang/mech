@@ -18,6 +18,13 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+#[path = "native_collection_descriptor_image.rs"]
+mod descriptor_image;
+
+#[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
+#[path = "native_collection_prepared_capacity_tests.rs"]
+mod capacity_tests;
+
 fn composite_shape_from_children(template: &NativeProgramLibraryTemplate) -> bool {
     matches!(
         template.primitive(),
@@ -64,18 +71,335 @@ fn record_selector(
 // Schemas that reject it retain the ordinary live constructor and error order.
 fn descriptor_templates(
     template: &NativeProgramLibraryTemplate,
-) -> Option<Box<[mech_core::ResolvedValueDescriptor]>> {
-    template
-        .inputs()
+) -> Option<Arc<[mech_core::ResolvedValueDescriptor]>> {
+    descriptors_for_schemas(template.inputs(), template.output())
+}
+
+fn descriptors_for_schemas(
+    inputs: &[mech_core::Schema],
+    output: &mech_core::Schema,
+) -> Option<Arc<[mech_core::ResolvedValueDescriptor]>> {
+    inputs
         .iter()
-        .chain(core::iter::once(template.output()))
-        .map(|schema| {
-            let shape = schema
-                .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
-                .ok()?;
-            mech_core::ResolvedValueDescriptor::from_schema(schema.clone(), shape).ok()
-        })
-        .collect()
+        .chain(core::iter::once(output))
+        .map(descriptor_for_schema)
+        .collect::<Option<Box<[_]>>>()
+        .map(Arc::from)
+}
+
+fn descriptor_for_schema(schema: &mech_core::Schema) -> Option<mech_core::ResolvedValueDescriptor> {
+    let shape = schema
+        .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
+        .ok()?;
+    mech_core::ResolvedValueDescriptor::from_schema(schema.clone(), shape).ok()
+}
+
+// A port ID is only a lookup hint. Reuse the stored key solely when the actual
+// finalized entry has this complete schema. Other template forms retain the
+// original schema encoding/hash path and its exact matching behavior.
+fn canonical_schema_key(
+    schema: &mech_core::Schema,
+    id: Option<mech_core::SchemaId>,
+    schemas: &SchemaTable,
+) -> mech_core::SchemaKey {
+    id.and_then(|id| schemas.entry(id))
+        .filter(|entry| entry.schema() == schema)
+        .map_or_else(|| schema.key(), |entry| entry.key())
+}
+
+fn input_schema_key(
+    template: &NativeProgramLibraryTemplate,
+    schemas: &SchemaTable,
+    index: usize,
+) -> Option<mech_core::SchemaKey> {
+    let schema = template.inputs().get(index)?;
+    let id = match template.contract() {
+        mech_core::ResolvedOperationContract::Declared(contract) => {
+            contract.inputs.get(index).map(|port| port.schema)
+        }
+        _ => None,
+    };
+    Some(canonical_schema_key(schema, id, schemas))
+}
+
+fn output_schema_key(
+    template: &NativeProgramLibraryTemplate,
+    schemas: &SchemaTable,
+) -> mech_core::SchemaKey {
+    let id = match template.contract() {
+        mech_core::ResolvedOperationContract::Declared(contract) => {
+            contract.outputs.first().map(|port| port.schema)
+        }
+        _ => None,
+    };
+    canonical_schema_key(template.output(), id, schemas)
+}
+
+/// Program-scoped sharing of immutable, safely constructed type descriptors.
+/// This contains no Values, live shapes, factory/visit authority or invocation
+/// cache. A schema-ID signature only selects candidates: every hit compares
+/// the complete canonical schemas, so reuse across different programs is safe.
+#[derive(Debug, Default)]
+pub struct NativeDescriptorTemplatePool {
+    entries: std::collections::HashMap<Vec<mech_core::SchemaId>, Vec<DescriptorTemplateEntry>>,
+    schemas: std::collections::HashMap<mech_core::SchemaId, Vec<SchemaDescriptorEntry>>,
+}
+
+#[derive(Debug)]
+struct SchemaDescriptorEntry {
+    schema: mech_core::Schema,
+    descriptor: Option<mech_core::ResolvedValueDescriptor>,
+}
+
+#[derive(Debug)]
+struct DescriptorTemplateEntry {
+    inputs: Box<[mech_core::Schema]>,
+    output: mech_core::Schema,
+    descriptors: Option<Arc<[mech_core::ResolvedValueDescriptor]>>,
+}
+
+impl NativeDescriptorTemplatePool {
+    fn for_template(
+        &mut self,
+        template: &NativeProgramLibraryTemplate,
+    ) -> Option<Arc<[mech_core::ResolvedValueDescriptor]>> {
+        let mech_core::ResolvedOperationContract::Declared(contract) = template.contract() else {
+            return descriptor_templates(template);
+        };
+        if contract.inputs.len() != template.inputs().len() || contract.outputs.len() != 1 {
+            return descriptor_templates(template);
+        }
+        let signature = contract
+            .inputs
+            .iter()
+            .map(|port| port.schema)
+            .chain(core::iter::once(contract.outputs[0].schema))
+            .collect();
+        self.for_schemas(signature, template.inputs(), template.output())
+    }
+
+    fn for_schemas(
+        &mut self,
+        signature: Vec<mech_core::SchemaId>,
+        inputs: &[mech_core::Schema],
+        output: &mech_core::Schema,
+    ) -> Option<Arc<[mech_core::ResolvedValueDescriptor]>> {
+        if signature.len() != inputs.len().checked_add(1)? {
+            return descriptors_for_schemas(inputs, output);
+        }
+        if let Some(entry) = self.entries.get(&signature).and_then(|entries| {
+            entries
+                .iter()
+                .find(|entry| entry.inputs.as_ref() == inputs && &entry.output == output)
+        }) {
+            return entry.descriptors.clone();
+        }
+        // Preserve the original neutral-shape constructor and its fallback.
+        // In particular, rejecting the neutral shape never rejects a live call.
+        // Resolve each canonical schema once across different call signatures.
+        // Copy the completed descriptor into the existing contiguous call table:
+        // execution retains its exact owned descriptor layout and clone costs.
+        let descriptors = signature
+            .iter()
+            .copied()
+            .zip(inputs.iter().chain(core::iter::once(output)))
+            .map(|(id, schema)| self.for_schema(id, schema).cloned())
+            .collect::<Option<Box<[_]>>>()
+            .map(Arc::from);
+        self.entries
+            .entry(signature)
+            .or_default()
+            .push(DescriptorTemplateEntry {
+                inputs: inputs.into(),
+                output: output.clone(),
+                descriptors: descriptors.clone(),
+            });
+        descriptors
+    }
+
+    fn for_schema(
+        &mut self,
+        id: mech_core::SchemaId,
+        schema: &mech_core::Schema,
+    ) -> Option<&mech_core::ResolvedValueDescriptor> {
+        let entries = self.schemas.entry(id).or_default();
+        let at = if let Some(at) = entries.iter().position(|entry| &entry.schema == schema) {
+            at
+        } else {
+            // A neutral-shape rejection belongs only to this complete schema;
+            // it never suppresses actual live-shape construction or admission.
+            let descriptor = descriptor_for_schema(schema);
+            entries.push(SchemaDescriptorEntry {
+                schema: schema.clone(),
+                descriptor,
+            });
+            entries.len() - 1
+        };
+        entries[at].descriptor.as_ref()
+    }
+}
+
+#[cfg(test)]
+mod descriptor_template_pool_tests {
+    use super::*;
+    use mech_core::{IntegerWidth, Schema, SchemaBody, SchemaDraft, SchemaId};
+
+    fn scalar(body: SchemaBody) -> Schema {
+        SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body,
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    #[test]
+    fn canonical_key_hints_cannot_substitute_an_unrelated_table_entry() {
+        let unsigned = scalar(SchemaBody::UnsignedInteger(IntegerWidth::W64));
+        let signed = scalar(SchemaBody::SignedInteger(IntegerWidth::W64));
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let unsigned_handle = builder.insert(unsigned.clone()).unwrap();
+        let signed_handle = builder.insert(signed).unwrap();
+        let built = builder.finish().unwrap();
+        let unsigned_id = built.resolve(unsigned_handle).unwrap();
+        let signed_id = built.resolve(signed_handle).unwrap();
+        let expected = unsigned.key();
+        assert_eq!(
+            canonical_schema_key(&unsigned, Some(unsigned_id), &built.table),
+            expected
+        );
+        assert_eq!(
+            canonical_schema_key(&unsigned, Some(signed_id), &built.table),
+            expected
+        );
+        assert_ne!(built.table.entry(signed_id).unwrap().key(), expected);
+        assert_eq!(
+            canonical_schema_key(&unsigned, Some(SchemaId::new(u32::MAX)), &built.table),
+            expected
+        );
+        assert_eq!(
+            canonical_schema_key(&unsigned, None, &built.table),
+            expected
+        );
+    }
+
+    #[test]
+    fn repeated_schema_resolution_keeps_owned_call_layouts_and_foreign_ids_separate() {
+        let unsigned = scalar(SchemaBody::UnsignedInteger(IntegerWidth::W64));
+        let signed = scalar(SchemaBody::SignedInteger(IntegerWidth::W64));
+        let u = SchemaId::new(0);
+        let i = SchemaId::new(1);
+        let mut pool = NativeDescriptorTemplatePool::default();
+        let first = pool
+            .for_schemas(vec![u, i], std::slice::from_ref(&unsigned), &signed)
+            .unwrap();
+        let second = pool
+            .for_schemas(
+                vec![i, u, u],
+                &[signed.clone(), unsigned.clone()],
+                &unsigned,
+            )
+            .unwrap();
+        assert_eq!(pool.schemas.len(), 2);
+        assert!(pool.schemas.values().all(|entries| entries.len() == 1));
+        assert_eq!(&first[0], &second[1]);
+        assert!(!core::ptr::eq(&first[0], &second[1]));
+        let expected =
+            descriptors_for_schemas(&[signed.clone(), unsigned.clone()], &unsigned).unwrap();
+        assert_eq!(second.as_ref(), expected.as_ref());
+        let foreign = pool
+            .for_schemas(vec![u, u], std::slice::from_ref(&unsigned), &signed)
+            .unwrap();
+        assert_eq!(foreign[0].schema(), &unsigned);
+        assert_eq!(foreign[1].schema(), &signed);
+        assert_eq!(pool.schemas[&u].len(), 2);
+        let again = pool
+            .for_schemas(
+                vec![i, u, u],
+                &[signed.clone(), unsigned.clone()],
+                &unsigned,
+            )
+            .unwrap();
+        assert!(Arc::ptr_eq(&second, &again));
+    }
+
+    #[test]
+    fn schema_id_collisions_cannot_reuse_a_different_type_contract() {
+        let unsigned = scalar(SchemaBody::UnsignedInteger(IntegerWidth::W64));
+        let signed = scalar(SchemaBody::SignedInteger(IntegerWidth::W64));
+        let ids = vec![SchemaId::new(0), SchemaId::new(1)];
+        let mut pool = NativeDescriptorTemplatePool::default();
+        let first = pool
+            .for_schemas(ids.clone(), std::slice::from_ref(&unsigned), &unsigned)
+            .unwrap();
+        let reused = pool
+            .for_schemas(ids.clone(), std::slice::from_ref(&unsigned), &unsigned)
+            .unwrap();
+        assert!(Arc::ptr_eq(&first, &reused));
+        // A second program can assign the same IDs to different schemas.
+        let other = pool
+            .for_schemas(ids.clone(), std::slice::from_ref(&signed), &signed)
+            .unwrap();
+        assert!(!Arc::ptr_eq(&first, &other));
+        assert_eq!(other[0].schema(), &signed);
+        assert_eq!(other[1].schema(), &signed);
+        let expected = descriptors_for_schemas(std::slice::from_ref(&signed), &signed).unwrap();
+        assert_eq!(other.as_ref(), expected.as_ref());
+        // The original valid contract remains independently reusable.
+        let again = pool
+            .for_schemas(ids, std::slice::from_ref(&unsigned), &unsigned)
+            .unwrap();
+        assert!(Arc::ptr_eq(&first, &again));
+        assert_eq!(first[0].schema(), &unsigned);
+    }
+
+    #[test]
+    fn rejected_neutral_shapes_do_not_suppress_other_schemas_or_live_bounds() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin,
+        };
+        let matrix = |lower| {
+            SchemaDraft {
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(lower),
+                    upper_bound: Some(DimensionExpr::Constant(4)),
+                }]
+                .into(),
+                body: SchemaBody::Matrix {
+                    element: SchemaBody::UnsignedInteger(IntegerWidth::W64).into(),
+                    dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(0))].into(),
+                },
+            }
+            .finalize()
+            .unwrap()
+        };
+        let rejected = matrix(1);
+        let accepted = matrix(0);
+        let output = scalar(SchemaBody::UnsignedInteger(IntegerWidth::W64));
+        let ids = vec![SchemaId::new(0), SchemaId::new(1)];
+        let mut pool = NativeDescriptorTemplatePool::default();
+        assert!(
+            pool.for_schemas(ids.clone(), std::slice::from_ref(&rejected), &output)
+                .is_none()
+        );
+        assert_eq!(pool.schemas[&SchemaId::new(0)].len(), 1);
+        assert!(pool.schemas[&SchemaId::new(0)][0].descriptor.is_none());
+        let descriptors = pool
+            .for_schemas(ids.clone(), std::slice::from_ref(&accepted), &output)
+            .unwrap();
+        assert_eq!(descriptors[0].schema(), &accepted);
+        assert_eq!(pool.schemas[&SchemaId::new(0)].len(), 2);
+        assert!(
+            pool.for_schemas(ids, std::slice::from_ref(&rejected), &output)
+                .is_none()
+        );
+        assert!(rejected.instantiate_shape(vec![1].into()).is_ok());
+        assert!(accepted.instantiate_shape(vec![5].into()).is_err());
+    }
 }
 
 #[cfg(any(
@@ -86,6 +410,17 @@ fn descriptor_templates(
 #[path = "native_collection_prepared_image.rs"]
 mod image;
 
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_borrowed_record_map.rs"]
+mod borrowed_record_map;
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_string_matrix_key.rs"]
+mod string_matrix_key;
+#[cfg(feature = "sequence_buffers")]
+pub use string_matrix_key::{
+    NativeBorrowedMapKeys, NativeBorrowedMapKeysChoice, NativeStringMatrixKeyCell,
+    NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal, NativeStringMatrixKeyView,
+};
 #[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_buffer_frames.rs"]
 mod buffer_frames;
@@ -100,6 +435,13 @@ mod frame_composition;
 mod frame_shape;
 #[path = "native_collection_histogram.rs"]
 mod histogram;
+#[path = "native_collection_map_owner_constructors.rs"]
+mod map_owner_constructors;
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_map_seed.rs"]
+mod map_seed;
+#[cfg(feature = "sequence_buffers")]
+pub use map_seed::{NativeMapSeedChoice, NativeMapSeedFrame};
 #[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_record_selector.rs"]
 mod record_selector;
@@ -107,6 +449,9 @@ mod record_selector;
 mod record_words;
 #[path = "native_collection_string_map_entry.rs"]
 mod string_map_entry;
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_string_reads.rs"]
+mod string_reads;
 #[path = "native_collection_string_span.rs"]
 mod string_span;
 #[cfg(feature = "sequence_buffers")]
@@ -155,7 +500,7 @@ pub struct NativePreparedLibraryCall {
     #[serde(skip)]
     factory: ResidentKernelFactory,
     #[serde(skip)]
-    descriptor_templates: Option<Box<[mech_core::ResolvedValueDescriptor]>>,
+    descriptor_templates: Option<Arc<[mech_core::ResolvedValueDescriptor]>>,
     binding_bytes: u64,
     binding_work: u64,
     binding_nodes: u64,
@@ -175,6 +520,8 @@ pub struct NativePreparedLibraryCall {
     #[cfg(feature = "sequence_buffers")]
     #[serde(skip)]
     frame_composition: Option<Box<frame_composition::Composition>>,
+    #[serde(skip)]
+    constructor_normalization: Option<mech_core::snapshot::CompositeBindingCost>,
     span_selector_metadata_bytes: u64,
     span_selector_work: u64,
     #[cfg(feature = "pure_text")]
@@ -265,6 +612,22 @@ pub fn prepare_native_program_library_call(
     template: &NativeProgramLibraryTemplate,
     catalog: &FunctionCatalog,
 ) -> Result<NativePreparedLibraryCall, Error> {
+    prepare_native_program_library_call_with_descriptors(
+        artifact,
+        template,
+        catalog,
+        &mut NativeDescriptorTemplatePool::default(),
+    )
+}
+
+/// Prepare the same selected call while sharing immutable descriptor metadata.
+/// Every source-site, factory, schema, capacity and binding check still runs.
+pub fn prepare_native_program_library_call_with_descriptors(
+    artifact: &ProgramArtifact,
+    template: &NativeProgramLibraryTemplate,
+    catalog: &FunctionCatalog,
+    descriptors: &mut NativeDescriptorTemplatePool,
+) -> Result<NativePreparedLibraryCall, Error> {
     let template = current_template(artifact, template, catalog)?;
     let node = template.origin().node();
     let key = template.selected_key();
@@ -333,12 +696,11 @@ pub fn prepare_native_program_library_call(
     let output_parameters = template.output().dimension_parameters().len();
     // Schema::key encodes and hashes its whole tree. Retain immutable keys
     // here, not inside an ostensibly constant-work runtime cache lookup.
-    let input_keys = template
-        .inputs()
-        .iter()
-        .map(|schema| schema.key())
-        .collect();
-    let output_key = template.output().key();
+    let input_keys = (0..template.inputs().len())
+        .map(|index| input_schema_key(&template, artifact.schemas(), index))
+        .collect::<Option<Box<[_]>>>()
+        .ok_or_else(|| super::invalid(node))?;
+    let output_key = output_schema_key(&template, artifact.schemas());
     // Lookup reads only borrowed validated shape tapes. Fund their complete
     // declared lengths, including the prior-output/zero-default signature.
     let parameters = template
@@ -397,12 +759,15 @@ pub fn prepare_native_program_library_call(
         buffer_frames::FrameGeometry::derive(&template, artifact.schemas(), binding_bytes);
     #[cfg(feature = "sequence_buffers")]
     let record_selector = record_selector::RecordSelector::derive(&template);
-    let descriptor_templates = descriptor_templates(&template);
+    let descriptor_templates = descriptors.for_template(&template);
+    let constructor_normalization =
+        map_owner_constructors::normalization(&template, artifact.schemas());
     Ok(NativePreparedLibraryCall {
         template,
         schemas: Arc::new(artifact.schemas().clone()),
         factory,
         descriptor_templates,
+        constructor_normalization,
         binding_bytes,
         binding_work,
         binding_nodes,
@@ -845,12 +1210,63 @@ impl NativePreparedLibraryCall {
                     }
                 }
                 self.validate_values(inputs, output, &memory)?;
+                let bounded = super::headroom::supports_template(&self.template);
+                if bounded {
+                    let scope = crate::resident::budget::payload::native_scope_metadata_bytes();
+                    let owner = core::mem::size_of::<CachedBinding>() as u64;
+                    let fixed = self
+                        .binding_bytes
+                        .checked_mul(2)
+                        .and_then(|n| n.checked_add(owner))
+                        .and_then(|n| n.checked_add(scope));
+                    // The prepared binding envelope bounds the ordinary
+                    // invocation envelope too (the maintained plan-entry bound
+                    // is covered by the prepared envelope and factory tests).
+                    // Subtract only capacity actually held in this account:
+                    // a failed replacement can leave an owner-only guard.
+                    let held_bytes = cache
+                        .binding
+                        .as_ref()
+                        .map_or(0, |binding| binding._reservation.capacity_bytes());
+                    let held_nodes = cache
+                        .binding
+                        .as_ref()
+                        .map_or(0, |binding| binding._nodes.nodes());
+                    let additional = fixed.and_then(|n| n.checked_sub(held_bytes));
+                    let nodes = self.binding_nodes.checked_add(1);
+                    let additional_nodes = nodes.and_then(|n| n.checked_sub(held_nodes));
+                    let fits = match (fixed, additional, nodes, additional_nodes) {
+                        (Some(fixed), Some(additional), Some(nodes), Some(additional_nodes)) => {
+                            super::cache_capacity::admits(
+                                &self.template,
+                                &self.schemas,
+                                inputs,
+                                output,
+                                limits,
+                                work,
+                                fixed,
+                                nodes,
+                                additional,
+                                additional_nodes,
+                            )?
+                        }
+                        _ => false,
+                    };
+                    if !fits {
+                        // No kernel has run. Retire the optional metadata
+                        // before the ordinary binder needs current capacity;
+                        // keep every already spent unit on the SAME ledger.
+                        cache.binding = None;
+                        work.charge(self.binding_work, 0)?;
+                        return self.invoke_validated_current(inputs, output, limits, work);
+                    }
+                }
                 let hit = cache
                     .binding
                     .as_ref()
                     .and_then(|binding| binding.call.as_ref())
                     .is_some_and(|call| self.geometry_matches(call, inputs, output));
-                if !hit && cache.binding.is_none() {
+                if !bounded && !hit && cache.binding.is_none() {
                     work.charge(512, 0)?;
                     // Binding capacity is already subtracted from the nested
                     // temporary allowance below. Their complete coexistence
@@ -919,7 +1335,11 @@ impl NativePreparedLibraryCall {
                         limits
                             .max_retained_nodes
                             .unwrap()
-                            .checked_sub(self.binding_nodes)
+                            .checked_sub(
+                                self.binding_nodes
+                                    .checked_add(u64::from(bounded))
+                                    .ok_or(MemoryPlanError::TargetAddressOverflow)?,
+                            )
                             .ok_or(MemoryPlanError::TargetAddressOverflow)?,
                     );
                     if let Some(binding) = cache.binding.as_mut() {

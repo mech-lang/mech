@@ -26,6 +26,10 @@ fn old_walk(layout: &Layout, fields: &[FrameField], leaves: &mut Vec<Leaf>) -> u
             Lane::Composite { .. } => {
                 1 + old_walk(layout, layout.children(*field).unwrap(), leaves)
             }
+            Lane::Tagged { tag, .. } => {
+                leaves.push(Leaf::Scalar(tag));
+                1 + old_walk(layout, layout.children(*field).unwrap(), leaves)
+            }
         })
         .sum()
 }
@@ -144,7 +148,7 @@ fn fill_owners(
                 frames.inner.as_mut().unwrap().owners.values_mut()[at] =
                     Some(value(field.schema(), artifact, memory))
             }
-            Lane::Composite { .. } => fill_owners(
+            Lane::Composite { .. } | Lane::Tagged { .. } => fill_owners(
                 layout,
                 layout.children(*field).unwrap(),
                 artifact,

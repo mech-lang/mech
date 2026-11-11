@@ -46,6 +46,30 @@ pub(crate) fn element_supported(body: &SchemaBody) -> bool {
     )
 }
 
+/// A row block can append directly to the canonical scalar bank. Its width
+/// may vary per visit; fixed one-row geometry avoids a hidden row permutation.
+pub(crate) fn row_block_supported(schema: &mech_core::Schema) -> bool {
+    matches!(schema.body(), SchemaBody::Matrix { element, dimensions }
+        if dimensions.len() == 2
+            && dimensions[0] == mech_core::DimensionExpr::Constant(1)
+            && element_supported(element))
+        && schema
+            .dimension_parameters()
+            .iter()
+            .all(|parameter| parameter.lifetime() == mech_core::DimensionLifetime::Turn)
+}
+
+pub(crate) fn collection_kind_supported(kind: ComprehensionKind) -> bool {
+    matches!(
+        kind,
+        ComprehensionKind::Matrix
+            | ComprehensionKind::MatrixPreserveShape
+            | ComprehensionKind::MatrixHorizontalBlocks {
+                rows: crate::MatrixBlockRows::Fixed(1)
+            }
+    )
+}
+
 #[derive(Clone, Copy)]
 struct QualifierContext<'a> {
     owner: Origin,
@@ -77,12 +101,7 @@ impl Builder<'_> {
         arguments: &[Value],
         output: Value,
     ) -> Result<(u32, u32), Error> {
-        if !self.allow_collections
-            || !matches!(
-                declaration.kind,
-                ComprehensionKind::Matrix | ComprehensionKind::MatrixPreserveShape
-            )
-        {
+        if !self.allow_collections || !collection_kind_supported(declaration.kind) {
             return Err(unsupported(owner, "native collection construction kind"));
         }
         let SchemaBody::Matrix { element, .. } = self.ty(output).definition().body() else {
@@ -297,13 +316,16 @@ impl Builder<'_> {
             }
         }
         let value = self.collection_read(declaration.yield_value, arguments, &locals, owner)?;
-        if !element_supported(self.ty(value).definition().body())
-            || !self
-                .ty(value)
-                .definition()
-                .dimension_parameters()
-                .is_empty()
-        {
+        let yielded = self.ty(value).definition();
+        let supported = if matches!(
+            declaration.kind,
+            ComprehensionKind::MatrixHorizontalBlocks { .. }
+        ) {
+            row_block_supported(yielded)
+        } else {
+            element_supported(yielded.body()) && yielded.dimension_parameters().is_empty()
+        };
+        if !supported {
             return Err(unsupported(owner, "native collected yield kind"));
         }
         let push = self.block(site, Scalar::None)?;

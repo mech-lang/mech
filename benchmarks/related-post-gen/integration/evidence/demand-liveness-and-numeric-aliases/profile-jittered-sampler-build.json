@@ -1,0 +1,15 @@
+{
+  "command": [
+    "xcrun",
+    "clang",
+    "-std=c11",
+    "-O2",
+    "-c",
+    "/private/tmp/mech-related-selected-and-numeric-aliases-pc-profile-20261107-v2/sampler.c",
+    "-o",
+    "/private/tmp/mech-related-selected-and-numeric-aliases-pc-profile-20261107-v2/sampler.o"
+  ],
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

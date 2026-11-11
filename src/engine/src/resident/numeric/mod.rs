@@ -3438,6 +3438,15 @@ fn bind_snapshot_numeric_binary(
             (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Subtract) => {
                 Some(NativeScalarOp::U32Sub)
             }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Multiply) => {
+                Some(NativeScalarOp::U32Mul)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Divide) => {
+                Some(NativeScalarOp::U32Div)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Remainder) => {
+                Some(NativeScalarOp::U32Rem)
+            }
             (SchemaBody::UnsignedInteger(IntegerWidth::W8), SemanticArithmetic::Add) => {
                 Some(NativeScalarOp::U8Add)
             }

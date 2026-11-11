@@ -77,6 +77,85 @@ fn contents(value: &Value) -> BTreeMap<String, u64> {
 }
 
 #[test]
+fn structured_result_has_exact_canonical_output_caps_and_atomic_denial() {
+    for record in [false, true] {
+        for map_ordinal in [0, 1] {
+            for count in [0, 1, 4] {
+                let map_body = SchemaBody::Map {
+                    key: Box::new(SchemaBody::String),
+                    value: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                    cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                };
+                let mut fields = vec![SchemaBody::UnsignedInteger(IntegerWidth::W64); 2];
+                fields[map_ordinal] = map_body;
+                let body = if record {
+                    SchemaBody::Record(
+                        fields
+                            .into_iter()
+                            .enumerate()
+                            .map(|(i, schema)| mech_core::SchemaField {
+                                name: format!("field-{i}-λ-{}", "long".repeat(i * 12)),
+                                schema,
+                            })
+                            .collect(),
+                    )
+                } else {
+                    SchemaBody::Tuple(fields.into())
+                };
+                let (schemas, schema) = schemas(body);
+                let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+                let mut map = table(&memory);
+                for i in 0..count {
+                    map.insert(&format!("key-{i}-λ"), i as u64).unwrap();
+                }
+                let live = geometry(&map);
+                let mut words = [777, 777];
+                words[map_ordinal] = 19; // caller's checked opaque owner token
+                let output = map
+                    .publish_result(&schemas, schema, &words, live, limits())
+                    .unwrap();
+                let footprint = output.retained_footprint(&schemas).unwrap();
+                let children = match output.data() {
+                    ValueData::Tuple(values) => values.as_ref(),
+                    ValueData::Record(value) => value.fields(),
+                    _ => panic!("compound result"),
+                };
+                assert!(
+                    matches!(&children[map_ordinal], ValueData::Map(value) if value.entries().len() == count)
+                );
+                assert!(matches!(&children[1 - map_ordinal], ValueData::U64(777)));
+                drop(output);
+                let before = memory.used_bytes();
+                let mut exact = limits();
+                exact.max_output_bytes = Some(footprint.retained_bytes);
+                exact.max_cloned_bytes = Some(footprint.retained_bytes);
+                drop(
+                    map.publish_result(&schemas, schema, &words, live, exact)
+                        .unwrap(),
+                );
+                assert_eq!(memory.used_bytes(), before);
+                for cloned in [false, true] {
+                    let mut short = exact;
+                    if cloned {
+                        short.max_cloned_bytes = Some(footprint.retained_bytes - 1);
+                    } else {
+                        short.max_output_bytes = Some(footprint.retained_bytes - 1);
+                    }
+                    assert!(matches!(
+                        map.publish_result(&schemas, schema, &words, live, short),
+                        Err(Error::Limit { .. })
+                    ));
+                    assert_eq!(memory.used_bytes(), before);
+                    assert_eq!(map.len(), count);
+                }
+                drop(map);
+                assert_eq!(memory.used_bytes(), 0);
+            }
+        }
+    }
+}
+
+#[test]
 fn publication_sort_batches_preserve_order_exact_work_and_first_denial() {
     fn run<'a>(
         input: &[(&'a str, u64)],

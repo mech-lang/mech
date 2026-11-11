@@ -8,10 +8,12 @@ use crate::native_artifact::program::prepare::{
 };
 use mech_engine::native_artifact::{
     NativeBufferFrames, NativeIterationAction as Action, NativePreparedLibraryCall,
-    NativeProgramArtifactPlan as Plan, NativeProgramFacts, NativeScalarKind,
+    NativeProgramArtifactPlan as Plan, NativeProgramFacts, NativeScalarAggregates,
+    NativeScalarKind,
 };
 
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.View")]
 pub(in crate::native_artifact) struct View {
     pub source: usize,
     pub width: u8,
@@ -19,12 +21,13 @@ pub(in crate::native_artifact) struct View {
 }
 /// Physical cleanup follows the chosen representation. Virtual temporaries
 /// retain their original ordered charge but have no storage to retire.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub(in crate::native_artifact) enum Retirement {
     Pay(u64),
     Current(u32),
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
 pub(in crate::native_artifact) struct Layout {
     pub views: Vec<View>,
     pub actions: Vec<(usize, Operation)>,
@@ -54,21 +57,6 @@ impl Layout {
             .checked_sub(frames.retirements.len())
             .ok_or("parent exit retirement words exceed its argument bank")?;
         let mut words = (flags..self.words).collect::<Vec<_>>();
-        for exit in &frames.exits {
-            for value in &exit.frames {
-                let recipe = frames
-                    .frames
-                    .iter()
-                    .find(|frame| frame.value == value.get())
-                    .ok_or("parent exit lacks its escaping frame recipe")?;
-                for &word in recipe.fields.iter().flatten() {
-                    if word >= frames.scalar_words {
-                        return Err("parent exit scalar word is outside its frame bank");
-                    }
-                    words.push(word);
-                }
-            }
-        }
         words.sort_unstable();
         words.dedup();
         Ok(words)
@@ -78,6 +66,7 @@ impl Layout {
         plan: &Plan,
         facts: &NativeProgramFacts<'_>,
         frame_layout: &NativeBufferFrames,
+        aggregates: &NativeScalarAggregates,
         calls: &[Option<NativePreparedLibraryCall>],
         visits: &[NativeIterationVisit],
         retirements: &FrameRetirements,
@@ -105,6 +94,8 @@ impl Layout {
             let action = if frame_layout.action(at).is_some() {
                 // Frame proof above already checked every pack/copy/project.
                 Operation::Frame
+            } else if aggregates.action(at).is_some() {
+                Operation::Aggregate
             } else if let Action::LibraryCall {
                 operands,
                 output,
@@ -198,7 +189,10 @@ impl Layout {
         // Native frame copies, spills and exit synchronization use the existing
         // word adapter. Fund their actual bounded word inventory as well.
         let fields = frames.frames.iter().try_fold(0usize, |n, f| {
-            n.checked_add(f.fields.len())
+            f.scalar_paths
+                .iter()
+                .try_fold(n, |n, (path, _)| n.checked_add(path.len()))
+                .and_then(|n| n.checked_add(f.arrays.iter().flatten().count()))
                 .ok_or("parent field count overflows")
         })?;
         compute = u64::try_from(fields)

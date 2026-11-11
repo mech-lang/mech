@@ -12,6 +12,28 @@ impl Pending {
     pub(super) fn current(&self) -> Option<usize> {
         self.0.map(|value| value.get() - 1)
     }
+    /// Replace only a sealed loop-tree's scalar edge marker. The caller has
+    /// independently checked both markers against the current source ancestry;
+    /// this neither borrows an owner nor admits an unvisited ordinary action.
+    pub(super) fn reconcile_tree(
+        &mut self,
+        previous: Option<usize>,
+        current: Option<usize>,
+    ) -> Result<(), Error> {
+        if self.current() != previous {
+            return Err(invalid("numeric tree changed its pending parent edge"));
+        }
+        let next = current
+            .map(|value| {
+                value
+                    .checked_add(1)
+                    .and_then(NonZeroUsize::new)
+                    .ok_or_else(|| invalid("numeric tree parent edge overflows"))
+            })
+            .transpose()?;
+        self.0 = next;
+        Ok(())
+    }
     fn prepared(&self, expected: Option<usize>, next: Option<usize>) -> Result<Self, Error> {
         if self.current() != expected {
             return Err(invalid("native parent edge differs from its root context"));
@@ -127,9 +149,6 @@ impl Invocation<'_, '_, '_> {
     }
 
     pub(super) fn arm_parent_continuation(&mut self, site: usize) -> Result<(), Error> {
-        if self.worker.is_some() {
-            return Ok(());
-        }
         let metadata = self.descriptor.metadata();
         if let Some((boundary, true)) = metadata.compositions.boundary(site) {
             let (parent, child) = metadata
@@ -155,9 +174,6 @@ impl Invocation<'_, '_, '_> {
         previous: Option<u32>,
         site: u64,
     ) -> Result<(), Error> {
-        if self.worker.is_some() {
-            return Ok(());
-        }
         let metadata = self.descriptor.metadata();
         if let Some((boundary, false)) =
             previous.and_then(|p| self.descriptor.metadata().compositions.boundary(p as usize))

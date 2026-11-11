@@ -12,7 +12,14 @@ fn nested_numeric_phase_children_read_growing_contents_and_length() {
             mode.compilation(),
         )
         .unwrap();
-        let phases = &jit.descriptor().metadata().closed_tails.regions;
+        let phases = jit
+            .descriptor()
+            .metadata()
+            .closed_tails
+            .regions
+            .iter()
+            .filter(|region| region.tail.parent().is_none())
+            .collect::<Vec<_>>();
         assert_eq!(phases.len(), 1);
         assert_eq!(
             phases[0]

@@ -1,0 +1,27 @@
+
+running 22 tests
+test memory_planner::program::identity_tests::every_transaction_object_is_remapped_into_the_program_namespace ... ok
+test memory_planner::program::tests::arena_placement_is_stable_and_reuse_members_share_an_offset ... ok
+test memory_planner::program::tests::closed_intervals_overlap_at_shared_endpoint ... ok
+test memory_planner::program::tests::plan_points_are_checked_and_exact ... ok
+test memory_planner::program::tests::published_outputs_are_not_reclassified_as_state ... ok
+test memory_planner::program::tests::scratch_lifetimes_follow_schedule_not_node_identity ... ok
+test memory_planner::resident::tests::metadata_baseline_survives_refinement_and_replacement_once ... ok
+test memory_planner::resident::tests::metadata_nodes_are_admitted_at_the_exact_limit ... ok
+test memory_planner::resident::tests::resident_arena_admission_uses_semantic_elements_not_only_lane_bytes ... ok
+test memory_planner::resident::tests::resident_arena_ids_are_stable_and_state_buffers_are_distinct ... ok
+test memory_planner::resident::tests::resident_effect_payload_retains_its_typed_arena_slot ... ok
+test memory_planner::resident::tests::resident_inputs_and_constants_do_not_inherit_call_output_limits ... ok
+test memory_planner::resident::tests::resident_payload_identity_survives_current_footprint_finalization ... ok
+test memory_planner::resident::tests::resident_projection_retains_string_and_snapshot_footprint_witnesses ... ok
+test memory_planner::resident::tests::resident_rmw_backups_reuse_one_non_overlapping_region_per_kind ... ok
+test memory_planner::turn::tests::borrowed_single_call_projection_keeps_current_facts_scratch_and_finite_violations ... ok
+test memory_planner::turn::tests::borrowed_single_call_projection_keeps_error_precedence_immutable_input_and_retry ... ok
+test memory_planner::turn::tests::observed_owned_call_keeps_the_call_when_refinement_is_not_selected ... ok
+test memory_planner::turn::tests::observed_owned_call_preserves_overflow_before_resolution_and_allows_retry ... ok
+test memory_planner::turn::tests::observed_owned_call_refines_current_outputs_and_keeps_published_finite_facts ... ok
+test memory_planner::turn::tests::owned_turn_template_restores_limits_after_rejections_and_retries ... ok
+test memory_planner::turn::tests::owned_turn_template_restores_limits_and_uses_each_current_payload ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 1218 filtered out; finished in 0.00s
+

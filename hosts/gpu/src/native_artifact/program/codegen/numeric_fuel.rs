@@ -6,7 +6,7 @@ use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::compiler::backend;
 use crate::native_artifact::program::prepare::{
     numeric_phase::Bound,
-    numeric_plan::{Operation, Plan},
+    readonly_numeric::{Operation, Proof},
 };
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{InstBuilder, Value, types};
@@ -16,7 +16,7 @@ pub(super) fn envelope(
     b: &mut FunctionBuilder<'_>,
     words: &Words,
     code: CodePlan<'_>,
-    proof: &Plan,
+    proof: &Proof,
     shadow: usize,
     root: u32,
     bound: &Bound,

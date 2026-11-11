@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-integration-old-object-20261106-v1/226/probe"
+  ],
+  "exit": 0,
+  "seconds": 0.5135474170092493,
+  "stdout": "{\"compiled_module_rejected\":\"canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact\",\"object_bound_rejected\":\"canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact\",\"old_entry_never_invoked\":true,\"old_typed_ir\":226}\n",
+  "stderr": ""
+}

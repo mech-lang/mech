@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-opt-20261106-v1/compiler-decoded",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-4/build/source.mec",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-4-decoded-bundle"
+  ],
+  "exit": 0,
+  "seconds": 6.566747375065461,
+  "stdout": "{\"code_bytes\":908464,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1520}\n",
+  "stderr": ""
+}

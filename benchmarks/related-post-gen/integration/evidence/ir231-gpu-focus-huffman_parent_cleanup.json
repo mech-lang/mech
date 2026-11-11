@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-reduction-terminal-transition-tests-20261106-v1/mech_gpu-tests",
+    "huffman_parent_cleanup",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 0.31799149978905916
+}

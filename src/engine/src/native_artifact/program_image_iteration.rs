@@ -1,9 +1,7 @@
 //! Private wire reconstruction of native iteration blocks; never a scheduler.
 use super::{WireAction, WireOrigin, WireTerminator, action, library, terminator};
 use crate::native_artifact::*;
-use mech_core::{FunctionCatalog, SchemaTable};
-use serde::Deserialize;
-use serde_json::Value as Json;
+use serde::{Deserialize, Deserializer};
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -21,7 +19,7 @@ enum Observation {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-enum Action {
+enum Action<'a> {
     Scalar(WireAction),
     Structural {
         source: u32,
@@ -30,7 +28,8 @@ enum Action {
         output: u32,
     },
     LibraryCall {
-        template: Json,
+        #[serde(borrow)]
+        template: BuildOwnedImageRecord<'a>,
         operands: Box<[u32]>,
         output: u32,
     },
@@ -91,10 +90,11 @@ enum Terminator {
     },
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Block {
+#[serde(deny_unknown_fields, rename = "mech.native.image.Block")]
+struct Block<'a> {
     origin: WireOrigin,
-    action: Action,
+    #[serde(borrow)]
+    action: Action<'a>,
     terminator: Terminator,
     iteration: Option<u32>,
 }
@@ -102,10 +102,9 @@ struct Block {
 /// # Safety
 /// Returned metadata must stay confined until the enclosing loader establishes
 /// unchanged compiler/Object provenance, including all loop and value indices.
-pub(super) unsafe fn block(
-    image: &Json,
-    catalog: &FunctionCatalog,
-    schemas: &SchemaTable,
+pub(super) unsafe fn block<'de, D: Deserializer<'de>>(
+    image: D,
+    templates: &library::Templates<'_>,
 ) -> Result<NativeIterationBlock, String> {
     let wire = Block::deserialize(image).map_err(|e| e.to_string())?;
     use NativeIterationAction as N;
@@ -144,7 +143,7 @@ pub(super) unsafe fn block(
             output,
         } => N::LibraryCall {
             // SAFETY: propagate the enclosing build-image confinement contract.
-            template: unsafe { library::template(&template, catalog, schemas)? },
+            template: unsafe { templates.read(template)? },
             operands: operands
                 .into_vec()
                 .into_iter()
@@ -236,6 +235,8 @@ mod tests {
         ];
         let catalog = mech_core::FunctionCatalogBuilder::new().build().unwrap();
         let schemas = mech_core::SchemaTableBuilder::new().finish().unwrap().table;
+        // SAFETY: metadata-only tests, with no library selections or entry.
+        let templates = unsafe { library::Templates::new(None, &catalog, &schemas) }.unwrap();
         for action in actions {
             let original = NativeIterationBlock {
                 origin: NativeMatchOrigin {
@@ -253,7 +254,7 @@ mod tests {
             };
             let image = serde_json::to_value(original).unwrap();
             // SAFETY: confined metadata round-trip test; synthetic indices never execute.
-            let loaded = unsafe { block(&image, &catalog, &schemas) }.unwrap();
+            let loaded = unsafe { block(&image, &templates) }.unwrap();
             assert_eq!(serde_json::to_value(loaded).unwrap(), image);
         }
     }

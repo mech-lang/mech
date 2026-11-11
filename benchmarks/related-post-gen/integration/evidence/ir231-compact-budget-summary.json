@@ -1,0 +1,306 @@
+{
+  "cases": [
+    {
+      "case": "work",
+      "denial_exact": true,
+      "full_output_exact": null,
+      "results": {
+        "bound": {
+          "budget_case": "work",
+          "error": "Base(WorkLimit { phase: Setup, required: 44160, limit: 0 })",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "independent": {
+          "budget_case": "work",
+          "error": "Base(WorkLimit { phase: Setup, required: 44160, limit: 0 })",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "full-catalog": {
+          "budget_case": "work",
+          "error": "Base(WorkLimit { phase: Setup, required: 44160, limit: 0 })",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        }
+      }
+    },
+    {
+      "case": "transport",
+      "denial_exact": true,
+      "full_output_exact": null,
+      "results": {
+        "bound": {
+          "budget_case": "transport",
+          "error": "Base(TransportLimit { required: 412624, limit: 0 })",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "independent": {
+          "budget_case": "transport",
+          "error": "Base(TransportLimit { required: 412624, limit: 0 })",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "full-catalog": {
+          "budget_case": "transport",
+          "error": "Base(TransportLimit { required: 412624, limit: 0 })",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        }
+      }
+    },
+    {
+      "case": "stack",
+      "denial_exact": true,
+      "full_output_exact": null,
+      "results": {
+        "bound": {
+          "budget_case": "stack",
+          "error": "Base(StackLimit { required: 1536, limit: 0 })",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "independent": {
+          "budget_case": "stack",
+          "error": "Base(StackLimit { required: 1536, limit: 0 })",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "full-catalog": {
+          "budget_case": "stack",
+          "error": "Base(StackLimit { required: 1536, limit: 0 })",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        }
+      }
+    },
+    {
+      "case": "output_bytes",
+      "denial_exact": true,
+      "full_output_exact": null,
+      "results": {
+        "bound": {
+          "budget_case": "output_bytes",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Binding(ResidentBinding { error: ResidentMemoryPlanRejected { error: TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Output, port: 0 }, dimension: OutputBytes, required: 64, limit: 0 } } } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "independent": {
+          "budget_case": "output_bytes",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Binding(ResidentBinding { error: ResidentMemoryPlanRejected { error: TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Output, port: 0 }, dimension: OutputBytes, required: 64, limit: 0 } } } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "full-catalog": {
+          "budget_case": "output_bytes",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Binding(ResidentBinding { error: ResidentMemoryPlanRejected { error: TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Output, port: 0 }, dimension: OutputBytes, required: 64, limit: 0 } } } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        }
+      }
+    },
+    {
+      "case": "output_elements",
+      "denial_exact": true,
+      "full_output_exact": null,
+      "results": {
+        "bound": {
+          "budget_case": "output_elements",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Binding(ResidentBinding { error: ResidentMemoryPlanRejected { error: TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Output, port: 0 }, dimension: OutputElements, required: 1, limit: 0 } } } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "independent": {
+          "budget_case": "output_elements",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Binding(ResidentBinding { error: ResidentMemoryPlanRejected { error: TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Output, port: 0 }, dimension: OutputElements, required: 1, limit: 0 } } } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "full-catalog": {
+          "budget_case": "output_elements",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Binding(ResidentBinding { error: ResidentMemoryPlanRejected { error: TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Output, port: 0 }, dimension: OutputElements, required: 1, limit: 0 } } } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        }
+      }
+    },
+    {
+      "case": "temporary",
+      "denial_exact": true,
+      "full_output_exact": null,
+      "results": {
+        "bound": {
+          "budget_case": "temporary",
+          "error": "Collection { origin: NativeMatchOrigin { node: NodeId(2), block: Some(2), local: Some(0) }, error: ResourceLimit { phase: Admission, dimension: TemporaryBytes, required: 33776, limit: 0 } }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "independent": {
+          "budget_case": "temporary",
+          "error": "Collection { origin: NativeMatchOrigin { node: NodeId(2), block: Some(2), local: Some(0) }, error: ResourceLimit { phase: Admission, dimension: TemporaryBytes, required: 33776, limit: 0 } }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "full-catalog": {
+          "budget_case": "temporary",
+          "error": "Collection { origin: NativeMatchOrigin { node: NodeId(2), block: Some(2), local: Some(0) }, error: ResourceLimit { phase: Admission, dimension: TemporaryBytes, required: 33776, limit: 0 } }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        }
+      }
+    },
+    {
+      "case": "nodes",
+      "denial_exact": true,
+      "full_output_exact": null,
+      "results": {
+        "bound": {
+          "budget_case": "nodes",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Plan(TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Input, port: 0 }, dimension: RetainedNodes, required: 2, limit: 0 } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "independent": {
+          "budget_case": "nodes",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Plan(TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Input, port: 0 }, dimension: RetainedNodes, required: 2, limit: 0 } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "full-catalog": {
+          "budget_case": "nodes",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Plan(TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Input, port: 0 }, dimension: RetainedNodes, required: 2, limit: 0 } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        }
+      }
+    },
+    {
+      "case": "comparison",
+      "denial_exact": true,
+      "full_output_exact": null,
+      "results": {
+        "bound": {
+          "budget_case": "comparison",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Binding(ResidentBinding { error: ResidentMemoryPlanRejected { error: TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Output, port: 0 }, dimension: ComparisonWork, required: 1, limit: 0 } } } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "independent": {
+          "budget_case": "comparison",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Binding(ResidentBinding { error: ResidentMemoryPlanRejected { error: TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Output, port: 0 }, dimension: ComparisonWork, required: 1, limit: 0 } } } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        },
+        "full-catalog": {
+          "budget_case": "comparison",
+          "error": "Library { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None }, error: Binding(ResidentBinding { error: ResidentMemoryPlanRejected { error: TargetLimitExceeded { violation: MemoryBudgetViolation { owner: DirectCallPort { call: 0, direction: Output, port: 0 }, dimension: ComparisonWork, required: 1, limit: 0 } } } }) }",
+          "output_unpublished": true,
+          "retained_bytes": 0,
+          "retained_nodes": 0
+        }
+      }
+    },
+    {
+      "case": "success",
+      "denial_exact": false,
+      "full_output_exact": true,
+      "results": {
+        "bound": {
+          "boundary": "native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction",
+          "compile_or_restore_seconds": 0.008766708,
+          "input_admission_seconds": 1.3041e-05,
+          "json_read_and_parse_seconds": 4.4583e-05,
+          "linked": true,
+          "parallel_batches": 0,
+          "parallel_numeric_regions": 0,
+          "parallel_numeric_work": 0,
+          "parallel_peak_workers": 0,
+          "parallel_regions": 0,
+          "parallel_tasks": 0,
+          "post_json_boundary": "one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time",
+          "post_json_seconds": 0.000963333,
+          "posts": 10,
+          "processing_plus_admission_seconds": 0.000961707,
+          "retained_bytes": 198917,
+          "sample": 0,
+          "seconds": 0.000948666,
+          "work": 1850374198
+        },
+        "independent": {
+          "boundary": "native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction",
+          "compile_or_restore_seconds": 0.299929667,
+          "input_admission_seconds": 1.3e-05,
+          "json_read_and_parse_seconds": 9.0792e-05,
+          "linked": true,
+          "parallel_batches": 0,
+          "parallel_numeric_regions": 0,
+          "parallel_numeric_work": 0,
+          "parallel_peak_workers": 0,
+          "parallel_regions": 0,
+          "parallel_tasks": 0,
+          "post_json_boundary": "one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time",
+          "post_json_seconds": 0.000902041,
+          "posts": 10,
+          "processing_plus_admission_seconds": 0.000901,
+          "retained_bytes": 198917,
+          "sample": 0,
+          "seconds": 0.000888,
+          "work": 1850375702
+        },
+        "full-catalog": {
+          "boundary": "native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction",
+          "compile_or_restore_seconds": 0.008818667,
+          "input_admission_seconds": 1.5625e-05,
+          "json_read_and_parse_seconds": 9.8583e-05,
+          "linked": true,
+          "parallel_batches": 0,
+          "parallel_numeric_regions": 0,
+          "parallel_numeric_work": 0,
+          "parallel_peak_workers": 0,
+          "parallel_regions": 0,
+          "parallel_tasks": 0,
+          "post_json_boundary": "one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time",
+          "post_json_seconds": 0.001016208,
+          "posts": 10,
+          "processing_plus_admission_seconds": 0.001014958,
+          "retained_bytes": 198917,
+          "sample": 0,
+          "seconds": 0.000999333,
+          "work": 1850374446
+        }
+      }
+    }
+  ],
+  "all_eight_denials_exact": true,
+  "successful_full_output_exact": true,
+  "successful_finite_work_cap": 1000000000000,
+  "exact_success_work_is_not_cross_process_invariant": true,
+  "variability_evidence": "v2/work-variability-audit.json",
+  "inherited_128_work_fault_still_open": true,
+  "production_assertions_and_seeds_unchanged": true,
+  "diagnostic_only": true
+}

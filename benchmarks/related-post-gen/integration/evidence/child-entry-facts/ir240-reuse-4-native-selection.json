@@ -1,0 +1,2870 @@
+{
+  "typed_ir_version": 240,
+  "code_bytes": 874160,
+  "stack_bytes": 1536,
+  "compiled_numeric_functions": [
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 211,
+        "after_instructions": 1761,
+        "before_blocks": 326,
+        "before_instructions": 7079,
+        "boolean_conditions_simplified": 11,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 18,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 2,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 5836,
+      "header": 107,
+      "stack_bytes": 240,
+      "symbol": "mech_canonical_program_entry_v1_numeric_107",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 68,
+        "after_instructions": 269,
+        "before_blocks": 112,
+        "before_instructions": 1415,
+        "boolean_conditions_simplified": 3,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1092,
+      "header": 146,
+      "stack_bytes": 80,
+      "symbol": "mech_canonical_program_entry_v1_numeric_146",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 104,
+      "cleanup": {
+        "after_blocks": 302,
+        "after_instructions": 3994,
+        "before_blocks": 466,
+        "before_instructions": 13105,
+        "boolean_conditions_simplified": 9,
+        "constant_branches_removed": 2,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 56,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 312,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 11776,
+      "header": 256,
+      "stack_bytes": 352,
+      "symbol": "mech_canonical_program_entry_v1_numeric_256",
+      "unsigned_guards": 7
+    },
+    {
+      "caller_template_bound": 96,
+      "cleanup": {
+        "after_blocks": 216,
+        "after_instructions": 2478,
+        "before_blocks": 329,
+        "before_instructions": 7926,
+        "boolean_conditions_simplified": 6,
+        "constant_branches_removed": 2,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 20,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 215,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 7108,
+      "header": 281,
+      "stack_bytes": 224,
+      "symbol": "mech_canonical_program_entry_v1_numeric_281",
+      "unsigned_guards": 5
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 167,
+        "after_instructions": 1614,
+        "before_blocks": 243,
+        "before_instructions": 4611,
+        "boolean_conditions_simplified": 4,
+        "constant_branches_removed": 2,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 7,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 2,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 5520,
+      "header": 304,
+      "stack_bytes": 176,
+      "symbol": "mech_canonical_program_entry_v1_numeric_304",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 116,
+        "after_instructions": 744,
+        "before_blocks": 153,
+        "before_instructions": 1649,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 2,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 3512,
+      "header": 329,
+      "stack_bytes": 144,
+      "symbol": "mech_canonical_program_entry_v1_numeric_329",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 81,
+        "after_instructions": 365,
+        "before_blocks": 113,
+        "before_instructions": 877,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1776,
+      "header": 459,
+      "stack_bytes": 128,
+      "symbol": "mech_canonical_program_entry_v1_numeric_459",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 58,
+        "after_instructions": 243,
+        "before_blocks": 90,
+        "before_instructions": 836,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1036,
+      "header": 505,
+      "stack_bytes": 112,
+      "symbol": "mech_canonical_program_entry_v1_numeric_505",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 186,
+        "after_instructions": 1607,
+        "before_blocks": 270,
+        "before_instructions": 4518,
+        "boolean_conditions_simplified": 4,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 7,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 5396,
+      "header": 572,
+      "stack_bytes": 240,
+      "symbol": "mech_canonical_program_entry_v1_numeric_572",
+      "unsigned_guards": 5
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 114,
+        "after_instructions": 598,
+        "before_blocks": 154,
+        "before_instructions": 1348,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 2880,
+      "header": 599,
+      "stack_bytes": 208,
+      "symbol": "mech_canonical_program_entry_v1_numeric_599",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 150,
+        "after_instructions": 1188,
+        "before_blocks": 231,
+        "before_instructions": 4691,
+        "boolean_conditions_simplified": 8,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 6,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 2,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 3480,
+      "header": 671,
+      "stack_bytes": 128,
+      "symbol": "mech_canonical_program_entry_v1_numeric_671",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 77,
+        "after_instructions": 334,
+        "before_blocks": 115,
+        "before_instructions": 1213,
+        "boolean_conditions_simplified": 4,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1504,
+      "header": 693,
+      "stack_bytes": 96,
+      "symbol": "mech_canonical_program_entry_v1_numeric_693",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 112,
+      "cleanup": {
+        "after_blocks": 391,
+        "after_instructions": 6301,
+        "before_blocks": 599,
+        "before_instructions": 20326,
+        "boolean_conditions_simplified": 11,
+        "constant_branches_removed": 3,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 93,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 395,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 19064,
+      "header": 801,
+      "stack_bytes": 416,
+      "symbol": "mech_canonical_program_entry_v1_numeric_801",
+      "unsigned_guards": 9
+    },
+    {
+      "caller_template_bound": 104,
+      "cleanup": {
+        "after_blocks": 305,
+        "after_instructions": 4405,
+        "before_blocks": 462,
+        "before_instructions": 13927,
+        "boolean_conditions_simplified": 8,
+        "constant_branches_removed": 3,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 45,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 298,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 13092,
+      "header": 826,
+      "stack_bytes": 272,
+      "symbol": "mech_canonical_program_entry_v1_numeric_826",
+      "unsigned_guards": 7
+    },
+    {
+      "caller_template_bound": 96,
+      "cleanup": {
+        "after_blocks": 256,
+        "after_instructions": 3328,
+        "before_blocks": 376,
+        "before_instructions": 9934,
+        "boolean_conditions_simplified": 6,
+        "constant_branches_removed": 3,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 20,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 227,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 10988,
+      "header": 849,
+      "stack_bytes": 240,
+      "symbol": "mech_canonical_program_entry_v1_numeric_849",
+      "unsigned_guards": 5
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 205,
+        "after_instructions": 2265,
+        "before_blocks": 286,
+        "before_instructions": 5933,
+        "boolean_conditions_simplified": 4,
+        "constant_branches_removed": 3,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 7,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 2,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 8524,
+      "header": 874,
+      "stack_bytes": 192,
+      "symbol": "mech_canonical_program_entry_v1_numeric_874",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 152,
+        "after_instructions": 1145,
+        "before_blocks": 192,
+        "before_instructions": 2316,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 3,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 5508,
+      "header": 901,
+      "stack_bytes": 144,
+      "symbol": "mech_canonical_program_entry_v1_numeric_901",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 81,
+        "after_instructions": 365,
+        "before_blocks": 113,
+        "before_instructions": 877,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1776,
+      "header": 1053,
+      "stack_bytes": 128,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1053",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 58,
+        "after_instructions": 243,
+        "before_blocks": 90,
+        "before_instructions": 836,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1036,
+      "header": 1099,
+      "stack_bytes": 112,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1099",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 186,
+        "after_instructions": 1607,
+        "before_blocks": 270,
+        "before_instructions": 4518,
+        "boolean_conditions_simplified": 4,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 7,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 5396,
+      "header": 1166,
+      "stack_bytes": 240,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1166",
+      "unsigned_guards": 5
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 114,
+        "after_instructions": 598,
+        "before_blocks": 154,
+        "before_instructions": 1348,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 2880,
+      "header": 1193,
+      "stack_bytes": 208,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1193",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 112,
+      "cleanup": {
+        "after_blocks": 672,
+        "after_instructions": 11012,
+        "before_blocks": 1154,
+        "before_instructions": 51241,
+        "boolean_conditions_simplified": 16,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 161,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 923,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 28448,
+      "header": 1282,
+      "stack_bytes": 528,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1282",
+      "unsigned_guards": 10
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 264,
+        "after_instructions": 2648,
+        "before_blocks": 464,
+        "before_instructions": 14772,
+        "boolean_conditions_simplified": 6,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 39,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 2,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 7784,
+      "header": 1311,
+      "stack_bytes": 288,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1311",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 182,
+        "after_instructions": 771,
+        "before_blocks": 339,
+        "before_instructions": 7559,
+        "boolean_conditions_simplified": 4,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 2940,
+      "header": 1341,
+      "stack_bytes": 192,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1341",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 251,
+        "after_instructions": 2302,
+        "before_blocks": 451,
+        "before_instructions": 12671,
+        "boolean_conditions_simplified": 7,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 26,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 2,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 6264,
+      "header": 1522,
+      "stack_bytes": 272,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1522",
+      "unsigned_guards": 2
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 168,
+        "after_instructions": 579,
+        "before_blocks": 324,
+        "before_instructions": 5627,
+        "boolean_conditions_simplified": 5,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1952,
+      "header": 1553,
+      "stack_bytes": 160,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1553",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 104,
+      "cleanup": {
+        "after_blocks": 479,
+        "after_instructions": 6267,
+        "before_blocks": 792,
+        "before_instructions": 26489,
+        "boolean_conditions_simplified": 11,
+        "constant_branches_removed": 2,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 53,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1186,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 17772,
+      "header": 1790,
+      "stack_bytes": 416,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1790",
+      "unsigned_guards": 6
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 197,
+        "after_instructions": 1781,
+        "before_blocks": 299,
+        "before_instructions": 5908,
+        "boolean_conditions_simplified": 5,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 12,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 6468,
+      "header": 1816,
+      "stack_bytes": 240,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1816",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 113,
+        "after_instructions": 551,
+        "before_blocks": 170,
+        "before_instructions": 1878,
+        "boolean_conditions_simplified": 3,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 2596,
+      "header": 1844,
+      "stack_bytes": 160,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1844",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 166,
+        "after_instructions": 638,
+        "before_blocks": 305,
+        "before_instructions": 5000,
+        "boolean_conditions_simplified": 4,
+        "constant_branches_removed": 2,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 2540,
+      "header": 1930,
+      "stack_bytes": 208,
+      "symbol": "mech_canonical_program_entry_v1_numeric_1930",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 81,
+        "after_instructions": 365,
+        "before_blocks": 113,
+        "before_instructions": 877,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1776,
+      "header": 2128,
+      "stack_bytes": 128,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2128",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 58,
+        "after_instructions": 243,
+        "before_blocks": 90,
+        "before_instructions": 836,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1036,
+      "header": 2174,
+      "stack_bytes": 112,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2174",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 190,
+        "after_instructions": 1627,
+        "before_blocks": 274,
+        "before_instructions": 4538,
+        "boolean_conditions_simplified": 4,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 7,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 5524,
+      "header": 2228,
+      "stack_bytes": 256,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2228",
+      "unsigned_guards": 5
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 114,
+        "after_instructions": 598,
+        "before_blocks": 154,
+        "before_instructions": 1348,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 2880,
+      "header": 2255,
+      "stack_bytes": 208,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2255",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 144,
+      "cleanup": {
+        "after_blocks": 1035,
+        "after_instructions": 24380,
+        "before_blocks": 1695,
+        "before_instructions": 88518,
+        "boolean_conditions_simplified": 29,
+        "constant_branches_removed": 2,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 321,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 3249,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 65308,
+      "header": 2349,
+      "stack_bytes": 896,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2349",
+      "unsigned_guards": 16
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 197,
+        "after_instructions": 1781,
+        "before_blocks": 299,
+        "before_instructions": 5908,
+        "boolean_conditions_simplified": 5,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 12,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 6468,
+      "header": 2384,
+      "stack_bytes": 240,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2384",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 113,
+        "after_instructions": 551,
+        "before_blocks": 170,
+        "before_instructions": 1878,
+        "boolean_conditions_simplified": 3,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 2596,
+      "header": 2412,
+      "stack_bytes": 160,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2412",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 166,
+        "after_instructions": 638,
+        "before_blocks": 305,
+        "before_instructions": 5000,
+        "boolean_conditions_simplified": 4,
+        "constant_branches_removed": 2,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2
+      },
+      "code_bytes": 2540,
+      "header": 2498,
+      "stack_bytes": 208,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2498",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 96,
+      "cleanup": {
+        "after_blocks": 186,
+        "after_instructions": 978,
+        "before_blocks": 267,
+        "before_instructions": 3495,
+        "boolean_conditions_simplified": 5,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 8,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 3,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 4388,
+      "header": 2651,
+      "stack_bytes": 192,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2651",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 95,
+        "after_instructions": 443,
+        "before_blocks": 138,
+        "before_instructions": 1513,
+        "boolean_conditions_simplified": 3,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 2,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 2084,
+      "header": 2676,
+      "stack_bytes": 128,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2676",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 96,
+      "cleanup": {
+        "after_blocks": 282,
+        "after_instructions": 3463,
+        "before_blocks": 492,
+        "before_instructions": 14984,
+        "boolean_conditions_simplified": 11,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 113,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 5,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 9256,
+      "header": 2742,
+      "stack_bytes": 464,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2742",
+      "unsigned_guards": 4
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 177,
+        "after_instructions": 897,
+        "before_blocks": 314,
+        "before_instructions": 4946,
+        "boolean_conditions_simplified": 6,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 2,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 3500,
+      "header": 2799,
+      "stack_bytes": 304,
+      "symbol": "mech_canonical_program_entry_v1_numeric_2799",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 81,
+        "after_instructions": 365,
+        "before_blocks": 113,
+        "before_instructions": 877,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1776,
+      "header": 3098,
+      "stack_bytes": 128,
+      "symbol": "mech_canonical_program_entry_v1_numeric_3098",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 58,
+        "after_instructions": 243,
+        "before_blocks": 90,
+        "before_instructions": 836,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 1036,
+      "header": 3144,
+      "stack_bytes": 112,
+      "symbol": "mech_canonical_program_entry_v1_numeric_3144",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 88,
+      "cleanup": {
+        "after_blocks": 190,
+        "after_instructions": 1627,
+        "before_blocks": 274,
+        "before_instructions": 4538,
+        "boolean_conditions_simplified": 4,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 7,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 5524,
+      "header": 3198,
+      "stack_bytes": 256,
+      "symbol": "mech_canonical_program_entry_v1_numeric_3198",
+      "unsigned_guards": 5
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 114,
+        "after_instructions": 598,
+        "before_blocks": 154,
+        "before_instructions": 1348,
+        "boolean_conditions_simplified": 2,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 2880,
+      "header": 3225,
+      "stack_bytes": 208,
+      "symbol": "mech_canonical_program_entry_v1_numeric_3225",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 120,
+      "cleanup": {
+        "after_blocks": 579,
+        "after_instructions": 11749,
+        "before_blocks": 930,
+        "before_instructions": 40332,
+        "boolean_conditions_simplified": 18,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 168,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 1751,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 36480,
+      "header": 3309,
+      "stack_bytes": 784,
+      "symbol": "mech_canonical_program_entry_v1_numeric_3309",
+      "unsigned_guards": 10
+    },
+    {
+      "caller_template_bound": 96,
+      "cleanup": {
+        "after_blocks": 186,
+        "after_instructions": 978,
+        "before_blocks": 267,
+        "before_instructions": 3495,
+        "boolean_conditions_simplified": 5,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 8,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 3,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 4388,
+      "header": 3335,
+      "stack_bytes": 192,
+      "symbol": "mech_canonical_program_entry_v1_numeric_3335",
+      "unsigned_guards": 3
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 95,
+        "after_instructions": 443,
+        "before_blocks": 138,
+        "before_instructions": 1513,
+        "boolean_conditions_simplified": 3,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 2,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 2084,
+      "header": 3360,
+      "stack_bytes": 128,
+      "symbol": "mech_canonical_program_entry_v1_numeric_3360",
+      "unsigned_guards": 1
+    },
+    {
+      "caller_template_bound": 96,
+      "cleanup": {
+        "after_blocks": 282,
+        "after_instructions": 3463,
+        "before_blocks": 492,
+        "before_instructions": 14984,
+        "boolean_conditions_simplified": 11,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 113,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 5,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 9256,
+      "header": 3426,
+      "stack_bytes": 464,
+      "symbol": "mech_canonical_program_entry_v1_numeric_3426",
+      "unsigned_guards": 4
+    },
+    {
+      "caller_template_bound": 80,
+      "cleanup": {
+        "after_blocks": 177,
+        "after_instructions": 897,
+        "before_blocks": 314,
+        "before_instructions": 4946,
+        "boolean_conditions_simplified": 6,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "neutral_operations_removed": 2,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "code_bytes": 3500,
+      "header": 3483,
+      "stack_bytes": 304,
+      "symbol": "mech_canonical_program_entry_v1_numeric_3483",
+      "unsigned_guards": 1
+    }
+  ],
+  "numeric_tree_candidates": [
+    {
+      "header": 47,
+      "iteration": 1,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 107,
+      "iteration": 3,
+      "nodes": 2,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 146,
+      "iteration": 4,
+      "nodes": null,
+      "parent": 3,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 256,
+      "iteration": 5,
+      "nodes": 4,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 281,
+      "iteration": 6,
+      "nodes": 3,
+      "parent": 5,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 304,
+      "iteration": 7,
+      "nodes": 2,
+      "parent": 6,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 329,
+      "iteration": 8,
+      "nodes": null,
+      "parent": 7,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 459,
+      "iteration": 10,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 505,
+      "iteration": 11,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 572,
+      "iteration": 13,
+      "nodes": 2,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 599,
+      "iteration": 14,
+      "nodes": null,
+      "parent": 13,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 671,
+      "iteration": 15,
+      "nodes": 2,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 693,
+      "iteration": 16,
+      "nodes": null,
+      "parent": 15,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 801,
+      "iteration": 17,
+      "nodes": 5,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 826,
+      "iteration": 18,
+      "nodes": 4,
+      "parent": 17,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 849,
+      "iteration": 19,
+      "nodes": 3,
+      "parent": 18,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 874,
+      "iteration": 20,
+      "nodes": 2,
+      "parent": 19,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 901,
+      "iteration": 21,
+      "nodes": null,
+      "parent": 20,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 1053,
+      "iteration": 23,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 1099,
+      "iteration": 24,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 1166,
+      "iteration": 26,
+      "nodes": 2,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1193,
+      "iteration": 27,
+      "nodes": null,
+      "parent": 26,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 1282,
+      "iteration": 29,
+      "nodes": 5,
+      "parent": 28,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1311,
+      "iteration": 30,
+      "nodes": 2,
+      "parent": 29,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1341,
+      "iteration": 31,
+      "nodes": null,
+      "parent": 30,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 1522,
+      "iteration": 32,
+      "nodes": 2,
+      "parent": 29,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1553,
+      "iteration": 33,
+      "nodes": null,
+      "parent": 32,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 1790,
+      "iteration": 35,
+      "nodes": 4,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1816,
+      "iteration": 36,
+      "nodes": 2,
+      "parent": 35,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1844,
+      "iteration": 37,
+      "nodes": null,
+      "parent": 36,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 1930,
+      "iteration": 38,
+      "nodes": null,
+      "parent": 35,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 2128,
+      "iteration": 40,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 2174,
+      "iteration": 41,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 2228,
+      "iteration": 43,
+      "nodes": 2,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2255,
+      "iteration": 44,
+      "nodes": null,
+      "parent": 43,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 2349,
+      "iteration": 47,
+      "nodes": 9,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2384,
+      "iteration": 48,
+      "nodes": 2,
+      "parent": 47,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2412,
+      "iteration": 49,
+      "nodes": null,
+      "parent": 48,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 2498,
+      "iteration": 50,
+      "nodes": null,
+      "parent": 47,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 2651,
+      "iteration": 51,
+      "nodes": 2,
+      "parent": 47,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": false
+    },
+    {
+      "header": 2676,
+      "iteration": 52,
+      "nodes": null,
+      "parent": 51,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 2742,
+      "iteration": 53,
+      "nodes": 3,
+      "parent": 47,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2761,
+      "iteration": 54,
+      "nodes": null,
+      "parent": 53,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 2799,
+      "iteration": 55,
+      "nodes": null,
+      "parent": 53,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 3038,
+      "iteration": 56,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 3098,
+      "iteration": 59,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 3144,
+      "iteration": 60,
+      "nodes": null,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 3198,
+      "iteration": 62,
+      "nodes": 2,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 3225,
+      "iteration": 63,
+      "nodes": null,
+      "parent": 62,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 3309,
+      "iteration": 65,
+      "nodes": 6,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 3335,
+      "iteration": 66,
+      "nodes": 2,
+      "parent": 65,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": false
+    },
+    {
+      "header": 3360,
+      "iteration": 67,
+      "nodes": null,
+      "parent": 66,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 3426,
+      "iteration": 68,
+      "nodes": 3,
+      "parent": 65,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 3445,
+      "iteration": 69,
+      "nodes": null,
+      "parent": 68,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    },
+    {
+      "header": 3483,
+      "iteration": 70,
+      "nodes": null,
+      "parent": 68,
+      "proof_eligible": false,
+      "rejection": "numeric tree has no child",
+      "selected": false
+    }
+  ],
+  "captured_numeric_candidates": [
+    {
+      "header": 47,
+      "iteration": 1,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "no selected unsigned reads or lengths",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 107,
+      "iteration": 3,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 146,
+      "iteration": 4,
+      "native_initializer": true,
+      "parent": 3,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": [
+        2210,
+        3
+      ],
+      "selected": false
+    },
+    {
+      "header": 256,
+      "iteration": 5,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 281,
+      "iteration": 6,
+      "native_initializer": false,
+      "parent": 5,
+      "proof_eligible": false,
+      "rejection": "no selected unsigned reads or lengths",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 304,
+      "iteration": 7,
+      "native_initializer": false,
+      "parent": 6,
+      "proof_eligible": false,
+      "rejection": "no selected unsigned reads or lengths",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 329,
+      "iteration": 8,
+      "native_initializer": false,
+      "parent": 7,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 459,
+      "iteration": 10,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 505,
+      "iteration": 11,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 572,
+      "iteration": 13,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 599,
+      "iteration": 14,
+      "native_initializer": false,
+      "parent": 13,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 671,
+      "iteration": 15,
+      "native_initializer": true,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": [
+        2233,
+        2
+      ],
+      "selected": false
+    },
+    {
+      "header": 693,
+      "iteration": 16,
+      "native_initializer": true,
+      "parent": 15,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": [
+        2239,
+        2
+      ],
+      "selected": false
+    },
+    {
+      "header": 801,
+      "iteration": 17,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 826,
+      "iteration": 18,
+      "native_initializer": false,
+      "parent": 17,
+      "proof_eligible": false,
+      "rejection": "no selected unsigned reads or lengths",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 849,
+      "iteration": 19,
+      "native_initializer": false,
+      "parent": 18,
+      "proof_eligible": false,
+      "rejection": "no selected unsigned reads or lengths",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 874,
+      "iteration": 20,
+      "native_initializer": false,
+      "parent": 19,
+      "proof_eligible": false,
+      "rejection": "no selected unsigned reads or lengths",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 901,
+      "iteration": 21,
+      "native_initializer": false,
+      "parent": 20,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1053,
+      "iteration": 23,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1099,
+      "iteration": 24,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1166,
+      "iteration": 26,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1193,
+      "iteration": 27,
+      "native_initializer": false,
+      "parent": 26,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1282,
+      "iteration": 29,
+      "native_initializer": false,
+      "parent": 28,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1311,
+      "iteration": 30,
+      "native_initializer": false,
+      "parent": 29,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1341,
+      "iteration": 31,
+      "native_initializer": false,
+      "parent": 30,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1522,
+      "iteration": 32,
+      "native_initializer": false,
+      "parent": 29,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1553,
+      "iteration": 33,
+      "native_initializer": false,
+      "parent": 32,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1790,
+      "iteration": 35,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1816,
+      "iteration": 36,
+      "native_initializer": false,
+      "parent": 35,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1844,
+      "iteration": 37,
+      "native_initializer": false,
+      "parent": 36,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 1930,
+      "iteration": 38,
+      "native_initializer": false,
+      "parent": 35,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2128,
+      "iteration": 40,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2174,
+      "iteration": 41,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2228,
+      "iteration": 43,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2255,
+      "iteration": 44,
+      "native_initializer": false,
+      "parent": 43,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2349,
+      "iteration": 47,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2384,
+      "iteration": 48,
+      "native_initializer": false,
+      "parent": 47,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2412,
+      "iteration": 49,
+      "native_initializer": false,
+      "parent": 48,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2498,
+      "iteration": 50,
+      "native_initializer": false,
+      "parent": 47,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2651,
+      "iteration": 51,
+      "native_initializer": false,
+      "parent": 47,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2676,
+      "iteration": 52,
+      "native_initializer": false,
+      "parent": 51,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2742,
+      "iteration": 53,
+      "native_initializer": false,
+      "parent": 47,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 2761,
+      "iteration": 54,
+      "native_initializer": true,
+      "parent": 53,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": [
+        2348,
+        3
+      ],
+      "selected": true
+    },
+    {
+      "header": 2799,
+      "iteration": 55,
+      "native_initializer": false,
+      "parent": 53,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 3038,
+      "iteration": 56,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "no selected unsigned reads or lengths",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 3098,
+      "iteration": 59,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 3144,
+      "iteration": 60,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 3198,
+      "iteration": 62,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 3225,
+      "iteration": 63,
+      "native_initializer": false,
+      "parent": 62,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 3309,
+      "iteration": 65,
+      "native_initializer": false,
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 3335,
+      "iteration": 66,
+      "native_initializer": false,
+      "parent": 65,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 3360,
+      "iteration": 67,
+      "native_initializer": false,
+      "parent": 66,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 3426,
+      "iteration": 68,
+      "native_initializer": false,
+      "parent": 65,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    },
+    {
+      "header": 3445,
+      "iteration": 69,
+      "native_initializer": true,
+      "parent": 68,
+      "proof_eligible": true,
+      "rejection": null,
+      "scalar_carrier_words": [
+        2367,
+        3
+      ],
+      "selected": true
+    },
+    {
+      "header": 3483,
+      "iteration": 70,
+      "native_initializer": false,
+      "parent": 68,
+      "proof_eligible": false,
+      "rejection": "capture is not from a strict ancestor",
+      "scalar_carrier_words": null,
+      "selected": false
+    }
+  ],
+  "readonly_numeric_candidates": [
+    {
+      "header": 107,
+      "iteration": 3,
+      "origin": {
+        "block": 11,
+        "local": 6,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 256,
+      "iteration": 5,
+      "origin": {
+        "block": 31,
+        "local": 13,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 281,
+      "iteration": 6,
+      "origin": {
+        "block": 33,
+        "local": 9,
+        "node": 2
+      },
+      "parent": 5,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 304,
+      "iteration": 7,
+      "origin": {
+        "block": 35,
+        "local": 7,
+        "node": 2
+      },
+      "parent": 6,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 329,
+      "iteration": 8,
+      "origin": {
+        "block": 37,
+        "local": 8,
+        "node": 2
+      },
+      "parent": 7,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 459,
+      "iteration": 10,
+      "origin": {
+        "block": 31,
+        "local": 25,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 505,
+      "iteration": 11,
+      "origin": {
+        "block": 31,
+        "local": 34,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 572,
+      "iteration": 13,
+      "origin": {
+        "block": 31,
+        "local": 47,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 599,
+      "iteration": 14,
+      "origin": {
+        "block": 69,
+        "local": 11,
+        "node": 2
+      },
+      "parent": 13,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 801,
+      "iteration": 17,
+      "origin": {
+        "block": 95,
+        "local": 12,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 826,
+      "iteration": 18,
+      "origin": {
+        "block": 97,
+        "local": 9,
+        "node": 2
+      },
+      "parent": 17,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 849,
+      "iteration": 19,
+      "origin": {
+        "block": 99,
+        "local": 7,
+        "node": 2
+      },
+      "parent": 18,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 874,
+      "iteration": 20,
+      "origin": {
+        "block": 101,
+        "local": 8,
+        "node": 2
+      },
+      "parent": 19,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 901,
+      "iteration": 21,
+      "origin": {
+        "block": 103,
+        "local": 9,
+        "node": 2
+      },
+      "parent": 20,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1053,
+      "iteration": 23,
+      "origin": {
+        "block": 95,
+        "local": 19,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1099,
+      "iteration": 24,
+      "origin": {
+        "block": 95,
+        "local": 28,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1166,
+      "iteration": 26,
+      "origin": {
+        "block": 95,
+        "local": 41,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 1193,
+      "iteration": 27,
+      "origin": {
+        "block": 138,
+        "local": 11,
+        "node": 2
+      },
+      "parent": 26,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1282,
+      "iteration": 29,
+      "origin": {
+        "block": 147,
+        "local": 16,
+        "node": 2
+      },
+      "parent": 28,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 1311,
+      "iteration": 30,
+      "origin": {
+        "block": 149,
+        "local": 14,
+        "node": 2
+      },
+      "parent": 29,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 1341,
+      "iteration": 31,
+      "origin": {
+        "block": 151,
+        "local": 13,
+        "node": 2
+      },
+      "parent": 30,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1522,
+      "iteration": 32,
+      "origin": {
+        "block": 149,
+        "local": 25,
+        "node": 2
+      },
+      "parent": 29,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 1553,
+      "iteration": 33,
+      "origin": {
+        "block": 173,
+        "local": 12,
+        "node": 2
+      },
+      "parent": 32,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1790,
+      "iteration": 35,
+      "origin": {
+        "block": 201,
+        "local": 9,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 1816,
+      "iteration": 36,
+      "origin": {
+        "block": 204,
+        "local": 10,
+        "node": 2
+      },
+      "parent": 35,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 1844,
+      "iteration": 37,
+      "origin": {
+        "block": 206,
+        "local": 12,
+        "node": 2
+      },
+      "parent": 36,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 1930,
+      "iteration": 38,
+      "origin": {
+        "block": 204,
+        "local": 15,
+        "node": 2
+      },
+      "parent": 35,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2128,
+      "iteration": 40,
+      "origin": {
+        "block": 239,
+        "local": 7,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2174,
+      "iteration": 41,
+      "origin": {
+        "block": 239,
+        "local": 16,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2228,
+      "iteration": 43,
+      "origin": {
+        "block": 239,
+        "local": 24,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 2255,
+      "iteration": 44,
+      "origin": {
+        "block": 253,
+        "local": 11,
+        "node": 2
+      },
+      "parent": 43,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2349,
+      "iteration": 47,
+      "origin": {
+        "block": 239,
+        "local": 33,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 2384,
+      "iteration": 48,
+      "origin": {
+        "block": 265,
+        "local": 10,
+        "node": 2
+      },
+      "parent": 47,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 2412,
+      "iteration": 49,
+      "origin": {
+        "block": 267,
+        "local": 12,
+        "node": 2
+      },
+      "parent": 48,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2498,
+      "iteration": 50,
+      "origin": {
+        "block": 265,
+        "local": 15,
+        "node": 2
+      },
+      "parent": 47,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2651,
+      "iteration": 51,
+      "origin": {
+        "block": 298,
+        "local": 6,
+        "node": 2
+      },
+      "parent": 47,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2676,
+      "iteration": 52,
+      "origin": {
+        "block": 300,
+        "local": 7,
+        "node": 2
+      },
+      "parent": 51,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 2742,
+      "iteration": 53,
+      "origin": {
+        "block": 298,
+        "local": 10,
+        "node": 2
+      },
+      "parent": 47,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 2799,
+      "iteration": 55,
+      "origin": {
+        "block": 312,
+        "local": 5,
+        "node": 2
+      },
+      "parent": 53,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 3098,
+      "iteration": 59,
+      "origin": {
+        "block": 340,
+        "local": 18,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 3144,
+      "iteration": 60,
+      "origin": {
+        "block": 340,
+        "local": 27,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 3198,
+      "iteration": 62,
+      "origin": {
+        "block": 340,
+        "local": 35,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 3225,
+      "iteration": 63,
+      "origin": {
+        "block": 360,
+        "local": 11,
+        "node": 2
+      },
+      "parent": 62,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 3309,
+      "iteration": 65,
+      "origin": {
+        "block": 340,
+        "local": 44,
+        "node": 2
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 3335,
+      "iteration": 66,
+      "origin": {
+        "block": 371,
+        "local": 5,
+        "node": 2
+      },
+      "parent": 65,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 3360,
+      "iteration": 67,
+      "origin": {
+        "block": 373,
+        "local": 7,
+        "node": 2
+      },
+      "parent": 66,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    },
+    {
+      "header": 3426,
+      "iteration": 68,
+      "origin": {
+        "block": 371,
+        "local": 9,
+        "node": 2
+      },
+      "parent": 65,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": true
+    },
+    {
+      "header": 3483,
+      "iteration": 70,
+      "origin": {
+        "block": 385,
+        "local": 5,
+        "node": 2
+      },
+      "parent": 68,
+      "proof_eligible": true,
+      "rejection": null,
+      "selected": true
+    }
+  ]
+}
