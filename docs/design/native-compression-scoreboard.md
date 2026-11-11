@@ -16,6 +16,8 @@ Ratios in this table use the same fresh four-actor cohort. The 31-case score com
 
 [R272 full timings, memory policy, qualification and profiles](native-zero-page-scratch.md).
 
+R273 reduces work in read-only scalar loops. Empty and one-byte inputs miss the block timing gate, so R272 remains active. [R273 measurements and exact-image evidence](native-readonly-scalar-reductions.md).
+
 ## Historical R270 measured comparison
 
 **27/81 cases faster than Roc (33.3%).** Goal 100%.

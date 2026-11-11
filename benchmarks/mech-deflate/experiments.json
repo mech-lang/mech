@@ -55267,6 +55267,80 @@
         }
       },
       "complete_goal": false
+    },
+    "273": {
+      "git_parent": "e8e87ab7f84a41fe1455bc216136729d90ea3d72",
+      "measured_parent": "e8e87ab7f84a41fe1455bc216136729d90ea3d72",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R270",
+      "retained_runtime": "R272",
+      "retained_source_packet_round": 270,
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain R272 after two block gate misses in the read-only scalar reduction pilot.",
+      "scope": {
+        "compiler_evaluated_only": true,
+        "changed_compiler_files": 4,
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "ir_work_abi_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "apple_arm64": true,
+        "cranelift": "0.131.3",
+        "regalloc2": "0.15.2"
+      },
+      "summary": {
+        "screen_cases": 19,
+        "screen_aggregate_of_paired_case_ratios": 0.992781511097188,
+        "gate_misses": {
+          "pooled": [],
+          "block": [
+            "empty",
+            "one-stored"
+          ]
+        },
+        "complete_smokes": 162,
+        "linked_controls": 30,
+        "matched_library_cases": 6,
+        "independent_counter_cases": 6,
+        "linked_profiles": 3,
+        "compiler_object_sha256": "db5ae26df99bff7eed9906d22a563a1f5359d40b0aa8fa538a06f4435dcf53e5",
+        "before_worker_sha256": "592c9dc3bf148fa74bdd123976425f249b103eb4f77427caf6800054268876e1",
+        "candidate_worker_sha256": "0b9160e50ab6da7764ec0ecbfc83241e989f5e6fb85b8b272730dbaaf3c39e1d"
+      },
+      "retained_score": {
+        "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+        "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+        "goal_percent": 100.0,
+        "before_count": 27,
+        "after_count": 31,
+        "denominator": 81,
+        "before_percent": 33.333333333333336,
+        "after_percent": 38.27160493827161,
+        "change_percentage_points": 4.938271604938272
+      },
+      "retained_libdeflate_wins": 3,
+      "report": "docs/design/native-readonly-scalar-reductions.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r273-readonly-scalar-reductions-49733d995008.tar.gz",
+        "bytes": 610638,
+        "sha256": "49733d9950080237a57cf59f1a8bb5fc4140aff4eaebd55b4e7ac9ac077bb9ff",
+        "files": 112,
+        "reports_replayed": 2,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "round-results.json": "88f043cb5efe6f79a4644fb7b83c9711b0647160888046afc62fe9e5a3e70df1",
+            "REPORT.md": "1f9c8cf914620e84567381957e566f9b4ef9dafce615ed76cc080d05959df3e3"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
