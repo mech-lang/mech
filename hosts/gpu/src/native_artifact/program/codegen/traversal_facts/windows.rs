@@ -49,5 +49,6 @@ impl State {
         // The expression is mathematical only after its checked operation
         // succeeded or this visit proved its wrapping addition cannot wrap.
         self.truth(terms, Relation::Lt, base, length) == Some(true)
+            || self.upper(terms, base) < self.lower(terms, length)
     }
 }

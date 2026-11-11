@@ -268,17 +268,15 @@ pub(super) fn frame_words(
     Ok(())
 }
 
-/// Canonical linear selection is column-major over row-major physical storage.
-/// Call only after the admitted unsigned view and one-based bounds check.
-pub(super) fn linear_address(
+/// Map an admitted zero-based logical ordinal into canonical matrix backing.
+/// The original one-based bounds check must precede this shared operation.
+pub(in crate::native_artifact) fn linear_ordinal(
     b: &mut FunctionBuilder<'_>,
     ordinal: Value,
     rows: Value,
     columns: Value,
-    width: u8,
     schema: &mech_core::SchemaBody,
-    base: impl FnOnce(&mut FunctionBuilder<'_>) -> Value,
-) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
+) -> Value {
     // The same entry witness that lends this view has already checked the
     // current owner's exact schema and dimensions. A unit dimension makes
     // column-major source order identical to row-major backing order. Derive
@@ -286,7 +284,7 @@ pub(super) fn linear_address(
     let vector = matches!(schema, mech_core::SchemaBody::Matrix { dimensions, .. }
         if dimensions.len() == 2 && dimensions.iter().any(|dimension|
             matches!(dimension, mech_core::DimensionExpr::Constant(1))));
-    let physical = if vector {
+    if vector {
         ordinal
     } else {
         // Generic schemas can still carry a current row or column vector.
@@ -312,7 +310,34 @@ pub(super) fn linear_address(
         b.ins().jump(done, &[physical.into()]);
         b.switch_to_block(done);
         b.block_params(done)[0]
-    };
+    }
+}
+
+/// Canonical linear selection is column-major over row-major physical storage.
+/// Call only after the admitted unsigned view and one-based bounds check.
+pub(super) fn linear_address(
+    b: &mut FunctionBuilder<'_>,
+    ordinal: Value,
+    rows: Value,
+    columns: Value,
+    width: u8,
+    schema: &mech_core::SchemaBody,
+    base: impl FnOnce(&mut FunctionBuilder<'_>) -> Value,
+) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
+    let physical = linear_ordinal(b, ordinal, rows, columns, schema);
+    element_address(b, physical, width, base)
+}
+
+/// Address an already translated physical element ordinal. A guarded vector
+/// entry may supply its logical ordinal directly: for either unit dimension,
+/// canonical source order and backing order are identical. Bounds still precede
+/// this operation, and packed element width remains independent of geometry.
+pub(super) fn element_address(
+    b: &mut FunctionBuilder<'_>,
+    physical: Value,
+    width: u8,
+    base: impl FnOnce(&mut FunctionBuilder<'_>) -> Value,
+) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
     let at = b.ins().imul_imm(physical, i64::from(width));
     let base = base(b);
     let address = b.ins().iadd(base, at);

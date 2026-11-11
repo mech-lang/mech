@@ -51,7 +51,7 @@ pub(in crate::native_artifact) mod numeric_outlined;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_packet;
 #[cfg(feature = "canonical-native-program")]
-mod numeric_read_packs;
+pub(in crate::native_artifact) mod numeric_read_packs;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_retirement;
 #[cfg(feature = "canonical-native-program")]
@@ -96,3 +96,17 @@ mod ordered_reduction;
 
 #[cfg(feature = "canonical-native-program")]
 mod fixed_keys;
+
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod append_run;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod low_word;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_minimal;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_phase_bounds;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod wide_equal;
+
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_compact;

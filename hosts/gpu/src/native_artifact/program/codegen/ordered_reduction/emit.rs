@@ -14,7 +14,10 @@ impl Reduction {
         proof: &Proof,
         shadow: usize,
         ordinary: Block,
-    ) {
+        facts: &super::super::traversal_facts::Proof,
+        initialize: usize,
+        carry_item: bool,
+    ) -> Block {
         let c = &self.candidate;
         let start = words.read(b, c.induction);
         let stop = words.read(b, c.count);
@@ -22,12 +25,24 @@ impl Reduction {
         let active = b.ins().icmp_imm(IntCC::Equal, tag, c.active as i64);
         let more = b.ins().icmp(IntCC::UnsignedLessThan, start, stop);
         let remaining = b.ins().isub(stop, start);
-        let fits = b
-            .ins()
-            .icmp_imm(IntCC::UnsignedLessThanOrEqual, stop, u32::MAX as i64);
+        let fits = if facts.check(
+            initialize,
+            super::super::traversal_facts::Check::Le(
+                super::super::traversal_facts::Operand::Word(c.count),
+                super::super::traversal_facts::Operand::Constant(u32::MAX as u64),
+            ),
+        ) {
+            b.ins().iconst(types::I8, 1)
+        } else {
+            b.ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, stop, u32::MAX as i64)
+        };
         let mut valid = b.ins().band(active, more);
         valid = b.ins().band(valid, fits);
         for read in &self.reads {
+            if facts.flat_arrays.contains(&read.array) {
+                continue;
+            }
             let view = shadow + proof.view(read.array);
             let rows = words.read(b, view + 2);
             let columns = words.read(b, view + 3);
@@ -42,26 +57,65 @@ impl Reduction {
         let best = words.read(b, self.best);
         let best = b.ins().ireduce(types::I32, best);
         let inputs = super::cost::Inputs::new(b, words, proof, shadow, &self.cost);
+        let old_item = carry_item.then(|| words.read(b, self.item));
+        let carried = if carry_item { types::I64 } else { types::I32 };
         let scalar_body = b.create_block();
-        for ty in [types::I64, types::I32, types::I32] {
+        for ty in [types::I64, types::I32, carried] {
             b.append_block_param(scalar_body, ty);
         }
         let scalar_finish = b.create_block();
-        for _ in 0..2 {
-            b.append_block_param(scalar_finish, types::I32);
-        }
+        b.append_block_param(scalar_finish, types::I32);
+        b.append_block_param(scalar_finish, carried);
         let vector = b.create_block();
         let missing = b.ins().iconst(types::I32, -1);
+        let initial = old_item.unwrap_or(missing);
         let long = b
             .ins()
             .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 16);
-        b.ins().brif(
-            long,
-            vector,
-            &[],
-            scalar_body,
-            &[start.into(), best.into(), missing.into()],
-        );
+        if let Some(old_item) =
+            old_item.filter(|_| std::env::var_os("MECH_SINGLETON_ORDERED_REDUCTION").is_some())
+        {
+            let short = b.create_block();
+            b.ins().brif(long, vector, &[], short, &[]);
+            b.switch_to_block(short);
+            // Do the first admitted visit directly. Only the continuing
+            // route constructs the next cursor and enters the scalar loop.
+            let cost = inputs.scalar(b, proof, &self.cost, start);
+            let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, best);
+            let selected = emit_item(
+                b,
+                words,
+                proof,
+                shadow,
+                &self.selected,
+                start,
+                ordinary,
+                true,
+            );
+            let minimum = b.ins().select(less, cost, best);
+            let item = b.ins().select(less, selected, old_item);
+            let one = b.ins().icmp_imm(IntCC::Equal, remaining, 1);
+            let advance = b.create_block();
+            b.ins().brif(
+                one,
+                scalar_finish,
+                &[minimum.into(), item.into()],
+                advance,
+                &[],
+            );
+            b.switch_to_block(advance);
+            let next = b.ins().iadd_imm(start, 1);
+            b.ins()
+                .jump(scalar_body, &[next.into(), minimum.into(), item.into()]);
+        } else {
+            b.ins().brif(
+                long,
+                vector,
+                &[],
+                scalar_body,
+                &[start.into(), best.into(), initial.into()],
+            );
+        }
         b.switch_to_block(vector);
         let prefix = b.ins().band_imm(remaining, -4);
         let end = b.ins().iadd(start, prefix);
@@ -105,13 +159,30 @@ impl Reduction {
         let winners = minimum_splat(b, indices);
         let minimum = b.ins().extractlane(minima, 0);
         let winner = b.ins().extractlane(winners, 0);
+        let carried_value = if let Some(old_item) = old_item {
+            let changed = b.ins().icmp_imm(IntCC::NotEqual, winner, -1);
+            let index = b.ins().uextend(types::I64, winner);
+            let selected = emit_item(
+                b,
+                words,
+                proof,
+                shadow,
+                &self.selected,
+                index,
+                ordinary,
+                true,
+            );
+            b.ins().select(changed, selected, old_item)
+        } else {
+            winner
+        };
         let more = b.ins().icmp(IntCC::UnsignedLessThan, end, stop);
         b.ins().brif(
             more,
             scalar_body,
-            &[end.into(), minimum.into(), winner.into()],
+            &[end.into(), minimum.into(), carried_value.into()],
             scalar_finish,
-            &[minimum.into(), winner.into()],
+            &[minimum.into(), carried_value.into()],
         );
         // Short entries are already nonempty at admission. Vector entries
         // reach this body only with a remainder. Advance before testing the
@@ -121,40 +192,65 @@ impl Reduction {
         let cost = inputs.scalar(b, proof, &self.cost, params[0]);
         let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, params[1]);
         let minimum = b.ins().umin(cost, params[1]);
-        let index = b.ins().ireduce(types::I32, params[0]);
-        let winner = b.ins().select(less, index, params[2]);
+        let selected = if carry_item {
+            emit_item(
+                b,
+                words,
+                proof,
+                shadow,
+                &self.selected,
+                params[0],
+                ordinary,
+                true,
+            )
+        } else {
+            b.ins().ireduce(types::I32, params[0])
+        };
+        let choice = b.ins().select(less, selected, params[2]);
         let next = b.ins().iadd_imm(params[0], 1);
         let more = b.ins().icmp(IntCC::UnsignedLessThan, next, stop);
         b.ins().brif(
             more,
             scalar_body,
-            &[next.into(), minimum.into(), winner.into()],
+            &[next.into(), minimum.into(), choice.into()],
             scalar_finish,
-            &[minimum.into(), winner.into()],
+            &[minimum.into(), choice.into()],
         );
         b.switch_to_block(scalar_finish);
         let params = b.block_params(scalar_finish).to_vec();
         let minimum = params[0];
-        let winner = params[1];
-        let selected = b.create_block();
-        let done = b.create_block();
-        b.append_block_param(done, types::I64);
-        let fallback = b.create_block();
-        b.append_block_param(fallback, types::I64);
-        let old_item = words.read(b, self.item);
-        let changed = b.ins().icmp_imm(IntCC::NotEqual, winner, -1);
-        b.ins()
-            .brif(changed, selected, &[], done, &[old_item.into()]);
-        b.switch_to_block(selected);
-        let winner = b.ins().uextend(types::I64, winner);
-        let item = emit_item(b, words, proof, shadow, &self.selected, winner, fallback);
-        b.ins().jump(done, &[item.into()]);
-        b.switch_to_block(fallback);
-        // The pure reduction has not changed source state. Preserve the exact
-        // original body if a shared scalar check unexpectedly declines.
-        b.ins().jump(ordinary, &[]);
-        b.switch_to_block(done);
-        let item = b.block_params(done)[0];
+        let item = if carry_item {
+            params[1]
+        } else {
+            let winner = params[1];
+            let selected = b.create_block();
+            let done = b.create_block();
+            b.append_block_param(done, types::I64);
+            let fallback = b.create_block();
+            b.append_block_param(fallback, types::I64);
+            let old_item = words.read(b, self.item);
+            let changed = b.ins().icmp_imm(IntCC::NotEqual, winner, -1);
+            b.ins()
+                .brif(changed, selected, &[], done, &[old_item.into()]);
+            b.switch_to_block(selected);
+            let winner = b.ins().uextend(types::I64, winner);
+            let item = emit_item(
+                b,
+                words,
+                proof,
+                shadow,
+                &self.selected,
+                winner,
+                fallback,
+                false,
+            );
+            b.ins().jump(done, &[item.into()]);
+            b.switch_to_block(fallback);
+            // Pure reduction state is still private. Retain the checked body.
+            b.ins().jump(ordinary, &[]);
+            b.switch_to_block(done);
+            b.block_params(done)[0]
+        };
         let minimum = b.ins().uextend(types::I64, minimum);
         let terminal = b.ins().iconst(types::I64, c.terminal as i64);
         words.write(b, c.tag, terminal);
@@ -165,7 +261,9 @@ impl Reduction {
         // exhausted payload identity and terminal dependency proofs exclude
         // skipped updates/temporaries. The original terminal traversal still
         // constructs the returned value.
+        let completed = b.current_block().expect("reduction completion");
         b.ins().jump(ordinary, &[]);
+        completed
     }
 }
 
@@ -203,6 +301,7 @@ fn emit_item(
     item: &Item,
     index: Value,
     error: Block,
+    total: bool,
 ) -> Value {
     match item {
         Item::Constant(value) => b.ins().iconst(types::I64, *value as i64),
@@ -212,9 +311,35 @@ fn emit_item(
         Item::Scalar(op, args) => {
             let args = args
                 .iter()
-                .map(|arg| emit_item(b, words, proof, shadow, arg, index, error))
+                .map(|arg| emit_item(b, words, proof, shadow, arg, index, error, total))
                 .collect::<Vec<_>>();
-            primitive(b, *op, &args, error)
+            // The complete-child proof certifies all reached source checks,
+            // and this value is observable only on the same strict winner
+            // edge. For other candidates evaluate a pure total extension:
+            // it can neither fail nor read memory. Their result is discarded.
+            match (total, *op) {
+                (true, Op::U64Add) => b.ins().iadd(args[0], args[1]),
+                (true, Op::U64Sub) => b.ins().isub(args[0], args[1]),
+                (true, Op::U64ToU32) => {
+                    let low = b.ins().ireduce(types::I32, args[0]);
+                    b.ins().uextend(types::I64, low)
+                }
+                (
+                    true,
+                    Op::U32ToU64
+                    | Op::U64WrappingAdd
+                    | Op::U64WrappingSub
+                    | Op::U64WrappingMul
+                    | Op::U64BitAnd
+                    | Op::U64BitOr
+                    | Op::U64BitXor
+                    | Op::U64BitNot
+                    | Op::U64ShlWrap
+                    | Op::U64ShrWrap,
+                )
+                | (false, _) => primitive(b, *op, &args, error),
+                (true, _) => unreachable!("normalized item operation needs a total extension"),
+            }
         }
     }
 }
