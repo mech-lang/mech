@@ -59926,6 +59926,192 @@
         }
       },
       "complete_goal": false
+    },
+    "304": {
+      "git_parent": "6f50ac6d77fc05ef292e746fa32ae966e2c251fa",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "6f50ac6d77fc05ef292e746fa32ae966e2c251fa",
+      "retained_compiler": "R304",
+      "retained_source_packet_round": 304,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Share adjacent typed addresses.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "bfa47e2849d238732b94f5b790fc418ab72badc2d2afa81f4ae53148eca8420b",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "b0e86890cd308c8905b16b34bffd9e44404e5b1bd083c849ee1428cfdf0fa5ab",
+            "after": "b0515bf9eaeb1cd69eb9475618590d5b65f40e99eca898e0748d12f5cfb47588"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/adjacent_addresses.rs": {
+            "before": null,
+            "after": "eba8375073b945654ef1786abb568aa88102151ee3568fef0a6d2578088f59e9"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "c3ef28c2de2823561c8ac8f81b9a50a2c3adc32d43686fdea543331be5d50252",
+            "after": "1eb7c40fadc648b7d8248c280272ac904c1885b3c43b679bad9d6491c48a9c71"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/window_bounds.rs": {
+            "before": "2ec5f1938cb4da500542d1a6856e68e04afe00801ab3fd2b04c66aa20483c393",
+            "after": "a04a7aa86b3eac9f2bf11591703846a3222bffb2af0f062f5580e4b40307a19f"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "34e1acaa8322c08568bd2962fbdf3e3285c6702bc469af371ebc81f6f42913eb",
+        "worker_sha256": "91814c3859e9349c8346d9d1e082468d18e219a0de2e597f7c472d50d86cc94d"
+      },
+      "summary": {
+        "published_parent": "6f50ac6d77fc05ef292e746fa32ae966e2c251fa",
+        "measured_parent": "6f50ac6d77fc05ef292e746fa32ae966e2c251fa",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 304,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 304,
+        "selected_mode": "adjacent-table-addresses",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.991904265249917,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r303": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc_in_peer_cohort": {
+          "mech-r303": 45,
+          "mech-candidate": 46
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "one-stored",
+          "ratio": 1.0025185439099735
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.0093214315709498
+        },
+        "next_experiment": "Audit literal-tally entry geometry and its repeated indexed update on random input. The source masks the literal ordinal to eight bits. Test whether a current frequency-table bound can authorize the whole literal recurrence while preserving the checked alternate path."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "34e1acaa8322c08568bd2962fbdf3e3285c6702bc469af371ebc81f6f42913eb",
+            "metadata.json": "07e2bfd92d7e1b3b55b6f64f9cd881628910dabab1223ddb47d975bc1387a00f"
+          },
+          "decoded": {
+            "object.o": "34e1acaa8322c08568bd2962fbdf3e3285c6702bc469af371ebc81f6f42913eb",
+            "metadata.json": "07e2bfd92d7e1b3b55b6f64f9cd881628910dabab1223ddb47d975bc1387a00f"
+          }
+        },
+        "cleanup_tests_passed": 49,
+        "adjacent_address_jit_calls": 150,
+        "changed_machine_bodies": 1
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r303": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc": {
+          "mech-r303": 45,
+          "mech-candidate": 46
+        }
+      },
+      "report": "docs/design/native-adjacent-typed-addresses.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r304-adjacent-table-addresses-6860652179ec.tar.gz",
+        "bytes": 5402385,
+        "sha256": "6860652179ec93fc949705ef55a40e60d99c1c2c8366cb6f6ebb67ced0169cdf",
+        "files": 952,
+        "reports_replayed": 9,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "07d525731e25cac4bfab216fda064eec684c0b5c1af2c7e571366d681eada48c",
+            "counter-results.json": "05e4b83331a73f54211b63e1f3b1c03024d287e02182d38048f14768a2877049",
+            "REPORT.md": "5b4693eda096044f41efe9ca0d7eb4e920586768fc8d66c254b4eac7c9b60179",
+            "library-results.json": "60d6cc2193605164fe43d4261c8d2512edb900f056472a07892c5db44857a74f",
+            "result-decision.json": "2e1b1bd2e8030666411a2db6bfce086da763ac79b2b41d77722eb90b0e5fbaf9",
+            "screen-results.json": "d33614cb3e853ec3fff426f6fe181d94c6b8afe390e6bc9775e0e1015cd914e2",
+            "adjacent-table-addresses-profile-results.json": "3ae423e709507c7a2c0efe4a2d61debda9409d6a3e383ec3b28938cc1f609ded",
+            "table-profile-analysis.json": "38156e0fd18992a22b8e184760d7d3ed3a3404dbe1e4fff30f7bccf2be951281",
+            "table-assembly.json": "fee2600d3d78cf6967bc107104c09f49a47df7071a4c35e84b0881c7050180ff"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
