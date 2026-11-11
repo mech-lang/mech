@@ -21,6 +21,8 @@ Ratios use the same fresh four-actor comparison. The parity score and gates use 
 
 R281 isolates the pinned C matcher’s four prefetch hints. Removing them increases 1 MiB random elapsed by 5.42% and changes 4 KiB natural elapsed by −0.06% in the paired screen. The Mech baseline remains R280. [Control and all 11 measurements](native-matcher-prefetch-control.md).
 
+R282 emits five proved future-write hints in the vector matcher. The 27-case paired screen improves 1 MiB random by 3.47%, regresses several repetitive cases about 1%, and misses one block gate. R280 stays retained. [Code, fixed-layout control and timings](native-private-write-prefetch.md).
+
 ## Historical R279 measured comparison
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
