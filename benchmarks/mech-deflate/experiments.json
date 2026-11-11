@@ -55691,6 +55691,147 @@
         }
       },
       "complete_goal": false
+    },
+    "276": {
+      "git_parent": "781de7de7b0c94a73038acb2ce124e1866e04f26",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "781de7de7b0c94a73038acb2ce124e1866e04f26",
+      "retained_compiler": "R276",
+      "retained_source_packet_round": 276,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain direct first visits in experimental short ordered reductions.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "a5dd859504eaf2542c5e0b9813c3d035b4ef5a784c055d8f390e765853a4fac4",
+        "first_candidate_patch_sha256": "7294fc37273eda37cbdc2ff5ad7bcf98ccb011a1352fa823a47cb15b5cb0dec8",
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "ea866d8fd3c52fea4801188c27a7ea3e0e6081c0fd8a818c8374e069f22d5422",
+        "worker_sha256": "6493c52533772ebdd59ea9da55cbe783511e18e10ecc4cd7d1154eb6841a3a10",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+            "baseline": "b5b7b10106307d9fe3e6f2062ffc220af360a82bb9482ffefb412c122021152e",
+            "candidate": "f2542b0b686ab5a81c32b1de939bdefa9e5b33a8d064379c93ff09d8abba212e"
+          }
+        }
+      },
+      "summary": {
+        "round": 276,
+        "published_parent": "781de7de7b0c94a73038acb2ce124e1866e04f26",
+        "measured_parent": "781de7de7b0c94a73038acb2ce124e1866e04f26",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 276,
+        "retained_runtime_packet_round": 272,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 38,
+          "after_count": 38,
+          "denominator": 81,
+          "before_percent": 46.91358024691358,
+          "after_percent": 46.91358024691358,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate_in_separate_cohort": {
+          "mech-peeled": 3,
+          "mech-r275": 3
+        },
+        "all81_paired_after_over_before": 0.9971066602086769,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 0.9971427412653125,
+          "primary-b": 0.9970705804576142
+        },
+        "pooled_gate_passed": 81,
+        "block_gate_passed": 81,
+        "gate_misses": {
+          "pooled": [],
+          "block": []
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "largest_paired_slowdown": {
+          "case": "random-32769",
+          "multiple": 1.0079129980133215
+        },
+        "logical_heap_families_identical": true,
+        "candidate_worker_sha256": "6493c52533772ebdd59ea9da55cbe783511e18e10ecc4cd7d1154eb6841a3a10",
+        "candidate_object_sha256": "ea866d8fd3c52fea4801188c27a7ea3e0e6081c0fd8a818c8374e069f22d5422",
+        "complete_goal": false
+      },
+      "qualification": {
+        "verified": true,
+        "smokes_per_variant_form": {
+          "singleton-original": 162,
+          "peeled-original": 162,
+          "peeled-decoded": 162
+        },
+        "complete_smokes": 486,
+        "peeled_complete_smokes": 324,
+        "exact_peeled_original_decoded": {
+          "original": {
+            "object.o": "ea866d8fd3c52fea4801188c27a7ea3e0e6081c0fd8a818c8374e069f22d5422",
+            "metadata.json": "11cca28c144b78981deeab819564f72f0bf06f1056a860fd35d7b5c28f046e7a"
+          },
+          "decoded": {
+            "object.o": "ea866d8fd3c52fea4801188c27a7ea3e0e6081c0fd8a818c8374e069f22d5422",
+            "metadata.json": "11cca28c144b78981deeab819564f72f0bf06f1056a860fd35d7b5c28f046e7a"
+          }
+        },
+        "linked_controls_per_form": {
+          "path-cases": 40,
+          "capacity-cases": 7,
+          "tie-cases": 9,
+          "alias-cases": 2,
+          "seed-cases": 5
+        },
+        "linked_controls": 126,
+        "ordinary_managed_path_not_replaced": true,
+        "scope": "Full compression and original/decoded linked observations with independent output checks."
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-peeled": 3,
+          "mech-r275": 3
+        }
+      },
+      "report": "docs/design/native-short-reduction-first-visit.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r276-short-reduction-first-visit-0893a086bfb4.tar.gz",
+        "bytes": 5699941,
+        "sha256": "0893a086bfb49236f9876b04adf6be081fab9a80174c70de579c14414fa61ed4",
+        "files": 1115,
+        "reports_replayed": 11,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "91e0d12d280b0fcdc6254ab408c13d4c53de3a0e9a11ac2168d21e2e59df976c",
+            "counter-results.json": "69142743dc7352811d060ca4b29a458911d31dbdaa992c4ccc72ccd0af7feef9",
+            "REPORT.md": "f33b8e6fa71ef091a9d924043bb668d4e40f00d184d7e2532acadb40d28eda16",
+            "library-results.json": "5f362dc8d4ba69fbadefb38868c2525b6b0fc707d4f319e10450ecfdd63c64f3",
+            "result-decision.json": "df4381d81467e842597b72d747def34bfe0a536b255ee584970c6b5b678b8995",
+            "screen-results.json": "b0603c5957fd71b22747e8f23dcb66edf4c127bb386a6eaede990b734abf7c1d",
+            "focused-counter-results.json": "4e39169a8e47a5d334e8d3f59a5a1291e6af5b21a589e29155c18cd107da3437",
+            "focused-library-results.json": "aa0470f5606357a6c7f658786f00576620781905493525411ea03a4568f9be94",
+            "singleton-static-routes.json": "4f99359ca0fa810573cba3464df78effa8fc162956cf743e2980a5bc65769248",
+            "singleton-profile-results.json": "94f74e94c9247519a49563aa7a0a321e73d9466ef2d810940fa277dae3d1ddf4",
+            "peeled-profile-results.json": "5e5b91711ea75dfc6e08a33f5062d801a695636fb10a193609e2ee72bc86ca54"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
