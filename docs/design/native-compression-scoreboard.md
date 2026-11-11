@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R288 emits each current window check once. Paired elapsed changes -0.799% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R287 / Roc | R288 / Roc | R287 / libdeflate | R288 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.201114× | 0.200733× | 2.515561× | 2.510802× |
+| prefix-random-8192 | 0.853602× | 0.856097× | 3.098573× | 3.107633× |
+| prefix-periodic-131072 | 0.827335× | 0.806444× | 1.499596× | 1.461730× |
+| prefix-periodic-1048576 | 0.846275× | 0.825687× | 1.432777× | 1.397920× |
+| prefix-repeated-131072 | 0.824803× | 0.808417× | 1.379811× | 1.352399× |
+| prefix-repeated-1048576 | 0.837032× | 0.818237× | 1.315791× | 1.286245× |
+| prefix-natural-4096 | 1.077144× | 1.069963× | 1.834289× | 1.822061× |
+| prefix-natural-1048576 | 1.470482× | 1.465712× | 1.186713× | 1.182864× |
+| prefix-random-1048576 | 1.764005× | 1.781920× | 2.496865× | 2.522222× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R288 timing, proof and replay evidence](native-shared-window-checks.md).
+
+## Historical R287 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R287 carries checked view lengths through loop indices. Paired elapsed changes -0.463% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R286 / Roc | R287 / Roc | R286 / libdeflate | R287 / libdeflate |

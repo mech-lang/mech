@@ -57452,6 +57452,163 @@
         }
       },
       "complete_goal": false
+    },
+    "288": {
+      "git_parent": "cc44167b09e3fe8e05ae30e67025a6b6ac416ce2",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "cc44167b09e3fe8e05ae30e67025a6b6ac416ce2",
+      "retained_compiler": "R288",
+      "retained_source_packet_round": 288,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Share current captured-window checks.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "0115915de79963ea44a62c6d1aab83af0b64b3e30cab2b451ef338b9958447be",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_capture_windows.rs": {
+            "before": "b003ceb731ffd380e3f59f6c671d4fb66d4056b45c9b9cbbb1d5657780b21825",
+            "after": "edb3d5355eb243ba2304c74574de335381f0aa404872faa93bcc284adc63fa93"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435"
+            }
+          },
+          "patch_sha256": "4129af708d08971fe429dd74d9217ba7d5e077d5c4276520b158637a3d71a119",
+          "library_sha256": "234c1bbb30921cc813e74f1317394306626cf56124800ad78e2fe954c5d7214b"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "3ebc76db90fad6243c50eae95076f5c82069a73853878f72d61d7751ec3e60f2",
+        "worker_sha256": "bb696c90a1cfc927059146f0db5c79ae44448c9d590f031191352d7b51c6ce80"
+      },
+      "summary": {
+        "published_parent": "cc44167b09e3fe8e05ae30e67025a6b6ac416ce2",
+        "measured_parent": "cc44167b09e3fe8e05ae30e67025a6b6ac416ce2",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 288,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 288,
+        "selected_mode": "shared-window-checks",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9920093811563174,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r287": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "prefix-random-32769",
+          "ratio": 1.0143774687153717
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.0774355856213784
+        },
+        "next_experiment": "Carry the exact unsigned relationship established by a selected edge. The current matcher repeats a checked subtraction after its opposite comparison and checked one-based increments after proving a strict readable bound. Keep the reached bounds, lexical failure order and fallback for unproved paths."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "3ebc76db90fad6243c50eae95076f5c82069a73853878f72d61d7751ec3e60f2",
+            "metadata.json": "a90da66e62968d96534fa40ec01ddcd96ede8f9815e935aa333d28e2c1aa448a"
+          },
+          "decoded": {
+            "object.o": "3ebc76db90fad6243c50eae95076f5c82069a73853878f72d61d7751ec3e60f2",
+            "metadata.json": "a90da66e62968d96534fa40ec01ddcd96ede8f9815e935aa333d28e2c1aa448a"
+          }
+        },
+        "cleanup_tests_passed": 43,
+        "compiled_gate_controls": 755,
+        "changed_machine_bodies": 2,
+        "all_other_machine_bodies_exact": true,
+        "shared_gate_checks": 8
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r287": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-shared-window-checks.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r288-shared-window-checks-102ca9982807.tar.gz",
+        "bytes": 5389072,
+        "sha256": "102ca9982807fe5cc1442fd0158241a7e342f4ad91075698ef889d19040d4c0f",
+        "files": 932,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "208cab07c8c11205bf5528d7148c0b453f1245a87d621095fa5125f38ba759dc",
+            "counter-results.json": "f7127c563dbf68185d94496d674b67af42132b661443642962ba5ffaf279d179",
+            "REPORT.md": "1eff8d229ad28eeadf8ed2220c53cb7508d8df8e656b15797aa3133febcf6529",
+            "library-results.json": "aa2651e51949d2ca28cd8642e2189d6819528613e3a0f0dcd610b2d5d80f1b57",
+            "result-decision.json": "0cb18226974b7dac10f1f332fa4bb1a206798ef4b836ab6f9a9abef159e8a61e",
+            "screen-results.json": "ca428d13e9b055448c29f70a9be78677e515f747dd4ea5aa0cf01feb5cfc34b9",
+            "shared-window-checks-profile-results.json": "f3c3fe754ce61c6b989505f5ae89dee9cc15a76f03b883bae5c6ca6fb97675e8",
+            "matcher-profile-analysis.json": "a63cf75f7c545567c3b5fedc8435f14f7ee6f7ffbed32d51dc8e8293bfe3342d"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
