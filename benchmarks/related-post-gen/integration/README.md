@@ -1,6 +1,16 @@
 # Current related-post integration targeting #973
 
-## Current IR315 selection, 2026-11-11
+## Current IR317 compiler integration, 2026-11-11
+
+PR990 includes #973 through **d09e3a4b78126b888e241599752b13a514e089d7**. The retained DEFLATE R304 source closure is reconstructed and verified; its portable SSA predicate, identity-route, loop-edge, agreeing-Boolean, bitwise, window/span and adjacent-address passes are integrated into the maintained numeric compiler. Existing leaf/tree lowering, narrow checked writes, guard ordering and backend patches remain. The entire experimental compact entry has not replaced this compiler. Production remains Cranelift; LLVM is not required.
+
+The first matched cohort measures **1.675333 ms / 1.106256× fastest eligible Rust** (**1.514417 ms**), versus same-source published IR315 at **1.683458 ms / 1.111621×**. Paired change **−0.229% [−1.149%, +0.659%]** is inconclusive. No unchanged confirmation is repeated. Verified savings are **49,933 retired instructions**, **2,060 native code bytes**, and **16,512 executable bytes**. Allocations/peak heap are unchanged. The hot query grows 132 code bytes and keeps its 576-byte frame; other bodies supply the overall text reduction.
+
+All **528** selected compiler contracts pass, retaining all 508 parent names. All **133** scalar/DEFLATE rows match every previous non-timing/resource field. The actual source passes 32 linked exact cases, original/decoded full-5000 execution, 12 zero-budget denials and 12 full retries. All **775 latency / 182 resource outputs** are exact. Current same-Object profiles still lead with compiled query, UTF8 histogram and numeric indexes, with host budget/worker/frame work visible. Diagnostic repeated profiles exclude input admission/materialization and are not CPU/time shares.
+
+See [full results, resources, failures and profile](retained-deflate-ssa-20261111/REPORT.md), [every timing](retained-deflate-ssa-20261111/ALL-TIMINGS.md), and [206 hashed raw records](retained-deflate-ssa-20261111/summary.json). The maintained source is unchanged from the independently confirmed IR315 source. Its older confirmation remains below as historical evidence; a different cohort's denominator does not prove a speedup. **The 1.00× goal remains unmet.** Whole-process stays visible without an acceptance gate. Draft; no merge or hosted-CI-green claim.
+
+## Historical IR315 source selection, 2026-11-11
 
 PR990 includes #973 through **6f50ac6d77fc05ef292e746fa32ae966e2c251fa**. Current compiler: **IR315 / work126 / ABI42 / image11**, production Cranelift with the checked DEFLATE backend and SSA-width work. No LLVM production dependency is required. The new compiler proof supports checked U8/U32 read/increment/write sequences and preserves independent logical carriers across narrow writes, while retaining source overflow, first-change ownership and finite recovery.
 
