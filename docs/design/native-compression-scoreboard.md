@@ -1,5 +1,36 @@
 # Current compression scoreboard
 
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
+R317 allocates the saved link register in framed leaf functions. Paired elapsed changes +0.010% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.074052× Roc. The closest above libdeflate parity is prefix-natural-262144 at 1.086069×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 and 64 KiB. The closest case is heldout-window-32768 at 1.314469× Roc and 1.201616× libdeflate, requiring a 23.92% elapsed reduction to match Roc.
+
+| Input | R315 / Roc | R317 / Roc | R315 / libdeflate | R317 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.183182× | 0.183064× | 2.317330× | 2.315841× |
+| prefix-random-8192 | 0.783637× | 0.788541× | 2.805431× | 2.822985× |
+| prefix-random-16384 | 1.095690× | 1.095046× | 2.935115× | 2.933389× |
+| prefix-periodic-131072 | 0.701255× | 0.708141× | 1.273304× | 1.285808× |
+| prefix-periodic-1048576 | 0.709254× | 0.719817× | 1.200946× | 1.218832× |
+| prefix-repeated-131072 | 0.703062× | 0.712938× | 1.178383× | 1.194936× |
+| prefix-repeated-1048576 | 0.711228× | 0.721120× | 1.116707× | 1.132238× |
+| prefix-natural-4096 | 0.980266× | 0.974934× | 1.681774× | 1.672626× |
+| prefix-natural-32767 | 1.339033× | 1.319552× | 1.217873× | 1.200154× |
+| reymont-prefix-32769 | 1.329434× | 1.315550× | 1.216897× | 1.204189× |
+| heldout-window-32768 | 1.327940× | 1.314469× | 1.213931× | 1.201616× |
+| prefix-natural-65537 | 1.344949× | 1.327774× | 1.128332× | 1.113923× |
+| prefix-natural-262144 | 1.361582× | 1.340684× | 1.102998× | 1.086069× |
+| prefix-natural-1048576 | 1.367430× | 1.347037× | 1.105167× | 1.088685× |
+| prefix-random-1048576 | 1.626115× | 1.631475× | 2.301789× | 2.309375× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R317 timing, proof and replay evidence](native-framed-leaf-register.md).
+
+## Historical R315 measured comparison
+
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
 R315 forwards a selected mismatch through the already resolved decisions. Paired elapsed changes -0.568% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
