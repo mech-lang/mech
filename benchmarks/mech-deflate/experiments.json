@@ -55485,6 +55485,212 @@
         }
       },
       "complete_goal": false
+    },
+    "275": {
+      "git_parent": "7708d533c8875a39bb9ca97e3e665dc15a53e341",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "7708d533c8875a39bb9ca97e3e665dc15a53e341",
+      "retained_compiler": "R275",
+      "retained_source_packet_round": 275,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain bounded equality reuse in experimental immutable comparison loops.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "f083eda80fe0529b0e877a9d7795dba31c66298263693a182ab274c1c79f0f48",
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "f53137bf403c51c2537cca768c4325d477ec2793948410feac8824b3dbc1c02a",
+        "worker_sha256": "836a6bcf0061a4f6c0b0e6ff71de67d82091f6aa0ee287b678346cb470f2f2d4",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "baseline": "2d045cba796754ac63dc75738e70e7a338048a35c47c678297a2eefc6b1db87d",
+            "candidate": "9beb85e5047c029c58860e90c769c6a25b0967ddc11292215851a7308889d4b0"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs": {
+            "baseline": "38d32590ba84a2d76092e039d8f093e94624a032c628e5acc679db54817f3bd5",
+            "candidate": "0365b5eb5de9c81dca0633301c0e06b51dac394b0018da748da1a15a577b9d6c"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal_reuse.rs": {
+            "baseline": null,
+            "candidate": "354739fe92c6628fd287c42055d3110a1062e572fe2d8766693cd0dc97cf9525"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs": {
+            "baseline": "cb1af28b4688811f82ad2d2ee5a4b2d7fa468a94965ff2047cd8a4d993d9b867",
+            "candidate": "adc0f057a3cd5df72faaa888248d4809fdb2db16af4dbc7aa64e53a65392b46d"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "baseline": "348cc3947ed83419f1ae3feea9c14632b3c762e12c084b0e90d03c2a55ca0b9b",
+            "candidate": "624a1eb3428f2ced8b51f8fe970e1fdd6a17172b21a8542ee8687b34b9638807"
+          }
+        }
+      },
+      "summary": {
+        "round": 275,
+        "published_parent": "7708d533c8875a39bb9ca97e3e665dc15a53e341",
+        "measured_parent": "7708d533c8875a39bb9ca97e3e665dc15a53e341",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 275,
+        "retained_runtime_packet_round": 272,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 32,
+          "after_count": 38,
+          "denominator": 81,
+          "before_percent": 39.50617283950617,
+          "after_percent": 46.91358024691358,
+          "change_percentage_points": 7.407407407407412
+        },
+        "faster_than_libdeflate_in_separate_cohort": {
+          "mech-r274": 3,
+          "mech-r275": 3
+        },
+        "all81_paired_after_over_before": 0.9745350487398133,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 0.9752282011495124,
+          "primary-b": 0.973842388994562
+        },
+        "pooled_gate_passed": 81,
+        "block_gate_passed": 81,
+        "gate_misses": {
+          "pooled": [],
+          "block": []
+        },
+        "cohort_gate_misses": {
+          "primary-a": {
+            "pooled": [],
+            "block": []
+          },
+          "primary-b": {
+            "pooled": [],
+            "block": []
+          }
+        },
+        "screen_block_gate_misses": {
+          "first-pilot": [
+            "empty"
+          ],
+          "pilot-confirmation": [
+            "seven-stored-prefix"
+          ]
+        },
+        "crossed_below": [
+          "prefix-periodic-65535",
+          "prefix-periodic-65536",
+          "prefix-periodic-65537",
+          "prefix-repeated-65535",
+          "prefix-repeated-65536",
+          "prefix-repeated-65537"
+        ],
+        "crossed_above": [],
+        "largest_paired_slowdown": {
+          "case": "seven-stored-prefix",
+          "multiple": 1.0349760894861437
+        },
+        "logical_heap_families_identical": true,
+        "candidate_worker_sha256": "836a6bcf0061a4f6c0b0e6ff71de67d82091f6aa0ee287b678346cb470f2f2d4",
+        "candidate_object_sha256": "f53137bf403c51c2537cca768c4325d477ec2793948410feac8824b3dbc1c02a",
+        "complete_goal": false
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_and_decoded_image": {
+          "original": {
+            "object.o": "f53137bf403c51c2537cca768c4325d477ec2793948410feac8824b3dbc1c02a",
+            "metadata.json": "2568aed591e5ea13a09b546c83c5105862b65c27d33a83279d7343349ffcf519"
+          },
+          "decoded": {
+            "object.o": "f53137bf403c51c2537cca768c4325d477ec2793948410feac8824b3dbc1c02a",
+            "metadata.json": "2568aed591e5ea13a09b546c83c5105862b65c27d33a83279d7343349ffcf519"
+          }
+        },
+        "rust_control_counts": {
+          "shifted-wide-tests": 5,
+          "nested-numeric-controls": 16,
+          "lexical-status-controls": 3,
+          "compact-range-controls": 4
+        },
+        "shifted_word_oracle_observations": 50688,
+        "screen_block_gate_misses": {
+          "first-pilot": [
+            "empty"
+          ],
+          "pilot-confirmation": [
+            "seven-stored-prefix"
+          ]
+        },
+        "screen_decision": "Run the prespecified complete paired cohorts. Both screens preserve pooled timing, the two distinct stored misses occur before matcher entry, and the periodic and repeated gains replicate. Full gates are unchanged.",
+        "changed_machine_bodies": [
+          "mech_compact_numeric_837",
+          "mech_compact_numeric_837_vector"
+        ],
+        "timing_scope": "Experimental compact entry with the same R272 allocation runtime."
+      },
+      "format_verification": {
+        "formatter": "rustfmt 1.9.0-nightly (ec818fda36 2026-03-02)",
+        "changed_source_sha256": {
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "0ddc7439bb0bd4c1356d932e64434b34120c34b1807b9874990060fb09d27383",
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal_reuse.rs": "c1f905a625f91785a7cb6988d14b26c366ed75098c5397ee1cc8cf156a977df2",
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "9c845a0b45cd2520d577488a0293c6d426436adb6a46ab5d81c7543846a0e9f5"
+        },
+        "patch_sha256": "51d21858cc9081385074aa250e8f4615b26d07c61085f969840e0ea3e185c59a",
+        "measured_source_left_intact": true,
+        "format_check_passed": true,
+        "formatted_artifact": {
+          "object.o": "f53137bf403c51c2537cca768c4325d477ec2793948410feac8824b3dbc1c02a",
+          "metadata.json": "2568aed591e5ea13a09b546c83c5105862b65c27d33a83279d7343349ffcf519"
+        },
+        "original_artifact": {
+          "object.o": "f53137bf403c51c2537cca768c4325d477ec2793948410feac8824b3dbc1c02a",
+          "metadata.json": "2568aed591e5ea13a09b546c83c5105862b65c27d33a83279d7343349ffcf519"
+        },
+        "exact_object_and_metadata_match": true
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r274": 3,
+          "mech-r275": 3
+        }
+      },
+      "report": "docs/design/native-shifted-immutable-equality.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r275-shifted-immutable-equality-0bff8acf380b.tar.gz",
+        "bytes": 5458782,
+        "sha256": "0bff8acf380b64fcc23250beb25995512c74f28eb7358e7e679d76651dbd90d0",
+        "files": 961,
+        "reports_replayed": 7,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "3843628b9ddb271bf7660c85e0085ec831b6b9fcfe090294d36bc6c62e5bba5d",
+            "counter-results.json": "c032b90db1d7996cbe3282f1f00edd8b1d650ba009c0b28d097713926ff299e1",
+            "REPORT.md": "1d78ad13a009c0da4fd5a836f12d64d9f036f8db7be69a3cf5e7843350ab1be1",
+            "shifted-equality-profile-results.json": "645792e5208c3effe252785ae72b6088a6510aa401b350788db45b978d8ddc23",
+            "library-results.json": "1499d6ff922fcd6d143f27264bdd9972b03850291b5334205a9f643bdc42a9aa",
+            "result-decision.json": "902f0d39a014744203d5b1206fa3a85826bc038af6356bc8b4f159ac23783c69",
+            "equality-routes.json": "f401af25a03787a49e1d927c67aa857828d7d950e7a97bf3bb92c97bc70011a5"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",

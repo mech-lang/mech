@@ -1,5 +1,27 @@
 # Current compression scoreboard
 
+**38/81 cases faster than Roc (46.91%).** Goal 100%.
+R275 reuses proved byte equality across shifted immutable input windows and keeps the R272 runtime. Paired elapsed falls 2.55% across all 81. Both timing gates pass 81/81. 6 cases move below Roc parity. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R274 / Roc | R275 / Roc | R274 / libdeflate | R275 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.199350× | 0.200462× | 2.536363× | 2.550512× |
+| prefix-periodic-32768 | 0.985956× | 0.908698× | 2.109599× | 1.944295× |
+| prefix-periodic-65536 | 1.076877× | 0.991375× | 2.070482× | 1.906090× |
+| prefix-repeated-65536 | 1.044666× | 0.972245× | 1.843924× | 1.716094× |
+| prefix-repeated-131072 | 1.095238× | 1.015547× | 1.831637× | 1.698365× |
+| prefix-repeated-262144 | 1.115580× | 1.032471× | 1.809245× | 1.674460× |
+| prefix-periodic-1048576 | 1.159278× | 1.063635× | 1.963402× | 1.801417× |
+| prefix-repeated-1048576 | 1.121432× | 1.035256× | 1.761369× | 1.626018× |
+| prefix-natural-1048576 | 1.508668× | 1.512215× | 1.215593× | 1.218451× |
+| prefix-random-1048576 | 2.111450× | 2.121498× | 2.982260× | 2.996453× |
+
+The table uses a fresh four-actor cohort. The parity score and timing gates use the two primary cohorts.
+
+[R275 compiler patch, all 81 timings, compiled controls and profiles](native-shifted-immutable-equality.md).
+
+## Historical R274 measured comparison
+
 **32/81 cases faster than Roc (39.51%).** Goal 100%.
 R274 carries the selected item in capacity-proved native reductions and keeps the R272 runtime. Paired elapsed falls 3.09% across all 81. Both timing gates pass 81/81. The matched control and candidate each beat Roc in 32 cases. The separate libdeflate cohort has three faster cases for each.
 
