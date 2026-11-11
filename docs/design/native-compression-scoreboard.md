@@ -1,5 +1,36 @@
 # Current compression scoreboard
 
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R315 forwards a selected mismatch through the already resolved decisions. Paired elapsed changes -0.568% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-natural-4096 at 1.010958× Roc. The closest above libdeflate parity is prefix-natural-262144 at 1.099598×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 and 64 KiB. The closest case is heldout-window-32767 at 1.333156× Roc and 1.212450× libdeflate, requiring a 24.99% elapsed reduction to match Roc.
+
+| Input | R314 / Roc | R315 / Roc | R314 / libdeflate | R315 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.181540× | 0.180131× | 2.323341× | 2.305305× |
+| prefix-random-8192 | 0.788547× | 0.784198× | 2.811498× | 2.795991× |
+| prefix-random-16384 | 1.094439× | 1.074619× | 2.969679× | 2.915899× |
+| prefix-periodic-131072 | 0.697352× | 0.696483× | 1.261895× | 1.260322× |
+| prefix-periodic-1048576 | 0.708865× | 0.708797× | 1.202042× | 1.201926× |
+| prefix-repeated-131072 | 0.704966× | 0.704816× | 1.179950× | 1.179700× |
+| prefix-repeated-1048576 | 0.710593× | 0.711106× | 1.117946× | 1.118753× |
+| prefix-natural-4096 | 0.981286× | 0.974793× | 1.678325× | 1.667220× |
+| prefix-natural-32767 | 1.351572× | 1.334376× | 1.228525× | 1.212894× |
+| reymont-prefix-32769 | 1.349985× | 1.334761× | 1.228686× | 1.214831× |
+| heldout-window-32768 | 1.350825× | 1.334876× | 1.229280× | 1.214766× |
+| prefix-natural-65537 | 1.353221× | 1.342407× | 1.139669× | 1.130562× |
+| prefix-natural-262144 | 1.372258× | 1.354530× | 1.113989× | 1.099598× |
+| prefix-natural-1048576 | 1.386745× | 1.368633× | 1.120419× | 1.105786× |
+| prefix-random-1048576 | 1.650705× | 1.628540× | 2.335408× | 2.304050× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R315 timing, proof and replay evidence](native-selected-mismatch.md).
+
+## Historical R314 measured comparison
+
 **46/81 cases faster than Roc (56.79%).** Goal 100%.
 R314 proves the two initial scalar reads inside a checked input window. Paired elapsed changes -0.880% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
