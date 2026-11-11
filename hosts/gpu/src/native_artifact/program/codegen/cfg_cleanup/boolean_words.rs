@@ -34,7 +34,7 @@ fn scalar(f: &Function, value: Value) -> bool {
     let ty = f.dfg.value_type(value);
     ty.is_int() && !ty.is_vector() && (1..=64).contains(&ty.bits())
 }
-fn inputs(f: &Function, cfg: &ControlFlowGraph) -> BTreeMap<Value, Vec<Value>> {
+pub(super) fn inputs(f: &Function, cfg: &ControlFlowGraph) -> BTreeMap<Value, Vec<Value>> {
     let mut out = BTreeMap::new();
     for block in f.layout.blocks() {
         if Some(block) == f.layout.entry_block() {

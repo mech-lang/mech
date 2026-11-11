@@ -15,6 +15,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     LookupFacts,
     CfgCleanup,
     DemandLiveness,
+    /// Propagate unsigned widths through every current SSA input and fold only
+    /// guards proved by those bounds and a dominating selected length floor.
+    ProvedWordWidths,
     EarlyIdentities,
     BooleanConditions,
     LoopOutlining,

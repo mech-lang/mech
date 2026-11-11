@@ -497,7 +497,7 @@ fn selected_template(
 // IR307 emits current-funded fixed-key selection and replacement in native code.
 // IR308 binds a selected numeric tree's same-plan dead-owner handoff request.
 // IR311 combines selected IR308 with PR973 through spill-copy facts on taken branches.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 312;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 313;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
