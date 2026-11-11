@@ -160,7 +160,7 @@ fn analyze(
                 array,
                 index,
                 incoming,
-            }) if numeric.arrays[*array].width == 8 => Some(Step::Write {
+            }) if matches!(numeric.arrays[*array].width, 1 | 2 | 4 | 8) => Some(Step::Write {
                 array: *array,
                 index: *index,
                 incoming: *incoming,
