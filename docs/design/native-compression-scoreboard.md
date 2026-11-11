@@ -17,6 +17,8 @@ Ratios use the same fresh four-actor comparison. The parity score and gates use 
 
 [R276 timing, proof and replay evidence](native-short-reduction-first-visit.md).
 
+R277 measures the dense offset map as a source experiment. Paired elapsed changes -0.320% across 81 cases. Both timing gates pass 81/81. The compiler and source baseline stays at R276. [R277 results and replay](native-dense-offset-slot-experiment.md).
+
 ## Historical R275 measured comparison
 
 **38/81 cases faster than Roc (46.91%).** Goal 100%.

@@ -55832,6 +55832,134 @@
         }
       },
       "complete_goal": false
+    },
+    "277": {
+      "git_parent": "5bf88bd67a20eb9b3bf98d05e38892e8758cf1a0",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "5bf88bd67a20eb9b3bf98d05e38892e8758cf1a0",
+      "retained_compiler": "R276",
+      "retained_source_packet_round": 276,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Record the dense offset lookup as source evidence and retain the existing compiler and source.",
+      "source": {
+        "source_program_changed": true,
+        "compiler_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "candidate_benchmark_source_sha256": "04cdbdf5c42d229fe14977fc1661ce45e96dd32462688f48bbc8959f42fff939",
+        "candidate_table_sha256": "f3e9cf7c0d9f9b098bd7d08652a75e8b7aae22dca5c8af40c6bc1734273f830a",
+        "original_decoded_object_sha256": "1491f19e4b07a63d46b7dea625ff2b7503d75c8fd81eeabd0428cd6ec142af7b",
+        "worker_sha256": "1d5a147aab03e849bae8f91ed15ed99a51476985c44a835b73ec9e6fbfb2c8f6"
+      },
+      "summary": {
+        "published_parent": "5bf88bd67a20eb9b3bf98d05e38892e8758cf1a0",
+        "measured_parent": "5bf88bd67a20eb9b3bf98d05e38892e8758cf1a0",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 276,
+        "retained_runtime_packet_round": 272,
+        "compiler_source_changed": false,
+        "candidate_benchmark_source_changed": true,
+        "retain_candidate_benchmark_source": false,
+        "all81_paired_after_over_before": 0.9968010268549797,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 38,
+          "after_count": 38,
+          "denominator": 81,
+          "before_percent": 46.91358024691358,
+          "after_percent": 46.91358024691358,
+          "change_percentage_points": 0.0
+        },
+        "crossings": [],
+        "largest_paired_slowdown": {
+          "case": "320-overlap",
+          "ratio": 1.0176875332226998
+        },
+        "candidate_natural_1m_instruction_delta": -45996015.5,
+        "candidate_library_wins": 3,
+        "next_experiment": "A complete no-growth empty-iteration recurrence using checked current views."
+      },
+      "qualification": {
+        "verified": true,
+        "full_program_smokes": {
+          "control-original": 162,
+          "dense-original": 162,
+          "dense-decoded": 162
+        },
+        "exact_dense_images": {
+          "original": {
+            "object.o": "1491f19e4b07a63d46b7dea625ff2b7503d75c8fd81eeabd0428cd6ec142af7b",
+            "metadata.json": "4f9a6e379820dda794a49181671a0197184a83179605691180491f9ea9a0ae45"
+          },
+          "decoded": {
+            "object.o": "1491f19e4b07a63d46b7dea625ff2b7503d75c8fd81eeabd0428cd6ec142af7b",
+            "metadata.json": "4f9a6e379820dda794a49181671a0197184a83179605691180491f9ea9a0ae45"
+          }
+        },
+        "exact_lookup_witness_images": {
+          "original": {
+            "object.o": "7b268a12f3a779d2e80140e03187ecc630cab7ef19bc9b0b1f8b9fc3a2ba2380",
+            "metadata.json": "4352b26245eab3b162e546187e495fde87e1a1759b8d951e470a0d4c17b49b75"
+          },
+          "decoded": {
+            "object.o": "7b268a12f3a779d2e80140e03187ecc630cab7ef19bc9b0b1f8b9fc3a2ba2380",
+            "metadata.json": "4352b26245eab3b162e546187e495fde87e1a1759b8d951e470a0d4c17b49b75"
+          }
+        },
+        "checked_offsets_per_form": {
+          "original": 65545,
+          "decoded": 65545
+        },
+        "full_program_compiler_source_unchanged": true,
+        "program_data_and_slot_lookup_changed": true,
+        "runtime_unchanged": true,
+        "source_control_binary_identical_to_retained": true,
+        "default_parser_limit_failure_preserved": true,
+        "compiled_max_parser_source_success": true
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r276": 3,
+          "mech-dense": 3
+        }
+      },
+      "report": "docs/design/native-dense-offset-slot-experiment.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r277-dense-offset-slot-47ba57889a90.tar.gz",
+        "bytes": 5243218,
+        "sha256": "47ba57889a90f8889e165b21f81c7b8ed9ae660ba95eab2297c892b0682c80d7",
+        "files": 969,
+        "reports_replayed": 7,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "cec33ac9aa01f2294681efb538dccc9bfe8bf859ace5295d1765b460892997b7",
+            "counter-results.json": "b3cc21a5d4977c411dd31bebc03a107c0df4bc544e81577404c595761d517fee",
+            "REPORT.md": "e20878ba05a445cec346b8f6b1fddfdd8795c5811c54b732da5fc0b390ae517b",
+            "library-results.json": "c5d0e95fcb0330ddb2b042347cf2feaae2f4674322761c89da9df67cbf2014a1",
+            "result-decision.json": "478361a99dcda92269d029ca6129db1d55eaaf78666d74dba12ec2b2421ca927",
+            "screen-results.json": "53b6fb1fb09ae965f337c1cf45c47d5a4cad859896bf231ef766793aa49e6f1f",
+            "dense-profile-results.json": "cf14081934884a9dbd8da8f10723616d561ecc463689557d129518750c2f4f94"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
