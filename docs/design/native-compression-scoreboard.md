@@ -1,5 +1,21 @@
 # Current compression scoreboard
 
+**27/81 cases faster than Roc (33.3%).** Goal 100%.
+R270 is retained. Paired elapsed improves 0.737% over R268, with 81/81 passes on both gates. Repeated 33,027 bytes crosses parity. All previously faster cases stay below 1× in the paired comparison.
+
+| Frontier | R268 / Roc | R270 / Roc |
+|---|---:|---:|
+| prefix-repeated-32768 | 0.995036× | 0.973240× |
+| prefix-repeated-33027 | 1.015880× | 0.992047× |
+| prefix-periodic-32768 | 1.033342× | 1.002207× |
+| prefix-periodic-32767 | 1.030812× | 1.008713× |
+| eight-literals | 0.426039× | 0.426594× |
+| prefix-natural-1048576 | 1.750283× | 1.764205× |
+
+[R270 timings, qualification and compiler patch](native-equality-loop-tiers.md). [Mech against libdeflate and Roc](native-libdeflate-comparison.md).
+
+## Historical R268 measured comparison
+
 **Cases faster than Roc: 26/81 = 32.1%. Goal 100%.**
 R268 is the retained compact compiler. The growth-isolated threaded candidate changes paired elapsed -3.590% across all 81. It passes 81/81 pooled and 81/81 block gates.
 
