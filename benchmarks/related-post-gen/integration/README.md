@@ -1,6 +1,18 @@
 # Current related-post integration targeting #973
 
-## Current IR242 and selected mask reuse
+## Current IR314 integration, 2026-11-11
+
+PR990 is rebased onto #973 at **4debec08de0feeb0884f13aa620c7167a1729682**. Current compiler: **IR314 / work126 / ABI42 / image11**, Cranelift 0.131.3 with the checked DEFLATE AArch64 comparison and spill-copy changes. The default SSA-width pass from the verified R293 closure remains. LLVM is not a required dependency. The latest #973 experimental records are included in git; their full compact experimental runtime has not replaced the maintained compiler.
+
+The new compiler fix selects an independently proved complete readonly numeric tree over an unsupported readonly partial phase. This keeps the narrow-counter coverage scan native instead of returning to the host per post. Mutable/current-funded phases keep their original transport; failed tree proof keeps the original phase. All **505 compiler contracts** pass, all 484 selected IR308 names remain, and all 133 scalar/DEFLATE rows match every non-timing/resource field. Four linked variants pass **128 exact cases** and Object byte audits. All 2,737 inventoried compiler/configuration source files remain identical after rebase.
+
+The fresh first matched cohort measures maintained-source Mech at **1.697375 ms / 1.133725×** fastest eligible Rust (**1.497167 ms**, ordered masks/tables256). The published IR313 control is 1.700167 ms. U32 counts, postings and both measure 1.693166, 1.705125 and 1.700958 ms; none demonstrates a reliable paired latency improvement against both controls. All 868 latency and 203 resource outputs are exact. No unchanged inconclusive retry or confirmation was run. The maintained Mech source is unchanged.
+
+Both-U32 saves **9.063% peak additional requested heap** (5,357,407→4,871,859 bytes), while adding allocations and instructions. It stays experimental. Current same-Object profiles identify the native query, UTF8 histogram and index loops as the leading active reported leaves; host budget locking and worker setup remain visible. These sampling observations are diagnostic, not exact time shares. Restoration and complete-process costs remain reported; whole-process is not an acceptance gate. **The 1.00× goal remains unmet.**
+
+See [full timings, resources, qualification and failures](complete-tree-selection-20261111/REPORT.md), [indexed raw records](complete-tree-selection-20261111/summary.json), [SSA-width integration](proved-word-widths-20261111/REPORT.md), and [DEFLATE backend integration](deflate-backend-20261111/REPORT.md). Older measurements and stricter historical adoption gates below are retained history, superseded by this current status.
+
+## Historical IR242 and selected mask reuse
 
 Qualified compiler **4cc266ae0d05c69432a4c15ffe99d5e586685647**, **IR242 / work115 / ABI41 / image9**, integrates #973 through **65034db9ca9da4133355108e85784703cde7592b**. PR990 continues to target #973. IR239, IR241 and IR243 experiments remain unapplied.
 
