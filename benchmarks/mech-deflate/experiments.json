@@ -59738,6 +59738,194 @@
         }
       },
       "complete_goal": false
+    },
+    "303": {
+      "git_parent": "ac79c1c3659866338ef98f8e3d5d7c3c3dcd61d6",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "4debec08de0feeb0884f13aa620c7167a1729682",
+      "retained_compiler": "R303",
+      "retained_source_packet_round": 303,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Forward a proved equality endpoint.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "b0b9eaa6ae02bd307e58c7ed93efe380f0719e17f1d687910bee730cc8f3b131",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "02fac8db7b7097bcd3ea819247ccf118e43fa1ca5ba1e7c7ae9fc7bb31cace8d",
+            "after": "b0e86890cd308c8905b16b34bffd9e44404e5b1bd083c849ee1428cfdf0fa5ab"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal_reuse.rs": {
+            "before": "c1f905a625f91785a7cb6988d14b26c366ed75098c5397ee1cc8cf156a977df2",
+            "after": "8299c2aa8902d25b9c3de4d7775e1f3f0491e13c1d7eb7f8516d4acabd452615"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs": {
+            "before": "0365b5eb5de9c81dca0633301c0e06b51dac394b0018da748da1a15a577b9d6c",
+            "after": "2f0d38961e0e730816a4698662617b1a997f1c31a49d61ffded055764d5d0522"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal_prefix.rs": {
+            "before": null,
+            "after": "0185c68c98eae7b9a72f86fd22d55e2f309f8725e008d836c0683276b4a62d8e"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "bf514e1c5f368aa4ac225b12a8f25efc37924b0b987dd5eaa1f79ae4eaa93d0f",
+        "worker_sha256": "3cedd8e35b49fc6e6dda6818b695788f1413c97d635aa75cf0cc11dffa85909e"
+      },
+      "summary": {
+        "published_parent": "ac79c1c3659866338ef98f8e3d5d7c3c3dcd61d6",
+        "measured_parent": "4debec08de0feeb0884f13aa620c7167a1729682",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 303,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 303,
+        "selected_mode": "single-equality-proof",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9856429786681348,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r301": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc_in_peer_cohort": {
+          "mech-r301": 45,
+          "mech-candidate": 46
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "reymont-prefix-1024",
+          "ratio": 1.0027019842510752
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.017269135134638
+        },
+        "next_experiment": "Measure common address generation for the two neighboring typed table slots on the ordinary matcher route. The current search emits separate scaled addresses. The linked C worker uses one base plus an immediate two-byte displacement. The next candidate must preserve current access order, geometry and intervening effects."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "bf514e1c5f368aa4ac225b12a8f25efc37924b0b987dd5eaa1f79ae4eaa93d0f",
+            "metadata.json": "6e3e1c63ea7c3fc5268ee8d06be267fc4cd004ab686cbfb7bb82bbb5e6953828"
+          },
+          "decoded": {
+            "object.o": "bf514e1c5f368aa4ac225b12a8f25efc37924b0b987dd5eaa1f79ae4eaa93d0f",
+            "metadata.json": "6e3e1c63ea7c3fc5268ee8d06be267fc4cd004ab686cbfb7bb82bbb5e6953828"
+          }
+        },
+        "cleanup_tests_passed": 48,
+        "handoff_calls": 23408,
+        "handoff_result_checks": 327712,
+        "wide_equality_tests": 4,
+        "exact_linked_parser_controls": 87,
+        "changed_machine_bodies": 1
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r301": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc": {
+          "mech-r301": 45,
+          "mech-candidate": 46
+        }
+      },
+      "report": "docs/design/native-forwarded-equality-end.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r303-single-equality-proof-cb6dea7f94a7.tar.gz",
+        "bytes": 5965591,
+        "sha256": "cb6dea7f94a7e7b41afd1299500c9986362133d6d9d1a73c84f1c88211d1005f",
+        "files": 999,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "86dacebe4db58dc1ee54c1a76856547a7c1feaae188ee7e0c2a7014e28b20616",
+            "counter-results.json": "a2ab8501e4df2360f9dac062c7675e54e5ae6af1145c3bbabeacdbb1a673a8b3",
+            "REPORT.md": "91a87c8b9530e3c1c8ac7675131911f795becddaf75399db452d00b686b06415",
+            "library-results.json": "2aff7a1efbbfa1f2d7df9fbab07ab8e68a2f4c06a52b91226e4a6a34d2c5da7c",
+            "result-decision.json": "6768952a253ad2b73c0d90b16044833c96d84ed19fa9dba15c16730455f676d7",
+            "screen-results.json": "c3dff6f46d01317828de123b8a8767229ee93a79732df45cff5ea260e237258f",
+            "single-equality-proof-profile-results.json": "422040fc62e8795c0aa8c9c5bd2e2f0e7b5850e42d2b26c6c0c58483e3ba5261",
+            "handoff-profile-analysis.json": "ae838ee7fb80e728f8bcdb07e45194c948c28de75f0308e8fc99a15df933bb60"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
