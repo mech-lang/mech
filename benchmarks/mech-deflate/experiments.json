@@ -59646,6 +59646,98 @@
         }
       },
       "complete_goal": false
+    },
+    "302": {
+      "git_parent": "4debec08de0feeb0884f13aa620c7167a1729682",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "4debec08de0feeb0884f13aa620c7167a1729682",
+      "retained_compiler": "R301",
+      "retained_source_packet_round": 301,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after screening shared equality across scans.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "compiler_patch_sha256": "9b31af2c5ea1a13586e49927b8ad9557418e27382d4498bfb1c6c2f7513cda10",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs": {
+            "before": "0365b5eb5de9c81dca0633301c0e06b51dac394b0018da748da1a15a577b9d6c",
+            "after": "7e53cd2a5a2240d3d9714eddb285b586ad698b42c7ea9e9dd214cc5d17dcda0f"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal_reuse.rs": {
+            "before": "c1f905a625f91785a7cb6988d14b26c366ed75098c5397ee1cc8cf156a977df2",
+            "after": "5ddefb7093d3107c6e8337382a45108f4925121995087fcc2199f81caeb1adb0"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/wide_equal_prefix.rs": {
+            "before": null,
+            "after": "f8707cae2d6cd43adff6745c7d9aa623cfcc82cbadb45959ac58561026744495"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "02fac8db7b7097bcd3ea819247ccf118e43fa1ca5ba1e7c7ae9fc7bb31cace8d",
+            "after": "e2d530c0ed699c5ec9b56da80d99cacdba6f7a572a7da3a265d26be42b1d0bc4"
+          }
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "candidate_object_sha256": "29306c52b113c378fb374aedf640294cfea5241c04cb5ec33991204709621475",
+        "candidate_worker_sha256": "b819f9ec93995e3d3ccdb77589f86ed31a353fabf65cf3bb2d4c3105c0e5361b"
+      },
+      "summary": {
+        "published_parent": "4debec08de0feeb0884f13aa620c7167a1729682",
+        "measured_parent": "4debec08de0feeb0884f13aa620c7167a1729682",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "round": 302,
+        "retained_source_packet_round": 301,
+        "retained_runtime_packet_round": 272,
+        "retain_experimental_compiler": false,
+        "compiler_patch_sha256": "9b31af2c5ea1a13586e49927b8ad9557418e27382d4498bfb1c6c2f7513cda10",
+        "screen_cases": 27,
+        "screen_calls": 56988,
+        "paired_elapsed_ratio": 0.9990227232770561,
+        "screen_pooled_gate_misses": [],
+        "screen_block_gate_misses": [
+          "empty"
+        ],
+        "screen_reference_below_1x": {
+          "baseline": 18,
+          "candidate": 18
+        },
+        "peer_screen_cases": 7,
+        "counter_screen_cases": 7,
+        "profile_cases": 4,
+        "retained_faster_than_roc": {
+          "count": 45,
+          "cases": 81,
+          "percent": 55.55555555555556
+        },
+        "retained_faster_than_libdeflate": {
+          "count": 3,
+          "cases": 81
+        },
+        "next_experiment": "Use a single proved end across the short scan and its continuation. Require the selected short exit to forward the exact current cursor and bases. On that route carry the proved end as one scalar through the existing continuation checks and read the saved record only once. Other entries retain the current checked lookup."
+      },
+      "report": "docs/design/native-shifted-equality-prefix.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r302-prefix-equality-reuse-4a2d9d0abdda.tar.gz",
+        "bytes": 765821,
+        "sha256": "4a2d9d0abdda9f3e607426bdc2dcc3593be2f1d0ad32e9623d2cb891576afa37",
+        "files": 182,
+        "reports_replayed": 7,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "screen-results.json": "75ed434066ff602a9ee3294c6e2d1228413f12480e3870223dfd6ab745551e2a",
+            "prefix-profile-analysis.json": "6a8ef46dbc0fcb6704ddcacf1ca85b5eadab4f9e475690a201c722c197b99eae",
+            "prefix-equality-reuse-profile-results.json": "08433ac7b96a03776bfe88f867b3a1a3a7cf3001473cd02bc6d4fc9964f2bfa2",
+            "result-decision.json": "57eb4ceb744f51cec37229a62a5c7c1699b0511c65dbc6b815e8b6ce520bc3b8",
+            "REPORT.md": "beeab88db15a38eff16d6090052c33cd2f6d4ffe442e37a07b4ef69464c0762c",
+            "peer-results.json": "6d45f7b482673efbd2d513c610d4aa4ca13fe24bf73c5ad4b047b39528bad70f",
+            "counter-results.json": "54e9b144bf4b8c4da79effa8a2233f58fc87128da28d749543c0619e2dec2342"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
