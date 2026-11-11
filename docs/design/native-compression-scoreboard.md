@@ -19,6 +19,8 @@ Ratios use the same fresh four-actor comparison. The parity score and gates use 
 
 [R301 timing, proof and replay evidence](native-ordered-capture-spans.md).
 
+R302 screens shared equality across a fixed prefix and its continuation. Paired elapsed changes -0.098% across 27 cases. The current baseline remains R301. [R302 timing, code and replay](native-shifted-equality-prefix.md).
+
 ## Historical R297 measured comparison
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
