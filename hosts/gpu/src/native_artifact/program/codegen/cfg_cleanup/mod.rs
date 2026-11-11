@@ -3,6 +3,7 @@
 //! Trapping loads, source failures and work debits retain their ordering.
 mod boolean_words;
 mod dead_values;
+mod known_widths;
 mod local_phis;
 mod preheaders;
 mod selected_ranges;
@@ -308,6 +309,7 @@ fn optimize_ordered(
         unsigned_intervals_combined: 0,
         selected_range_branches_removed: 0,
         boolean_phi_values: 0,
+        known_width_branches_removed: 0,
         before_blocks,
         before_instructions,
         after_blocks: before_blocks,
@@ -373,6 +375,16 @@ fn optimize_ordered(
         context.compute_domtree();
         context.eliminate_unreachable_code(isa).map_err(backend)?;
         context.remove_constant_phis(isa).map_err(backend)?;
+    }
+    if controls.enabled(OptimizationPass::ProvedWordWidths) {
+        report.known_width_branches_removed =
+            known_widths::fold(&mut context.func, &context.cfg, &context.domtree);
+        if report.known_width_branches_removed != 0 {
+            context.compute_cfg();
+            context.compute_domtree();
+            context.eliminate_unreachable_code(isa).map_err(backend)?;
+            context.remove_constant_phis(isa).map_err(backend)?;
+        }
     }
     if controls.enabled(OptimizationPass::DemandLiveness) {
         let dead = dead_values::eliminate(&mut context.func);
