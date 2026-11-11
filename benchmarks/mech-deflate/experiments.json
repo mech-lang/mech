@@ -54517,6 +54517,145 @@
         "100% of the fixed matrix faster than the reference."
       ],
       "complete_goal": false
+    },
+    "268": {
+      "git_parent": "fd529dd01f388828d079e5bf6f26c398eacb67a7",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R268",
+      "retained_source_packet_round": 268,
+      "decision": "Retain the growth-isolated threaded candidate for the compact executable.",
+      "source": {
+        "evaluated_only": false,
+        "files": 831,
+        "baseline": "R264",
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ]
+      },
+      "backend_source": {
+        "files": 200,
+        "changed": false,
+        "version": "Cranelift 0.131.3",
+        "register_allocator": "regalloc2 0.15.2"
+      },
+      "summary": {
+        "round": 268,
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "published_parent": "fd529dd01f388828d079e5bf6f26c398eacb67a7",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 268,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R264",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 22,
+          "after_count": 26,
+          "denominator": 81,
+          "before_percent": 27.160493827160494,
+          "after_percent": 32.098765432098766,
+          "change_percentage_points": 4.938271604938272
+        },
+        "all81_paired_after_over_before": 0.9640954845038232,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 0.9650124783782672,
+          "primary-b": 0.9631793619940348
+        },
+        "pooled_gate_passed": 81,
+        "block_gate_passed": 81,
+        "gate_misses": {
+          "pooled": [],
+          "block": []
+        },
+        "crossed_below": [
+          "repeated-32769",
+          "prefix-repeated-32767",
+          "prefix-repeated-32768",
+          "prefix-repeated-32769"
+        ],
+        "crossed_above": [],
+        "scope": "Measurements cover the compact executable's complete compression, scratch construction, output transfer and private cleanup. The ordinary managed admission, accounting and recovery contract lies outside that boundary.",
+        "measured_repeated_32768": {
+          "before": 1.0200981239310196,
+          "after": 0.9865084402458432
+        },
+        "complete_goal": false
+      },
+      "qualification": {
+        "native_tests": 727,
+        "inherited_exclusions": 7,
+        "complete_smokes": 324,
+        "full_image_profiles": 8,
+        "source_path_cases_each_artifact_form": 40,
+        "focused_capacity_cases_each_form": 7,
+        "alias_cases_each_form": 2
+      },
+      "pins": {
+        "candidate_object": {
+          "sha256": "96b3e7ce89956adfd600b36b389047455a47d3e88c599155b2f936ad98f12d3a"
+        },
+        "candidate_worker": {
+          "sha256": "e570897a8f7f4fafd3fb3160a4c060b40a8b7ee46f3c7c2db6f5628cec0fc80d"
+        },
+        "source": {
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "bytecode": {
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "original_decoded_exact": true
+      },
+      "artifacts": [
+        {
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r268-thread-after-growth-isolation-c0f0679e0fe2.tar.gz",
+          "bytes": 7558564,
+          "sha256": "c0f0679e0fe2bd769b04d051333be39ad6b6144b488d269a0daac2baa484197c"
+        }
+      ],
+      "public_verification": {
+        "downloaded_archive_and_receipt_exact": true,
+        "archive_sha256": "c0f0679e0fe2bd769b04d051333be39ad6b6144b488d269a0daac2baa484197c",
+        "verified_files": 1891,
+        "offline_reports": 5,
+        "current_source_files": 831,
+        "reversed_base_source_files": 825,
+        "current_backend_source_files": 200,
+        "reversed_backend_source_files": 200,
+        "source_reconstruction_exact": true,
+        "replayed_output_hashes": {
+          "primary-results.json": "ad2c9fe94445522fefc9ce6f6bd2f16ec0a74afabebbc68af6b97b0aded6eb83",
+          "counter-results.json": "d68518d81abaa91f30c8e52380620fc777b174e82f47f6be3f913f01b7bd80be",
+          "REPORT.md": "322c661c67a9b342bb2b26f0d2162b60d2ef7df5a41aafb145390931491d873a",
+          "result-decision.json": "9a30eee9635a17c90ad48fabbb349c53df45fc37ab1d2bc6ea0f6a2017fe99ab",
+          "empty-visit-audit.json": "649d0faf9842d6c861bf37db8679e46453c8ea365b4d332ddc16aed99a0c88b9"
+        },
+        "stdout": "Verified 831 candidate files, reversals to R264 and R267, both numeric reports and the frontier.\n"
+      },
+      "report": "docs/design/native-thread-after-growth-isolation.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r268-thread-after-growth-isolation-c0f0679e0fe2.tar.gz",
+        "bytes": 7558564,
+        "sha256": "c0f0679e0fe2bd769b04d051333be39ad6b6144b488d269a0daac2baa484197c",
+        "files": 1891,
+        "reports_replayed": 5,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "ad2c9fe94445522fefc9ce6f6bd2f16ec0a74afabebbc68af6b97b0aded6eb83",
+            "counter-results.json": "d68518d81abaa91f30c8e52380620fc777b174e82f47f6be3f913f01b7bd80be",
+            "REPORT.md": "322c661c67a9b342bb2b26f0d2162b60d2ef7df5a41aafb145390931491d873a",
+            "result-decision.json": "9a30eee9635a17c90ad48fabbb349c53df45fc37ab1d2bc6ea0f6a2017fe99ab",
+            "empty-visit-audit.json": "649d0faf9842d6c861bf37db8679e46453c8ea365b4d332ddc16aed99a0c88b9"
+          }
+        }
+      },
+      "remaining": [
+        "100% of the fixed matrix faster than the reference. Preserve full gates and revisit the closest repeated and periodic cases."
+      ],
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
