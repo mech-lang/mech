@@ -60993,6 +60993,178 @@
         }
       },
       "complete_goal": false
+    },
+    "311": {
+      "git_parent": "333e51a4d9e46f4856186933f7bcc8a8d303fb1d",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "6120aba1263cab886cd1d66c3c3c8d610c590172",
+      "retained_compiler": "R309",
+      "retained_source_packet_round": 309,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after both screens slow the target.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "cbcb78d91cd9bac3565d1edce415715fa2ac4d72631ec8815ceccc83ba425ccf",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/direct_predicate_branches/tests.rs": {
+            "before": null,
+            "after": "bb7b46b2be87e42b49d1a8cb0cdc2b901291b7f0e1497c269f53ba60731fb55d"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/direct_predicate_branches.rs": {
+            "before": null,
+            "after": "5d883dd52a116069610a8a78ec9352845ec7476d8db6dd6b0d3b926137e944c1"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "8ea9ac258685215d2e024235a9ce13b8fdaa482035b1298c58455d6abef2e493",
+            "after": "f53b7c5462b781384335694af2ff35ec2f04510bc1be55302cbaf80f505afbb3"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "361debc3126921b30f3b9222c4b51bfecabe352028930008e93e6d9d4319d704",
+            "after": "0af34c5ea5f6e28c9c5d09cbd8c88b6d067d07ed3a09313fc9d88cdba28fa82b"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_object_sha256": "ecbbbbd7fa68a54eaa845bf882a9dee9b993cd349e588fbc0d574dca63915fcd",
+        "worker_sha256": "6d7f49bd26c0ee7e305e4fd57f6657c740ceaaf8d90d6ba395f846fb8b8f2221"
+      },
+      "summary": {
+        "round": 311,
+        "published_parent": "333e51a4d9e46f4856186933f7bcc8a8d303fb1d",
+        "measured_parent": "6120aba1263cab886cd1d66c3c3c8d610c590172",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 309,
+        "retained_runtime_packet_round": 272,
+        "screen_cases": 10,
+        "original_1_05_gates_passed": 10,
+        "blockmean_1_05_gates_passed": 10,
+        "screen_paired_geomean": 1.0089250051710348,
+        "matched_cases": 10,
+        "matched_timed_calls": 154176,
+        "target": "prefix-natural-262144",
+        "target_matched_x_libdeflate": [
+          1.1177044821515207,
+          1.1203184001024478
+        ],
+        "target_screen_after_over_before": 1.0019794536999629,
+        "target_counter_medians": {
+          "before": {
+            "cycles": 201592745.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 805643376.0,
+            "lifetime_peak_physical": 49939392.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46007232.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47448064.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 201529126.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 800794869.5,
+            "lifetime_peak_physical": 49923008.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 45990848.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47431680.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144846541.0,
+            "instructions": 479464851.5,
+            "level": 12.0,
+            "lifetime_peak_physical": 13140864.0,
+            "physical_after": 13140864.0,
+            "rss_after": 13762560.0
+          }
+        },
+        "heap_families_agree": true,
+        "reason": "Both independent timing screens slow the selected libdeflate frontier input"
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 162,
+        "image_sha256": {
+          "object.o": "ecbbbbd7fa68a54eaa845bf882a9dee9b993cd349e588fbc0d574dca63915fcd",
+          "metadata.json": "6b90e009e393eee344501a5ecd12aa9bfd8a87d707322ec77b0c705233630506"
+        },
+        "worker_sha256": "6d7f49bd26c0ee7e305e4fd57f6657c740ceaaf8d90d6ba395f846fb8b8f2221"
+      },
+      "report": "docs/design/native-forwarded-boolean-merges.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r311-boolean-merges-23a28bbc60ed.tar.gz",
+        "bytes": 1171769,
+        "sha256": "23a28bbc60eda6afb7d3940b2919e0c6e0d1f0cdb7f69799e96aaea5ca0e4f10",
+        "files": 190,
+        "reports_replayed": 4,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "daf071a35a89f7314890e7549149c6c5e65e457d1252312167aae360604fa60f",
+            "pilot-counters.json": "c1d1a63c09b7c98305774fa3ec8b5196e4e9b41806c6a378ab8f83865e27412f",
+            "result-decision.json": "abd7394ffa99c20cf5ff5f78576997c623d6d6ddabe7f2dad773ffdf6961542f",
+            "candidate-profile-summary.json": "53dca1acc795488cafb60841731bd8fa8e6daeba76cb96aacc14feec1ee7a693"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
