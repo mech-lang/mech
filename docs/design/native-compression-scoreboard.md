@@ -1,5 +1,24 @@
 # Current compression scoreboard
 
+**Cases faster than Roc: 26/81 = 32.1%. Goal 100%.**
+R268 is the retained compact compiler. The growth-isolated threaded candidate changes paired elapsed -3.590% across all 81. It passes 81/81 pooled and 81/81 block gates.
+
+| Frontier | R264 / Roc | R268 candidate / Roc |
+|---|---:|---:|
+| prefix-repeated-32767 | 1.01982× | 0.99346× |
+| prefix-repeated-32768 | 1.02010× | 0.98651× |
+| prefix-repeated-32769 | 1.02155× | 0.99224× |
+| prefix-repeated-33027 | 1.03488× | 1.01076× |
+| prefix-periodic-32768 | 1.04986× | 1.02095× |
+| eight-literals | 0.42972× | 0.42657× |
+| prefix-natural-1048576 | 1.88820× | 1.75372× |
+
+Cases moving below 1× in the fresh comparison repeated-32769, prefix-repeated-32767, prefix-repeated-32768, prefix-repeated-32769.
+
+[All 81 results, proof, counters, safety gates and profiles](native-thread-after-growth-isolation.md).
+
+## Historical R267 measured comparison
+
 **Cases faster than Roc: 22/81 = 27.2%. Goal 100%.**
 R264 remains the retained experimental compiler. The separate no-growth body improved paired elapsed 2.1243% across the matrix. Empty and one-byte inputs missed the block timing gate. Both counter cohorts and all adverse observations are preserved.
 
