@@ -3,8 +3,8 @@
   "compiler": {
     "identity": "IR314/work126/ABI42/image11",
     "measured_commit": "09d30f06f43d40724ad8ed8fcb486cf09c94393b",
-    "rebased_commit": "bcb117c187983f76a0822205c5056ffa76216d47",
-    "PR973_base": "4debec08de0feeb0884f13aa620c7167a1729682",
+    "rebased_commit": "7d9647a9b5ceceb571c12e756d46e3940b49d0b6",
+    "PR973_base": "ac79c1c3659866338ef98f8e3d5d7c3c3dcd61d6",
     "rebase_source_identity": {
       "measured_compiler_source_commit": "09d30f06f43d40724ad8ed8fcb486cf09c94393b",
       "rebased_compiler_commit": "bcb117c187983f76a0822205c5056ffa76216d47",
@@ -17,7 +17,17 @@
       "whole_inventory_identical": true
     },
     "backend": "Cranelift 0.131.3 with verified DEFLATE backend patches",
-    "required_LLVM_dependency": false
+    "required_LLVM_dependency": false,
+    "latest_rebase_source_identity": {
+      "measured_compiler_commit": "09d30f06f43d40724ad8ed8fcb486cf09c94393b",
+      "rebase_evidence_parent_commit": "f7ef8df7285531fc3f2b2d8c9e91ce8217b2dc69",
+      "rebased_compiler_source_commit": "7d9647a9b5ceceb571c12e756d46e3940b49d0b6",
+      "PR973_base": "ac79c1c3659866338ef98f8e3d5d7c3c3dcd61d6",
+      "inventoried_compiler_configuration_files": 2737,
+      "whole_inventory_identical": true,
+      "changed_files": [],
+      "scope": "Second bounded rebase imports only new experiment/design records after 4debec08de; measured compiler remains byte-source-identical."
+    }
   },
   "decision": {
     "compiler_gap_fixed": true,
@@ -6165,6 +6175,13 @@
       "uncompressed_sha256": "adbffdfa747b257e6351a5a6dc1212ed017bdf4bb783a4ed8faaa2fc0c6da521",
       "uncompressed_bytes": 1040,
       "original_path": "session-observed preparation errors"
+    },
+    {
+      "path": "records/rebase-source-identity-v2.json.gz",
+      "sha256": "f7524d4c31f780f7480aad3e39be90394d19cc3c1996ac2546a042eb416caf1f",
+      "uncompressed_sha256": "f83e6482917b6bddc2605ddb5df1208febeab8311f447123234b2fdbb79f4531",
+      "uncompressed_bytes": 554,
+      "original_path": "/private/tmp/mech-related-complete-tree-selection-20261111-v2/rebase-source-identity-v2.json"
     }
   ]
 }
