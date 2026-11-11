@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "benchmarks/related-post-gen/integration/native-compact-20261111/verify.py"
+  ],
+  "exit": 0,
+  "verification": {
+    "verified_records": 2452,
+    "verified_current_source_files": 2809,
+    "exact_retained_cohort_outputs": 3069,
+    "final_contracts": 589,
+    "post_json_ms": 1.31525,
+    "fastest_Rust_ms": 1.516584,
+    "times_fastest_Rust": 0.8672450718192992,
+    "independent_times_fastest_Rust": 0.8776456719634681,
+    "target_met": true
+  },
+  "verifier_sha256": "e45d03386de81a0de0a61f853122b2af71225e2220880f6cba3c93a56ed607e2"
+}
