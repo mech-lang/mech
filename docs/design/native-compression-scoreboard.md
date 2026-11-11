@@ -1,5 +1,35 @@
 # Current compression scoreboard
 
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R313 reuses the selected input-window comparisons through the matcher. Paired elapsed changes -0.780% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-natural-4096 at 1.000762× Roc. The closest above libdeflate parity is 256 KiB natural at 1.116256×.
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 KiB. The closest case is heldout-window-32768 at 1.347196× Roc and 1.228103× libdeflate, requiring a 25.77% elapsed reduction to match Roc.
+
+
+| Input | R312 / Roc | R313 / Roc | R312 / libdeflate | R313 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.181078× | 0.183156× | 2.306530× | 2.332990× |
+| prefix-random-8192 | 0.787610× | 0.790435× | 2.805482× | 2.815544× |
+| prefix-random-16384 | 1.103377× | 1.093201× | 2.976185× | 2.948736× |
+| prefix-periodic-131072 | 0.728841× | 0.715789× | 1.322400× | 1.298720× |
+| prefix-periodic-1048576 | 0.740598× | 0.729926× | 1.252752× | 1.234700× |
+| prefix-repeated-131072 | 0.732165× | 0.723716× | 1.224013× | 1.209889× |
+| prefix-repeated-1048576 | 0.740535× | 0.729368× | 1.163245× | 1.145704× |
+| prefix-natural-4096 | 0.989913× | 0.985195× | 1.693191× | 1.685120× |
+| prefix-natural-32767 | 1.354085× | 1.348764× | 1.234217× | 1.229367× |
+| reymont-prefix-32769 | 1.354036× | 1.348475× | 1.232615× | 1.227553× |
+| heldout-window-32768 | 1.354765× | 1.347196× | 1.235003× | 1.228103× |
+| prefix-natural-262144 | 1.385548× | 1.377538× | 1.122747× | 1.116256× |
+| prefix-natural-1048576 | 1.401785× | 1.392938× | 1.130270× | 1.123136× |
+| prefix-random-1048576 | 1.659751× | 1.647827× | 2.349192× | 2.332316× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R313 timing, proof and replay evidence](native-dominating-window-facts.md).
+
+## Historical R312 measured comparison
+
 **46/81 cases faster than Roc (56.79%).** Goal 100%.
 R312 defers phase packet loads with a single use on an exit. Paired elapsed changes -0.330% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
