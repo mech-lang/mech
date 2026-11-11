@@ -56563,6 +56563,140 @@
         }
       },
       "complete_goal": false
+    },
+    "282": {
+      "git_parent": "1f388ba572d4d0e767e50e54aebd92090468ac16",
+      "measured_parent": "74205739c757a23c01994b902649a765589cf364",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R280",
+      "retained_source_packet_round": 280,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler. The fixed-placement comparison isolates a random-input benefit from the hints while the 27-case pilot has a small aggregate slowdown and one block gate miss.",
+      "source": {
+        "compiler_changed": true,
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "changed_mech_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/future_store.rs": {
+            "before": null,
+            "after": "0128159a863fbb4fe7f2e198e47226e3dc6cfefb4114f48dea5b75b4ef02cabb"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "464242340cf30c5f759afe96ed49337a7ddfd4ae26b495341424be38dff52f21",
+            "after": "9b64cc5ad24f701c715877d838e98de1a78a535d613d35420436067db2b48154"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "before": "ab8cbf6a411e5639dcc22b34b04587dbfcc9c943d5d58e5be41e8b21521c0bff",
+            "after": "459d416bcc510821f165b308b7581869f4239af62d32f5c00b23a69c72a61bb4"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "49f15359c35cd497af61637be48f27e5b4a58a9acc666a18e27047ab48a8f00a",
+            "after": "5ff467136c049cd4f779cb4df57a3bbcb2c1ffefaec6e2117fb74c61f89320ba"
+          }
+        },
+        "changed_backend_sources": {
+          "src/isa/aarch64/inst/emit.rs": {
+            "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+            "after": "5e1648c705e9987d5de39b7ee1bd38dba44deb334aa992fb7afcdb00aaf530c7"
+          },
+          "src/isa/aarch64/inst/mod.rs": {
+            "before": "0928d4d4aed3f84f0f9902696144b91ddf9c7985d889b573829e2dccf2343f26",
+            "after": "6c536f33d97c15b02f7d2763a944fd7c0534f5bc45605fa137ac99a9331c63b3"
+          },
+          "src/isa/aarch64/inst.isle": {
+            "before": "ac36acbf673e499b9642a12960c3b3ec94032fba5a744f0b192161a2ec6e38df",
+            "after": "8c2206cd62f9dbd7671496e21a2851463eb0809688f59aed27139767d2c63a88"
+          },
+          "src/isa/aarch64/lower.isle": {
+            "before": "10d4b5b35122798b53d57684bc61f1b9db232c113a949dd3d0262fbc6bc4829d",
+            "after": "34dd0ad46833e3c150a0b6c1c33984f0e15e3d890778e243ab788239166f19bb"
+          },
+          "meta/src/shared/instructions.rs": {
+            "before": "bbacd1a5b066a6682fae8c1868f46b36f241720e9709fd874fff3aabf989c573",
+            "after": "f175a549ef5e3a4c30c07c9aa23f7092f5313573ea067eaf9300bede316b23a3"
+          }
+        },
+        "compiler_patch_sha256": "c3d5a41cc23d368c135e3298ea7c22614bd9de57eea52cd08fc13d6e2895cf0d",
+        "backend_prefetch_patch_sha256": "45f2c3a8c0d7286fb220743b689dbe769c3e11e51ea38821450ed0ef158e1873",
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "5f56c99c29109a242fad338d4a512c16d3c2fde78f5ef55f88bb1c587b1f612a",
+        "worker_sha256": "42846c4f3cbbcab8a2f495957b24f4cd16581188e98f85794b3f95ef2911bcb0",
+        "fixed_placement_no_hint_sha256": "a6eff61aaca11c4cd301e9fe3977393b6772ef1b303264c9783cfa7556f141b8"
+      },
+      "summary": {
+        "screen_cases": 27,
+        "screen_timed_calls": 151968,
+        "paired_geomean": {
+          "prefetch": 1.0020789768656209,
+          "no-hint": 1.0068377737527394
+        },
+        "timing_gate_misses": {
+          "prefetch": {
+            "pooled_gate_1_05": [],
+            "block_gate_1_05": [
+              "seven-stored-prefix"
+            ]
+          },
+          "no-hint": {
+            "pooled_gate_1_05": [],
+            "block_gate_1_05": [
+              "seven-stored-prefix"
+            ]
+          }
+        },
+        "screen_faster_than_reference": {
+          "retained": 18,
+          "prefetch": 18,
+          "no-hint": 18
+        },
+        "library_cases": 8,
+        "library_timed_calls": 6816,
+        "memory_equal_diagnostic_cases": true,
+        "next": "Test selected-edge predicate refinement inside the checked vector phase. The emitted current input length comparison is repeated after its successful branch."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "5f56c99c29109a242fad338d4a512c16d3c2fde78f5ef55f88bb1c587b1f612a",
+            "metadata.json": "b056acb70a1d2ea6777d72ecd9a51a508b3dada6429d781798f1705335bdad4d"
+          },
+          "decoded": {
+            "object.o": "5f56c99c29109a242fad338d4a512c16d3c2fde78f5ef55f88bb1c587b1f612a",
+            "metadata.json": "b056acb70a1d2ea6777d72ecd9a51a508b3dada6429d781798f1705335bdad4d"
+          }
+        },
+        "changed_bodies": [
+          "mech_compact_numeric_837_vector"
+        ],
+        "root_and_other_machine_bodies_exact": true,
+        "new_backend_initial_refusal_exact_before": true,
+        "paired_jit_calls": 120,
+        "boundary_refusal_controls": 4
+      },
+      "report": "docs/design/native-private-write-prefetch.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r282-private-write-prefetch-86c770541636.tar.gz",
+        "bytes": 1572790,
+        "sha256": "86c770541636c52732288e2eb079a25b1a8f019a109c22ba5fdd6ba0dadb0e7e",
+        "files": 253,
+        "reports_replayed": 2,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "7e58d1aade501eeb725964a5a72ea0f4582f7fc0f965f6be914a0e94c6ed8282",
+            "prefetch-results.json": "ee7b7afe8bce2c4c8fa0d4dd3dbff07b891e6750b41fee95efde060c569eb2f9"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
