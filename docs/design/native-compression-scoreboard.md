@@ -1,5 +1,26 @@
 # Current compression scoreboard
 
+**32/81 cases faster than Roc (39.51%).** Goal 100%.
+R274 carries the selected item in capacity-proved native reductions and keeps the R272 runtime. Paired elapsed falls 3.09% across all 81. Both timing gates pass 81/81. The matched control and candidate each beat Roc in 32 cases. The separate libdeflate cohort has three faster cases for each.
+
+| Input | R272 / Roc | R274 / Roc | R272 / libdeflate | R274 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.201229× | 0.199891× | 2.554727× | 2.537733× |
+| prefix-repeated-33027 | 0.981701× | 0.971683× | 1.904939× | 1.885501× |
+| prefix-periodic-32768 | 0.982359× | 0.980489× | 2.096360× | 2.092368× |
+| prefix-repeated-65536 | 1.050521× | 1.041300× | 1.858888× | 1.842571× |
+| prefix-natural-32768 | 1.685446× | 1.475704× | 1.535526× | 1.344440× |
+| prefix-natural-1048576 | 1.760098× | 1.506684× | 1.419691× | 1.215288× |
+| prefix-random-1048576 | 2.108295× | 2.107406× | 2.974567× | 2.973314× |
+| prefix-periodic-1048576 | 1.157258× | 1.150178× | 1.971536× | 1.959475× |
+| prefix-repeated-1048576 | 1.120134× | 1.120273× | 1.762614× | 1.762834× |
+
+The table uses a fresh four-actor cohort. The parity score and timing gates use the two primary cohorts.
+
+[R274 compiler patch, all 81 timings, linked controls and profiles](native-capacity-phase-selected-item.md).
+
+## Historical R272 measured comparison
+
 **31/81 cases faster than Roc (38.27%).** Goal 100%.
 R272 supplies large zero-filled buffers through private pages. The compressor Object and program stay at R270. Paired elapsed falls 10.25% across all 81. Both timing gates pass 81/81. Four periodic inputs cross below Roc parity. The separate libdeflate cohort has 3/81 faster cases.
 
