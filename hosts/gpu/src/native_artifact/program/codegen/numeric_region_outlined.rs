@@ -204,6 +204,12 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             &mut context,
             &mut cleanup,
         );
+        crate::native_artifact::program::codegen::cfg_cleanup::finish_imported_passes(
+            controls,
+            &mut context,
+            module.isa(),
+            &mut cleanup,
+        )?;
         let header = region.tail.header() as usize;
         let symbol = format!("{entry_symbol}_numeric_{header}");
         let function = module

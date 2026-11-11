@@ -1,13 +1,18 @@
 //! Fold proved native branches, then retire unreachable blocks and values
 //! with no path to control or effects before the single backend data pass.
 //! Trapping loads, source failures and work debits retain their ordering.
+mod adjacent_addresses;
 mod boolean_words;
+mod current_predicates;
 mod dead_values;
+mod identity_routes;
 mod known_widths;
 mod local_phis;
 mod preheaders;
 mod selected_ranges;
+mod threaded_edges;
 mod unsigned_intervals;
+mod window_bounds;
 mod word_ranges;
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::control::CfgCleanup;
@@ -15,7 +20,7 @@ use crate::native_artifact::codegen::options::{CompilationControls, Optimization
 use crate::native_artifact::compiler::backend;
 use cranelift_codegen::Context;
 use cranelift_codegen::ir::{
-    Function, InstBuilder, InstructionData, Opcode, Value, ValueDef, condcodes::IntCC,
+    Block, Function, InstBuilder, InstructionData, Opcode, Value, ValueDef, condcodes::IntCC,
 };
 use cranelift_codegen::isa::TargetIsa;
 
@@ -260,7 +265,9 @@ pub(in crate::native_artifact) fn optimize(
     context: &mut Context,
     isa: &dyn TargetIsa,
 ) -> Result<CfgCleanup, NativeCompileError> {
-    optimize_ordered(controls, context, isa, true)
+    let mut report = optimize_ordered(controls, context, isa, true)?;
+    finish_imported_passes(controls, context, isa, &mut report)?;
+    Ok(report)
 }
 
 // Numeric range proofs still consume exact equality-to-one facts on phi
@@ -310,6 +317,13 @@ fn optimize_ordered(
         selected_range_branches_removed: 0,
         boolean_phi_values: 0,
         known_width_branches_removed: 0,
+        current_predicate_branches: 0,
+        identity_edges: 0,
+        loop_edges: 0,
+        bitwise_constant_branches: 0,
+        window_bounds_combined: 0,
+        ordered_capture_spans: 0,
+        adjacent_addresses_reused: 0,
         before_blocks,
         before_instructions,
         after_blocks: before_blocks,
@@ -401,3 +415,223 @@ fn optimize_ordered(
 
 #[cfg(test)]
 mod tests;
+
+pub(in crate::native_artifact) fn forward_identity_routes(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<identity_routes::Report, NativeCompileError> {
+    forward_identity_routes_from(controls, context, isa, None)
+}
+
+pub(in crate::native_artifact) fn forward_identity_routes_from(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+    origins: Option<&[Block]>,
+) -> Result<identity_routes::Report, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup)
+        || !controls.enabled(OptimizationPass::IdentityRoutes)
+    {
+        return Ok(identity_routes::Report::default());
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let report =
+        identity_routes::optimize(&mut context.func, &context.cfg, &context.domtree, origins);
+    if report.threaded_edges != 0 {
+        optimize_ordered(controls, context, isa, true)?;
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(report)
+}
+
+pub(in crate::native_artifact) fn refine_current_predicates(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<current_predicates::Report, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup)
+        || !controls.enabled(OptimizationPass::CurrentPredicates)
+    {
+        return Ok(current_predicates::Report::default());
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let report = current_predicates::fold(&mut context.func, &context.cfg, &context.domtree);
+    if report.removed_branches != 0 {
+        optimize_ordered(controls, context, isa, true)?;
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(report)
+}
+pub(in crate::native_artifact) fn fold_proved_widths(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup)
+        || !controls.enabled(OptimizationPass::ProvedWordWidths)
+    {
+        return Ok(0);
+    }
+    context.compute_cfg();
+    context.compute_domtree();
+    let removed = known_widths::fold(&mut context.func, &context.cfg, &context.domtree);
+    if removed != 0 {
+        optimize_ordered(controls, context, isa, true)?;
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(removed)
+}
+
+pub(in crate::native_artifact) fn fold_ordered_capture_spans(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup)
+        || !controls.enabled(OptimizationPass::OrderedCaptureSpans)
+    {
+        return Ok(0);
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let selected =
+        window_bounds::ordered_spans::fold(&mut context.func, &context.cfg, &context.domtree);
+    if selected != 0 {
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(selected)
+}
+
+pub(in crate::native_artifact) fn reuse_adjacent_addresses(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup)
+        || !controls.enabled(OptimizationPass::AdjacentAddresses)
+    {
+        return Ok(0);
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let changed = adjacent_addresses::fold(&mut context.func, &context.cfg, &context.domtree);
+    if changed != 0 {
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(changed)
+}
+
+pub(in crate::native_artifact) fn combine_window_bounds(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup)
+        || !controls.enabled(OptimizationPass::FixedWindowBounds)
+    {
+        return Ok(0);
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let removed = window_bounds::combine(&mut context.func, &context.cfg, &context.domtree);
+    if removed != 0 {
+        optimize_ordered(controls, context, isa, true)?;
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(removed)
+}
+
+/// A current loop edge may bypass proved pure dispatch, carrying live-outs
+/// through typed destination phis. Ordinary entries keep their original route.
+pub(in crate::native_artifact) fn thread_loop_edges(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<threaded_edges::Report, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup)
+        || !controls.enabled(OptimizationPass::LoopEdgeThreading)
+    {
+        return Ok(threaded_edges::Report::default());
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let report = threaded_edges::optimize(&mut context.func, &context.cfg, &context.domtree);
+    if report.threaded_edges != 0 {
+        // No data/egraph pass is added. The existing structural cleanup now
+        // retires dispatch tags whose only remaining incoming value is fixed.
+        optimize_ordered(controls, context, isa, true)?;
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(report)
+}
+
+/// Run retained DEFLATE SSA passes after the ordinary checked numeric guard
+/// proofs. They consume immutable machine words, never runtime permissions.
+pub(in crate::native_artifact) fn finish_imported_passes(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+    report: &mut CfgCleanup,
+) -> Result<(), NativeCompileError> {
+    if !report.enabled {
+        return Ok(());
+    }
+    if controls.enabled(OptimizationPass::ScopedBitwiseConstants) {
+        let changed = fold_bitwise_constants(controls, &mut context.func);
+        report.bitwise_constant_branches += changed;
+        if changed != 0 {
+            optimize_ordered(controls, context, isa, true)?;
+        }
+    }
+    report.loop_edges += thread_loop_edges(controls, context, isa)?.threaded_edges;
+    report.identity_edges += forward_identity_routes(controls, context, isa)?.threaded_edges;
+    report.current_predicate_branches +=
+        refine_current_predicates(controls, context, isa)?.removed_branches;
+    report.known_width_branches_removed += fold_proved_widths(controls, context, isa)?;
+    report.window_bounds_combined += combine_window_bounds(controls, context, isa)?;
+    report.ordered_capture_spans += fold_ordered_capture_spans(controls, context, isa)?;
+    report.adjacent_addresses_reused += reuse_adjacent_addresses(controls, context, isa)?;
+    (report.after_blocks, report.after_instructions) = counts(&context.func);
+    Ok(())
+}
+
+fn fold_bitwise_constants(controls: &CompilationControls, function: &mut Function) -> usize {
+    if !controls.enabled(OptimizationPass::CfgCleanup) {
+        return 0;
+    }
+    let mut facts = word_ranges::Facts::with_bitwise_constants(function);
+    let changes = function
+        .layout
+        .blocks()
+        .filter_map(|block| {
+            let inst = function.layout.last_inst(block)?;
+            let InstructionData::Brif { arg, blocks, .. } = &function.dfg.insts[inst] else {
+                return None;
+            };
+            let selected = &blocks[usize::from(!facts.condition(*arg)?)];
+            Some((
+                inst,
+                selected.block(&function.dfg.value_lists),
+                selected.args(&function.dfg.value_lists).collect::<Vec<_>>(),
+            ))
+        })
+        .collect::<Vec<_>>();
+    for (inst, target, args) in &changes {
+        function.dfg.replace(*inst).jump(*target, args);
+    }
+    changes.len()
+}
