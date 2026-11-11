@@ -208,6 +208,47 @@ pub(super) fn define<M: Module>(
             eprintln!("{symbol} adjacent typed accesses: {changed}");
         }
     }
+    if std::env::var_os("MECH_SHARE_REPEATED_BOUNDS").is_some() {
+        let changed = cfg_cleanup::share_repeated_bounds(&controls, &mut context, module.isa())?;
+        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} repeated bounds checks: {changed}");
+        }
+    }
+    if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_DEFER_EXIT_PACKET_WORDS").is_some()
+    {
+        let changed = super::phase_storage::sink_exit_packet_words(
+            &mut context.func,
+            input_words,
+            output_words,
+        );
+        if changed != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                eprintln!("{symbol} deferred exit packet words: {changed}");
+            }
+        }
+    }
+    if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_REUSE_DOMINATING_WINDOW_FACTS").is_some()
+    {
+        let changed =
+            cfg_cleanup::reuse_dominating_window_facts(&controls, &mut context, module.isa())?;
+        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} reused dominating window facts: {changed}");
+        }
+    }
+    if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_PROVE_SCALAR_SPANS").is_some()
+    {
+        let changed = cfg_cleanup::prove_scalar_spans(&controls, &mut context, module.isa())?;
+        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} proved scalar spans: {changed}");
+        }
+    }
     if let Some(path) = std::env::var_os("MECH_INSPECT_PHASE_CLIF") {
         let path = std::path::PathBuf::from(path);
         if path.file_stem().is_some_and(|name| name == symbol.as_str()) {

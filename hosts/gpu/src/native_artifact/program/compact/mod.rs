@@ -13,17 +13,21 @@ mod collections;
 mod constants;
 mod emit;
 mod flow;
+mod histogram;
 mod layout;
 mod packed;
+mod parallel;
 mod phase_storage;
 mod phases;
 pub(in crate::native_artifact) use phases::{
     NoGrowth, PRIVATE_HANDOFF, PrivatePhase, VectorContract,
 };
+mod map_index;
 mod maps;
 mod private_chains;
 mod recipes;
 mod strings;
+mod utf8_classes;
 mod widening_reduction;
 mod word_collections;
 mod word_packs;

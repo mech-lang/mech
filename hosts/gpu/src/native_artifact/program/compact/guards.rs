@@ -200,10 +200,10 @@ impl Guards {
             }
         }
         let mut states = vec![None::<State>; plan.blocks().len()];
-        states[plan.entry() as usize] = Some(initial);
+        states[flow.entry] = Some(initial);
         let mut queued = vec![false; states.len()];
-        let mut pending = VecDeque::from([plan.entry() as usize]);
-        queued[plan.entry() as usize] = true;
+        let mut pending = VecDeque::from([flow.entry]);
+        queued[flow.entry] = true;
         while let Some(site) = pending.pop_front() {
             queued[site] = false;
             let mut after = states[site].as_ref().unwrap().clone();

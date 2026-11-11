@@ -28,6 +28,36 @@ pub(super) fn literal(function: &Function, value: Value) -> Option<u64> {
     Some(imm.bits() as u64 & word_mask(function, value)?)
 }
 
+/// Normalize integer addition modulo the word width. Callers use I64 words.
+pub(super) fn constant_offset(f: &Function, mut value: Value) -> (Value, u64) {
+    let mut offset = 0u64;
+    loop {
+        value = f.dfg.resolve_aliases(value);
+        let step = match f.dfg.value_def(value) {
+            ValueDef::Result(inst, 0) => match f.dfg.insts[inst] {
+                Data::BinaryImm64 {
+                    opcode: Op::IaddImm,
+                    arg,
+                    imm,
+                } => Some((arg, imm.bits() as u64)),
+                Data::Binary {
+                    opcode: Op::Iadd,
+                    args: [left, right],
+                } => literal(f, right)
+                    .map(|constant| (left, constant))
+                    .or_else(|| literal(f, left).map(|constant| (right, constant))),
+                _ => None,
+            },
+            _ => None,
+        };
+        let Some((next, constant)) = step else {
+            return (value, offset);
+        };
+        offset = offset.wrapping_add(constant);
+        value = next;
+    }
+}
+
 #[cfg(test)]
 mod tests;
 

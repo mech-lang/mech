@@ -27,7 +27,7 @@ pub(super) fn supports(op: P) -> bool {
             | P::StringMapValues
     )
 }
-fn add(b: &mut FunctionBuilder<'_>, a: Value, c: Value, error: Block) -> Value {
+pub(super) fn add(b: &mut FunctionBuilder<'_>, a: Value, c: Value, error: Block) -> Value {
     let (sum, overflow) = b.ins().uadd_overflow(a, c);
     let valid = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
     guard(b, valid, error, 1);
@@ -39,7 +39,7 @@ fn address(b: &mut FunctionBuilder<'_>, pointer: Value, ordinal: Value, stride: 
 }
 /// Exact lower_bound plus presence. The source invariant is canonical sorted,
 /// unique UTF8 keys, maintained by every construction and insertion below.
-fn find(
+pub(super) fn find(
     b: &mut FunctionBuilder<'_>,
     pointer: Value,
     length: Value,
@@ -125,6 +125,8 @@ pub(super) fn emit(
     output: V,
     error: Block,
     endian: cranelift_codegen::ir::Endianness,
+    histogram: Option<cranelift_codegen::ir::FuncRef>,
+    classes: Option<(cranelift_codegen::ir::FuncRef, &super::utf8_classes::State)>,
 ) -> Result<(), NativeCompileError> {
     let zero = b.ins().iconst(types::I64, 0);
     let one = b.ins().iconst(types::I64, 1);
@@ -136,7 +138,7 @@ pub(super) fn emit(
             words,
             b,
             layout.slot(output.get()),
-            &[zero, zero, zero, one, zero, zero],
+            &[zero, zero, zero, zero, zero, zero],
         );
         return Ok(());
     }
@@ -159,62 +161,21 @@ pub(super) fn emit(
         ) {
             return Err(backend("native String histogram requires U64 counts"));
         }
-        let stride = entry.packed_bytes.unwrap();
-        let value_at = fields[1].packed_offset.unwrap();
-        let source = arrays::read(words, b, layout, operands[0]);
-        // Every input can introduce at most one distinct key. No mutable backing
-        // escapes this construction, so the generated loop needs no per-key COW.
-        let mut view = arrays.allocate(b, source[1], entry, false, error)?;
-        let header = b.create_block();
-        b.append_block_param(header, types::I64);
-        b.append_block_param(header, types::I64);
-        let body = b.create_block();
-        let update = b.create_block();
-        let insert = b.create_block();
-        let next = b.create_block();
-        b.append_block_param(next, types::I64);
-        let done = b.create_block();
-        b.append_block_param(done, types::I64);
-        b.ins().jump(header, &[zero.into(), zero.into()]);
-        b.switch_to_block(header);
-        let i = b.block_params(header)[0];
-        let count = b.block_params(header)[1];
-        let more = b.ins().icmp(IntCC::UnsignedLessThan, i, source[1]);
-        b.ins().brif(more, body, &[], done, &[count.into()]);
-        b.switch_to_block(body);
-        let key_at = address(b, source[0], i, 16);
-        let key = packed::load(b, key_at, &fields[0].ty)?;
-        let (at, present) = find(b, view[0], count, &key, stride, endian);
-        b.ins().brif(present, update, &[], insert, &[]);
-        b.switch_to_block(update);
-        let ptr = address(b, view[0], at, stride);
-        let current = b
-            .ins()
-            .load(types::I64, MemFlags::new(), ptr, value_at as i32);
-        let increment = add(b, current, one, error);
-        b.ins()
-            .store(MemFlags::new(), increment, ptr, value_at as i32);
-        b.ins().jump(next, &[count.into()]);
-        b.switch_to_block(insert);
-        let mut initialized = view.clone();
-        initialized[1] = count;
-        insert_space(arrays, b, &initialized, at, zero, stride);
-        let ptr = address(b, view[0], at, stride);
-        let mut value = key;
-        value.push(one);
-        packed::store(b, ptr, entry, &value)?;
-        let count = add(b, count, one, error);
-        b.ins().jump(next, &[count.into()]);
-        b.switch_to_block(next);
-        let count = b.block_params(next)[0];
-        let i = b.ins().iadd_imm(i, 1);
-        b.ins().jump(header, &[i.into(), count.into()]);
-        b.switch_to_block(done);
-        let count = b.block_params(done)[0];
-        view[1] = count;
-        view[3] = one;
-        view[4] = count;
-        arrays::write(words, b, layout.slot(output.get()), &view);
+        super::histogram::emit(
+            arrays,
+            b,
+            words,
+            layout,
+            operands[0],
+            output,
+            error,
+            endian,
+            classes
+                .map(|(function, _)| function)
+                .or(histogram)
+                .ok_or_else(|| backend("native histogram leaf absent"))?,
+            classes.map(|(_, state)| state),
+        )?;
         return Ok(());
     }
     arity(
@@ -267,7 +228,11 @@ pub(super) fn emit(
         return Err(backend("native Map key requires UTF8"));
     }
     let key = arrays::read(words, b, layout, operands[1]);
-    let (at, present) = find(b, source[0], source[1], &key, stride, endian);
+    let (at, present) = if op == P::MapInsert {
+        find(b, source[0], source[1], &key, stride, endian)
+    } else {
+        super::map_index::find(b, &source, &key, stride, endian, error)
+    };
     match op {
         P::MapContainsKey => {
             arrays::write(words, b, layout.slot(output.get()), &[present]);
@@ -291,15 +256,15 @@ pub(super) fn emit(
             let missing = b.ins().bxor_imm(present, 1);
             let length = add(b, source[1], missing, error);
             let capacity = Arrays::grown_capacity(b, source[2], length, stride, error);
-            let mut view = arrays.writable(b, &source, consume, capacity, entry, error)?;
+            let mut view =
+                super::map_index::writable(arrays, b, &source, consume, capacity, entry, error)?;
             insert_space(arrays, b, &view, at, present, stride);
             let ptr = address(b, view[0], at, stride);
             let mut values = key;
             values.extend(arrays::read(words, b, layout, operands[2]));
             packed::store(b, ptr, entry, &values)?;
             view[1] = length;
-            view[3] = one;
-            view[4] = length;
+            super::map_index::rebuild(b, &view, entry, error);
             arrays::write(words, b, layout.slot(output.get()), &view);
         }
         _ => return Err(backend("unselected native Map operation")),

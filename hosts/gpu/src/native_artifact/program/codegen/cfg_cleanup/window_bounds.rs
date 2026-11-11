@@ -27,7 +27,7 @@ fn unextended(f: &Function, mut value: Value) -> Option<Inst> {
     }
 }
 
-fn comparison(f: &Function, value: Value) -> Option<Inst> {
+pub(super) fn comparison(f: &Function, value: Value) -> Option<Inst> {
     let mut inst = unextended(f, value)?;
     loop {
         let inner = match f.dfg.insts[inst] {
