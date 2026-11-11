@@ -29,6 +29,8 @@ Ratios use the same fresh four-actor comparison. The parity score and gates use 
 
 [R315 timing, proof and replay evidence](native-selected-mismatch.md).
 
+R316 measures carried child addresses. The 81-case paired elapsed changes +0.482%. [R316 timing, proof and replay evidence](native-carried-child-addresses.md).
+
 ## Historical R314 measured comparison
 
 **46/81 cases faster than Roc (56.79%).** Goal 100%.
