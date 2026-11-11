@@ -60228,6 +60228,213 @@
         }
       },
       "complete_goal": false
+    },
+    "306": {
+      "git_parent": "f4836ed924b4e4f20d621296083293089ab84e4f",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "9283b56817d59042eb73420d0e05a3bc9ec2216f",
+      "retained_compiler": "R304",
+      "retained_source_packet_round": 304,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after measuring the callee-local indexed update.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "49e9fd3005aa14dea66978e32f384be27ea800d32a1bd98a620b81eb10619412",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "b0515bf9eaeb1cd69eb9475618590d5b65f40e99eca898e0748d12f5cfb47588",
+            "after": "ac33b5412fe4858861b3b03f00b70aaff5d738cbaf7fb317cd21f7e383507668"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/emit.rs": {
+            "before": "91d81515e0061fdd4b17e05a805d8218ea3434e26b206bc416a2ac88384c10ed",
+            "after": "45a66f32fa4109bb9e7de21f649c13b2dd64a3eb1e6f9aab89fdd0533e206ac7"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phases.rs": {
+            "before": "b545946d9d2a99a1711011886c42ec8983b97856d3bbe19e8af1b78e5ec92859",
+            "after": "2c099942225b1b2f3b2252f3ed1e763fc4dda231d0239da279522ec388631c49"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_traversal.rs": {
+            "before": "3ba06604fe5c8e47994151dbe22085eb0fa6f23c0a1af4366c3da54571b2584e",
+            "after": "352728cd04f9ec6874998b07c9428093b44c35733afff7645aa288c29613db51"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "before": "f52f1991f4a9ddedaf9ae5e2d720448d9da90274f37e394e3bfb995ba4236084",
+            "after": "410c55c3a9e3ea875eced27224cf7a758bb9f15f203233463f848dd931fb31c6"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_outlined.rs": {
+            "before": "5979ee8039d50618bf55299e309064ded4495b9f1ebfd2d9be32f932c8012309",
+            "after": "c2a04f56ad86cd4d724117c43e5215218ad62f3bd5c15af96014cf8767b0e44d"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_bounds.rs": {
+            "before": "75d9aa704b4cfcdad12d32cd6614dbb0076443f8fc4099a377dd369d22e88522",
+            "after": "2505b024579c61e8f4c1bf9170fffec324ab76b806985525ad87613ab4f5ce87"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/traversal_facts/flow.rs": {
+            "before": "9dc1adbffd43e743e03725721819f03798bd1677266569aa0fe9284ecec4acb6",
+            "after": "694ec2223ccdd9ce8ed3763e920c0a84b9c1797f2501a5a7fc7570ffff2123c9"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "134cd0e7c69dbcdda8d555fce49d3f9fd1d92a1d20fcf9a75b9f9bbcebb12c14",
+        "worker_sha256": "3e1cf4a1f3d402fb1af7c82ed7d93c39e4429909aaa3c40f3c5d88437393ee2c"
+      },
+      "summary": {
+        "published_parent": "f4836ed924b4e4f20d621296083293089ab84e4f",
+        "measured_parent": "9283b56817d59042eb73420d0e05a3bc9ec2216f",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 304,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 306,
+        "selected_mode": "local-tally-bounds",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9932521969799474,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 79,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r304": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc_in_peer_cohort": {
+          "mech-r304": 46,
+          "mech-candidate": 46
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": [
+            "empty",
+            "one-stored"
+          ]
+        },
+        "highest_paired_ratio": {
+          "case": "empty",
+          "ratio": 1.075753721423384
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.004575116663532
+        },
+        "next_experiment": "For random input, inspect whether the existing read guard and later write guard can share one current-view predicate inside the original checked body. The false edge must preserve the original write rejection and the source operations that precede it. This would avoid adding a second callee or a phase-entry check. A separate parity-frontier experiment can address the short natural-text reduction path."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "134cd0e7c69dbcdda8d555fce49d3f9fd1d92a1d20fcf9a75b9f9bbcebb12c14",
+            "metadata.json": "521827b94fa53b0b86a4dfc397be81271385a800a604c0e44ef9dee13f508a47"
+          },
+          "decoded": {
+            "object.o": "134cd0e7c69dbcdda8d555fce49d3f9fd1d92a1d20fcf9a75b9f9bbcebb12c14",
+            "metadata.json": "521827b94fa53b0b86a4dfc397be81271385a800a604c0e44ef9dee13f508a47"
+          }
+        },
+        "cleanup_tests_passed": 49,
+        "linked_witness_calls": 36,
+        "phase_bounds_tests_passed": 2,
+        "changed_machine_bodies": 6,
+        "checked_fallbacks": 6,
+        "root_code_identical": true
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r304": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc": {
+          "mech-r304": 46,
+          "mech-candidate": 46
+        }
+      },
+      "report": "docs/design/native-local-bounded-indexed-updates.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r306-local-tally-bounds-e3dbe45fafb2.tar.gz",
+        "bytes": 5721264,
+        "sha256": "e3dbe45fafb2471264e9e3d619f482a88ed6d7d1e90a90ca861961649b97c929",
+        "files": 990,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "0c67b42b7bee0297dcde88cfc64252142303e4edc15b6d7661110645e17c5691",
+            "counter-results.json": "18065a717caae75464dc040d1530cae5d10829b372d095e75adb05aa0efe3195",
+            "REPORT.md": "78ec6e5cdaa1c54795924b8726cb3e1fc898787e81776b8fe86f3989e04e5a07",
+            "library-results.json": "7f223c5a90b3cb839360ba631d7409440e958dd5103d6618c274bb6b5c54fb56",
+            "result-decision.json": "a6fca6e02940613148338f5da4656d506f1a47e9a8282dcab223c28e7208dcfc",
+            "screen-results.json": "5d97b2d6f60e2838008627d6072393172eef9e478b1f16eaae6f985e22e512cc",
+            "local-tally-bounds-profile-results.json": "f4ef462505e1a1411d7ad7e8862bfc9cc20e3008458fbe750eeb20c07d10b529",
+            "tally-profile-analysis.json": "411d5d9780a066083167c793740019942b35075d2e79462a0986315ac91f05a7"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
