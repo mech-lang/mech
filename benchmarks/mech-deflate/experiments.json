@@ -61350,6 +61350,200 @@
         }
       },
       "complete_goal": false
+    },
+    "313": {
+      "git_parent": "7877f21ecc971fede210201e865d1e0f6a6147c3",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "7877f21ecc971fede210201e865d1e0f6a6147c3",
+      "retained_compiler": "R313",
+      "retained_source_packet_round": 313,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Reuse dominated unsigned comparisons of the same current endpoint.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "e961bb5f9ec6d283bc069369fd5c0d704a4585de968733894b90dc4f6d089390",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/relations.rs": {
+            "before": null,
+            "after": "818e1c8c8098d205b15ca068d51664c8b783cf75834b1973aff655adbfb53417"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates.rs": {
+            "before": "fb831bfd1498b0dae9d2825f261773e4a2e844a78362a1c48d5f6e0605efe900",
+            "after": "237e3f9f795ebbe37daf5d51ddd572ec86821cbc25f2998977c412a37a88856c"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "8ea9ac258685215d2e024235a9ce13b8fdaa482035b1298c58455d6abef2e493",
+            "after": "e11bb3d8bdd847bd571b56b0930aacdf006b837ee92769d5658702dab027a851"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "fd1049a9fa040490eabebd8b5610743de57496cedab62929948ce6e27f285fcb",
+            "after": "c1a5a577f9fd9b7b57280d5c2988b8140da26ab5cea428685d7bc534ae960959"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "f5ab361f017446623057ffcc94f7dbbbab70f979770a8cc91d402ae1f4dc617c",
+        "worker_sha256": "56d8a3ae9380a96171f226369088996fd370813d98446d4a409af938cbab33ca"
+      },
+      "summary": {
+        "published_parent": "7877f21ecc971fede210201e865d1e0f6a6147c3",
+        "measured_parent": "7877f21ecc971fede210201e865d1e0f6a6147c3",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 313,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 313,
+        "selected_mode": "dominating-window-facts",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9921977979318048,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r312": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc_in_peer_cohort": {
+          "mech-r312": 46,
+          "mech-candidate": 46
+        },
+        "faster_than_both_in_peer_cohort": {
+          "mech-r312": 0,
+          "mech-candidate": 0
+        },
+        "roc_faster_than_libdeflate": 17,
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "eight-overlap",
+          "ratio": 1.0098921537808123
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.0007620294863728
+        },
+        "dual_peer_frontier": "heldout-window-32768",
+        "heap_families_identical": true
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "f5ab361f017446623057ffcc94f7dbbbab70f979770a8cc91d402ae1f4dc617c",
+            "metadata.json": "d1ed2750ac3a0f5caf4dce7588d985ad59138b02879ad5a0b09c8abf20957d36"
+          },
+          "decoded": {
+            "object.o": "f5ab361f017446623057ffcc94f7dbbbab70f979770a8cc91d402ae1f4dc617c",
+            "metadata.json": "d1ed2750ac3a0f5caf4dce7588d985ad59138b02879ad5a0b09c8abf20957d36"
+          }
+        },
+        "worker_sha256": "56d8a3ae9380a96171f226369088996fd370813d98446d4a409af938cbab33ca",
+        "cfg_cleanup_tests": 52,
+        "packet_word_tests": 2,
+        "window_facts_tests": 1,
+        "window_facts_jit_pairs": 60,
+        "warnings_as_errors": true
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r312": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc": {
+          "mech-r312": 46,
+          "mech-candidate": 46
+        }
+      },
+      "report": "docs/design/native-dominating-window-facts.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r313-dominating-window-facts-d8272c2cd309.tar.gz",
+        "bytes": 6224219,
+        "sha256": "d8272c2cd309faf5353c275a9713da8f094a89c5048cf1192f5faaf18af106a6",
+        "files": 1073,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "d1c19efa593b1c7790b369a818050c20fc5f40de7382d051b1a0b3a82962863d",
+            "counter-results.json": "2cd4ce484c4087c71d47c8168bcd20fa0d60ed4cfdef242170e4c5c88d251fdc",
+            "REPORT.md": "777019d5deec5372cf82308031119257be0f72106c0d324665499abae14c93cb",
+            "library-results.json": "d505755c2da1da0235af240f747dba2fe00cbbae6e5071f7585b612aaa43b5ca",
+            "result-decision.json": "190418bf2ccb6b06466f7289d2f64dcc2d302821db8491a7dcff49ee802c77b5",
+            "screen-disposition.json": "3a4bb90469be50477a6c32b3acd8b7237cc76190a78717552353f1102f7da139",
+            "profile-summary.json": "7204ddcd75a13ea0b2da7050b822eb7cc9de1206d9a07f28e30b944f0487a098",
+            "dual-peer-frontier.json": "047743489d6ddb6beb1f212ae856d7209e8d9965d86c182939efff40eef14b2d"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
