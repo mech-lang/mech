@@ -23,12 +23,24 @@ static TOKENS: AtomicU64 = AtomicU64::new(0);
 
 /// A span is constructed only by the selected current-visit projection. Its
 /// complete admitted owner stays pinned; the projected key is never a Value.
+#[derive(Clone, Copy)]
 pub(in crate::native_artifact) enum Key<'a> {
     Canonical(&'a Value),
     Span {
         value: mech_engine::native_artifact::NativeMatchValue,
         owner: &'a Value,
         bytes: &'a core::ops::Range<usize>,
+    },
+    MapOrdinal {
+        value: mech_engine::native_artifact::NativeMatchValue,
+        owner: &'a Value,
+        text: &'a str,
+        ordinal: usize,
+    },
+    MatrixCell {
+        value: mech_engine::native_artifact::NativeMatchValue,
+        owner: &'a Value,
+        text: &'a str,
     },
 }
 impl<'a> From<&'a Value> for Key<'a> {
@@ -69,6 +81,9 @@ fn width(schema: &SchemaBody) -> Result<usize, Error> {
         SchemaBody::UnsignedInteger(_) | SchemaBody::Map { .. } => Ok(1),
         SchemaBody::Tuple(items) => items.iter().try_fold(0usize, |n, item| {
             n.checked_add(width(item)?).ok_or(Error::Overflow)
+        }),
+        SchemaBody::Record(fields) => fields.iter().try_fold(0usize, |n, field| {
+            n.checked_add(width(&field.schema)?).ok_or(Error::Overflow)
         }),
         SchemaBody::Enum { variants, .. } => variants
             .iter()
@@ -111,6 +126,13 @@ fn seed<'a>(
                 seed(field, item, words, at, map)?;
             }
         }
+        (SchemaBody::Record(fields), ValueData::Record(value))
+            if fields.len() == value.fields().len() =>
+        {
+            for (field, item) in fields.iter().zip(value.fields()) {
+                seed(&field.schema, item, words, at, map)?;
+            }
+        }
         (SchemaBody::Enum { variants, .. }, ValueData::Enum(value)) => {
             words[*at] = u64::from(value.ordinal());
             *at += 1;
@@ -151,6 +173,101 @@ pub(in crate::native_artifact) fn take_native_probe_counts() -> (u64, u64) {
     NATIVE_PROBE_COUNTS.with(|counts| counts.replace((0, 0)))
 }
 
+enum SeedSource<'a> {
+    Canonical(&'a Value),
+    Frame(&'a mech_engine::native_artifact::NativeMapSeedFrame),
+}
+impl SeedSource<'_> {
+    fn schema(&self) -> mech_core::SchemaId {
+        match self {
+            Self::Canonical(v) => v.schema(),
+            Self::Frame(v) => v.schema(),
+        }
+    }
+    fn key(&self) -> mech_core::SchemaKey {
+        match self {
+            Self::Canonical(v) => v.schema_key(),
+            Self::Frame(v) => v.schema_key(),
+        }
+    }
+    fn shape_empty(&self) -> bool {
+        match self {
+            Self::Canonical(v) => v.shape().parameter_values().is_empty(),
+            Self::Frame(_) => true,
+        }
+    }
+    fn retained(&self, work: &NativeLibraryWorkBudget) -> Result<u64, Error> {
+        let memory = work.memory_budget();
+        match self {
+            Self::Canonical(v) => v
+                .memory_budget_retained_bytes(&memory)
+                .ok_or(Error::Binding("unadmitted seed")),
+            Self::Frame(v) => {
+                v.check_account(work)
+                    .map_err(|_| Error::Binding("foreign private seed account"))?;
+                // Children may alias. A genuine same-account pin is enough;
+                // complete caller inventory, not a sum of shared owners, prices coexistence.
+                let mut largest = 0;
+                for child in v.children().iter().flatten() {
+                    largest = largest.max(
+                        child
+                            .memory_budget_retained_bytes(&memory)
+                            .ok_or(Error::Binding("unadmitted private seed child"))?,
+                    );
+                }
+                add(largest, v.metadata_demand().turn_peak_bytes)
+            }
+        }
+    }
+    fn footprint(&self, schemas: &SchemaTable) -> Result<(u64, u64), Error> {
+        match self {
+            Self::Canonical(v) => {
+                let f = v
+                    .retained_footprint(schemas)
+                    .map_err(|_| Error::Binding("seed footprint"))?;
+                Ok((f.retained_bytes, f.node_count))
+            }
+            Self::Frame(v) => Ok((v.logical_retained_bytes(), v.logical_nodes())),
+        }
+    }
+    fn words<'a>(
+        &'a self,
+        body: &SchemaBody,
+        words: &mut [u64; 33],
+    ) -> Result<(usize, &'a mech_core::snapshot::MapValue), Error> {
+        match self {
+            Self::Canonical(v) => {
+                let mut at = 0;
+                let mut map = None;
+                seed(body, v.data(), words, &mut at, &mut map)?;
+                map.ok_or(Error::Binding("missing seed map"))
+            }
+            Self::Frame(v) => {
+                if !matches!(body, SchemaBody::Tuple(_) | SchemaBody::Record(_))
+                    || width(body)? != v.children().len()
+                {
+                    return Err(Error::Binding("private seed layout differs"));
+                }
+                let mut map = None;
+                for (at, child) in v.children().iter().enumerate() {
+                    match child
+                        .as_ref()
+                        .ok_or(Error::Binding("missing private seed child"))?
+                        .data()
+                    {
+                        ValueData::U64(value) if at != v.map_ordinal() => words[at] = *value,
+                        ValueData::Map(value) if at == v.map_ordinal() && map.is_none() => {
+                            map = Some((at, value))
+                        }
+                        _ => return Err(Error::Binding("private seed kind differs")),
+                    }
+                }
+                map.ok_or(Error::Binding("private seed lost map"))
+            }
+        }
+    }
+}
+
 pub(in crate::native_artifact) struct Binding<'plan> {
     // Retire actual table/keys before the enclosing binding's reservation.
     map: Option<OwnedStringMap>,
@@ -168,6 +285,111 @@ impl<'plan> Binding<'plan> {
         region: &'plan NativeMapOwnerRegion,
         schemas: &Arc<SchemaTable>,
         source: &Value,
+        work: NativeLibraryWorkBudget,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<(Self, InitialWords), Error> {
+        Self::import_source(
+            plan,
+            region,
+            schemas,
+            SeedSource::Canonical(source),
+            None,
+            work,
+            geometry,
+            limits,
+        )
+    }
+    pub(in crate::native_artifact) fn import_frame(
+        plan: &'plan Plan,
+        region: &'plan NativeMapOwnerRegion,
+        schemas: &Arc<SchemaTable>,
+        frame: &mech_engine::native_artifact::NativeMapSeedFrame,
+        work: NativeLibraryWorkBudget,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<(Self, InitialWords), Error> {
+        Self::import_source(
+            plan,
+            region,
+            schemas,
+            SeedSource::Frame(frame),
+            None,
+            work,
+            geometry,
+            limits,
+        )
+    }
+    pub(in crate::native_artifact) fn import_frame_with_keys(
+        plan: &'plan Plan,
+        region: &'plan NativeMapOwnerRegion,
+        schemas: &Arc<SchemaTable>,
+        frame: &mech_engine::native_artifact::NativeMapSeedFrame,
+        keys: &Value,
+        work: NativeLibraryWorkBudget,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<(Self, InitialWords), Error> {
+        Self::import_source(
+            plan,
+            region,
+            schemas,
+            SeedSource::Frame(frame),
+            Some(keys),
+            work,
+            geometry,
+            limits,
+        )
+    }
+    pub(in crate::native_artifact) fn has_borrowed_keys(&self) -> bool {
+        self.map
+            .as_ref()
+            .is_some_and(OwnedStringMap::has_borrowed_keys)
+    }
+    pub(in crate::native_artifact) fn fixed_call_geometry(
+        &self,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<(), Error> {
+        let map = self.current(self.token)?;
+        self.geometry(
+            self.token,
+            geometry,
+            limits,
+            map.len() as u64,
+            map.key_bytes(),
+            0,
+        )
+        .map(|_| ())
+    }
+    pub(in crate::native_artifact) fn fixed_native_values(
+        &mut self,
+        source: &Value,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<Option<(u64, u64, u64)>, Error> {
+        let map = self.current(self.token)?;
+        self.geometry(
+            self.token,
+            geometry,
+            limits,
+            map.len() as u64,
+            map.key_bytes(),
+            0,
+        )?;
+        let token = self.token;
+        self.map
+            .as_mut()
+            .ok_or(Error::Binding("closed fixed-key owner"))?
+            .native_values(source)
+            .map(|v| v.map(|(pointer, len)| (pointer, len, token)))
+    }
+    fn import_source(
+        plan: &'plan Plan,
+        region: &'plan NativeMapOwnerRegion,
+        schemas: &Arc<SchemaTable>,
+        source: SeedSource<'_>,
+        borrowed_keys: Option<&Value>,
         work: NativeLibraryWorkBudget,
         geometry: Geometry,
         limits: MemoryBudgetLimits,
@@ -219,12 +441,10 @@ impl<'plan> Binding<'plan> {
             cap(limits.max_temporary_bytes)?,
             cap(limits.max_retained_nodes)?,
         );
-        let retained = source
-            .memory_budget_retained_bytes(&memory)
-            .ok_or(Error::Binding("unadmitted seed"))?;
+        let retained = source.retained(&work)?;
         if source.schema() != ty.schema()
-            || source.schema_key() != ty.schema_key()
-            || !source.shape().parameter_values().is_empty()
+            || source.key() != ty.schema_key()
+            || !source.shape_empty()
         {
             return Err(Error::Binding("seed schema"));
         }
@@ -236,20 +456,18 @@ impl<'plan> Binding<'plan> {
                 if schemas.get(ty.schema()) != Some(ty.definition()) {
                     return Err(Error::Binding("seed schema context"));
                 }
-                let footprint = source
-                    .retained_footprint(schemas)
-                    .map_err(|_| Error::Binding("seed footprint"))?;
-                if geometry.live_bytes < retained || geometry.live_nodes < footprint.node_count {
+                let (footprint_bytes, footprint_nodes) = source.footprint(schemas)?;
+                if geometry.live_bytes < retained || geometry.live_nodes < footprint_nodes {
                     return Err(Error::Binding("incomplete seed geometry"));
                 }
                 check(1, cap(limits.max_output_elements)?, "output elements")?;
                 check(
-                    footprint.retained_bytes,
+                    footprint_bytes,
                     cap(limits.max_output_bytes)?,
                     "output bytes",
                 )?;
                 check(
-                    footprint.retained_bytes,
+                    footprint_bytes,
                     cap(limits.max_cloned_bytes)?,
                     "cloned bytes",
                 )?;
@@ -267,17 +485,8 @@ impl<'plan> Binding<'plan> {
                     len: words_len,
                     _reservation: memory.reserve_capacity(size_of::<InitialWords>() as u64)?,
                 };
-                let mut source_map = None;
-                let mut at = 0;
-                seed(
-                    ty.definition().body(),
-                    source.data(),
-                    &mut initial.words,
-                    &mut at,
-                    &mut source_map,
-                )?;
                 let (map_word, source_map) =
-                    source_map.ok_or(Error::Binding("missing seed map"))?;
+                    source.words(ty.definition().body(), &mut initial.words)?;
                 let nodes = add(source_map.entries().len() as u64, 3)?;
                 check(
                     add(geometry.live_nodes, nodes)?,
@@ -287,23 +496,60 @@ impl<'plan> Binding<'plan> {
                 let remaining = cap(limits.max_temporary_bytes)?
                     .checked_sub(outside)
                     .ok_or(Error::Overflow)?;
-                let mut map = OwnedStringMap::new_with_memory(
-                    work.clone(),
-                    Limits {
-                        entries: source_map.entries().len() as u64,
-                        retained_bytes: remaining,
-                        temporary_bytes: remaining,
-                    },
-                    memory.clone(),
-                )?;
-                for entry in source_map.entries() {
-                    let (ValueData::String(key), ValueData::U64(value)) =
-                        (entry.key().data(), entry.value())
-                    else {
-                        return Err(Error::Binding("seed map key/value kind"));
+                let storage = Limits {
+                    entries: source_map.entries().len() as u64,
+                    retained_bytes: remaining,
+                    temporary_bytes: remaining,
+                };
+                let borrowed =
+                    if let (SeedSource::Frame(frame), Some(keys)) = (&source, borrowed_keys) {
+                        let child = frame
+                            .children()
+                            .get(map_word)
+                            .and_then(Option::as_ref)
+                            .ok_or(Error::Binding("private seed lost borrowed map child"))?;
+                        match OwnedStringMap::try_with_borrowed_keys(
+                            child,
+                            keys,
+                            schemas,
+                            work.clone(),
+                            storage,
+                            memory.clone(),
+                        ) {
+                            Ok(owner) => owner,
+                            // Keep all failed admission work on this original call.
+                            // Ordinary import receives no renewed relative allowance.
+                            Err(
+                                Error::Memory(_)
+                                | Error::Work(_)
+                                | Error::Limit { .. }
+                                | Error::Allocation,
+                            ) => None,
+                            Err(error) => return Err(error),
+                        }
+                    } else {
+                        None
                     };
-                    map.insert(key, *value)?;
-                }
+                let map = if let Some(map) = borrowed {
+                    map
+                } else {
+                    let mut map =
+                        OwnedStringMap::new_with_memory(work.clone(), storage, memory.clone())?;
+                    for entry in source_map.entries() {
+                        let (ValueData::String(key), ValueData::U64(value)) =
+                            (entry.key().data(), entry.value())
+                        else {
+                            return Err(Error::Binding("seed map key/value kind"));
+                        };
+                        map.insert(key, *value)?;
+                    }
+                    map
+                };
+                check(
+                    add(geometry.live_nodes, add(map.retained_nodes(), 2)?)?,
+                    cap(limits.max_retained_nodes)?,
+                    "retained nodes",
+                )?;
                 let token = token_from(&TOKENS, &work)?;
                 initial.words[map_word] = token;
                 Ok((
@@ -328,6 +574,28 @@ impl<'plan> Binding<'plan> {
         }
         self.map.as_ref().ok_or(Error::Binding("closed owner"))
     }
+    pub(in crate::native_artifact) fn constructor_statistics(
+        &self,
+        site: usize,
+        token: u64,
+    ) -> Result<(u64, u64), Error> {
+        let map = self.current(token)?;
+        let Some(Action::LibraryCall {
+            template, output, ..
+        }) = self.plan.blocks().get(site).map(|block| block.action())
+        else {
+            return Err(Error::Binding("constructor action missing"));
+        };
+        if !self.region.values().contains(output)
+            || !matches!(
+                template.primitive(),
+                Primitive::CompositePack(_) | Primitive::EnumPack
+            )
+        {
+            return Err(Error::Binding("unselected owner constructor"));
+        }
+        Ok((map.len() as u64, map.key_bytes()))
+    }
     pub(in crate::native_artifact) fn retained_bytes(&self) -> Result<u64, Error> {
         add(
             self.map
@@ -339,7 +607,7 @@ impl<'plan> Binding<'plan> {
     pub(in crate::native_artifact) fn retained_nodes(&self) -> Result<u64, Error> {
         self.map
             .as_ref()
-            .map_or(Ok(1), |map| add(map.len() as u64, 3))
+            .map_or(Ok(1), |map| add(map.retained_nodes(), 2))
     }
     fn site(
         &self,
@@ -383,6 +651,49 @@ impl<'plan> Binding<'plan> {
         geometry: Geometry,
     ) -> Result<&'a str, Error> {
         let ty = &self.plan.values()[operand.get() as usize];
+        if let Key::MapOrdinal {
+            value, owner, text, ..
+        } = key
+        {
+            if value != operand
+                || ty.definition().body() != &SchemaBody::String
+                || !ty.definition().dimension_parameters().is_empty()
+                || !matches!(owner.data(), ValueData::Map(_))
+            {
+                return Err(Error::Binding("wrong borrowed Map key"));
+            }
+            let retained = owner
+                .memory_budget_retained_bytes(&self.work.memory_budget())
+                .ok_or(Error::Binding("unadmitted Map key snapshot"))?;
+            let map = self.map.as_ref().ok_or(Error::Binding("closed owner"))?;
+            if geometry.live_bytes < add(self.retained_bytes()?, retained)?
+                || geometry.live_nodes
+                    < add(map.len() as u64, 5)?.max(add(map.retained_nodes(), 4)?)
+            {
+                return Err(Error::Binding("incomplete Map key geometry"));
+            }
+            return Ok(text);
+        }
+        if let Key::MatrixCell { value, owner, text } = key {
+            if value != operand
+                || ty.definition().body() != &SchemaBody::String
+                || !ty.definition().dimension_parameters().is_empty()
+                || !matches!(owner.data(), ValueData::Matrix(matrix)
+                    if matches!(matrix.elements(), mech_core::snapshot::SequenceView::String(_)))
+            {
+                return Err(Error::Binding("wrong borrowed matrix key"));
+            }
+            let retained = owner
+                .memory_budget_retained_bytes(&self.work.memory_budget())
+                .ok_or(Error::Binding("unadmitted matrix key source"))?;
+            let map = self.map.as_ref().ok_or(Error::Binding("closed owner"))?;
+            if geometry.live_bytes < add(self.retained_bytes()?, retained)?
+                || geometry.live_nodes < add(map.len() as u64, 5)?
+            {
+                return Err(Error::Binding("incomplete matrix key geometry"));
+            }
+            return Ok(text);
+        }
         let (owner, bytes) = match key {
             Key::Canonical(key) => {
                 if key.schema() != ty.schema() || key.schema_key() != ty.schema_key() {
@@ -403,6 +714,7 @@ impl<'plan> Binding<'plan> {
                 }
                 (owner, Some(bytes))
             }
+            Key::MatrixCell { .. } | Key::MapOrdinal { .. } => unreachable!("handled above"),
         };
         let ValueData::String(text) = owner.data() else {
             return Err(Error::Binding("key kind"));
@@ -435,7 +747,7 @@ impl<'plan> Binding<'plan> {
         finite(limits, cap)?;
         let map = self.current(token)?;
         if geometry.live_bytes < self.retained_bytes()?
-            || geometry.live_nodes < add(map.len() as u64, 3)?
+            || geometry.live_nodes < add(map.len() as u64, 3)?.max(add(map.retained_nodes(), 2)?)
         {
             return Err(Error::Binding("incomplete owner geometry"));
         }
@@ -515,7 +827,17 @@ impl<'plan> Binding<'plan> {
     ) -> Result<u64, Error> {
         self.current(token)?;
         let (operands, _) = self.site(site, true)?;
-        let key = self.key(operands[1], key.into(), geometry)?;
+        let key = key.into();
+        let ordinal = match key {
+            Key::MapOrdinal {
+                owner,
+                ordinal,
+                text,
+                ..
+            } => Some((owner, ordinal, text)),
+            _ => None,
+        };
+        let key = self.key(operands[1], key, geometry)?;
         let work = self.work.clone();
         work.with_call_limits(
             cap(limits.max_compute_work)?,
@@ -523,7 +845,15 @@ impl<'plan> Binding<'plan> {
             || {
                 work.charge(256, 0)?;
                 let map = self.current(token)?;
-                let fresh = map.get(key)?.is_none();
+                let borrowed = map.has_borrowed_keys();
+                if borrowed && ordinal.is_none() {
+                    return Err(Error::Binding("borrowed dictionary write lost ordinal"));
+                }
+                let fresh = if borrowed {
+                    false
+                } else {
+                    map.get(key)?.is_none()
+                };
                 let count = add(map.len() as u64, u64::from(fresh))?;
                 let cloned = if fresh { key.len() as u64 } else { 0 };
                 let payload = add(map.key_bytes(), cloned)?;
@@ -533,7 +863,12 @@ impl<'plan> Binding<'plan> {
                 let next = token_from(&TOKENS, &work)?;
                 let map = self.map.as_mut().ok_or(Error::Binding("closed owner"))?;
                 map.set_limits(storage);
-                map.insert(key, value)?;
+                if borrowed {
+                    let (source, index, text) = ordinal.unwrap();
+                    map.replace_borrowed(source, index, text, value)?;
+                } else {
+                    map.insert(key, value)?;
+                }
                 self.token = next;
                 Ok(next)
             },
@@ -671,6 +1006,7 @@ impl<'plan> Binding<'plan> {
         Ok(ty.schema())
     }
 
+    #[cfg(test)]
     pub(in crate::native_artifact) fn finish(
         &mut self,
         site: usize,
@@ -679,11 +1015,42 @@ impl<'plan> Binding<'plan> {
         geometry: Geometry,
         limits: MemoryBudgetLimits,
     ) -> Result<Value, Error> {
+        self.finish_words(site, token, &[token], schemas, geometry, limits)
+    }
+
+    pub(in crate::native_artifact) fn finish_words(
+        &mut self,
+        site: usize,
+        token: u64,
+        words: &[u64],
+        schemas: &Arc<SchemaTable>,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+    ) -> Result<Value, Error> {
+        match self.finish_words_choice(site, token, words, schemas, geometry, limits, false)? {
+            super::string::frozen::FreezeChoice::Canonical(value) => Ok(value),
+            super::string::frozen::FreezeChoice::Frozen(_) => {
+                Err(Error::Binding("unexpected private canonical publication"))
+            }
+        }
+    }
+    pub(in crate::native_artifact) fn finish_words_choice(
+        &mut self,
+        site: usize,
+        token: u64,
+        words: &[u64],
+        schemas: &Arc<SchemaTable>,
+        geometry: Geometry,
+        limits: MemoryBudgetLimits,
+        may_freeze: bool,
+    ) -> Result<super::string::frozen::FreezeChoice, Error> {
         self.current(token)?;
         if site != self.region.tail().exit() as usize {
             return Err(Error::Binding("unselected owner exit"));
         }
         let work = self.work.clone();
+        let enclosing = work.has_active_call_limit()?;
+        let started = work.used();
         work.with_call_limits(
             cap(limits.max_compute_work)?,
             cap(limits.max_comparison_work)?,
@@ -692,6 +1059,22 @@ impl<'plan> Binding<'plan> {
                 let ty = &self.plan.values()[self.region.tail().result().get() as usize];
                 if schemas.get(ty.schema()) != Some(ty.definition()) {
                     return Err(Error::Binding("result schema context"));
+                }
+                let map_word = match ty.definition().body() {
+                    SchemaBody::Map { .. } => Some(0),
+                    SchemaBody::Tuple(fields) => fields
+                        .iter()
+                        .position(|field| matches!(field, SchemaBody::Map { .. })),
+                    SchemaBody::Record(fields) => fields
+                        .iter()
+                        .position(|field| matches!(field.schema, SchemaBody::Map { .. })),
+                    _ => None,
+                }
+                .ok_or(Error::Binding("result map field"))?;
+                if words.len() != width(ty.definition().body())?
+                    || words.get(map_word).copied() != Some(token)
+                {
+                    return Err(Error::Binding("result word shape/token"));
                 }
                 let map = self.current(token)?;
                 self.geometry(
@@ -702,7 +1085,31 @@ impl<'plan> Binding<'plan> {
                     map.key_bytes(),
                     map.key_bytes(),
                 )?;
-                let value = map.publish(schemas, ty.schema(), geometry, limits)?;
+                let value = if may_freeze
+                    && !enclosing
+                    && matches!(ty.definition().body(), SchemaBody::Map { .. })
+                {
+                    let map = self
+                        .map
+                        .take()
+                        .ok_or(Error::Binding("closed dictionary owner"))?;
+                    map.freeze_or_publish_in_call(
+                        schemas,
+                        ty.schema(),
+                        geometry,
+                        limits,
+                        started,
+                        true,
+                    )?
+                } else {
+                    super::string::frozen::FreezeChoice::Canonical(map.publish_result(
+                        schemas,
+                        ty.schema(),
+                        words,
+                        geometry,
+                        limits,
+                    )?)
+                };
                 self.token = 0;
                 drop(self.map.take());
                 Ok(value)

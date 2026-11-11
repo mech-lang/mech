@@ -192,6 +192,10 @@ pub(in crate::native_artifact) fn render_main(
 ) -> String {
     template
         .replace("@IDENTITY_SYMBOL@", symbol)
+        .replace(
+            "@IMAGE_BINDING_SYMBOL@",
+            &format!("{symbol}_descriptor_binding_v1"),
+        )
         .replace("@BYTECODE_SHA256@", &digest(bytecode))
 }
 
@@ -416,8 +420,9 @@ lto = "thin"
                 .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
         ),
     ]);
-    // Bind both inspectable and embedded copies to the SAME checked Object,
-    // bytecode and source. The launcher loads only the smaller packed copy.
+    // Pin the inspectable and compatibility images to the SAME checked Object,
+    // bytecode and source. New program launchers reference the typed metadata
+    // export in program.o directly; the packed JSON remains a legacy image.
     if let Some(image) = inputs.descriptor_image {
         #[cfg(feature = "canonical-native-program")]
         files.insert(

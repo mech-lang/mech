@@ -1,0 +1,5 @@
+{
+  "hosts/gpu/src/native_artifact/program/image/identity.rs": "ir237-source-hosts__gpu__src__native_artifact__program__image__identity.rs.txt",
+  "src/core/src/function/specialization.rs": "ir237-source-src__core__src__function__specialization.rs.txt",
+  "src/core/src/type_system/resolved_value.rs": "ir237-source-src__core__src__type_system__resolved_value.rs.txt"
+}

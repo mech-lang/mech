@@ -1,0 +1,68 @@
+{
+  "upstream_sha": "fc2982b0c929b1b701209d401a1dc30c773ef4ab",
+  "index_base": 0,
+  "expected_scope": "Exact unmodified upstream Rust output, including repeated index-zero fallback when fewer than five candidates have positive overlap. This compatibility expectation is intentionally distinct from strict benchmark validation.",
+  "license_scope": "first-10/100/500 source records are subsets of upstream posts.json and retain LICENSE.upstream (MIT). Unicode/ties and empty-tags fixtures were authored for this comparison.",
+  "fixtures": [
+    {
+      "name": "first-10",
+      "input": "posts-first-10.json",
+      "expected": "expected-first-10.json",
+      "posts": 10,
+      "sha256": "d1f8fc0b78afc85f6e8fee37201e8df147ffd38ef98c3d1837eb57b614cefb8b",
+      "rust_zero_fallback_rows": [
+        0,
+        1,
+        3,
+        5,
+        9
+      ],
+      "provenance": "First n original upstream records, preserving input order"
+    },
+    {
+      "name": "first-100",
+      "input": "posts-first-100.json",
+      "expected": "expected-first-100.json",
+      "posts": 100,
+      "sha256": "102bc717d350440fe452e4e90a8dae8cce57a1c62e05d5b14c53050e2d0de75b",
+      "rust_zero_fallback_rows": [],
+      "provenance": "First n original upstream records, preserving input order"
+    },
+    {
+      "name": "first-500",
+      "input": "posts-first-500.json",
+      "expected": "expected-first-500.json",
+      "posts": 500,
+      "sha256": "6895f88ae76b09b36c8c5bb008ae1338e69020c6a87f6033447e48a1fea84f2d",
+      "rust_zero_fallback_rows": [],
+      "provenance": "First n original upstream records, preserving input order"
+    },
+    {
+      "name": "unicode-ties",
+      "input": "posts-unicode-ties.json",
+      "expected": "expected-unicode-ties.json",
+      "posts": 8,
+      "sha256": "44884a03317fe2254a405645cff447997b14ab8b0bf1abc57da824e562210b7e",
+      "rust_zero_fallback_rows": [],
+      "provenance": "Authored UTF-8/ties input"
+    },
+    {
+      "name": "empty-tags",
+      "input": "posts-empty-tags.json",
+      "expected": "expected-empty-tags.json",
+      "posts": 8,
+      "sha256": "bfce06227d8abffa82c6abae1ceb1cbab8228cf2874a97e32d0ef8fb04ff9e35",
+      "rust_zero_fallback_rows": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "provenance": "Authored sparse/empty-tag compatibility input"
+    }
+  ]
+}

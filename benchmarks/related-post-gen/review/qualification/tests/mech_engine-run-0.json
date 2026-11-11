@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-fixed-frame-arenas-tests-20261106-v1/mech_engine-tests",
+    "native_artifact::",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 5.953294583130628
+}

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-conjoined-window-integration-runners-20261107-v1/mask-frontier-image-probe/probe"
+  ],
+  "exit": 0,
+  "seconds": 3.2707901659887284,
+  "stdout": "{\"forged_cases\":[{\"case\":\"positive_to_zero\",\"independent_rejected\":true,\"object_bound_rejected\":true},{\"case\":\"zero_to_positive\",\"independent_rejected\":true,\"object_bound_rejected\":true},{\"case\":\"missing\",\"independent_rejected\":true,\"object_bound_rejected\":true},{\"case\":\"empty\",\"independent_rejected\":true,\"object_bound_rejected\":true},{\"case\":\"duplicate\",\"independent_rejected\":true,\"object_bound_rejected\":true},{\"case\":\"remove_zero\",\"independent_rejected\":true,\"object_bound_rejected\":true},{\"case\":\"wrong_header\",\"independent_rejected\":true,\"object_bound_rejected\":true},{\"case\":\"wrong_array\",\"independent_rejected\":true,\"object_bound_rejected\":true}],\"genuine_legacy_independent_bound_and_compiled_module_accepted\":true,\"native_entry_never_invoked\":true}\n",
+  "stderr": "",
+  "selected_query_header": 1282
+}

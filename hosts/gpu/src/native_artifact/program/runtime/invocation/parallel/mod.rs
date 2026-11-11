@@ -44,6 +44,10 @@ thread_local! { pub(in crate::native_artifact::program::runtime) static TEST_DIS
 pub(in crate::native_artifact::program::runtime) enum Capture {
     Word(u32, u64),
     Value(u32, Value),
+    Frame(
+        u32,
+        std::sync::Arc<crate::native_artifact::program::runtime::buffer_frames::CapturedFrame>,
+    ),
 }
 pub(in crate::native_artifact::program::runtime) enum Yield {
     Word(u64),
@@ -67,6 +71,8 @@ pub(in crate::native_artifact::program::runtime) struct Receipt {
     pub worker_credit_batches: u64,
     pub worker_credit_reclaims: u64,
     pub fused_string_map_bytes: u64,
+    pub numeric_regions: u64,
+    pub numeric_work: u64,
 }
 pub(in crate::native_artifact::program::runtime) struct Worker {
     pub region: usize,
@@ -107,8 +113,8 @@ fn scheduler_nodes(workers: usize, regions: usize, captures: usize) -> Result<u6
     // each task's escrow/local-account owner, scope/thread closure, handle,
     // job, result, receipt and capture-vector roots; then Capture entries.
     // Captured/result canonical payloads keep their independent shared claims.
-    amount(regions, 8, 17)?
-        .checked_add(amount(workers, 16, 0)?)
+    amount(regions, 8, 18)?
+        .checked_add(amount(workers, 17, 0)?)
         .and_then(|nodes| nodes.checked_add(amount(captures, workers as u64 + 1, 0).ok()?))
         .ok_or_else(|| invalid("parallel scheduler node count overflow"))
 }
@@ -298,6 +304,7 @@ impl Invocation<'_, '_, '_> {
         let metadata = amount(
             workers,
             (std::mem::size_of::<Receipt>()
+                + std::mem::size_of::<Worker>()
                 + std::mem::size_of::<ReadyRegion>()
                 + std::mem::size_of::<PendingRegion>()
                 + 1024) as u64,
@@ -367,6 +374,21 @@ impl Invocation<'_, '_, '_> {
                     captures.push(Capture::Word(slot, unsafe {
                         *frame.base.locals.add(slot as usize)
                     }));
+                } else if descriptor
+                    .metadata()
+                    .buffer_frames
+                    .fields_at(slot as usize)
+                    .is_some()
+                {
+                    captures.push(Capture::Frame(
+                        slot,
+                        self.state.buffer_frames.capture_frame(
+                            &descriptor.metadata().buffer_frames,
+                            slot,
+                            &memory,
+                            &mut self.state.control.work,
+                        )?,
+                    ));
                 } else {
                     captures.push(Capture::Value(
                         slot,
@@ -575,6 +597,18 @@ impl Invocation<'_, '_, '_> {
                 .max(activity.peak.load(Ordering::Relaxed) as u64);
         }
         for result in results.iter().filter_map(|result| result.as_ref().ok()) {
+            self.state.stats.parallel_numeric_regions = self
+                .state
+                .stats
+                .parallel_numeric_regions
+                .checked_add(result.numeric_regions)
+                .ok_or_else(|| invalid("parallel numeric receipt count overflow"))?;
+            self.state.stats.parallel_numeric_work = self
+                .state
+                .stats
+                .parallel_numeric_work
+                .checked_add(result.numeric_work)
+                .ok_or_else(|| invalid("parallel numeric receipt debit overflow"))?;
             self.state.control.visits = self
                 .state
                 .control
@@ -836,6 +870,8 @@ impl Invocation<'_, '_, '_> {
             worker_credit_batches: self.state.stats.worker_credit_batches,
             worker_credit_reclaims: self.state.stats.worker_credit_reclaims,
             fused_string_map_bytes: self.state.stats.fused_string_map_bytes,
+            numeric_regions: self.state.stats.parallel_numeric_regions,
+            numeric_work: self.state.stats.parallel_numeric_work,
         });
         Ok(Some(1))
     }

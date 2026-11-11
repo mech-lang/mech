@@ -2,11 +2,15 @@
 use super::*;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Condvar;
 use std::sync::{MutexGuard, TryLockError};
 
 #[path = "native_worker_credits.rs"]
 mod credits;
 pub use credits::NativeWorkerCreditStatistics;
+#[path = "native_worker_fuel.rs"]
+mod native_fuel;
+pub use native_fuel::NativeWorkerNativeFuel;
 
 // Retry only short ownership transfers. A bounded exponential pause avoids
 // repeatedly contending on one cache line before the original blocking lock.
@@ -16,6 +20,7 @@ thread_local! {
     // Attempts, pause hints, blocking fallbacks, poison recoveries.
     static ESCROW_LOCK_STATS: std::cell::Cell<(u32, u32, u32, u32)> = const { std::cell::Cell::new((0, 0, 0, 0)) };
     static ESCROW_PARK_NOTIFY: RefCell<Option<std::sync::mpsc::Sender<()>>> = const { RefCell::new(None) };
+    static NATIVE_FUEL_WAIT_NOTIFY: RefCell<Option<std::sync::mpsc::Sender<()>>> = const { RefCell::new(None) };
 }
 fn lock_escrow(shared: &Mutex<Escrow>) -> MutexGuard<'_, Escrow> {
     for round in 0..ESCROW_SPIN_ROUNDS {
@@ -82,12 +87,55 @@ impl From<mech_core::MemoryRuntimeError> for NativeWorkerBudgetError {
 struct Escrow {
     limit: ControlWork,
     used: ControlWork,
+    // Callback-free native regions own these non-revocable reservations.
+    // They cannot lend the same allowance to another concurrent worker.
+    native_reserved: ControlWork,
+    native_changed: Arc<Condvar>,
     live: u64,
     sealed: bool,
     credits: credits::Book,
     // The shared allocation remains admitted until the final worker retires,
     // including when its parent closes early after an error.
     _reservation: mech_core::ManagedMemoryReservation,
+}
+
+fn wait_native<'a>(mut state: MutexGuard<'a, Escrow>) -> MutexGuard<'a, Escrow> {
+    let changed = state.native_changed.clone();
+    #[cfg(test)]
+    NATIVE_FUEL_WAIT_NOTIFY.with(|slot| {
+        if let Some(notify) = slot.borrow_mut().take() {
+            let _ = notify.send(());
+        }
+    });
+    state = changed
+        .wait(state)
+        .unwrap_or_else(|error| error.into_inner());
+    state
+}
+
+fn next_after_native<'a>(
+    mut state: MutexGuard<'a, Escrow>,
+    compute: u64,
+    comparison: u64,
+    may_wait: bool,
+) -> Result<(MutexGuard<'a, Escrow>, ControlWork), ResidentKernelError> {
+    loop {
+        match state.direct_next(compute, comparison) {
+            Ok(next) => return Ok((state, next)),
+            Err(_)
+                if may_wait
+                    && !state.sealed
+                    && (state.native_reserved.compute != 0
+                        || state.native_reserved.comparison != 0) =>
+            {
+                // An in-flight grant is real reserved fuel. Wait for its
+                // bounded generated code to settle before deciding a denial.
+                // Never wait while this SAME account owns a native grant.
+                state = wait_native(state);
+            }
+            Err(error) => return Err(error),
+        }
+    }
 }
 impl Escrow {
     fn next(&self, compute: u64, comparison: u64) -> Result<ControlWork, ResidentKernelError> {
@@ -119,8 +167,18 @@ impl Escrow {
             ),
         ] {
             let reserved = match dimension {
-                MemoryBudgetDimension::ComputeWork => self.credits.reserved.compute,
-                MemoryBudgetDimension::ComparisonWork => self.credits.reserved.comparison,
+                MemoryBudgetDimension::ComputeWork => self
+                    .credits
+                    .reserved
+                    .compute
+                    .checked_add(self.native_reserved.compute)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                MemoryBudgetDimension::ComparisonWork => self
+                    .credits
+                    .reserved
+                    .comparison
+                    .checked_add(self.native_reserved.comparison)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
                 _ => unreachable!(),
             };
             let required = required
@@ -169,18 +227,27 @@ impl NativeWorkerWorkLoan {
         }
         state.settle_credits();
         Some((
-            state.limit.compute - state.used.compute,
-            state.limit.comparison - state.used.comparison,
+            state.limit.compute - state.used.compute - state.native_reserved.compute,
+            state.limit.comparison - state.used.comparison - state.native_reserved.comparison,
         ))
     }
-    pub(super) fn preview(&self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
-        lock_escrow(&self.shared)
-            .direct_next(compute, comparison)
-            .map(drop)
+    pub(super) fn preview(
+        &self,
+        compute: u64,
+        comparison: u64,
+        may_wait: bool,
+    ) -> Result<(), ResidentKernelError> {
+        next_after_native(lock_escrow(&self.shared), compute, comparison, may_wait).map(drop)
     }
-    pub(super) fn charge(&self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
-        let mut state = lock_escrow(&self.shared);
-        state.used = state.direct_next(compute, comparison)?;
+    pub(super) fn charge(
+        &self,
+        compute: u64,
+        comparison: u64,
+        may_wait: bool,
+    ) -> Result<(), ResidentKernelError> {
+        let (mut state, next) =
+            next_after_native(lock_escrow(&self.shared), compute, comparison, may_wait)?;
+        state.used = next;
         Ok(())
     }
 }
@@ -227,13 +294,27 @@ impl NativeLibraryWorkBudget {
         };
         if let Some(worker) = &account.worker {
             let mut state = lock_escrow(&worker.shared);
+            if account.reserved.compute != 0 || account.reserved.comparison != 0 {
+                return Ok(None);
+            }
+            while !state.sealed
+                && (state.native_reserved.compute != 0 || state.native_reserved.comparison != 0)
+            {
+                state = wait_native(state);
+            }
             if state.sealed {
                 return Ok(None);
             }
             state.settle_credits();
             let remaining = (
-                local.0.min(state.limit.compute - state.used.compute),
-                local.1.min(state.limit.comparison - state.used.comparison),
+                local
+                    .0
+                    .min(state.limit.compute - state.used.compute - state.native_reserved.compute),
+                local.1.min(
+                    state.limit.comparison
+                        - state.used.comparison
+                        - state.native_reserved.comparison,
+                ),
             );
             let (compute, comparison, result) = prepare(remaining)?;
             let next = checked_local_control_account_work(account, compute, comparison)?;
@@ -307,6 +388,8 @@ impl NativeLibraryWorkBudget {
         let shared = Arc::new(Mutex::new(Escrow {
             limit: allowance,
             used: ControlWork::default(),
+            native_reserved: ControlWork::default(),
+            native_changed: Arc::new(Condvar::new()),
             live: 0,
             sealed: false,
             credits: credits::Book::new(),
@@ -364,6 +447,12 @@ impl NativeLibraryWorkBudget {
     pub fn worker_group_metadata_bytes() -> u64 {
         (core::mem::size_of::<Mutex<Escrow>>() + 2 * core::mem::size_of::<usize>()) as u64
             + credits::Book::backing_bytes()
+            + std::alloc::Layout::new::<[usize; 2]>()
+                .extend(std::alloc::Layout::new::<Condvar>())
+                .unwrap()
+                .0
+                .pad_to_align()
+                .size() as u64
     }
     pub fn worker_account_metadata_bytes() -> u64 {
         (core::mem::size_of::<RefCell<ControlWorkAccount>>() + 2 * core::mem::size_of::<usize>())
@@ -431,6 +520,12 @@ impl NativeWorkGroup {
         if !self.closed {
             state.sealed = true;
             state.settle_credits();
+            // Early group closure cannot refund code that might still be
+            // running. Conservatively retain every outstanding native grant.
+            state.used.compute += state.native_reserved.compute;
+            state.used.comparison += state.native_reserved.comparison;
+            state.native_reserved = ControlWork::default();
+            state.native_changed.notify_all();
             let mut parent = self.parent.borrow_mut();
             parent.reserved.compute = parent
                 .reserved

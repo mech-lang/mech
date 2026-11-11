@@ -19,7 +19,7 @@ pub(in crate::native_artifact) enum Progress {
     Latch(u32),
     Exit(u32),
 }
-#[derive(Clone, Copy, Debug, serde::Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeIterationVisit {
     pub(in crate::native_artifact) origin: NativeMatchOrigin,
     pub(in crate::native_artifact) successors: [Option<u32>; 2],

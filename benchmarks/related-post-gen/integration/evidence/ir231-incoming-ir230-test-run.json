@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/private/tmp/mech-related-deflate-affine-read-integration-tests-20261106-v1/mech_gpu-tests",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 215.08197674993426,
+  "summary": [
+    "test result: FAILED. 839 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 215.05s"
+  ],
+  "expected_failures_exact": true,
+  "failed_tests": [
+    "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+  ],
+  "new_failures": []
+}

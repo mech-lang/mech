@@ -13,11 +13,21 @@ use mech_core::{
 
 /// Exact symbolic type. Managed dimensions are deliberately not replaced by
 /// the physical one-handle transport shape; a call must bind its current shape.
-#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeProgramType {
     pub(crate) schema: SchemaId,
-    pub(crate) definition: Schema,
-    pub(crate) scalar: Option<NativeScalarType>,
+    pub(crate) definition: std::sync::Arc<Schema>,
+    pub(crate) scalar: Option<std::sync::Arc<NativeScalarType>>,
+}
+impl serde::Serialize for NativeProgramType {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeStruct;
+        let mut fields = serializer.serialize_struct("NativeProgramType", 3)?;
+        fields.serialize_field("schema", &self.schema)?;
+        fields.serialize_field("definition", self.definition())?;
+        fields.serialize_field("scalar", &self.scalar())?;
+        fields.end()
+    }
 }
 impl NativeProgramType {
     pub const fn schema(&self) -> SchemaId {
@@ -30,16 +40,17 @@ impl NativeProgramType {
         &self.definition
     }
     pub fn scalar(&self) -> Option<&NativeScalarType> {
-        self.scalar.as_ref()
+        self.scalar.as_deref()
     }
     pub fn scalar_kind(&self) -> Option<NativeScalarKind> {
         self.scalar().map(|ty| ty.kind())
     }
     pub(crate) fn into_scalar(self) -> Result<NativeScalarType, NativeArtifactLoweringError> {
-        self.scalar
-            .ok_or(NativeArtifactLoweringError::UnsupportedSchema {
+        self.scalar.map(std::sync::Arc::unwrap_or_clone).ok_or(
+            NativeArtifactLoweringError::UnsupportedSchema {
                 schema: self.schema,
-            })
+            },
+        )
     }
 }
 
@@ -610,3 +621,6 @@ impl NativeProgramArtifactPlan {
         super::iteration_validation::validate_detailed(self)
     }
 }
+
+#[path = "program_table_image.rs"]
+mod table_image;

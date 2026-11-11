@@ -236,19 +236,14 @@ fn recursive_calls_inside_comprehensions_fail_at_the_source_boundary() {
 }
 
 #[test]
-fn recursive_pattern_function_lifts_fail_at_the_source_boundary() {
-    for call in ["walk([1 2])", "walk({1, 2})"] {
+fn recursive_pattern_function_lifts_keep_each_elements_callable_frame() {
+    for (call, expected) in [
+        ("walk([1 2])", matrix(&[0.0, 0.0])),
+        ("walk({1, 2})", Data::Set(vec![f(0.0)].into())),
+        ("[walk(x) | x <- [1 2]]", matrix(&[0.0, 0.0])),
+    ] {
         let source = format!("walk(n<f64>) => <f64>\n  | 0 => 0\n  | n => walk(n - 1).\n{call}\n");
-        let parsed = parse_canonical_document(
-            TextSnapshot::new(DocumentId(0x556), Revision(1), source.clone()).unwrap(),
-            ParseConfig::default(),
-        );
-        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
-        let error = CanonicalSourceFrontend
-            .compile_document(&document)
-            .err()
-            .unwrap_or_else(|| panic!("{call} must reject recursive implicit lifting"));
-        assert_eq!(error.code, "source-semantics/recursive-comprehension");
+        execute_document(&source, expected);
     }
 }
 

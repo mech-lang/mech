@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-guarded-load-demand-opt-20261107-v1/compiler",
+    "/private/tmp/mech-related-conjoined-window-integration-runners-20261107-v1/reuse-4/build/source.mec",
+    "/private/tmp/mech-related-native-guarded-load-demand-runners-20261107-v1/reuse-4/build"
+  ],
+  "exit": 0,
+  "seconds": 5.172934249974787,
+  "stdout": "{\"code_bytes\":871412,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1536}\n",
+  "stderr": ""
+}

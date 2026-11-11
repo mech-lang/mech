@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-integration-tests-20261106-v12/mech_gpu-tests",
+    "virtual_retirement",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 0.6932792500592768
+}

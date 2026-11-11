@@ -115,7 +115,7 @@ impl Recording {
                     }
                     Step::Assign { moves, .. } => moves.iter().map(|(_, from)| *from).collect(),
                     Step::Read { index, .. } => vec![*index as usize],
-                    Step::Define(_) | Step::Replace => return None,
+                    Step::Define(_) | Step::Write { .. } | Step::Replace => return None,
                     Step::Scalar(Scalar::None) | Step::Length { .. } | Step::Keep => vec![],
                 };
                 slots

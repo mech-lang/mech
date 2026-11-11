@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-opt-20261106-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runtime-check-20261106-v1/managed-app/src/main.rs",
+    "--out",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runtime-check-20261106-v1/managed-app/runner-standard",
+    "--bundle",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runtime-check-20261106-v1/managed-app/audit-bundle",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 0.8830265421420336,
+  "stdout": "{\"seconds\": 0.3869381248950958, \"exit\": 0}\n",
+  "stderr": "",
+  "compiler_source_sha256": "2612a00ee8c19b975943d78ecd52dc889e11dc6899c4f11a46fc6ab8b8963329"
+}

@@ -1,0 +1,11 @@
+{
+  "hosts/gpu/src/native_artifact/codegen/options.rs": "source-hosts__gpu__src__native_artifact__codegen__options.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "source-hosts__gpu__src__native_artifact__program__codegen__mod.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_boundary.rs": "source-hosts__gpu__src__native_artifact__program__codegen__numeric_boundary.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_retirement.rs": "source-hosts__gpu__src__native_artifact__program__codegen__numeric_retirement.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_retirement_tests.rs": "source-hosts__gpu__src__native_artifact__program__codegen__numeric_retirement_tests.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_tree.rs": "source-hosts__gpu__src__native_artifact__program__codegen__numeric_tree.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "source-hosts__gpu__src__native_artifact__program__codegen__readonly_numeric.rs.txt",
+  "hosts/gpu/src/native_artifact/program/image/identity.rs": "source-hosts__gpu__src__native_artifact__program__image__identity.rs.txt",
+  "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree.rs": "source-hosts__gpu__src__native_artifact__program__runtime__composition_tests__numeric_tree.rs.txt"
+}

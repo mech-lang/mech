@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "external_producer_write_cannot_mutate_retained_copies": true,
+  "identical_evidence_shares_inode": true,
+  "mech_self_output_preserved": true,
+  "objects_read_only": true,
+  "original_harness_sha256": "9964d51087b0152b2a7f6de3cf29ace8b902c6050620accc54df14a4898edf6a",
+  "new_harness_sha256": "9b4bd9c9314ddc5b88d9748a770c3aeb1769a2cdb315c597d341fcb117930000"
+}

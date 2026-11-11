@@ -1,0 +1,246 @@
+{
+  "scope": "Main-thread wall-clock snapshots inside post-JSON only; workers omitted; blocking and disturbance retained. Not all-thread CPU-time shares.",
+  "records": 2553,
+  "jitter_seed": 10027589,
+  "interval_min_ns": 250000,
+  "interval_max_ns": 1500000,
+  "categories": {
+    "emitted_native_code": {
+      "samples": 1500,
+      "percent": 58.75440658049354
+    },
+    "mech_host_code": {
+      "samples": 451,
+      "percent": 17.665491578535057
+    },
+    "waiting_or_kernel_message": {
+      "samples": 359,
+      "percent": 14.061887974931453
+    },
+    "allocator_or_memory_copy": {
+      "samples": 130,
+      "percent": 5.09204857030944
+    },
+    "other_host_or_system": {
+      "samples": 113,
+      "percent": 4.426165295730513
+    }
+  },
+  "top_leaf_symbols": [
+    {
+      "symbol": "__ulock_wait",
+      "samples": 359,
+      "percent": 14.061887974931453
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1",
+      "samples": 277,
+      "percent": 10.849980415197807
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+      "samples": 272,
+      "percent": 10.654132393262827
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_256",
+      "samples": 251,
+      "percent": 9.831570701135918
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_801",
+      "samples": 206,
+      "percent": 8.068938503721112
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_572",
+      "samples": 148,
+      "percent": 5.797101449275362
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1166",
+      "samples": 83,
+      "percent": 3.2510771641206424
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_459",
+      "samples": 83,
+      "percent": 3.2510771641206424
+    },
+    {
+      "symbol": "mech_gpu::native_artifact::program::runtime::collections::data::element",
+      "samples": 79,
+      "percent": 3.0943987465726597
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_107",
+      "samples": 70,
+      "percent": 2.7418723070896984
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1099",
+      "samples": 51,
+      "percent": 1.9976498237367804
+    },
+    {
+      "symbol": "<mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+      "samples": 47,
+      "percent": 1.8409714061887974
+    },
+    {
+      "symbol": "_xzm_free",
+      "samples": 44,
+      "percent": 1.7234625930278105
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1053",
+      "samples": 33,
+      "percent": 1.2925969447708578
+    },
+    {
+      "symbol": "_platform_memmove",
+      "samples": 33,
+      "percent": 1.2925969447708578
+    },
+    {
+      "symbol": "mech_core::snapshot::encoding::retained_sequence_footprint",
+      "samples": 29,
+      "percent": 1.1359185272228751
+    },
+    {
+      "symbol": "<mech_core::snapshot::sequence::SequenceStorage>::view",
+      "samples": 25,
+      "percent": 0.9792401096748923
+    },
+    {
+      "symbol": "mech_core::snapshot::encoding::visit_sequence_work::<mech_core::memory_plan::error::MemoryPlanError, <mech_engine::resident::general::live::InputDataMemo>::measure<mech_engine::resident::general::live::footprint_impl<mech_engine::resident::general::native_collection_calls::invocation::measurement::NativeMeasurementCheck>::{closure#3}>::{closure#0}>",
+      "samples": 21,
+      "percent": 0.8225616921269095
+    },
+    {
+      "symbol": "core::ptr::drop_in_place::<mech_core::snapshot::encoding::ValueFootprintError>",
+      "samples": 20,
+      "percent": 0.7833920877399139
+    },
+    {
+      "symbol": "_free",
+      "samples": 19,
+      "percent": 0.7442224833529182
+    },
+    {
+      "symbol": "<mech_gpu::native_artifact::program::runtime::collections::State>::push_row_block",
+      "samples": 19,
+      "percent": 0.7442224833529182
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_671",
+      "samples": 18,
+      "percent": 0.7050528789659224
+    },
+    {
+      "symbol": "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_utf8_read",
+      "samples": 17,
+      "percent": 0.6658832745789267
+    },
+    {
+      "symbol": "runner::run",
+      "samples": 16,
+      "percent": 0.626713670191931
+    },
+    {
+      "symbol": "__bsdthread_create",
+      "samples": 15,
+      "percent": 0.5875440658049353
+    },
+    {
+      "symbol": "mach_vm_reclaim_update_kernel_accounting_trap",
+      "samples": 13,
+      "percent": 0.509204857030944
+    },
+    {
+      "symbol": "core::slice::copy_from_slice_impl::len_mismatch_fail",
+      "samples": 12,
+      "percent": 0.4700352526439483
+    },
+    {
+      "symbol": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::histogram_helper",
+      "samples": 11,
+      "percent": 0.4308656482569526
+    },
+    {
+      "symbol": "_kernelrpc_mach_vm_deallocate_trap",
+      "samples": 10,
+      "percent": 0.39169604386995693
+    },
+    {
+      "symbol": "_platform_memset",
+      "samples": 9,
+      "percent": 0.3525264394829612
+    }
+  ],
+  "native_functions": [
+    {
+      "symbol": "_mech_canonical_program_entry_v1",
+      "samples": 277,
+      "percent": 10.849980415197807
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+      "samples": 272,
+      "percent": 10.654132393262827
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_256",
+      "samples": 251,
+      "percent": 9.831570701135918
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_801",
+      "samples": 206,
+      "percent": 8.068938503721112
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_572",
+      "samples": 148,
+      "percent": 5.797101449275362
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1166",
+      "samples": 83,
+      "percent": 3.2510771641206424
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_459",
+      "samples": 83,
+      "percent": 3.2510771641206424
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_107",
+      "samples": 70,
+      "percent": 2.7418723070896984
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1099",
+      "samples": 51,
+      "percent": 1.9976498237367804
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_1053",
+      "samples": 33,
+      "percent": 1.2925969447708578
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_671",
+      "samples": 18,
+      "percent": 0.7050528789659224
+    },
+    {
+      "symbol": "_mech_canonical_program_entry_v1_numeric_505",
+      "samples": 8,
+      "percent": 0.3133568350959655
+    }
+  ],
+  "unresolved": 0,
+  "sampler_zero_failures": true,
+  "suspend_resume_balanced": true
+}

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-owned-shape-metadata-opt-20261107-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-owned-shape-metadata-runtime-check-20261107-v1/managed-app/src/main.rs",
+    "--out",
+    "/private/tmp/mech-related-owned-shape-metadata-runtime-check-20261107-v1/managed-app/runner-standard",
+    "--bundle",
+    "/private/tmp/mech-related-owned-shape-metadata-runtime-check-20261107-v1/managed-app/audit-bundle",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 0.9114117911085486,
+  "stdout": "{\"seconds\": 0.4072636670898646, \"exit\": 0}\n",
+  "stderr": "",
+  "compiler_source_sha256": "cd5f1b6b260c87297d38baa3e571d9fc86b904ac1aeb3eee02b1d8f2483053d1"
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cc",
+    "-O3",
+    "-c",
+    "/private/tmp/mech-related-owned-shape-metadata-pc-profile-20261107-v1/sampler.c",
+    "-o",
+    "/private/tmp/mech-related-owned-shape-metadata-pc-profile-20261107-v1/sampler.o"
+  ],
+  "exit": 0,
+  "seconds": 0.18368283286690712,
+  "stdout": "",
+  "stderr": "",
+  "profiled_timings_excluded": true
+}

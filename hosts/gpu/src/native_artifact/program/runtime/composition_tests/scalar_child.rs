@@ -32,12 +32,7 @@ fn ordinary_scalar_child_keeps_current_boolean_words_errors_and_retry() {
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
-        let jit = JitProgramArtifact::compile_with_limits(
-            &artifact,
-            &mech_stdlib::source_catalog(),
-            mode.compilation(),
-        )
-        .unwrap();
+        let jit = compile_parent_pieces(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let parents = &jit.descriptor().metadata().compositions.parents;
         assert_eq!(parents.len(), 1);
         let parent = &parents[0];

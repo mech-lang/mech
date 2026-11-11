@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-conjoined-window-integration-opt-20261107-v1/compiler-decoded",
+    "/private/tmp/mech-related-conjoined-window-integration-runners-20261107-v1/reuse-4/source.mec",
+    "/private/tmp/mech-related-conjoined-window-integration-runners-20261107-v1/reuse-4-decoded-bundle"
+  ],
+  "exit": 101,
+  "seconds": 0.012774791102856398,
+  "stdout": "",
+  "stderr": "\nthread '<unnamed>' (20389890) panicked at /private/tmp/mech-related-conjoined-window-integration-opt-20261107-v1/compiler-decoded.rs:33:52:\ncalled `Result::unwrap()` on an `Err` value: Os { code: 2, kind: NotFound, message: \"No such file or directory\" }\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\nthread 'main' (20389888) panicked at /private/tmp/mech-related-conjoined-window-integration-opt-20261107-v1/compiler-decoded.rs:99:10:\ncalled `Result::unwrap()` on an `Err` value: Any { .. }\n"
+}

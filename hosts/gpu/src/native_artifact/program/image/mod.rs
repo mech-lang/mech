@@ -3,7 +3,10 @@ use crate::native_artifact::iteration_abi::NativeIterationVisit;
 use mech_core::SchemaTable;
 use mech_engine::native_artifact::{NativeIterationAction, NativeProgramArtifactPlan};
 
+pub(in crate::native_artifact) mod binding;
 pub(in crate::native_artifact) mod decode;
+pub(in crate::native_artifact) mod machine_backend;
+mod static_layouts;
 
 #[derive(Debug)]
 pub struct NativeProgramDescriptor {
@@ -11,6 +14,7 @@ pub struct NativeProgramDescriptor {
         crate::native_artifact::program::prepare::ProgramMetadata,
     pub(in crate::native_artifact) footprint: NativeCodeFootprint,
     pub(in crate::native_artifact) identity: [u8; 32],
+    pub(in crate::native_artifact) machine_backend: Option<machine_backend::MachineBackend>,
 }
 #[derive(Clone, Copy, Debug)]
 pub(in crate::native_artifact) struct NativeCodeFootprint {
@@ -20,9 +24,24 @@ pub(in crate::native_artifact) struct NativeCodeFootprint {
 // Public Serialize is a compatibility boundary, independent of Rust nesting.
 impl serde::Serialize for NativeProgramDescriptor {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.serialize_image_fields::<S, false>(serializer)
+    }
+}
+impl NativeProgramDescriptor {
+    fn serialize_image_fields<S: serde::Serializer, const TABLES: bool>(
+        &self,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
-        let mut fields = serializer.serialize_struct("NativeProgramDescriptor", 26)?;
-        fields.serialize_field("plan", &self.metadata.plan)?;
+        let mut fields = serializer.serialize_struct(
+            "NativeProgramDescriptor",
+            (if TABLES { 32 } else { 29 }) + usize::from(self.machine_backend.is_some()),
+        )?;
+        if TABLES {
+            fields.serialize_field("plan", &TablePlan(&self.metadata.plan))?;
+        } else {
+            fields.serialize_field("plan", &self.metadata.plan)?;
+        }
         #[derive(serde::Serialize)]
         struct Schemas<'a>(
             #[serde(
@@ -31,9 +50,17 @@ impl serde::Serialize for NativeProgramDescriptor {
             &'a SchemaTable,
         );
         fields.serialize_field("schemas", &Schemas(&self.metadata.schemas))?;
-        fields.serialize_field("calls", &self.metadata.calls)?;
+        if TABLES {
+            fields.serialize_field("calls", &TableCalls(&self.metadata.calls))?;
+        } else {
+            fields.serialize_field("calls", &self.metadata.calls)?;
+        }
         fields.serialize_field("types", &self.metadata.types)?;
-        fields.serialize_field("visits", &self.metadata.visits)?;
+        if TABLES {
+            fields.serialize_field("visit_work", &VisitWork(&self.metadata))?;
+        } else {
+            fields.serialize_field("visits", &self.metadata.visits)?;
+        }
         fields.serialize_field("retirements", &self.metadata.retirements)?;
         fields.serialize_field("constant_bytes", &self.metadata.constant_bytes)?;
         fields.serialize_field("scalar_bytes", &self.metadata.scalar_bytes)?;
@@ -46,7 +73,13 @@ impl serde::Serialize for NativeProgramDescriptor {
         fields.serialize_field("window_regions", &self.metadata.window_regions)?;
         fields.serialize_field("string_map_regions", &self.metadata.string_map_regions)?;
         fields.serialize_field("scalar_aggregates", &self.metadata.scalar_aggregates)?;
+        fields.serialize_field("buffer_frames", &self.metadata.buffer_frames)?;
         fields.serialize_field("map_owner_words", &self.metadata.map_owner_words)?;
+        fields.serialize_field("borrowed_record_maps", &self.metadata.borrowed_record_maps)?;
+        fields.serialize_field("utf8_reads", &self.metadata.utf8_reads)?;
+        if TABLES {
+            fields.serialize_field("numeric_maps", &self.metadata.numeric_maps)?;
+        }
         fields.serialize_field("frozen_maps", &self.metadata.frozen_maps)?;
         fields.serialize_field("map_admission", &self.metadata.map_admission)?;
         fields.serialize_field("parallel", &self.metadata.parallel)?;
@@ -58,6 +91,19 @@ impl serde::Serialize for NativeProgramDescriptor {
         fields.serialize_field("stack", &self.footprint.stack_bytes)?;
         fields.serialize_field("code", &self.footprint.code_bytes)?;
         fields.serialize_field("identity", &self.identity)?;
+        if let Some(backend) = &self.machine_backend {
+            fields.serialize_field("machine_backend", backend)?;
+        }
+        if TABLES {
+            fields.serialize_field(
+                "static_layouts",
+                &static_layouts::Borrowed::from(&self.metadata),
+            )?;
+            fields.serialize_field(
+                "schema_templates",
+                &TableSchemaTemplates(&self.metadata.schemas),
+            )?;
+        }
         fields.end()
     }
 }
@@ -66,6 +112,17 @@ impl NativeProgramDescriptor {
         prepared: crate::native_artifact::program::prepare::PreparedNativeProgram,
         footprint: NativeCodeFootprint,
     ) -> Self {
+        let identity = Self::source_identity(&prepared);
+        Self {
+            metadata: prepared.into_metadata(),
+            footprint,
+            identity,
+            machine_backend: None,
+        }
+    }
+    pub(in crate::native_artifact) fn source_identity(
+        prepared: &crate::native_artifact::program::prepare::PreparedNativeProgram,
+    ) -> [u8; 32] {
         let metadata = prepared.metadata();
         let identity = crate::native_artifact::program::image::identity::typed_ir_sha256(
             prepared.plan(),
@@ -74,13 +131,25 @@ impl NativeProgramDescriptor {
             &metadata.line_matrices.regions,
             metadata.map_owner_words.as_ref(),
             &metadata.frozen_maps,
+            &metadata.borrowed_record_maps,
+            &metadata.utf8_reads,
+            &metadata.numeric_maps,
             &metadata.string_map_regions,
         );
-        Self {
-            metadata: prepared.into_metadata(),
-            footprint,
-            identity,
+        identity
+    }
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn bind_machine_backend(
+        mut self,
+        backend: machine_backend::MachineBackend,
+    ) -> Result<Self, String> {
+        backend.validate()?;
+        if backend.source_ir() != &self.identity || self.machine_backend.is_some() {
+            return Err("machine backend differs from prepared source identity".into());
         }
+        self.identity = backend.identity();
+        self.machine_backend = Some(backend);
+        Ok(self)
     }
     pub(in crate::native_artifact) fn metadata(
         &self,
@@ -144,6 +213,10 @@ impl NativeProgramDescriptor {
     }
 }
 #[cfg(all(test, feature = "canonical-native-program"))]
+mod borrowed_record_map_tests;
+#[cfg(test)]
+mod numeric_tree_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
 mod string_map_factory_tests;
 impl crate::native_artifact::iteration_runtime::VisitPlan for NativeProgramDescriptor {
     fn entry(&self) -> u32 {
@@ -162,3 +235,72 @@ impl crate::native_artifact::iteration_runtime::VisitPlan for NativeProgramDescr
 
 pub(in crate::native_artifact) mod identity;
 pub(in crate::native_artifact) mod packing;
+
+// Serialization wrappers only. No new public deserializer or proof constructor.
+struct TablePlan<'a>(&'a NativeProgramArtifactPlan);
+
+struct TableSchemaTemplates<'a>(&'a SchemaTable);
+impl serde::Serialize for TableSchemaTemplates<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        mech_engine::native_artifact::NativeDescriptorTemplatePool::serialize_build_owned_schema_templates(self.0, s)
+    }
+}
+impl serde::Serialize for TablePlan<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize_build_owned_shared_template_plan(s)
+    }
+}
+struct TableBinding<'a>(&'a mech_engine::native_artifact::NativePreparedLibraryCall);
+impl serde::Serialize for TableBinding<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize_build_owned_binding(s)
+    }
+}
+struct TableCalls<'a>(&'a [Option<mech_engine::native_artifact::NativePreparedLibraryCall>]);
+impl serde::Serialize for TableCalls<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.collect_seq(self.0.iter().map(|call| call.as_ref().map(TableBinding)))
+    }
+}
+struct TableDescriptor<'a>(&'a NativeProgramDescriptor);
+impl serde::Serialize for TableDescriptor<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize_image_fields::<S, true>(s)
+    }
+}
+
+// Checked build-time projection: only work may differ after control derivation.
+// New control metadata cannot silently disappear if a future writer changes it.
+struct VisitWork<'a>(&'a crate::native_artifact::program::prepare::ProgramMetadata);
+impl serde::Serialize for VisitWork<'_> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::Error;
+        let plan = &self.0.plan;
+        let base = crate::native_artifact::iteration_abi::control_visits(
+            plan.blocks(),
+            plan.iterations().iter().map(Into::into),
+            0,
+        )
+        .map_err(S::Error::custom)?;
+        if base.len() != self.0.visits.len() {
+            return Err(S::Error::custom(
+                "visit work inventory differs from its plan",
+            ));
+        }
+        let length = base
+            .len()
+            .checked_mul(8)
+            .ok_or_else(|| S::Error::custom("visit work byte length overflows"))?;
+        let mut bytes = Vec::with_capacity(length);
+        for (mut expected, visit) in base.into_iter().zip(self.0.visits.iter()) {
+            expected.work = visit.work;
+            if expected != *visit {
+                return Err(S::Error::custom(
+                    "visit control differs from plan-derived fields",
+                ));
+            }
+            bytes.extend_from_slice(&visit.work.to_le_bytes());
+        }
+        serde::Serialize::serialize(&bytes, s)
+    }
+}

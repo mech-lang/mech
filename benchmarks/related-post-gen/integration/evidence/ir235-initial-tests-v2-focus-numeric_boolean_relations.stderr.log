@@ -1,0 +1,6 @@
+
+thread 'native_artifact::program::runtime::composition_tests::numeric_boolean_relations::numeric_boolean_relations_lower_guarded_mask_reuse_and_preserve_each_current_visit' (20080952) panicked at /private/tmp/mech-related-native-boolean-implication-freshness-compiler-20261106/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_boolean_relations.rs:129:25:
+assertion `left == right` failed
+  left: 84816871
+ right: 202217009
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

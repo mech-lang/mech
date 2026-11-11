@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-canonical-schema-sinks-runtime-check-20261107-v1/runtime-runner/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-canonical-schema-sinks-runtime-check-20261107-v1/runtime-runner/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-canonical-schema-sinks-runtime-check-20261107-v1/runtime-runner/native-link-audit.json"
+  ],
+  "exit": 0,
+  "seconds": 0.07306845812126994,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 55, \"normalized_text_sha256\": \"ccb2f7b5226276debc54ed31bf3edb1373ea94ca55c4213b7b0ab81dc0d7e4db\"}\n",
+  "stderr": "",
+  "compiler_source_sha256": "34fab362ddaa5301a1932109ccdfac14ae71668a49347e85f82c3a52b3c4f413"
+}

@@ -17,7 +17,7 @@ const KINDS: [RetirementKind; 3] = [
 ];
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.RetirementTables")]
 pub(in crate::native_artifact) struct RetirementTables {
     // A three-range prefix per loop, followed by ascending slot ordinals.
     // The invocation copies ALL words into its own admitted typed storage.

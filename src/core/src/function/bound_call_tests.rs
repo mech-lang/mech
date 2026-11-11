@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, vec};
+use alloc::{boxed::Box, format, vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, vec};
 
@@ -149,5 +149,66 @@ fn bound_call_refresh_rejects_arity_type_and_fixed_lifetime_changes_then_retries
             .unwrap();
         assert_eq!(retried, original);
         assert_eq!(original, retained);
+    }
+}
+
+#[test]
+fn shared_bound_call_contract_updates_and_rejected_refresh_keep_retained_calls_independent() {
+    let original = call(DimensionLifetime::Activation);
+    let retained = original.clone();
+    let current = descriptor(DimensionLifetime::Activation, 2);
+    let mut refreshed = original
+        .with_current_descriptors([current.clone()].into(), [current].into())
+        .unwrap();
+    let refreshed_retained = refreshed.clone();
+    let mut contract = original.operation_descriptor().contract.clone();
+    contract.outputs[0].change_detection = ChangeDetectionPolicy::AlwaysChanged;
+    refreshed.resolve_operation_contract(&contract).unwrap();
+    assert_eq!(original, retained);
+    assert_eq!(refreshed_retained, retained);
+    assert_ne!(
+        refreshed.operation_descriptor(),
+        retained.operation_descriptor()
+    );
+    let changed = descriptor(DimensionLifetime::Activation, 3);
+    assert!(
+        refreshed
+            .with_current_descriptors([changed.clone()].into(), [changed].into())
+            .is_err()
+    );
+    let current = descriptor(DimensionLifetime::Activation, 2);
+    let retried = refreshed
+        .with_current_descriptors([current.clone()].into(), [current].into())
+        .unwrap();
+    assert_eq!(retried, refreshed);
+    drop(original);
+    drop(refreshed);
+    assert_eq!(retried.outputs()[0].shape().parameter_values(), &[2]);
+    assert_eq!(retained.inputs()[0].shape().parameter_values(), &[2]);
+    assert_eq!(
+        refreshed_retained.operation_descriptor(),
+        retained.operation_descriptor()
+    );
+}
+
+#[test]
+fn resolved_operation_validation_matches_constructor_identity_checks() {
+    let reference = call(DimensionLifetime::Turn).operation_descriptor().clone();
+    for name in ["", "test/descriptor-identity", "test/other"] {
+        for id in [reference.id, crate::OperationId::from_name(name)] {
+            let operation = ResolvedOperationDescriptor {
+                id,
+                canonical_name: name.into(),
+                contract: reference.contract.clone(),
+            };
+            let expected = ResolvedOperationDescriptor::new(id, name, reference.contract.clone());
+            match (expected, operation.validate()) {
+                (Ok(_), Ok(())) => {}
+                (Err(expected), Err(actual)) => {
+                    assert_eq!(format!("{expected:?}"), format!("{actual:?}"));
+                }
+                _ => panic!("borrowed validation differs from constructor identity check"),
+            }
+        }
     }
 }

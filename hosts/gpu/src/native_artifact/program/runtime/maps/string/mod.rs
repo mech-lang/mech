@@ -8,7 +8,9 @@ use mech_core::{ManagedMemoryReservation, ManagedNodeReservation};
 use mech_engine::native_artifact::NativeLibraryWorkBudget;
 use std::hash::BuildHasher;
 
+mod borrowed_values;
 mod publication;
+use borrowed_values::BorrowedStringValues;
 pub(in crate::native_artifact) use crate::native_artifact::program::runtime::maps::string::publication::{
     Geometry as PublicationGeometry,
     logical_map_bytes,
@@ -37,6 +39,7 @@ fn allocation_bound(capacity: usize) -> Result<u64, Error> {
 pub(in crate::native_artifact) struct OwnedStringMap<S = DefaultHashBuilder> {
     // Actual allocations retire before their corresponding reservations.
     values: HashMap<Box<str>, u64, S>,
+    borrowed: Option<Box<[BorrowedStringValues; 1]>>,
     table: ManagedMemoryReservation,
     keys: ManagedMemoryReservation,
     metadata: ManagedMemoryReservation,
@@ -45,6 +48,70 @@ pub(in crate::native_artifact) struct OwnedStringMap<S = DefaultHashBuilder> {
     limits: Limits,
 }
 impl OwnedStringMap {
+    pub(in crate::native_artifact) fn try_with_borrowed_keys(
+        source: &mech_core::Value,
+        keys: &mech_core::Value,
+        schemas: &mech_core::SchemaTable,
+        work: NativeLibraryWorkBudget,
+        limits: Limits,
+        memory: mech_core::ManagedMemoryBudget,
+    ) -> Result<Option<Self>, Error> {
+        let mut owner = Self::new_with_memory(work.clone(), limits, memory.clone())?;
+        let fixed = owner.retained_bytes()?;
+        let remaining = Limits {
+            entries: limits.entries,
+            retained_bytes: limits
+                .retained_bytes
+                .checked_sub(fixed)
+                .ok_or(Error::Overflow)?,
+            temporary_bytes: limits
+                .temporary_bytes
+                .checked_sub(fixed)
+                .ok_or(Error::Overflow)?,
+        };
+        match BorrowedStringValues::new_with_keys(
+            source,
+            keys,
+            schemas,
+            work.clone(),
+            memory.clone(),
+            remaining,
+        ) {
+            Ok(bank) => {
+                // Keep an ordinary map's inline representation small. The bank's
+                // metadata claim funds its boxed body; separately admit the
+                // transient stack/heap coexistence before the fallible allocation.
+                let bytes = size_of::<BorrowedStringValues>() as u64;
+                check(
+                    add(owner.retained_bytes()?, add(bank.retained_bytes()?, bytes)?)?,
+                    limits.temporary_bytes,
+                    "temporary bytes",
+                )?;
+                work.charge(add(mul(bytes, 8)?, 128)?, 0)?;
+                let staging = memory.reserve_capacity(bytes)?;
+                let mut one = Vec::new();
+                one.try_reserve_exact(1).map_err(|_| Error::Allocation)?;
+                if one.capacity() != 1 {
+                    return Err(Error::Allocation);
+                }
+                one.push(bank);
+                let bank: Box<[BorrowedStringValues; 1]> = one
+                    .into_boxed_slice()
+                    .try_into()
+                    .map_err(|_| Error::Allocation)?;
+                drop(staging);
+                owner.borrowed = Some(bank);
+                Ok(Some(owner))
+            }
+            // A different key set is an optional representation miss. It must
+            // preserve the original seed and ordinary owned import.
+            Err(Error::Binding(
+                "borrowed dictionary key sets differ"
+                | "borrowed dictionary ordered key sets differ",
+            )) => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
     #[cfg(test)]
     pub(in crate::native_artifact) fn new(
         work: NativeLibraryWorkBudget,
@@ -57,7 +124,11 @@ impl OwnedStringMap {
         limits: Limits,
         memory: mech_core::ManagedMemoryBudget,
     ) -> Result<Self, Error> {
-        Self::with_hasher_memory_fn(work, limits, memory, DefaultHashBuilder::default)
+        #[cfg(test)]
+        let hasher = tests::publication_hasher;
+        #[cfg(not(test))]
+        let hasher = DefaultHashBuilder::default;
+        Self::with_hasher_memory_fn(work, limits, memory, hasher)
     }
 }
 impl<S: BuildHasher> OwnedStringMap<S> {
@@ -97,6 +168,7 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         let metadata = memory.reserve_capacity(bytes)?;
         Ok(Self {
             values: HashMap::with_hasher(hasher()),
+            borrowed: None,
             table: memory.reserve_capacity(0)?,
             keys: memory.reserve_capacity(0)?,
             metadata,
@@ -105,24 +177,66 @@ impl<S: BuildHasher> OwnedStringMap<S> {
             limits,
         })
     }
+    fn borrowed(&self) -> Option<&BorrowedStringValues> {
+        self.borrowed.as_deref().map(|one| &one[0])
+    }
     pub(in crate::native_artifact) fn len(&self) -> usize {
-        self.values.len()
+        self.borrowed()
+            .map_or_else(|| self.values.len(), BorrowedStringValues::len)
     }
     #[cfg(test)]
     pub(in crate::native_artifact) fn capacity(&self) -> usize {
         self.values.capacity()
     }
     pub(in crate::native_artifact) fn key_bytes(&self) -> u64 {
-        self.keys.capacity_bytes()
+        self.borrowed().map_or_else(
+            || self.keys.capacity_bytes(),
+            BorrowedStringValues::key_bytes,
+        )
     }
     pub(in crate::native_artifact) fn set_limits(&mut self, limits: Limits) {
         self.limits = limits;
     }
     pub(in crate::native_artifact) fn retained_bytes(&self) -> Result<u64, Error> {
-        add(
+        let owned = add(
             add(self.table.capacity_bytes(), self.keys.capacity_bytes())?,
             self.metadata.capacity_bytes(),
+        )?;
+        add(
+            owned,
+            self.borrowed()
+                .map_or(Ok(0), BorrowedStringValues::retained_bytes)?,
         )
+    }
+    pub(in crate::native_artifact) fn retained_nodes(&self) -> u64 {
+        self.nodes.nodes()
+            + self
+                .borrowed()
+                .map_or(0, BorrowedStringValues::retained_nodes)
+    }
+    pub(in crate::native_artifact) fn has_borrowed_keys(&self) -> bool {
+        self.borrowed.is_some()
+    }
+    pub(in crate::native_artifact) fn replace_borrowed(
+        &mut self,
+        source: &mech_core::Value,
+        index: usize,
+        text: &str,
+        value: u64,
+    ) -> Result<u64, Error> {
+        self.borrowed
+            .as_mut()
+            .ok_or(Error::Binding("ordinal write without borrowed bank"))?[0]
+            .replace(source, index, text, value)
+    }
+    pub(in crate::native_artifact) fn native_values(
+        &mut self,
+        source: &mech_core::Value,
+    ) -> Result<Option<(u64, u64)>, Error> {
+        self.borrowed
+            .as_mut()
+            .map(|one| one[0].native_values(source))
+            .transpose()
     }
     // Bound a full collision chain before lookup. Raw String equality can
     // inspect at most all stored key bytes plus fixed bucket/header work.
@@ -138,6 +252,9 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         Ok(())
     }
     pub(in crate::native_artifact) fn get(&self, key: &str) -> Result<Option<u64>, Error> {
+        if self.borrowed.is_some() {
+            return Err(Error::Binding("unproved lookup of borrowed dictionary"));
+        }
         self.lookup_work(key, 1)?;
         Ok(self.values.get(key).copied())
     }
@@ -148,6 +265,9 @@ impl<S: BuildHasher> OwnedStringMap<S> {
         key: &str,
         value: u64,
     ) -> Result<Option<u64>, Error> {
+        if self.borrowed.is_some() {
+            return Err(Error::Binding("unproved write of borrowed dictionary"));
+        }
         self.lookup_work(key, 2)?;
         if let Some(current) = self.values.get_mut(key) {
             return Ok(Some(core::mem::replace(current, value)));
@@ -247,6 +367,9 @@ impl<S: BuildHasher> OwnedStringMap<S> {
     pub(in crate::native_artifact) fn entries(
         &self,
     ) -> Result<impl ExactSizeIterator<Item = (&str, u64)>, Error> {
+        if let Some(bank) = self.borrowed() {
+            return Ok(Entries::Borrowed(bank.entries()?));
+        }
         self.work.charge(
             add(
                 mul(self.values.capacity() as u64, 32)?,
@@ -254,12 +377,42 @@ impl<S: BuildHasher> OwnedStringMap<S> {
             )?,
             0,
         )?;
-        Ok(self
-            .values
-            .iter()
-            .map(|(key, value)| (key.as_ref(), *value)))
+        Ok(Entries::Owned(
+            self.values
+                .iter()
+                .map(|(key, value)| (key.as_ref(), *value)),
+        ))
     }
+}
+
+// Both views borrow stable keys and allocate no iterator storage.
+enum Entries<A, B> {
+    Owned(A),
+    Borrowed(B),
+}
+impl<T, A: Iterator<Item = T>, B: Iterator<Item = T>> Iterator for Entries<A, B> {
+    type Item = T;
+    fn next(&mut self) -> Option<T> {
+        match self {
+            Self::Owned(a) => a.next(),
+            Self::Borrowed(b) => b.next(),
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self {
+            Self::Owned(a) => a.size_hint(),
+            Self::Borrowed(b) => b.size_hint(),
+        }
+    }
+}
+impl<T, A: ExactSizeIterator<Item = T>, B: ExactSizeIterator<Item = T>> ExactSizeIterator
+    for Entries<A, B>
+{
 }
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+pub(in crate::native_artifact) use tests::with_fixed_publication_hash_seed;
+
+pub(in crate::native_artifact) mod frozen;

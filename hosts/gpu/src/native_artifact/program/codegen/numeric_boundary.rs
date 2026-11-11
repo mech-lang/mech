@@ -64,8 +64,8 @@ pub(super) fn source_failure(
 }
 
 pub(super) fn materialize(
+    controls: &CompilationControls,
     b: &mut FunctionBuilder<'_>,
-    options: crate::native_artifact::codegen::options::OptimizationOptions,
     words: &Words,
     region: &Region,
     proof: &Proof,
@@ -77,7 +77,13 @@ pub(super) fn materialize(
     incoming: Value,
     hooks: &Hooks,
     error: Block,
+    fuel_debits: Option<&super::super::numeric_fuel_debits::Anchors>,
+    retirement: Option<&super::super::numeric_retirement::ScalarHomes>,
 ) -> Result<(), NativeCompileError> {
+    let options = controls.options();
+    if let Some(anchors) = fuel_debits {
+        anchors.publish(b, words);
+    }
     let shadow = region
         .shadow
         .ok_or_else(|| backend("numeric materialization lacks scratch home"))?;
@@ -92,14 +98,50 @@ pub(super) fn materialize(
     );
     hooks.require_argument_words(b, proof.words + 4, error);
     for field in proof
-        .fields(region.tail.carrier().get())
-        .unwrap()
-        .iter()
-        .flatten()
+        .frame(region.tail.carrier().get())
+        .into_iter()
+        .flat_map(|frame| frame.scalar_slots())
     {
         let value = words.read(b, shadow + field);
         b.ins()
             .store(MemFlags::new(), value, hooks.arguments, offset(2 + field)?);
+    }
+    if let Some(tree) = &region.numeric_tree {
+        let active = controls
+            .enabled(OptimizationPass::PrivateLiveness)
+            .then(|| super::super::private_liveness::carrier_words(tree, site))
+            .transpose()?;
+        for node in &tree.nodes {
+            for binding in &node.scalar_bindings {
+                if active
+                    .as_ref()
+                    .is_some_and(|words| !words.contains(&binding.word))
+                {
+                    continue;
+                }
+                let value = words.read(b, shadow + binding.word);
+                b.ins().store(
+                    MemFlags::new(),
+                    value,
+                    hooks.arguments,
+                    offset(2 + binding.word)?,
+                );
+            }
+        }
+        let settled = super::super::numeric_tree::settled_debits(
+            b,
+            tree,
+            controls.enabled(OptimizationPass::ProjectedNumericDebits),
+            |b, slot| Ok(words.read(b, shadow + slot)),
+        )?;
+        for slot in tree.counters..tree.bank() {
+            let value = settled
+                .get(&slot)
+                .copied()
+                .unwrap_or_else(|| words.read(b, shadow + slot));
+            b.ins()
+                .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
+        }
     }
     if let Some(phase) = &proof.phase {
         for debit in &phase.loops {
@@ -126,11 +168,20 @@ pub(super) fn materialize(
     );
     let compute = words.read(b, region.words + 1);
     let comparison = words.read(b, region.words + 2);
+    use crate::native_artifact::program::protocol::NumericWriteHandoff;
+    let handoff = if tree_owner_handoff(controls, region, proof) {
+        b.ins().iconst(
+            types::I64,
+            NumericWriteHandoff::RetireDeadTreePins.raw() as i64,
+        )
+    } else {
+        zero
+    };
     hooks.call(
         b,
         site,
         crate::native_artifact::program::protocol::GlobalHelper::NumericWritePrepare,
-        [compute, comparison, zero],
+        [compute, comparison, handoff],
         error,
     );
     let mut reload = vec![
@@ -166,6 +217,28 @@ pub(super) fn materialize(
         );
         words.write(b, slot, value);
     }
+    if let Some(tree) = &region.numeric_tree {
+        for slot in tree.counters..tree.bank() {
+            let value = if tree.live_counter_word(
+                slot,
+                controls.enabled(OptimizationPass::ProjectedNumericDebits),
+            ) {
+                b.ins().load(
+                    types::I64,
+                    MemFlags::new(),
+                    hooks.arguments,
+                    offset(2 + slot)?,
+                )
+            } else {
+                b.ins().iconst(types::I64, 0)
+            };
+            words.write(b, shadow + slot, value);
+        }
+        let bank = b
+            .ins()
+            .load(types::I64, MemFlags::new(), hooks.arguments, 16);
+        words.write(b, shadow + tree.bank(), bank);
+    }
     let one = b.ins().iconst(types::I64, 1);
     words.write(b, region.words, one);
     b.ins().store(
@@ -174,5 +247,21 @@ pub(super) fn materialize(
         locals,
         offset(region.words)?,
     );
+    if let Some(anchors) = fuel_debits {
+        anchors.refresh(b, words);
+    }
+    if let Some(retirement) = retirement {
+        retirement.materialized(b);
+    }
     Ok(())
+}
+
+pub(super) fn tree_owner_handoff(
+    controls: &CompilationControls,
+    region: &Region,
+    proof: &Proof,
+) -> bool {
+    region.numeric_tree.is_some()
+        && proof.phase.is_none()
+        && controls.enabled(OptimizationPass::NumericTreeOwnerHandoff)
 }

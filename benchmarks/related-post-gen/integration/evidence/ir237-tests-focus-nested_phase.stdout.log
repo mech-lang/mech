@@ -1,0 +1,125 @@
+
+running 16 tests
+test native_artifact::program::runtime::composition_tests::nested_phase::controls::nested_numeric_phase_declines_unknown_progress_mutation_and_collection ... ok
+test native_artifact::program::runtime::composition_tests::nested_phase::controls::nested_numeric_phase_images_cannot_grant_membership_storage_or_debits ... ok
+test native_artifact::program::runtime::composition_tests::nested_phase::controls::nested_numeric_phase_keeps_assertion_bounds_and_arithmetic_order ... ok
+test native_artifact::program::runtime::composition_tests::nested_phase::controls::nested_numeric_phase_settles_nonempty_prefix_before_ordinary_retry ... {"limit":54217303,"restored":false,"settlements":[[5,1,4,18631680],[1,0,0,0]],"succeeded":false,"witness":"native-prefix-fallback"}
+{"limit":54217303,"restored":true,"settlements":[[5,1,4,18631680],[1,0,0,0]],"succeeded":false,"witness":"native-prefix-fallback"}
+{"limit":54217303,"restored":false,"settlements":[[5,1,4,18631680],[1,0,0,0]],"succeeded":false,"witness":"native-prefix-fallback"}
+{"limit":54217303,"restored":true,"settlements":[[5,1,4,18631680],[1,0,0,0]],"succeeded":false,"witness":"native-prefix-fallback"}
+ok
+test native_artifact::program::runtime::composition_tests::nested_phase::fallback::nested_numeric_phase_capacity_fallback_completes_without_replaying_append ... ok
+test native_artifact::program::runtime::composition_tests::nested_phase::fallback::nested_numeric_phase_envelope_overflow_declines_before_source_checks ... ok
+test native_artifact::program::runtime::composition_tests::nested_phase::nested_numeric_phase_finite_limits_keep_publication_and_retry ... {"dimension":"control","exact_selected_fragments":0,"minimum":122040499,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":23907427,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":7982937,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3593,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":17176,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":0,"minimum":122040499,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":23907427,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":7982937,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3593,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":17176,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":0,"minimum":122358371,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":23906427,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":7982455,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3839,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":13760,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":0,"minimum":122358371,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":23906427,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":7982455,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3839,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":13760,"witness":"composition-finite-boundary","zero_spending":false}
+ok
+test native_artifact::program::runtime::composition_tests::nested_phase::nested_numeric_phase_keeps_aliases_current_arguments_and_failure_recovery ... {"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":1,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":1,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":1,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":1,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":1,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":1,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":1,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":false,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":1,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"reserved_nodes":305257,"restored":true,"selected_pieces":0,"witness":"nested-numeric-phase"}
+ok
+test native_artifact::program::runtime::composition_tests::nested_phase::stride::nested_numeric_phase_affine_guard_overflow_keeps_prior_errors_and_recovery ... ok
+test native_artifact::program::runtime::composition_tests::nested_phase::stride::nested_numeric_phase_checked_offset_and_constant_stride_stay_native ... ok
+test native_artifact::program::runtime::composition_tests::nested_phase::stride::nested_numeric_phase_declines_wrapping_offset_zero_or_dynamic_stride ... ok
+test native_artifact::program::runtime::composition_tests::nested_phase::stride::nested_numeric_phase_stride_keeps_finite_boundary_failures_and_retry ... {"dimension":"control","exact_selected_fragments":2,"minimum":168196539,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":23907427,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":7988634,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3595,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":17336,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":2,"minimum":168196539,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":23907427,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":7988634,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3595,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":17336,"witness":"composition-finite-boundary","zero_spending":false}
+ok
+test native_artifact::program::runtime::composition_tests::nested_phase_growing::nested_numeric_phase_children_read_growing_contents_and_length ... {"admissions":7,"helpers":8,"positions":3,"restored":false,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"restored":false,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"restored":false,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"restored":true,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"restored":true,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"restored":true,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"restored":false,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"restored":false,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"restored":false,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"restored":true,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":7,"positions":0,"restored":true,"selected_pieces":0,"witness":"growing-numeric-phase"}
+{"admissions":7,"helpers":8,"positions":3,"restored":true,"selected_pieces":0,"witness":"growing-numeric-phase"}
+ok
+test native_artifact::program::runtime::composition_tests::nested_phase_handoff::nested_numeric_phase_canonical_handoff_keeps_copy_denial_and_recovery ... ok
+test native_artifact::program::runtime::composition_tests::nested_phase_handoff::nested_numeric_phase_canonical_pin_handoff_keeps_finite_failures_and_retry ... {"dimension":"control","exact_selected_fragments":0,"minimum":155744919,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":23907427,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":6,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":7983049,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3641,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":17288,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":0,"minimum":155744919,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":23907427,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":6,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":7983049,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":3641,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":17288,"witness":"composition-finite-boundary","zero_spending":false}
+ok
+test native_artifact::program::runtime::composition_tests::nested_phase_handoff::nested_numeric_phase_first_change_retires_only_dead_canonical_pins ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 839 filtered out; finished in 6.04s
+

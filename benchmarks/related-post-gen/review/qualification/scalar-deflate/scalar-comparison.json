@@ -1,0 +1,1752 @@
+{
+  "rows": 128,
+  "all_nonallocation_nontiming_fields_equal_IR222": true,
+  "allocation_requests_and_bytes_never_regress": true,
+  "allocation_changes": [
+    {
+      "row": 0,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 1,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 2,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 3,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 4,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 5,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 6,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 7,
+      "metrics": {}
+    },
+    {
+      "row": 8,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 9,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 10,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 11,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 12,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 13,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 14,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 15,
+      "metrics": {}
+    },
+    {
+      "row": 16,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 17,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 18,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 19,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 20,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 21,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 22,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 23,
+      "metrics": {}
+    },
+    {
+      "row": 24,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 25,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 26,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 27,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 28,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 29,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 30,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 31,
+      "metrics": {}
+    },
+    {
+      "row": 32,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 33,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 34,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 35,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 36,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 37,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 38,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 39,
+      "metrics": {}
+    },
+    {
+      "row": 40,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 41,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 42,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 43,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 44,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 45,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 46,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 47,
+      "metrics": {}
+    },
+    {
+      "row": 48,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 49,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 50,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 51,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 52,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 53,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 54,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 55,
+      "metrics": {}
+    },
+    {
+      "row": 56,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 57,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 58,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 59,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 60,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 61,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 62,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 63,
+      "metrics": {}
+    },
+    {
+      "row": 64,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 65,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 66,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 67,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 68,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 69,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 70,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 71,
+      "metrics": {}
+    },
+    {
+      "row": 72,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 73,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 74,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 75,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 76,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 77,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 78,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 79,
+      "metrics": {}
+    },
+    {
+      "row": 80,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 81,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 82,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 83,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 84,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 85,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 86,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 87,
+      "metrics": {}
+    },
+    {
+      "row": 88,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 89,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 90,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 91,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 92,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 93,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 94,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 95,
+      "metrics": {}
+    },
+    {
+      "row": 96,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 97,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 98,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 99,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 100,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 101,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 102,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 103,
+      "metrics": {}
+    },
+    {
+      "row": 104,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 105,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 106,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 107,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 108,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 109,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 110,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 111,
+      "metrics": {}
+    },
+    {
+      "row": 112,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 113,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 114,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 115,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 116,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 117,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 118,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 119,
+      "metrics": {}
+    },
+    {
+      "row": 120,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 121,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 122,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 123,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 124,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 125,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 126,
+      "metrics": {
+        "allocation_requests_per_100": {
+          "before": 61500,
+          "after": 48300,
+          "delta": -13200
+        },
+        "requested_bytes_per_100": {
+          "before": 16817800,
+          "after": 14896200,
+          "delta": -1921600
+        }
+      }
+    },
+    {
+      "row": 127,
+      "metrics": {}
+    }
+  ],
+  "differences": []
+}

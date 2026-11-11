@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/screen-comparison-config.json",
+    "--out",
+    "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/extra-metrics",
+    "--variant",
+    "mech-ir238-original-8",
+    "--variant",
+    "mech-ir238-compact-4",
+    "--variant",
+    "mech-ir238-compact-8"
+  ],
+  "exit": 0,
+  "seconds": 5.715471250005066,
+  "stdout": "{\"variant\": \"mech-ir238-original-8\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-ir238-compact-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-ir238-compact-8\", \"status\": \"built\", \"reverse_patch_exact\": true}\n",
+  "stderr": ""
+}

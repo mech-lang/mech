@@ -1,6 +1,89 @@
 //! Synchronous invocation orchestration for this owner.
 use super::*;
+use crate::native_artifact::program::protocol::GlobalHelper;
 impl Invocation<'_, '_, '_> {
+    pub(in crate::native_artifact::program::runtime) fn matrix_map_key_call(
+        &mut self,
+        site: usize,
+        args: [u64; 3],
+    ) -> Result<Option<u64>, Error> {
+        if self.state.consumed
+            || args != [self.arguments as u64, 2, 0]
+            || self.argument_capacity < 2
+        {
+            return Err(invalid(
+                "matrix key helper outside exact retained visit/lane",
+            ));
+        }
+        let metadata = self.descriptor.metadata();
+        self.state.control.work.charge(
+            Phase::Setup,
+            amount(metadata.matrix_map_keys.regions.len(), 64, 0)?,
+        )?;
+        let (_, proof) = metadata
+            .matrix_map_keys
+            .producer(site)
+            .ok_or_else(|| invalid("matrix key helper outside producer proof"))?;
+        if !self.state.map_owners.has_retained_binding(proof.owner) {
+            return Err(invalid("matrix key helper has no active retained owner"));
+        }
+        // SAFETY: exact invocation-owned pointer and capacity checked above;
+        // generated execution is suspended during this synchronous callback.
+        let words = unsafe { core::slice::from_raw_parts(self.arguments, 2) };
+        if words[0] != 0 {
+            return Err(invalid("matrix key source transported as scalar"));
+        }
+        let index = words[1];
+        let mut state = self.state.map_owners.state.take().unwrap();
+        let result = state.project_matrix_key(&mut MapExecution::new(self), site, index);
+        self.state.map_owners.state = Some(state);
+        if result? {
+            self.state.consumed = true;
+            Ok(None)
+        } else {
+            // Optional table/headroom refusal preserves the ordinary selected
+            // String producer at this SAME visit and on the SAME accounts.
+            self.helper(site as u64, GlobalHelper::Library.raw(), args)
+        }
+    }
+
+    pub(in crate::native_artifact::program::runtime) fn retained_constructor_check(
+        &mut self,
+        site: usize,
+        args: [u64; 3],
+    ) -> Result<Option<u64>, Error> {
+        if args[1..] != [0; 2] || self.state.consumed {
+            return Err(invalid("malformed or replayed retained constructor check"));
+        }
+        let mut state = self
+            .state
+            .map_owners
+            .state
+            .take()
+            .ok_or_else(|| invalid("retained constructor has no owner session"))?;
+        let result = state.constructor_statistics(&mut MapExecution::new(self), site, args[0]);
+        self.state.map_owners.state = Some(state);
+        let (entries, key_bytes) = result?;
+        let descriptor = self.descriptor;
+        let call = descriptor.metadata().calls[site]
+            .as_ref()
+            .ok_or_else(|| invalid("retained constructor lost selected factory"))?;
+        let coexistence = self.selected_join_coexistence(None)?;
+        call.admit_map_owner_constructor(
+            entries,
+            key_bytes,
+            self.limits,
+            &self.state.library,
+            coexistence,
+        )
+        .map_err(|error| Error::Library {
+            origin: descriptor.metadata().plan.blocks()[site].origin(),
+            error,
+        })?;
+        self.state.consumed = true;
+        Ok(None)
+    }
+
     /// Retire private views at the SAME Tail latch/exit boundary as ordinary
     /// immutable locals. A later iteration can never read an earlier key.
     pub(in crate::native_artifact::program::runtime) fn retire_keys(
@@ -47,6 +130,13 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         site: usize,
     ) -> Result<Option<InitialWords>, Error> {
+        self.begin_retained_map_with_keys(site, false)
+    }
+    fn begin_retained_map_with_keys(
+        &mut self,
+        site: usize,
+        prefer_borrowed: bool,
+    ) -> Result<Option<InitialWords>, Error> {
         // Check authority before lazy allocation, including refused-entry replay.
         if !core::ptr::eq(self.state.map_owners.descriptor, self.descriptor)
             || self.state.control.previous != u32::try_from(site).ok()
@@ -89,11 +179,43 @@ impl Invocation<'_, '_, '_> {
             };
             self.state.map_owners.state = Some(state);
         }
+        let mut seed = self.take_seed(site)?;
         let mut state = self.state.map_owners.state.take().unwrap();
-        let result = state.try_begin_retained(&mut MapExecution::new(self), site);
+        let result = if let Some(seed) = seed.as_ref() {
+            state.try_begin_retained_seed_with_keys(
+                &mut MapExecution::new(self),
+                site,
+                Some(&seed.frame),
+                prefer_borrowed,
+            )
+        } else {
+            state.try_begin_retained(&mut MapExecution::new(self), site)
+        };
         // Restore on both success and failure. No new ledger or permit is made.
         self.state.map_owners.state = Some(state);
-        result
+        let result = result?;
+        if result.is_none() {
+            if let Some(seed) = seed.take() {
+                self.materialize_seed(seed)?;
+            }
+            let metadata = self.descriptor.metadata();
+            let owner = metadata
+                .map_owner_words
+                .as_ref()
+                .unwrap()
+                .initializer(site)
+                .unwrap();
+            for proof in &metadata.borrowed_map_keys.regions {
+                if metadata
+                    .matrix_map_keys
+                    .producer(proof.cells[0])
+                    .is_some_and(|(_, p)| p.owner == owner)
+                {
+                    self.materialize_borrowed_keys(proof.output.get())?;
+                }
+            }
+        }
+        Ok(result)
     }
 
     pub(in crate::native_artifact::program::runtime) fn call_retained_map(
@@ -116,6 +238,8 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         site: usize,
         token: u64,
+        words: &[u64],
+        dictionary: bool,
     ) -> Result<Publication, Error> {
         let mut state = self
             .state
@@ -123,7 +247,11 @@ impl Invocation<'_, '_, '_> {
             .state
             .take()
             .ok_or_else(|| invalid("retained map session publication before admitted entry"))?;
-        let result = state.publish_retained(&mut MapExecution::new(self), site, token);
+        let result = if dictionary {
+            state.publish_retained_choice(&mut MapExecution::new(self), site, token, words, true)
+        } else {
+            state.publish_retained(&mut MapExecution::new(self), site, token, words)
+        };
         self.state.map_owners.state = Some(state);
         result
     }
@@ -185,11 +313,18 @@ impl Invocation<'_, '_, '_> {
         if self.state.consumed {
             return Err(invalid("duplicate retained map helper"));
         }
-        if operation == MAP_OWNER_BEGIN {
+        let borrowed = operation
+            == crate::native_artifact::program::protocol::GlobalHelper::MapOwnerBeginBorrowedValues
+                .raw();
+        if operation == MAP_OWNER_BEGIN || borrowed {
             if args != [0; 3] {
                 return Err(invalid("malformed retained map entry"));
             }
-            if let Some(words) = self.begin_retained_map(site)? {
+            if let Some(words) = if borrowed {
+                self.begin_retained_map_with_keys(site, true)?
+            } else {
+                self.begin_retained_map(site)?
+            } {
                 let layout = self.descriptor.metadata().map_owner_words.as_ref().unwrap();
                 let index = layout.initializer(site).unwrap();
                 let count = layout
@@ -245,10 +380,10 @@ impl Invocation<'_, '_, '_> {
             let result = self.call_retained_map(site, &words[..count])?;
             self.state.consumed = true;
             Ok(Some(result))
-        } else if operation == MAP_OWNER_END {
-            if args[1..] != [0; 2] {
-                return Err(invalid("malformed retained map publication"));
-            }
+        } else if operation == MAP_OWNER_END
+            || operation
+                == crate::native_artifact::program::protocol::GlobalHelper::MapDictionaryEnd.raw()
+        {
             let Action::Scalar(mech_engine::native_artifact::NativeMatchAction::Copy {
                 output,
                 ..
@@ -257,14 +392,81 @@ impl Invocation<'_, '_, '_> {
                 return Err(invalid("retained map exit lacks canonical destination"));
             };
             let output = *output;
-            let token = match self.finish_retained_map(site, args[0])? {
+            let layout = self
+                .descriptor
+                .metadata()
+                .map_owner_words
+                .as_ref()
+                .ok_or_else(|| invalid("retained map exit layout missing"))?;
+            let region = layout
+                .exit(site)
+                .and_then(|id| layout.regions().get(id))
+                .ok_or_else(|| invalid("retained map exit proof missing"))?;
+            let count = layout
+                .aggregates()
+                .slot(region.tail().returned())
+                .ok_or_else(|| invalid("retained map result word slot missing"))?
+                .1;
+            let mut words = [0u64; 32];
+            if count == 1 && args[1..] == [0; 2] {
+                words[0] = args[0];
+            } else {
+                if count > words.len()
+                    || count > self.argument_capacity
+                    || args[1] != self.arguments as usize as u64
+                    || args[2] != count as u64
+                {
+                    return Err(invalid("malformed retained map publication words"));
+                }
+                // SAFETY: the exact invocation-owned argument pointer/count
+                // was checked; generated execution remains suspended.
+                words[..count]
+                    .copy_from_slice(unsafe { core::slice::from_raw_parts(self.arguments, count) });
+            }
+            let token = match self.finish_retained_map(
+                site,
+                args[0],
+                &words[..count],
+                operation
+                    == crate::native_artifact::program::protocol::GlobalHelper::MapDictionaryEnd
+                        .raw(),
+            )? {
                 Publication::Canonical(value) => {
                     self.state
                         .arena
                         .put(output.get(), &value, &mut self.state.control.work)?;
+                    if let Some(owner) = layout.exit(site)
+                        && self
+                            .descriptor
+                            .metadata()
+                            .borrowed_record_maps
+                            .regions
+                            .iter()
+                            .any(|r| r.owner == owner)
+                    {
+                        let source = self
+                            .state
+                            .arena
+                            .current_handle(output.get(), &mut self.state.control.work)?;
+                        self.state
+                            .map_owners
+                            .state
+                            .as_mut()
+                            .unwrap()
+                            .borrowed_records
+                            .published = Some(super::borrowed_records::Published {
+                            owner,
+                            source,
+                            visit: self.state.control.visits,
+                        });
+                    }
                     0
                 }
                 Publication::Frozen(token) => token,
+                Publication::Dictionary(map) => {
+                    self.install_dictionary(site, map)?;
+                    0
+                }
             };
             self.state.consumed = true;
             Ok(Some(token))

@@ -28,18 +28,18 @@ fn native_argument_bank_numeric_words_do_not_inflate_managed_values() {
             let descriptor = restored_descriptor.as_ref().unwrap_or(jit.descriptor());
             let metadata = descriptor.metadata();
             assert!(metadata.compositions.parents.iter().all(|parent| {
-                parent.iteration != metadata.closed_tails.regions[0].iteration
-                    && parent
-                        .segments
-                        .iter()
-                        .all(|piece| piece.prepaid_region.is_none())
+                parent
+                    .segments
+                    .iter()
+                    .all(|piece| piece.prepaid_region.is_none())
             }));
             assert_eq!(
                 metadata
                     .closed_tails
                     .regions
                     .iter()
-                    .filter(|r| r.numeric.as_ref().is_some_and(|p| p.phase.is_some()))
+                    .filter(|r| r.tail.parent().is_none()
+                        && r.numeric.as_ref().is_some_and(|p| p.phase.is_some()))
                     .count(),
                 1
             );
@@ -54,6 +54,7 @@ fn native_argument_bank_numeric_words_do_not_inflate_managed_values() {
                 .max()
                 .unwrap();
             assert!(metadata.max_library_inputs > maximum_values);
+            let maximum_values = maximum_values.max(metadata.compositions.argument_values());
             assert_eq!(metadata.max_call_values, maximum_values);
             let memory = mode.memory_budget();
             let prepared = Prepared::new(descriptor, mode.execution(), &memory).unwrap();

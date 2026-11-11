@@ -1,0 +1,13 @@
+scalar-runtime passed
+program-runtime passed
+runtime-runner-build passed
+runtime-runner-audit passed
+runtime-first10 passed
+runtime-full5000 passed
+runtime-images passed
+hosted-generation passed
+generator-build passed
+generate-standard-app passed
+managed-main-build passed
+managed-main-audit passed
+Runtime-only/full5000 and unmodified Managed application qualification passed

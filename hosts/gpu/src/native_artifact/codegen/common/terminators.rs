@@ -11,10 +11,16 @@ pub(in crate::native_artifact) fn emit_source_terminator(
     b: &mut FunctionBuilder<'_>,
     words: &Words,
     code: CodePlan<'_>,
+    site: usize,
+    options: crate::native_artifact::codegen::options::OptimizationOptions,
     terminator: Term,
     fail_at: Block,
     target: impl Fn(u32) -> Block,
 ) {
+    if let Some(next) = super::boolean_branches::target(code, site, options) {
+        b.ins().jump(target(next), &[]);
+        return;
+    }
     match terminator {
         Term::TailHeader { body, .. } | Term::Scalar(Branch::Jump(body)) => {
             b.ins().jump(target(body), &[]);

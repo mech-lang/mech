@@ -138,6 +138,9 @@ fn shared_retention_inventory_preserves_identity_and_capture_eligibility() {
                     &lines,
                     descriptor.metadata().map_owner_words.as_ref(),
                     &descriptor.metadata().frozen_maps,
+                    &descriptor.metadata().borrowed_record_maps,
+                    &descriptor.metadata().utf8_reads,
+                    &descriptor.metadata().numeric_maps,
                     &(&descriptor.metadata().plan).string_map_regions(),
                 )
             };

@@ -1,0 +1,1 @@
+{"exit":1,"reason":"Recipe migration accidentally changed the retained numeric-collections helper path v6 to v7. No compilation or fixture ran. Corrected to original retained helper and exact current compiler prefix."}

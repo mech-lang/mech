@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-guarded-load-demand-tests-20261107-v1/mech_gpu-tests",
+    "guarded_numeric_load",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 2.039444874972105
+}

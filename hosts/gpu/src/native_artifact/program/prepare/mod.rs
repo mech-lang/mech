@@ -6,11 +6,13 @@ use crate::native_artifact::program::prepare::retirement::RetirementTables;
 use mech_core::{FunctionCatalog, SchemaTable, Value};
 use mech_engine::ProgramArtifact;
 use mech_engine::native_artifact::{
-    NativeIterationAction, NativePreparedLibraryCall, NativeProgramArtifactPlan,
-    NativeTextLineRetentionFrontier, prepare_native_program_library_call,
+    NativeDescriptorTemplatePool, NativeIterationAction, NativePreparedLibraryCall,
+    NativeProgramArtifactPlan, NativeTextLineRetentionFrontier,
+    prepare_native_program_library_call_with_descriptors,
 };
 use std::sync::Arc;
 
+pub(in crate::native_artifact) mod borrowed_dictionary_values;
 pub(in crate::native_artifact) mod call_cache;
 pub(in crate::native_artifact) mod call_routes;
 pub(in crate::native_artifact) mod cleanup_effects;
@@ -100,6 +102,8 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     // it is neither serialized authority nor another preparation pipeline.
     pub(in crate::native_artifact) uniform_word_collections:
         Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
+    pub(in crate::native_artifact) utf8_reads: utf8_reads::Layout,
+    pub(in crate::native_artifact) numeric_maps: numeric_maps::Layout,
     pub(in crate::native_artifact) word_collections: Box<[word_collections::Region]>,
     pub(in crate::native_artifact) window_regions:
         Box<[mech_engine::native_artifact::NativeWindowRegion]>,
@@ -112,6 +116,13 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) map_owner_words:
         Option<mech_engine::native_artifact::NativeMapOwnerWords>,
     pub(in crate::native_artifact) frozen_maps: native::program::prepare::frozen_map::Layout,
+    pub(in crate::native_artifact) borrowed_record_maps: borrowed_record_map::Layout,
+    pub(in crate::native_artifact) matrix_map_keys: matrix_map_keys::Layout,
+    pub(in crate::native_artifact) borrowed_map_keys: borrowed_map_keys::Layout,
+    pub(in crate::native_artifact) generic_dictionary: generic_dictionary::Layout,
+    pub(in crate::native_artifact) dictionary_seed_frames: dictionary_seed_frames::Layout,
+    pub(in crate::native_artifact) borrowed_dictionary_values: borrowed_dictionary_values::Layout,
+    pub(in crate::native_artifact) fixed_key_loops: fixed_key_loops::Layout,
     pub(in crate::native_artifact) map_admission: native::program::prepare::map_admission::Layout,
     pub(in crate::native_artifact) parallel: native::program::prepare::parallel::Layout,
     pub(in crate::native_artifact) borrowed_strings: native::program::prepare::borrowed::Layout,
@@ -139,7 +150,11 @@ impl PreparedNativeProgram {
         plan.validate_current_visits().map_err(str::to_owned)?;
         let facts = plan.facts();
         let scalar_aggregates = facts.scalar_aggregates();
-        let buffer_frames = facts.buffer_frames();
+        // One same-plan ownership decision: retained native map words keep
+        // their existing components, while disjoint private frames may use
+        // admitted canonical owners. A managed value cannot occupy both.
+        let (buffer_frames, map_owner_words) =
+            facts.buffer_frame_owner_layouts().map_err(str::to_owned)?;
         let parallel =
             native::program::prepare::parallel::Layout::derive(&facts, &scalar_aggregates)
                 .map_err(str::to_owned)?;
@@ -157,6 +172,8 @@ impl PreparedNativeProgram {
         let selected_joins =
             native::program::prepare::selected_join::Layout::derive(&plan, &string_map_regions)?;
         let line_matrices = native::program::prepare::line_matrix::Layout::derive(&plan)?;
+        let utf8_reads = utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
+        let numeric_maps = numeric_maps::Layout::derive(&plan).map_err(str::to_owned)?;
         let mut analysis_visits = native::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
@@ -175,6 +192,20 @@ impl PreparedNativeProgram {
         selected_joins
             .fund_visit_checks(&mut visits)
             .map_err(str::to_owned)?;
+        compose_work(
+            &mut analysis_visits,
+            &mut visits,
+            |site| {
+                Ok(if utf8_reads.at_header(site).is_some() {
+                    utf8_reads::HEADER_WORK
+                } else if numeric_maps.at_header(site).is_some() {
+                    numeric_maps::HEADER_WORK
+                } else {
+                    0
+                })
+            },
+            "native UTF8 lookup header work overflow",
+        )?;
         // Derive this proof once from the SAME immutable plan. Both layout and
         // identity inspect the complete result, including unsupported/multiple
         // frontiers; no caller-provided or persistent proof cache is consulted.
@@ -200,108 +231,58 @@ impl PreparedNativeProgram {
             },
             "borrowed String visit work overflow",
         )?;
-        let map_owner_words = facts.map_owner_words().map_err(str::to_owned)?;
         compose_work(
             &mut analysis_visits,
             &mut visits,
             |site| native::program::prepare::map_owner::extra_work(&map_owner_words, site),
             "map owner visit work overflow",
         )?;
-        let mut calls = plan
-            .blocks()
-            .iter()
-            .map(|block| match block.action() {
-                NativeIterationAction::LibraryCall { template, .. } => {
-                    prepare_native_program_library_call(artifact, template, catalog)
-                        .map(Some)
-                        .map_err(|e| e.to_string())
-                }
-                NativeIterationAction::PrepareStringSpanSelector { collection }
-                | NativeIterationAction::ProjectStringSpan { collection } => {
-                    let projection = plan.collections()[*collection as usize]
-                        .string_span_projection()
-                        .ok_or("String span action lacks its selected proof")?;
-                    let template = if matches!(
-                        block.action(),
-                        NativeIterationAction::PrepareStringSpanSelector { .. }
-                    ) {
-                        projection.range_template()
-                    } else {
-                        projection.selection_template()
-                    };
-                    prepare_native_program_library_call(artifact, template, catalog)
-                        .map(Some)
+        let mut descriptor_templates = NativeDescriptorTemplatePool::default();
+        let mut calls = (0..plan.blocks().len())
+            .map(|site| {
+                plan.prepared_library_template(site)
+                    .map_err(str::to_owned)?
+                    .map(|template| {
+                        prepare_native_program_library_call_with_descriptors(
+                            artifact,
+                            template,
+                            catalog,
+                            &mut descriptor_templates,
+                        )
                         .map_err(|error| error.to_string())
-                }
-                NativeIterationAction::ProjectStringMapEntry { collection } => {
-                    let projection = plan.collections()[*collection as usize]
-                        .string_element_map_projection()
-                        .ok_or("String map projection lacks its selected proof")?;
-                    prepare_native_program_library_call(
-                        artifact,
-                        projection.selection_template(),
-                        catalog,
-                    )
-                    .map(Some)
-                    .map_err(|error| error.to_string())
-                }
-                NativeIterationAction::HistogramQueryStep { collection, step } => {
-                    let mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(
-                        sink,
-                    ) = plan.collections()[*collection as usize].result()
-                    else {
-                        return Err("histogram query stage lacks selected proof".into());
-                    };
-                    sink.steps()
-                        .get(*step as usize)
-                        .ok_or("histogram query step outside proof")?
-                        .template()
-                        .map(|template| {
-                            prepare_native_program_library_call(artifact, template, catalog)
-                        })
-                        .transpose()
-                        .map_err(|error| error.to_string())
-                }
-                NativeIterationAction::HistogramFinish { collection } => {
-                    let mech_engine::native_artifact::NativeCollectionResult::Histogram(sink) =
-                        plan.collections()[*collection as usize].result()
-                    else {
-                        return Err("histogram consumer lacks selected sink proof".into());
-                    };
-                    prepare_native_program_library_call(artifact, sink.template(), catalog)
-                        .map(Some)
-                        .map_err(|error| error.to_string())
-                }
-                NativeIterationAction::TextJoinFinish { collection } => {
-                    let mech_engine::native_artifact::NativeCollectionResult::TextJoin(sink) =
-                        plan.collections()[*collection as usize].result()
-                    else {
-                        return Err("text join consumer lacks selected sink proof".into());
-                    };
-                    prepare_native_program_library_call(artifact, sink.template(), catalog)
-                        .map(Some)
-                        .map_err(|e| e.to_string())
-                }
-                NativeIterationAction::PrepareU64Range { iteration } => {
-                    let mech_engine::native_artifact::NativeControlLoop::Collection(generator) =
-                        &plan.iterations()[*iteration as usize]
-                    else {
-                        return Err("range source is not a collection".into());
-                    };
-                    let mech_engine::native_artifact::NativeCollectionSource::U64Range(cursor) =
-                        generator.source()
-                    else {
-                        return Err("range source lacks selected proof".into());
-                    };
-                    prepare_native_program_library_call(artifact, cursor.template(), catalog)
-                        .map(Some)
-                        .map_err(|e| e.to_string())
-                }
-                _ => Ok(None),
+                    })
+                    .transpose()
             })
             .collect::<Result<Box<[_]>, _>>()?;
         query_stages::validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
         prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
+        let matrix_map_keys = matrix_map_keys::Layout::derive(&plan, Some(&map_owner_words))
+            .map_err(str::to_owned)?;
+        let borrowed_map_keys =
+            borrowed_map_keys::Layout::derive(&plan, &buffer_frames, &matrix_map_keys)
+                .map_err(str::to_owned)?;
+        let generic_dictionary =
+            generic_dictionary::Layout::derive(&plan, &map_owner_words, &utf8_reads)
+                .map_err(str::to_owned)?;
+        let dictionary_seed_frames =
+            dictionary_seed_frames::Layout::derive(&plan, &map_owner_words)
+                .map_err(str::to_owned)?;
+        let borrowed_dictionary_values = borrowed_dictionary_values::Layout::derive(
+            &plan,
+            Some(&map_owner_words),
+            &borrowed_map_keys,
+            &matrix_map_keys,
+            &dictionary_seed_frames,
+            &generic_dictionary,
+        )
+        .map_err(str::to_owned)?;
+        let fixed_key_loops = fixed_key_loops::Layout::derive(
+            &plan,
+            Some(&map_owner_words),
+            &borrowed_dictionary_values,
+            &matrix_map_keys,
+        )
+        .map_err(str::to_owned)?;
         let closed_tails = native::program::prepare::tail::Layout::derive(
             &plan,
             &borrowed_strings,
@@ -310,6 +291,7 @@ impl PreparedNativeProgram {
             &map_owner_words,
             &buffer_frames,
             &calls,
+            &fixed_key_loops,
         )?;
         compose_work(
             &mut analysis_visits,
@@ -401,6 +383,15 @@ impl PreparedNativeProgram {
                     .unwrap_or(0),
             )
             .max(usize::from(!parallel.regions.is_empty()))
+            .max(
+                closed_tails
+                    .regions
+                    .iter()
+                    .filter_map(|region| region.captures.as_ref())
+                    .map(|proof| proof.words() + 2)
+                    .max()
+                    .unwrap_or(0),
+            )
             .max(if closed_tails.regions.is_empty() {
                 0
             } else {
@@ -446,8 +437,19 @@ impl PreparedNativeProgram {
             .transpose()
             .map_err(str::to_owned)?
             .unwrap_or_default();
-        let call_routes =
-            call_routes::derive(&plan, &buffer_frames, &unsigned_buffer_calls, &calls);
+        let borrowed_record_maps = map_owner_words
+            .as_ref()
+            .map(|owner| borrowed_record_map::Layout::derive(&plan, owner))
+            .transpose()
+            .map_err(str::to_owned)?
+            .unwrap_or_default();
+        let call_routes = call_routes::derive(
+            &plan,
+            &buffer_frames,
+            &unsigned_buffer_calls,
+            &calls,
+            &borrowed_map_keys,
+        );
         let call_cache = call_cache::Layout::derive(&plan, &calls)?;
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let metadata = ProgramMetadata {
@@ -467,6 +469,8 @@ impl PreparedNativeProgram {
             max_library_inputs,
             max_call_values,
             uniform_word_collections,
+            utf8_reads,
+            numeric_maps,
             word_collections,
             unsigned_buffer_calls,
             buffer_frames,
@@ -477,6 +481,13 @@ impl PreparedNativeProgram {
             scalar_aggregates,
             map_owner_words,
             frozen_maps,
+            borrowed_record_maps,
+            matrix_map_keys,
+            borrowed_map_keys,
+            generic_dictionary,
+            dictionary_seed_frames,
+            borrowed_dictionary_values,
+            fixed_key_loops,
             map_admission,
             parallel,
             borrowed_strings,
@@ -527,7 +538,7 @@ fn compose_work(
 
 // The sole canonical frame-prefix formula. Owner relocation occurs only in
 // preparation; later consumers inspect this existing assignment.
-fn frame_prefix_words(
+pub(in crate::native_artifact) fn frame_prefix_words(
     plan: &NativeProgramArtifactPlan,
     aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
     borrowed: &native::program::prepare::borrowed::Layout,
@@ -589,7 +600,10 @@ pub(in crate::native_artifact) fn validate_type_slots(
     Ok(())
 }
 
+pub(in crate::native_artifact) mod captured_numeric;
 pub(in crate::native_artifact) mod numeric_plan;
+pub(in crate::native_artifact) mod numeric_tree;
+mod phase_numeric;
 pub(in crate::native_artifact) mod readonly_numeric;
 pub(in crate::native_artifact) mod retirement;
 
@@ -601,10 +615,12 @@ pub(in crate::native_artifact) fn constant_admission_total(bounds: &[u64]) -> Re
 }
 
 pub(in crate::native_artifact) mod borrowed;
+pub(in crate::native_artifact) mod borrowed_record_map;
 pub(in crate::native_artifact) mod frozen_map;
 pub(in crate::native_artifact) mod line_matrix;
 pub(in crate::native_artifact) mod map_admission;
 pub(in crate::native_artifact) mod map_owner;
+pub(in crate::native_artifact) mod matrix_map_keys;
 pub(in crate::native_artifact) mod packed_map;
 pub(in crate::native_artifact) mod parallel;
 pub(in crate::native_artifact) mod prefix;
@@ -613,4 +629,14 @@ pub(in crate::native_artifact) mod tail;
 pub(in crate::native_artifact) mod window_histogram;
 pub(in crate::native_artifact) mod word_collections;
 
+pub(in crate::native_artifact) mod numeric_maps;
 pub(in crate::native_artifact) mod query_stages;
+pub(in crate::native_artifact) mod utf8_reads;
+
+pub(in crate::native_artifact) mod borrowed_map_keys;
+
+pub(in crate::native_artifact) mod generic_dictionary;
+
+pub(in crate::native_artifact) mod dictionary_seed_frames;
+
+pub(in crate::native_artifact) mod fixed_key_loops;

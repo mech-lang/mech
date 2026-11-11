@@ -83,6 +83,12 @@ pub enum NativeScalarOp {
     #[cfg(any(feature = "convert", feature = "native-artifact"))]
     U32Sub,
     #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32Mul,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32Div,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    U32Rem,
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
     U8Add,
     U64Add,
     U64Sub,
@@ -234,7 +240,7 @@ impl NativeScalarOp {
             U64BitAnd | U64BitOr | U64BitXor | U64ShlWrap | U64ShrWrap | U64WrappingAdd
             | U64WrappingSub | U64WrappingMul => (&[U64, U64], U64),
             #[cfg(any(feature = "convert", feature = "native-artifact"))]
-            U32Add | U32Sub => (&[U32, U32], U32),
+            U32Add | U32Sub | U32Mul | U32Div | U32Rem => (&[U32, U32], U32),
             #[cfg(any(feature = "convert", feature = "native-artifact"))]
             U8Add => (&[U8, U8], U8),
             U64Add | U64Sub | U64Mul | U64Div | U64Rem => (&[U64, U64], U64),

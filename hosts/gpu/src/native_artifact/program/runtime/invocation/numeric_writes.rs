@@ -2,6 +2,7 @@
 //! validation/copy/error ordering. The rest of the recurrence uses native cells.
 use super::{Error, Invocation, invalid};
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
+use crate::native_artifact::program::protocol::NumericWriteHandoff;
 use mech_core::snapshot::UnsignedMatrixViewMut;
 use mech_engine::native_artifact::NativeIterationAction as Action;
 
@@ -12,12 +13,15 @@ impl Invocation<'_, '_, '_> {
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
         let metadata = self.descriptor.metadata();
+        // A selected complete tree and its ordinary fallback leaves have
+        // overlapping source sites. Only the current exclusive loan identifies
+        // which independently proved owner bank is live at this exact store.
         let Some(super::tail::State {
             region: super::tail::Region::Tail(id),
             ..
         }) = self.closed_tail.as_ref()
         else {
-            return Err(invalid("numeric materialization outside active region"));
+            return Err(invalid("numeric materialization has no current Tail loan"));
         };
         let id = *id;
         let region = &metadata.closed_tails.regions[id];
@@ -33,7 +37,10 @@ impl Invocation<'_, '_, '_> {
         else {
             return Err(invalid("numeric materialization outside selected write"));
         };
-        if args[2] != 0
+        let handoff = NumericWriteHandoff::decode(args[2])
+            .ok_or_else(|| invalid("unknown numeric ownership handoff"))?;
+        if (handoff == NumericWriteHandoff::RetireDeadTreePins
+            && (region.numeric_tree.is_none() || proof.phase.is_some()))
             || self
                 .state
                 .buffer_frames
@@ -52,7 +59,8 @@ impl Invocation<'_, '_, '_> {
         let Action::LibraryCall { operands, .. } = metadata.plan.blocks()[site].action() else {
             return Err(invalid("numeric write lost source operation"));
         };
-        let aliases = if proof.phase.is_some() {
+        let aliases = if proof.phase.is_some() || handoff == NumericWriteHandoff::RetireDeadTreePins
+        {
             metadata
                 .unsigned_buffer_calls
                 .get(site)
@@ -63,7 +71,8 @@ impl Invocation<'_, '_, '_> {
                 .ok_or_else(|| invalid("numeric write lost its same-plan ownership proof"))?
                 .owned_source_slots()
         } else {
-            // Existing child-free leaves retain their qualified handoff/prices.
+            // Child-free leaves and an emission-only tree ablation retain
+            // their established handoff and prices.
             &[]
         };
         let call = metadata.calls[site]
@@ -76,15 +85,19 @@ impl Invocation<'_, '_, '_> {
                 .and_then(|n| n.checked_add(64))
                 .ok_or_else(|| invalid("numeric ownership work overflows"))?,
         )?;
-        let source = self.state.buffer_frames.take_managed_owner(
-            &metadata.buffer_frames,
-            region.tail.carrier(),
-            proof.arrays[*array].field,
+        let source = self.state.buffer_frames.take_numeric_owner(
+            proof.arrays[*array]
+                .physical()
+                .ok_or_else(|| invalid("captured array cannot receive a mutable owner"))?,
+            proof.arrays[*array].schema,
         )?;
         // The same source-site proof used by ordinary replacement/append
         // admits only dead canonical aliases. A skipped private projection does
         // not itself retire an earlier canonical definition. Release matching
         // old pins here, after settlement and before Core checks exclusivity.
+        // The tree proof owns the same source store and current carrier as the
+        // ordinary route. Its generated request does not broaden last use:
+        // only the independently derived source-site list above is inspected.
         // Live frames, outside aliases and differently backed visits remain.
         for slot in aliases {
             self.state.arena.retire_current_matching(

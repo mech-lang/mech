@@ -1,0 +1,22 @@
+
+running 17 tests
+test native_artifact::program::codegen::traversal_facts::captured_windows::captured_window_facts_require_current_selected_mathematical_coordinates ... ok
+test native_artifact::program::codegen::traversal_facts::completion::completion_does_not_get_totality_from_a_successful_replacement ... ok
+test native_artifact::program::codegen::traversal_facts::completion::completion_exhausts_normalized_predicates_but_preserves_raw_boolean_rejects ... ok
+test native_artifact::program::codegen::traversal_facts::completion::completion_keeps_unknown_and_overflowing_source_arithmetic_fallible ... ok
+test native_artifact::program::codegen::traversal_facts::tests::child_checks_use_checked_sum_order_but_not_wrapping_or_fresh_words ... ok
+test native_artifact::program::codegen::traversal_facts::tests::child_window_checks_keep_exact_views_current_words_and_checked_extents ... ok
+test native_artifact::program::codegen::traversal_facts::tests::current_array_windows_follow_selected_literals_aliases_and_word_versions ... ok
+test native_artifact::program::codegen::traversal_facts::tests::finite_limits_decline_without_turning_unknown_into_proof ... ok
+test native_artifact::program::codegen::traversal_facts::tests::joins_drop_one_arm_facts_and_preserve_only_unchanged_aliases ... ok
+test native_artifact::program::codegen::traversal_facts::tests::literal_bool_propagation_keeps_raw_remainder_and_overflow_unknown ... ok
+test native_artifact::program::codegen::traversal_facts::tests::overlapping_assignments_keep_current_tag_versions_in_the_emitted_order ... ok
+test native_artifact::program::codegen::traversal_facts::tests::selected_normalized_booleans_retain_only_logically_forced_operands ... ok
+test native_artifact::program::codegen::traversal_facts::tests::smaller_sum_windows_require_selected_checked_bounds_and_current_views ... ok
+test native_artifact::program::codegen::traversal_facts::tests::tag_partitions_keep_invalid_remainder_and_boolean_words_opaque ... ok
+test native_artifact::program::codegen::traversal_facts::tests::unsigned_bounds_use_exact_current_values_and_successful_difference ... ok
+test native_artifact::program::codegen::traversal_facts::tests::whole_window_admission_implies_initialized_one_based_indices ... ok
+test native_artifact::program::codegen::traversal_facts::tests::whole_windows_need_the_current_selected_interval_and_exact_views ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 848 filtered out; finished in 0.00s
+

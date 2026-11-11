@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-shared-call-certificates-tests-20261107-v1/mech_gpu-tests",
+    "local_effects",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 2.2851604579482228
+}

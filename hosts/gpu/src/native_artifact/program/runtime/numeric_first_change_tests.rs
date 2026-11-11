@@ -147,134 +147,146 @@ fn delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry()
         .unwrap();
         let mut work = Vec::new();
         for artifact in [original, decoded] {
-            let jit = crate::native_artifact::JitProgramArtifact::compile(
-                &artifact,
-                &mech_stdlib::source_catalog(),
-            )
-            .unwrap_or_else(|error| panic!("{kind}, interleaved={interleaved}: {error:?}"));
-            assert!(
-                jit.descriptor()
-                    .metadata()
-                    .closed_tails
-                    .regions
-                    .iter()
-                    .any(|region| region.numeric.as_ref().is_some_and(|proof| proof
-                        .arrays
-                        .iter()
-                        .filter(|array| array.writable)
-                        .count()
-                        == 2))
-            );
-            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
-            let mut outputs = vec![None; artifact.outputs().len()];
-            let mut current_work = Vec::new();
-            // Failure kinds: 0 succeeds, 1 denies the real helper's private lane,
-            // 2 denies the original first copy while keeping actual input aliases.
-            for (a, b, seed, checksum, flip, alias, failure) in [
-                (5, 11, 17, 23, false, false, 0),
-                (5, 11, 17, 23, false, false, 1),
-                (19, 19, 31, 7, true, true, 0),
-                (41, 9, 3, 5, false, false, 2),
-                (7, 29, 11, 37, true, false, 0),
-            ] {
-                let mut args =
-                    arguments(&artifact, cell(a), cell(b), seed, checksum, flip, &memory);
-                if alias {
-                    let port = |name: &str| {
-                        artifact
-                            .inputs()
-                            .iter()
-                            .position(|p| {
-                                mech_engine::decode_source_input_name(&p.name).unwrap() == name
-                            })
-                            .unwrap()
-                    };
-                    let first = port("first");
-                    let second = port("second");
-                    assert_eq!(args[first].schema(), args[second].schema());
-                    args[second] = args[first].clone();
-                }
-                let aliases = args.clone();
-                let values = args
-                    .iter()
-                    .map(|v| v.canonical_data_draft().unwrap())
-                    .collect::<Vec<_>>();
-                let prior = outputs.clone();
-                let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
-                let mut caps = limits();
-                if failure == 2 {
-                    caps.library.max_cloned_bytes = Some(0);
-                }
-                let (run, rows) = execute_observed_numeric_first_change(
-                    &jit,
-                    &args,
-                    &mut outputs,
-                    caps,
-                    &memory,
-                    failure == 1,
-                );
-                let (answer, expected_rows) = model(a, b, seed, checksum, flip, interleaved);
-                assert_eq!(rows[0].scalars, expected_rows[0], "{rows:?}");
-                assert_eq!(rows[0].incoming, u64::from(a) + 1);
-                if failure == 0 {
-                    current_work.push(run.unwrap().work);
-                    assert_eq!(
-                        rows.len(),
-                        2,
-                        "each array changes once after distinct no-op prefixes"
-                    );
-                    assert_eq!(rows[1].scalars, expected_rows[1], "{rows:?}");
-                    assert_eq!(rows[1].incoming, u64::from(b) + 2);
-                    assert!(rows.iter().all(|row| row.status == STATUS_OK));
-                    assert_eq!(
-                        outputs
-                            .last()
-                            .unwrap()
-                            .as_ref()
-                            .unwrap()
-                            .canonical_data_draft()
-                            .unwrap(),
-                        ValueDataDraft::U64(answer)
-                    );
+            for old_write_order in [false, true] {
+                let jit = if old_write_order {
+                    crate::native_artifact::JitProgramArtifact::compile_for_test(
+                    &artifact, &mech_stdlib::source_catalog(),
+                    crate::native_artifact::codegen::options::OptimizationPass::PrivateWritesFirst,
+                )
                 } else {
-                    let error = format!("{:?}", run.unwrap_err());
-                    if failure == 1 {
-                        assert!(
-                            error.contains("native reconciliation word outside admitted lane"),
-                            "{error}"
+                    crate::native_artifact::JitProgramArtifact::compile(
+                        &artifact,
+                        &mech_stdlib::source_catalog(),
+                    )
+                }
+                .unwrap_or_else(|error| panic!("{kind}, interleaved={interleaved}: {error:?}"));
+                assert!(
+                    jit.descriptor()
+                        .metadata()
+                        .closed_tails
+                        .regions
+                        .iter()
+                        .any(|region| region.numeric.as_ref().is_some_and(|proof| proof
+                            .arrays
+                            .iter()
+                            .filter(|array| array.writable)
+                            .count()
+                            == 2))
+                );
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let mut outputs = vec![None; artifact.outputs().len()];
+                let mut current_work = Vec::new();
+                // Failure kinds: 0 succeeds, 1 denies the real helper's private lane,
+                // 2 denies the original first copy while keeping actual input aliases.
+                for (a, b, seed, checksum, flip, alias, failure) in [
+                    (5, 11, 17, 23, false, false, 0),
+                    (5, 11, 17, 23, false, false, 1),
+                    (19, 19, 31, 7, true, true, 0),
+                    (41, 9, 3, 5, false, false, 2),
+                    (7, 29, 11, 37, true, false, 0),
+                ] {
+                    let mut args =
+                        arguments(&artifact, cell(a), cell(b), seed, checksum, flip, &memory);
+                    if alias {
+                        let port = |name: &str| {
+                            artifact
+                                .inputs()
+                                .iter()
+                                .position(|p| {
+                                    mech_engine::decode_source_input_name(&p.name).unwrap() == name
+                                })
+                                .unwrap()
+                        };
+                        let first = port("first");
+                        let second = port("second");
+                        assert_eq!(args[first].schema(), args[second].schema());
+                        args[second] = args[first].clone();
+                    }
+                    let aliases = args.clone();
+                    let values = args
+                        .iter()
+                        .map(|v| v.canonical_data_draft().unwrap())
+                        .collect::<Vec<_>>();
+                    let prior = outputs.clone();
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let mut caps = limits();
+                    if failure == 2 {
+                        caps.library.max_cloned_bytes = Some(0);
+                    }
+                    let (run, rows) = execute_observed_numeric_first_change(
+                        &jit,
+                        &args,
+                        &mut outputs,
+                        caps,
+                        &memory,
+                        failure == 1,
+                    );
+                    let (answer, expected_rows) = model(a, b, seed, checksum, flip, interleaved);
+                    assert_eq!(rows[0].scalars, expected_rows[0], "{rows:?}");
+                    assert_eq!(rows[0].incoming, u64::from(a) + 1);
+                    if failure == 0 {
+                        current_work.push(run.unwrap().work);
+                        assert_eq!(
+                            rows.len(),
+                            2,
+                            "each array changes once after distinct no-op prefixes"
+                        );
+                        assert_eq!(rows[1].scalars, expected_rows[1], "{rows:?}");
+                        assert_eq!(rows[1].incoming, u64::from(b) + 2);
+                        assert!(rows.iter().all(|row| row.status == STATUS_OK));
+                        assert_eq!(
+                            outputs
+                                .last()
+                                .unwrap()
+                                .as_ref()
+                                .unwrap()
+                                .canonical_data_draft()
+                                .unwrap(),
+                            ValueDataDraft::U64(answer)
                         );
                     } else {
-                        assert!(error.contains("ClonedBytes"), "{error}");
+                        let error = format!("{:?}", run.unwrap_err());
+                        if failure == 1 {
+                            assert!(
+                                error.contains("native reconciliation word outside admitted lane"),
+                                "{error}"
+                            );
+                        } else {
+                            assert!(error.contains("ClonedBytes"), "{error}");
+                        }
+                        assert_eq!(rows.len(), 1);
+                        assert_eq!(rows[0].status, STATUS_ADMISSION);
+                        assert_eq!(
+                            retained,
+                            (memory.used_bytes(), memory.retained_snapshot_nodes())
+                        );
+                        assert!(outputs.iter().zip(&prior).all(|(a, b)| {
+                            a.as_ref()
+                                .unwrap()
+                                .shares_frozen_storage(b.as_ref().unwrap())
+                        }));
                     }
-                    assert_eq!(rows.len(), 1);
-                    assert_eq!(rows[0].status, STATUS_ADMISSION);
                     assert_eq!(
-                        retained,
-                        (memory.used_bytes(), memory.retained_snapshot_nodes())
+                        args.iter()
+                            .map(|v| v.canonical_data_draft().unwrap())
+                            .collect::<Vec<_>>(),
+                        values
                     );
-                    assert!(outputs.iter().zip(&prior).all(|(a, b)| {
-                        a.as_ref()
-                            .unwrap()
-                            .shares_frozen_storage(b.as_ref().unwrap())
-                    }));
+                    assert!(
+                        args.iter()
+                            .zip(&aliases)
+                            .all(|(a, b)| a.shares_frozen_storage(b))
+                    );
                 }
-                assert_eq!(
-                    args.iter()
-                        .map(|v| v.canonical_data_draft().unwrap())
-                        .collect::<Vec<_>>(),
-                    values
-                );
-                assert!(
-                    args.iter()
-                        .zip(&aliases)
-                        .all(|(a, b)| a.shares_frozen_storage(b))
-                );
+                work.push(current_work);
+                drop(outputs);
+                assert_eq!(memory.used_bytes(), 0);
+                assert_eq!(memory.retained_snapshot_nodes(), 0);
             }
-            work.push(current_work);
-            drop(outputs);
-            assert_eq!(memory.used_bytes(), 0);
-            assert_eq!(memory.retained_snapshot_nodes(), 0);
         }
-        assert_eq!(work[0], work[1], "original and decoded work agreement");
+        assert!(
+            work.windows(2).all(|pair| pair[0] == pair[1]),
+            "original/decoded and both write orders must keep exact work"
+        );
     }
 }

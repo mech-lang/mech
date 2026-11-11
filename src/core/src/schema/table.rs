@@ -91,26 +91,25 @@ impl SchemaTableBuilder {
     }
 
     pub fn finish(self) -> Result<SchemaTableBuild, SemanticModelError> {
-        self.finish_with(u32::MAX as usize, Schema::key)
+        self.finish_with(u32::MAX as usize, |_, key| key)
     }
 
     fn finish_with(
         self,
         unique_limit: usize,
-        key_for: impl Fn(&Schema) -> SchemaKey,
+        key_for: impl Fn(&Schema, SchemaKey) -> SchemaKey,
     ) -> Result<SchemaTableBuild, SemanticModelError> {
-        let handle_keys = self
-            .schemas
-            .iter()
-            .map(Schema::key)
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
         let mut pending = self
             .schemas
             .into_iter()
             .enumerate()
             .map(|(handle, schema)| (schema.canonical_bytes(), handle, schema))
             .collect::<Vec<_>>();
+        let handle_keys = pending
+            .iter()
+            .map(|(bytes, _, _)| Schema::key_for_canonical_bytes(bytes))
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
         pending.sort_by(|left, right| left.0.cmp(&right.0).then(left.1.cmp(&right.1)));
 
         let mut remap = vec![SchemaId::new(0); pending.len()];
@@ -130,7 +129,7 @@ impl SchemaTableBuilder {
             let id = u32::try_from(entries.len())
                 .map(SchemaId::new)
                 .map_err(|_| SemanticModelError::SchemaIdExhausted)?;
-            let key = key_for(&schema);
+            let key = key_for(&schema, handle_keys[handle]);
             if let Some(existing) = keys.get(&key) {
                 if existing.as_ref() != canonical_bytes.as_ref() {
                     return Err(SemanticModelError::SchemaKeyCollision { key });
@@ -176,7 +175,7 @@ mod tests {
             .insert(schema(SchemaBody::UnsignedInteger(IntegerWidth::W8)))
             .unwrap();
         assert!(matches!(
-            builder.finish_with(1, Schema::key),
+            builder.finish_with(1, |_, key| key),
             Err(SemanticModelError::SchemaIdExhausted)
         ));
     }
@@ -205,7 +204,7 @@ mod tests {
             .unwrap();
         let forced = SchemaKey::from_bytes([7; 32]);
         assert!(matches!(
-            builder.finish_with(u32::MAX as usize, |_| forced),
+            builder.finish_with(u32::MAX as usize, |_, _| forced),
             Err(SemanticModelError::SchemaKeyCollision { key }) if key == forced
         ));
     }

@@ -10,7 +10,7 @@ use crate::native_artifact::compiler::{backend, offset, primitive, set_origin};
 use crate::native_artifact::program::codegen::{hooks::Hooks, tail};
 use crate::native_artifact::program::prepare::{
     readonly_numeric::{Operation, Proof},
-    tail::{FIXED_OVERHEAD, Layout, OVERHEAD},
+    tail::{Layout, OVERHEAD},
 };
 use crate::native_artifact::{NativeCompileError, abi::STATUS_ABI};
 use cranelift_codegen::ir::condcodes::IntCC;
@@ -24,6 +24,8 @@ use std::collections::{BTreeMap, BTreeSet};
 mod boundary;
 #[path = "numeric_child_fuel.rs"]
 mod child_fuel;
+#[path = "numeric_region_outlined.rs"]
+pub(in crate::native_artifact) mod outlined;
 #[path = "numeric_snapshots.rs"]
 pub(super) mod snapshots;
 
@@ -33,6 +35,10 @@ pub(in crate::native_artifact) struct Report {
     pub parent: Option<u32>,
     pub source_sites: Vec<usize>,
     pub typed_loads: Vec<(usize, u8)>,
+    pub movable_capture_reads: Vec<(usize, usize)>,
+    pub ordinary_capture_reads: Vec<(usize, usize)>,
+    #[serde(skip)]
+    pub(super) capture_read_candidates: Vec<super::numeric_captured_reads::Candidate>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub source_guarded_read_packs: Vec<usize>,
     pub fully_lowered_read_packs: Vec<usize>,
@@ -40,17 +46,22 @@ pub(in crate::native_artifact) struct Report {
     pub proven_projection_guards: Vec<(usize, u32, usize, u32)>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
     pub proven_scalar_read_guards: Vec<(usize, usize, u32)>,
+    pub proven_checked_increment_writes: Vec<(usize, usize, usize, u32, u32)>,
+    pub proven_independent_view_increment_writes: Vec<(usize, usize, usize)>,
     pub proven_scalar_arithmetic: Vec<usize>,
     pub guarded_loop_windows: Vec<super::numeric_loop_windows::Report>,
     pub version_entry_gates: Vec<(usize, usize, Option<usize>)>,
     proven_child_entry_checks: Vec<(usize, super::traversal_facts::Check)>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
+    pub owned_handoff_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
     pub length_sites: Vec<usize>,
+    pub static_array_extents: Vec<(usize, usize, u64)>,
     pub append_sites: Vec<(usize, u8)>,
     pub bulk_append_sites: Vec<usize>,
     pub capacity_guards: Vec<(usize, usize)>,
+    pub refined_capacity_guards: Vec<(usize, usize, usize)>,
     pub scalar_operations: usize,
     pub register_words: usize,
     pub fresh_traversal_words: usize,
@@ -59,6 +70,73 @@ pub(in crate::native_artifact) struct Report {
     pub successful_backedge_helpers: usize,
     pub maximum_source_instructions: usize,
     pub fixed_template_instructions: usize,
+    pub scalar_input_loads: usize,
+    pub scalar_output_stores: usize,
+    pub entry_shadow_argument_copies: usize,
+    pub private_boundary_words: usize,
+    pub source_home_words: usize,
+    pub terminal_scalar_words_omitted: usize,
+    pub runtime_scalar_path_walks: usize,
+    pub guarded_scalar_retirement_nodes: Vec<usize>,
+    pub scalar_retirement_mask_words: usize,
+    pub tree_nodes: Vec<usize>,
+    pub projected_child_debit_nodes: usize,
+    pub fuel_derived_child_debit_nodes: usize,
+    pub direct_child_edges: Vec<(usize, usize, usize)>,
+    // Compiler-local SSA facts, regenerated from checked typed-view recipes.
+    // They are never serialized or accepted from a descriptor/image caller.
+    #[serde(skip)]
+    pub native_extent_bounds: Vec<(Value, u64)>,
+}
+
+/// A terminal error never resumes a source consumer. Mode3 still reconciles
+/// every owner/view, active-path flag and independent debit, but does not export
+/// private scalar payload. Derive payload homes from actual typed bindings,
+/// rather than treating an arbitrary scratch-word range as discardable.
+fn terminal_scalars(
+    proof: &Proof,
+    tree: Option<&crate::native_artifact::program::prepare::numeric_tree::Proof>,
+) -> Result<BTreeSet<usize>, NativeCompileError> {
+    let mut words = proof
+        .frames
+        .iter()
+        .flat_map(|frame| frame.scalar_slots())
+        .collect::<BTreeSet<_>>();
+    words.extend(
+        proof
+            .scalar_inputs
+            .iter()
+            .chain(&proof.scalar_outputs)
+            .chain(&proof.scalar_captures)
+            .map(|binding| binding.word),
+    );
+    words.extend(
+        proof
+            .cold_scalars
+            .iter()
+            .flat_map(|(_, bindings)| bindings.iter().map(|binding| binding.word)),
+    );
+    if let Some(tree) = tree {
+        words.extend(
+            tree.nodes
+                .iter()
+                .flat_map(|node| node.scalar_bindings.iter().map(|binding| binding.word)),
+        );
+        if words
+            .iter()
+            .any(|word| (tree.counters..=tree.bank()).contains(word))
+        {
+            return Err(backend(
+                "terminal scalar payload overlaps numeric tree accounting",
+            ));
+        }
+    }
+    if words.iter().any(|word| *word >= proof.words) {
+        return Err(backend(
+            "terminal scalar payload exceeds its checked private bank",
+        ));
+    }
+    Ok(words)
 }
 
 impl Report {
@@ -119,6 +197,9 @@ pub(in crate::native_artifact) fn emit_entry(
     b: &mut FunctionBuilder<'_>,
     frame: Value,
     locals: Value,
+    user_context: Value,
+    outlined_function: Option<cranelift_codegen::ir::FuncRef>,
+    outlined_body: bool,
     code: CodePlan<'_>,
     closed: &Layout,
     site: usize,
@@ -135,6 +216,9 @@ pub(in crate::native_artifact) fn emit_entry(
         return Ok(false);
     };
     let region = &closed.regions[id];
+    if region.numeric_subtree() && !controls.enabled(OptimizationPass::NumericTrees) {
+        return Ok(false);
+    }
     let Some(proof) = &region.numeric else {
         return Ok(false);
     };
@@ -186,26 +270,72 @@ pub(in crate::native_artifact) fn emit_entry(
         }
         return Ok(true);
     }
+    if let Some(function) = outlined_function {
+        outlined::call(
+            b,
+            function,
+            frame,
+            locals,
+            user_context,
+            region,
+            ordinary_blocks,
+            ordinary,
+            error,
+        )?;
+        b.switch_to_block(ordinary);
+        return Ok(true);
+    }
     let shadow = region
         .shadow
         .ok_or_else(|| backend("numeric region lacks scratch home"))?;
     let slots = slots(code, proof, region.words, shadow)?;
     let candidates =
         snapshots::source_words(code, proof, shadow, &proof.boundary_values.candidates)?;
-    if slots
-        .iter()
-        .copied()
-        .filter(|slot| {
-            !(region.words..region.words + 3).contains(slot)
-                && !(shadow..shadow + proof.words).contains(slot)
-        })
-        .chain(shadow..shadow + proof.scalar_words)
-        .any(|slot| !candidates.contains(&slot))
+    if region.numeric_tree.is_none()
+        && !proof.boundary_values.candidates.is_empty()
+        && slots
+            .iter()
+            .copied()
+            .filter(|slot| {
+                !(region.words..region.words + 3).contains(slot)
+                    && !(shadow..shadow + proof.words).contains(slot)
+            })
+            .chain(shadow..shadow + proof.scalar_words)
+            .any(|slot| !candidates.contains(&slot))
     {
         return Err(backend("numeric exit query omits a registered source word"));
     }
     let register_words = slots.len();
-    let fresh = fresh_words(code, proof, shadow, &slots)?;
+    let mut fresh = BTreeSet::new();
+    for &value in &proof.fresh_values {
+        if program.metadata().plan.values()[value as usize]
+            .scalar_kind()
+            .is_some()
+        {
+            fresh.insert(value as usize);
+        }
+        if let Some(fields) = proof.fields(value) {
+            fresh.extend(fields.iter().flatten().map(|field| shadow + field));
+        }
+        if let Some((base, count)) = program.metadata().scalar_aggregates.slot_at(value as usize) {
+            fresh.extend(base..base + count);
+        }
+    }
+    fresh.retain(|slot| slots.contains(slot));
+    if register_words > proof.boundary_words {
+        return Err(backend(
+            "numeric backend homes exceed independent boundary inventory",
+        ));
+    }
+    let bank = if proof.scalar_inputs.is_empty()
+        && proof.scalar_captures.is_empty()
+        && region.numeric_tree.is_none()
+    {
+        b.ins().iconst(types::I64, 0)
+    } else {
+        b.ins()
+            .load(types::I64, MemFlags::new(), hooks.arguments, 16)
+    };
     let packet = if matches!(outline, super::numeric_outlined::Entry::PacketBody { .. }) {
         Some(
             super::numeric_packet::Recipe::derive(code, region)?
@@ -227,20 +357,200 @@ pub(in crate::native_artifact) fn emit_entry(
             )
         }
     };
-    let words = if let (Some(packet), super::numeric_outlined::Entry::PacketBody { input, .. }) =
-        (&packet, outline)
-    {
-        packet.words(b, locals, input, code, slots.clone(), home_flags)?
+    let mut words =
+        if let (Some(packet), super::numeric_outlined::Entry::PacketBody { input, .. }) =
+            (&packet, outline)
+        {
+            packet.words(b, locals, input, code, slots.clone(), home_flags)?
+        } else {
+            Words::new_with_initial_regions(
+                b,
+                locals,
+                code,
+                slots.clone(),
+                |b, slot| {
+                    if !(shadow..shadow + proof.words).contains(&slot) {
+                        return Ok(None);
+                    }
+                    let relative = slot - shadow;
+                    if let Some(tree) = &region.numeric_tree {
+                        if relative == tree.bank() {
+                            return Ok(Some(bank));
+                        }
+                        if relative == tree.active(0) {
+                            return Ok(Some(b.ins().iconst(types::I64, 1)));
+                        }
+                    }
+                    if let Some(binding) = proof
+                        .scalar_inputs
+                        .iter()
+                        .chain(&proof.scalar_captures)
+                        .find(|binding| binding.word == relative)
+                    {
+                        let at = binding
+                            .physical
+                            .checked_mul(2)
+                            .ok_or_else(|| backend("numeric scalar import offset overflows"))?;
+                        return Ok(Some(b.ins().load(
+                            types::I64,
+                            MemFlags::new(),
+                            bank,
+                            offset(at)?,
+                        )));
+                    }
+                    let metadata_input = proof.arrays.iter().enumerate().any(|(array, _)| {
+                        (proof.view(array)..proof.view(array) + 4).contains(&relative)
+                            || proof.capacity(array) == Some(relative)
+                    });
+                    if metadata_input {
+                        Ok(Some(b.ins().load(
+                            types::I64,
+                            MemFlags::new(),
+                            hooks.arguments,
+                            offset(2 + relative)?,
+                        )))
+                    } else {
+                        Ok(Some(b.ins().iconst(types::I64, 0)))
+                    }
+                },
+                |slot| {
+                    if (region.words..region.words + 3).contains(&slot)
+                        || (shadow..shadow + proof.words).contains(&slot)
+                    {
+                        tail::flags(controls.options(), region)
+                    } else {
+                        crate::native_artifact::codegen::common::memory_regions::program_locals(
+                            controls.options(),
+                        )
+                    }
+                },
+            )?
+        };
+    for (at, array) in proof.arrays.iter().enumerate() {
+        if matches!(array.width, 1 | 2 | 4 | 8) {
+            // Runtime unsigned_matrix_native_view validates the actual packed
+            // slice and retained owner. Rust slices/Vec allocations cannot
+            // exceed isize::MAX bytes; appends additionally retain the checked
+            // fixed physical capacity. Never infer this for rows/columns:
+            // a zero-element matrix can have an arbitrarily large empty axis.
+            let upper = i64::MAX as u64 / u64::from(array.width);
+            words.bound_native_extent(shadow + proof.view(at) + 1, upper);
+            if let Some(capacity) = proof.capacity(at) {
+                words.bound_native_extent(shadow + capacity, upper);
+            }
+        }
+    }
+    let fuel_debits = region
+        .numeric_tree
+        .as_ref()
+        .filter(|tree| {
+            controls.enabled(OptimizationPass::FuelDerivedNumericDebits)
+                && controls.enabled(OptimizationPass::ProjectedNumericDebits)
+                && tree.projected_child_debits()
+        })
+        .map(|tree| {
+            super::numeric_fuel_debits::Anchors::new(b, &words, region.words, shadow, tree)
+        });
+    let retirement = region
+        .numeric_tree
+        .as_ref()
+        .filter(|_| controls.enabled(OptimizationPass::ScalarHomeRetirement))
+        .map(|tree| {
+            super::numeric_retirement::ScalarHomes::new(
+                b,
+                tree.nodes
+                    .iter()
+                    .enumerate()
+                    .skip(1)
+                    .filter(|(_, node)| !node.scalar_bindings.is_empty())
+                    .map(|(index, _)| index),
+            )
+        });
+    // Every ordinary scalar operand home is retained conservatively. Private
+    // virtual-frame intermediates have no cold consumer: reconciliation reads
+    // only current carrier/result leaves and exact view/flag/capacity lanes.
+    let source_homes = super::numeric_words::source_slots(
+        code,
+        proof.sites.iter().copied(),
+        &proof.actions,
+        core::iter::empty(),
+    )?;
+    let liveness = controls
+        .enabled(OptimizationPass::SourceLiveness)
+        .then(|| super::source_liveness::Liveness::derive(program, &source_homes))
+        .transpose()
+        .map_err(backend)?;
+    let mut private_live = BTreeSet::new();
+    private_live.extend(proof.scalar_inputs.iter().map(|binding| binding.word));
+    private_live.extend(proof.scalar_outputs.iter().map(|binding| binding.word));
+    private_live.extend(
+        proof
+            .cold_scalars
+            .iter()
+            .flat_map(|(_, bindings)| bindings.iter().map(|binding| binding.word)),
+    );
+    if let Some(tree) = &region.numeric_tree {
+        private_live.extend(
+            tree.nodes
+                .iter()
+                .flat_map(|node| node.scalar_bindings.iter().map(|binding| binding.word)),
+        );
+    }
+    private_live.extend(proof.scalar_words..proof.words);
+    let exact_private = if controls.enabled(OptimizationPass::PrivateLiveness) {
+        proof
+            .sites
+            .iter()
+            .copied()
+            .chain([region.tail.exit() as usize])
+            .map(|site| {
+                Ok((
+                    site,
+                    super::private_liveness::at(
+                        proof,
+                        region.numeric_tree.as_ref(),
+                        site,
+                        region.tail.exit() as usize,
+                        controls.enabled(OptimizationPass::ProjectedNumericDebits),
+                    )?,
+                ))
+            })
+            .collect::<Result<BTreeMap<_, _>, NativeCompileError>>()?
     } else {
-        Words::new_with_regions(b, locals, code, slots.clone(), home_flags)?
+        BTreeMap::new()
+    };
+    let live_at = |site| {
+        let source = liveness
+            .as_ref()
+            .map_or(&source_homes, |live| live.at(site));
+        let private = exact_private.get(&site).unwrap_or(&private_live);
+        source
+            .iter()
+            .copied()
+            .chain(region.words..region.words + 3)
+            .chain(private.iter().map(|word| shadow + word))
+            .collect::<BTreeSet<_>>()
+    };
+    let terminal_scalars = if controls.enabled(OptimizationPass::PrivateLiveness) {
+        terminal_scalars(proof, region.numeric_tree.as_ref())?
+    } else {
+        BTreeSet::new()
     };
     let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
-    let bailout = b.create_block();
+    let bailouts = if let Some(tree) = &region.numeric_tree {
+        tree.nodes
+            .iter()
+            .map(|node| (node.tail.header() as usize, b.create_block()))
+            .collect::<BTreeMap<_, _>>()
+    } else {
+        BTreeMap::from([(region.tail.header() as usize, b.create_block())])
+    };
     let failed = b.create_block();
     b.append_block_param(failed, types::I64);
     b.set_cold_block(failed);
-    let mut boundaries = BTreeSet::from([exit, bailout, failed]);
+    let mut boundaries = BTreeSet::from([exit, failed]);
+    boundaries.extend(bailouts.values().copied());
     let blocks = proof
         .sites
         .iter()
@@ -254,6 +564,14 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     };
     let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
+    let movable_captures = if outlined_body
+        && controls.enabled(OptimizationPass::GuardedNumericLoads)
+        && controls.enabled(OptimizationPass::MovableCaptureReads)
+    {
+        super::numeric_captured_reads::stable_arrays(code, region, proof)
+    } else {
+        BTreeSet::new()
+    };
     let boolean_successors =
         super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     let versions = super::numeric_loop_windows::derive(
@@ -274,7 +592,11 @@ pub(in crate::native_artifact) fn emit_entry(
         header: site,
         parent: region.tail.parent(),
         source_sites: proof.sites.clone(),
+        native_extent_bounds: Vec::new(),
         typed_loads: Vec::new(),
+        movable_capture_reads: Vec::new(),
+        ordinary_capture_reads: Vec::new(),
+        capture_read_candidates: Vec::new(),
         read_pack_sites: Vec::new(),
         source_guarded_read_packs: Vec::new(),
         fully_lowered_read_packs: Vec::new(),
@@ -285,21 +607,26 @@ pub(in crate::native_artifact) fn emit_entry(
             .collect(),
         proven_projection_guards: Vec::new(),
         proven_scalar_read_guards: Vec::new(),
+        proven_checked_increment_writes: Vec::new(),
+        proven_independent_view_increment_writes: Vec::new(),
         proven_scalar_arithmetic: Vec::new(),
         guarded_loop_windows: versions.iter().map(|v| v.report(proof)).collect(),
         version_entry_gates: Vec::new(),
         proven_child_entry_checks: Vec::new(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
+        owned_handoff_boundaries: Vec::new(),
         cold_exits: proof
             .exits
             .iter()
             .map(|exit| (exit.from, exit.to))
             .collect(),
         length_sites: Vec::new(),
+        static_array_extents: Vec::new(),
         append_sites: Vec::new(),
         bulk_append_sites: Vec::new(),
         capacity_guards: Vec::new(),
+        refined_capacity_guards: Vec::new(),
         scalar_operations: 0,
         register_words,
         fresh_traversal_words: fresh.len(),
@@ -308,6 +635,67 @@ pub(in crate::native_artifact) fn emit_entry(
         successful_backedge_helpers: 0,
         maximum_source_instructions: 0,
         fixed_template_instructions: 0,
+        scalar_input_loads: proof.scalar_inputs.len() + proof.scalar_captures.len(),
+        scalar_output_stores: (proof.scalar_inputs.len() + proof.scalar_outputs.len()) * 2,
+        entry_shadow_argument_copies: 0,
+        private_boundary_words: exact_private
+            .values()
+            .map(BTreeSet::len)
+            .max()
+            .unwrap_or(private_live.len()),
+        source_home_words: source_homes.len(),
+        terminal_scalar_words_omitted: 0,
+        runtime_scalar_path_walks: 0,
+        guarded_scalar_retirement_nodes: region.numeric_tree.as_ref().map_or_else(
+            Vec::new,
+            |tree| {
+                if retirement.is_none() {
+                    return Vec::new();
+                }
+                tree.nodes
+                    .iter()
+                    .skip(1)
+                    .filter(|node| !node.scalar_bindings.is_empty())
+                    .map(|node| node.tail.header() as usize)
+                    .collect()
+            },
+        ),
+        scalar_retirement_mask_words: retirement.as_ref().map_or(0, |r| r.word_count()),
+        tree_nodes: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
+            tree.nodes
+                .iter()
+                .map(|n| n.tail.header() as usize)
+                .collect()
+        }),
+        projected_child_debit_nodes: region.numeric_tree.as_ref().map_or(0, |tree| {
+            if controls.enabled(OptimizationPass::ProjectedNumericDebits)
+                && tree.projected_child_debits()
+            {
+                tree.nodes.len() - 1
+            } else {
+                0
+            }
+        }),
+        fuel_derived_child_debit_nodes: region.numeric_tree.as_ref().map_or(0, |tree| {
+            if fuel_debits.is_some() {
+                tree.nodes.len() - 1
+            } else {
+                0
+            }
+        }),
+        direct_child_edges: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
+            tree.nodes
+                .iter()
+                .skip(1)
+                .map(|n| {
+                    (
+                        n.tail.initialize() as usize,
+                        n.tail.header() as usize,
+                        n.tail.exit() as usize,
+                    )
+                })
+                .collect()
+        }),
     };
     // Both bodies share the same admitted SSA homes and loan. A guard is
     // evaluated afresh only at the canonical initialize edge. Each version's
@@ -428,7 +816,17 @@ pub(in crate::native_artifact) fn emit_entry(
         )? {
             report.boundary_spill_words.push(("child", site, count));
         }
-        if site == region.tail.header() as usize {
+        let tree_node = region.numeric_tree.as_ref().and_then(|tree| {
+            tree.nodes
+                .iter()
+                .position(|node| node.tail.header() as usize == site)
+        });
+        if site == region.tail.header() as usize || tree_node.is_some() {
+            let (compute_cost, comparison_cost) =
+                tree_node.map_or((region.compute, region.comparison), |node| {
+                    let n = &region.numeric_tree.as_ref().unwrap().nodes[node];
+                    (n.compute, n.comparison)
+                });
             let compute = words.read(b, region.words + 1);
             let comparison = words.read(b, region.words + 2);
             let (compute_bound, comparison_bound, valid) = if let Some(phase) = &proof.phase {
@@ -453,8 +851,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 (work, compare, b.ins().band(a, c))
             } else {
                 (
-                    b.ins().iconst(types::I64, region.compute as i64),
-                    b.ins().iconst(types::I64, region.comparison as i64),
+                    b.ins().iconst(types::I64, compute_cost as i64),
+                    b.ins().iconst(types::I64, comparison_cost as i64),
                     b.ins().iconst(types::I8, 1),
                 )
             };
@@ -468,17 +866,35 @@ pub(in crate::native_artifact) fn emit_entry(
             );
             let mut enough = b.ins().band(a, c);
             enough = b.ins().band(enough, valid);
+            let mut unrefined_enough = enough;
+            let mut capacity_refinements = Vec::new();
             // Capacity is checked before ANY source operation in this visit.
-            // Count all append sites: a conservative DAG traversal bound, even
-            // if a branch would skip some. A miss uses the existing header exit.
+            // A tree frontier ends at its next header check and includes any
+            // ancestor continuation after a child returns. Leaves retain their
+            // original conservative whole-traversal site count.
             for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
-                let count = proof
-                    .actions
-                    .iter()
-                    .try_fold(0usize, |count, (_, op)| {
-                        count.checked_add(op.maximum_append(array))
-                    })
-                    .ok_or_else(|| backend("numeric append capacity bound overflows"))?;
+                let count = if region.numeric_tree.is_some() {
+                    proof
+                        .append_limit(site, array)
+                        .ok_or_else(|| backend("numeric header lost its append frontier"))?
+                } else {
+                    proof
+                        .actions
+                        .iter()
+                        .try_fold(0usize, |count, (_, op)| {
+                            count.checked_add(op.maximum_append(array))
+                        })
+                        .ok_or_else(|| backend("numeric append capacity bound overflows"))?
+                };
+                // Entry lends a real Vec prefix whose length is within its
+                // capacity. Every append-capable frontier still checks its
+                // complete advance before executing source operations, and a
+                // cold first change reloads a newly validated reserved view.
+                // A zero frontier cannot advance this prefix before the next
+                // header, so it does not need to re-prove the invariant.
+                if count == 0 && controls.enabled(OptimizationPass::ZeroAppendFrontiers) {
+                    continue;
+                }
                 let length = words.read(b, shadow + proof.view(array) + 1);
                 let capacity = words.read(b, shadow + proof.capacity(array).unwrap());
                 let valid = b
@@ -489,17 +905,78 @@ pub(in crate::native_artifact) fn emit_entry(
                     .ins()
                     .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, spare, count as i64);
                 let fits = b.ins().band(valid, fits);
+                if count != 0
+                    && controls.enabled(OptimizationPass::RefinedAppendCapacity)
+                    && let Some(certificate) = super::numeric_append_guards::certificate(
+                        code,
+                        proof,
+                        shadow,
+                        &region.tail,
+                        region.numeric_tree.as_ref(),
+                        site,
+                        array,
+                        count,
+                    )
+                {
+                    capacity_refinements.push((certificate, fits, valid, spare));
+                    report.refined_capacity_guards.push((site, array, count));
+                } else {
+                    unrefined_enough = b.ins().band(unrefined_enough, fits);
+                }
                 enough = b.ins().band(enough, fits);
                 report.capacity_guards.push((array, count));
             }
             let funded = b.create_block();
-            b.ins().brif(enough, funded, &[], bailout, &[]);
+            if capacity_refinements.is_empty() {
+                b.ins().brif(enough, funded, &[], bailouts[&site], &[]);
+            } else {
+                // Keep the original single successful header branch. Only its
+                // cold capacity failure can enter the optional pure preview;
+                // failed funding/other guards go straight to the old fallback.
+                let cold = b.create_block();
+                let preview = b.create_block();
+                b.set_cold_block(cold);
+                b.set_cold_block(preview);
+                b.ins().brif(enough, funded, &[], cold, &[]);
+                b.switch_to_block(cold);
+                b.ins()
+                    .brif(unrefined_enough, preview, &[], bailouts[&site], &[]);
+                b.switch_to_block(preview);
+                let mut refined_enough = b.ins().iconst(types::I8, 1);
+                for (certificate, fits, valid, spare) in capacity_refinements {
+                    let fits = super::numeric_append_guards::refine(
+                        b,
+                        &words,
+                        code,
+                        proof,
+                        shadow,
+                        &certificate,
+                        fits,
+                        valid,
+                        spare,
+                    )?;
+                    refined_enough = b.ins().band(refined_enough, fits);
+                }
+                b.ins()
+                    .brif(refined_enough, funded, &[], bailouts[&site], &[]);
+            }
             b.switch_to_block(funded);
-            let cost = b.ins().iconst(types::I64, region.compute as i64);
+            let cost = b.ins().iconst(types::I64, compute_cost as i64);
             let compute = b.ins().isub(compute, cost);
-            let comparison = b.ins().iadd_imm(comparison, -(region.comparison as i64));
+            let comparison = b.ins().iadd_imm(comparison, -(comparison_cost as i64));
             words.write(b, region.words + 1, compute);
             words.write(b, region.words + 2, comparison);
+            if let Some(node) = tree_node {
+                super::numeric_tree::debit(
+                    b,
+                    &words,
+                    shadow,
+                    region.numeric_tree.as_ref().unwrap(),
+                    node,
+                    controls.enabled(OptimizationPass::ProjectedNumericDebits),
+                    fuel_debits.is_some(),
+                );
+            }
         }
         if let Some(debit) = proof.phase.as_ref().and_then(|phase| {
             phase.loops.iter().find(|loop_| {
@@ -530,6 +1007,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 });
             let complete = super::numeric_read_packs::emit(
                 b,
+                controls.options(),
                 &words,
                 shadow,
                 proof,
@@ -575,7 +1053,16 @@ pub(in crate::native_artifact) fn emit_entry(
             }
             Some(Operation::ArrayCopy) => {}
             Some(Operation::Length { array, output }) => {
-                let length = words.read(b, shadow + proof.view(*array) + 1);
+                let fixed = controls
+                    .enabled(OptimizationPass::StaticNumericExtents)
+                    .then(|| super::numeric_words::fixed_length(code, proof, *array))
+                    .flatten();
+                let length = if let Some(length) = fixed {
+                    report.static_array_extents.push((site, *array, length));
+                    b.ins().iconst(types::I64, length as i64)
+                } else {
+                    words.read(b, shadow + proof.view(*array) + 1)
+                };
                 words.write(b, *output as usize, length);
                 report.length_sites.push(site);
             }
@@ -593,8 +1080,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.switch_to_block(materialize);
                 let index = b.ins().iadd_imm(length, 1);
                 boundary::materialize(
+                    controls,
                     b,
-                    controls.options(),
                     &words,
                     region,
                     proof,
@@ -606,6 +1093,8 @@ pub(in crate::native_artifact) fn emit_entry(
                     incoming,
                     hooks,
                     error,
+                    fuel_debits.as_ref(),
+                    retirement.as_ref(),
                 )?;
                 b.ins().jump(done, &[]);
                 b.switch_to_block(store);
@@ -636,6 +1125,9 @@ pub(in crate::native_artifact) fn emit_entry(
                 report.typed_stores.push((site, width));
                 report.append_sites.push((site, width));
                 report.first_change_boundaries.push(site);
+                if boundary::tree_owner_handoff(controls, region, proof) {
+                    report.owned_handoff_boundaries.push(site);
+                }
             }
             Some(Operation::AppendLeBytes {
                 array,
@@ -669,8 +1161,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.ins().brif(private, store, &[], materialize, &[]);
                 b.switch_to_block(materialize);
                 boundary::materialize(
+                    controls,
                     b,
-                    controls.options(),
                     &words,
                     region,
                     proof,
@@ -682,6 +1174,8 @@ pub(in crate::native_artifact) fn emit_entry(
                     incoming,
                     hooks,
                     error,
+                    fuel_debits.as_ref(),
+                    retirement.as_ref(),
                 )?;
                 b.ins().jump(done, &[]);
                 b.switch_to_block(store);
@@ -707,14 +1201,40 @@ pub(in crate::native_artifact) fn emit_entry(
                 report.append_sites.push((site, 1));
                 report.bulk_append_sites.push(site);
                 report.first_change_boundaries.push(site);
+                if boundary::tree_owner_handoff(controls, region, proof) {
+                    report.owned_handoff_boundaries.push(site);
+                }
             }
             Some(
                 operation @ (Operation::Read { array, index, .. }
                 | Operation::Write { array, index, .. }),
             ) => {
+                let checked_increment = match operation {
+                    Operation::Write {
+                        array,
+                        index,
+                        incoming,
+                    } if controls.enabled(OptimizationPass::CheckedIncrementWrites) => traversal
+                        .increment_write(site, *array, *index, *incoming)
+                        .filter(|update| {
+                            !update.crossed_write
+                                || controls.enabled(OptimizationPass::IndependentViewUpdates)
+                        })
+                        .copied(),
+                    _ => None,
+                };
                 let view = shadow + proof.view(*array);
                 let index = words.read(b, *index as usize);
-                let length = words.read(b, view + 1);
+                let fixed = controls
+                    .enabled(OptimizationPass::StaticNumericExtents)
+                    .then(|| super::numeric_words::fixed_length(code, proof, *array))
+                    .flatten();
+                let length = if let Some(length) = fixed {
+                    report.static_array_extents.push((site, *array, length));
+                    b.ins().iconst(types::I64, length as i64)
+                } else {
+                    words.read(b, view + 1)
+                };
                 let ordinal = b.ins().iadd_imm(index, -1);
                 if let Operation::Read { array, index, .. } = operation
                     && traversal.read(site, *array, *index)
@@ -722,6 +1242,21 @@ pub(in crate::native_artifact) fn emit_entry(
                     report
                         .proven_scalar_read_guards
                         .push((site, *array, *index));
+                } else if let Some(update) = checked_increment {
+                    if update.crossed_write {
+                        report.proven_independent_view_increment_writes.push((
+                            site,
+                            update.read_site,
+                            update.array,
+                        ));
+                    }
+                    report.proven_checked_increment_writes.push((
+                        site,
+                        update.read_site,
+                        update.array,
+                        update.index,
+                        update.incoming,
+                    ));
                 } else {
                     let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, length);
                     let good = b.create_block();
@@ -730,12 +1265,52 @@ pub(in crate::native_artifact) fn emit_entry(
                     boundaries.insert(bad);
                     b.ins().brif(valid, good, &[], bad, &[]);
                     b.switch_to_block(bad);
-                    // Preserve the exact original source-failure path whenever
-                    // no current selected-view proof justifies this read.
-                    let spilled = boundary::source_failure(
-                        b, controls, &words, frame, locals, code, closed, id, site, hooks, error,
-                    )?;
-                    report.bounds_error_spill_words.push((site, spilled));
+                    if region.numeric_tree.is_some() || proof.boundary_values.candidates.is_empty()
+                    {
+                        set_origin(b, frame, site as u64);
+                        super::numeric_fuel_debits::spill_live(
+                            fuel_debits.as_ref(),
+                            b,
+                            &words,
+                            locals,
+                            &live_at(site),
+                        )?;
+                        // Ordinary source sites retain their deepest independent leaf
+                        // proof for a declined outer tree. This generated path owns
+                        // the known root loan, so reconcile that exact region instead
+                        // of looking up the ordinary site's shadowed leaf region.
+                        let source_site = b.ins().iconst(types::I64, site as i64);
+                        tail::leave(
+                            controls.options(),
+                            b,
+                            locals,
+                            region,
+                            source_site,
+                            2,
+                            hooks,
+                            error,
+                        )?;
+                        let Action::LibraryCall { operands, .. } = code.blocks()[site].action()
+                        else {
+                            return Err(backend("numeric read lost selected call"));
+                        };
+                        hooks.library(
+                            b,
+                            site,
+                            operands,
+                            locals,
+                            |v| code.kind(v).is_some(),
+                            error,
+                        )?;
+                        let status = b.ins().iconst(types::I64, STATUS_ABI as i64);
+                        b.ins().jump(error, &[status.into()]);
+                    } else {
+                        let spilled = boundary::source_failure(
+                            b, controls, &words, frame, locals, code, closed, id, site, hooks,
+                            error,
+                        )?;
+                        report.bounds_error_spill_words.push((site, spilled));
+                    }
                     b.switch_to_block(good);
                 }
                 // Canonical storage is row-major; source linear selection is
@@ -748,41 +1323,135 @@ pub(in crate::native_artifact) fn emit_entry(
                 else {
                     return Err(backend("numeric address lost its entry witness"));
                 };
-                let (address, ty) = super::numeric_words::linear_address(
-                    b,
-                    ordinal,
-                    rows,
-                    columns,
-                    width,
-                    template.inputs()[0].body(),
-                    |b| words.read(b, view),
-                )?;
-                let value = b.ins().load(ty, MemFlags::new(), address, 0);
-                let value = if width < 8 {
-                    b.ins().uextend(types::I64, value)
+                let movable =
+                    matches!(operation, Operation::Read { .. }) && movable_captures.contains(array);
+                let (address, ty, clamp) = if movable {
+                    let base = words.read(b, view);
+                    let (address, ty, clamp) = super::numeric_captured_reads::address(
+                        b,
+                        ordinal,
+                        length,
+                        base,
+                        rows,
+                        columns,
+                        width,
+                        template.inputs()[0].body(),
+                    )?;
+                    (address, ty, Some(clamp))
                 } else {
-                    value
+                    let (address, ty) = super::numeric_words::linear_address(
+                        b,
+                        ordinal,
+                        rows,
+                        columns,
+                        width,
+                        template.inputs()[0].body(),
+                        |b| words.read(b, view),
+                    )?;
+                    (address, ty, None)
                 };
-                report.typed_loads.push((site, width));
+                let private_first = controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::PrivateWritesFirst,
+                );
+                let deferred_old = private_first && matches!(operation, Operation::Write { .. });
+                let value = if checked_increment.is_some() || deferred_old {
+                    None
+                } else {
+                    let value = b.ins().load(
+                        ty,
+                        if movable {
+                            super::numeric_captured_reads::flags()
+                        } else {
+                            super::numeric_words::guarded_load_flags(controls.options())
+                        },
+                        address,
+                        0,
+                    );
+                    if let Some(clamp) = clamp {
+                        let cranelift_codegen::ir::ValueDef::Result(load, 0) =
+                            b.func.dfg.value_def(value)
+                        else {
+                            unreachable!("physical capture load lost its instruction");
+                        };
+                        report.capture_read_candidates.push(
+                            super::numeric_captured_reads::Candidate {
+                                site,
+                                array: *array,
+                                load,
+                                ordinal,
+                                rows,
+                                clamp,
+                            },
+                        );
+                    }
+                    let value = if width < 8 {
+                        b.ins().uextend(types::I64, value)
+                    } else {
+                        value
+                    };
+                    report.typed_loads.push((site, width));
+                    Some(value)
+                };
                 match operation {
-                    Operation::Read { output, .. } => words.write(b, *output as usize, value),
+                    Operation::Read { output, .. } => words.write(
+                        b,
+                        *output as usize,
+                        value.expect("read retains its typed load"),
+                    ),
                     Operation::Write { incoming, .. } => {
                         let incoming = words.read(b, *incoming as usize);
-                        let changed = b.ins().icmp(IntCC::NotEqual, value, incoming);
-                        let update = b.create_block();
                         let done = b.create_block();
-                        b.ins().brif(changed, update, &[], done, &[]);
-                        b.switch_to_block(update);
-                        let private = words.read(b, shadow + proof.private_flag(*array));
                         let store = b.create_block();
                         let materialize = b.create_block();
                         b.set_cold_block(materialize);
                         boundaries.insert(materialize);
-                        b.ins().brif(private, store, &[], materialize, &[]);
+                        if private_first {
+                            // A private bank has already changed. Equal writes
+                            // need no old-cell read or first-change admission.
+                            let private = words.read(b, shadow + proof.private_flag(*array));
+                            let shared = b.create_block();
+                            b.ins().brif(private, store, &[], shared, &[]);
+                            b.switch_to_block(shared);
+                            let changed = if checked_increment.is_some() {
+                                b.ins().iconst(types::I8, 1)
+                            } else {
+                                let old = b.ins().load(
+                                    ty,
+                                    super::numeric_words::guarded_load_flags(controls.options()),
+                                    address,
+                                    0,
+                                );
+                                let old = if width < 8 {
+                                    b.ins().uextend(types::I64, old)
+                                } else {
+                                    old
+                                };
+                                report.typed_loads.push((site, width));
+                                b.ins().icmp(IntCC::NotEqual, old, incoming)
+                            };
+                            // Unowned zero-to-zero/equal writes retain the old
+                            // no-op path and never materialize a private copy.
+                            b.ins().brif(changed, materialize, &[], done, &[]);
+                        } else {
+                            let changed = if checked_increment.is_some() {
+                                b.ins().iconst(types::I8, 1)
+                            } else {
+                                b.ins().icmp(
+                                    IntCC::NotEqual,
+                                    value.expect("ordinary write retains old cell"),
+                                    incoming,
+                                )
+                            };
+                            let update = b.create_block();
+                            b.ins().brif(changed, update, &[], done, &[]);
+                            b.switch_to_block(update);
+                            let private = words.read(b, shadow + proof.private_flag(*array));
+                            b.ins().brif(private, store, &[], materialize, &[]);
+                        }
                         b.switch_to_block(materialize);
                         boundary::materialize(
+                            controls,
                             b,
-                            controls.options(),
                             &words,
                             region,
                             proof,
@@ -794,6 +1463,8 @@ pub(in crate::native_artifact) fn emit_entry(
                             incoming,
                             hooks,
                             error,
+                            fuel_debits.as_ref(),
+                            retirement.as_ref(),
                         )?;
                         b.ins().jump(done, &[]);
                         b.switch_to_block(store);
@@ -807,6 +1478,9 @@ pub(in crate::native_artifact) fn emit_entry(
                         b.switch_to_block(done);
                         report.typed_stores.push((site, width));
                         report.first_change_boundaries.push(site);
+                        if boundary::tree_owner_handoff(controls, region, proof) {
+                            report.owned_handoff_boundaries.push(site);
+                        }
                     }
                     _ => unreachable!("selected numeric access"),
                 }
@@ -852,6 +1526,9 @@ pub(in crate::native_artifact) fn emit_entry(
                 _ => return Err(backend("numeric proof contains unsupported action")),
             },
         }
+        if let Some(tree) = &region.numeric_tree {
+            super::numeric_tree::control(b, &words, shadow, tree, site, retirement.as_ref())?;
+        }
         if let Some(window) = versions.iter().find(|v| v.initialize == site) {
             // Initialize just copied this child's current source arguments.
             // Current source facts may establish particular predicates. All
@@ -881,6 +1558,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 b,
                 &words,
                 code,
+                site,
+                controls.options(),
                 traversal
                     .successors
                     .get(&site)
@@ -897,44 +1576,74 @@ pub(in crate::native_artifact) fn emit_entry(
         b.switch_to_block(fail);
         let status = b.block_params(fail)[0];
         set_origin(b, frame, site as u64);
+        let mut live = live_at(site);
+        let live_before = live.len();
+        for word in &terminal_scalars {
+            live.remove(&(shadow + word));
+        }
+        report.terminal_scalar_words_omitted = report
+            .terminal_scalar_words_omitted
+            .max(live_before - live.len());
+        super::numeric_fuel_debits::spill_live(fuel_debits.as_ref(), b, &words, locals, &live)?;
         b.ins().jump(failed, &[status.into()]);
         report.source_instructions(b.func.dfg.num_insts() - before)?;
     }
     let boundary = b.func.dfg.num_insts();
-    b.switch_to_block(bailout);
-    let count = snapshots::spill(
-        b,
-        &words,
-        locals,
-        code,
-        region,
-        1,
-        None,
-        &proof.boundary_values.header,
-        &slots,
-    )?;
-    report
-        .boundary_spill_words
-        .push(("header", region.tail.header() as usize, count));
-    let header = b.ins().iconst(types::I64, region.tail.header() as i64);
-    tail::leave(
-        controls.options(),
-        b,
-        locals,
-        region,
-        header,
-        1,
-        hooks,
-        error,
-    )?;
-    b.ins().jump(ordinary, &[]);
+    for (&site, &bailout) in &bailouts {
+        b.switch_to_block(bailout);
+        if region.numeric_tree.is_none() && !proof.boundary_values.candidates.is_empty() {
+            let count = snapshots::spill(
+                b,
+                &words,
+                locals,
+                code,
+                region,
+                1,
+                Some(site),
+                &proof.boundary_values.header,
+                &slots,
+            )?;
+            report.boundary_spill_words.push(("header", site, count));
+        } else {
+            super::numeric_fuel_debits::spill_live(
+                fuel_debits.as_ref(),
+                b,
+                &words,
+                locals,
+                &live_at(site),
+            )?;
+        }
+        let header = b.ins().iconst(types::I64, site as i64);
+        tail::leave(
+            controls.options(),
+            b,
+            locals,
+            region,
+            header,
+            1,
+            hooks,
+            error,
+        )?;
+        if site == region.tail.header() as usize {
+            b.ins().jump(ordinary, &[]);
+        } else {
+            b.ins().jump(
+                ordinary_blocks[site]
+                    .ok_or_else(|| backend("numeric tree child header is not emitted"))?,
+                &[],
+            );
+        }
+    }
     b.switch_to_block(exit);
-    let count = if let (Some(packet), super::numeric_outlined::Entry::PacketBody { output, .. }) =
+    if let (Some(packet), super::numeric_outlined::Entry::PacketBody { output, .. }) =
         (&packet, outline)
     {
-        packet.finish(b, &words, output)?
-    } else {
-        snapshots::spill(
+        let count = packet.finish(b, &words, output)?;
+        report
+            .boundary_spill_words
+            .push(("exit", region.tail.exit() as usize, count));
+    } else if region.numeric_tree.is_none() && !proof.boundary_values.candidates.is_empty() {
+        let count = snapshots::spill(
             b,
             &words,
             locals,
@@ -944,33 +1653,37 @@ pub(in crate::native_artifact) fn emit_entry(
             None,
             &proof.boundary_values.exit,
             &slots,
-        )?
-    };
-    report
-        .boundary_spill_words
-        .push(("exit", region.tail.exit() as usize, count));
+        )?;
+        report
+            .boundary_spill_words
+            .push(("exit", region.tail.exit() as usize, count));
+    } else {
+        super::numeric_fuel_debits::spill_live(
+            fuel_debits.as_ref(),
+            b,
+            &words,
+            locals,
+            &live_at(region.tail.exit() as usize),
+        )?;
+    }
     b.ins()
         .jump(ordinary_blocks[region.tail.exit() as usize].unwrap(), &[]);
     b.switch_to_block(failed);
     let status = b.block_params(failed)[0];
-    // The common error arm settles/finalizes and terminates; it cannot resume
-    // ordinary source code. Preserve exactly its existing abort consumers.
-    let count = snapshots::spill(b, &words, locals, code, region, 3, None, &[], &slots)?;
-    report
-        .boundary_spill_words
-        .push(("failure", region.tail.header() as usize, count));
+    if region.numeric_tree.is_none() && !proof.boundary_values.candidates.is_empty() {
+        let count = snapshots::spill(b, &words, locals, code, region, 3, None, &[], &slots)?;
+        report
+            .boundary_spill_words
+            .push(("failure", region.tail.header() as usize, count));
+    }
+    // Each source-specific failure already synchronized its exact live homes.
     b.ins().jump(error, &[status.into()]);
     report.fixed_template_instructions =
         setup_work + b.func.dfg.num_insts() - boundary + outline.body_overhead().unwrap_or(0);
-    if report.fixed_template_instructions
-        > proof
-            .phase
-            .as_ref()
-            .map_or(FIXED_OVERHEAD, |p| p.boundary_work) as usize
-    {
-        // Outlining is optional. A body fitting the original envelope may
-        // have insufficient headroom for the extra native call. Discard the
-        // temporary definition and retain the maintained inline route.
+    let boundary_limit = proof.phase.as_ref().map_or(proof.boundary_work, |phase| {
+        proof.boundary_work.min(phase.boundary_work)
+    });
+    if report.fixed_template_instructions as u64 > boundary_limit {
         if outline.body_overhead().is_some() {
             b.switch_to_block(ordinary);
             return Ok(false);
@@ -997,6 +1710,7 @@ pub(in crate::native_artifact) fn emit_entry(
     if report.successful_backedge_helpers != 0 {
         return Err(backend("numeric funded body contains a general call"));
     }
+    report.native_extent_bounds = words.native_extent_bounds();
     if proof.writes() {
         reports.numeric_write_loops.push(report);
     } else {

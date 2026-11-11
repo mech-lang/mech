@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "fresh_old_objects": 3,
+  "rows": [
+    {
+      "compiled_module_rejected": "canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact",
+      "object_bound_rejected": "canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact",
+      "old_entry_never_invoked": true,
+      "old_typed_ir": 231
+    },
+    {
+      "compiled_module_rejected": "canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact",
+      "object_bound_rejected": "canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact",
+      "old_entry_never_invoked": true,
+      "old_typed_ir": 232
+    },
+    {
+      "compiled_module_rejected": "canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact",
+      "object_bound_rejected": "canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact",
+      "old_entry_never_invoked": true,
+      "old_typed_ir": 233
+    }
+  ],
+  "older26_checks_retained_separately_not_counted_as_fresh": true
+}

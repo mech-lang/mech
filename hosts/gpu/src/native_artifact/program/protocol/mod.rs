@@ -4,6 +4,32 @@ mod owner;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) use crate::native_artifact::program::protocol::owner::OwnerOperation;
 
+/// A cold first-write request, never ownership authority. The runtime still
+/// requires the current selected tree, its exact source-site last-use proof,
+/// matching frozen identity, and Core's exclusive consuming transfer.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::native_artifact) enum NumericWriteHandoff {
+    Established,
+    RetireDeadTreePins,
+}
+impl NumericWriteHandoff {
+    pub const fn raw(self) -> u64 {
+        match self {
+            Self::Established => 0,
+            Self::RetireDeadTreePins => 1,
+        }
+    }
+    pub const fn decode(value: u64) -> Option<Self> {
+        if value == Self::Established.raw() {
+            Some(Self::Established)
+        } else if value == Self::RetireDeadTreePins.raw() {
+            Some(Self::RetireDeadTreePins)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::native_artifact) struct OutputIndex(u64);
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -42,8 +68,25 @@ pub(in crate::native_artifact) enum GlobalHelper {
     NumericSegmentEnd,
     AdmitMove,
     AdmitStructuralObservation,
+    AdmitNumericSegmentBegin,
+    MapOwnerConstructorCheck,
+    BorrowedRecordMapProject,
+    BorrowedRecordMapRead,
+    Utf8ReadPrepare,
+    Utf8ReadFinish,
+    UniformFillPrepare,
+    UniformFillFinish,
+    NumericMapPrepare,
+    NumericMapFinish,
+    HistogramPrepare,
+    HistogramFinish,
     WordCollectionPrepare,
     WordCollectionFinish,
+    MapMatrixKey,
+    MapKeys,
+    MapDictionaryEnd,
+    MapSeedFrame,
+    MapOwnerBeginBorrowedValues,
 }
 impl GlobalHelper {
     // Decoding classifies only. Site, phase, lane, admission and cursor checks
@@ -83,8 +126,25 @@ impl GlobalHelper {
             value if value == u64::MAX - 28 => Self::NumericSegmentEnd,
             value if value == u64::MAX - 29 => Self::AdmitMove,
             value if value == u64::MAX - 30 => Self::AdmitStructuralObservation,
-            value if value == u64::MAX - 31 => Self::WordCollectionPrepare,
-            value if value == u64::MAX - 32 => Self::WordCollectionFinish,
+            value if value == u64::MAX - 31 => Self::AdmitNumericSegmentBegin,
+            value if value == u64::MAX - 32 => Self::MapOwnerConstructorCheck,
+            value if value == u64::MAX - 33 => Self::BorrowedRecordMapProject,
+            value if value == u64::MAX - 34 => Self::BorrowedRecordMapRead,
+            value if value == u64::MAX - 35 => Self::Utf8ReadPrepare,
+            value if value == u64::MAX - 36 => Self::Utf8ReadFinish,
+            value if value == u64::MAX - 37 => Self::UniformFillPrepare,
+            value if value == u64::MAX - 38 => Self::UniformFillFinish,
+            value if value == u64::MAX - 41 => Self::NumericMapPrepare,
+            value if value == u64::MAX - 42 => Self::NumericMapFinish,
+            value if value == u64::MAX - 39 => Self::HistogramPrepare,
+            value if value == u64::MAX - 40 => Self::HistogramFinish,
+            value if value == u64::MAX - 43 => Self::WordCollectionPrepare,
+            value if value == u64::MAX - 44 => Self::WordCollectionFinish,
+            value if value == u64::MAX - 47 => Self::MapMatrixKey,
+            value if value == u64::MAX - 48 => Self::MapKeys,
+            value if value == u64::MAX - 49 => Self::MapDictionaryEnd,
+            value if value == u64::MAX - 50 => Self::MapSeedFrame,
+            value if value == u64::MAX - 51 => Self::MapOwnerBeginBorrowedValues,
             value => Self::Output(OutputIndex(value - 3)),
         }
     }
@@ -124,8 +184,25 @@ impl GlobalHelper {
             Self::NumericSegmentEnd => u64::MAX - 28,
             Self::AdmitMove => u64::MAX - 29,
             Self::AdmitStructuralObservation => u64::MAX - 30,
-            Self::WordCollectionPrepare => u64::MAX - 31,
-            Self::WordCollectionFinish => u64::MAX - 32,
+            Self::AdmitNumericSegmentBegin => u64::MAX - 31,
+            Self::MapOwnerConstructorCheck => u64::MAX - 32,
+            Self::BorrowedRecordMapProject => u64::MAX - 33,
+            Self::BorrowedRecordMapRead => u64::MAX - 34,
+            Self::Utf8ReadPrepare => u64::MAX - 35,
+            Self::Utf8ReadFinish => u64::MAX - 36,
+            Self::UniformFillPrepare => u64::MAX - 37,
+            Self::UniformFillFinish => u64::MAX - 38,
+            Self::NumericMapPrepare => u64::MAX - 41,
+            Self::NumericMapFinish => u64::MAX - 42,
+            Self::HistogramPrepare => u64::MAX - 39,
+            Self::HistogramFinish => u64::MAX - 40,
+            Self::WordCollectionPrepare => u64::MAX - 43,
+            Self::WordCollectionFinish => u64::MAX - 44,
+            Self::MapMatrixKey => u64::MAX - 47,
+            Self::MapKeys => u64::MAX - 48,
+            Self::MapDictionaryEnd => u64::MAX - 49,
+            Self::MapSeedFrame => u64::MAX - 50,
+            Self::MapOwnerBeginBorrowedValues => u64::MAX - 51,
         }
     }
     #[cfg(feature = "canonical-native-program")]
@@ -140,3 +217,27 @@ impl GlobalHelper {
 
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod abi;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[test]
+fn collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space() {
+    let tags = [
+        GlobalHelper::UniformFillPrepare,
+        GlobalHelper::UniformFillFinish,
+        GlobalHelper::HistogramPrepare,
+        GlobalHelper::HistogramFinish,
+        GlobalHelper::NumericMapPrepare,
+        GlobalHelper::NumericMapFinish,
+        GlobalHelper::MapMatrixKey,
+        GlobalHelper::MapKeys,
+        GlobalHelper::MapDictionaryEnd,
+        GlobalHelper::MapSeedFrame,
+        GlobalHelper::MapOwnerBeginBorrowedValues,
+    ];
+    let mut codes = std::collections::BTreeSet::new();
+    for tag in tags {
+        assert!(codes.insert(tag.raw()));
+        assert_eq!(GlobalHelper::decode(tag.raw()), tag);
+        assert!(GlobalHelper::output(tag.raw() - 3).is_none());
+    }
+}

@@ -1,0 +1,137 @@
+{
+  "schema": "mech.related-post-gen.twenty-four-hour-selected-comparison.v1",
+  "created_utc": "2026-11-07T05:53:03.778430+00:00",
+  "old": {
+    "selected_identity": "IR204/work114/ABI40",
+    "compiler": "1a31c2bbb7b48e0dda0a9e7b7cc9f3d63b728a5c",
+    "workers": 4,
+    "report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/compiler-compact-native-fact-rows-candidate-20261106.json",
+    "status_message_utc": "2026-11-06T05:14:49.744Z",
+    "matched_reference": {
+      "variant": "rust-mech-control-streaming",
+      "median_seconds": 0.001619209,
+      "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+      "eligible_variants": [
+        "rust",
+        "rust-concurrent",
+        "rust-mech-control",
+        "rust-ho",
+        "rust-cold-workers-1",
+        "rust-cold-workers-2",
+        "rust-cold-workers-3",
+        "rust-cold-workers-4",
+        "rust-cold-workers-5",
+        "rust-cold-workers-6",
+        "rust-cold-workers-7",
+        "rust-mech-control-rebuilt",
+        "rust-mech-control-streaming"
+      ]
+    },
+    "whole_reference": {
+      "variant": "rust-preinitialized",
+      "median_seconds": 0.023727166932076216,
+      "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+    }
+  },
+  "current": {
+    "identity": "IR242/work115/ABI41/image9",
+    "compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+    "workers": 4,
+    "source_variant": "ordered-combinadic-mask-reuse",
+    "report": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/selected-speed-checkpoint-20261107.json",
+    "selected_updated_utc": "2026-11-07T05:45:28.215616+00:00",
+    "matched_reference": {
+      "variant": "rust-mech-control-u8-ids-u32",
+      "median_seconds": 0.0016044590000000001,
+      "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+      "eligible_variants": [
+        "rust",
+        "rust-mech-control-streaming",
+        "rust-mech-control-u32-casts",
+        "rust-mech-control-u8-ids-u32"
+      ]
+    },
+    "whole_reference": {
+      "variant": "rust-mech-control-u32-casts",
+      "median_seconds": 0.023081457940861583,
+      "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+    },
+    "published_head": "954a70b539dabf5985b6cfea79f4aea0294c01a6"
+  },
+  "metrics": {
+    "post_json_ms": {
+      "old": 3.216875,
+      "current": 2.839,
+      "percent_reduction": 11.746648533126091
+    },
+    "post_json_times_fastest_eligible_rust": {
+      "old": 1.986695355571764,
+      "current": 1.7694437813618171,
+      "percent_reduction": 10.935324009323132
+    },
+    "whole_process_ms": {
+      "old": 39.285500068217516,
+      "current": 34.66066694818437,
+      "percent_reduction": 11.772366679824186
+    },
+    "whole_process_times_fastest_eligible_rust": {
+      "old": 1.6557181133626344,
+      "current": 1.501667140654225,
+      "percent_reduction": 9.304178740639845
+    },
+    "post_json_allocation_requests": {
+      "old": 4848,
+      "current": 3758,
+      "percent_reduction": 22.483498349834985
+    },
+    "post_json_requested_bytes": {
+      "old": 8384366,
+      "current": 8012356,
+      "percent_reduction": 4.436948482449354
+    },
+    "post_json_peak_live_requested_heap_bytes": {
+      "old": 14502937,
+      "current": 13344067,
+      "percent_reduction": 7.990588389096631
+    },
+    "post_json_instructions": {
+      "old": 67239640,
+      "current": 54878870,
+      "percent_reduction": 18.383159100792334
+    },
+    "post_json_cycles": {
+      "old": 17912241,
+      "current": 14939198,
+      "percent_reduction": 16.59782826727264
+    },
+    "restore_allocation_requests": {
+      "old": 83648,
+      "current": 26837,
+      "percent_reduction": 67.91674636572303
+    },
+    "restore_requested_bytes": {
+      "old": 17444828,
+      "current": 12830999,
+      "percent_reduction": 26.44811975216953
+    },
+    "restore_instructions": {
+      "old": 182331217,
+      "current": 125878851,
+      "percent_reduction": 30.961437612737484
+    },
+    "process_peak_resident_bytes": {
+      "old": 29523968,
+      "current": 26558464,
+      "percent_reduction": 10.044395116537185
+    }
+  },
+  "limits": [
+    "Historical and current values are separate cohorts on the same shared M3. Percentages describe the recorded trend, not a simultaneous 24-hour pairwise experiment.",
+    "Each timing multiple uses the fastest eligible Rust implementation measured in that same cohort and scope.",
+    "Processing includes continuous post-JSON input admission, setup, worker creation/run/join and result materialization; whole-process includes restore, JSON and teardown.",
+    "Resource metrics are from separate instrumented cohorts; their timings do not supply latency claims.",
+    "The current selected compiler and source beat the immediately previous IR238 selected version in29/31 post-JSON and24/31 whole-process pairs. This is not a same-cohort comparison against IR204.",
+    "Unselected IR243 shared-call metadata allocation improvements are excluded from current values."
+  ],
+  "rust_parity_achieved": false
+}

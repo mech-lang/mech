@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-child-entry-facts-integration-opt-20261107-v1/compiler-decoded",
+    "/private/tmp/mech-related-child-entry-facts-integration-runners-20261107-v1/after-8/build/source.mec",
+    "/private/tmp/mech-related-child-entry-facts-integration-runners-20261107-v1/after-8-decoded-bundle"
+  ],
+  "exit": 0,
+  "seconds": 5.005572957918048,
+  "stdout": "{\"code_bytes\":905908,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1520}\n",
+  "stderr": ""
+}

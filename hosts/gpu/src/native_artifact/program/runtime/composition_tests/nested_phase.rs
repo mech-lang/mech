@@ -189,7 +189,14 @@ fn qualify_nested_inventory(jit: &JitProgramArtifact) {
         panic!("nested phase must have a Tail root")
     };
     let forest = Forest::derive(plan, root).unwrap();
-    let regions = &jit.descriptor().metadata().closed_tails.regions;
+    let regions = jit
+        .descriptor()
+        .metadata()
+        .closed_tails
+        .regions
+        .iter()
+        .filter(|region| region.tail.header() == root.header())
+        .collect::<Vec<_>>();
     assert_eq!(regions.len(), 1);
     let selected = regions[0].numeric.as_ref().expect("complete native phase");
     assert_eq!(
@@ -214,16 +221,15 @@ fn qualify_nested_inventory(jit: &JitProgramArtifact) {
     // phase-descendant witness proves non-vacuous selection and execution.
     assert!(
         parents.iter().all(|parent| {
-            parent.iteration != regions[0].iteration
-                && parent.segments.iter().all(|piece| {
-                    piece.prepaid_region.is_none()
-                        && piece
-                            .sites
-                            .iter()
-                            .all(|site| forest.sites.contains(&(*site as usize)))
-                })
+            parent.segments.iter().all(|piece| {
+                piece.prepaid_region.is_none()
+                    && piece
+                        .sites
+                        .iter()
+                        .all(|site| forest.sites.contains(&(*site as usize)))
+            })
         }),
-        "the complete root stays unsplit and descendants keep the full source price"
+        "the complete native root and retained fallback pieces keep exact source coverage and full ordinary prices"
     );
     let metadata = jit.descriptor().metadata();
     assert!(

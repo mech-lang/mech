@@ -86,6 +86,11 @@ impl<'a> Facts<'a> {
         }
     }
 
+    pub fn canonical_boolean(&mut self, value: Value) -> bool {
+        self.range(value, MAX_DEPTH)
+            .is_some_and(|range| range.1 <= 1)
+    }
+
     fn range(&mut self, value: Value, depth: usize) -> Option<Range> {
         let value = self.function.dfg.resolve_aliases(value);
         let mask = word_mask(self.function, value)?;

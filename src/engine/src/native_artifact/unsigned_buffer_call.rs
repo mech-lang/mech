@@ -8,13 +8,19 @@ use super::{
 #[path = "unsigned_buffer_aliases.rs"]
 mod aliases;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct NativeUnsignedBufferCall {
     site: u32,
     source: Option<Value>,
     sublist: Option<Value>,
     owned_source_slots: Box<[Value]>,
 }
+super::program_image_proofs::image_struct!(NativeUnsignedBufferCall {
+    site: u32,
+    source: Option<Value>,
+    sublist: Option<Value>,
+    owned_source_slots: Box<[Value]>,
+});
 impl NativeUnsignedBufferCall {
     pub fn site(&self) -> u32 {
         self.site

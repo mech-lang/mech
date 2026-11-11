@@ -22,10 +22,11 @@ impl FrameAdmissionRecipe {
             fields: inputs
                 .iter()
                 .map(|id| {
+                    let entry = schemas.entry(*id)?;
                     Some(Field {
                         schema: *id,
-                        key: schemas.get(*id)?.key(),
-                        footprint: PreparedNativeFrameFootprint::derive(schemas.get(*id)?)?,
+                        key: entry.key(),
+                        footprint: PreparedNativeFrameFootprint::derive_from_entry(entry)?,
                     })
                 })
                 .collect::<Option<Box<[_]>>>()?,

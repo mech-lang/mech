@@ -45,7 +45,9 @@ pub(super) fn eliminate(function: &mut Function) -> Removed {
     }) {
         return Removed::default();
     }
-    function.dfg.resolve_all_aliases();
+    // Demand resolves each value below. Keep the alias records themselves:
+    // later native range proofs also retain producer-derived SSA references.
+    // resolve_all_aliases rewrites IR uses but invalidates those records.
     let mut incoming = BTreeMap::new();
     let mut live_values = vec![false; function.dfg.num_values()];
     let mut live_insts = vec![false; function.dfg.num_insts()];

@@ -127,19 +127,19 @@ fn collection_boundaries_and_scalar_only_programs_keep_original_inventories() {
             assert!(layout.boundaries.is_empty());
         }
     }
-    // The source pipeline currently rejects recursive calls inside a
-    // comprehension, before a native child/collection crossing can exist.
-    // Preserve that rejection rather than fabricating an unreachable plan.
-    let parsed = parse_canonical_document(
-        TextSnapshot::new(DocumentId(0x434c4541), Revision(1), crossing).unwrap(),
-        ParseConfig::default(),
-    );
-    assert!(parsed.is_strictly_clean());
-    let Err(error) = CanonicalSourceFrontend.compile_document_with_catalog(
-        &DocumentSyntax::cast(parsed.syntax()).unwrap(),
-        mech_stdlib::source_catalog(),
-    ) else {
-        panic!("recursive comprehension must retain its source rejection")
-    };
-    assert_eq!(error.code, "source-semantics/recursive-comprehension");
+    // Each recursive helper now owns a frame inside its collection element.
+    // Cleanup still cannot cross the enclosing collection lifetime.
+    for plan in plans(crossing) {
+        plan.validate_current_visits().unwrap();
+        assert!(
+            plan.collections()
+                .iter()
+                .any(|collection| collection.parent().is_some())
+        );
+        let frames = plan.facts().buffer_frames();
+        let recipes = FrameRetirements::derive(&frames, plan.values().len()).unwrap();
+        let tables = RetirementTables::derive(&plan, &plan.scalar_aggregates()).unwrap();
+        let layout = Layout::derive(&plan, &tables, &frames, &recipes).unwrap();
+        assert!(layout.boundaries.is_empty());
+    }
 }

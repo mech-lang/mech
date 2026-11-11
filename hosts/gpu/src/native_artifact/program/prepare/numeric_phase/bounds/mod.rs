@@ -61,7 +61,7 @@ impl Bound {
     }
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Trips")]
 pub(in crate::native_artifact) struct Trips {
     pub iteration: u32,
     pub field: usize,

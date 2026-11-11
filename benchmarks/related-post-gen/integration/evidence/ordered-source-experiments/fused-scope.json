@@ -1,0 +1,11 @@
+{
+  "status": "unselected_source_experiment",
+  "sorts_each_subset": false,
+  "ordering_guard": "Single existing per-tag bit-mask scan: bit > accumulated mask proves strict order and uniqueness for interned IDs below 64.",
+  "fallback": "Original exact related-with-tags path for unordered/duplicate/long/wide-vocabulary inputs.",
+  "tradeoff": "Unordered inputs lose the former subset fast path; do not promote without recording this scope and testing fallback.",
+  "performance_gain_claim": false,
+  "separate_ordering_scan": false,
+  "mask_reuse_after_eligibility": false,
+  "source_sha256": "5d502d9284d860ca048ca94b98731f1bb13d66a69ba491542e9db17beb1ce3c2"
+}

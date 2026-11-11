@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v2/build.json",
+    "--source",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-old-object-20261106-v2/207/probe.rs",
+    "--out",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-old-object-20261106-v2/207/probe",
+    "--bundle",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-old-object-20261106-v2/207/build",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 1.273573291953653,
+  "stdout": "warning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-native-fixed-frame-arenas-old-object-20261106-v2/207/build/linked.rs:3:146\n  |\n3 | ...a3bce2faaa6b3cebb555300_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: 1 warning emitted\n\n{\"seconds\": 0.7390597919002175, \"exit\": 0}\n",
+  "stderr": ""
+}

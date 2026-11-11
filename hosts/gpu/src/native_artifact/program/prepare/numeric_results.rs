@@ -24,9 +24,9 @@ pub(in crate::native_artifact) enum ResultRecipe {
     },
 }
 
-/// Reuse the connected private-use proof and its exact scalar word count.
-/// Numeric leaves initially compose only flat tuples/records, not enum tags or
-/// nested fields. Their ordinary shared aggregate emitter owns bit semantics.
+/// Reuse the connected private-use proof and its exact scalar word count for
+/// flat scalar aggregates. Nested scalar spans use the separate buffer-frame
+/// recipe; the ordinary shared aggregate emitter still owns bit semantics here.
 pub(in crate::native_artifact::program::prepare) fn scalar_aggregate(
     plan: &Plan,
     aggregates: &NativeScalarAggregates,
@@ -77,7 +77,7 @@ pub(super) fn derive(
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
-    carrier: &[NativeBufferFrameField],
+    _carrier: &[NativeBufferFrameField],
     arrays: &[Array],
     provenance: &mut Provenance<'_, '_>,
 ) -> Result<ResultRecipe, &'static str> {
@@ -93,13 +93,14 @@ pub(super) fn derive(
         let field = provenance
             .array(value.get(), ordinal)
             .ok_or("leaf result lacks a numeric carrier root")?;
-        if schema != carrier[field].schema() {
+        let at = arrays
+            .iter()
+            .position(|a| a.root == field)
+            .ok_or("returned array outside proved roots")?;
+        if schema != arrays[at].schema {
             return Err("returned array requires a different schema binding");
         }
-        arrays
-            .iter()
-            .position(|a| a.field == field)
-            .ok_or("returned array outside carrier")
+        Ok(at)
     };
     if matches!(ty.definition().body(), SchemaBody::Matrix { .. }) {
         return Ok(ResultRecipe::Array {
@@ -114,24 +115,17 @@ pub(super) fn derive(
     }
     // The connected private-use proof supplies the exact tuple/record field
     // order and rejects public escape. Both use the same per-field roots and
-    // terminal freshness proof; nested composites remain unsupported here.
-    let fields = frames
-        .fields(value)
-        .ok_or("numeric result frame escapes or lacks exact private fields")?;
-    if fields
-        .iter()
-        .any(|f| matches!(f.lane(), Lane::Composite { .. }))
-    {
-        return Err("numeric result requires flat fields");
-    }
+    // terminal freshness proof. Nested spans must contain scalar leaves only.
+    let fields = numeric_fields::at(frames, value.get())
+        .ok_or("numeric result frame escapes or lacks exact untagged leaves")?;
     let managed = fields
         .iter()
         .enumerate()
         .filter(|(_, f)| matches!(f.lane(), Lane::Managed { .. }))
         .collect::<Vec<_>>();
-    if managed.is_empty() {
-        return Err("numeric result frame requires an array owner");
-    }
+    // A lifted immutable array may leave only nested scalar spans in the
+    // result. The exact private-frame recipe also represents that empty set
+    // of owner transfers; scalar lanes still use their ordinary exit stores.
     let arrays = managed
         .into_iter()
         .map(|(ordinal, field)| Ok((ordinal, root(Some(ordinal), field.schema())?)))

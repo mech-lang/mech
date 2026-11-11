@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runners-20261106-v2/qualify-compact-budgets.py"
+  ],
+  "exit": 0,
+  "seconds": 10.485065167071298,
+  "stdout": "eight denials exact across three loaders\nfinite first10/full5000 outputs exact across three loaders\n",
+  "stderr": ""
+}

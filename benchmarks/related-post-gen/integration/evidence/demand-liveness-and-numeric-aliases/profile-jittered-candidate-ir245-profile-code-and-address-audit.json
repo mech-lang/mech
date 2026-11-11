@@ -1,0 +1,6 @@
+{
+  "actual_macho_text_vmaddr": 4294967296,
+  "sampler_address_formula_verified": true,
+  "native_text_exact_to_normal_runner": true,
+  "normalized_native_text_sha256": "e893de3e7dd8033b9172de3924316ae8c6716cc5e2e75480c41587d43fd76fed"
+}

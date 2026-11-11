@@ -10,6 +10,12 @@ impl Invocation<'_, '_, '_> {
     ) -> Result<Option<Option<u64>>, Error> {
         match self.descriptor.metadata().call_routes[site] {
             LibraryCallRoute::Canonical => Ok(None),
+            LibraryCallRoute::BorrowedMapKeysLength => {
+                Ok(self.borrowed_keys_length_call(site, words)?.map(Some))
+            }
+            LibraryCallRoute::BorrowedMapKeysFrame => {
+                self.buffer_frame_action(site, GlobalHelper::Library, words)
+            }
             LibraryCallRoute::BufferFrame => {
                 self.buffer_frame_action(site, GlobalHelper::Library, words)
             }
@@ -22,9 +28,13 @@ impl Invocation<'_, '_, '_> {
             LibraryCallRoute::UnsignedMatrixLength => {
                 Ok(self.unsigned_matrix_length_call(site, words)?.map(Some))
             }
+            LibraryCallRoute::MatrixLength => Ok(self.matrix_length_call(site, words)?.map(Some)),
             LibraryCallRoute::UnsignedMatrixElement => {
                 Ok(self.unsigned_matrix_element_call(site, words)?.map(Some))
             }
+            LibraryCallRoute::StringMatrixElement => Ok(self
+                .string_matrix_element_call(site, words)?
+                .then_some(None)),
             LibraryCallRoute::UnsignedMatrixReplace => Ok(self
                 .unsigned_matrix_replace_call(site, words)?
                 .then_some(None)),

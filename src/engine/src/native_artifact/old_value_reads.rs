@@ -6,9 +6,11 @@ use crate::native_artifact::{
 };
 
 impl NativeProgramFacts<'_> {
-    /// Exact original visit of a descriptive read. Collection/publication and
-    /// effect reads keep their independent ownership frontiers.
-    pub(crate) fn control_read_site(plan: &Plan, role: Read) -> Option<(u32, bool)> {
+    /// Exact original visit of a descriptive read. The bool marks a terminator
+    /// read after the action. Collection/publication and effect reads retain
+    /// independent ownership frontiers and return None. This mechanical mapping
+    /// grants neither liveness, ownership nor permission to execute a visit.
+    pub fn control_read_site(plan: &Plan, role: Read) -> Option<(u32, bool)> {
         Some(match role {
             Read::Action(site) => (site, false),
             Read::Terminator(site) => (site, true),

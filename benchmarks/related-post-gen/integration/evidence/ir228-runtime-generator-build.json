@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-deflate-reduction-integration-runtime-check-20261106-v1/hosted-build.json",
+    "--source",
+    "/private/tmp/mech-related-deflate-reduction-integration-runtime-check-20261106-v1/generate-standard-app.rs",
+    "--out",
+    "/private/tmp/mech-related-deflate-reduction-integration-runtime-check-20261106-v1/generate-standard-app"
+  ],
+  "exit": 0,
+  "seconds": 2.80512166605331,
+  "stdout": "{\"seconds\": 1.9116460420191288, \"exit\": 0}\n",
+  "stderr": "",
+  "compiler_source_sha256": "ff786a9f9160b29ef24aba52ed08641d78daae1ad5af6c498e4e9430eef8fa8b"
+}
