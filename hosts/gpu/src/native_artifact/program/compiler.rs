@@ -783,3 +783,189 @@ impl NativeProgramObject {
         self.codegen.emission_counts()
     }
 }
+
+/// Diagnostic compile-time inventory for compact closed-program emission.
+pub fn compact_native_layout_for_diagnostic(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+) -> Result<serde_json::Value, NativeCompileError> {
+    let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
+    let plan = lower_native_program_artifact_with_definition_table_limit(
+        artifact,
+        catalog,
+        limits.max_definition_table_bytes,
+    )
+    .map_err(backend)?;
+    let mut inventory = crate::native_artifact::program::compact::inventory(&plan)?;
+    if std::env::var_os("MECH_COMPACT_PROOF_INVENTORY").is_some() {
+        let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+        let meta = prepared.metadata();
+        let complete_headers = std::env::var("MECH_COMPACT_COMPLETE_PROOF_HEADERS")
+            .ok()
+            .map(|text| {
+                text.split(',')
+                    .map(|v| v.parse::<u32>().map_err(backend))
+                    .collect::<Result<std::collections::BTreeSet<_>, _>>()
+            })
+            .transpose()?
+            .unwrap_or_default();
+        let rows = meta.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
+            let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
+            let result = crate::native_artifact::program::prepare::readonly_numeric::derive(
+                &meta.plan, tail, &meta.buffer_frames, &meta.scalar_aggregates, &meta.calls, &meta.visits);
+            let complete_rejection = complete_headers.contains(&tail.header()).then(||
+                crate::native_artifact::program::prepare::readonly_numeric::derive_complete_for_diagnostic(
+                    &meta.plan, tail, &meta.buffer_frames, &meta.scalar_aggregates, &meta.calls, &meta.visits).err());
+            Some(serde_json::json!({"complete_rejection":complete_rejection,"iteration":iteration,"header":tail.header(),"parent":tail.parent(),
+                "origin":tail.origin(),"proof_eligible":result.is_ok(),"rejection":result.as_ref().err(),
+                "selected_closed_region":meta.closed_tails.regions.iter().any(|v|v.iteration as usize==iteration && v.numeric.is_some()),
+                "arrays":result.as_ref().ok().map(|p|p.arrays.len()),
+                "native_sites":result.as_ref().ok().map(|p|p.sites.len()),
+                "cold_exits":result.as_ref().ok().map(|p|p.exits.len()),
+                "cold_exit_records":result.as_ref().ok().map(|p|&p.exits)}))
+        }).collect::<Vec<_>>();
+        inventory["numeric_candidates"] = serde_json::json!(rows);
+    }
+    Ok(inventory)
+}
+
+/// Diagnostic native closed computation. The ordinary managed entry never
+/// selects this function until its full resource/recovery contract is restored.
+pub fn emit_compact_closed_object_for_diagnostic(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    emit_compact_closed_object_with_phase_observer_for_diagnostic(artifact, catalog, false)
+}
+pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    observe: bool,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    host_supported()?;
+    eprintln!("compact-stage: canonical lowering");
+    let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
+    let plan = lower_native_program_artifact_with_definition_table_limit(
+        artifact,
+        catalog,
+        limits.max_definition_table_bytes,
+    )
+    .map_err(backend)?;
+    eprintln!(
+        "compact-stage: preparation blocks={} values={}",
+        plan.blocks().len(),
+        plan.values().len()
+    );
+    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+    eprintln!("compact-stage: native module");
+    let mut module =
+        codegen_backend::object("mech_compact_closed_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
+    let metadata =
+        crate::native_artifact::program::compact::define(&mut module, &prepared, observe)?;
+    Ok((module.finish().emit().map_err(backend)?, metadata))
+}
+
+/// Diagnostic compilation only: compact typed numeric functions over the same
+/// semantic plan/emitter/backend. No ordinary managed entry selects these
+/// functions, and this is NOT a qualified/unmetered Program execution API.
+pub fn emit_minimal_numeric_object_for_diagnostic(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    use crate::native_artifact::codegen::options::{CompilationControls, OptimizationOptions};
+    use crate::native_artifact::compiler::compiled_stack_bytes;
+    use crate::native_artifact::program::codegen::{cfg_cleanup, numeric_compact, numeric_minimal};
+    use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, types};
+    use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
+    host_supported()?;
+    let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
+    let plan = lower_native_program_artifact_with_definition_table_limit(
+        artifact,
+        catalog,
+        limits.max_definition_table_bytes,
+    )
+    .map_err(backend)?;
+    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+    let mut module =
+        codegen_backend::object("mech_minimal_numeric_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
+    let code = CodePlan::Program(&prepared);
+    let closed = &prepared.metadata().closed_tails;
+    let controls = CompilationControls::new(OptimizationOptions::default());
+    let mut reports = Vec::new();
+    let mut functions = Vec::new();
+    for (id, region) in closed.regions.iter().enumerate() {
+        let site = region.tail.header() as usize;
+        let Some(proof) = region.numeric.as_ref().filter(|p| {
+            p.exits.is_empty()
+                && p.phase
+                    .as_ref()
+                    .is_some_and(|p| p.loops.len() > 1 && !p.checked_children)
+        }) else {
+            continue;
+        };
+        if closed.sites[site] != Some(id) || region.cold_resume().is_some() {
+            continue;
+        }
+        let symbol = format!("mech_minimal_numeric_{site}");
+        let mut signature = module.make_signature();
+        signature.params = vec![AbiParam::new(types::I64); 2];
+        signature.returns = vec![AbiParam::new(types::I64); 2];
+        let mut context = module.make_context();
+        context.func.signature = signature.clone();
+        let mut fb = FunctionBuilderContext::new();
+        {
+            let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
+            let entry = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.switch_to_block(entry);
+            let input = b.block_params(entry)[0];
+            let output = b.block_params(entry)[1];
+            let zero = b.ins().iconst(types::I64, 0);
+            let error = b.create_block();
+            b.append_block_param(error, types::I64);
+            b.set_cold_block(error);
+            let done = b.create_block();
+            // No helper is reachable in this direct private-storage contract.
+            // Retained shared source operations must lower or fail explicitly.
+            let native =
+                numeric_minimal::Boundary::new(&mut b, input, output, region, None, None, None)?;
+            let report = numeric_compact::emit(
+                &controls, &mut b, code, region, &native, None, None, None, done, error,
+            )?;
+            reports.push(report);
+            b.switch_to_block(done);
+            b.ins().return_(&[zero, zero]);
+            b.switch_to_block(error);
+            let status = b.block_params(error)[0];
+            let origin = b.ins().load(types::I64, MemFlags::new(), output, 0);
+            b.ins().return_(&[status, origin]);
+            b.seal_all_blocks();
+            b.finalize();
+        }
+        let function = module
+            .declare_function(&symbol, Linkage::Export, &signature)
+            .map_err(backend)?;
+        let cleanup = cfg_cleanup::optimize(&controls, &mut context, module.isa())?;
+        let calls = context
+            .func
+            .layout
+            .blocks()
+            .flat_map(|block| context.func.layout.block_insts(block))
+            .filter(|&inst| context.func.dfg.insts[inst].opcode().is_call())
+            .count();
+        if calls != 0 {
+            return Err(backend(
+                "minimal diagnostic still contains an unresolved helper call",
+            ));
+        }
+        module
+            .define_function(function, &mut context)
+            .map_err(backend)?;
+        let compiled = context
+            .compiled_code()
+            .ok_or_else(|| backend("minimal numeric function lacks machine code"))?;
+        functions.push(serde_json::json!({"header":site,"symbol":symbol,"input_words":numeric_minimal::input_words(proof,region.tail.carrier().get())?,"output_words":numeric_minimal::output_words(proof)?,"arrays":proof.arrays,"scalar_words":proof.scalar_words,"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"cleanup":cleanup,"calls":calls}));
+    }
+    let metadata = serde_json::json!({"contract":"Diagnostic typed computation, exact ordinary accounting/publication/recovery omitted; not NoLimits or a qualified Program entry.","shared_semantic_plan":true,"shared_scalar_array_emitter_and_backend":true,"source_names_not_used_for_selection":true,"functions":functions,"numeric_reports":reports,"codegen_flags":PROGRAM_CODEGEN_FLAGS});
+    Ok((module.finish().emit().map_err(backend)?, metadata))
+}

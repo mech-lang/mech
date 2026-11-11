@@ -26,6 +26,7 @@ pub(in crate::native_artifact::program::codegen) enum Step<'a> {
         array: usize,
         index: u32,
         incoming: u32,
+        width: u8,
         preserved_arrays: Vec<usize>,
     },
     /// Successful checked replacement preserves shape and immutable scalar
@@ -64,6 +65,8 @@ pub(in crate::native_artifact::program::codegen) fn with_windows<'a>(
         &[],
         None,
         &Queries::new(),
+        &[],
+        false,
         &step,
     )
 }
@@ -73,9 +76,22 @@ pub(in crate::native_artifact::program::codegen) fn with_checks<'a>(
     scope: &Scope,
     slots: &BTreeSet<usize>,
     checks: &Queries,
+    floors: &[(usize, u64)],
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
-    analyze(code, scope, slots, None, &[], &[], None, checks, &step)
+    analyze(
+        code,
+        scope,
+        slots,
+        None,
+        &[],
+        &[],
+        None,
+        checks,
+        floors,
+        false,
+        &step,
+    )
 }
 
 pub(in crate::native_artifact::program::codegen) fn with_captured_windows<'a>(
@@ -94,6 +110,8 @@ pub(in crate::native_artifact::program::codegen) fn with_captured_windows<'a>(
         captures,
         None,
         &Queries::new(),
+        &[],
+        false,
         &step,
     )?;
     proof
@@ -122,6 +140,31 @@ pub(in crate::native_artifact::program::codegen) fn with_completion<'a>(
         &[],
         Some(completion),
         &Queries::new(),
+        &[],
+        false,
+        &step,
+    )
+}
+
+pub(in crate::native_artifact::program::codegen) fn with_reused_reads<'a>(
+    code: CodePlan<'_>,
+    scope: &Scope,
+    slots: &BTreeSet<usize>,
+    checks: &Queries,
+    floors: &[(usize, u64)],
+    step: impl Fn(usize) -> Option<Step<'a>>,
+) -> Option<Proof> {
+    analyze(
+        code,
+        scope,
+        slots,
+        None,
+        &[],
+        &[],
+        None,
+        checks,
+        floors,
+        true,
         &step,
     )
 }
@@ -135,10 +178,12 @@ fn analyze<'a>(
     captures: &[CapturedWindow],
     completion: Option<completion::Candidate>,
     checks: &Queries,
+    floors: &[(usize, u64)],
+    reuse: bool,
     step: &impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
     let ordered = scope.order(code)?;
-    let (mut terms, partitions) = entry::states(
+    let (mut terms, mut partitions) = entry::states(
         code,
         &ordered,
         slots,
@@ -148,6 +193,23 @@ fn analyze<'a>(
         completion.as_ref(),
         &step,
     )?;
+    if reuse {
+        for state in &mut partitions {
+            state.snapshots = Some(BTreeMap::new());
+        }
+    }
+    // These facts have a separate current-phase runtime guard. This domain
+    // never walks through append; only its nondecreasing lower bound is seeded
+    // afresh. No old length equality, scalar snapshot or pointer is carried.
+    for &(array, minimum) in floors {
+        let length = terms.intern(Expr::ArrayLength(array))?;
+        let minimum = terms.constant(minimum)?;
+        for state in &mut partitions {
+            if !state.assume(&terms, Relation::Le, minimum, length)? {
+                return None;
+            }
+        }
+    }
     let candidate = completion.clone();
     let mut completion = completion.map(completion::Collector::new);
     let mut incoming: BTreeMap<usize, Vec<Option<State>>> = ordered
@@ -186,6 +248,8 @@ fn analyze<'a>(
                 &[],
                 None,
                 &Queries::new(),
+                &[],
+                false,
                 step,
             )?
             .unchanged_at_latch,
@@ -244,6 +308,9 @@ fn analyze<'a>(
                 }
             }
             Step::Scalar(action) => {
+                for (word, snapshot) in read_reuse::operands(&states, &terms, action) {
+                    proof.reused_operands.insert((site, word), snapshot);
+                }
                 if !captures.is_empty()
                     && let Scalar::Primitive { op, operands, .. } = action
                     && let Some((relation, reverse)) = comparison(*op)
@@ -329,6 +396,7 @@ fn analyze<'a>(
                     }
                 }
                 for state in states.iter_mut().flatten() {
+                    state.snapshot_inputs(site, action);
                     scalar(state, &mut terms, site, action)?;
                 }
             }
@@ -355,6 +423,9 @@ fn analyze<'a>(
                 index,
                 output,
             } => {
+                if let Some(snapshot) = read_reuse::find(&states, &terms, array, index) {
+                    proof.reused_reads.insert(site, snapshot);
+                }
                 let length = terms.intern(Expr::ArrayLength(array))?;
                 // An implicit one-based read has the same interval obligation
                 // as an explicit base<length comparison. Discover candidates
@@ -378,6 +449,14 @@ fn analyze<'a>(
                 }
                 let value = terms.intern(Expr::Definition(site, output))?;
                 for state in states.iter_mut().flatten() {
+                    terms.changes.record(
+                        value,
+                        write_changes::Value::Read {
+                            array,
+                            index: state.read(index as usize)?,
+                            version: state.content_version,
+                        },
+                    );
                     if let Some(recording) = &mut terms.recording {
                         recording.record(
                             value,
@@ -389,6 +468,7 @@ fn analyze<'a>(
                     }
                     state.remember_read(array, state.read(index as usize)?, site, output, value)?;
                     state.words.insert(output, value);
+                    state.snapshot(site, output);
                 }
             }
             Step::Write {
@@ -396,6 +476,7 @@ fn analyze<'a>(
                 index,
                 incoming,
                 preserved_arrays,
+                width,
             } => {
                 let candidate = states
                     .iter()
@@ -409,13 +490,37 @@ fn analyze<'a>(
                 {
                     proof.increment_writes.insert(site, candidate);
                 }
+                let length = terms.intern(Expr::ArrayLength(array))?;
+                if states.iter().flatten().all(|state| {
+                    state
+                        .read(index as usize)
+                        .is_some_and(|index| state.readable(&terms, index, length))
+                }) {
+                    proof.writes.insert((site, array, index));
+                }
+                if states.iter().flatten().all(|state| {
+                    state
+                        .read(index as usize)
+                        .zip(state.read(incoming as usize))
+                        .is_some_and(|(index, incoming)| {
+                            state.changes(&terms, array, index, incoming, width)
+                        })
+                }) {
+                    proof
+                        .changed_writes
+                        .insert((site, array, index, incoming, width));
+                }
                 for state in states.iter_mut().flatten() {
                     state.preserve_reads(&preserved_arrays);
+                    state.content_version = write_changes::Version::Write(site);
                 }
             }
             Step::Replace | Step::Keep => {
                 for state in states.iter_mut().flatten() {
                     state.checked_reads.clear();
+                    if matches!(step(site)?, Step::Replace) {
+                        state.content_version = write_changes::Version::Write(site);
+                    }
                 }
             }
         }
@@ -424,6 +529,28 @@ fn analyze<'a>(
         // carrying any facts across its body/return edge.
         if let Some(checks) = checks.get(&site) {
             for &check in checks {
+                let word = match check {
+                    Check::Addition { word, .. } | Check::Fits { count: word, .. } => Some(word),
+                    Check::Le(Operand::Word(word), _) => Some(word),
+                    _ => None,
+                };
+                if let Some(word) = word {
+                    let upper = states
+                        .iter()
+                        .flatten()
+                        .map(|state| {
+                            state
+                                .read(word)
+                                .map_or(u64::MAX, |value| state.upper(&terms, value))
+                        })
+                        .max()
+                        .unwrap_or(u64::MAX);
+                    proof
+                        .query_upper
+                        .entry((site, word))
+                        .and_modify(|old| *old = (*old).max(upper))
+                        .or_insert(upper);
+                }
                 if states
                     .iter()
                     .flatten()

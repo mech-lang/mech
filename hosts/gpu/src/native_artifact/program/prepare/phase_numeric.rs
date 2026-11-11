@@ -292,6 +292,25 @@ pub(in crate::native_artifact) fn derive_interval(
     )
 }
 
+pub(in crate::native_artifact) fn derive_complete(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+) -> Result<Proof, &'static str> {
+    derive_with_children(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        calls,
+        visits,
+        Coverage::Complete,
+    )
+}
+
 fn derive_with_children(
     plan: &Plan,
     tail: &NativeTailLoop,
