@@ -55960,6 +55960,227 @@
         }
       },
       "complete_goal": false
+    },
+    "278": {
+      "git_parent": "3dd44874b29e65fede81ea45a498830a63cdaff8",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "5bf88bd67a20eb9b3bf98d05e38892e8758cf1a0",
+      "retained_compiler": "R278",
+      "retained_source_packet_round": 278,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain the guarded append recurrence in the experimental compiler.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "b33633b260f4581c744dfe70b86f04114633cbb1757ceda686932ac3db8167eb",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/append_run.rs": {
+            "baseline": null,
+            "candidate": "396f9afa6d590f749a0754a33229d7f1a7e6b3e7e09b92a313daa45b29fd72b1"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/append_run_trace.rs": {
+            "baseline": null,
+            "candidate": "6fa65bf4cc2f16b8b3dc9ac868360fde91dd2296fcfa9a97863b01dfcc3cc9bc"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+            "baseline": "81e0e94dbf57958cd7c0f8c52a603917e14d1b09a5e7ea564fdbafa54732966c",
+            "candidate": "c0b3e1c383ae73ab2afc2d96dfdf0d053a94ecfba77b4a55ce1fffcaabc2891b"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "baseline": "0ddc7439bb0bd4c1356d932e64434b34120c34b1807b9874990060fb09d27383",
+            "candidate": "ab8cbf6a411e5639dcc22b34b04587dbfcc9c943d5d58e5be41e8b21521c0bff"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "baseline": "9c845a0b45cd2520d577488a0293c6d426436adb6a46ab5d81c7543846a0e9f5",
+            "candidate": "81dc905b9d1f56c68f7408206b79c9dd05241acc88dcf8da428e351daf32d312"
+          }
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "9b296ddc761aff41e2d2eb14116b135292aeda8c6285bce8a886afd4e3a2e08a",
+        "worker_sha256": "e885848340d3c44dedc45c847062361706e1432720fa24aee2f978fc61234187"
+      },
+      "summary": {
+        "published_parent": "3dd44874b29e65fede81ea45a498830a63cdaff8",
+        "measured_parent": "5bf88bd67a20eb9b3bf98d05e38892e8758cf1a0",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 278,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 278,
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9561778400647781,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 38,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 46.91358024691358,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 8.641975308641975
+        },
+        "faster_than_libdeflate": {
+          "mech-r276": 3,
+          "mech-pilot": 3
+        },
+        "crossed_below": [
+          "prefix-random-8192",
+          "prefix-periodic-131072",
+          "prefix-periodic-262144",
+          "prefix-periodic-1048576",
+          "prefix-repeated-131072",
+          "prefix-repeated-262144",
+          "prefix-repeated-1048576"
+        ],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "largest_paired_slowdown": {
+          "case": "prefix-natural-131072",
+          "ratio": 1.0200240795072388
+        },
+        "case_stats": {
+          "prefix-natural-1048576": {
+            "primary_elapsed_ratio": 1.0161902117042443,
+            "cpu_before": 3447129361.0,
+            "cpu_after": 3515969018.0
+          },
+          "prefix-random-1048576": {
+            "primary_elapsed_ratio": 0.9318245081238782,
+            "cpu_before": 874104144.0,
+            "cpu_after": 826378236.0
+          },
+          "prefix-periodic-1048576": {
+            "primary_elapsed_ratio": 0.916962390355122,
+            "cpu_before": 706194799.0,
+            "cpu_after": 673121469.0
+          },
+          "prefix-repeated-1048576": {
+            "primary_elapsed_ratio": 0.9213359835642221,
+            "cpu_before": 713752551.5,
+            "cpu_after": 680673325.5
+          },
+          "eight-literals": {
+            "primary_elapsed_ratio": 0.9925509996712581,
+            "cpu_before": 812601.0,
+            "cpu_after": 812170.5
+          }
+        },
+        "next_experiment": "Reduce repeated descriptor reloads and the return to the ordinary match path."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_compression_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_guarded_and_screened_images": {
+          "original": {
+            "object.o": "9b296ddc761aff41e2d2eb14116b135292aeda8c6285bce8a886afd4e3a2e08a",
+            "metadata.json": "e985faddfb3155d952b190a66e4ed4a59ac82fd205183ca999623a804409f95f"
+          },
+          "decoded": {
+            "object.o": "9b296ddc761aff41e2d2eb14116b135292aeda8c6285bce8a886afd4e3a2e08a",
+            "metadata.json": "e985faddfb3155d952b190a66e4ed4a59ac82fd205183ca999623a804409f95f"
+          }
+        },
+        "selector_negative_old_compiler_reproduced": true,
+        "guarded_matcher_tests": 2,
+        "exact_phase_calls": {
+          "baseline": {
+            "source_object_sha256": "ea866d8fd3c52fea4801188c27a7ea3e0e6081c0fd8a818c8374e069f22d5422",
+            "test_worker_sha256": "d74a9d4c5bf59211d5614a1f70da9d5cf081791961baf157f45cf2ca2ec09485",
+            "body_encodings_match_source": true,
+            "cases": 7
+          },
+          "pilot-original": {
+            "source_object_sha256": "9b296ddc761aff41e2d2eb14116b135292aeda8c6285bce8a886afd4e3a2e08a",
+            "test_worker_sha256": "bfb5e09b160fcf73b123b538e1c395c4c474d163a89ba471e3785ce185977b33",
+            "body_encodings_match_source": true,
+            "cases": 7
+          },
+          "pilot-decoded": {
+            "source_object_sha256": "9b296ddc761aff41e2d2eb14116b135292aeda8c6285bce8a886afd4e3a2e08a",
+            "test_worker_sha256": "05ef840cca91ce572752f84b412813b77dccc3174a85a1ddaa702ba1c58caddf",
+            "body_encodings_match_source": true,
+            "cases": 7
+          }
+        },
+        "linked_program_controls_per_form": {
+          "path": {
+            "path": 40,
+            "capacity": 7,
+            "tie": 9
+          },
+          "seed": {
+            "seed": 5,
+            "transition": 7
+          },
+          "alias": {
+            "alias": 2
+          }
+        },
+        "linked_program_controls": 140,
+        "resident_focused_outcomes_per_form": {
+          "seed": {
+            "resident_values": 2,
+            "resident_errors": 1,
+            "resident_default_work_denials": 2
+          },
+          "transition": {
+            "resident_values": 1,
+            "resident_errors": 1,
+            "resident_default_work_denials": 5
+          }
+        },
+        "compiler_only": true,
+        "ordinary_managed_contract_unchanged": true,
+        "scope": "Exact original and decoded closed native artifacts. The phase observer confirms the existing capacity and owner route. The exact production phase separately executes the specialized transitions and defaults."
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r276": 3,
+          "mech-pilot": 3
+        }
+      },
+      "report": "docs/design/native-checked-append-run.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r278-checked-append-run-7d6f1e528b44.tar.gz",
+        "bytes": 5290623,
+        "sha256": "7d6f1e528b443c0e994ee9c24bb9b08b4bef144116b1bf0d7ac04bd6805d83d7",
+        "files": 1084,
+        "reports_replayed": 7,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "8dff579c2f7ea907e695dce314e79efaed7a187b1cfc5e0a26c2dd05b1944810",
+            "counter-results.json": "2dc9865a7c64926b40336b5170f7f1d41ca50132d54cce07f8e8aa961c85c29a",
+            "REPORT.md": "05a776e1d4618cd5354c03f5211f19a930f5a91c1c90230033d7e8171e20fbd3",
+            "library-results.json": "4dcc535d7ffec1d210feb059f663c93e3812f34f1e0bfe2afb8817f5d05cbe34",
+            "result-decision.json": "2663bcdf7f721711e61f5e7fda0b24bc7d3fe2e23a6e9dd86318aa9023309fcd",
+            "screen-results.json": "765188c4f8cbf65482f454a086e4f3ef1477e34478e1ab5f720b7840d87611ed",
+            "pilot-profile-results.json": "8acf13d13a50748cee0da2846745c5809085879b2bdd0a5f6820feb76cee6964"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
