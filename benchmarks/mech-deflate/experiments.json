@@ -59457,6 +59457,195 @@
         }
       },
       "complete_goal": false
+    },
+    "301": {
+      "git_parent": "dca3d786e1a17f8a2307985e5be517ed9144933c",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "c2aa0ebc8984e608791e0fca42fcc0ea8f44d7b9",
+      "retained_compiler": "R301",
+      "retained_source_packet_round": 301,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Reuse checked spans for ordered captures.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "eecf41f205348ec4ab9d1c8dfacdc0f3f3afd08b29f0e997220b34f6f102c58a",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "af8eb5f8d715a6e5cea90187edad11358b173104143cb73f591c26153eb3f839",
+            "after": "02fac8db7b7097bcd3ea819247ccf118e43fa1ca5ba1e7c7ae9fc7bb31cace8d"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "f9c42a01a1136009b0ecf64692cec165e1616884e0f66a6826890388f3491479",
+            "after": "c3ef28c2de2823561c8ac8f81b9a50a2c3adc32d43686fdea543331be5d50252"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/window_bounds.rs": {
+            "before": "5e124bac84eaf7baca5aacad4d0afe6a49de9265264946403f89e6c0b8c455db",
+            "after": "2ec5f1938cb4da500542d1a6856e68e04afe00801ab3fd2b04c66aa20483c393"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/window_bounds/ordered_spans.rs": {
+            "before": null,
+            "after": "2af9b1ae4910caa09c796589f149be9efa7d24932d312d77c98e2ac7b1254aa8"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "188413412bdec8e5d37743932f418266cd0cafb7fbcfbd551d8553c22fbc5a27",
+        "worker_sha256": "d3a80cec6c187907cea3bb736743731a00b634f3337cd08939015b50a6552d2e"
+      },
+      "summary": {
+        "published_parent": "dca3d786e1a17f8a2307985e5be517ed9144933c",
+        "measured_parent": "c2aa0ebc8984e608791e0fca42fcc0ea8f44d7b9",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 301,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 301,
+        "selected_mode": "ordered-capture-spans",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9952531953590096,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r297": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "highest_paired_ratio": {
+          "case": "empty",
+          "ratio": 1.0187555076588977
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.0071985853571452
+        },
+        "next_experiment": "Check whether the existing shifted equality proof can cover the earlier four-word comparison in the skip path. The R275 proof starts after those comparisons in the long route. Require the same current immutable view, a fully covered prefix and the original entry checks before any bypass. Measure the linked prefix and proof state separately from changes to tree addresses."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "188413412bdec8e5d37743932f418266cd0cafb7fbcfbd551d8553c22fbc5a27",
+            "metadata.json": "f912421483a54371f6be90fd11b77c58ce92355d9c92e2f9f13d3a99a233ed35"
+          },
+          "decoded": {
+            "object.o": "188413412bdec8e5d37743932f418266cd0cafb7fbcfbd551d8553c22fbc5a27",
+            "metadata.json": "f912421483a54371f6be90fd11b77c58ce92355d9c92e2f9f13d3a99a233ed35"
+          }
+        },
+        "cleanup_tests_passed": 48,
+        "compiled_window_calls": 43923,
+        "compiled_route_calls": 3840,
+        "packed_source_window_tests": 1,
+        "direct_linked_phase_calls": 87,
+        "focused_window_gate_calls": 3443,
+        "composed_captured_window_tests": 6,
+        "changed_machine_bodies": 1,
+        "shared_window_limit_control_calls": 5184,
+        "exact_bitwise_guard_control_calls": 20,
+        "ordered_span_control_calls": 229376
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r297": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-ordered-capture-spans.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r301-ordered-capture-spans-97a258fe1a09.tar.gz",
+        "bytes": 5352606,
+        "sha256": "97a258fe1a0912372d0011526ca6c59d3a8a8662ed94ef67007ced74af024bda",
+        "files": 983,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "ee6c619ae6cfadf0b83ac7fe794f3afd332ba498f3ad666131108224d58ee90e",
+            "counter-results.json": "dbdaf2a3273d7093279243059f2288606f195e3c88ebc5444d5e5d1df3e5a795",
+            "REPORT.md": "5b313a3ad003a1e1e078943217e904d3df2eda0644c6ce35bf29c689fc69dedf",
+            "library-results.json": "cbe1e42bd2868ac0be1e32b4a48ac6dac5d45733218e761a38f4988adcc1b6ff",
+            "result-decision.json": "8dbb4bd3471decf27bc909edd3259db99fe4e41f628676e98dde916019dae6de",
+            "screen-results.json": "cfd75d3f1c254f1996aae9a125a0251f656b02bb259e2ff607b3bc3286f00a00",
+            "ordered-capture-spans-profile-results.json": "40cdb7e354f904422ede9877f47268619f6818c73fc89dc78a9e3d9f6be99ac2",
+            "ordered-profile-analysis.json": "c123e5a6139c855be7a4534042d2ca4cf84487f0ae9772346079e4bd0a064a87"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",

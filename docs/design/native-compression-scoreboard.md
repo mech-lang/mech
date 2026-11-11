@@ -1,6 +1,27 @@
 # Current compression scoreboard
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
+R301 reuses checked spans for ordered captures. Paired elapsed changes -0.475% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R297 / Roc | R301 / Roc | R297 / libdeflate | R301 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.195561× | 0.196638× | 2.469847× | 2.483453× |
+| prefix-random-8192 | 0.810624× | 0.820570× | 2.892809× | 2.928306× |
+| prefix-periodic-131072 | 0.774351× | 0.763179× | 1.396637× | 1.376487× |
+| prefix-periodic-1048576 | 0.790321× | 0.779962× | 1.339501× | 1.321945× |
+| prefix-repeated-131072 | 0.779710× | 0.772003× | 1.305959× | 1.293050× |
+| prefix-repeated-1048576 | 0.786521× | 0.777683× | 1.235952× | 1.222064× |
+| prefix-natural-4096 | 0.996537× | 1.001627× | 1.704040× | 1.712745× |
+| prefix-natural-1048576 | 1.405964× | 1.403915× | 1.134504× | 1.132851× |
+| prefix-random-1048576 | 1.713533× | 1.713116× | 2.426087× | 2.425496× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R301 timing, proof and replay evidence](native-ordered-capture-spans.md).
+
+## Historical R297 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
 R297 folds exact flags in selected reductions. Paired elapsed changes -0.635% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 | Input | R296 / Roc | R297 / Roc | R296 / libdeflate | R297 / libdeflate |
