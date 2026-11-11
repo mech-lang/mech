@@ -19,6 +19,8 @@ Ratios use the same fresh four-actor comparison. The parity score and gates use 
 
 [R297 timing, proof and replay evidence](native-scoped-bitwise-guards.md).
 
+R298 screens shared immutable comparison window bounds. Paired elapsed changes -0.223% across 27 cases. The current baseline remains R297. [R298 timing, code and replay](native-paired-capture-bounds.md).
+
 ## Historical R296 measured comparison
 
 **45/81 cases faster than Roc (55.56%).** Goal 100%.
