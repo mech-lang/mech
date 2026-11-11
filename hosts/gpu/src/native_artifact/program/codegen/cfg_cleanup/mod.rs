@@ -609,7 +609,10 @@ pub(in crate::native_artifact) fn finish_imported_passes(
     Ok(())
 }
 
-fn fold_bitwise_constants(controls: &CompilationControls, function: &mut Function) -> usize {
+pub(in crate::native_artifact) fn fold_bitwise_constants(
+    controls: &CompilationControls,
+    function: &mut Function,
+) -> usize {
     if !controls.enabled(OptimizationPass::CfgCleanup) {
         return 0;
     }

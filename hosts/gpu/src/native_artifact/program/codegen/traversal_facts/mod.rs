@@ -17,18 +17,22 @@ mod flow;
 mod loop_windows;
 mod operations;
 mod ranges;
+mod read_reuse;
 mod scope;
 mod updates;
 mod windows;
+mod write_changes;
 pub(super) use captured_windows::CapturedWindow;
 pub(super) use checks::{Check, Operand, Queries};
 pub(super) use completion::{Candidate, Completed};
 pub(super) use expressions::{Graph, Node};
 pub(super) use flow::with_checks;
+pub(super) use flow::with_reused_reads;
 pub(super) use flow::{Step, derive};
 pub(super) use flow::{with_captured_windows, with_completion, with_windows};
 pub(super) use loop_windows::Window;
 use operations::{aggregate, scalar};
+pub(super) use read_reuse::Snapshot;
 pub(super) use scope::Scope;
 const MAX_SITES: usize = 256;
 const MAX_WORDS: usize = 512;
@@ -70,6 +74,7 @@ struct Terms {
     terms: Vec<Expr>,
     interned: BTreeMap<Expr, Id>,
     recording: Option<expressions::Recording>,
+    changes: write_changes::Values,
 }
 impl Terms {
     fn intern(&mut self, expr: Expr) -> Option<Id> {
@@ -116,6 +121,8 @@ struct State {
     windows: Vec<Window>,
     captures: Vec<CapturedWindow>,
     checked_reads: BTreeMap<(usize, Id), updates::CheckedRead>,
+    content_version: write_changes::Version,
+    snapshots: Option<BTreeMap<Snapshot, Id>>,
 }
 impl State {
     fn assign(&mut self, moves: &[(usize, usize)], parallel: bool) -> Option<()> {
@@ -288,14 +295,35 @@ impl State {
         Some(true)
     }
     fn merge(&mut self, other: &Self, site: usize, terms: &mut Terms) -> Option<()> {
-        let condition = terms
-            .recording
-            .as_ref()
-            .and_then(|_| expressions::condition(self, other, terms));
+        if let Some(values) = &mut self.snapshots {
+            values.retain(|key, value| {
+                other.snapshots.as_ref().and_then(|v| v.get(key)) == Some(value)
+            });
+        }
+        let condition = expressions::condition(self, other, terms);
+        if self.content_version != other.content_version {
+            self.content_version = write_changes::Version::Join(site);
+        }
         for (&slot, value) in &mut self.words {
             if other.words.get(&slot) != Some(&*value) {
                 let old = *value;
                 let phi = terms.intern(Expr::Phi(site, slot))?;
+                if let Some((condition, yes)) = condition
+                    && let Some(&from) = other.words.get(&slot)
+                    && old != phi
+                    && from != phi
+                {
+                    terms.changes.record(
+                        phi,
+                        write_changes::Value::Select {
+                            condition,
+                            yes: if yes { old } else { from },
+                            no: if yes { from } else { old },
+                        },
+                    );
+                } else {
+                    terms.changes.invalidate(phi);
+                }
                 if let Some(recording) = &mut terms.recording {
                     if let Some((condition, yes)) = condition
                         && let Some(&from) = other.words.get(&slot)
@@ -328,10 +356,16 @@ impl State {
 
 #[derive(Default)]
 pub(super) struct Proof {
+    reused_reads: BTreeMap<usize, Snapshot>,
+    ambiguous_reuses: BTreeSet<usize>,
+    reused_operands: BTreeMap<(usize, usize), Snapshot>,
+    ambiguous_operands: BTreeSet<(usize, usize)>,
     guards: BTreeSet<(usize, u32, usize, u32)>,
     arithmetic: BTreeMap<usize, (Op, Vec<NativeMatchValue>)>,
     reads: BTreeSet<(usize, usize, u32)>,
     increment_writes: BTreeMap<usize, updates::CheckedUpdate>,
+    writes: BTreeSet<(usize, usize, u32)>,
+    changed_writes: BTreeSet<(usize, usize, u32, u32, u8)>,
     pub(super) completed: Option<Completed>,
     pub(super) expressions: Option<Graph>,
     pub(super) windows: BTreeSet<Window>,
@@ -341,13 +375,17 @@ pub(super) struct Proof {
     checks: BTreeSet<(usize, Check)>,
     // This traversal's ordinary, post-copy backedge identities. It is not
     // combined by extend, which may aggregate facts from different scopes.
+    pub(super) query_upper: BTreeMap<(usize, usize), u64>,
     unchanged_at_latch: BTreeSet<usize>,
 }
 impl Proof {
     pub(super) fn extend_increment_writes(&mut self, other: Self) {
         self.increment_writes.extend(other.increment_writes);
     }
-    pub(super) fn extend(&mut self, other: Self) {
+    pub(super) fn extend(&mut self, mut other: Self) {
+        self.extend_reuses(&mut other);
+        self.writes.extend(other.writes);
+        self.changed_writes.extend(other.changed_writes);
         self.guards.extend(other.guards);
         self.arithmetic.extend(other.arithmetic);
         self.reads.extend(other.reads);
@@ -356,6 +394,12 @@ impl Proof {
         self.successors.extend(other.successors);
         self.predicates.extend(other.predicates);
         self.checks.extend(other.checks);
+        for (key, upper) in other.query_upper {
+            self.query_upper
+                .entry(key)
+                .and_modify(|old| *old = (*old).max(upper))
+                .or_insert(upper);
+        }
     }
 
     pub fn check(&self, site: usize, check: Check) -> bool {
@@ -375,6 +419,13 @@ impl Proof {
         self.arithmetic
             .get(&site)
             .is_some_and(|(proved, inputs)| *proved == op && inputs == operands)
+    }
+    pub fn changes(&self, site: usize, array: usize, index: u32, incoming: u32, width: u8) -> bool {
+        self.changed_writes
+            .contains(&(site, array, index, incoming, width))
+    }
+    pub fn write(&self, site: usize, array: usize, index: u32) -> bool {
+        self.writes.contains(&(site, array, index))
     }
     pub fn read(&self, site: usize, array: usize, index: u32) -> bool {
         self.reads.contains(&(site, array, index))

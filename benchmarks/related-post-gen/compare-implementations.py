@@ -306,7 +306,7 @@ def main():
             'samples': len(rows), 'all_exact_rust': all(r['exact_rust_output'] for r in rows),
             'category': variant['category'],
         }
-        if variant['kind'] == 'mech':
+        if variant['kind'] == 'mech' and all('processing_plus_admission_seconds' in r for r in rows):
             report['summary'][variant['name']]['median_processing_plus_admission_seconds'] = statistics.median(r['processing_plus_admission_seconds'] for r in rows)
         if args.resources:
             def medians(items):

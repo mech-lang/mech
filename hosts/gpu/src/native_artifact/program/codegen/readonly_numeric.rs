@@ -586,7 +586,7 @@ pub(in crate::native_artifact) fn emit_entry(
         .iter()
         .map(|v| (v.initialize, v.queries(proof)))
         .collect();
-    let traversal = super::numeric_traversal::derive(code, proof, shadow, &checks);
+    let traversal = super::numeric_traversal::derive(code, proof, shadow, &checks, &[], false);
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
@@ -1552,6 +1552,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 traversal,
                 region.words,
                 target(window.header as u32),
+                true,
+                false,
             );
         } else {
             terminators::emit_source_terminator(

@@ -198,21 +198,23 @@ pub(super) fn derive(
 }
 
 impl Version {
-    pub fn queries(&self, proof: &Proof) -> std::collections::BTreeSet<Check> {
+    pub fn queries(&self, _proof: &Proof) -> std::collections::BTreeSet<Check> {
         let mut checks = std::collections::BTreeSet::new();
         for window in &self.windows {
             checks.insert(Check::Addition {
                 word: window.count,
                 extra: window.delta,
             });
-            if !proof.arrays[window.array].writable && !proof.arrays[window.array].appends {
-                checks.insert(Check::Fits {
-                    array: window.array,
-                    base: None,
-                    count: window.count,
-                    extra: window.adjustment(),
-                });
-            }
+            checks.insert(Check::Fits {
+                array: window.array,
+                base: None,
+                count: window.count,
+                extra: window.adjustment(),
+            });
+            checks.insert(Check::Le(
+                Operand::Word(window.count),
+                Operand::Constant(u32::MAX as u64),
+            ));
         }
         for window in &self.captures {
             checks.extend([
@@ -294,14 +296,16 @@ impl Version {
         facts: &Facts,
         state: usize,
         checked: Block,
-    ) {
+        accounted: bool,
+        carry_item: bool,
+    ) -> Option<Block> {
         if !self.geometry.is_empty() {
             geometry::gate(self, b, words, shadow, proof, checked);
-            return;
+            return None;
         }
         if !self.captures.is_empty() {
             captured::gate(self, b, words, shadow, proof, facts, state, checked);
-            return;
+            return None;
         }
         let mut enough = b.ins().iconst(cranelift_codegen::ir::types::I8, 1);
         for window in &self.windows {
@@ -347,12 +351,26 @@ impl Version {
             } else {
                 scalar
             };
-            prepaid.gate(b, words, state, shadow, enough, selected, checked);
+            if accounted {
+                prepaid.gate(b, words, state, shadow, enough, selected, checked);
+            } else {
+                prepaid.native_gate(b, words, enough, selected, checked);
+            }
             if let Some(reduction) = &self.reduction {
                 b.switch_to_block(selected);
-                reduction.emit(b, words, proof, shadow, scalar);
+                let completed = reduction.emit(
+                    b,
+                    words,
+                    proof,
+                    shadow,
+                    scalar,
+                    facts,
+                    self.initialize,
+                    carry_item,
+                );
+                return carry_item.then_some(completed);
             }
-            return;
+            return None;
         }
         b.ins().brif(
             enough,
@@ -361,5 +379,6 @@ impl Version {
             checked,
             &[],
         );
+        None
     }
 }

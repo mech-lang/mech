@@ -3,50 +3,88 @@ use super::*;
 
 impl State {
     pub(super) fn lower(&self, terms: &Terms, value: Id) -> u64 {
-        if let Some(value) = self.constant(terms, value) {
-            return value;
-        }
-        // Arithmetic is mathematical only after a checked operation succeeded
-        // or the current traversal proved a wrapping operation cannot wrap.
-        // A single nonnegative addend supplies a lower bound; ring expressions
-        // and unknown/redefined words supply none.
-        match terms.terms[value] {
-            Expr::Arithmetic(Arithmetic::Add, a, b) => self
-                .constant(terms, a)
-                .unwrap_or(0)
-                .max(self.constant(terms, b).unwrap_or(0)),
-            _ => 0,
-        }
+        self.bounds(terms, value).0
     }
 
     pub(super) fn upper(&self, terms: &Terms, value: Id) -> u64 {
-        if let Some(value) = self.constant(terms, value) {
-            return value;
-        }
-        // A single established strict upper edge suffices for x+1. Do not
-        // recursively chase relations or infer a bound from one phi arm.
-        let mut upper = match terms.terms[value] {
-            Expr::Bounded(_, _, upper) => upper,
-            Expr::Compare(..) | Expr::Boolean(..) | Expr::And(..) | Expr::Or(..) => 1,
-            _ => u64::MAX,
-        };
-        upper = upper.min(self.capture_upper(terms, value).unwrap_or(u64::MAX));
-        for &(relation, a, b) in &self.relations {
-            if a == value {
-                match relation {
-                    Relation::Eq | Relation::Le => {
-                        upper = upper.min(terms.value(b).unwrap_or(u64::MAX));
-                    }
-                    Relation::Lt => {
-                        upper = upper.min(terms.value(b).unwrap_or(u64::MAX).saturating_sub(1));
-                    }
-                    Relation::Ne => {}
-                }
-            } else if b == value && relation == Relation::Eq {
-                upper = upper.min(terms.value(a).unwrap_or(u64::MAX));
+        self.bounds(terms, value).1
+    }
+
+    fn bounds(&self, terms: &Terms, value: Id) -> (u64, u64) {
+        // Only arithmetic operands are followed. Their IDs precede their
+        // definition, so an ascending pass visits each needed DAG node once.
+        // Shared expressions never expand exponentially and no recursion or
+        // additional depth allowance limits useful range propagation.
+        let mut needed = BTreeSet::new();
+        let mut pending = vec![value];
+        while let Some(at) = pending.pop() {
+            if !needed.insert(at) || self.constant(terms, at).is_some() {
+                continue;
+            }
+            if let Expr::Arithmetic(_, a, b) = terms.terms[at] {
+                pending.extend([a, b]);
             }
         }
-        upper
+        let mut ranges = BTreeMap::<Id, (u64, u64)>::new();
+        for &value in &needed {
+            if let Some(constant) = self.constant(terms, value) {
+                ranges.insert(value, (constant, constant));
+                continue;
+            }
+            let mut range = match terms.terms[value] {
+                Expr::Bounded(_, _, upper) => (0, upper),
+                Expr::Compare(..) | Expr::Boolean(..) | Expr::And(..) | Expr::Or(..) => (0, 1),
+                Expr::Arithmetic(op, a, b) => {
+                    let (al, ah) = ranges[&a];
+                    let (bl, bh) = ranges[&b];
+                    match op {
+                        Arithmetic::Add => (al.saturating_add(bl), ah.saturating_add(bh)),
+                        Arithmetic::Sub => (al.saturating_sub(bh), ah.saturating_sub(bl)),
+                    }
+                }
+                // Wrapping expressions retain identity, not mathematical ranges.
+                _ => (0, u64::MAX),
+            };
+            range.1 = range
+                .1
+                .min(self.capture_upper(terms, value).unwrap_or(u64::MAX));
+            // Only direct constant edges refine the interval. Do not chase a
+            // relation cycle or import an unselected predecessor's facts.
+            for &(relation, a, b) in &self.relations {
+                if a == value {
+                    if relation == Relation::Lt {
+                        range.1 = range
+                            .1
+                            .min(terms.value(b).unwrap_or(u64::MAX).saturating_sub(1));
+                    }
+                    if let Some(bound) = terms.value(b) {
+                        match relation {
+                            Relation::Eq => {
+                                range.0 = range.0.max(bound);
+                                range.1 = range.1.min(bound);
+                            }
+                            Relation::Le => range.1 = range.1.min(bound),
+                            Relation::Lt => range.1 = range.1.min(bound.saturating_sub(1)),
+                            Relation::Ne => {}
+                        }
+                    }
+                } else if b == value {
+                    if let Some(bound) = terms.value(a) {
+                        match relation {
+                            Relation::Eq => {
+                                range.0 = range.0.max(bound);
+                                range.1 = range.1.min(bound);
+                            }
+                            Relation::Le => range.0 = range.0.max(bound),
+                            Relation::Lt => range.0 = range.0.max(bound.saturating_add(1)),
+                            Relation::Ne => {}
+                        }
+                    }
+                }
+            }
+            ranges.insert(value, range);
+        }
+        ranges[&value]
     }
     pub(super) fn safe(&self, terms: &Terms, op: Arithmetic, a: Id, b: Id) -> bool {
         if self.successful.contains(&(op, a, b))

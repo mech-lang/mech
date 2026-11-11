@@ -15,22 +15,26 @@ use std::collections::{BTreeMap, BTreeSet};
 #[path = "numeric_pack_window.rs"]
 mod window;
 
-pub(super) struct Pack {
+pub(in crate::native_artifact) struct Pack {
     pub first: usize,
     pub last: usize,
     pub next: u32,
     pub width: u8,
     pub source_window: bool,
     pub(super) array: usize,
-    pub(super) base: NativeMatchValue,
-    pub(super) offset: u64,
-    end: u64,
-    output: NativeMatchValue,
+    pub(in crate::native_artifact) base: NativeMatchValue,
+    pub(in crate::native_artifact) offset: u64,
+    pub(in crate::native_artifact) source: NativeMatchValue,
+    pub(in crate::native_artifact) end: u64,
+    pub(in crate::native_artifact) output: NativeMatchValue,
     sites: BTreeSet<usize>,
 }
 
 impl Pack {
-    pub(super) fn contains(&self, site: usize) -> bool {
+    pub(in crate::native_artifact) fn sites(&self) -> impl Iterator<Item = usize> + '_ {
+        self.sites.iter().copied()
+    }
+    pub(in crate::native_artifact) fn contains(&self, site: usize) -> bool {
         self.sites.contains(&site)
     }
 
@@ -169,7 +173,7 @@ impl Finder<'_, '_> {
                     }
                     sites.insert(read);
                     let (base, offset) = self.index(index_value, &mut sites)?;
-                    bytes.push((shift, *array, base, offset));
+                    bytes.push((shift, *array, base, offset, operands[0]));
                     if bytes.len() > 8 {
                         return None;
                     }
@@ -182,8 +186,10 @@ impl Finder<'_, '_> {
             return None;
         }
         bytes.sort_by_key(|b| b.0);
-        let (_, array, base, offset) = bytes[0];
-        for (i, &(shift, current_array, current_base, current_offset)) in bytes.iter().enumerate() {
+        let (_, array, base, offset, source) = bytes[0];
+        for (i, &(shift, current_array, current_base, current_offset, _)) in
+            bytes.iter().enumerate()
+        {
             if shift != (i * 8) as u64
                 || current_array != array
                 || current_base != base
@@ -253,6 +259,7 @@ impl Finder<'_, '_> {
             next,
             width,
             source_window: false,
+            source,
             array,
             base,
             offset,
@@ -265,7 +272,10 @@ impl Finder<'_, '_> {
     }
 }
 
-pub(super) fn derive(facts: &NativeProgramFacts<'_>, proof: &Proof) -> Vec<Pack> {
+pub(in crate::native_artifact) fn derive(
+    facts: &NativeProgramFacts<'_>,
+    proof: &Proof,
+) -> Vec<Pack> {
     let mut boundaries = BTreeSet::new();
     if let Some(phase) = &proof.phase {
         for debit in &phase.loops {
@@ -396,7 +406,22 @@ pub(super) fn emit(
         let pointer = words.read(b, view);
         b.ins().iadd(pointer, ordinal)
     };
-    let ty = match pack.width {
+    let value = load_word(b, options, address, pack.width);
+    words.write(b, pack.output.get() as usize, value);
+    b.ins().jump(next, &[]);
+    if let Some(original) = original {
+        b.switch_to_block(original);
+    }
+    complete
+}
+
+pub(in crate::native_artifact) fn load_word(
+    b: &mut FunctionBuilder<'_>,
+    options: OptimizationOptions,
+    address: cranelift_codegen::ir::Value,
+    width: u8,
+) -> cranelift_codegen::ir::Value {
+    let ty = match width {
         2 => types::I16,
         4 => types::I32,
         8 => types::I64,
@@ -408,17 +433,12 @@ pub(super) fn emit(
         address,
         0,
     );
-    let value = if pack.width < 8 {
+    let value = if width < 8 {
         b.ins().uextend(types::I64, value)
     } else {
         value
     };
-    words.write(b, pack.output.get() as usize, value);
-    b.ins().jump(next, &[]);
-    if let Some(original) = original {
-        b.switch_to_block(original);
-    }
-    complete
+    value
 }
 
 #[cfg(test)]

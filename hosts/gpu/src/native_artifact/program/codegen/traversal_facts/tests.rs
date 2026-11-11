@@ -631,3 +631,175 @@ fn finite_limits_decline_without_turning_unknown_into_proof() {
             .is_none()
     );
 }
+
+#[test]
+fn checked_match_subtraction_retains_its_selected_interval() {
+    let mut terms = Terms::default();
+    let value = terms.intern(Expr::Bounded(1, 0, 65535)).unwrap();
+    let three = terms.constant(3).unwrap();
+    let maximum = terms.constant(258).unwrap();
+    let two = terms.constant(2).unwrap();
+    let mut state = State::default();
+    state.assume(&terms, Relation::Le, three, value).unwrap();
+    state.assume(&terms, Relation::Le, value, maximum).unwrap();
+    let count = terms
+        .intern(Expr::Arithmetic(Arithmetic::Sub, value, two))
+        .unwrap();
+    assert_eq!(
+        (state.lower(&terms, count), state.upper(&terms, count)),
+        (1, 256)
+    );
+    state.words.insert(0, count);
+    assert_eq!(
+        Check::Addition { word: 0, extra: 3 }.holds(&state, &mut terms),
+        Some(true)
+    );
+    let ring = terms
+        .intern(Expr::Wrapping(Arithmetic::Sub, value, two))
+        .unwrap();
+    assert_eq!(
+        (state.lower(&terms, ring), state.upper(&terms, ring)),
+        (0, u64::MAX)
+    );
+    assert_eq!(State::default().upper(&terms, count), 65533);
+}
+
+#[test]
+fn phase_floor_proves_only_the_exact_current_window() {
+    let mut terms = Terms::default();
+    let count = terms.intern(Expr::Bounded(1, 0, 256)).unwrap();
+    let length = terms.intern(Expr::ArrayLength(0)).unwrap();
+    let floor = terms.constant(259).unwrap();
+    let mut state = State::default();
+    state.words.insert(0, count);
+    state.assume(&terms, Relation::Le, floor, length).unwrap();
+    assert_eq!(state.lower(&terms, length), 259);
+    assert_eq!(
+        Check::Fits {
+            array: 0,
+            base: None,
+            count: 0,
+            extra: 3
+        }
+        .holds(&state, &mut terms),
+        Some(true)
+    );
+    assert_eq!(
+        Check::Fits {
+            array: 0,
+            base: None,
+            count: 0,
+            extra: 4
+        }
+        .holds(&state, &mut terms),
+        Some(false)
+    );
+    let three = terms.constant(3).unwrap();
+    let required = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, count, three))
+        .unwrap();
+    assert_eq!(state.upper(&terms, required), 259);
+    let other_length = terms.intern(Expr::ArrayLength(1)).unwrap();
+    assert_eq!(state.lower(&terms, other_length), 0);
+    let mut missing = state.clone();
+    missing.merge(&State::default(), 8, &mut terms).unwrap();
+    assert_eq!(missing.lower(&terms, length), 0);
+    state
+        .words
+        .insert(0, terms.intern(Expr::Initial(0)).unwrap());
+    assert_eq!(
+        Check::Addition { word: 0, extra: 3 }.holds(&state, &mut terms),
+        Some(false)
+    );
+}
+
+#[test]
+fn checked_interval_edges_saturate_conservatively_without_ring_proofs() {
+    let mut terms = Terms::default();
+    let low = terms.intern(Expr::Initial(0)).unwrap();
+    let high = terms.constant(u64::MAX).unwrap();
+    let one = terms.constant(1).unwrap();
+    let mut state = State::default();
+    state.assume(&terms, Relation::Lt, one, low).unwrap();
+    assert_eq!(state.lower(&terms, low), 2);
+    let sum = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, low, high))
+        .unwrap();
+    assert_eq!(state.upper(&terms, sum), u64::MAX);
+    assert!(!state.safe(&terms, Arithmetic::Add, low, high));
+    let difference = terms
+        .intern(Expr::Arithmetic(Arithmetic::Sub, low, high))
+        .unwrap();
+    assert_eq!(state.lower(&terms, difference), 0);
+    let changed = terms.intern(Expr::Definition(9, 0)).unwrap();
+    assert_eq!(state.lower(&terms, changed), 0);
+}
+
+#[test]
+fn shared_and_deep_checked_arithmetic_use_the_bounded_term_dag_once() {
+    let mut terms = Terms::default();
+    let mut shared = terms.intern(Expr::Bounded(1, 0, 1)).unwrap();
+    for _ in 0..96 {
+        shared = terms
+            .intern(Expr::Arithmetic(Arithmetic::Add, shared, shared))
+            .unwrap();
+    }
+    let state = State::default();
+    assert_eq!(state.upper(&terms, shared), u64::MAX);
+    assert_eq!(state.lower(&terms, shared), 0);
+    let one = terms.constant(1).unwrap();
+    let mut deep = terms.intern(Expr::Bounded(2, 0, 258)).unwrap();
+    for _ in 0..64 {
+        deep = terms
+            .intern(Expr::Arithmetic(Arithmetic::Sub, deep, one))
+            .unwrap();
+    }
+    assert_eq!(state.upper(&terms, deep), 194);
+}
+
+#[test]
+fn masked_one_based_access_uses_only_its_current_guarded_length_floor() {
+    let mut terms = Terms::default();
+    let one = terms.constant(1).unwrap();
+    let floor = terms.constant(16).unwrap();
+    let length = terms.intern(Expr::ArrayLength(0)).unwrap();
+    let other_length = terms.intern(Expr::ArrayLength(1)).unwrap();
+    let base = terms.intern(Expr::Bounded(5, 6, 15)).unwrap();
+    let index = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, base, one))
+        .unwrap();
+    let unknown = State::default();
+    assert!(!unknown.readable(&terms, index, length));
+    let mut state = State::default();
+    state.assume(&terms, Relation::Le, floor, length).unwrap();
+    assert!(state.readable(&terms, index, length));
+    assert!(!state.readable(&terms, index, other_length));
+    let too_high = terms.intern(Expr::Bounded(7, 8, 16)).unwrap();
+    let outside = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, too_high, one))
+        .unwrap();
+    assert!(!state.readable(&terms, outside, length));
+    let wrapped = terms
+        .intern(Expr::Wrapping(Arithmetic::Add, base, one))
+        .unwrap();
+    assert!(!state.readable(&terms, wrapped, length));
+    let zero = terms.constant(0).unwrap();
+    assert!(!state.readable(&terms, zero, length));
+}
+
+#[test]
+fn masked_products_bound_indices_without_assuming_wrapping_products_fit() {
+    use crate::native_artifact::program::prepare::word_collections::bounds::Range;
+    for max in [0, 1, 7, 32767, 65535, u64::MAX] {
+        for factor in [0, 1, 2, u64::MAX] {
+            let bound = Range(0, max).wrapping_mul(Range(factor, factor));
+            for value in [0, max / 2, max] {
+                assert!(value.wrapping_mul(factor) <= bound.1);
+            }
+            if max.checked_mul(factor).is_none() {
+                assert_eq!(bound.1, u64::MAX);
+            }
+        }
+    }
+    assert_eq!(Range(0, 65535).wrapping_mul(Range(2, 2)), Range(0, 131070));
+}

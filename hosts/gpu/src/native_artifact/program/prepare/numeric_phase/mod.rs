@@ -21,7 +21,11 @@ mod intervals;
 mod schedule;
 mod words;
 pub(in crate::native_artifact) use bounds::Bound;
+#[cfg(feature = "canonical-native-program")]
+mod countdown;
 pub(in crate::native_artifact) use cold::Child as ColdChild;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) use countdown::unit_append_countdown;
 pub(in crate::native_artifact) use homes::boundary_work;
 pub(in crate::native_artifact) use schedule::Schedule;
 

@@ -184,7 +184,13 @@ fn completion_does_not_get_totality_from_a_successful_replacement() {
     collector.action(
         &Terms::default(),
         &[Some(State::default())],
-        &Step::Replace,
+        &Step::Write {
+            array: 0,
+            index: 1,
+            incoming: 2,
+            width: 4,
+            preserved_arrays: Vec::new(),
+        },
         Term::Scalar(Branch::Jump(1)),
     );
     assert!(

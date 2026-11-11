@@ -22,3 +22,6 @@ pub(in crate::native_artifact) mod runtime;
 
 #[cfg(feature = "canonical-native")]
 pub(in crate::native_artifact) mod codegen;
+
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod compact;

@@ -76,24 +76,53 @@ pub(super) fn derive(code: CodePlan<'_>, numeric: &Numeric, shadow: usize) -> Pr
         Some(_) => false,
     };
     let mut facts = Proof::default();
-    for &(site, _) in numeric.actions.iter().filter(|(_, action)| {
-        matches!(action, Operation::Write { array, .. }
+    for &(site, _) in numeric
+        .actions
+        .iter()
+        .filter(|(_, action)| {
+            matches!(action, Operation::Write { array, .. }
             if matches!(numeric.arrays[*array].width, 1 | 2 | 4 | 8))
-    }).take(MAX_LOCAL_WRITES) {
-        let Some(exit) = jump(site) else { continue; };
+        })
+        .take(MAX_LOCAL_WRITES)
+    {
+        let Some(exit) = jump(site) else {
+            continue;
+        };
         let mut sites = vec![site];
         let mut current = site;
         while sites.len() < MAX_LOCAL_SITES {
             let (count, previous) = predecessors[current];
-            if count != 1 || !owned.contains(&previous) || sites.contains(&previous)
-                || !pure(previous) || jump(previous) != Some(current as u32) { break; }
+            if count != 1
+                || !owned.contains(&previous)
+                || sites.contains(&previous)
+                || !pure(previous)
+                || jump(previous) != Some(current as u32)
+            {
+                break;
+            }
             sites.push(previous);
             current = previous;
         }
         sites.reverse();
-        let scope = Scope { header: sites[0], latch: site, exit, sites, outside: BTreeSet::new() };
-        if let Some(proof) = analyze(code, numeric, shadow, &scope, &[], &[], None,
-                                    &traversal_facts::Queries::new()) {
+        let scope = Scope {
+            header: sites[0],
+            latch: site,
+            exit,
+            sites,
+            outside: BTreeSet::new(),
+        };
+        if let Some(proof) = analyze(
+            code,
+            numeric,
+            shadow,
+            &scope,
+            &[],
+            &[],
+            None,
+            &traversal_facts::Queries::new(),
+            &[],
+            false,
+        ) {
             facts.extend_increment_writes(proof);
         }
     }

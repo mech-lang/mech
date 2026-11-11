@@ -18,6 +18,8 @@ pub(super) fn derive(
     numeric: &Numeric,
     shadow: usize,
     checks: &traversal_facts::Queries,
+    floors: &[(usize, u64)],
+    reuse: bool,
 ) -> Proof {
     let CodePlan::Program(program) = code else {
         return Proof::default();
@@ -45,7 +47,18 @@ pub(super) fn derive(
             sites,
             outside: BTreeSet::new(),
         };
-        if let Some(proof) = analyze(code, numeric, shadow, &scope, &[], &[], None, checks) {
+        if let Some(proof) = analyze(
+            code,
+            numeric,
+            shadow,
+            &scope,
+            &[],
+            &[],
+            None,
+            checks,
+            floors,
+            reuse,
+        ) {
             facts.extend(proof);
         }
     }
@@ -72,6 +85,8 @@ pub(super) fn local(
         &[],
         None,
         &traversal_facts::Queries::new(),
+        &[],
+        false,
     )
 }
 
@@ -91,6 +106,8 @@ pub(super) fn captured_version(
         windows,
         None,
         &traversal_facts::Queries::new(),
+        &[],
+        false,
     )
 }
 
@@ -111,6 +128,8 @@ pub(super) fn complete(
         &[],
         Some(candidate),
         &traversal_facts::Queries::new(),
+        &[],
+        false,
     )
 }
 
@@ -123,6 +142,8 @@ fn analyze(
     captures: &[traversal_facts::CapturedWindow],
     candidate: Option<traversal_facts::Candidate>,
     checks: &traversal_facts::Queries,
+    floors: &[(usize, u64)],
+    reuse: bool,
 ) -> Option<Proof> {
     let CodePlan::Program(program) = code else {
         return None;
@@ -164,6 +185,7 @@ fn analyze(
                 array: *array,
                 index: *index,
                 incoming: *incoming,
+                width: numeric.arrays[*array].width,
                 preserved_arrays: checked_updates::independent_carriers(numeric, *array),
             }),
             Some(Operation::Write { .. }) => Some(Step::Replace),
@@ -187,6 +209,14 @@ fn analyze(
         .as_ref()
         .is_some_and(|p| p.sites != scope.sites || p.outside != scope.outside);
     let scope = prefix.as_ref().unwrap_or(scope);
+    if !floors.is_empty() && std::env::var_os("MECH_TRAVERSAL_FLOOR_DIAGNOSTIC").is_some() {
+        eprintln!(
+            "TRAVERSAL_FLOOR header={} supported_sites={} order={} floors={floors:?}",
+            scope.header,
+            scope.sites.len(),
+            scope.order(code).is_some()
+        );
+    }
     let sites = BTreeSet::from_iter(scope.sites.iter().copied());
     // An outside edge may only enter at the fresh header. In particular no
     // skipped case selection or cold resume can inherit a predecessor fact.
@@ -200,6 +230,12 @@ fn analyze(
             .flatten()
             .any(|next| sites.contains(&(next as usize)) && next as usize != scope.header)
         {
+            if !floors.is_empty() && std::env::var_os("MECH_TRAVERSAL_FLOOR_DIAGNOSTIC").is_some() {
+                eprintln!(
+                    "TRAVERSAL_FLOOR header={} refusal=outside-entry site={site}",
+                    scope.header
+                );
+            }
             return None;
         }
     }
@@ -224,8 +260,12 @@ fn analyze(
     } else if let Some(candidate) = candidate {
         traversal_facts::with_completion(code, scope, &slots, windows, candidate, step)
     } else {
-        let mut proof = if windows.is_empty() {
-            traversal_facts::with_checks(code, scope, &slots, checks, step)?
+        let mut proof = if reuse && windows.is_empty() {
+            // Exact array provenance keeps each view stable throughout this
+            // traversal; growth/unknown effects terminate the supported prefix.
+            traversal_facts::with_reused_reads(code, scope, &slots, checks, floors, step)?
+        } else if windows.is_empty() {
+            traversal_facts::with_checks(code, scope, &slots, checks, floors, step)?
         } else {
             traversal_facts::with_windows(code, scope, &slots, None, windows, step)?
         };

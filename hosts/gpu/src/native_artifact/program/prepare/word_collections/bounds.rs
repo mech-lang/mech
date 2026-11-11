@@ -15,6 +15,11 @@ impl Range {
         }
         Self(0, self.1.min(other.1))
     }
+    pub(in crate::native_artifact) fn wrapping_mul(self, other: Self) -> Self {
+        // If the entire interval fits, no product wraps. Otherwise retain the
+        // full unsigned range; saturated upper MAX is valid for every residue.
+        Self(0, self.1.saturating_mul(other.1))
+    }
     pub(super) fn kind(kind: Kind) -> Option<Self> {
         Some(Self(
             0,
@@ -122,8 +127,9 @@ impl State {
                 U64Rem if args[1].0 != 0 => Range(0, args[0].1.min(args[1].1 - 1)),
                 BoolAnd | BoolOr | BoolXor | BoolNot => Range(0, 1),
                 U64BitAnd => args[0].bit_and(args[1]),
+                U64WrappingMul => args[0].wrapping_mul(args[1]),
                 U64BitOr | U64BitXor | U64BitNot | U64ShlWrap | U64ShrWrap | U64WrappingAdd
-                | U64WrappingSub | U64WrappingMul => Range(0, u64::MAX),
+                | U64WrappingSub => Range(0, u64::MAX),
                 U64Clz | U64Ctz => Range(0, 64),
                 _ => return None,
             }

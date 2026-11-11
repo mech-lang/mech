@@ -567,6 +567,23 @@ impl Provenance<'_, '_> {
     }
 }
 
+pub(in crate::native_artifact) fn derive_complete_for_diagnostic(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+) -> Result<Proof, &'static str> {
+    from_phase(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        super::phase_numeric::derive_complete(plan, tail, frames, aggregates, calls, visits)?,
+    )
+}
+
 pub(in crate::native_artifact) fn derive(
     plan: &Plan,
     tail: &NativeTailLoop,
