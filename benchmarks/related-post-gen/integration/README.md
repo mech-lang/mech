@@ -1,6 +1,20 @@
 # Current related-post integration targeting #973
 
-## Current IR314 integration, 2026-11-11
+## Current IR315 selection, 2026-11-11
+
+PR990 includes #973 through **6f50ac6d77fc05ef292e746fa32ae966e2c251fa**. Current compiler: **IR315 / work126 / ABI42 / image11**, production Cranelift with the checked DEFLATE backend and SSA-width work. No LLVM production dependency is required. The new compiler proof supports checked U8/U32 read/increment/write sequences and preserves independent logical carriers across narrow writes, while retaining source overflow, first-change ownership and finite recovery.
+
+The selected source now uses **U32 frequency banks and posting IDs**, with U64 prefixes, positions, keys and ranks. Existing distinct/ordered eligibility plus a posts<=u32::MAX guard proves the narrow ranges; larger inputs take the original generic fallback. Its bytes match the measured candidate exactly. All four workers still execute emitted native code and are created, run and joined inside the timer.
+
+Independent confirmation measures **1.675500 ms / 1.118055× fastest eligible Rust** (**1.498584 ms**). Same-cohort published IR314 U64 is 1.709875 ms. Selected paired change is **−1.379% [−2.441%, −0.545%]** against published U64 and **−2.058% [−2.617%, −1.256%]** against the same combined source on IR314. The first cohort also passes against both and the same-compiler U64 control. Counts-only/postings-only remain inconclusive and were not retried. All 1,798 latency and 420 resource outputs are exact.
+
+Peak additional requested heap falls **9.063%**, requested bytes **3.947%**. Allocations rise 720→735; selected instructions remain above U64 and Rust. Native code is 1,023,588 bytes, module stack bound 1,568 bytes, executable 17,082,512 bytes. The query frame grows 560→576 bytes despite fewer static stack references. Restoration and whole-process remain visible; the latter is not an acceptance gate.
+
+Qualification: **508 selected compiler contracts**, every 505 IR314/484 IR308 name retained; all 133 scalar/DEFLATE non-timing/resource rows exact; 128 linked exact cases and four Object byte audits. The selected full 5,000-post source passes original/decoded execution, 12 finite denials with unchanged publication and 12 successful full retries. The documentation-only rebase preserves all 2,737 inventoried compiler/configuration sources. Fresh same-Object profiles still lead with native query, UTF8 histogram and index loops; their repeated loop excludes repeated input admission/materialization.
+
+See [confirmed timings/resources/qualification](narrow-checked-updates-20261111/REPORT.md), [every first/confirmation timing](narrow-checked-updates-20261111/ALL-TIMINGS.md), and [hashed raw records](narrow-checked-updates-20261111/summary.json). **The 1.00× goal remains unmet, with 176.916 μs remaining.** Older timings and stricter gates below are retained history, superseded by this status. Draft; no merge or hosted-CI-green claim.
+
+## Historical IR314 integration, 2026-11-11
 
 PR990 is rebased onto #973 at **ac79c1c3659866338ef98f8e3d5d7c3c3dcd61d6**. Current compiler: **IR314 / work126 / ABI42 / image11**, Cranelift 0.131.3 with the checked DEFLATE AArch64 comparison and spill-copy changes. The default SSA-width pass from the verified R293 closure remains. LLVM is not a required dependency. The latest #973 experimental records are included in git; their full compact experimental runtime has not replaced the maintained compiler.
 
