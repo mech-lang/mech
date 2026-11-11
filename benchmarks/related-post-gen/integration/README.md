@@ -2,7 +2,7 @@
 
 ## Current IR314 integration, 2026-11-11
 
-PR990 is rebased onto #973 at **4debec08de0feeb0884f13aa620c7167a1729682**. Current compiler: **IR314 / work126 / ABI42 / image11**, Cranelift 0.131.3 with the checked DEFLATE AArch64 comparison and spill-copy changes. The default SSA-width pass from the verified R293 closure remains. LLVM is not a required dependency. The latest #973 experimental records are included in git; their full compact experimental runtime has not replaced the maintained compiler.
+PR990 is rebased onto #973 at **ac79c1c3659866338ef98f8e3d5d7c3c3dcd61d6**. Current compiler: **IR314 / work126 / ABI42 / image11**, Cranelift 0.131.3 with the checked DEFLATE AArch64 comparison and spill-copy changes. The default SSA-width pass from the verified R293 closure remains. LLVM is not a required dependency. The latest #973 experimental records are included in git; their full compact experimental runtime has not replaced the maintained compiler.
 
 The new compiler fix selects an independently proved complete readonly numeric tree over an unsupported readonly partial phase. This keeps the narrow-counter coverage scan native instead of returning to the host per post. Mutable/current-funded phases keep their original transport; failed tree proof keeps the original phase. All **505 compiler contracts** pass, all 484 selected IR308 names remain, and all 133 scalar/DEFLATE rows match every non-timing/resource field. Four linked variants pass **128 exact cases** and Object byte audits. All 2,737 inventoried compiler/configuration source files remain identical after rebase.
 
