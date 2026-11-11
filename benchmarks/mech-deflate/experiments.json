@@ -56509,6 +56509,60 @@
         }
       },
       "complete_goal": false
+    },
+    "281": {
+      "git_parent": "74205739c757a23c01994b902649a765589cf364",
+      "measured_parent": "74205739c757a23c01994b902649a765589cf364",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "retained_compiler": "R280",
+      "retained_source_packet_round": 280,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Measure four prefetch hints in the linked library peer. Use the random-input result to prioritize a bounded native compiler pilot.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "compiler_changed": false,
+        "exact_peer_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+        "fixed_placement_peer_sha256": "0b4b54ab513644ea8d72fae558a0baf46ff0febbe7787a4ebf566893e92eb86a"
+      },
+      "summary": {
+        "cases": 11,
+        "timed_calls": 20208,
+        "balanced_blocks_per_case": 24,
+        "smoke_calls": 162,
+        "peer_only": true
+      },
+      "ratios": {
+        "eight-literals": 1.0007650480078039,
+        "prefix-natural-4096": 0.9994327810135858,
+        "prefix-natural-32768": 1.009531821841017,
+        "prefix-natural-1048576": 1.0093827550008352,
+        "prefix-random-8192": 1.0022559243348481,
+        "prefix-random-32768": 1.0291003973349264,
+        "prefix-random-1048576": 1.0541659298576935,
+        "prefix-periodic-32768": 0.9987231548696647,
+        "prefix-periodic-1048576": 0.9998608205381898,
+        "prefix-repeated-33027": 1.0016461053435637,
+        "prefix-repeated-1048576": 0.9997020192963492
+      },
+      "report": "docs/design/native-matcher-prefetch-control.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r281-matcher-prefetch-control-4d5838f78e92.tar.gz",
+        "bytes": 202256,
+        "sha256": "4d5838f78e92473c6d63d98d96ec9a7d228ce3021df1d75ee33f8777aba844f0",
+        "files": 21,
+        "reports_replayed": 2,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "9b9d0b49d6ae6f35de2a37c151fc7d5dd74e63a6ba940d7a026f8d56dda8a34b",
+            "prefetch-results.json": "81a4f6875437c61d9de5fe48bf3423ef67d2d7f1e7f8a6af264cb79b97399953"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
