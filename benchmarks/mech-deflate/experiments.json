@@ -62379,6 +62379,179 @@
         }
       },
       "complete_goal": false
+    },
+    "318": {
+      "git_parent": "8903df3b33c310ba314500832aab10c9e09345bf",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "8903df3b33c310ba314500832aab10c9e09345bf",
+      "retained_compiler": "R317",
+      "retained_source_packet_round": 317,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after both timing screens slow the priority input.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "3ed8c98555ea6dcac177c11b3eae56093340a171dfe249b0f0a61d486966a8fb",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "a81ee58e4c8845813b5509c5f2ebf3b7ff8e3ff03dd0a29b164a02b7c55fa374",
+            "after": "ed6adfbc6857189db95adf2540c343785a3d055ff66a9dfdba53593f4e0419f8"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/ordered_choices/tests.rs": {
+            "before": null,
+            "after": "24cc06ac7e089e2fddbd9f9335620466f412809f529b4885c49d8833a0faf68f"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/ordered_choices.rs": {
+            "before": null,
+            "after": "007d86200a1b52b4d733b3985c26e53b5e7fbc1331d0d42145b9d3d93afb0979"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "7663ae56508eb3130f6d5ef9eef19823c0c09dbebb60a7d101ce542dab1fb65f",
+            "after": "2b7e178378fb6b2202601f84f08f5c4e9040893a1bb20a41db0db9ee981316f3"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "inherited_backend_patch_sha256": "04eec5f0bca9f502c9b1cb98706f37ab2adbf21b62dabcac11d9ab2cf5904809",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_object_sha256": "01a9d6ccd8c471a8921039913695c742ea2622f50500a0cbca8ce7ba41e40055",
+        "worker_sha256": "f117719e7e2eaca16c3f848fcf2a85f4cbe2e0063c5b7f14cfa48a82836d91f7"
+      },
+      "summary": {
+        "round": 318,
+        "published_parent": "8903df3b33c310ba314500832aab10c9e09345bf",
+        "measured_parent": "8903df3b33c310ba314500832aab10c9e09345bf",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 317,
+        "retained_runtime_packet_round": 272,
+        "screen_cases": 15,
+        "original_1_05_gates_passed": 15,
+        "blockmean_1_05_gates_passed": 15,
+        "screen_paired_geomean": 0.9983039193720279,
+        "matched_cases": 15,
+        "matched_timed_calls": 154656,
+        "target": "prefix-natural-262144",
+        "target_matched_x_libdeflate": [
+          1.0835087095989615,
+          1.0863778612285766
+        ],
+        "target_screen_after_over_before": 1.0006048935067444,
+        "target_counter_medians": {
+          "before": {
+            "cycles": 194884968.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 773578398.5,
+            "lifetime_peak_physical": 50414528.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46482368.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47923200.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 194922949.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 770007514.0,
+            "lifetime_peak_physical": 50414528.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46482368.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47923200.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144814905.0,
+            "instructions": 479462398.5,
+            "level": 12.0,
+            "lifetime_peak_physical": 14386112.0,
+            "physical_after": 14386112.0,
+            "rss_after": 14991360.0
+          }
+        },
+        "heap_families_agree": true,
+        "reason": "Both independent timing screens slow the selected libdeflate frontier input"
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 162,
+        "image_sha256": {
+          "object.o": "01a9d6ccd8c471a8921039913695c742ea2622f50500a0cbca8ce7ba41e40055",
+          "metadata.json": "b50611f76105928a8a5b44c12e7304b3af538033d1ebfdaae396dbdc6df86e02"
+        },
+        "worker_sha256": "f117719e7e2eaca16c3f848fcf2a85f4cbe2e0063c5b7f14cfa48a82836d91f7"
+      },
+      "report": "docs/design/native-ordered-choice-screen.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r318-ordered-choices-c6997e54c284.tar.gz",
+        "bytes": 1229512,
+        "sha256": "c6997e54c284d2f976334b8bf59523cc7453b49d0de7b4e4ce31f56138bca9be",
+        "files": 229,
+        "reports_replayed": 4,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "7b0eba31104b16eb939c29b7734811ba6beaa66576ca852d30e1cadf958e795a",
+            "pilot-counters.json": "af73fc2b683db9a60ee28a69b55b8351286d10e19d7fe231a628bc50d019c08a",
+            "result-decision.json": "649735d1b2648484f83a09859fdde60e376087ef8bb752bfa59441c2f46fe2a3",
+            "candidate-profile-summary.json": "00fc28b4a86b79de584171c611fc135b04d13d3e9ddd8c75daae0ace09d51210"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
