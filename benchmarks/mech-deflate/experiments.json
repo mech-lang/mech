@@ -56826,6 +56826,152 @@
         }
       },
       "complete_goal": false
+    },
+    "284": {
+      "git_parent": "e6e9a28c1f7f305c612e624410bb0e3d2417e2ba",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "e6e9a28c1f7f305c612e624410bb0e3d2417e2ba",
+      "retained_compiler": "R284",
+      "retained_source_packet_round": 284,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain the packed-load width inference in the experimental compiler.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "84f17d7fd85d3618c485716c2c503307a17a1602b7bdc7136a5c07244a4db7ce",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/boolean_words.rs": {
+            "before": "87fd8a5341af359157bc071e1dc90ff3376cdea7fda08646a89235d74721e58c",
+            "after": "d632cc67965b721e66a7c94426370c4ce216df47bb41b68c369cc0bf2dd84b9b"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/known_widths.rs": {
+            "before": null,
+            "after": "8aa3e28242aa8588a11c3155fb1cc287647c57f420d2f6e9eda564e7a2d213a8"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/known_widths_tests.rs": {
+            "before": null,
+            "after": "6a5f9fbb0b5bbaea2a275952a0507e9cc6e629e1f7bd8229b2da986cb0a5680e"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "464242340cf30c5f759afe96ed49337a7ddfd4ae26b495341424be38dff52f21",
+            "after": "6d1507450719cd260ea26bed63b5692c906020cdc29871a855459d49d93d873c"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "ecadcc551552238e27d3d6a570a9f2fc72b180ba3c94be4fea1823e8ec9d8107",
+            "after": "a089b3a8d68ba2cecffd8d6dff19c7b01a6f0b237cbaf582812a7cd4bc3f1c14"
+          }
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "035d7fb2bead4f923894da508e725f07ef3765a8dbbd650f70d16235a6af3dd3",
+        "worker_sha256": "1e9be092e9cf91a193fe7a32c14282ac236245a5ed7f0738465716e299acba24"
+      },
+      "summary": {
+        "published_parent": "e6e9a28c1f7f305c612e624410bb0e3d2417e2ba",
+        "measured_parent": "e6e9a28c1f7f305c612e624410bb0e3d2417e2ba",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 284,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 284,
+        "selected_mode": "phi-widths",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.988682458378411,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r283": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "largest_paired_slowdown": {
+          "case": "random-1024",
+          "ratio": 1.0107429679777689
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.0961475569935122
+        },
+        "next_experiment": "Extend the existing comparison tracker through the exact non-flag-setting add and shifted OR used to construct the selected item. Require the current compare operands to survive. Audit the complete parser, including empty visits, and then run the same paired tests."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "035d7fb2bead4f923894da508e725f07ef3765a8dbbd650f70d16235a6af3dd3",
+            "metadata.json": "e07a84080f810f563c6c2973a607511436377d8ba9fb862bffa651a7775015b5"
+          },
+          "decoded": {
+            "object.o": "035d7fb2bead4f923894da508e725f07ef3765a8dbbd650f70d16235a6af3dd3",
+            "metadata.json": "e07a84080f810f563c6c2973a607511436377d8ba9fb862bffa651a7775015b5"
+          }
+        },
+        "linked_width_tests_passed": 2,
+        "linked_join_input_pairs": 36,
+        "linked_backedge_input_pairs": 60,
+        "matcher_width_guards_removed": 5,
+        "new_vector_dispatch": 0,
+        "all_other_machine_bodies_exact": true
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r283": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-packed-join-widths.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r284-packed-join-widths-8468d74a1c5e.tar.gz",
+        "bytes": 5442725,
+        "sha256": "8468d74a1c5ecb689cb26495bf550272d168be850fd58576895a9b693aeb3c16",
+        "files": 946,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "0a4f23453752b5ae4fd53985b232afccb8f04efdaabfff1446ec03ae66699e45",
+            "counter-results.json": "4b60ea0fc3d62dbbc356a89b901a033ef740364d8b20fcab09a651dcc65a2315",
+            "REPORT.md": "a646d1acde85a8abea7445d91b92a9232089be08842e04c7a7ac865c38f39840",
+            "library-results.json": "250e29ee8660b57026854a81f3e0168638e570e9704b6571313cec9d638a8003",
+            "result-decision.json": "fcef87fb4cfe568f295d94b5bd59f0aa3e31dabb2f0c51af06c4c5804a00edd3",
+            "screen-results.json": "577d9fe60dd30dfeadc37dab30184bb359cc304cd11c647d029cb22760211b6e",
+            "phi-widths-profile-results.json": "9dfdeac8dc6a640203ae2aa426fdda24e3bf093c46fee7bc5a538b7a7c411dd1",
+            "current-matcher-samples.json": "a64f80474fa7cf93feb73135a06c37c6982d302e945cfb61ceb5e7ae401588e8"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
