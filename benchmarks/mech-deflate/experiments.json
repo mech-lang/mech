@@ -56697,6 +56697,135 @@
         }
       },
       "complete_goal": false
+    },
+    "283": {
+      "git_parent": "8521ae943b38d07f8b042e4643b0a33630c02c6a",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "74205739c757a23c01994b902649a765589cf364",
+      "retained_compiler": "R283",
+      "retained_source_packet_round": 283,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain the selected-edge predicate reuse in the experimental compiler.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "1e1f6c7c8db144ca4089537db7a0edb11d365906650565e097c4ba602027825c",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "49f15359c35cd497af61637be48f27e5b4a58a9acc666a18e27047ab48a8f00a",
+            "after": "ecadcc551552238e27d3d6a570a9f2fc72b180ba3c94be4fea1823e8ec9d8107"
+          }
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "c05af6d19e2478e97160cd8c526b13f9b5036d9fc0f38f76e0afbe0bf22def78",
+        "worker_sha256": "573d59b76bb02b6392433ff03d9299fd1b593762dd92659cc4a70aca5d1b8285"
+      },
+      "summary": {
+        "published_parent": "8521ae943b38d07f8b042e4643b0a33630c02c6a",
+        "measured_parent": "74205739c757a23c01994b902649a765589cf364",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 283,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 283,
+        "selected_mode": "vector-predicates",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9805333666574159,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 45,
+          "after_count": 45,
+          "denominator": 81,
+          "before_percent": 55.55555555555556,
+          "after_percent": 55.55555555555556,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r280": 3,
+          "mech-candidate": 3
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "largest_paired_slowdown": {
+          "case": "one-stored",
+          "ratio": 1.0156112006359075
+        },
+        "candidate_frontier": {
+          "case": "prefix-natural-4096",
+          "x_reference": 1.1073365234374724
+        },
+        "next_experiment": "Carry integer width through packed-read joins. The exact matcher still checks the merged result against 0xffffffff after a 32-bit load or byte assembly. Prove the range on every incoming edge before removing the check."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "c05af6d19e2478e97160cd8c526b13f9b5036d9fc0f38f76e0afbe0bf22def78",
+            "metadata.json": "d65714f102e49aeec5887db6dff1da725f6abef3c57b1d49da6e008a7f161003"
+          },
+          "decoded": {
+            "object.o": "c05af6d19e2478e97160cd8c526b13f9b5036d9fc0f38f76e0afbe0bf22def78",
+            "metadata.json": "d65714f102e49aeec5887db6dff1da725f6abef3c57b1d49da6e008a7f161003"
+          }
+        },
+        "existing_predicate_tests_passed": 5,
+        "vector_bodies_changed": 43,
+        "new_existing_guarded_vector_routes": 42,
+        "duplicate_four_byte_guard_removed": true,
+        "all_general_numeric_bodies_exact": true
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r280": 3,
+          "mech-candidate": 3
+        }
+      },
+      "report": "docs/design/native-vector-predicate-reuse.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r283-vector-predicate-reuse-4ecc4bfbd4bf.tar.gz",
+        "bytes": 5511633,
+        "sha256": "4ecc4bfbd4bf4d719d60587523877a2ada0007f22ebd11d5c36ef9528470100a",
+        "files": 926,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "722b73822467f06dc7ae8e57bb9ffc0df05db53b92a5bf27b09a06aa36d3163f",
+            "counter-results.json": "1dfb6eeaa9d72a75c32803acc0926d5c22b3698c2e114819bad860313e3081de",
+            "REPORT.md": "42849859e11db890f0c6c8d4319bdf873775c081e513213fff03869aca8442a0",
+            "library-results.json": "074ff728e054c4b009656ac19c124edf830edfad57f01b77eef93bbe89898094",
+            "result-decision.json": "24483f657a15d830d40db4e66631dcff93f65b429ecc5ad9b5f46de66ead1213",
+            "screen-results.json": "d244fc52507c4dca548c3145881debc388200be1d4d9c46f67a599150e34e329",
+            "vector-predicates-profile-results.json": "2bd2c2f412c89157367ee243a7c2cfb1c9796ec1e152707f31191e5f66b1bd2f",
+            "current-matcher-samples.json": "34b463338dcca6ea8cb60d0095f2a300e693473fb9fe20ced663139df8f860ac"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
