@@ -55341,6 +55341,150 @@
         }
       },
       "complete_goal": false
+    },
+    "274": {
+      "git_parent": "d42011925b2ab21d5119802141d2612eaea9a36c",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "e8e87ab7f84a41fe1455bc216136729d90ea3d72",
+      "retained_compiler": "R274",
+      "retained_source_packet_round": 274,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain direct selected-item transport in experimental no-growth phase bodies.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "23a004ce745605695691d2507bad838275fa33ff873206de94eeff5969f96342",
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "d04170a56e31f084ed06d3b0281894997d5a8c36b9b212fd3194c9824a26eb3e",
+        "worker_sha256": "18c177e0651b1703307cc9e71a0853c3d9b3aaa4dd36e831ae26bc1287092bcb",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_loop_windows.rs": {
+            "baseline": "f4ef33054f076da3b7f0733973e9113b51b0a7097ea37b4e13e31af5f21dcc02",
+            "candidate": "2635489c1bb1d6b06a7d44204182d5cbc48001be58093c8593798bc4ebbfb36d"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+            "baseline": "6932b0e979e11b558256d6f8aac89de120eed14e85a4342618603faafd596847",
+            "candidate": "b5b7b10106307d9fe3e6f2062ffc220af360a82bb9482ffefb412c122021152e"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "baseline": "e122b4688c2a2a133e7e58722d535816f5098d1d719e5490cd1222e0413686be",
+            "candidate": "2d045cba796754ac63dc75738e70e7a338048a35c47c678297a2eefc6b1db87d"
+          }
+        }
+      },
+      "summary": {
+        "round": 274,
+        "published_parent": "d42011925b2ab21d5119802141d2612eaea9a36c",
+        "measured_parent": "e8e87ab7f84a41fe1455bc216136729d90ea3d72",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 274,
+        "retained_runtime_packet_round": 272,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 32,
+          "after_count": 32,
+          "denominator": 81,
+          "before_percent": 39.50617283950617,
+          "after_percent": 39.50617283950617,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate_in_separate_cohort": {
+          "mech-r272": 3,
+          "mech-r274": 3
+        },
+        "all81_paired_after_over_before": 0.969110108310116,
+        "cohort_all81_paired_after_over_before": {
+          "primary-a": 0.9683327536875241,
+          "primary-b": 0.9698880869746056
+        },
+        "pooled_gate_passed": 81,
+        "block_gate_passed": 81,
+        "gate_misses": {
+          "pooled": [],
+          "block": []
+        },
+        "crossed_below": [],
+        "crossed_above": [],
+        "logical_heap_families_identical": true,
+        "candidate_worker_sha256": "18c177e0651b1703307cc9e71a0853c3d9b3aaa4dd36e831ae26bc1287092bcb",
+        "candidate_object_sha256": "d04170a56e31f084ed06d3b0281894997d5a8c36b9b212fd3194c9824a26eb3e",
+        "complete_goal": false
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "complete_smokes_per_form": {
+          "original": 162,
+          "decoded": 162
+        },
+        "linked_original_and_decoded_exact": {
+          "original": {
+            "object.o": "d04170a56e31f084ed06d3b0281894997d5a8c36b9b212fd3194c9824a26eb3e",
+            "metadata.json": "b9251c57e5d047f07a172d61eb4dfd9d4c153afcdcbf2ee1176f66ca1ac82414"
+          },
+          "decoded": {
+            "object.o": "d04170a56e31f084ed06d3b0281894997d5a8c36b9b212fd3194c9824a26eb3e",
+            "metadata.json": "b9251c57e5d047f07a172d61eb4dfd9d4c153afcdcbf2ee1176f66ca1ac82414"
+          }
+        },
+        "linked_control_calls": 126,
+        "linked_controls_per_form": {
+          "tie-cases": 9,
+          "path-cases": 40,
+          "capacity-cases": 7,
+          "alias-cases": 2,
+          "seed-cases": 5
+        },
+        "observed_no_growth_in_every_tie_control": true,
+        "root_object_bytes_identical": true,
+        "changed_machine_bodies": [
+          "mech_compact_numeric_12419_no_growth",
+          "mech_compact_numeric_15296_no_growth",
+          "mech_compact_numeric_26895_no_growth",
+          "mech_compact_numeric_31086_no_growth"
+        ],
+        "timing_scope": "Experimental compact diagnostic. Ordinary resource and recovery contract outside measurement."
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r272": 3,
+          "mech-r274": 3
+        }
+      },
+      "report": "docs/design/native-capacity-phase-selected-item.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r274-selected-item-capacity-4fb1081c5175.tar.gz",
+        "bytes": 5340414,
+        "sha256": "4fb1081c5175f5be6e67b85163af94c205620a8dddd91625ec9327782a75290c",
+        "files": 1053,
+        "reports_replayed": 6,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "198d0b073bc62b4f3e70e39bd8736e7c1f106e27a4d2425b586467c950196202",
+            "counter-results.json": "789b0916f4610e0916215fbe1596816cfefc39ee89c5bac960dc0b22621f6466",
+            "REPORT.md": "2af86aa65ce782bc9deec27e1ab2d641a813f869e18bcb9a45ee14fabd613714",
+            "direct-item-profile-results.json": "80fec6b33b9368f641cc29cd84250e63519749d7eb1b0c8ca8fc30ac2c261b9b",
+            "library-results.json": "6b1972c7bccd4009ef5b1d6307c1cb62bc1a0e5ac10ac3d7e959eaad689b1fd6",
+            "result-decision.json": "5ef11e932055763365bf8224d4445fe46dd8afa51a1e6326245166dc538b9614"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
