@@ -1,0 +1,87 @@
+{
+  "excluded_local_control": "rust-mech-control is a locally authored same-numeric-algorithm diagnostic, despite raw kind=upstream.",
+  "existing_example_summaries": {
+    "cpp-concurrent-precision": {
+      "all_exact_rust": true,
+      "category": "concurrent_four_workers_timer_precision_only",
+      "median_seconds": 0.00331667,
+      "over_fastest": 1.7853953372698121,
+      "over_rust": 0.3919602919017933,
+      "samples": 7
+    },
+    "d-concurrent": {
+      "all_exact_rust": true,
+      "category": "concurrent",
+      "median_seconds": 0.003074,
+      "over_fastest": 1.6547637439864087,
+      "over_rust": 0.36328182704523293,
+      "samples": 7
+    },
+    "d-concurrent-v2": {
+      "all_exact_rust": true,
+      "category": "concurrent",
+      "median_seconds": 0.002919,
+      "over_fastest": 1.5713257542928847,
+      "over_rust": 0.34496410317014803,
+      "samples": 7
+    },
+    "d-ho": {
+      "all_exact_rust": true,
+      "category": "specialized_single_core",
+      "median_seconds": 0.005736,
+      "over_fastest": 3.087743928271321,
+      "over_rust": 0.6778739622418529,
+      "samples": 7
+    },
+    "go-ho": {
+      "all_exact_rust": true,
+      "category": "specialized_single_core",
+      "median_seconds": 0.0028857910000000004,
+      "over_fastest": 1.5534490304236446,
+      "over_rust": 0.34103950128519517,
+      "samples": 7
+    },
+    "rust": {
+      "all_exact_rust": true,
+      "category": "single_core_standard",
+      "median_seconds": 0.00846175,
+      "over_fastest": 4.555041350252764,
+      "over_rust": 1.0,
+      "samples": 7
+    },
+    "rust-concurrent": {
+      "all_exact_rust": true,
+      "category": "concurrent_8_physical_workers",
+      "median_seconds": 0.001857667,
+      "over_fastest": 1.0,
+      "over_rust": 0.21953697521198332,
+      "samples": 7
+    },
+    "rust-ho": {
+      "all_exact_rust": true,
+      "category": "single_core_specialized",
+      "median_seconds": 0.002946834,
+      "over_fastest": 1.5863090640033979,
+      "over_rust": 0.34825349366265845,
+      "samples": 7
+    }
+  },
+  "fastest_existing_locally_verified_example": "rust-concurrent",
+  "limitations": [
+    "The published OVH VM times are not denominators for local Mech measurements.",
+    "Julia HO is listed upstream but Julia is not installed locally; this is a verified-candidate comparison, not proof of a universal fastest implementation."
+  ],
+  "median_seconds": 0.001857667,
+  "no_C_or_Roc_directory_at_pinned_revision": "c3 and cpp exist; no c or roc root directory in retained upstream tree inventory.",
+  "not_claimed": "Universal fastest over every repository implementation or direct comparability with published OVH timings. Julia highly optimized exists but was not built locally.",
+  "report": {
+    "artifact": "reports/historical_expanded_sweep.json.gz",
+    "bytes": 75391,
+    "compression": "gzip",
+    "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-fastest-refresh-20261104-5000-m3.json",
+    "sha256": "075115371bf50c8ae8216183b302614f800d23316277e66ad8c1f564245a9acc",
+    "stored_sha256": "0affea690ca4998546137510fa007b42ef161692a9fb1c1d9228386b428d9ad6"
+  },
+  "source_timer_only_variant": "cpp-concurrent-precision changes the printed timer precision; retained upstream algorithm, not byte-identical source.",
+  "upstream_commit": "fc2982b0c929b1b701209d401a1dc30c773ef4ab"
+}
