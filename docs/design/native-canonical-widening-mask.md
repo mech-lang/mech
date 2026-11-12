@@ -77,7 +77,7 @@ Four additional captures cover periodic and repeated 1 MiB using the same linked
 
 Natural 256 KiB samples 88 of 5,355 running PCs in the fixed 32-byte route at source header 1372. That route still executes a guard for the 64-byte tier and recurring 16-byte limit checks. These samples identify reached instructions. A separate experiment is required to measure their cost.
 
-The candidate beats Roc on 3/16 pilot cases and libdeflate on 3/16. The published 81-case scoreboard remains at the measured integration baseline pending a full adoption campaign.
+The candidate beats Roc on 3/16 pilot cases and libdeflate on 3/16. R355 remains the retained 81-case performance baseline.
 
 ## Provenance
 
