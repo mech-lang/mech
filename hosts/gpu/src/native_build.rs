@@ -1,6 +1,7 @@
 //! Reusable source-to-application Cranelift build path, shared with `mech build`.
 //! Arithmetic and traversal execute in emitted objects. Application shells only
 //! initialize generic library services, link those objects, and perform IO.
+use crate::application_manifest::workspace_resolution_patches;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -61,29 +62,13 @@ pub fn emit_application(
             )
             .map_err(|e| e.to_string())?;
             fs::write(directory.join("build.rs"), "fn main() { let root = std::env::var(\"CARGO_MANIFEST_DIR\").unwrap(); println!(\"cargo:rustc-link-arg={root}/mech-sequence.o\"); println!(\"cargo:rerun-if-changed=mech-sequence.o\"); println!(\"cargo:rerun-if-changed=constants.json\"); }\n").map_err(|e| e.to_string())?;
-            let quoted = |path: &Path| {
-                serde_json::to_string(&path.display().to_string()).map_err(|e| e.to_string())
-            };
-            let mut manifest = format!(
-                "[package]\nname = {}\nversion = \"0.0.0\"\nedition = \"2024\"\n[dependencies]\nmech-gpu = {{ path = {}, default-features = false, features = {library_features} }}\nserde_json = \"1\"\n[patch.crates-io]\n",
-                serde_json::to_string(name).unwrap(),
-                quoted(&workspace.join("hosts/gpu"))?
-            );
-            for (component, path) in [
-                ("core", "src/core"),
-                ("engine", "src/engine"),
-                ("syntax", "src/syntax"),
-                ("stdlib", "src/stdlib"),
-                ("runtime", "src/runtime"),
-                ("terminal", "hosts/terminal"),
-            ] {
-                manifest.push_str(&format!(
-                    "mech-{component} = {{ path = {} }}\n",
-                    quoted(&workspace.join(path))?
-                ));
-            }
-            manifest.push_str("[workspace]\n");
-            fs::write(directory.join("Cargo.toml"), manifest).map_err(|e| e.to_string())?;
+            write_application_manifest(
+                directory,
+                workspace,
+                name,
+                library_features,
+                ApplicationKind::Sequence,
+            )?;
             Ok(ApplicationKind::Sequence)
         }
         Err(sequence_error) => {
@@ -106,25 +91,13 @@ pub fn emit_application(
                 )
                 .map_err(|e| e.to_string())?;
                 fs::write(directory.join("build.rs"),"fn main(){let root=std::env::var(\"CARGO_MANIFEST_DIR\").unwrap();println!(\"cargo:rustc-link-arg={root}/mech-control.o\");println!(\"cargo:rerun-if-changed=mech-control.o\");println!(\"cargo:rerun-if-changed=control.json\");}").map_err(|e|e.to_string())?;
-                let quoted = |p: &Path| serde_json::to_string(&p.display().to_string()).unwrap();
-                let mut manifest = format!(
-                    "[package]\nname={}\nversion=\"0.0.0\"\nedition=\"2024\"\n[dependencies]\nmech-gpu={{path={},default-features=false,features={library_features}}}\n[patch.crates-io]\n",
-                    serde_json::to_string(name).unwrap(),
-                    quoted(&workspace.join("hosts/gpu"))
-                );
-                for (component, path) in [
-                    ("core", "src/core"),
-                    ("engine", "src/engine"),
-                    ("syntax", "src/syntax"),
-                    ("stdlib", "src/stdlib"),
-                ] {
-                    manifest.push_str(&format!(
-                        "mech-{component}={{path={}}}\n",
-                        quoted(&workspace.join(path))
-                    ));
-                }
-                manifest.push_str("[workspace]\n");
-                fs::write(directory.join("Cargo.toml"), manifest).map_err(|e| e.to_string())?;
+                write_application_manifest(
+                    directory,
+                    workspace,
+                    name,
+                    library_features,
+                    ApplicationKind::Control,
+                )?;
                 return Ok(ApplicationKind::Control);
             }
             crate::fused_f64::map_runner::emit_source_program(
@@ -139,6 +112,45 @@ pub fn emit_application(
         }
     }
 }
+fn write_application_manifest(
+    directory: &Path,
+    workspace: &Path,
+    name: &str,
+    library_features: &str,
+    kind: ApplicationKind,
+) -> Result<(), String> {
+    const COMMON_PATCHES: &[(&str, &str)] = &[
+        ("mech-core", "src/core"),
+        ("mech-engine", "src/engine"),
+        ("mech-syntax", "src/syntax"),
+        ("mech-stdlib", "src/stdlib"),
+    ];
+    const SEQUENCE_PATCHES: &[(&str, &str)] = &[
+        ("mech-runtime", "src/runtime"),
+        ("mech-terminal", "hosts/terminal"),
+    ];
+    let workspace = workspace
+        .canonicalize()
+        .map_err(|error| error.to_string())?;
+    let quoted =
+        |text: &str| serde_json::to_string(text).expect("string serialization cannot fail");
+    let mut manifest = format!(
+        "[package]\nname = {}\nversion = \"0.0.0\"\nedition = \"2024\"\n[dependencies]\nmech-gpu = {{ path = {}, default-features = false, features = {library_features} }}\n",
+        quoted(name),
+        quoted(&workspace.join("hosts/gpu").display().to_string()),
+    );
+    let mut fallbacks = COMMON_PATCHES.to_vec();
+    if kind == ApplicationKind::Sequence {
+        manifest.push_str("serde_json = \"1\"\n");
+        fallbacks.extend_from_slice(SEQUENCE_PATCHES);
+    }
+    manifest.push_str(
+        &workspace_resolution_patches(&workspace, &fallbacks).map_err(|error| error.to_string())?,
+    );
+    manifest.push_str("[workspace]\n");
+    fs::write(directory.join("Cargo.toml"), manifest).map_err(|error| error.to_string())
+}
+
 fn command(mut command: Command) -> Result<(), String> {
     let rendered = format!("{command:?}");
     let status = command.status().map_err(|e| format!("{rendered}: {e}"))?;

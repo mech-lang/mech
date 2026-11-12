@@ -22,7 +22,7 @@ canonical-native-program-host = ["canonical-native-program", "canonical-native-p
 # Explicit experiment only: never enabled by the production hosted CLI features.
 canonical-native-benchmark-policy-runtime = ["canonical-native-program-host-runtime"]
 canonical-native-benchmark-policy = ["canonical-native-program-host", "canonical-native-benchmark-policy-runtime"]
-native-build = ["sequence-cli", "fused-cli"]
+native-build = ["sequence-cli", "fused-cli", "dep:toml_edit"]
 system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
 sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]
 runtime-host = ["dep:mech-runtime"]
