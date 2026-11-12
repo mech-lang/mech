@@ -33,6 +33,8 @@ use mech_engine::{
 };
 use serde::{Deserialize, Serialize};
 
+#[cfg(any(feature = "canonical-native", feature = "native-build"))]
+mod application_manifest;
 mod batched;
 #[cfg(feature = "canonical-native-runtime")]
 pub mod native_artifact;
