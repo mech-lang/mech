@@ -98,8 +98,11 @@ fn original_and_decoded_closed_program_generate_same_hosted_object_and_pins() {
                 .is_none()
         );
         assert_eq!(manifest["profile"]["dev"]["debug"].as_integer(), Some(0));
-        assert!(main.contains("BuildOwnedHostedBinding::from_build_owned_image("));
-        assert!(main.contains("run_hosted_program_application(binding,"));
+        crate::fixture::assert_compiled_hosted_launcher(
+            &project,
+            &main,
+            "run_hosted_program_application(binding,",
+        );
         let launcher = include_str!("../../src/native_artifact/launch/hosted/mod.rs");
         assert!(launcher.contains("with_prepared_canonical_native_resources_phased_text"));
         let compact = launcher.split_whitespace().collect::<String>();

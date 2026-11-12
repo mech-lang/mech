@@ -12,13 +12,18 @@ fn build_owned_images_reject_wrong_registry_revision_and_broken_inventories() {
     let bytes = jit.descriptor().encode_build_owned_image().unwrap();
     let original: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     for (pointer, replacement) in [
-        ("/version", serde_json::json!(2)),
+        ("/version", serde_json::json!(u32::MAX)),
         ("/descriptor/code", serde_json::json!(0)),
         ("/descriptor/calls", serde_json::json!([])),
         ("/descriptor/types/0/schema", serde_json::json!(u32::MAX)),
     ] {
         let mut changed = original.clone();
-        *changed.pointer_mut(pointer).unwrap() = replacement;
+        let field = changed.pointer_mut(pointer).unwrap();
+        assert_ne!(
+            *field, replacement,
+            "{pointer} must change the encoded value"
+        );
+        *field = replacement;
         // SAFETY: rejection probe only; no reconstructed metadata can execute.
         assert!(
             unsafe {
@@ -57,6 +62,12 @@ fn build_owned_images_reject_wrong_registry_revision_and_broken_inventories() {
         .is_err()
     );
     let mut changed: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert!(
+        !changed["plan"]["requirements"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
     changed["plan"]["requirements"] = serde_json::json!([]);
     // SAFETY: rejection probe cannot enter resource admission or native code.
     assert!(
@@ -74,6 +85,12 @@ fn build_owned_images_reject_wrong_registry_revision_and_broken_inventories() {
 #[test]
 fn generated_hosted_application_pins_the_same_object_descriptor() {
     use sha2::{Digest, Sha256};
+    let digest = |bytes: &[u8]| {
+        Sha256::digest(bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
     let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()
@@ -92,17 +109,9 @@ fn generated_hosted_application_pins_the_same_object_descriptor() {
         )
         .unwrap();
         let image = std::fs::read(project.root().join("native-descriptor.json")).unwrap();
-        let digest = Sha256::digest(&image)
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
-        assert_eq!(project.pins()["native-descriptor.json"], digest);
+        assert_eq!(project.pins()["native-descriptor.json"], digest(&image));
         let packed = std::fs::read(project.root().join("native-descriptor.bin")).unwrap();
-        let packed_digest = Sha256::digest(&packed)
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
-        assert_eq!(project.pins()["native-descriptor.bin"], packed_digest);
+        assert_eq!(project.pins()["native-descriptor.bin"], digest(&packed));
         assert!(packed.len() < image.len());
         // SAFETY: this same checked compiler produced the image and Object;
         // the decoded metadata remains confined to round-trip inspection.
@@ -130,6 +139,7 @@ fn generated_hosted_application_pins_the_same_object_descriptor() {
         trailing[16..24].copy_from_slice(&payload_len.to_le_bytes());
         corruptions.push(trailing);
         for changed in corruptions {
+            assert_ne!(changed, packed);
             // SAFETY: rejection probe only; no returned proof can execute.
             assert!(
                 unsafe {
@@ -141,11 +151,7 @@ fn generated_hosted_application_pins_the_same_object_descriptor() {
             );
         }
         let resources = std::fs::read(project.root().join("native-resources.json")).unwrap();
-        let resource_digest = Sha256::digest(&resources)
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
-        assert_eq!(project.pins()["native-resources.json"], resource_digest);
+        assert_eq!(project.pins()["native-resources.json"], digest(&resources));
         let prepared = CanonicalNativeResourceMetadata::prepare(artifact, usize::MAX).unwrap();
         assert_eq!(resources, prepared.encode_build_owned_image().unwrap());
         // SAFETY: this same checked build produced both the image and Object.
@@ -169,25 +175,26 @@ fn generated_hosted_application_pins_the_same_object_descriptor() {
         assert!(!main.contains("decode_program_artifact"));
         assert!(!main.contains("CanonicalNativeResourceMetadata::prepare"));
         assert!(!main.contains("lower_native_program_artifact"));
-        assert!(main.contains("BuildOwnedHostedBinding::from_build_owned_image("));
-        assert!(main.contains("run_hosted_program_application(binding,"));
-        let binding = include_str!("../../src/native_artifact/launch/program.rs");
-        assert!(binding.contains("LinkedProgramArtifact::from_build_owned_image("));
-        assert!(main.contains("include_bytes!(\"../native-descriptor.bin\")"));
-        assert!(!main.contains("include_bytes!(\"../native-descriptor.json\")"));
+        crate::fixture::assert_compiled_hosted_launcher(
+            &project,
+            &main,
+            "run_hosted_program_application(binding,",
+        );
         let object = mech_gpu::native_artifact::emit_program_object(artifact, &catalog).unwrap();
+        assert_eq!(
+            project.metadata()["object"]["compiled_module_symbol"],
+            object.compiled_module_symbol()
+        );
         assert_eq!(
             image,
             object.descriptor().encode_build_owned_image().unwrap()
         );
-        assert_eq!(
-            std::fs::read(project.root().join("program.o")).unwrap(),
-            object.bytes()
-        );
-        assert_eq!(
-            std::fs::read(project.root().join("object-identity.bin")).unwrap(),
-            object.identity().bytes()
-        );
+        let linked_object = std::fs::read(project.root().join("program.o")).unwrap();
+        assert_eq!(linked_object, object.bytes());
+        assert_eq!(project.pins()["program.o"], digest(&linked_object));
+        let identity = std::fs::read(project.root().join("object-identity.bin")).unwrap();
+        assert_eq!(identity, object.identity().bytes());
+        assert_eq!(project.pins()["object-identity.bin"], digest(&identity));
         images.push(image);
     }
     assert_eq!(images[0], images[1]);
@@ -222,7 +229,7 @@ fn native_descriptor_images_preserve_layouts_without_process_pointers() {
                 assert_eq!(bytes, restored.encode_build_owned_image().unwrap());
                 let image: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
                 assert_eq!(image["format"], "mech.build-owned-native-descriptor");
-                assert_eq!(image["version"], 1);
+                assert_eq!(image["version"], 2);
                 let body = &image["descriptor"];
                 assert_eq!(body["stack"], descriptor.stack_bytes());
                 assert_eq!(body["code"], descriptor.code_bytes());
