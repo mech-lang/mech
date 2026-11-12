@@ -521,12 +521,19 @@ pub(crate) fn encode_normalized_dimension_into(expression: &DimensionExpr, bytes
             });
             bytes.extend_from_slice(&(children.len() as u32).to_le_bytes());
             for child in children {
-                let encoded = encode_normalized_dimension(child);
-                bytes.extend_from_slice(&(encoded.len() as u64).to_le_bytes());
-                bytes.extend_from_slice(&encoded);
+                encode_dimension_node(child, bytes);
             }
         }
     }
+}
+
+fn encode_dimension_node(expression: &DimensionExpr, bytes: &mut Vec<u8>) {
+    let length_at = bytes.len();
+    bytes.extend_from_slice(&0_u64.to_le_bytes());
+    let start = bytes.len();
+    encode_normalized_dimension_into(expression, bytes);
+    let length = (bytes.len() - start) as u64;
+    bytes[length_at..length_at + 8].copy_from_slice(&length.to_le_bytes());
 }
 
 pub(crate) fn encode_dimension_parameters(parameters: &[DimensionParameter], bytes: &mut Vec<u8>) {
@@ -536,16 +543,12 @@ pub(crate) fn encode_dimension_parameters(parameters: &[DimensionParameter], byt
             DimensionLifetime::Turn => 0x02,
             DimensionLifetime::CompileTime => unreachable!("compile-time parameters are rejected"),
         });
-        let lower = encode_normalized_dimension(&parameter.lower_bound);
-        bytes.extend_from_slice(&(lower.len() as u64).to_le_bytes());
-        bytes.extend_from_slice(&lower);
+        encode_dimension_node(&parameter.lower_bound, bytes);
         match &parameter.upper_bound {
             None => bytes.push(0),
             Some(upper) => {
                 bytes.push(1);
-                let upper = encode_normalized_dimension(upper);
-                bytes.extend_from_slice(&(upper.len() as u64).to_le_bytes());
-                bytes.extend_from_slice(&upper);
+                encode_dimension_node(upper, bytes);
             }
         }
     }

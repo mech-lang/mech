@@ -125,6 +125,7 @@ impl Invocation<'_, '_, '_> {
             .ok()
             .and_then(|n| metadata.observation_schema_bytes.checked_mul(n))
             .and_then(|n| n.checked_add(amount(proof.words, 128, 2048).ok()?));
+        entry = entry.and_then(|n| n.checked_add(amount(frames.scalar_entry_steps, 64, 0).ok()?));
         // These borrows cover this entry only. Owner tables and source values
         // are immutable throughout preflight; the separate argument word bank
         // may be written below. Large inventories keep the ordinary lookup.
@@ -224,17 +225,29 @@ impl Invocation<'_, '_, '_> {
         // A stale previous physical definition must be retired by its original
         // path, rather than silently overwritten by a virtual frame.
         for frame in &frames.frames {
-            if !frames.inputs.contains(&frame.value) {
-                if metadata
+            if frames.inputs.contains(&frame.value) {
+                continue;
+            }
+            let live = metadata
+                .buffer_frames
+                .fields_at(frame.value as usize)
+                .is_some_and(|fields| {
+                    fields
+                        .iter()
+                        .any(|field| self.state.buffer_frames.current_leaf(*field).is_some())
+                });
+            if live {
+                return Ok(Some(0));
+            }
+        }
+        for binding in &frames.scalar_bindings {
+            if !frames.inputs.contains(&binding.value)
+                && self
+                    .state
                     .buffer_frames
-                    .fields_at(frame.value as usize)
-                    .is_some_and(|f| {
-                        f.iter()
-                            .any(|f| self.state.buffer_frames.current_leaf(*f).is_some())
-                    })
-                {
-                    return Ok(Some(0));
-                }
+                    .current_scalar_binding(binding.physical, binding.kind)
+            {
+                return Ok(Some(0));
             }
         }
         // Only an omitted frame retirement needs this additional canonical
@@ -278,27 +291,14 @@ impl Invocation<'_, '_, '_> {
                 "parent native transport is smaller than its prepared inventory",
             ));
         }
-        for word in 0..proof.words {
-            self.write_borrowed_word(word, 0)?;
-        }
-        for &value in &frames.inputs {
-            let recipe = frames
-                .frames
-                .iter()
-                .find(|f| f.value == value)
-                .ok_or_else(|| invalid("parent input frame has no scalar lanes"))?;
-            for (ordinal, slot) in recipe.fields.iter().enumerate() {
-                if let Some(slot) = slot {
-                    let Some((_, bits)) = metadata
-                        .buffer_frames
-                        .fields_at(value as usize)
-                        .and_then(|f| f.get(ordinal))
-                        .and_then(|f| self.state.buffer_frames.current_leaf(*f))
-                    else {
-                        return Ok(Some(0));
-                    };
-                    self.write_borrowed_word(*slot, bits)?;
-                }
+        for binding in &frames.scalar_bindings {
+            if frames.inputs.contains(&binding.value)
+                && !self
+                    .state
+                    .buffer_frames
+                    .current_scalar_binding(binding.physical, binding.kind)
+            {
+                return Ok(Some(0));
             }
         }
         for frame in &frames.frames {
@@ -313,20 +313,16 @@ impl Invocation<'_, '_, '_> {
             // avoids revisiting fields when it already fits the current cap.
             let mut upper = frame_capacity_bound(
                 largest_source_bytes,
-                frame.arrays.len(),
+                frame.scalar_nodes() + frame.arrays.iter().flatten().count(),
                 self.limits.max_output_bytes,
             );
             if upper.is_none() {
-                upper = Some(0u64);
-                for source in &frame.arrays {
-                    let bound = if let Some(source) = source {
-                        let Some(owner) = current_source(*source)? else {
-                            return Ok(Some(0));
-                        };
-                        owner.memory_budget_retained_bytes(&memory)
-                    } else {
-                        Some(scalar_bytes)
+                upper = scalar_bytes.checked_mul(frame.scalar_nodes() as u64);
+                for source in frame.arrays.iter().flatten() {
+                    let Some(owner) = current_source(*source)? else {
+                        return Ok(Some(0));
                     };
+                    let bound = owner.memory_budget_retained_bytes(&memory);
                     upper = upper.and_then(|n| n.checked_add(bound?));
                     if upper.is_none() {
                         break;
@@ -337,19 +333,18 @@ impl Invocation<'_, '_, '_> {
             if upper.is_none_or(|n| n.max(8) > self.limits.max_output_bytes.unwrap_or(u64::MAX)) {
                 // A refused/overflowing upper bound proves nothing. Preserve
                 // the exact original walk, sum, overflow and byte-limit check.
-                bytes = 0;
-                for source in &frame.arrays {
-                    let bound = if let Some(source) = source {
-                        let Some(owner) = current_source(*source)? else {
-                            return Ok(Some(0));
-                        };
-                        let Ok(footprint) = owner.retained_footprint(&metadata.schemas) else {
-                            return Ok(Some(0));
-                        };
-                        footprint.retained_bytes
-                    } else {
-                        scalar_bytes
+                let Some(scalars) = scalar_bytes.checked_mul(frame.scalar_nodes() as u64) else {
+                    return Ok(Some(0));
+                };
+                bytes = scalars;
+                for source in frame.arrays.iter().flatten() {
+                    let Some(owner) = current_source(*source)? else {
+                        return Ok(Some(0));
                     };
+                    let Ok(footprint) = owner.retained_footprint(&metadata.schemas) else {
+                        return Ok(Some(0));
+                    };
+                    let bound = footprint.retained_bytes;
                     let Some(next) = bytes.checked_add(bound) else {
                         return Ok(Some(0));
                     };
@@ -359,7 +354,7 @@ impl Invocation<'_, '_, '_> {
             if self
                 .limits
                 .max_output_elements
-                .is_some_and(|n| n < frame.fields.len() as u64)
+                .is_some_and(|n| n < frame.field_count() as u64)
                 || self
                     .limits
                     .max_output_bytes
@@ -405,10 +400,20 @@ impl Invocation<'_, '_, '_> {
                 .ok_or_else(|| invalid("parent entry changed account scope"))?,
             entry: site as u32,
             partial: false,
+            native_fuel: None,
         };
         // Selection proves that any active ordinary scalar group is wholly
         // inside this piece. Its existing debit is retained. Every decline
         // above leaves its marker intact for the ordinary scalar continuation.
+        if !frames.scalar_bindings.is_empty() {
+            let scalar_bank = self
+                .state
+                .buffer_frames
+                .scalar_bank_pointer(&metadata.buffer_frames)?;
+            // Scalar homes are native SSA now. Reuse the first unused scalar
+            // argument word; no transport capacity or admission is enlarged.
+            self.write_borrowed_word(0, scalar_bank)?;
+        }
         self.state.scalar_path = None;
         self.closed_tail = Some(state);
         Ok(Some(1))
@@ -536,18 +541,10 @@ impl Invocation<'_, '_, '_> {
                             .iter()
                             .find(|f| f.value == value.get())
                             .unwrap();
-                        for (ordinal, (word, source)) in
-                            recipe.fields.iter().zip(&recipe.arrays).enumerate()
-                        {
-                            if let Some(word) = word {
-                                let bits = self.read_borrowed_word(*word)?;
-                                self.state.buffer_frames.synchronize_scalar(
-                                    &metadata.buffer_frames,
-                                    *value,
-                                    ordinal,
-                                    bits,
-                                )?;
-                            } else if let Some(source) = source {
+                        // Generated success-edge stores publish these scalar
+                        // bindings after this checked retirement/owner boundary.
+                        for (ordinal, source) in recipe.arrays.iter().enumerate() {
+                            if let Some(source) = source {
                                 let owner = self.state.call_inputs.values()[*source]
                                     .as_ref()
                                     .ok_or_else(|| invalid("parent export source pin missing"))?
@@ -558,10 +555,6 @@ impl Invocation<'_, '_, '_> {
                                     ordinal,
                                     owner,
                                 )?;
-                            } else {
-                                return Err(invalid(
-                                    "parent export has no scalar or managed source",
-                                ));
                             }
                         }
                     }
@@ -574,6 +567,17 @@ impl Invocation<'_, '_, '_> {
         self.state.scalar_path = None;
         self.state.control.previous = Some(site as u32);
         self.state.consumed = args[0] != 2;
+        // Reissue the native pointer after all retirement/managed-lane borrows.
+        // Generated scalar exports never retain the entry pointer across us.
+        if !frames.scalar_bindings.is_empty() {
+            let scalar_bank = self
+                .state
+                .buffer_frames
+                .scalar_bank_pointer(&metadata.buffer_frames)?;
+            // Scalar homes are native SSA now. Reuse the first unused scalar
+            // argument word; no transport capacity or admission is enlarged.
+            self.write_borrowed_word(0, scalar_bank)?;
+        }
         // A generated suffix may belong to an ordinary scalar group whose
         // entry was executed inside this piece. That group was never funded
         // as an ordinary path. Clear its readiness lane with the marker so

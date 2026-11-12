@@ -1,7 +1,10 @@
 //! Current frame/owner sources for one acyclic parent piece. Sources are checked
 //! descriptions; the runtime must still establish current invocation availability.
 use super::Segment;
-use crate::native_artifact::program::prepare::readonly_numeric::FrameWords;
+use crate::native_artifact::program::prepare::readonly_numeric::{
+    FrameWords, OwnedFrameWords, ScalarBinding, scalar_bindings, scalar_children,
+    scalar_node_count, scalar_paths,
+};
 use mech_engine::native_artifact::{
     NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame, NativeBufferFrames,
     NativeIterationAction as Action, NativeMatchValue, NativeProgramArtifactPlan as Plan,
@@ -9,33 +12,42 @@ use mech_engine::native_artifact::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, serde::Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) enum Source {
     Value(u32),
     Field { value: u32, ordinal: usize },
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Exit")]
 pub(in crate::native_artifact) struct Exit {
     pub from: u32,
     pub to: u32,
+    #[serde(deserialize_with = "super::image::values")]
     pub frames: Vec<NativeMatchValue>,
+    #[serde(deserialize_with = "super::image::values")]
     pub aliases: Vec<NativeMatchValue>,
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Alias")]
 pub(in crate::native_artifact) struct Alias {
+    #[serde(deserialize_with = "super::image::value")]
     pub value: NativeMatchValue,
     pub source: usize,
     /// A library result keeps its declared output limits even when its owner
     /// remains private. Structural forwarding has no declared call boundary.
     pub call_result: bool,
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
 pub(in crate::native_artifact) struct Layout {
     pub sources: Vec<Source>,
     pub aliases: Vec<Alias>,
     pub frames: Vec<FrameWords>,
     pub inputs: Vec<u32>,
     pub scalar_words: usize,
+    pub scalar_bindings: Vec<ScalarBinding>,
+    pub scalar_entry_steps: usize,
     pub retirements: Vec<(u32, Vec<u32>)>,
     pub exits: Vec<Exit>,
 }
@@ -113,6 +125,9 @@ impl Origins<'_, '_> {
             let mut selected = None;
             for site in definitions {
                 let source = match self.frames.action(site).unwrap().operation() {
+                    Frame::EnumPack { .. } | Frame::Observe { .. } => {
+                        return Err("tagged frame outside numeric parent provenance");
+                    }
                     Frame::Pack { .. } => {
                         let Action::LibraryCall { operands, .. } =
                             self.plan.blocks()[site].action()
@@ -161,10 +176,23 @@ impl Layout {
         for &site in &segment.sites {
             if let Some(frame) = frames.action(site as usize) {
                 match frame.operation() {
+                    Frame::EnumPack { .. } | Frame::Observe { .. } => {
+                        return Err("tagged frame outside numeric parent composition");
+                    }
                     Frame::Pack { output } => {
                         writes.entry(output.get()).or_default().push(site as usize);
                         written_values.insert(output.get(), *output);
                         values.insert(output.get());
+                        if let Action::LibraryCall { operands, .. } =
+                            plan.blocks()[site as usize].action()
+                        {
+                            values.extend(
+                                operands
+                                    .iter()
+                                    .filter(|value| frames.fields(**value).is_some())
+                                    .map(|value| value.get()),
+                            );
+                        }
                     }
                     Frame::Copy { source, output } => {
                         writes.entry(output.get()).or_default().push(site as usize);
@@ -173,7 +201,11 @@ impl Layout {
                     }
                     Frame::Project { source, output, .. } => {
                         values.insert(source.get());
-                        if plan.values()[output.get() as usize].scalar_kind().is_none() {
+                        if frames.fields(*output).is_some() {
+                            writes.entry(output.get()).or_default().push(site as usize);
+                            values.insert(output.get());
+                            written_values.insert(output.get(), *output);
+                        } else if plan.values()[output.get() as usize].scalar_kind().is_none() {
                             projected.insert(output.get(), *output);
                             written_values.insert(output.get(), *output);
                         }
@@ -201,9 +233,22 @@ impl Layout {
         let mut sources = Vec::new();
         let mut words = 0usize;
         let mut recipes = Vec::new();
+        let mut physical_bindings = Vec::new();
         for value in values {
             let mut scalar = Vec::new();
             let mut arrays = Vec::new();
+            let fields = frames
+                .fields_at(value as usize)
+                .ok_or("parent frame lacks exact fields")?;
+            if fields.iter().any(|field| {
+                matches!(field.lane(), Lane::Tagged { .. })
+                    || (matches!(field.lane(), Lane::Composite { .. })
+                        && !scalar_children(frames, *field))
+            }) {
+                return Err("parent composite frame requires scalar-only children");
+            }
+            let mut paths = Vec::new();
+            scalar_paths(frames, fields, &mut Vec::new(), &mut words, &mut paths);
             for (ordinal, field) in frames
                 .fields_at(value as usize)
                 .ok_or("parent frame lacks exact fields")?
@@ -212,9 +257,13 @@ impl Layout {
             {
                 match field.lane() {
                     Lane::Scalar { .. } => {
-                        scalar.push(Some(words));
+                        scalar.push(
+                            paths
+                                .iter()
+                                .find(|(path, _)| path.as_slice() == [ordinal])
+                                .map(|(_, slot)| *slot),
+                        );
                         arrays.push(None);
-                        words = words.checked_add(1).ok_or("parent scalar words overflow")?;
                     }
                     Lane::Managed { .. } => {
                         let source = origins.field(value, ordinal)?;
@@ -227,14 +276,30 @@ impl Layout {
                         scalar.push(None);
                         arrays.push(Some(at));
                     }
-                    Lane::Composite { .. } => return Err("parent frame requires flat fields"),
+                    Lane::Tagged { .. } => return Err("tagged frame outside numeric parent lanes"),
+                    Lane::Composite { .. } => {
+                        scalar.push(None);
+                        arrays.push(None);
+                    }
                 }
             }
-            recipes.push(FrameWords {
+            physical_bindings.extend(scalar_bindings(frames, value, &paths)?);
+            recipes.push(FrameWords::from(OwnedFrameWords {
                 value,
+                scalar_node_count: scalar_node_count(&paths),
+                scalar_paths: paths,
                 fields: scalar,
+                array_bindings: fields
+                    .iter()
+                    .zip(&arrays)
+                    .filter_map(|(field, array)| match (field.lane(), array) {
+                        (Lane::Managed { at }, Some(array)) => Some((at, *array)),
+                        _ => None,
+                    })
+                    .collect(),
+                maximum_arity: fields.len(),
                 arrays,
-            });
+            }));
         }
         let mut aliases = Vec::new();
         for &value in projected.values() {
@@ -298,7 +363,7 @@ impl Layout {
                     maybe.insert(output.get());
                 }
                 if let Frame::Project { output, .. } = action.operation()
-                    && projected.contains_key(&output.get())
+                    && (projected.contains_key(&output.get()) || frames.fields(*output).is_some())
                 {
                     valid.insert(output.get());
                     maybe.insert(output.get());
@@ -307,7 +372,8 @@ impl Layout {
                     && let Action::LibraryCall { operands, .. } =
                         plan.blocks()[site as usize].action()
                     && operands.iter().any(|value| {
-                        projected.contains_key(&value.get()) && !valid.contains(&value.get())
+                        (projected.contains_key(&value.get()) || frames.fields(*value).is_some())
+                            && !valid.contains(&value.get())
                     })
                 {
                     return Err("parent pack reads an unreached or retired array alias");
@@ -369,12 +435,25 @@ impl Layout {
                     .collect(),
             });
         }
+        let scalar_entry_steps = physical_bindings
+            .iter()
+            .try_fold(0usize, |sum, binding| {
+                let frame = recipes.iter().find(|frame| frame.value == binding.value)?;
+                let (path, _) = frame
+                    .scalar_paths
+                    .iter()
+                    .find(|(_, word)| *word == binding.word)?;
+                sum.checked_add(path.len().saturating_sub(1))
+            })
+            .ok_or("parent scalar entry price overflows")?;
         Ok(Self {
             sources,
             aliases,
             frames: recipes,
             inputs,
             scalar_words: words,
+            scalar_entry_steps,
+            scalar_bindings: physical_bindings,
             retirements,
             exits,
         })

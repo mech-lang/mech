@@ -164,10 +164,16 @@ impl Escrow {
         }
         self.next(compute, comparison)
     }
-    fn free(&self) -> (u64, u64) {
+    pub(super) fn free(&self) -> (u64, u64) {
         (
-            self.limit.compute - self.used.compute - self.credits.reserved.compute,
-            self.limit.comparison - self.used.comparison - self.credits.reserved.comparison,
+            self.limit.compute
+                - self.used.compute
+                - self.credits.reserved.compute
+                - self.native_reserved.compute,
+            self.limit.comparison
+                - self.used.comparison
+                - self.credits.reserved.comparison
+                - self.native_reserved.comparison,
         )
     }
     pub(super) fn claim_credit(

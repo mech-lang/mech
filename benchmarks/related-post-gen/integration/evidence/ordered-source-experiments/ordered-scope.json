@@ -1,0 +1,8 @@
+{
+  "status": "unselected_source_experiment",
+  "sorts_each_subset": false,
+  "ordering_guard": "Every eligible row must have strictly ascending numeric tag IDs.",
+  "fallback": "Original exact related-with-tags path for unordered/duplicate/long/wide-vocabulary inputs.",
+  "tradeoff": "Unordered inputs lose the former subset fast path; do not promote without recording this scope and testing fallback.",
+  "performance_gain_claim": false
+}

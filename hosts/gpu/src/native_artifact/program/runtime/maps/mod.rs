@@ -14,3 +14,13 @@ pub(in crate::native_artifact) mod key_domain;
 pub(in crate::native_artifact::program::runtime) mod owner;
 pub(in crate::native_artifact) mod packed;
 pub(in crate::native_artifact) mod string;
+// Experimental emitted storage kernel, not selected by canonical programs.
+#[cfg(all(test, feature = "canonical-native-program", feature = "jit"))]
+mod native_utf8_prototype;
+
+pub(in crate::native_artifact) mod utf8_read;
+
+// Physical storage only; original-call admission controls every loan.
+pub(in crate::native_artifact) mod utf8_histogram;
+
+pub(in crate::native_artifact) mod fixed_keys;

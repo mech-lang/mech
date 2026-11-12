@@ -344,6 +344,14 @@ pub(in crate::native_artifact) fn derive_scalar(
                 Transfer {
                     writes: vec![(action.output().get() as usize, Expr::Copy(Input::Unknown))],
                 }
+            } else if let Some(action) = region
+                .captures
+                .as_ref()
+                .and_then(|proof| proof.action(site))
+            {
+                Transfer {
+                    writes: vec![(action.output() as usize, Expr::Copy(Input::Unknown))],
+                }
             } else {
                 scalar_transfer(code, site)?
             };
@@ -536,7 +544,7 @@ fn derive_from(
                         }
                     }
                 }
-                Term::Scalar(Branch::Reject) => Edge::Reject,
+                Term::Scalar(Branch::Reject | Branch::IntegrityFailure) => Edge::Reject,
                 _ => return None,
             }
         };

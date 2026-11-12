@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo",
+    "build",
+    "--release",
+    "--locked"
+  ],
+  "seconds": 9.21316304197535,
+  "exit": 0,
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0\n",
+  "source_unchanged": true,
+  "source_sha256": {
+    "src/types.rs": "25be70799325ea1511b921030fcf4978d5191ee19415a467eb157528849569e2",
+    "src/main.rs": "dbfbb70ae223195f9d928c9833b4bd8ea18eddbf46da10a8b7ec2080c4c1052e",
+    "src/utils.rs": "6723047b80e229c0989fe25e901b6966c3ac25b6f399e5d884860892394a6278"
+  },
+  "lock_sha256": "efe70c557c5d79f5766e1eeb86f99baf990defa024e78b0af2ea29edf8d02bfc",
+  "executable": "/private/tmp/mech-related-c-family-20261104/rust_con/target/release/rust_rayon",
+  "executable_sha256": "1f8c55519b0afd796c8d1bf60d5fcb9c88c617bfdaad65c8fc3e8c32a4e83d25"
+}

@@ -11,9 +11,11 @@ use mech_engine::native_artifact::{
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::num::NonZeroUsize;
 pub(in crate::native_artifact) mod frames;
+pub(in crate::native_artifact) mod image;
 pub(in crate::native_artifact) mod numeric;
 
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Segment")]
 pub(in crate::native_artifact) struct Segment {
     pub entry: u32,
     pub sites: Vec<u32>,
@@ -24,9 +26,10 @@ pub(in crate::native_artifact) struct Segment {
     /// Exact root traversal whose source visits can already have been paid.
     /// The invocation must still hold that root's current cold continuation.
     pub prepaid_region: Option<usize>,
-    pub rejection: Option<&'static str>,
+    pub rejection: Option<std::borrow::Cow<'static, str>>,
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Parent")]
 pub(in crate::native_artifact) struct Parent {
     pub iteration: u32,
     /// Innermost suspended ancestor edge, rederived from validated loop ancestry
@@ -35,7 +38,8 @@ pub(in crate::native_artifact) struct Parent {
     pub children: Vec<Child>,
     pub segments: Vec<Segment>,
 }
-#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Child")]
 pub(in crate::native_artifact) struct Child {
     pub child: u32,
     pub child_initialize: u32,
@@ -162,16 +166,9 @@ impl Layout {
                 .get(parent.header() as usize)
                 .copied()
                 .flatten();
-            if closed_region.is_some_and(|id| {
-                let region = &closed.regions[id];
-                region.numeric.as_ref().is_some_and(|p| {
-                    p.phase.is_some()
-                        && region.iteration == iteration as u32
-                        && p.prepaid_sites.is_empty()
-                })
-            }) {
-                continue;
-            }
+            // Preserve independently proved ordinary parent pieces even when
+            // a native phase covers this loop. A declined phase grants no
+            // source credit; actual paid overlap still declines at admission.
             // Descendants keep the full ordinary source price. Their native
             // entry declines if any member belongs to a current paid traversal.
             // An interval's custom native CFG and its ordinary cold suffix
@@ -202,10 +199,14 @@ impl Layout {
             if children.is_empty() {
                 continue;
             }
-            if !frames.fields(parent.carrier()).is_some_and(|f| {
-                f.iter()
-                    .all(|f| !matches!(f.lane(), Lane::Composite { .. }))
-            }) {
+            if !(frames.fields(parent.carrier()).is_some_and(|f| {
+                f.iter().all(|f| {
+                    !matches!(f.lane(), Lane::Tagged { .. })
+                        && (!matches!(f.lane(), Lane::Composite { .. })
+                            || super::readonly_numeric::scalar_children(frames, *f))
+                })
+            }) || aggregates.slot(parent.carrier()).is_some())
+            {
                 continue;
             }
             let mut child_boundaries = Vec::with_capacity(children.len());
@@ -225,13 +226,24 @@ impl Layout {
                 let returned_arrays = if let Some(proof) = proof
                     && let ResultRecipe::Frame { arrays, .. } = &proof.result
                 {
+                    // Parent-piece forwarding names child carrier homes. An
+                    // immutable capture has no such home; the child's own
+                    // numeric proof remains independently usable.
+                    if arrays.iter().any(|&(_, array)| {
+                        proof
+                            .arrays
+                            .get(array)
+                            .is_some_and(|a| a.physical().is_none())
+                    }) {
+                        break;
+                    }
                     arrays
                         .iter()
                         .map(|&(field, array)| {
                             proof
                                 .arrays
                                 .get(array)
-                                .map(|a| (field, a.field))
+                                .map(|a| (field, a.root))
                                 .ok_or("composition child result array is outside its proof")
                         })
                         .collect::<Result<Vec<_>, _>>()?
@@ -285,7 +297,7 @@ impl Layout {
                         })
                         && plan.activation_boundary() != Some(site as u32)
                         && matches!(block.terminator(), Term::Scalar(_))
-                        && eligible(plan, frames, calls, site))
+                        && eligible(plan, frames, aggregates, calls, site))
                     .then_some(site as u32)
                 })
                 .collect::<BTreeSet<_>>();
@@ -386,6 +398,7 @@ impl Layout {
                             plan,
                             &facts,
                             frames,
+                            aggregates,
                             calls,
                             visits,
                             retirements,
@@ -393,11 +406,11 @@ impl Layout {
                             &mut proof,
                         ) {
                             Ok(numeric) => segment.numeric = Some(numeric),
-                            Err(reason) => segment.rejection = Some(reason),
+                            Err(reason) => segment.rejection = Some(reason.into()),
                         }
                         segment.frame_plan = Some(proof);
                     }
-                    Err(reason) => segment.rejection = Some(reason),
+                    Err(reason) => segment.rejection = Some(reason.into()),
                 }
             }
             // Validate the complete graph partition independently of construction.
@@ -553,33 +566,48 @@ fn scalar_child_tree(
 fn eligible(
     plan: &Plan,
     frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
     calls: &[Option<NativePreparedLibraryCall>],
     site: usize,
 ) -> bool {
     let action = plan.blocks()[site].action();
+    if aggregates.action(site).is_some() {
+        return true;
+    }
     if let Some(frame) = frames.action(site) {
-        let flat = |value| {
+        let native_frame = |value| {
             frames.fields(value).is_some_and(|fields| {
-                fields
-                    .iter()
-                    .all(|f| !matches!(f.lane(), Lane::Composite { .. }))
+                fields.iter().all(|f| {
+                    !matches!(f.lane(), Lane::Tagged { .. })
+                        && (!matches!(f.lane(), Lane::Composite { .. })
+                            || super::readonly_numeric::scalar_children(frames, *f))
+                })
             })
         };
         return match frame.operation() {
             Frame::Pack { output } => {
-                flat(*output)
+                native_frame(*output)
                     && calls[site]
                         .as_ref()
                         .is_some_and(|c| c.supports_invariant_buffer_frame())
             }
-            Frame::Copy { source, output } => flat(*source) && flat(*output),
+            Frame::EnumPack { .. } | Frame::Observe { .. } => false,
+            Frame::Copy { source, output } => native_frame(*source) && native_frame(*output),
             Frame::Project {
                 source,
                 ordinal,
                 output,
             } => {
-                flat(*source)
+                native_frame(*source)
                     && (plan.values()[output.get() as usize].scalar_kind().is_some()
+                        || (native_frame(*output)
+                            && frames
+                                .fields(*source)
+                                .and_then(|fields| fields.get(*ordinal))
+                                .is_some_and(|field| {
+                                    matches!(field.lane(), Lane::Composite { .. })
+                                        && super::readonly_numeric::scalar_children(frames, *field)
+                                }))
                         || ((matches!(action, Action::Structural { .. })
                             || matches!(action, Action::LibraryCall { template, .. }
                                 if template.primitive() == Primitive::RecordFieldAccess

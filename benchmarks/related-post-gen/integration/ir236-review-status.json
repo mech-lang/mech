@@ -1,0 +1,42 @@
+{
+  "schema": "mech.related-post-gen.current-compiler-review.v1",
+  "status": "locally_qualified_draft_review_candidate",
+  "compiler": "67bdc1a3ec9e28accb2fd968f4292ca73d81b542",
+  "identity": "IR236/work115/ABI41/image9",
+  "incoming": "40bba44acd7a60e28e3378dab012ee9d50007c66",
+  "target_pr": 973,
+  "target_branch": "codex/level12-compression-consolidated",
+  "source_files": 2465,
+  "gpu_passed": 853,
+  "inherited_gpu_failures": [
+    "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+  ],
+  "ci_selected_names_passed": 358,
+  "scalar_controls_exact_IR235": 128,
+  "compression_controls_exact_IR235": 5,
+  "loader_fixtures_exact": 558,
+  "decoded_bundle_files_exact": 65,
+  "finite_denials_exact": 48,
+  "finite_small_full_successes_exact": 12,
+  "forged_frontier_rejections": 16,
+  "genuine_old_object_versions_rejected": [
+    235,
+    234
+  ],
+  "runtime_only_and_unmodified_generated_main_passed": true,
+  "scalar_only_passed": true,
+  "current_performance_cohort_run": true,
+  "cohort_outputs_exact": 463,
+  "profile_invocations_exact": 2000,
+  "unselected_metadata_compiler": "7471c892eed435ff16416c949db8408e4b3edea0",
+  "metadata_patch_applied": false,
+  "borrowed_json_applied": false,
+  "selected": false,
+  "selected_speed_checkpoint": "IR208",
+  "goal_complete": false,
+  "hosted_ci_green_claim": false,
+  "raw_archives_remotely_uploaded": false,
+  "local_archive_verified_files": 4955,
+  "updated_utc": "2026-11-07T02:01:15.495076+00:00"
+}

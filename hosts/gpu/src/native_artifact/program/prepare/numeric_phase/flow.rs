@@ -21,7 +21,7 @@ impl Flow<'_> {
     pub fn reaches(&self, target: usize, avoid: Option<(usize, usize)>, tag: Option<u64>) -> bool {
         self.reaches_with(target, avoid, tag, None)
     }
-    fn reaches_with(
+    pub(super) fn reaches_with(
         &self,
         target: usize,
         avoid: Option<(usize, usize)>,

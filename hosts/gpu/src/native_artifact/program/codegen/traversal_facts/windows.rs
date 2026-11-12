@@ -1,6 +1,19 @@
 //! Selected Boolean cases and one-based reads of the same immutable view.
 use super::*;
 
+pub(super) fn read_base(terms: &Terms, index: Id) -> Option<Id> {
+    let Expr::Arithmetic(Arithmetic::Add, a, b) = terms.terms[index] else {
+        return None;
+    };
+    if terms.value(a) == Some(1) {
+        Some(b)
+    } else if terms.value(b) == Some(1) {
+        Some(a)
+    } else {
+        None
+    }
+}
+
 impl State {
     pub(super) fn literal(&mut self, terms: &Terms, a: Id, b: Id, equal: bool) -> Option<bool> {
         if !self.assume(terms, if equal { Relation::Eq } else { Relation::Ne }, a, b)? {
@@ -30,18 +43,12 @@ impl State {
     }
 
     pub(super) fn readable(&self, terms: &Terms, index: Id, length: Id) -> bool {
-        let Expr::Arithmetic(Arithmetic::Add, a, b) = terms.terms[index] else {
-            return false;
-        };
-        let base = if terms.value(a) == Some(1) {
-            b
-        } else if terms.value(b) == Some(1) {
-            a
-        } else {
+        let Some(base) = read_base(terms, index) else {
             return false;
         };
         // The expression is mathematical only after its checked operation
         // succeeded or this visit proved its wrapping addition cannot wrap.
         self.truth(terms, Relation::Lt, base, length) == Some(true)
+            || self.upper(terms, base) < self.lower(terms, length)
     }
 }

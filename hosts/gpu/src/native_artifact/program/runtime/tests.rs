@@ -1007,7 +1007,7 @@ fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_en
 }
 #[test]
 fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-    assert_eq!(VERSION, 39);
+    assert_eq!(VERSION, 42);
     assert_eq!(
         crate::native_artifact::program::protocol::abi::PHASE_CAPTURE_TAIL,
         3
@@ -1126,11 +1126,7 @@ unsafe extern "C" fn observe_numeric_fuel(
                 && proof.writes()
             {
                 for array in &proof.arrays {
-                    let owner = ctx
-                        .state
-                        .buffer_frames
-                        .managed_owner(&metadata.buffer_frames, region.tail.carrier(), array.field)
-                        .unwrap();
+                    let owner = ctx.numeric_array_owner(array).unwrap().unwrap();
                     let ValueData::Matrix(matrix) = owner.data() else {
                         panic!("numeric fuel owner is not a matrix")
                     };

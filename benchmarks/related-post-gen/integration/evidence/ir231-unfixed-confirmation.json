@@ -1,0 +1,7 @@
+{
+  "inherited_miscompile_reproduced": true,
+  "production_compiler": "a7b1c9b269bd2d098293b3603dce415de4c9a2db",
+  "reproducer_test": "numeric_ordered_reduction_preserves_exhausted_payload_updates",
+  "binary_sha256": "549c611a110b3b3fbcd9f3de4044b5dd9d543ce7e1b1751b28cd5ba064834ae4",
+  "test_source_commit": "fc61145beddd6a9777e40e0469e224801bfe47c8"
+}

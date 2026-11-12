@@ -3,7 +3,7 @@ use super::*;
 
 pub(super) struct CallInputs {
     backing: NativeTypedStorage<Option<Value>>,
-    values: usize,
+    funded: usize,
 }
 
 impl CallInputs {
@@ -17,24 +17,29 @@ impl CallInputs {
             return Err(invalid("canonical arguments exceed admitted backing"));
         }
         Ok(Self {
-            // Retain the original allocation, initialization and memory floor.
-            // The unexposed tail stays None: no installer can access it through
-            // this type, and raw numeric words live in different typed backing.
-            backing: NativeTypedStorage::new_values(funded, limit, memory)?,
-            values,
+            // The same full claim and setup price remain in force; only the
+            // canonical-owner prefix is physically initialized. Raw numeric
+            // arguments retain their separate original typed word backing.
+            backing: NativeTypedStorage::new_values_compact(funded, values, limit, memory)?,
+            funded,
         })
     }
 
     pub(super) fn values(&self) -> &[Option<Value>] {
-        &self.backing.values()[..self.values]
+        self.backing.values()
     }
 
     pub(super) fn values_mut(&mut self) -> &mut [Option<Value>] {
-        &mut self.backing.values_mut()[..self.values]
+        self.backing.values_mut()
     }
 
     /// Conservative original header price, even for unexposed empty slots.
     pub(super) fn funded_len(&self) -> usize {
+        self.funded
+    }
+
+    #[cfg(test)]
+    pub(super) fn physical_len(&self) -> usize {
         self.backing.values().len()
     }
 }

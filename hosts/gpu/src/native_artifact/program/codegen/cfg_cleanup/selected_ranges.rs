@@ -7,6 +7,7 @@ use cranelift_codegen::ir::condcodes::{CondCode, IntCC};
 use cranelift_codegen::ir::{
     Block, Function, InstBuilder, InstructionData as Data, Opcode, Value, ValueDef,
 };
+use std::collections::BTreeMap;
 
 fn mask(f: &Function, value: Value) -> Option<u64> {
     let ty = f.dfg.value_type(value);
@@ -57,6 +58,7 @@ fn selected(
     value: Value,
     truth: bool,
     depth: usize,
+    known: &BTreeMap<Value, Range>,
     facts: &mut Vec<(Value, Range)>,
 ) {
     if depth == 0 {
@@ -81,20 +83,32 @@ fn selected(
         Data::Unary {
             opcode: Opcode::Uextend,
             arg,
-        } => return selected(f, arg, truth, depth - 1, facts),
+        } => return selected(f, arg, truth, depth - 1, known, facts),
+        Data::BinaryImm64 {
+            opcode: Opcode::BandImm,
+            arg,
+            imm,
+        } if (imm.bits() as u64 & maximum) == 1
+            && Facts::selected(f, known).canonical_boolean(arg) =>
+        {
+            // Direct Boolean lowering exposes a low-bit test. It is an
+            // identity only for a separately proved zero-or-one SSA word;
+            // an unrestricted odd word must never become the value one.
+            return selected(f, arg, truth, depth - 1, known, facts);
+        }
         Data::Binary {
             opcode: Opcode::Band,
             args,
         } if truth => {
-            selected(f, args[0], true, depth - 1, facts);
-            return selected(f, args[1], true, depth - 1, facts);
+            selected(f, args[0], true, depth - 1, known, facts);
+            return selected(f, args[1], true, depth - 1, known, facts);
         }
         Data::Binary {
             opcode: Opcode::Bor,
             args,
         } if !truth => {
-            selected(f, args[0], false, depth - 1, facts);
-            return selected(f, args[1], false, depth - 1, facts);
+            selected(f, args[0], false, depth - 1, known, facts);
+            return selected(f, args[1], false, depth - 1, known, facts);
         }
         Data::IntCompare { cond, args, .. } => {
             if let Some(bound) = constant(f, args[1]) {
@@ -130,7 +144,12 @@ fn selected(
     constrain(f, word, range, facts);
 }
 
-fn incoming(f: &Function, cfg: &ControlFlowGraph, block: Block) -> Vec<(Value, Range)> {
+pub(super) fn incoming(
+    f: &Function,
+    cfg: &ControlFlowGraph,
+    block: Block,
+    known: &BTreeMap<Value, Range>,
+) -> Vec<(Value, Range)> {
     if Some(block) == f.layout.entry_block() {
         return Vec::new();
     }
@@ -150,7 +169,7 @@ fn incoming(f: &Function, cfg: &ControlFlowGraph, block: Block) -> Vec<(Value, R
         return Vec::new();
     }
     let mut facts = Vec::new();
-    selected(f, *arg, block == yes, 16, &mut facts);
+    selected(f, *arg, block == yes, 16, known, &mut facts);
     facts
 }
 
@@ -190,7 +209,7 @@ pub(super) fn fold(
             }
             Step::Enter(block) => {
                 let mut undo = Vec::new();
-                for (value, range) in incoming(f, cfg, block) {
+                for (value, range) in incoming(f, cfg, block, &known) {
                     let current = known.get(&value).copied();
                     let range =
                         current.map_or(range, |a| Range(a.0.max(range.0), a.1.min(range.1)));

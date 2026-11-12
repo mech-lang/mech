@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-tests-20261106-v1/mech_gpu-tests",
+    "ordered_reduction",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 19.14802600000985
+}

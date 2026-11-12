@@ -75,7 +75,7 @@ impl Collector {
                     .read(*index as usize)
                     .zip(terms.interned.get(&Expr::ArrayLength(*array)).copied())
                     .is_some_and(|(index, length)| state.readable(terms, index, length)),
-                Step::Define(_) | Step::Replace => false,
+                Step::Define(_) | Step::Write { .. } | Step::Replace => false,
                 Step::Scalar(_) | Step::Assign { .. } | Step::Length { .. } | Step::Keep => true,
             };
         }
@@ -184,7 +184,13 @@ fn completion_does_not_get_totality_from_a_successful_replacement() {
     collector.action(
         &Terms::default(),
         &[Some(State::default())],
-        &Step::Replace,
+        &Step::Write {
+            array: 0,
+            index: 1,
+            incoming: 2,
+            width: 4,
+            preserved_arrays: Vec::new(),
+        },
         Term::Scalar(Branch::Jump(1)),
     );
     assert!(

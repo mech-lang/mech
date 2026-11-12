@@ -43,6 +43,7 @@ fn nested_numeric_phase_first_change_retires_only_dead_canonical_pins() {
                     .regions
                     .iter()
                     .filter_map(|r| r.numeric.as_ref().and_then(|p| p.phase.as_ref()))
+                    .filter(|phase| phase.loops.len() == 3)
                     .count(),
                 1
             );

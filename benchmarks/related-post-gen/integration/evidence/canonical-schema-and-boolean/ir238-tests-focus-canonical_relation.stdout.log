@@ -1,0 +1,6 @@
+
+running 1 test
+test native_artifact::program::prepare::readonly_numeric::versions::boolean_relations::tests::canonical_relation_requires_every_tuple_field_producer_and_refuses_raw_inputs ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 854 filtered out; finished in 0.09s
+

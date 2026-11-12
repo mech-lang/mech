@@ -1,0 +1,14 @@
+{
+  "verified_records": 2923,
+  "unique_blobs": 1177,
+  "compressed_bytes": 9933548,
+  "base_source_commit": "f361f91f298b87ebb9bee880930951fdf79b0d5f",
+  "primary_exact_outputs": 930,
+  "resource_exact_outputs": 203,
+  "qualification_edges_per_candidate": 31,
+  "selected": "IR331",
+  "new_latency_gain_established": false,
+  "R332_instructions": 29749600,
+  "R333_instructions": 29691144,
+  "allocation_bytes_unchanged": true
+}

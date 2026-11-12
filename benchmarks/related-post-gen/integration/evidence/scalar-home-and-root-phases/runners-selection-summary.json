@@ -1,0 +1,20 @@
+{
+  "after-4": {
+    "typed_ir": 241,
+    "numeric_functions": 53,
+    "code_bytes": 915836,
+    "stack_bytes": 1536,
+    "guarded_nodes": 44,
+    "mask_words": 21,
+    "all_original_artifact_catalog_frames_unchanged": true
+  },
+  "reuse-4": {
+    "typed_ir": 241,
+    "numeric_functions": 51,
+    "code_bytes": 884092,
+    "stack_bytes": 1552,
+    "guarded_nodes": 44,
+    "mask_words": 21,
+    "all_original_artifact_catalog_frames_unchanged": true
+  }
+}

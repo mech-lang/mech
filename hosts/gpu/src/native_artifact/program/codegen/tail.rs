@@ -1,6 +1,6 @@
 //! Native finite fuel for closed scalar/map Tail bodies, inside the same round.
 use crate::native_artifact::NativeCompileError;
-use crate::native_artifact::codegen::options::OptimizationOptions;
+use crate::native_artifact::codegen::options::{OptimizationOptions, OptimizationPass};
 use crate::native_artifact::compiler::{backend, offset};
 use crate::native_artifact::program::codegen::hooks::Hooks;
 use crate::native_artifact::program::prepare::tail::{Layout, Region};
@@ -8,7 +8,9 @@ use crate::native_artifact::program::prepare::tail::{Layout, Region};
 use crate::native_artifact::program::protocol::GlobalHelper;
 use crate::native_artifact::program::protocol::{OwnerOperation, abi as program_abi};
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
+use cranelift_codegen::ir::{
+    Block, InstBuilder, InstructionData, MemFlags, Opcode, Value, ValueDef, types,
+};
 use cranelift_frontend::FunctionBuilder;
 
 pub(in crate::native_artifact) fn flags(options: OptimizationOptions, region: &Region) -> MemFlags {
@@ -70,15 +72,13 @@ pub(in crate::native_artifact) fn numeric_exit_words(
         .result
         .frame()
         .filter(|_| mode == 0)
-        .and_then(|value| proof.fields(value))
-        .unwrap_or(&[]);
+        .and_then(|value| proof.frame(value));
     let mut words = proof
-        .fields(region.tail.carrier().get())
-        .unwrap()
-        .iter()
-        .chain(terminal.iter())
-        .flatten()
-        .copied()
+        .frame(region.tail.carrier().get())
+        .into_iter()
+        .flat_map(|frame| frame.scalar_slots())
+        .chain(terminal.into_iter().flat_map(|frame| frame.scalar_slots()))
+        .filter(|_| region.numeric_tree.is_none() || (mode != 0 && mode != 3))
         .collect::<Vec<_>>();
     if matches!(mode, 6 | 7) {
         for value in proof
@@ -137,7 +137,74 @@ pub(in crate::native_artifact) fn leave_at(
             b.ins()
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
+        if let Some(tree) = &region.numeric_tree {
+            if mode == 1 && (!proof.cold_scalars.is_empty() || !proof.cold_frames.is_empty()) {
+                // Header bailouts have a literal same-plan source site. Read
+                // only that header's live frame words; other virtual frames
+                // may not yet have a current value in this activation.
+                let value = b.func.dfg.resolve_aliases(site);
+                let ValueDef::Result(inst, 0) = b.func.dfg.value_def(value) else {
+                    return Err(backend("numeric cold scalar exit has a dynamic header"));
+                };
+                let InstructionData::UnaryImm {
+                    opcode: Opcode::Iconst,
+                    imm,
+                    ..
+                } = b.func.dfg.insts[inst]
+                else {
+                    return Err(backend("numeric cold scalar exit lacks a literal header"));
+                };
+                let header = usize::try_from(imm.bits())
+                    .map_err(|_| backend("numeric cold scalar header is out of range"))?;
+                for (_, bindings) in proof
+                    .cold_scalars
+                    .iter()
+                    .filter(|(site, _)| *site == header)
+                {
+                    for binding in bindings {
+                        let value = load(options, b, locals, region, shadow + binding.word)?;
+                        b.ins().store(
+                            MemFlags::new(),
+                            value,
+                            hooks.arguments,
+                            offset(2 + binding.word)?,
+                        );
+                    }
+                }
+            }
+            // Every cold boundary carries the sealed generated ancestry and
+            // exact debit projection. Inactive carrier words grant no authority;
+            // runtime reifies only the checked active path.
+            if mode != 3 {
+                for node in &tree.nodes {
+                    for binding in &node.scalar_bindings {
+                        let value = load(options, b, locals, region, shadow + binding.word)?;
+                        b.ins().store(
+                            MemFlags::new(),
+                            value,
+                            hooks.arguments,
+                            offset(2 + binding.word)?,
+                        );
+                    }
+                }
+            }
+            let settled = super::numeric_tree::settled_debits(
+                b,
+                tree,
+                options.enabled(OptimizationPass::ProjectedNumericDebits),
+                |b, slot| load(options, b, locals, region, shadow + slot),
+            )?;
+            for slot in tree.counters..tree.bank() {
+                let value = match settled.get(&slot) {
+                    Some(&value) => value,
+                    None => load(options, b, locals, region, shadow + slot)?,
+                };
+                b.ins()
+                    .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
+            }
+        }
     }
+    let normal_exit = mode == 0;
     let mode = b.ins().iconst(types::I64, mode);
     hooks.call_at(
         b,
@@ -146,6 +213,28 @@ pub(in crate::native_artifact) fn leave_at(
         [compute, comparison, mode],
         error,
     );
+    if normal_exit {
+        if let Some(proof) = &region.numeric {
+            if !proof.scalar_inputs.is_empty() || !proof.scalar_outputs.is_empty() {
+                let bank = b
+                    .ins()
+                    .load(types::I64, MemFlags::new(), hooks.arguments, 16);
+                let shadow = region
+                    .shadow
+                    .ok_or_else(|| backend("numeric export lacks scratch"))?;
+                let ready = b.ins().iconst(types::I64, 1);
+                for binding in proof.scalar_inputs.iter().chain(&proof.scalar_outputs) {
+                    let value = load(options, b, locals, region, shadow + binding.word)?;
+                    let at = binding
+                        .physical
+                        .checked_mul(2)
+                        .ok_or_else(|| backend("numeric scalar export offset overflows"))?;
+                    b.ins().store(MemFlags::new(), value, bank, offset(at)?);
+                    b.ins().store(MemFlags::new(), ready, bank, offset(at + 1)?);
+                }
+            }
+        }
+    }
     b.ins().jump(done, &[]);
     b.switch_to_block(done);
     Ok(())
@@ -189,18 +278,38 @@ pub(in crate::native_artifact) fn abort(
     Ok(())
 }
 pub(in crate::native_artifact) fn prepare(
-    options: OptimizationOptions,
+    controls: &crate::native_artifact::codegen::options::CompilationControls,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
+    fixed_keys: Option<&crate::native_artifact::program::prepare::fixed_key_loops::Layout>,
     site: usize,
     hooks: &Hooks,
     error: Block,
 ) -> Result<(), NativeCompileError> {
+    let options = controls.options();
     let Some(region) = layout.initializers.get(site).copied().flatten() else {
         return Ok(());
     };
     let region = &layout.regions[region];
+    if region
+        .map
+        .is_some_and(|owner| fixed_keys.is_some_and(|keys| keys.owner(owner).is_some()))
+        && !controls
+            .enabled(crate::native_artifact::codegen::options::OptimizationPass::FixedKeyMapLoops)
+    {
+        return Ok(());
+    }
+    if region.numeric_subtree()
+        && !controls
+            .enabled(crate::native_artifact::codegen::options::OptimizationPass::NumericTrees)
+    {
+        return Ok(());
+    }
+    if region.captures.is_some() && !controls.scalar_capture_selected(region.tail.header() as usize)
+    {
+        return Ok(());
+    }
     if region.numeric.is_some()
         && !options.enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
     {
@@ -300,7 +409,11 @@ fn prepare_region(
     hooks.call(b, site, GlobalHelper::decode(operation), [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     store(options, b, locals, region, region.words, ready)?;
-    let inputs = if let Some(proof) = &region.numeric {
+    let inputs = if let Some(proof) = region
+        .numeric
+        .as_ref()
+        .filter(|proof| proof.phase.is_some())
+    {
         (0..2)
             .chain(
                 proof
@@ -309,15 +422,21 @@ fn prepare_region(
                     .into_iter()
                     .map(|word| word + 2),
             )
+            .chain(2..2 + region.captures.as_ref().map_or(0, |p| p.words()))
             .collect::<Vec<_>>()
     } else {
-        (0..if region.map.is_some() { 4 } else { 2 }).collect()
+        (0..if region.map.is_some() {
+            4
+        } else {
+            2 + region.captures.as_ref().map_or(0, |p| p.words())
+        })
+            .collect()
     };
     for i in inputs {
         let word = b
             .ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, offset(i)?);
-        let destination = if region.numeric.is_some() && i >= 2 {
+        let destination = if (region.numeric.is_some() || region.captures.is_some()) && i >= 2 {
             region
                 .shadow
                 .ok_or_else(|| backend("numeric entry lacks scratch home"))?
@@ -398,6 +517,15 @@ pub(in crate::native_artifact) fn admission(
         return Ok(None);
     };
     let region = &layout.regions[region];
+    if region.numeric_tree.is_some() {
+        // The complete tree has its own generated CFG. Its successful return,
+        // finite fallback and error/first-write boundaries settle the same
+        // loan before any ordinary source block can execute. An ordinary join
+        // here would only suppress the independently proved smaller-piece
+        // entry fusion, including when the complete tree is ablated/declined.
+        // Runtime still rejects every ordinary callback with a live tree loan.
+        return Ok(None);
+    }
     let ready = load(options, b, locals, region, region.words)?;
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     let native = b.create_block();

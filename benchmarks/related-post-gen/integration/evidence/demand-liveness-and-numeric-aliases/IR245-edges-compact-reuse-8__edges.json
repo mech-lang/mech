@@ -1,0 +1,571 @@
+[
+  {
+    "fixture": "first-10",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/actual-first-10.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.012283,\"input_admission_seconds\":0.000026,\"json_read_and_parse_seconds\":0.000074125,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00125225,\"posts\":10,\"processing_plus_admission_seconds\":0.001224291,\"retained_bytes\":197558,\"sample\":0,\"seconds\":0.001198291,\"work\":1905299773}\n",
+    "stderr": "",
+    "diagnostic_elapsed_excluded_from_benchmark": true,
+    "exact_expected_output": true
+  },
+  {
+    "fixture": "first-100",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-100.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/actual-first-100.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008293375,\"input_admission_seconds\":0.000013,\"json_read_and_parse_seconds\":0.000097625,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000768,\"posts\":100,\"processing_plus_admission_seconds\":0.000764583,\"retained_bytes\":210869,\"sample\":0,\"seconds\":0.000751583,\"work\":7164110230}\n",
+    "stderr": "",
+    "diagnostic_elapsed_excluded_from_benchmark": true,
+    "exact_expected_output": true
+  },
+  {
+    "fixture": "first-500",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-500.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/actual-first-500.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008310625,\"input_admission_seconds\":0.000023542,\"json_read_and_parse_seconds\":0.000238584,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.001606666,\"posts\":500,\"processing_plus_admission_seconds\":0.00160275,\"retained_bytes\":269524,\"sample\":0,\"seconds\":0.001579208,\"work\":33145043265}\n",
+    "stderr": "",
+    "diagnostic_elapsed_excluded_from_benchmark": true,
+    "exact_expected_output": true
+  },
+  {
+    "fixture": "unicode-ties",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-unicode-ties.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/actual-unicode-ties.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008267292,\"input_admission_seconds\":9.75e-6,\"json_read_and_parse_seconds\":0.000066417,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000601041,\"posts\":8,\"processing_plus_admission_seconds\":0.000598125,\"retained_bytes\":196828,\"sample\":0,\"seconds\":0.000588375,\"work\":979128756}\n",
+    "stderr": "",
+    "diagnostic_elapsed_excluded_from_benchmark": true,
+    "exact_expected_output": true
+  },
+  {
+    "fixture": "empty-tags",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-empty-tags.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/actual-empty-tags.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008261917,\"input_admission_seconds\":9.167e-6,\"json_read_and_parse_seconds\":0.000070834,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000537167,\"posts\":8,\"processing_plus_admission_seconds\":0.0005338340000000001,\"retained_bytes\":196587,\"sample\":0,\"seconds\":0.000524667,\"work\":1354187671}\n",
+    "stderr": "",
+    "diagnostic_elapsed_excluded_from_benchmark": true,
+    "exact_expected_output": true
+  },
+  {
+    "fixture": "all-empty",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/all-empty/posts.json",
+    "source_posts_sha256": "48b65449ee26a8109b36fe3f33801c8993afd451631b624ae4e832499792d24c",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/all-empty/related_posts_rust.json",
+    "expected_sha256": "4472abb8295c2c4fdf5eac0624cb63340bc659bae73ba0caa814043e42529d44",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/all-empty/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/all-empty/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008286791,\"input_admission_seconds\":9.041e-6,\"json_read_and_parse_seconds\":0.000044,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000163583,\"posts\":7,\"processing_plus_admission_seconds\":0.000160457,\"retained_bytes\":196431,\"sample\":0,\"seconds\":0.000151416,\"work\":51737405}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "one-post",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/one-post/posts.json",
+    "source_posts_sha256": "7ee5ce0a5c6057e8d3eb443461efecd02fab6eaeb2e641e603bdd35150b81284",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/one-post/related_posts_rust.json",
+    "expected_sha256": "a19fa0ffe408b4c2c069666acf76a5773c562e46039017224ae38b7ff843dad4",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/one-post/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/one-post/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008277541,\"input_admission_seconds\":9.125e-6,\"json_read_and_parse_seconds\":0.000045458,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.0005495,\"posts\":1,\"processing_plus_admission_seconds\":0.000546417,\"retained_bytes\":196164,\"sample\":0,\"seconds\":0.000537292,\"work\":684460528}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "eight-tag-boundary",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/eight-tag-boundary/posts.json",
+    "source_posts_sha256": "fc245e0810464c56b13e99580ab823d32bc2e51df03e3e323e1f9f3546db0911",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/eight-tag-boundary/related_posts_rust.json",
+    "expected_sha256": "addb131c02863a4cea80de1036818a3e904e8f803ad815d75ef629b86809922b",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/eight-tag-boundary/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/eight-tag-boundary/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008272333,\"input_admission_seconds\":9.417e-6,\"json_read_and_parse_seconds\":0.000046375,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000579709,\"posts\":9,\"processing_plus_admission_seconds\":0.0005768339999999999,\"retained_bytes\":197823,\"sample\":0,\"seconds\":0.000567417,\"work\":1110793014}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "duplicate-utf8",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/duplicate-utf8/posts.json",
+    "source_posts_sha256": "8ac1769f76ec4aec63089df94174009f00ac40571abad0a4a510d67c7a2f7f87",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/duplicate-utf8/related_posts_rust.json",
+    "expected_sha256": "e4cc28ed7892bce334d883f3c95de8c266ebcfdab269cf69e2f0f3fd5aad8f43",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/duplicate-utf8/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/duplicate-utf8/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.0083215,\"input_admission_seconds\":8.792e-6,\"json_read_and_parse_seconds\":0.0000485,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00057375,\"posts\":12,\"processing_plus_admission_seconds\":0.000570792,\"retained_bytes\":197331,\"sample\":0,\"seconds\":0.000562,\"work\":1025286596}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "wrapped-u8",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrapped-u8/posts.json",
+    "source_posts_sha256": "a08298a21467d27cd1873e986b6bd76166b4ccbaa27d52b5535208c65e2c6953",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrapped-u8/related_posts_rust.json",
+    "expected_sha256": "2d73c412da9f2bcd421c55bb8e710b7fba58b7b2b5632bb0c05a46a6fafb9bcf",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrapped-u8/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrapped-u8/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00826275,\"input_admission_seconds\":9.333e-6,\"json_read_and_parse_seconds\":0.000045958,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000580459,\"posts\":7,\"processing_plus_admission_seconds\":0.0005772910000000001,\"retained_bytes\":198671,\"sample\":0,\"seconds\":0.000567958,\"work\":1873407700}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "wrap255",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap255/posts.json",
+    "source_posts_sha256": "1b25d59a2ee6d06d487219ca58075a174d4beb4f07c314ad2ae7653e6b061dd1",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap255/related_posts_rust.json",
+    "expected_sha256": "5fa23e9938aa6aaf2cc2162b457784327179c48314107bc9d6daf7915286c093",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap255/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap255/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008276583,\"input_admission_seconds\":9.25e-6,\"json_read_and_parse_seconds\":0.000040583,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.0005485,\"posts\":7,\"processing_plus_admission_seconds\":0.0005453330000000001,\"retained_bytes\":197371,\"sample\":0,\"seconds\":0.000536083,\"work\":1015266130}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "wrap256",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap256/posts.json",
+    "source_posts_sha256": "2157323219b29b6289217e499228f6e08501adf13a494dc645dcfd48b8ad713c",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap256/related_posts_rust.json",
+    "expected_sha256": "449edbac0ac7d00724f6a5b7c1bc5fbdde788a8bed9068ff0d0daffee1807743",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap256/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap256/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00851525,\"input_admission_seconds\":0.000010292,\"json_read_and_parse_seconds\":0.000041083,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000585875,\"posts\":7,\"processing_plus_admission_seconds\":0.000582917,\"retained_bytes\":197371,\"sample\":0,\"seconds\":0.000572625,\"work\":1015266130}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "wrap257",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap257/posts.json",
+    "source_posts_sha256": "5a36e2bb268d2d674f5d117f4644170d9b5a070e8ff1c8249e942808c29f86b2",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap257/related_posts_rust.json",
+    "expected_sha256": "d30cb3a833c0f9b4d7a58d51d29d185a592dc70d7d78106571318995267c05fc",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap257/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/wrap257/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008269875,\"input_admission_seconds\":0.000010042,\"json_read_and_parse_seconds\":0.000044667,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000763834,\"posts\":7,\"processing_plus_admission_seconds\":0.000760792,\"retained_bytes\":201991,\"sample\":0,\"seconds\":0.00075075,\"work\":7183572736}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "long-nine-tags",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/long-nine-tags/posts.json",
+    "source_posts_sha256": "f83050e9389635b99a61d6cd139c475fd5c1c3294296f154882f5657b311ab06",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/long-nine-tags/related_posts_rust.json",
+    "expected_sha256": "fa6d2da252d06ee02b6b7af798f9b15b3c0d36965f217ce2ec60539a2fb7baab",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/long-nine-tags/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/long-nine-tags/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008395833,\"input_admission_seconds\":9.25e-6,\"json_read_and_parse_seconds\":0.000045875,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000593584,\"posts\":9,\"processing_plus_admission_seconds\":0.000590083,\"retained_bytes\":198147,\"sample\":0,\"seconds\":0.000580833,\"work\":1143396310}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "large-vocabulary",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/large-vocabulary/posts.json",
+    "source_posts_sha256": "0962452e508882d564c9f43c53f98e7ffd86109475c0def015f83e895977eebc",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/large-vocabulary/related_posts_rust.json",
+    "expected_sha256": "79f9ba0b430411e86088e5ca013aff409d9c0b6ce7f88fb53a0af389e7b0fef7",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/large-vocabulary/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/large-vocabulary/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008229708,\"input_admission_seconds\":0.000010916,\"json_read_and_parse_seconds\":0.000054583,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.001537458,\"posts\":70,\"processing_plus_admission_seconds\":0.0015338329999999999,\"retained_bytes\":203545,\"sample\":0,\"seconds\":0.001522917,\"work\":8261119682}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "mixed-full-sparse",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/mixed-full-sparse/posts.json",
+    "source_posts_sha256": "623ecc7b1acfd805e4a40eb3e147569708d54a5ba402c10fccbfb059e58d5bfb",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/mixed-full-sparse/related_posts_rust.json",
+    "expected_sha256": "5d22c798f73e51c5a5f1ddf53ba2f6435311d22a3309ccaf04a4afa671f729f6",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/mixed-full-sparse/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/mixed-full-sparse/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008318541,\"input_admission_seconds\":9.166e-6,\"json_read_and_parse_seconds\":0.000047,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000532541,\"posts\":12,\"processing_plus_admission_seconds\":0.000529707,\"retained_bytes\":197154,\"sample\":0,\"seconds\":0.000520541,\"work\":1433190505}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "coverage-five-with-two-tag-fifth",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-five-with-two-tag-fifth/posts.json",
+    "source_posts_sha256": "14b69aab163030129d1f61883b6ba55207b9010c3fd4090d4ea70c46015fe031",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-five-with-two-tag-fifth/related_posts_rust.json",
+    "expected_sha256": "c8e6ac2b11c25bc61563534986ac8dac28b219f2769ad8e452f42628fa2fe90a",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-five-with-two-tag-fifth/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-five-with-two-tag-fifth/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.0083905,\"input_admission_seconds\":9.125e-6,\"json_read_and_parse_seconds\":0.000049833,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000543542,\"posts\":6,\"processing_plus_admission_seconds\":0.0005405410000000001,\"retained_bytes\":196672,\"sample\":0,\"seconds\":0.000531416,\"work\":1457894232}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "coverage-six-with-two-tag-extra",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-six-with-two-tag-extra/posts.json",
+    "source_posts_sha256": "6f45a2402d21455583da8dae7394543cd34a7c76a815dbfc7eac05dd1eef9d2a",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-six-with-two-tag-extra/related_posts_rust.json",
+    "expected_sha256": "2a4ab210e18ff088dec749910293dda03012d3c7779ba3e4c8bf6c3116464944",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-six-with-two-tag-extra/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-six-with-two-tag-extra/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008268833,\"input_admission_seconds\":9.959e-6,\"json_read_and_parse_seconds\":0.000047958,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00051875,\"posts\":7,\"processing_plus_admission_seconds\":0.000515626,\"retained_bytes\":196771,\"sample\":0,\"seconds\":0.000505667,\"work\":1354278507}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "coverage-all-six",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-all-six/posts.json",
+    "source_posts_sha256": "fa0a869e769c45863072bb0d62a413b1cc5982090f466da187169f66a81f5456",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-all-six/related_posts_rust.json",
+    "expected_sha256": "b09e5cff175918ebc5034b232a5cc21def3cb3473bd82928b8ad8941b5f193f0",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-all-six/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-all-six/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00828475,\"input_admission_seconds\":8.667e-6,\"json_read_and_parse_seconds\":0.000043458,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000491417,\"posts\":6,\"processing_plus_admission_seconds\":0.000488542,\"retained_bytes\":196689,\"sample\":0,\"seconds\":0.000479875,\"work\":814217962}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "coverage-permuted-ties",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-permuted-ties/posts.json",
+    "source_posts_sha256": "a6fdff26341ce7ae31f3662717f662ce9c467bf4f0993249e259220cd052a5a2",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-permuted-ties/related_posts_rust.json",
+    "expected_sha256": "a6a797c424f07ee981bac07120361de23b769e52002dbdb7f93c76c64d717ff0",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-permuted-ties/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-permuted-ties/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008316042,\"input_admission_seconds\":9.667e-6,\"json_read_and_parse_seconds\":0.000041584,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000573125,\"posts\":7,\"processing_plus_admission_seconds\":0.000570084,\"retained_bytes\":196771,\"sample\":0,\"seconds\":0.000560417,\"work\":899019766}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "utf8-key-prefix",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/utf8-key-prefix/posts.json",
+    "source_posts_sha256": "773d03c6ee3f27d9ba9da5a224bdaea74d92811eba125fdbf57953fe043d54d0",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/utf8-key-prefix/related_posts_rust.json",
+    "expected_sha256": "b6bd6e42890f9afc8cbe6c1fd67477bea71b5dfffd7e3a581b3c98d38539954a",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/utf8-key-prefix/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/utf8-key-prefix/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008363125,\"input_admission_seconds\":9e-6,\"json_read_and_parse_seconds\":0.000043916,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00058025,\"posts\":10,\"processing_plus_admission_seconds\":0.000577,\"retained_bytes\":197305,\"sample\":0,\"seconds\":0.000568,\"work\":1026081020}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "long-utf8-key-prefix",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/long-utf8-key-prefix/posts.json",
+    "source_posts_sha256": "fb8b2b3ca442958534ccf594fbb8c46c693001766ce461600d4409dc5c0a3085",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/long-utf8-key-prefix/related_posts_rust.json",
+    "expected_sha256": "7f265e4c8325666161cc38f336eff5c8c89c06f8d27e0d97260786299b0dfe10",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/long-utf8-key-prefix/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/long-utf8-key-prefix/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008324291,\"input_admission_seconds\":9.208e-6,\"json_read_and_parse_seconds\":0.000055083,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000567334,\"posts\":8,\"processing_plus_admission_seconds\":0.0005641660000000001,\"retained_bytes\":198087,\"sample\":0,\"seconds\":0.000554958,\"work\":961314366}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "coverage-mixed-disjoint",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-mixed-disjoint/posts.json",
+    "source_posts_sha256": "8df45026eb1fb0bd04030b02e177f63f32abfc0e910312a29300cad3ef09339d",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-mixed-disjoint/related_posts_rust.json",
+    "expected_sha256": "90f50ef216587e89d4819e50e96640e0ea6efa1401052399f8d554859ae03dbf",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-mixed-disjoint/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/coverage-mixed-disjoint/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008295583,\"input_admission_seconds\":9.667e-6,\"json_read_and_parse_seconds\":0.000048667,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000528916,\"posts\":12,\"processing_plus_admission_seconds\":0.000525667,\"retained_bytes\":197266,\"sample\":0,\"seconds\":0.000516,\"work\":1520898760}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-0",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-0/posts.json",
+    "source_posts_sha256": "331e4ca150d081f088c6dffac4b1e9858940d078e6849258a14cdf9ed398afcc",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-0/related_posts_rust.json",
+    "expected_sha256": "58354cb037a5d55a3122ed98d58b423dff75d503409b569ae0509590a540e018",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-0/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-0/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008249375,\"input_admission_seconds\":9.959e-6,\"json_read_and_parse_seconds\":0.000042958,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00060475,\"posts\":16,\"processing_plus_admission_seconds\":0.0006016260000000001,\"retained_bytes\":197884,\"sample\":0,\"seconds\":0.000591667,\"work\":1328530822}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-1",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-1/posts.json",
+    "source_posts_sha256": "e7e07acdf2b25dd1261435963a11b7a0eb5a1916cfbd001629c8d6bdf0a23849",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-1/related_posts_rust.json",
+    "expected_sha256": "066f936451f02bdb2a944fdaec721a3fc43d846f864185a419f64d08b830174d",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-1/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-1/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008273209,\"input_admission_seconds\":0.000010125,\"json_read_and_parse_seconds\":0.000043084,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.0006125,\"posts\":15,\"processing_plus_admission_seconds\":0.000609542,\"retained_bytes\":197676,\"sample\":0,\"seconds\":0.000599417,\"work\":1324115668}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-2",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-2/posts.json",
+    "source_posts_sha256": "578ce462db07ab13a7ce747b5e32d94f514d0aa8d6f098075d4c7438aa809970",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-2/related_posts_rust.json",
+    "expected_sha256": "ded40fc9adca4c3d1eca1beddb9d5b7ea4a268f3fb3534c6e75eb0e83bccb3b7",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-2/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-2/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008333417,\"input_admission_seconds\":9.875e-6,\"json_read_and_parse_seconds\":0.000047125,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000619042,\"posts\":15,\"processing_plus_admission_seconds\":0.000615792,\"retained_bytes\":198240,\"sample\":0,\"seconds\":0.000605917,\"work\":1334348882}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-3",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-3/posts.json",
+    "source_posts_sha256": "3ac7dd2662eb36639dfad93b44c3ff4aa950cb1b452d5f23924827a3bb2caac4",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-3/related_posts_rust.json",
+    "expected_sha256": "bdc01f34edc232a3684d3d538b38c43bbc02b7371f823cbdedff3aa62449e5de",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-3/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-3/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008271042,\"input_admission_seconds\":9.791e-6,\"json_read_and_parse_seconds\":0.000054334,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000619958,\"posts\":21,\"processing_plus_admission_seconds\":0.000616582,\"retained_bytes\":199042,\"sample\":0,\"seconds\":0.000606791,\"work\":1476537730}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-4",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-4/posts.json",
+    "source_posts_sha256": "a5ab05f9d1288acff3f86cd8b14680f3714b5cb67ea26176fcaa1961719516f7",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-4/related_posts_rust.json",
+    "expected_sha256": "33e1cacce66b18c10f313a8d506002bc0c62bd5c465c009d93f3cd2270109a02",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-4/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-4/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008259292,\"input_admission_seconds\":9.458e-6,\"json_read_and_parse_seconds\":0.000041666,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000596917,\"posts\":13,\"processing_plus_admission_seconds\":0.0005939579999999999,\"retained_bytes\":197784,\"sample\":0,\"seconds\":0.0005845,\"work\":1278932970}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-5",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-5/posts.json",
+    "source_posts_sha256": "85262b9cdb415ec1bc454fe9b2e3654e1deab6ce73a43d51185b8ad4780f440a",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-5/related_posts_rust.json",
+    "expected_sha256": "7755299eaf0868f06f910e8e420443a32eb26dac0bd14375ce24feef74423c0d",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-5/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-5/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008305375,\"input_admission_seconds\":9.25e-6,\"json_read_and_parse_seconds\":0.000044958,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000611625,\"posts\":9,\"processing_plus_admission_seconds\":0.0006083750000000001,\"retained_bytes\":197205,\"sample\":0,\"seconds\":0.000599125,\"work\":1193589740}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-6",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-6/posts.json",
+    "source_posts_sha256": "872042b10a0943a4d8108bd62cfb4d2270b645f84dae3457b9575fbdc5d63432",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-6/related_posts_rust.json",
+    "expected_sha256": "324dfee068e9408575b914ec219df58ede42ba6b3d2c8da62abff45a09c48c99",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-6/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-6/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008268792,\"input_admission_seconds\":9.833e-6,\"json_read_and_parse_seconds\":0.000042791,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000615333,\"posts\":22,\"processing_plus_admission_seconds\":0.000612417,\"retained_bytes\":198868,\"sample\":0,\"seconds\":0.000602584,\"work\":1474643626}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-7",
+    "source_posts": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-7/posts.json",
+    "source_posts_sha256": "fb40868cde25aae2917f05cce1c816b6eec7197e84bfe0d8ded9a3bd56fb9059",
+    "expected": "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-7/related_posts_rust.json",
+    "expected_sha256": "0849d7f4b3c054f3e422f9aea3a1a85f335a0c21f253708371d847907652d090",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/runner-aot",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/build/source.mec",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-7/posts.json",
+      "/private/tmp/mech-related-native-numeric-aliases-runners-20261107-v1/compact-reuse-8/edges/edges/random-7/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.008423334,\"input_admission_seconds\":0.000011625,\"json_read_and_parse_seconds\":0.000053208,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000648542,\"posts\":12,\"processing_plus_admission_seconds\":0.000645125,\"retained_bytes\":197603,\"sample\":0,\"seconds\":0.0006335,\"work\":1255281816}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  }
+]

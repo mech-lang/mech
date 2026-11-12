@@ -193,80 +193,75 @@ pub(super) fn gate(
     for address in &version.addresses {
         address.stage(b, words, shadow, proof);
     }
-    let mut enough = b.ins().iconst(types::I8, 1);
+    // All captures in this gate use the same current words. Build each
+    // required predicate once and combine only the predicates that remain.
+    let mut checks = BTreeSet::new();
+    let mut required = |check| checks.insert(check) && !facts.check(version.initialize, check);
+    let mut views = BTreeSet::new();
+    let mut predicates = Vec::new();
     for window in &version.captures {
-        let start = words.read(b, window.induction);
         let limit = words.read(b, window.limit);
-        let ordered = if facts.check(
-            version.initialize,
-            Check::Le(Operand::Word(window.induction), Operand::Word(window.limit)),
-        ) {
-            b.ins().iconst(types::I8, 1)
-        } else {
-            b.ins().icmp(IntCC::UnsignedLessThanOrEqual, start, limit)
-        };
-        let long = if facts.check(
-            version.initialize,
-            Check::Le(Operand::Constant(window.width), Operand::Word(window.limit)),
-        ) {
-            b.ins().iconst(types::I8, 1)
-        } else {
-            b.ins().icmp_imm(
+        if required(Check::Le(
+            Operand::Word(window.induction),
+            Operand::Word(window.limit),
+        )) {
+            let start = words.read(b, window.induction);
+            predicates.push(b.ins().icmp(IntCC::UnsignedLessThanOrEqual, start, limit));
+        }
+        if required(Check::Le(
+            Operand::Constant(window.width),
+            Operand::Word(window.limit),
+        )) {
+            predicates.push(b.ins().icmp_imm(
                 IntCC::UnsignedGreaterThanOrEqual,
                 limit,
                 window.width as i64,
-            )
-        };
-        let safe = if facts.check(
-            version.initialize,
-            Check::Addition {
-                word: window.limit,
-                extra: window.width,
-            },
-        ) {
-            b.ins().iconst(types::I8, 1)
-        } else {
-            b.ins().icmp_imm(
+            ));
+        }
+        if required(Check::Addition {
+            word: window.limit,
+            extra: window.width,
+        }) {
+            predicates.push(b.ins().icmp_imm(
                 IntCC::UnsignedLessThanOrEqual,
                 limit,
                 (u64::MAX - window.width) as i64,
-            )
-        };
+            ));
+        }
         let view = shadow + proof.view(window.array);
         let length = words.read(b, view + 1);
         let base = words.read(b, window.base);
-        let inside = if facts.check(
-            version.initialize,
-            Check::Le(Operand::Word(window.base), Operand::Length(window.array)),
-        ) {
-            b.ins().iconst(types::I8, 1)
-        } else {
-            b.ins().icmp(IntCC::UnsignedLessThanOrEqual, base, length)
-        };
-        let available = b.ins().isub(length, base);
-        let fits = if facts.check(
-            version.initialize,
-            Check::Fits {
-                array: window.array,
-                base: Some(window.base),
-                count: window.limit,
-                extra: 0,
-            },
-        ) {
-            b.ins().iconst(types::I8, 1)
-        } else {
-            b.ins()
-                .icmp(IntCC::UnsignedLessThanOrEqual, limit, available)
-        };
-        let rows = words.read(b, view + 2);
-        let columns = words.read(b, view + 3);
-        let row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
-        let column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
-        let flat = b.ins().bor(row, column);
-        for valid in [ordered, long, safe, inside, fits, flat] {
-            enough = b.ins().band(enough, valid);
+        if required(Check::Le(
+            Operand::Word(window.base),
+            Operand::Length(window.array),
+        )) {
+            predicates.push(b.ins().icmp(IntCC::UnsignedLessThanOrEqual, base, length));
+        }
+        if required(Check::Fits {
+            array: window.array,
+            base: Some(window.base),
+            count: window.limit,
+            extra: 0,
+        }) {
+            let available = b.ins().isub(length, base);
+            predicates.push(
+                b.ins()
+                    .icmp(IntCC::UnsignedLessThanOrEqual, limit, available),
+            );
+        }
+        // An immutable capture keeps the enclosing scope's current geometry.
+        if !facts.flat_arrays.contains(&window.array) && views.insert(window.array) {
+            let rows = words.read(b, view + 2);
+            let columns = words.read(b, view + 3);
+            let row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
+            let column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
+            predicates.push(b.ins().bor(row, column));
         }
     }
+    let enough = predicates
+        .into_iter()
+        .reduce(|left, right| b.ins().band(left, right))
+        .unwrap_or_else(|| b.ins().iconst(types::I8, 1));
     if let Some(funding) = &version.funding {
         funding.gate(b, words, state, shadow, enough, checked);
         return;

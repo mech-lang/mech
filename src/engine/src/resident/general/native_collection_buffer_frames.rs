@@ -293,7 +293,7 @@ impl NativePreparedLibraryCall {
         work: &NativeLibraryWorkBudget,
         coexistence: ResourceDemand,
     ) -> Result<(), InvokeError> {
-        self.admit_buffer_frame_inputs(inputs, None, limits, work, coexistence)
+        self.admit_buffer_frame_inputs(inputs, None, None, limits, work, coexistence)
     }
 
     pub fn admit_buffer_frame_words(
@@ -307,13 +307,42 @@ impl NativePreparedLibraryCall {
         if inputs.len() != words.len() {
             return Err(InvokeError::InvalidInput);
         }
-        self.admit_buffer_frame_inputs(inputs, Some(words), limits, work, coexistence)
+        self.admit_buffer_frame_inputs(inputs, Some(words), None, limits, work, coexistence)
+    }
+
+    /// A constructor-private borrowed map/keys witness supplies one real child
+    /// shape and logical footprint without fabricating a canonical Matrix.
+    pub fn admit_buffer_frame_borrowed_map_keys(
+        &self,
+        inputs: &[Option<Value>],
+        words: &[u64],
+        index: usize,
+        keys: &super::NativeBorrowedMapKeys,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<(), InvokeError> {
+        if inputs.len() != words.len()
+            || inputs.get(index).is_none_or(Option::is_some)
+            || words.get(index) != Some(&0)
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        self.admit_buffer_frame_inputs(
+            inputs,
+            Some(words),
+            Some((index, keys)),
+            limits,
+            work,
+            coexistence,
+        )
     }
 
     fn admit_buffer_frame_inputs(
         &self,
         inputs: &[Option<Value>],
         words: Option<&[u64]>,
+        borrowed: Option<(usize, &super::NativeBorrowedMapKeys)>,
         limits: MemoryBudgetLimits,
         work: &NativeLibraryWorkBudget,
         coexistence: ResourceDemand,
@@ -371,7 +400,7 @@ impl NativePreparedLibraryCall {
                 let _nodes = memory.reserve_nodes(nodes)?;
                 let mut meter = ResidentBudgetMeter::for_native_projection(work, limits)?;
                 let admitted = match (&geometry.admission, &geometry.shape) {
-                    (Some(recipe), Some(_)) => {
+                    (Some(recipe), Some(_)) if borrowed.is_none() => {
                         recipe.try_admit(self, inputs, words, &memory, &mut meter)?
                     }
                     _ => None,
@@ -379,38 +408,51 @@ impl NativePreparedLibraryCall {
                 let mut logical_bytes = admitted.unwrap_or(0);
                 if admitted.is_none() {
                     for (index, value) in inputs.iter().enumerate() {
-                        let footprint = match value {
-                            Some(value) => {
-                                if words.is_some_and(|bits| bits[index] != 0)
-                                    || value.schema_key() != self.input_keys[index]
-                                    || value.memory_budget_retained_bytes(&memory).is_none()
-                                {
-                                    return Err(InvokeError::InvalidInput);
+                        let footprint = if let Some((_, keys)) =
+                            borrowed.filter(|(i, _)| *i == index)
+                        {
+                            keys.validate_frame_child(self, index, work)?;
+                            // A current sealed immutable view replaces a repeated
+                            // String-matrix walk. This pays the actual fixed
+                            // witness inspection and retains logical node limits.
+                            meter.charge_compute_work(128)?;
+                            let footprint = keys.logical_footprint();
+                            meter.charge_retained_nodes(footprint.node_count)?;
+                            footprint
+                        } else {
+                            match value {
+                                Some(value) => {
+                                    if words.is_some_and(|bits| bits[index] != 0)
+                                        || value.schema_key() != self.input_keys[index]
+                                        || value.memory_budget_retained_bytes(&memory).is_none()
+                                    {
+                                        return Err(InvokeError::InvalidInput);
+                                    }
+                                    value
+                                        .validate_against(&self.schemas)
+                                        .map_err(|_| InvokeError::InvalidInput)?;
+                                    measure_borrowed_canonical_value_footprint(
+                                        &mut meter,
+                                        value,
+                                        &self.schemas,
+                                    )?
                                 }
-                                value
-                                    .validate_against(&self.schemas)
-                                    .map_err(|_| InvokeError::InvalidInput)?;
-                                measure_borrowed_canonical_value_footprint(
-                                    &mut meter,
-                                    value,
-                                    &self.schemas,
-                                )?
-                            }
-                            None => {
-                                let schema = &self.template.inputs()[index];
-                                if !schema.dimension_parameters().is_empty() {
-                                    return Err(InvokeError::InvalidInput);
+                                None => {
+                                    let schema = &self.template.inputs()[index];
+                                    if !schema.dimension_parameters().is_empty() {
+                                        return Err(InvokeError::InvalidInput);
+                                    }
+                                    let kind = NativeScalarKind::from_schema_body(schema.body())
+                                        .ok_or(InvokeError::InvalidInput)?;
+                                    let bits = words.ok_or(InvokeError::InvalidInput)?[index];
+                                    let value = NativeScalarValue::from_bits(kind, bits)
+                                        .ok_or(InvokeError::InvalidInput)?;
+                                    measure_native_scalar_frame_footprint(
+                                        &mut meter,
+                                        schema.body(),
+                                        value,
+                                    )?
                                 }
-                                let kind = NativeScalarKind::from_schema_body(schema.body())
-                                    .ok_or(InvokeError::InvalidInput)?;
-                                let bits = words.ok_or(InvokeError::InvalidInput)?[index];
-                                let value = NativeScalarValue::from_bits(kind, bits)
-                                    .ok_or(InvokeError::InvalidInput)?;
-                                measure_native_scalar_frame_footprint(
-                                    &mut meter,
-                                    schema.body(),
-                                    value,
-                                )?
                             }
                         };
                         logical_bytes = logical_bytes
@@ -418,16 +460,24 @@ impl NativePreparedLibraryCall {
                             .ok_or(InvokeError::InvalidInput)?;
                     }
                 }
+                let current_shape = |i: usize| {
+                    borrowed
+                        .filter(|(at, _)| *at == i)
+                        .map(|(_, keys)| keys.shape())
+                        .or_else(|| inputs[i].as_ref().map(Value::shape))
+                };
                 if let Some(recipe) = &geometry.shape {
-                    if !recipe.matches_current(|i| inputs[i].as_ref().map(Value::shape)) {
-                        recipe.validate(&self.schemas, |i| inputs[i].as_ref().map(Value::shape))?;
+                    if !recipe.matches_current(current_shape) {
+                        recipe.validate(&self.schemas, current_shape)?;
                     }
                 } else {
                     let children = inputs
                         .iter()
                         .enumerate()
                         .map(|(index, value)| {
-                            if let Some(value) = value {
+                            if let Some((_, keys)) = borrowed.filter(|(i, _)| *i == index) {
+                                Ok((keys.schema(), keys.shape().clone()))
+                            } else if let Some(value) = value {
                                 Ok((value.schema(), value.shape().clone()))
                             } else {
                                 let schema = contract.inputs[index].schema;
@@ -487,5 +537,9 @@ impl NativePreparedLibraryCall {
             .as_ref()
             .and_then(|geometry| geometry.shape.as_ref())
             .is_some_and(|recipe| recipe.is_identity_forwarding())
+            || self
+                .frame_composition
+                .as_ref()
+                .is_some_and(|recipe| recipe.is_identity_forwarding())
     }
 }

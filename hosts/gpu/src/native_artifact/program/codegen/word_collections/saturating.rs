@@ -39,7 +39,9 @@ impl State {
                 | U32ToU64 | U64ToU8 | U64ToU16 | U64ToU32,
                 [value],
             ) => *value,
-            (U64Sub | U32Sub, [E::Element, E::Uniform(threshold)]) => E::Difference(*threshold),
+            (U64Sub | U16Sub | U32Sub, [E::Element, E::Uniform(threshold)]) => {
+                E::Difference(*threshold)
+            }
             (U64Lt | U32Lt | U16Lt | U8Lt, [E::Element, E::Uniform(threshold)])
             | (U64Gt | U16Gt | U8Gt, [E::Uniform(threshold), E::Element]) => {
                 E::Less(*threshold, true)

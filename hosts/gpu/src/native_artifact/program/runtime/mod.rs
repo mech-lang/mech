@@ -32,6 +32,10 @@ use std::ffi::c_void;
 
 mod call_inputs;
 mod collections;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) use collections::numeric_map::Frame as NativeNumericMapFrame;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) use collections::uniform_words::Frame as NativeUniformFillFrame;
 
 mod lines;
 
@@ -137,6 +141,10 @@ pub struct NativeProgramExecutionReport {
     pub parallel_tasks: u64,
     /// Observed peak simultaneously executing workers, not admitted capacity.
     pub parallel_peak_workers: u64,
+    /// Generated numeric loans actually reconciled by worker entries.
+    pub parallel_numeric_regions: u64,
+    /// Exact generated compute debits committed by those worker loans.
+    pub parallel_numeric_work: u64,
 }
 fn invalid(reason: &'static str) -> NativeProgramExecutionError {
     NativeExecutionError::Descriptor { reason }.into()
@@ -289,6 +297,9 @@ mod histogram_query_observation_tests;
 mod histogram_observation_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
+mod compiled_histogram_tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
 mod text_join_observation_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
@@ -299,6 +310,8 @@ mod structural_projection_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod composition_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod matrix_map_keys_actual_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod numeric_shadow_tests;

@@ -10,12 +10,26 @@ use mech_engine::native_artifact::{
     NativeControlLoop, NativeIterationAction as Action, NativeMatchValue,
 };
 use std::collections::BTreeSet;
+#[path = "numeric_checked_updates.rs"]
+mod checked_updates;
+#[path = "producer_element_ranges.rs"]
+mod producer_element_ranges;
+
+pub(super) fn producer_reads(
+    code: CodePlan<'_>,
+    numeric: &Numeric,
+    controls: &crate::native_artifact::codegen::options::CompilationControls,
+) -> BTreeSet<(usize, usize, u32)> {
+    producer_element_ranges::derive(code, numeric, controls)
+}
 
 pub(super) fn derive(
     code: CodePlan<'_>,
     numeric: &Numeric,
     shadow: usize,
     checks: &traversal_facts::Queries,
+    floors: &[(usize, u64)],
+    reuse: bool,
 ) -> Proof {
     let CodePlan::Program(program) = code else {
         return Proof::default();
@@ -43,10 +57,25 @@ pub(super) fn derive(
             sites,
             outside: BTreeSet::new(),
         };
-        if let Some(proof) = analyze(code, numeric, shadow, &scope, &[], &[], None, checks) {
+        if let Some(proof) = analyze(
+            code,
+            numeric,
+            shadow,
+            &scope,
+            &[],
+            &[],
+            None,
+            checks,
+            floors,
+            reuse,
+        ) {
             facts.extend(proof);
         }
     }
+    // A loop-wide supported prefix intentionally ends at appends and opaque
+    // children. Fresh short chains may independently prove a later local
+    // read/add/write without carrying any fact through that boundary.
+    facts.extend_increment_writes(checked_updates::derive(code, numeric, shadow));
     facts
 }
 
@@ -66,6 +95,8 @@ pub(super) fn local(
         &[],
         None,
         &traversal_facts::Queries::new(),
+        &[],
+        false,
     )
 }
 
@@ -85,6 +116,8 @@ pub(super) fn captured_version(
         windows,
         None,
         &traversal_facts::Queries::new(),
+        &[],
+        false,
     )
 }
 
@@ -105,6 +138,8 @@ pub(super) fn complete(
         &[],
         Some(candidate),
         &traversal_facts::Queries::new(),
+        &[],
+        false,
     )
 }
 
@@ -117,6 +152,8 @@ fn analyze(
     captures: &[traversal_facts::CapturedWindow],
     candidate: Option<traversal_facts::Candidate>,
     checks: &traversal_facts::Queries,
+    floors: &[(usize, u64)],
+    reuse: bool,
 ) -> Option<Proof> {
     let CodePlan::Program(program) = code else {
         return None;
@@ -150,6 +187,17 @@ fn analyze(
                 array: *array,
                 output: *output as usize,
             }),
+            Some(Operation::Write {
+                array,
+                index,
+                incoming,
+            }) if matches!(numeric.arrays[*array].width, 1 | 2 | 4 | 8) => Some(Step::Write {
+                array: *array,
+                index: *index,
+                incoming: *incoming,
+                width: numeric.arrays[*array].width,
+                preserved_arrays: checked_updates::independent_carriers(numeric, *array),
+            }),
             Some(Operation::Write { .. }) => Some(Step::Replace),
             // Growth and unknown effects still need their original guards.
             Some(_) => None,
@@ -171,6 +219,14 @@ fn analyze(
         .as_ref()
         .is_some_and(|p| p.sites != scope.sites || p.outside != scope.outside);
     let scope = prefix.as_ref().unwrap_or(scope);
+    if !floors.is_empty() && std::env::var_os("MECH_TRAVERSAL_FLOOR_DIAGNOSTIC").is_some() {
+        eprintln!(
+            "TRAVERSAL_FLOOR header={} supported_sites={} order={} floors={floors:?}",
+            scope.header,
+            scope.sites.len(),
+            scope.order(code).is_some()
+        );
+    }
     let sites = BTreeSet::from_iter(scope.sites.iter().copied());
     // An outside edge may only enter at the fresh header. In particular no
     // skipped case selection or cold resume can inherit a predecessor fact.
@@ -184,6 +240,12 @@ fn analyze(
             .flatten()
             .any(|next| sites.contains(&(next as usize)) && next as usize != scope.header)
         {
+            if !floors.is_empty() && std::env::var_os("MECH_TRAVERSAL_FLOOR_DIAGNOSTIC").is_some() {
+                eprintln!(
+                    "TRAVERSAL_FLOOR header={} refusal=outside-entry site={site}",
+                    scope.header
+                );
+            }
             return None;
         }
     }
@@ -208,8 +270,12 @@ fn analyze(
     } else if let Some(candidate) = candidate {
         traversal_facts::with_completion(code, scope, &slots, windows, candidate, step)
     } else {
-        let mut proof = if windows.is_empty() {
-            traversal_facts::with_checks(code, scope, &slots, checks, step)?
+        let mut proof = if reuse && windows.is_empty() {
+            // Exact array provenance keeps each view stable throughout this
+            // traversal; growth/unknown effects terminate the supported prefix.
+            traversal_facts::with_reused_reads(code, scope, &slots, checks, floors, step)?
+        } else if windows.is_empty() {
+            traversal_facts::with_checks(code, scope, &slots, checks, floors, step)?
         } else {
             traversal_facts::with_windows(code, scope, &slots, None, windows, step)?
         };

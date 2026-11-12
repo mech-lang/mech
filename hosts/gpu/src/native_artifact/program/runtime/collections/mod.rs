@@ -20,6 +20,8 @@ use mech_engine::native_artifact::{
 
 mod allocation;
 mod ascii_facts;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod optional_metadata_tests;
 pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     values: Vec<T>,
     count: usize,
@@ -28,7 +30,10 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     allocation::exact_capacity(values, count, reason)
 }
 mod data;
-mod uniform_words;
+pub(in crate::native_artifact) mod numeric_map;
+mod row_blocks;
+pub(in crate::native_artifact) mod uniform_words;
+pub(in crate::native_artifact::program::runtime) mod utf8_read;
 mod word_collections;
 pub(in crate::native_artifact::program::runtime) fn source_count(
     value: &Value,
@@ -115,6 +120,9 @@ pub(in crate::native_artifact::program::runtime) struct State {
     string_spans: Vec<Option<string_span::Lane>>,
     string_maps: Vec<Option<string_map_entry::Lane>>,
     current: Option<u32>,
+    native_read: Option<Box<utf8_read::Storage>>,
+    native_fill: Option<Box<uniform_words::Loan>>,
+    native_map: Option<Box<numeric_map::Loan>>,
     live_bytes: u64,
     // Genuine query scalar roots stay in the arena after token cleanup.
     // Keep their complete bound in every later collection workspace peak.
@@ -246,7 +254,19 @@ impl State {
             return Ok(0);
         }
         add(
-            (size_of::<[u64; 6]>()
+            (if descriptor.metadata().utf8_reads.regions.is_empty() {
+                0
+            } else {
+                size_of::<Option<Box<utf8_read::Loan>>>()
+            } + if descriptor.metadata().uniform_word_collections.is_empty() {
+                0
+            } else {
+                size_of::<Option<Box<uniform_words::Loan>>>()
+            } + if descriptor.metadata().numeric_maps.regions.is_empty() {
+                0
+            } else {
+                size_of::<Option<Box<numeric_map::Loan>>>()
+            } + size_of::<[u64; 6]>()
                 + size_of::<Vec<Option<string_span::Lane>>>()
                 + size_of::<Vec<Option<string_map_entry::Lane>>>()) as u64
                 + if descriptor.metadata().window_regions.is_empty() {
@@ -298,10 +318,33 @@ impl State {
             plan.collections().len(),
             "collection builder metadata allocation",
         )?;
-        let string_spans =
-            allocation::metadata(plan.collections().len(), "String span metadata allocation")?;
+        // Absent projection categories have no executable selector/element
+        // action in this checked plan. Keep their original logical byte/node
+        // envelope and setup charge above, but construct no unused carriers.
+        // A present category keeps the complete collection-indexed lane;
+        // neither generated coordinates nor current-visit checks change.
+        let string_spans = allocation::metadata(
+            if plan
+                .collections()
+                .iter()
+                .any(|collection| collection.string_span_projection().is_some())
+            {
+                plan.collections().len()
+            } else {
+                0
+            },
+            "String span metadata allocation",
+        )?;
         let string_maps = allocation::metadata(
-            plan.collections().len(),
+            if plan
+                .collections()
+                .iter()
+                .any(|collection| collection.string_element_map_projection().is_some())
+            {
+                plan.collections().len()
+            } else {
+                0
+            },
             "String map projection metadata allocation",
         )?;
         Ok(Some(Self {
@@ -311,6 +354,9 @@ impl State {
             string_spans,
             string_maps,
             current: None,
+            native_read: None,
+            native_fill: None,
+            native_map: None,
             live_bytes: bytes,
             query_scalar_bytes: 0,
             query_scalar_nodes: 0,
@@ -324,6 +370,9 @@ impl State {
         }))
     }
     pub(in crate::native_artifact::program::runtime) fn is_complete(&self) -> bool {
+        if self.has_utf8_read() || self.native_fill.is_some() {
+            return false;
+        }
         self.current.is_none()
             && self.sources.iter().all(Option::is_none)
             && self.prepared_ranges.iter().all(Option::is_none)
@@ -756,6 +805,16 @@ impl State {
             }
             Action::CollectionPush { collection, value } => {
                 if matches!(
+                    plan.collections()[*collection as usize].kind(),
+                    ComprehensionKind::MatrixHorizontalBlocks { .. }
+                ) {
+                    if words != [0; 2] {
+                        return Err(invalid("row-block yield has an unexpected scalar payload"));
+                    }
+                    self.push_row_block(ctx, *collection, *value)?;
+                    return Ok(None);
+                }
+                if matches!(
                     plan.collections()[*collection as usize].result(),
                     mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(_)
                 ) {
@@ -1105,3 +1164,8 @@ impl State {
         Ok(())
     }
 }
+
+// Fallible exact-layout storage; each selecting owner prepays its layout.
+pub(in crate::native_artifact::program::runtime) use utf8_read::{
+    boxed as fixed_box, fixed as fixed_slice,
+};

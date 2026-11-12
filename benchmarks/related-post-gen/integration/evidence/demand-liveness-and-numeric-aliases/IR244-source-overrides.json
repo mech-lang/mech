@@ -1,0 +1,8 @@
+{
+  "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs": "IR244-source-hosts__gpu__src__native_artifact__codegen__control__report__mod.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": "IR244-source-hosts__gpu__src__native_artifact__program__codegen__cfg_cleanup__mod.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/dead_values/mod.rs": "IR244-source-hosts__gpu__src__native_artifact__program__codegen__cfg_cleanup__dead_values__mod.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/dead_values/tests.rs": "IR244-source-hosts__gpu__src__native_artifact__program__codegen__cfg_cleanup__dead_values__tests.rs.txt",
+  "hosts/gpu/src/native_artifact/program/image/identity.rs": "IR244-source-hosts__gpu__src__native_artifact__program__image__identity.rs.txt",
+  "hosts/gpu/src/native_artifact/program/runtime/composition_tests/fresh_traversals.rs": "IR244-source-hosts__gpu__src__native_artifact__program__runtime__composition_tests__fresh_traversals.rs.txt"
+}

@@ -144,6 +144,35 @@ impl CollectedValues {
             2,
         )
     }
+    pub(super) fn unsigned_capacity_pointer(&mut self) -> Result<u64, Error> {
+        Ok(match self {
+            Self::U8(v) => v.as_mut_ptr() as u64,
+            Self::U16(v) => v.as_mut_ptr() as u64,
+            Self::U32(v) => v.as_mut_ptr() as u64,
+            Self::U64(v) => v.as_mut_ptr() as u64,
+            Self::Draft(_) => return Err(invalid("native fill requires packed unsigned storage")),
+        })
+    }
+    /// Caller proves that generated stores initialized exactly the complete
+    /// capacity. A partially filled vector must retain its zero length.
+    pub(super) unsafe fn set_initialized_unsigned_len(
+        &mut self,
+        count: usize,
+    ) -> Result<(), Error> {
+        if self.len() != 0 || self.capacity() != count {
+            return Err(invalid(
+                "native fill initialized length exceeds its exact bank",
+            ));
+        }
+        match self {
+            Self::U8(v) => unsafe { v.set_len(count) },
+            Self::U16(v) => unsafe { v.set_len(count) },
+            Self::U32(v) => unsafe { v.set_len(count) },
+            Self::U64(v) => unsafe { v.set_len(count) },
+            Self::Draft(_) => return Err(invalid("native fill initialized nonunsigned storage")),
+        }
+        Ok(())
+    }
     pub(super) fn fill_unsigned(
         &mut self,
         count: usize,

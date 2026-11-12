@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/generate-standard-app",
+    "/private/tmp/mech-related-child-entry-facts-integration-compiler-20261107",
+    "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/managed-app"
+  ],
+  "exit": 0,
+  "seconds": 1.3220020839944482,
+  "stdout": "generated\n",
+  "stderr": "",
+  "compiler_source_sha256": "e0757f4724e4237faa11bcac16c2ee0b8866b7f4d13b13ef0989b60b0e4fad63"
+}

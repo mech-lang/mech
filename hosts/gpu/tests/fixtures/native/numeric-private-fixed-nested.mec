@@ -1,0 +1,29 @@
+// Fixed-buffer nested witness; ordinary funding and private ownership are distinct contracts.
++> sequence
++> bits
+<skip-state> := <{tree<[u16]> cache<[u32]> hash3<u64> hash4<u64> position<u64> base<u64> slide<u64> maximum<u64> nice<u64> remaining<u64> pointer<u64>}>
+put-tree(tree<[u16]>, position<u64>, value<u16>) => (out<[u16]>) :=
+  ~next := tree
+  next[bits/wrapping-add(position, 1u64)] = value
+  out := next.
+put-cache(cache<[u32]>, position<u64>, value<u32>) => (out<[u32]>) :=
+  ~next := cache
+  next[bits/wrapping-add(position, 1u64)] = value
+  out := next.
+<touch-state> := <{data<[u16]> remaining<u64>}>
+touch(data<[u16]>, position<u64>, cursor<u64>, limit<u64>) => (out<touch-state>) :=
+  more := cursor < limit
+  next := (more? | true => put-tree(data, position, 7u16) | false => data)
+  out := (more? | true => touch(next, position, cursor + 1u64, limit) | false => {data: data, remaining: cursor}).
+walk(tree<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, position<u64>, base<u64>, slide<u64>, maximum<u64>, nice<u64>, remaining<u64>, pointer<u64>) => (out<skip-state>) :=
+  more := remaining != 0u64
+  child := (more? | true => touch(tree, position, 0u64, 2u64) | false => {data: tree, remaining: 0u64})
+  next-tree := child.data
+  next-cache := (more? | true => put-cache(cache, position, 19u32) | false => cache)
+  out := (more?
+    | true => walk(next-tree, next-cache, bits/wrapping-add(hash3, 1u64), bits/wrapping-add(hash4, 3u64), bits/wrapping-add(position, 1u64), base, slide, maximum, nice, bits/wrapping-sub(remaining, 1u64), bits/wrapping-add(pointer, 1u64))
+    | false => {tree: tree, cache: cache, hash3: hash3, hash4: hash4, position: position, base: base, slide: slide, maximum: maximum, nice: nice, remaining: remaining, pointer: pointer}).
+execute(tree<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, position<u64>, base<u64>, slide<u64>, maximum<u64>, nice<u64>, remaining<u64>, pointer<u64>) => (out<([u16], [u32], u64, u64, u64, u64, u64, u64, u64, u64, u64)>) :=
+  result := walk(tree, cache, hash3, hash4, position, base, slide, maximum, nice, remaining, pointer)
+  out := (result.tree, result.cache, result.hash3, result.hash4, result.position, result.base, result.slide, result.maximum, result.nice, result.remaining, result.pointer).
+execute(tree<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, position<u64>, base<u64>, slide<u64>, maximum<u64>, nice<u64>, remaining<u64>, pointer<u64>)

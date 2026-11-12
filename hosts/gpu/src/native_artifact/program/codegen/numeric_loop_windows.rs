@@ -97,21 +97,51 @@ pub(super) fn derive(
                 .or_default()
                 .push(window);
         }
-        // Begin with a paired forward/reverse immutable window. This confines
-        // code duplication to a complete leaf computation with both benefits.
-        let Some(windows) = groups.into_values().find(|windows| {
+        // Preserve paired-window selection, then consider an ordinary forward
+        // traversal of immutable views. A current entry gate proves the whole
+        // interval; each visit must still select its original induction bound.
+        let paired = groups.values().find(|windows| {
             windows
                 .iter()
                 .any(|a| !a.reverse && windows.iter().any(|b| b.reverse && b.array != a.array))
-        }) else {
+        });
+        let forward = paired.is_none();
+        let Some(windows) = paired
+            .or_else(|| {
+                groups.values().find(|windows| {
+                    windows.iter().all(|window| {
+                        !window.reverse
+                            && !proof.arrays[window.array].writable
+                            && !proof.arrays[window.array].appends
+                    })
+                })
+            })
+            .cloned()
+        else {
             continue;
         };
-        let Some(mut facts) =
+        let Some(mut selected) =
             super::numeric_traversal::local(code, proof, shadow, &scope, &windows)
         else {
             continue;
         };
-        if facts.predicates.len() < 2 || facts.successors.len() < 2 {
+        if !forward && (selected.predicates.len() < 2 || selected.successors.len() < 2) {
+            continue;
+        }
+        // Do not duplicate a forward loop unless admission removes an actual
+        // source branch or read check that ordinary current facts cannot prove.
+        if forward
+            && !selected
+                .successors
+                .iter()
+                .any(|(site, target)| facts.successors.get(site) != Some(target))
+            && !scope.sites.iter().any(|&site| {
+                let Some(Operation::Read { array, index, .. }) = proof.action(site) else {
+                    return false;
+                };
+                selected.read(site, *array, *index) && !facts.read(site, *array, *index)
+            })
+        {
             continue;
         }
         let mut prepaid = None;
@@ -138,7 +168,7 @@ pub(super) fn derive(
                         &windows,
                     );
                 }
-                facts = complete;
+                selected = complete;
             }
         }
         versions.push(Version {
@@ -154,7 +184,7 @@ pub(super) fn derive(
             captures: Vec::new(),
             geometry: Vec::new(),
             addresses: Vec::new(),
-            facts,
+            facts: selected,
             prepaid,
             reduction,
             funding: None,
@@ -168,21 +198,23 @@ pub(super) fn derive(
 }
 
 impl Version {
-    pub fn queries(&self, proof: &Proof) -> std::collections::BTreeSet<Check> {
+    pub fn queries(&self, _proof: &Proof) -> std::collections::BTreeSet<Check> {
         let mut checks = std::collections::BTreeSet::new();
         for window in &self.windows {
             checks.insert(Check::Addition {
                 word: window.count,
                 extra: window.delta,
             });
-            if !proof.arrays[window.array].writable && !proof.arrays[window.array].appends {
-                checks.insert(Check::Fits {
-                    array: window.array,
-                    base: None,
-                    count: window.count,
-                    extra: window.adjustment(),
-                });
-            }
+            checks.insert(Check::Fits {
+                array: window.array,
+                base: None,
+                count: window.count,
+                extra: window.adjustment(),
+            });
+            checks.insert(Check::Le(
+                Operand::Word(window.count),
+                Operand::Constant(u32::MAX as u64),
+            ));
         }
         for window in &self.captures {
             checks.extend([
@@ -264,14 +296,16 @@ impl Version {
         facts: &Facts,
         state: usize,
         checked: Block,
-    ) {
+        accounted: bool,
+        carry_item: bool,
+    ) -> Option<Block> {
         if !self.geometry.is_empty() {
             geometry::gate(self, b, words, shadow, proof, checked);
-            return;
+            return None;
         }
         if !self.captures.is_empty() {
             captured::gate(self, b, words, shadow, proof, facts, state, checked);
-            return;
+            return None;
         }
         let mut enough = b.ins().iconst(cranelift_codegen::ir::types::I8, 1);
         for window in &self.windows {
@@ -317,12 +351,26 @@ impl Version {
             } else {
                 scalar
             };
-            prepaid.gate(b, words, state, shadow, enough, selected, checked);
+            if accounted {
+                prepaid.gate(b, words, state, shadow, enough, selected, checked);
+            } else {
+                prepaid.native_gate(b, words, enough, selected, checked);
+            }
             if let Some(reduction) = &self.reduction {
                 b.switch_to_block(selected);
-                reduction.emit(b, words, proof, shadow, scalar);
+                let completed = reduction.emit(
+                    b,
+                    words,
+                    proof,
+                    shadow,
+                    scalar,
+                    facts,
+                    self.initialize,
+                    carry_item,
+                );
+                return carry_item.then_some(completed);
             }
-            return;
+            return None;
         }
         b.ins().brif(
             enough,
@@ -331,5 +379,6 @@ impl Version {
             checked,
             &[],
         );
+        None
     }
 }

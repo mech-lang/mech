@@ -1,7 +1,7 @@
 //! SSA native parent pieces around the original managed/child boundaries.
 use super::{hooks::Hooks, numeric_words};
 use crate::native_artifact::codegen::{
-    common::{ssa_words::Words, terminators},
+    common::{aggregates, ssa_words::Words, terminators, word_access::SsaWords},
     control::{CodegenReport, plan::CodePlan},
     options::{CompilationControls, OptimizationPass},
 };
@@ -31,6 +31,10 @@ pub(in crate::native_artifact) struct Report {
     pub exit_argument_stores: usize,
     pub exit_boundaries: usize,
     pub successful_interior_helpers: usize,
+    pub scalar_input_loads: usize,
+    pub scalar_output_stores: usize,
+    pub runtime_scalar_path_walks: usize,
+    pub entry_callbacks: usize,
     pub total_ir_instructions: usize,
 }
 
@@ -41,6 +45,7 @@ fn end(
     locals: Value,
     shadow: usize,
     proof: &Layout,
+    frames: &crate::native_artifact::program::prepare::composition::frames::Layout,
     exit_words: &[usize],
     hooks: &Hooks,
     site: usize,
@@ -64,6 +69,38 @@ fn end(
     }
     let args = [mode, next, 0].map(|v| b.ins().iconst(types::I64, v as i64));
     hooks.call(b, site, GlobalHelper::NumericSegmentEnd, args, error);
+    if mode == 0 {
+        // Reborrow only after the helper's final Rust lane mutation has ended.
+        // The entry pointer is never reused across that mutable boundary.
+        let scalar_bank = if frames.scalar_bindings.is_empty() {
+            b.ins().iconst(types::I64, 0)
+        } else {
+            b.ins()
+                .load(types::I64, MemFlags::new(), hooks.arguments, 0)
+        };
+        let exit = frames
+            .exits
+            .iter()
+            .find(|e| e.from as usize == site && u64::from(e.to) == next)
+            .ok_or_else(|| backend("compiled scalar export lost its exact frontier"))?;
+        // The checked end has completed original retirement and managed-owner
+        // synchronization. No ordinary callback can observe the frame until
+        // these already funded native stores publish its scalar leaves.
+        let ready = b.ins().iconst(types::I64, 1);
+        for binding in &frames.scalar_bindings {
+            if exit.frames.iter().any(|value| value.get() == binding.value) {
+                let value = words.read(b, shadow + binding.word);
+                let payload = binding
+                    .physical
+                    .checked_mul(2)
+                    .ok_or_else(|| backend("scalar export offset overflows"))?;
+                b.ins()
+                    .store(MemFlags::new(), value, scalar_bank, offset(payload)?);
+                b.ins()
+                    .store(MemFlags::new(), ready, scalar_bank, offset(payload + 1)?);
+            }
+        }
+    }
     Ok(stores)
 }
 
@@ -78,6 +115,7 @@ pub(in crate::native_artifact) fn emit_entry(
     ordinary_blocks: &[Option<Block>],
     error: Block,
     reports: &mut CodegenReport,
+    fused_admission: bool,
 ) -> Result<usize, NativeCompileError> {
     if !controls.enabled(OptimizationPass::ScalarLoops) {
         return Ok(0);
@@ -108,15 +146,36 @@ pub(in crate::native_artifact) fn emit_entry(
     // The source visit has just published whether its ordinary scalar prefix
     // was funded. NumericSegmentBegin uses the same result word for selection;
     // preserve the prefix decision if its larger piece declines.
-    let scalar_ready = metadata
+    let scalar_group = metadata
         .map_admission
         .group(site)
-        .filter(|group| group.owner.is_none() && group.start() as usize == site)
-        .map(|_| b.ins().load(types::I64, MemFlags::new(), hooks.result, 0));
+        .is_some_and(|group| group.owner.is_none() && group.start() as usize == site);
+    let prior_scalar_ready = (scalar_group && !fused_admission)
+        .then(|| b.ins().load(types::I64, MemFlags::new(), hooks.result, 0));
     hooks.require_argument_words(b, proof.words, error);
     let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(b, site, GlobalHelper::NumericSegmentBegin, [zero; 3], error);
-    let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+    hooks.call(
+        b,
+        site,
+        if fused_admission {
+            GlobalHelper::AdmitNumericSegmentBegin
+        } else {
+            GlobalHelper::NumericSegmentBegin
+        },
+        [zero; 3],
+        error,
+    );
+    let result = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+    let scalar_ready = if fused_admission && scalar_group {
+        Some(b.ins().band_imm(result, 1))
+    } else {
+        prior_scalar_ready
+    };
+    let ready = if fused_admission {
+        b.ins().ushr_imm(result, 1)
+    } else {
+        result
+    };
     let selected = b.create_block();
     let ordinary = b.create_block();
     b.ins().brif(ready, selected, &[], ordinary, &[]);
@@ -124,6 +183,12 @@ pub(in crate::native_artifact) fn emit_entry(
     // Only the selected body is excluded from that visit's instruction audit.
     let entry_ir = b.func.dfg.num_insts() - before;
     b.switch_to_block(selected);
+    let scalar_bank = if frames.scalar_bindings.is_empty() {
+        b.ins().iconst(types::I64, 0)
+    } else {
+        b.ins()
+            .load(types::I64, MemFlags::new(), hooks.arguments, 0)
+    };
     let source_homes = numeric_words::source_slots(
         code,
         segment.sites.iter().map(|&s| s as usize),
@@ -142,12 +207,35 @@ pub(in crate::native_artifact) fn emit_entry(
     let register_words = slots.len();
     let words = Words::new_with(b, locals, code, slots, |b, slot| {
         if scratch.contains(&slot) {
-            Ok(Some(b.ins().load(
-                types::I64,
-                MemFlags::new(),
-                hooks.arguments,
-                offset(slot - shadow)?,
-            )))
+            if let Some(binding) = frames.scalar_bindings.iter().find(|binding| {
+                shadow + binding.word == slot && frames.inputs.contains(&binding.value)
+            }) {
+                let payload = binding
+                    .physical
+                    .checked_mul(2)
+                    .ok_or_else(|| backend("scalar import offset overflows"))?;
+                return Ok(Some(b.ins().load(
+                    types::I64,
+                    MemFlags::new(),
+                    scalar_bank,
+                    offset(payload)?,
+                )));
+            }
+            let relative = slot - shadow;
+            let views_end = frames.scalar_words + proof.views.len() * 4;
+            if relative >= frames.scalar_words && relative < views_end {
+                Ok(Some(b.ins().load(
+                    types::I64,
+                    MemFlags::new(),
+                    hooks.arguments,
+                    offset(relative)?,
+                )))
+            } else {
+                // Noninput virtual scalar lanes and reached-retirement flags
+                // have no host producer. Initialize their SSA definitions here;
+                // only witnessed views cross the argument bank at entry.
+                Ok(Some(b.ins().iconst(types::I64, 0)))
+            }
         } else {
             Ok(None)
         }
@@ -180,6 +268,20 @@ pub(in crate::native_artifact) fn emit_entry(
             .find(|(s, _)| *s == source)
             .map(|(_, a)| a)
         {
+            Some(Operation::Aggregate) => {
+                let layout = &program.metadata().scalar_aggregates;
+                let action = layout
+                    .action(source)
+                    .ok_or_else(|| backend("parent numeric aggregate lost its shared action"))?;
+                aggregates::emit(
+                    b,
+                    &mut SsaWords(&words),
+                    layout,
+                    action,
+                    failure,
+                    &mut aggregates::CheckedGuards,
+                )?;
+            }
             Some(Operation::Frame) => {
                 numeric_words::frame_words(b, &words, shadow, code, source, &frames.frames)?
             }
@@ -210,6 +312,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     locals,
                     shadow,
                     proof,
+                    frames,
                     &exit_words,
                     hooks,
                     source,
@@ -250,12 +353,13 @@ pub(in crate::native_artifact) fn emit_entry(
                     template.inputs()[0].body(),
                     |b| words.read(b, view),
                 )?;
-                let value = b.ins().load(ty, MemFlags::new(), address, 0);
-                let value = if width < 8 {
-                    b.ins().uextend(types::I64, value)
-                } else {
-                    value
-                };
+                let value = numeric_words::load_unsigned_word(
+                    b,
+                    ty,
+                    numeric_words::guarded_load_flags(controls.options()),
+                    address,
+                    0,
+                );
                 words.write(b, *output as usize, value);
                 typed_loads.push((source, width));
             }
@@ -294,6 +398,8 @@ pub(in crate::native_artifact) fn emit_entry(
             b,
             &words,
             code,
+            source,
+            controls.options(),
             code.blocks()[source].terminator(),
             failure,
             |next| {
@@ -312,6 +418,7 @@ pub(in crate::native_artifact) fn emit_entry(
             locals,
             shadow,
             proof,
+            frames,
             &exit_words,
             hooks,
             source,
@@ -332,6 +439,7 @@ pub(in crate::native_artifact) fn emit_entry(
             locals,
             shadow,
             proof,
+            frames,
             &exit_words,
             hooks,
             from as usize,
@@ -391,6 +499,25 @@ pub(in crate::native_artifact) fn emit_entry(
         exit_argument_stores,
         exit_boundaries,
         successful_interior_helpers: calls,
+        scalar_input_loads: frames
+            .scalar_bindings
+            .iter()
+            .filter(|b| frames.inputs.contains(&b.value))
+            .count(),
+        scalar_output_stores: frames
+            .exits
+            .iter()
+            .map(|exit| {
+                frames
+                    .scalar_bindings
+                    .iter()
+                    .filter(|binding| exit.frames.iter().any(|value| value.get() == binding.value))
+                    .count()
+                    * 2
+            })
+            .sum(),
+        runtime_scalar_path_walks: 0,
+        entry_callbacks: if fused_admission { 1 } else { 2 },
         total_ir_instructions,
     });
     Ok(total_ir_instructions - entry_ir - decline_ir)

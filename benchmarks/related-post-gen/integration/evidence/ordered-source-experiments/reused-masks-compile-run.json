@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-opt-20261106-v1/compiler",
+    "/private/tmp/mech-related-ordered-subsets-reused-masks-source-20261106-v1/source.mec",
+    "/private/tmp/mech-related-ordered-subsets-reused-masks-source-20261106-v1/build"
+  ],
+  "exit": 0,
+  "seconds": 4.537323166849092,
+  "stdout": "{\"code_bytes\":870360,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1536}\n",
+  "stderr": ""
+}

@@ -1,6 +1,71 @@
 use super::*;
 
 #[test]
+fn checked_increment_requires_current_cell_surviving_read_and_successful_addition() {
+    let mut terms = Terms::default();
+    let index = terms.intern(Expr::Initial(0)).unwrap();
+    let other = terms.intern(Expr::Initial(1)).unwrap();
+    let old = terms.intern(Expr::Definition(10, 2)).unwrap();
+    let one = terms.constant(1).unwrap();
+    let added = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, old, one))
+        .unwrap();
+    let wrapped = terms
+        .intern(Expr::Wrapping(Arithmetic::Add, old, one))
+        .unwrap();
+    let mut state = State::default();
+    state
+        .words
+        .extend([(0, index), (1, other), (2, old), (3, index), (4, added)]);
+    state.remember_read(0, index, 10, 2, old).unwrap();
+    assert!(state.checked_increment(&terms, 0, 3, 4).is_none());
+    state.successful.insert((Arithmetic::Add, old, one));
+    assert_eq!(
+        state.checked_increment(&terms, 0, 3, 4).unwrap().read_site,
+        10
+    );
+    assert!(state.checked_increment(&terms, 1, 3, 4).is_none());
+    assert!(state.checked_increment(&terms, 0, 1, 4).is_none());
+    state.words.insert(4, wrapped);
+    assert!(state.checked_increment(&terms, 0, 3, 4).is_none());
+    state.words.insert(4, old);
+    assert!(state.checked_increment(&terms, 0, 3, 4).is_none());
+    state.words.insert(4, added);
+    state
+        .words
+        .insert(2, terms.intern(Expr::Definition(11, 2)).unwrap());
+    assert!(state.checked_increment(&terms, 0, 3, 4).is_none());
+}
+
+#[test]
+fn checked_increment_merges_require_the_same_checked_read_on_every_path() {
+    let mut terms = Terms::default();
+    let index = terms.intern(Expr::Initial(0)).unwrap();
+    let old = terms.intern(Expr::Definition(10, 1)).unwrap();
+    let one = terms.constant(1).unwrap();
+    let added = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, old, one))
+        .unwrap();
+    let mut initial = State::default();
+    initial.words.extend([(0, index), (1, old), (2, added)]);
+    initial.successful.insert((Arithmetic::Add, old, one));
+    initial.remember_read(0, index, 10, 1, old).unwrap();
+    let mut same = initial.clone();
+    same.merge(&initial, 20, &mut terms).unwrap();
+    assert!(same.checked_increment(&terms, 0, 0, 2).is_some());
+    for different_read in [false, true] {
+        let mut other = initial.clone();
+        other.checked_reads.clear();
+        if different_read {
+            other.remember_read(0, index, 12, 1, old).unwrap();
+        }
+        let mut joined = initial.clone();
+        joined.merge(&other, 20, &mut terms).unwrap();
+        assert!(joined.checked_increment(&terms, 0, 0, 2).is_none());
+    }
+}
+
+#[test]
 fn selected_normalized_booleans_retain_only_logically_forced_operands() {
     let mut terms = Terms::default();
     let a = terms.intern(Expr::Initial(0)).unwrap();
@@ -235,6 +300,57 @@ fn whole_windows_need_the_current_selected_interval_and_exact_views() {
 }
 
 #[test]
+fn zero_offset_windows_need_selected_current_bounds_and_mathematical_reads() {
+    let mut terms = Terms::default();
+    let k = terms.intern(Expr::Initial(0)).unwrap();
+    let count = terms.intern(Expr::Initial(1)).unwrap();
+    let other = terms.intern(Expr::Initial(2)).unwrap();
+    let one = terms.constant(1).unwrap();
+    let length = terms.intern(Expr::ArrayLength(0)).unwrap();
+    let wrong_view = terms.intern(Expr::ArrayLength(1)).unwrap();
+    let index = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, k, one))
+        .unwrap();
+    let ring = terms
+        .intern(Expr::Wrapping(Arithmetic::Add, k, one))
+        .unwrap();
+    let fresh = terms.intern(Expr::Definition(7, 0)).unwrap();
+    let changed_index = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, fresh, one))
+        .unwrap();
+    let mut state = State::default();
+    assert_eq!(state.discover_window(&terms, k, length), None);
+    state.assume(&terms, Relation::Lt, k, count).unwrap();
+    let invalid_reverse = terms
+        .intern(Expr::Wrapping(Arithmetic::Sub, length, k))
+        .unwrap();
+    assert_eq!(state.discover_window(&terms, invalid_reverse, length), None);
+    let window = state.discover_window(&terms, k, length).unwrap();
+    assert_eq!(
+        window,
+        Window {
+            induction: 0,
+            count: 1,
+            array: 0,
+            delta: 0,
+            reverse: false
+        }
+    );
+    assert_eq!(window.adjustment(), 0);
+    assert!(!state.readable(&terms, index, length));
+    state.windows.push(window);
+    assert!(state.readable(&terms, index, length));
+    assert!(!state.readable(&terms, index, wrong_view));
+    assert!(!state.readable(&terms, ring, length));
+    assert!(!state.readable(&terms, changed_index, length));
+    let mut unselected = State::default();
+    unselected.windows.push(window);
+    assert!(!unselected.readable(&terms, index, length));
+    unselected.assume(&terms, Relation::Lt, k, other).unwrap();
+    assert!(!unselected.readable(&terms, index, length));
+}
+
+#[test]
 fn whole_window_admission_implies_initialized_one_based_indices() {
     let check = |count: u64, delta: u64, length: u64, reverse: bool, k: u64| {
         let Some(end) = count.checked_add(delta) else {
@@ -259,7 +375,10 @@ fn whole_window_admission_implies_initialized_one_based_indices() {
     };
     for reverse in [false, true] {
         for count in 0..16 {
-            for delta in 1..8 {
+            for delta in 0..8 {
+                if reverse && delta == 0 {
+                    continue;
+                }
                 for length in 0..40 {
                     for k in 0..count {
                         check(count, delta, length, reverse, k);
@@ -267,7 +386,10 @@ fn whole_window_admission_implies_initialized_one_based_indices() {
                 }
             }
         }
-        for delta in [1, 3, 258, u64::MAX] {
+        for delta in [0, 1, 3, 258, u64::MAX] {
+            if reverse && delta == 0 {
+                continue;
+            }
             for count in [0, 1, u64::MAX - delta, u64::MAX] {
                 for length in [0, 1, u64::MAX - 1, u64::MAX] {
                     check(count, delta, length, reverse, 0);
@@ -508,4 +630,176 @@ fn finite_limits_decline_without_turning_unknown_into_proof() {
             .assume(&terms, Relation::Lt, 0, MAX_RELATIONS + 1)
             .is_none()
     );
+}
+
+#[test]
+fn checked_match_subtraction_retains_its_selected_interval() {
+    let mut terms = Terms::default();
+    let value = terms.intern(Expr::Bounded(1, 0, 65535)).unwrap();
+    let three = terms.constant(3).unwrap();
+    let maximum = terms.constant(258).unwrap();
+    let two = terms.constant(2).unwrap();
+    let mut state = State::default();
+    state.assume(&terms, Relation::Le, three, value).unwrap();
+    state.assume(&terms, Relation::Le, value, maximum).unwrap();
+    let count = terms
+        .intern(Expr::Arithmetic(Arithmetic::Sub, value, two))
+        .unwrap();
+    assert_eq!(
+        (state.lower(&terms, count), state.upper(&terms, count)),
+        (1, 256)
+    );
+    state.words.insert(0, count);
+    assert_eq!(
+        Check::Addition { word: 0, extra: 3 }.holds(&state, &mut terms),
+        Some(true)
+    );
+    let ring = terms
+        .intern(Expr::Wrapping(Arithmetic::Sub, value, two))
+        .unwrap();
+    assert_eq!(
+        (state.lower(&terms, ring), state.upper(&terms, ring)),
+        (0, u64::MAX)
+    );
+    assert_eq!(State::default().upper(&terms, count), 65533);
+}
+
+#[test]
+fn phase_floor_proves_only_the_exact_current_window() {
+    let mut terms = Terms::default();
+    let count = terms.intern(Expr::Bounded(1, 0, 256)).unwrap();
+    let length = terms.intern(Expr::ArrayLength(0)).unwrap();
+    let floor = terms.constant(259).unwrap();
+    let mut state = State::default();
+    state.words.insert(0, count);
+    state.assume(&terms, Relation::Le, floor, length).unwrap();
+    assert_eq!(state.lower(&terms, length), 259);
+    assert_eq!(
+        Check::Fits {
+            array: 0,
+            base: None,
+            count: 0,
+            extra: 3
+        }
+        .holds(&state, &mut terms),
+        Some(true)
+    );
+    assert_eq!(
+        Check::Fits {
+            array: 0,
+            base: None,
+            count: 0,
+            extra: 4
+        }
+        .holds(&state, &mut terms),
+        Some(false)
+    );
+    let three = terms.constant(3).unwrap();
+    let required = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, count, three))
+        .unwrap();
+    assert_eq!(state.upper(&terms, required), 259);
+    let other_length = terms.intern(Expr::ArrayLength(1)).unwrap();
+    assert_eq!(state.lower(&terms, other_length), 0);
+    let mut missing = state.clone();
+    missing.merge(&State::default(), 8, &mut terms).unwrap();
+    assert_eq!(missing.lower(&terms, length), 0);
+    state
+        .words
+        .insert(0, terms.intern(Expr::Initial(0)).unwrap());
+    assert_eq!(
+        Check::Addition { word: 0, extra: 3 }.holds(&state, &mut terms),
+        Some(false)
+    );
+}
+
+#[test]
+fn checked_interval_edges_saturate_conservatively_without_ring_proofs() {
+    let mut terms = Terms::default();
+    let low = terms.intern(Expr::Initial(0)).unwrap();
+    let high = terms.constant(u64::MAX).unwrap();
+    let one = terms.constant(1).unwrap();
+    let mut state = State::default();
+    state.assume(&terms, Relation::Lt, one, low).unwrap();
+    assert_eq!(state.lower(&terms, low), 2);
+    let sum = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, low, high))
+        .unwrap();
+    assert_eq!(state.upper(&terms, sum), u64::MAX);
+    assert!(!state.safe(&terms, Arithmetic::Add, low, high));
+    let difference = terms
+        .intern(Expr::Arithmetic(Arithmetic::Sub, low, high))
+        .unwrap();
+    assert_eq!(state.lower(&terms, difference), 0);
+    let changed = terms.intern(Expr::Definition(9, 0)).unwrap();
+    assert_eq!(state.lower(&terms, changed), 0);
+}
+
+#[test]
+fn shared_and_deep_checked_arithmetic_use_the_bounded_term_dag_once() {
+    let mut terms = Terms::default();
+    let mut shared = terms.intern(Expr::Bounded(1, 0, 1)).unwrap();
+    for _ in 0..96 {
+        shared = terms
+            .intern(Expr::Arithmetic(Arithmetic::Add, shared, shared))
+            .unwrap();
+    }
+    let state = State::default();
+    assert_eq!(state.upper(&terms, shared), u64::MAX);
+    assert_eq!(state.lower(&terms, shared), 0);
+    let one = terms.constant(1).unwrap();
+    let mut deep = terms.intern(Expr::Bounded(2, 0, 258)).unwrap();
+    for _ in 0..64 {
+        deep = terms
+            .intern(Expr::Arithmetic(Arithmetic::Sub, deep, one))
+            .unwrap();
+    }
+    assert_eq!(state.upper(&terms, deep), 194);
+}
+
+#[test]
+fn masked_one_based_access_uses_only_its_current_guarded_length_floor() {
+    let mut terms = Terms::default();
+    let one = terms.constant(1).unwrap();
+    let floor = terms.constant(16).unwrap();
+    let length = terms.intern(Expr::ArrayLength(0)).unwrap();
+    let other_length = terms.intern(Expr::ArrayLength(1)).unwrap();
+    let base = terms.intern(Expr::Bounded(5, 6, 15)).unwrap();
+    let index = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, base, one))
+        .unwrap();
+    let unknown = State::default();
+    assert!(!unknown.readable(&terms, index, length));
+    let mut state = State::default();
+    state.assume(&terms, Relation::Le, floor, length).unwrap();
+    assert!(state.readable(&terms, index, length));
+    assert!(!state.readable(&terms, index, other_length));
+    let too_high = terms.intern(Expr::Bounded(7, 8, 16)).unwrap();
+    let outside = terms
+        .intern(Expr::Arithmetic(Arithmetic::Add, too_high, one))
+        .unwrap();
+    assert!(!state.readable(&terms, outside, length));
+    let wrapped = terms
+        .intern(Expr::Wrapping(Arithmetic::Add, base, one))
+        .unwrap();
+    assert!(!state.readable(&terms, wrapped, length));
+    let zero = terms.constant(0).unwrap();
+    assert!(!state.readable(&terms, zero, length));
+}
+
+#[test]
+fn masked_products_bound_indices_without_assuming_wrapping_products_fit() {
+    use crate::native_artifact::program::prepare::word_collections::bounds::Range;
+    for max in [0, 1, 7, 32767, 65535, u64::MAX] {
+        for factor in [0, 1, 2, u64::MAX] {
+            let bound = Range(0, max).wrapping_mul(Range(factor, factor));
+            for value in [0, max / 2, max] {
+                assert!(value.wrapping_mul(factor) <= bound.1);
+            }
+            if max.checked_mul(factor).is_none() {
+                assert_eq!(bound.1, u64::MAX);
+            }
+        }
+    }
+    assert_eq!(Range(0, 65535).wrapping_mul(Range(2, 2)), Range(0, 131070));
 }

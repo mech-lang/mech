@@ -1,0 +1,98 @@
+{
+  "after-4": {
+    "source_artifact_catalog_frames_unchanged": true,
+    "numeric_functions": 53,
+    "complete_native_text_byte_identical": true,
+    "before_native_text_sha256": "ccb2f7b5226276debc54ed31bf3edb1373ea94ca55c4213b7b0ab81dc0d7e4db",
+    "after_native_text_sha256": "ccb2f7b5226276debc54ed31bf3edb1373ea94ca55c4213b7b0ab81dc0d7e4db",
+    "before_code_bytes": 905904,
+    "after_code_bytes": 905904,
+    "files": {
+      "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+      "image-binding.bin": "ae262e5a9b3fd00c79ebeb20212e76073ed164453823438a0139cc90ad37a259",
+      "frame-summary.json": "aab2e3f78a45f66bf5b8442360f780a13c2dc96ad486e71c66447698a93083a9",
+      "artifact.mecb": "8c1cf10b07a51c8dc04aaf90d1d0b862615c7bf36fcf7ec83298bfba0d87fb1a",
+      "source.mec": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "metadata.json": "b51cb92142fda284a27a2c9f5bffd07b649f9a3d2134e50fcf46e1671329a1aa",
+      "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+      "native-metadata-binding.bin": "fffb0e68f3b95643ed0c847d1710b5f076aed4d7dd1e3ac6deebbed83d2e0f79",
+      "native-metadata.bin": "12cd37b085030a5e2017184158df059dc54e4dd84b84b2fbe32816511ed0dd8f",
+      "linked.rs": "2884fa5b380fd3d276f27cd228eb19b5f20d29879200e002b0c21afa3c4b81e5",
+      "object.o": "de58fd425af9a29742f6509cb0351c6e07b86b5ba7ed747d59a993be00f1f7b9",
+      "descriptor.json": "ec96650f20e78a02e3fba35c21704f2279b95ba9b149fb4be06a4420c6094b3b",
+      "map-facts.txt": "d5be89e6e3005de483d8cd80055e4f6f1042d84c36696cb08ae9ecd6038868dc"
+    }
+  },
+  "compact-4": {
+    "source_artifact_catalog_frames_unchanged": true,
+    "numeric_functions": 53,
+    "complete_native_text_byte_identical": true,
+    "before_native_text_sha256": "8061b846328c2d296b38cc3dd74eefb853a8edf2f1daa0260c39fa81790d0f9c",
+    "after_native_text_sha256": "8061b846328c2d296b38cc3dd74eefb853a8edf2f1daa0260c39fa81790d0f9c",
+    "before_code_bytes": 902288,
+    "after_code_bytes": 902288,
+    "files": {
+      "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+      "image-binding.bin": "d44c0d0213355b163b109d2b73d6830752c4eeec0c067465dfbc2496d05efe6a",
+      "frame-summary.json": "7b1e251c0bec64f2c3578a656a860ae3b75fffba8c973d6ed72853f87eacc5e2",
+      "artifact.mecb": "f8a0467970f7f8a935cd6f11bf27f55b75d997dacdfcc5a119c12809acf55728",
+      "source.mec": "86c064828f10fb9cf8ff2f1daf630a50eea98c646f87bab9041344cd988688b1",
+      "metadata.json": "3907e2e1be4f8e5d15522c650e2f43148e4b458e474e760739288412867e59ed",
+      "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+      "native-metadata-binding.bin": "6dd693733e68fe7699951d73ca461c591793aafd1b50b54883e5597f3db798f6",
+      "native-metadata.bin": "c91a13588ce4d28a147c613c59e3fad83b2c0847a141899df705aaa4f70a59e6",
+      "linked.rs": "1edc0f70d228fa9660e7e8d696bf7c03f028b7cd8304d76655ff1b760e8652a5",
+      "object.o": "745d708c262f98da52fd5de2794f499e72dca47873bcc4efe3eb50aa148f8b14",
+      "descriptor.json": "7c1fe2ed36f299fda58b3e96785c2fea0f3ddf178ed57deba6344ad5a41512db",
+      "map-facts.txt": "b07244903d2d0b0146726034638f507928f29a35d9af65cb6a447f8e81dc6d45"
+    }
+  },
+  "after-8": {
+    "source_artifact_catalog_frames_unchanged": true,
+    "numeric_functions": 53,
+    "complete_native_text_byte_identical": true,
+    "before_native_text_sha256": "8b0c80b6efef161c0efcebacea43ecb234dbaacf0675f193ce3d78fa92c766b1",
+    "after_native_text_sha256": "8b0c80b6efef161c0efcebacea43ecb234dbaacf0675f193ce3d78fa92c766b1",
+    "before_code_bytes": 905908,
+    "after_code_bytes": 905908,
+    "files": {
+      "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+      "image-binding.bin": "8f826dc0a8dbe0443978fed48b34eca6e94e7191c6c16a158e57a654047fa91e",
+      "frame-summary.json": "2dc6d27892d444b37e4d6e22f3932dbc57cceeb4a79322bb74d3fa38c748dac0",
+      "artifact.mecb": "f511fde667b147c96ee84aee0b99558b218053d04ca8befc3d6d3c6c5475d59c",
+      "source.mec": "3ea66a55689037fc8fcb8c293cc84b40b07c9d19f2061b8b40313583970670c3",
+      "metadata.json": "fc20af6363678025741a915178787865fc7cc5acc1479d937ca299081a208e77",
+      "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+      "native-metadata-binding.bin": "0030849dcd469a16bcfa45280363f17a4e56461d0f3dc03227427857cf0535bb",
+      "native-metadata.bin": "352392a266805d54a2eecf3d49f8aad268d4009106c822448d8f3b27f4021abd",
+      "linked.rs": "5faf89dcf7e551f4250b1b070c37ab9dfddc1901b5c4f3df8ab12e22f0dbf50b",
+      "object.o": "c1e02b2d261fbf0e4e7ba15abf5da9893e19e5842c1f6234120d25cca3d4f7c7",
+      "descriptor.json": "97f5a663d8ec4651506154c60fc47925da2838166bc65523155c17cb80475d82",
+      "map-facts.txt": "520b1f96a6cfff2dbbdd0649e904b113476750d769c142e286320ba9eddcc2e9"
+    }
+  },
+  "compact-8": {
+    "source_artifact_catalog_frames_unchanged": true,
+    "numeric_functions": 53,
+    "complete_native_text_byte_identical": true,
+    "before_native_text_sha256": "3b342b1d52d01ffbd4d67bed5d83eca9b6601e28b9984e52a94009663175feff",
+    "after_native_text_sha256": "3b342b1d52d01ffbd4d67bed5d83eca9b6601e28b9984e52a94009663175feff",
+    "before_code_bytes": 902292,
+    "after_code_bytes": 902292,
+    "files": {
+      "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+      "image-binding.bin": "126c79f6d99d5ce107154b1bd93a166c4ee20b280b58ba4d29e2923df2f1ef9c",
+      "frame-summary.json": "f7db4079514d12082aafdabe5dc65e2699e3897787ca5cdda07c0d097fc4091c",
+      "artifact.mecb": "8ce9cd4d4032a81b2934a9c9fd8657606dc4f95b6d136baac13bdff2149b6f63",
+      "source.mec": "5754c0c5e47067358c0e70ba7dafb8e754302b15634d0ac2d60891b74e042327",
+      "metadata.json": "a35c9e523653032af08e6b7007dcc9b949e220869cbfb7e249670b370ae98293",
+      "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+      "native-metadata-binding.bin": "aa3b7792ee368b95d4f2fd9cddabc4aa942937c3c3095b523eec0789af48b8d3",
+      "native-metadata.bin": "072f04956b4a7fe53543fcae3927ae07c6dfd04b8136ca01d5d9d106aa6410b5",
+      "linked.rs": "e2c6c2ff5add6ab6fa27f79ff3e5188ee9f7bc806bf012e90212536443fabc50",
+      "object.o": "d3af0f79d274fa35a3d753202aed02be67dfc4a80849b73616dac0a7c062dca6",
+      "descriptor.json": "ae5054ddb2e56e33c5ceefb98a85328110f6e0f5481a8af83c571ecad177314a",
+      "map-facts.txt": "fec09c0d868299c4695d9a418f8659e42a21dd4dc679b5d6cc25533d925f7dd1"
+    }
+  }
+}

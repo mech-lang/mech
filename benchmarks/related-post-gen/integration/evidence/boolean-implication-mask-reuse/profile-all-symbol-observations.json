@@ -1,0 +1,1151 @@
+{
+  "schema": "mech.related-post-gen.post-json-all-symbol-observations.v1",
+  "compilers": {
+    "before": "c4649860a5e445c1ce1bdec8503870e8a455da17",
+    "after": "cbe5b47839b4fe2300fe16ebc1fcacfcfa03f98b"
+  },
+  "all2000_invocations_exact": true,
+  "profiled_timings_excluded": true,
+  "rows": {
+    "before": {
+      "records": 18564,
+      "all_resolved_symbols_from_same_live_process": true,
+      "unresolved_external_records": 26,
+      "observed_post_json_epochs": 875,
+      "phase_range": [
+        1,
+        1749
+      ],
+      "record_bytes": 56,
+      "raw_sha256": "ef8c639b21e4f8f0dd4ab1d98805f555a8fa31044ef081e63d89aef8ab8ce9ca",
+      "observation_categories": {
+        "system_wait_position": 9170,
+        "other_emitted_native": 111,
+        "root_native": 213,
+        "other_executable_code": 5153,
+        "other_system_code": 2476,
+        "system_allocator": 407,
+        "outlined_numeric_native": 980,
+        "system_thread_management": 28,
+        "unresolved_external": 26
+      },
+      "top_symbols": [
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__ulock_wait",
+          "demangled": "__ulock_wait",
+          "observations": 9161
+        },
+        {
+          "image": "/usr/lib/system/libsystem_platform.dylib",
+          "symbol": "_platform_memmove",
+          "demangled": "_platform_memmove",
+          "observations": 1041
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "mach_vm_reclaim_update_kernel_accounting_trap",
+          "demangled": "mach_vm_reclaim_update_kernel_accounting_trap",
+          "observations": 1031
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1282",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1282",
+          "observations": 489
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16numeric_segmentsNtB4_10Invocation21begin_numeric_segment",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_numeric_segment",
+          "observations": 397
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          "demangled": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "observations": 348
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "observations": 318
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 295
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "mach_absolute_time",
+          "demangled": "mach_absolute_time",
+          "observations": 214
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1",
+          "demangled": "_mech_canonical_program_entry_v1",
+          "observations": 213
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvXsC_NtNtCsgDHHaSskbIF_4core5slice3cmpmNtB5_13SliceContains14slice_contains",
+          "demangled": "<u32 as core::slice::cmp::SliceContains>::slice_contains",
+          "observations": 145
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_256",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_256",
+          "observations": 137
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs3_NtNtCs5noBob9g3z0_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          "demangled": "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+          "observations": 127
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget18unscoped_remaining0INtNtCsgDHHaSskbIF_4core6option6OptionTyyEEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::unscoped_remaining::{closure#0}, core::option::Option<(u64, u64)>>",
+          "observations": 121
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+          "demangled": "<mech_core::snapshot::validation::Value>::memory_budget_retained_bytes",
+          "observations": 113
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "demangled": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "observations": 111
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames14retire_prepaid",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::retire_prepaid",
+          "observations": 110
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvYNCNKNvNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+          "demangled": "<mech_engine::resident::budget::CONTROL_WORK_CONTEXT::{K#0}::{closure#0} as core::ops::function::FnOnce<(core::option::Option<&mut core::option::Option<mech_engine::resident::budget::ControlWorkContext>>,)>>::call_once",
+          "observations": 109
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCINvMNtNtB4G_8prepared16unsigned_buffersNtB6c_25NativePreparedLibraryCall20unsigned_buffer_withB3H_NCNvB69_28unsigned_buffer_with_sublist0E0E0IB36_B35_NtNtNtB3N_8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<mech_core::snapshot::validation::Value, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_buffer_with<mech_core::snapshot::validation::Value, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_buffer_with_sublist::{closure#0}>::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<mech_core::snapshot::validation::Value, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "observations": 108
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNCNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16numeric_segmentsNtB6_10Invocation19end_numeric_segments4_0Be_",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::end_numeric_segment::{closure#6}",
+          "observations": 104
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          "demangled": "<mech_engine::resident::budget::native_turn_plan_cache::string_projection::NativeProjectionIndexContext>::check",
+          "observations": 101
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs0_NtNtCs2f6zuEJIbcT_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          "demangled": "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+          "observations": 98
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames12current_leaf",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::current_leaf",
+          "observations": 95
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16numeric_segmentsNtB4_10Invocation19end_numeric_segment",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::end_numeric_segment",
+          "observations": 94
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::retire_tail_locals",
+          "observations": 94
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_801",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_801",
+          "observations": 94
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_572",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_572",
+          "observations": 85
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+          "demangled": "mech_core::schema::shape::evaluate_dimension",
+          "observations": 83
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_free",
+          "demangled": "_xzm_free",
+          "observations": 82
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_segment_group_find_and_allocate_chunk",
+          "demangled": "_xzm_segment_group_find_and_allocate_chunk",
+          "observations": 77
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_numeric_views",
+          "observations": 75
+        },
+        {
+          "image": "/usr/lib/system/libsystem_platform.dylib",
+          "symbol": "_platform_memset",
+          "demangled": "_platform_memset",
+          "observations": 73
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required",
+          "observations": 73
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation10needs_move",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::needs_move",
+          "observations": 66
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 58
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RINvMNtCsgDHHaSskbIF_4core6optionINtB3_6OptionRNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7prepare13map_admission5GroupE6filterNCNvMs1_NtNtBP_7runtime10invocationNtB2o_10Invocation5visits5_0EBT_",
+          "demangled": "<core::option::Option<&mech_gpu::native_artifact::program::prepare::map_admission::Group>>::filter::<<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit::{closure#7}>",
+          "observations": 55
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+          "observations": 52
+        },
+        {
+          "image": "/usr/lib/system/libdyld.dylib",
+          "symbol": "_tlv_get_addr",
+          "demangled": "_tlv_get_addr",
+          "observations": 51
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+          "demangled": "mech_gpu::native_artifact::program::runtime::collections::data::element",
+          "observations": 47
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_459",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_459",
+          "observations": 45
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation21admission_predecessor",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::admission_predecessor",
+          "observations": 44
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation12continuationNtB6_10Invocation23arm_parent_continuation",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::arm_parent_continuation",
+          "observations": 41
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape21evaluate_body_extents",
+          "demangled": "mech_core::schema::shape::evaluate_body_extents",
+          "observations": 40
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1166",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1166",
+          "observations": 39
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::retire",
+          "observations": 37
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          "demangled": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+          "observations": 37
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames22current_scalar_binding",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::current_scalar_binding",
+          "observations": 37
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime5hooks13admit_current",
+          "demangled": "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+          "observations": 37
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_146",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_146",
+          "observations": 36
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          "demangled": "<mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+          "observations": 35
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_free",
+          "demangled": "_free",
+          "observations": 35
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs0_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime11collections11string_spanNtB7_5State22validate_span_boundary",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::validate_span_boundary",
+          "observations": 33
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value16validate_against",
+          "demangled": "<mech_core::snapshot::validation::Value>::validate_against",
+          "observations": 33
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs0_NtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation14numeric_matrixNtB7_5Value27from_unsigned_matrix_buffer",
+          "demangled": "<mech_core::snapshot::validation::Value>::from_unsigned_matrix_buffer",
+          "observations": 33
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+          "demangled": "<mech_core::snapshot::sequence::SequenceStorage>::view",
+          "observations": 32
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_malloc_zone_malloc",
+          "demangled": "_malloc_zone_malloc",
+          "observations": 30
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs1_NtNtCs5noBob9g3z0_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena3put",
+          "demangled": "<mech_gpu::native_artifact::values::NativeValueArena>::put",
+          "observations": 30
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation4tailNtB6_10Invocation19begin_closed_region",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_closed_region",
+          "observations": 30
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          "demangled": "core::ptr::drop_in_place::<mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>",
+          "observations": 30
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs1_NtNtCs5noBob9g3z0_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena22retire_current_prepaid",
+          "demangled": "<mech_gpu::native_artifact::values::NativeValueArena>::retire_current_prepaid",
+          "observations": 30
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+          "demangled": "<<mech_core::snapshot::validation::FrozenSnapshotStorage>::unlink_budget_registration::{closure#0} as core::ops::function::FnOnce<(&mut core::option::Option<alloc::sync::Arc<mech_core::snapshot::validation::SnapshotBudgetRegistration>>,)>>::call_once",
+          "observations": 29
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs1_NtNtCs2f6zuEJIbcT_11mech_engine15native_artifact13buffer_framesNtB5_18NativeBufferFrames9fields_at",
+          "demangled": "<mech_engine::native_artifact::buffer_frames::NativeBufferFrames>::fields_at",
+          "observations": 28
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_xzone_malloc",
+          "demangled": "_xzm_xzone_malloc",
+          "observations": 28
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMNtNtCs5noBob9g3z0_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+          "demangled": "<mech_gpu::native_artifact::work::NativeWorkMeter>::charge",
+          "observations": 28
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation8borrowedNtB4_10Invocation15borrowed_action",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::borrowed_action",
+          "observations": 28
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7prepare16frame_retirementNtB2_16FrameRetirements3get",
+          "demangled": "<mech_gpu::native_artifact::program::prepare::frame_retirement::FrameRetirements>::get",
+          "observations": 27
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation12continuationNtB6_10Invocation28complete_parent_continuation",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::complete_parent_continuation",
+          "observations": 27
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames10check_copy",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+          "observations": 26
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+          "symbol": "__RNCNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB7_5Value24into_memory_budget_inners3_0Bb_",
+          "demangled": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner::{closure#5}",
+          "observations": 25
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "xzm_malloc",
+          "demangled": "xzm_malloc",
+          "observations": 25
+        }
+      ],
+      "external_positions_with_own_executable_lr": [
+        [
+          "__RNvNtNtCs2f6zuEJIbcT_11mech_engine10intrinsics16sequence_buffers24copy_buffer_with_sublist",
+          1030
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames14retire_prepaid",
+          50
+        ],
+        [
+          "__RNvYNCNKNvNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+          50
+        ],
+        [
+          "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation15finalized_valueNtNtNtB6_6schema5shape13ShapeInstanceEB6_",
+          47
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation18FrozenSnapshotDataEBM_",
+          42
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core11type_system14resolved_value31shape_for_declared_lower_bounds",
+          19
+        ],
+        [
+          "__RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation21FrozenSnapshotStorageE9drop_slowBM_",
+          18
+        ],
+        [
+          "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          14
+        ],
+        [
+          "__RNvCsg2Tlac8ZPZa_6runner3run",
+          13
+        ],
+        [
+          "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs2f6zuEJIbcT_11mech_engine",
+          13
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+          12
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECs5noBob9g3z0_8mech_gpu",
+          9
+        ],
+        [
+          "__RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcNtNtNtCsfBfheTzTBUt_9mech_core6schema5shape13ShapeInstanceE9drop_slowBM_",
+          8
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix4sync5mutexNtB2_5Mutex8try_lock",
+          7
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation23SnapshotBudgetOwnershipEBM_",
+          6
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+          5
+        ],
+        [
+          "__RNvNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix14stack_overflow3imp12drop_handler",
+          4
+        ],
+        [
+          "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core6schema8encodingNtB6_6Schema3key",
+          4
+        ],
+        [
+          "__RNvNtNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general23native_collection_calls8prepared12word_updates4copy",
+          3
+        ],
+        [
+          "__RNvXNtCsfBfheTzTBUt_9mech_core9kind_exprNtB2_8KindExprNtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+          2
+        ],
+        [
+          "__RNvXsf_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxeENtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model14CallMemoryPlanECs2f6zuEJIbcT_11mech_engine",
+          2
+        ],
+        [
+          "__RINvMNtNtNtCsgKscDXrlV49_5alloc11collections5btree6appendINtNtB5_4node7NodeRefNtNtBW_6marker5OwnedmNtNtB5_7set_val9SetValZSTNtB1g_14LeafOrInternalE9bulk_pushINtNtB5_17dedup_sorted_iter15DedupSortedItermB1z_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtNtB9_3vec9into_iter8IntoItermENCINvMse_NtB5_3setINtB4O_8BTreeSetmE16from_sorted_iterB46_E0EENtNtB9_5alloc6GlobalECs2f6zuEJIbcT_11mech_engine",
+          2
+        ],
+        [
+          "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs5noBob9g3z0_8mech_gpu",
+          1
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core11type_system14resolved_value23ResolvedValueDescriptorECs2f6zuEJIbcT_11mech_engine",
+          1
+        ],
+        [
+          "__RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtCsfBfheTzTBUt_9mech_core9dimension13DimensionExprENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneBM_",
+          1
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          1
+        ],
+        [
+          "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+          1
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtCsfBfheTzTBUt_9mech_core9kind_expr8KindExprECs2f6zuEJIbcT_11mech_engine",
+          1
+        ],
+        [
+          "__RINvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime7sessionNtB5_8Prepared6finishNCNvMNtB9_6linkedNtB1F_21LinkedProgramArtifact13evaluate_into0EBd_",
+          1
+        ]
+      ]
+    },
+    "after": {
+      "records": 3893,
+      "all_resolved_symbols_from_same_live_process": true,
+      "unresolved_external_records": 6,
+      "observed_post_json_epochs": 1000,
+      "phase_range": [
+        1,
+        1999
+      ],
+      "record_bytes": 56,
+      "raw_sha256": "fe51bfba6b02982a69e14b3a2df51077e2b4c7967ccfcae0627272f9ed24048c",
+      "observation_categories": {
+        "system_wait_position": 1799,
+        "other_executable_code": 376,
+        "other_emitted_native": 202,
+        "root_native": 178,
+        "outlined_numeric_native": 1170,
+        "unresolved_external": 6,
+        "system_allocator": 65,
+        "other_system_code": 55,
+        "system_thread_management": 42
+      },
+      "top_symbols": [
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__ulock_wait",
+          "demangled": "__ulock_wait",
+          "observations": 1795
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1282",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1282",
+          "observations": 590
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "demangled": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "observations": 202
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1",
+          "demangled": "_mech_canonical_program_entry_v1",
+          "observations": 178
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_256",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_256",
+          "observations": 138
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_801",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_801",
+          "observations": 97
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_459",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_459",
+          "observations": 96
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_572",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_572",
+          "observations": 86
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1166",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1166",
+          "observations": 66
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+          "demangled": "mech_gpu::native_artifact::program::runtime::collections::data::element",
+          "observations": 62
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_107",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_107",
+          "observations": 38
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_free",
+          "demangled": "_xzm_free",
+          "observations": 28
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1053",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1053",
+          "observations": 25
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          "demangled": "<mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+          "observations": 24
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+          "demangled": "<mech_core::snapshot::sequence::SequenceStorage>::view",
+          "observations": 23
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+          "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::encoding::ValueFootprintError>",
+          "observations": 20
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1099",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1099",
+          "observations": 18
+        },
+        {
+          "image": "/usr/lib/system/libsystem_platform.dylib",
+          "symbol": "_platform_memmove",
+          "demangled": "_platform_memmove",
+          "observations": 14
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtB4_5State14push_row_block",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::push_row_block",
+          "observations": 14
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact6memory18NativeTypedStorageINtNtB4_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueEEEBN_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::memory::NativeTypedStorage<core::option::Option<mech_core::snapshot::validation::Value>>>",
+          "observations": 14
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_11memory_plan5error15MemoryPlanErrorNCINvMs_NtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general4liveNtB1Y_13InputDataMemo7measureNCINvB1Y_14footprint_implNtNtNtNtB20_23native_collection_calls10invocation11measurement22NativeMeasurementCheckEs1_0E0EB24_",
+          "demangled": "mech_core::snapshot::encoding::visit_sequence_work::<mech_core::memory_plan::error::MemoryPlanError, <mech_engine::resident::general::live::InputDataMemo>::measure<mech_engine::resident::general::live::footprint_impl<mech_engine::resident::general::native_collection_calls::invocation::measurement::NativeMeasurementCheck>::{closure#3}>::{closure#0}>",
+          "observations": 13
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__bsdthread_terminate",
+          "demangled": "__bsdthread_terminate",
+          "observations": 13
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_free",
+          "demangled": "_free",
+          "observations": 12
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_671",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_671",
+          "observations": 10
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding27retained_sequence_footprint",
+          "demangled": "mech_core::snapshot::encoding::retained_sequence_footprint",
+          "observations": 10
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_xzone_malloc_tiny",
+          "demangled": "_xzm_xzone_malloc_tiny",
+          "observations": 9
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget7workers11lock_escrow",
+          "demangled": "mech_engine::resident::budget::workers::lock_escrow",
+          "observations": 7
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "pthread_mutex_unlock",
+          "demangled": "pthread_mutex_unlock",
+          "observations": 7
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_utf8_read",
+          "observations": 7
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvCsg2Tlac8ZPZa_6runner3run",
+          "demangled": "runner::run",
+          "observations": 6
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner4PostEENCNvB1R_10post_viewss_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2H_8for_each4callNtB1R_8PostViewNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB48_3VecB3K_E14extend_trustedBN_E0E0EB1R_",
+          "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::PostView, <alloc::vec::Vec<runner::PostView>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}>>::{closure#0}>::{closure#0}>",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__bsdthread_create",
+          "demangled": "__bsdthread_create",
+          "observations": 6
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_505",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_505",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "mach_vm_reclaim_update_kernel_accounting_trap",
+          "demangled": "mach_vm_reclaim_update_kernel_accounting_trap",
+          "observations": 6
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections9utf8_read5fixedNtNtNtB6_4maps9utf8_read4CellEBc_",
+          "demangled": "mech_gpu::native_artifact::program::runtime::collections::utf8_read::fixed::<mech_gpu::native_artifact::program::runtime::maps::utf8_read::Cell>",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_platform.dylib",
+          "symbol": "_platform_memset",
+          "demangled": "_platform_memset",
+          "observations": 6
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 5
+        },
+        {
+          "image": "/usr/lib/system/libdyld.dylib",
+          "symbol": "_tlv_get_addr",
+          "demangled": "_tlv_get_addr",
+          "observations": 5
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "pthread_mutex_trylock",
+          "demangled": "pthread_mutex_trylock",
+          "observations": 5
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__munmap",
+          "demangled": "__munmap",
+          "observations": 5
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocation9histogramNtB4_10Invocation16histogram_helper",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::histogram_helper",
+          "observations": 5
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_xzone_malloc",
+          "demangled": "_xzm_xzone_malloc",
+          "observations": 5
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "-",
+          "demangled": "-",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime7sessionNtB4_8Prepared10run_worker",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run_worker",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          "demangled": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_3zip3ZipINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner8PostViewEINtB1g_11ChunksExactyEENCNvB1F_3run0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2L_8for_each4callNtB1F_7RelatedNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB4b_3VecB3O_E14extend_trustedBN_E0E0EB1F_",
+          "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::Related, <alloc::vec::Vec<runner::Related>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}>>::{closure#0}>::{closure#0}>",
+          "observations": 4
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "_pthread_create",
+          "demangled": "_pthread_create",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvMs1_NtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "observations": 4
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "mach_absolute_time",
+          "demangled": "mach_absolute_time",
+          "observations": 4
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__ulock_wake",
+          "demangled": "__ulock_wake",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvMs3_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime10allocationINtB5_18FixedHostArenaPlanINtNtCsgDHHaSskbIF_4core6option6OptionNtNtNtB9_8snapshot10validation5ValueEE11materializeCs8ajBNycbQ5U_8mech_gpu",
+          "demangled": "<mech_core::memory_runtime::allocation::FixedHostArenaPlan<core::option::Option<mech_core::snapshot::validation::Value>>>::materialize",
+          "observations": 4
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "_pthread_tsd_cleanup",
+          "demangled": "_pthread_tsd_cleanup",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime7session14CallCacheEntryEBQ_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::session::CallCacheEntry>",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECs8ajBNycbQ5U_8mech_gpu",
+          "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::validation::Value>",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10retirement3run",
+          "demangled": "mech_gpu::native_artifact::program::runtime::retirement::run",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+          "demangled": "mech_core::schema::shape::evaluate_dimension",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocation14numeric_writesNtB4_10Invocation21prepare_numeric_write",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepare_numeric_write",
+          "observations": 3
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__psynch_mutexwait",
+          "demangled": "__psynch_mutexwait",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvMs1_NtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+          "demangled": "<mech_gpu::native_artifact::values::NativeValueArena>::retire_current",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          "demangled": "core::ptr::drop_in_place::<mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>",
+          "observations": 3
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_malloc_zone_malloc",
+          "demangled": "_malloc_zone_malloc",
+          "observations": 3
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "_kernelrpc_mach_vm_deallocate_trap",
+          "demangled": "_kernelrpc_mach_vm_deallocate_trap",
+          "observations": 3
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "xzm_malloc",
+          "demangled": "xzm_malloc",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget7workers17next_after_native",
+          "demangled": "mech_engine::resident::budget::workers::next_after_native",
+          "observations": 2
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvCsfBzVIH1HIC6_7___rustc11___rdl_alloc",
+          "demangled": "__rustc::__rdl_alloc",
+          "observations": 2
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RNvNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix14stack_overflow3imp12drop_handler",
+          "demangled": "std::sys::pal::unix::stack_overflow::imp::drop_handler",
+          "observations": 2
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvBW_20observe_control_work0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<mech_engine::resident::budget::observe_control_work::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 2
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 2
+        },
+        {
+          "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+          "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::validation::SnapshotBudgetRegistration>",
+          "observations": 2
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "xzm_realloc",
+          "demangled": "xzm_realloc",
+          "observations": 2
+        }
+      ],
+      "external_positions_with_own_executable_lr": [
+        [
+          "__RNvCsg2Tlac8ZPZa_6runner3run",
+          19
+        ],
+        [
+          "__RNvNtNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general23native_collection_calls8prepared12word_updates4copy",
+          6
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix4sync5mutexNtB2_5Mutex8try_lock",
+          5
+        ],
+        [
+          "__RNvNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix14stack_overflow3imp12drop_handler",
+          5
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          4
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+          3
+        ],
+        [
+          "__RNvYNCNKNvNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+          3
+        ],
+        [
+          "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs8ajBNycbQ5U_8mech_gpu",
+          3
+        ],
+        [
+          "__RNvXs_NtNtNtNtCsgirOGyZpP7g_3std3sys4sync5mutex7pthreadNtB4_5MutexNtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4drop",
+          2
+        ],
+        [
+          "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          2
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvBW_20observe_control_work0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          2
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix4sync5mutexNtB2_5Mutex4lock",
+          2
+        ],
+        [
+          "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot5errorNtB4_12SnapshotPath5child",
+          2
+        ],
+        [
+          "__RINvMsa_NtCsd0jj78El3J_9hashbrown3rawNtB6_13RawTableInner16drop_inner_tableTINtNtCsgKscDXrlV49_5alloc5boxed3BoxeEyENtNtNtNtCs1SzEm9rEJgZ_14allocator_api26stable5alloc6global6GlobalECs8ajBNycbQ5U_8mech_gpu",
+          1
+        ],
+        [
+          "__RNvMNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation23private_unsigned_matrixNtB2_21PrivateUnsignedMatrix5admit",
+          1
+        ],
+        [
+          "__RNvNvMs0_NtNtNtCsgirOGyZpP7g_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+          1
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime7sessionNtB4_8Prepared15new_with_budget",
+          1
+        ],
+        [
+          "__RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtNtCsgirOGyZpP7g_3std4sync6poison5mutex5MutexNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget7workers6EscrowEE9drop_slowB1D_",
+          1
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECs8ajBNycbQ5U_8mech_gpu",
+          1
+        ],
+        [
+          "__RNvYNCNKNvNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceCs8ajBNycbQ5U_8mech_gpu",
+          1
+        ],
+        [
+          "__RNvXs_NtNtCsgKscDXrlV49_5alloc3vec16in_place_collectINtB6_3VecTRNtNtCsfBfheTzTBUt_9mech_core6schema10SchemaBodyB10_EEINtNtB6_14spec_from_iter12SpecFromIterBY_INtNtNtCsgDHHaSskbIF_4core4iter8adapters12GenericShuntINtNtB2z_3map3MapINtNtB2z_3zip3ZipINtNtB6_9into_iter8IntoIterBZ_EINtNtNtB2D_5slice4iter4IterTNtNtB14_17semantic_identity8SchemaIdNtNtB12_5shape13ShapeInstanceEEENCNvMs9_NtNtB14_8snapshot10validationNtB67_28CompositeSnapshotConstructor18shape_for_childrens_0EINtNtB2D_6result6ResultNtNtB2D_7convert10InfallibleNtNtB69_5error18SnapshotValueErrorEEE9from_iterB14_",
+          1
+        ],
+        [
+          "__RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcNtNtNtCsfBfheTzTBUt_9mech_core6schema5shape13ShapeInstanceE9drop_slowBM_",
+          1
+        ],
+        [
+          "__RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model14AllocationPlanENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCs2f6zuEJIbcT_11mech_engine",
+          1
+        ],
+        [
+          "__RNvXNtCsfBfheTzTBUt_9mech_core9kind_exprNtB2_8KindExprNtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+          1
+        ],
+        [
+          "__RNvMs_NtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtNtB6_4data15CollectedValues10append_row",
+          1
+        ],
+        [
+          "__RNvNtNtCs2f6zuEJIbcT_11mech_engine14memory_planner4turn15scope_turn_call",
+          1
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core11memory_plan6derive25derive_dimension_capacity",
+          1
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8sequence15SequenceStorageEBM_",
+          1
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot9relations16insert_map_entry",
+          1
+        ],
+        [
+          "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growB7_",
+          1
+        ]
+      ]
+    }
+  },
+  "limitations": [
+    "These are statistical current-PC observations, not CPU-time shares or dynamic instruction counts. Waiting threads can retain a wait PC while consuming no CPU.",
+    "A single odd epoch must surround each accepted register observation; sampling across a phase boundary is discarded.",
+    "JSON decoding, output verification and teardown occur outside the gate. Restored program and original JSON text are reused.",
+    "System names are resolved after sampling in the same live process; executable-local names use the exact profiled Mach-O."
+  ]
+}

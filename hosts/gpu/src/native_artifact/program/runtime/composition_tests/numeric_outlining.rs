@@ -56,13 +56,20 @@ fn numeric_phase_outlining_is_a_real_shared_native_definition() {
         );
         for row in outlines.unwrap() {
             assert!(row["code_bytes"].as_u64().unwrap() > 0);
-            assert!(row["compact_input_words"].as_u64().is_some_and(|n| n > 0));
-            assert!(row["compact_output_words"].as_u64().is_some_and(|n| n > 0));
+            if row["compact_input_words"].is_u64() {
+                assert!(row["compact_input_words"].as_u64().is_some_and(|n| n > 0));
+                assert!(row["compact_output_words"].as_u64().is_some_and(|n| n > 0));
+            }
             assert!(row["symbol"].as_str().unwrap().contains("_numeric_phase_"));
             let header = row["header"].as_u64().unwrap();
             let reports = metadata["compiled_numeric_write_loops"].as_array().unwrap();
             let body = reports
                 .iter()
+                .chain(
+                    metadata["compiled_readonly_numeric_loops"]
+                        .as_array()
+                        .unwrap(),
+                )
                 .find(|body| body["header"].as_u64() == Some(header))
                 .unwrap();
             assert_eq!(body["successful_backedge_helpers"], 0);
@@ -272,6 +279,11 @@ fn numeric_phase_outlining_declines_without_changing_the_finite_envelope() {
                 .as_array()
                 .unwrap()
                 .iter()
+                .chain(
+                    metadata["compiled_readonly_numeric_loops"]
+                        .as_array()
+                        .unwrap(),
+                )
                 .find(|r| r["header"].as_u64() == Some(header as u64))
                 .unwrap();
             let inline_work = body["fixed_template_instructions"].as_u64().unwrap()

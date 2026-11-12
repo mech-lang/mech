@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/compact-4-full-catalog/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/compact-4-full-catalog/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/compact-4-full-catalog/native-link-audit.json"
+  ],
+  "exit": 0,
+  "seconds": 0.4415087909437716,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 55, \"normalized_text_sha256\": \"ceadbd4563aef062da64858455ed92f7cae7b94dca8e0df7288fa479906d0ff7\"}\n",
+  "stderr": ""
+}

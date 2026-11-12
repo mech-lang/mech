@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-conjoined-window-integration-runtime-check-20261107-v1/runtime-runner/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-conjoined-window-integration-runtime-check-20261107-v1/runtime-runner/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-conjoined-window-integration-runtime-check-20261107-v1/runtime-runner/native-link-audit.json"
+  ],
+  "exit": 0,
+  "seconds": 0.0728954158257693,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 53, \"normalized_text_sha256\": \"1ea96b1f8d41e4c76064d51a3f0c1349d16d42da2a8a7677f0ca7aa4649c9c7a\"}\n",
+  "stderr": "",
+  "compiler_source_sha256": "86d973f572e30f0ceb6e1b486505452c2b91443973de0187f5cefe954f96a3b4"
+}

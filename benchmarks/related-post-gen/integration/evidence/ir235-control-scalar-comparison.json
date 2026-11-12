@@ -1,0 +1,520 @@
+{
+  "rows": 128,
+  "all_nontiming_fields_equal_IR234": true,
+  "allocation_requests_and_bytes_never_regress": true,
+  "allocation_changes": [
+    {
+      "row": 0,
+      "metrics": {}
+    },
+    {
+      "row": 1,
+      "metrics": {}
+    },
+    {
+      "row": 2,
+      "metrics": {}
+    },
+    {
+      "row": 3,
+      "metrics": {}
+    },
+    {
+      "row": 4,
+      "metrics": {}
+    },
+    {
+      "row": 5,
+      "metrics": {}
+    },
+    {
+      "row": 6,
+      "metrics": {}
+    },
+    {
+      "row": 7,
+      "metrics": {}
+    },
+    {
+      "row": 8,
+      "metrics": {}
+    },
+    {
+      "row": 9,
+      "metrics": {}
+    },
+    {
+      "row": 10,
+      "metrics": {}
+    },
+    {
+      "row": 11,
+      "metrics": {}
+    },
+    {
+      "row": 12,
+      "metrics": {}
+    },
+    {
+      "row": 13,
+      "metrics": {}
+    },
+    {
+      "row": 14,
+      "metrics": {}
+    },
+    {
+      "row": 15,
+      "metrics": {}
+    },
+    {
+      "row": 16,
+      "metrics": {}
+    },
+    {
+      "row": 17,
+      "metrics": {}
+    },
+    {
+      "row": 18,
+      "metrics": {}
+    },
+    {
+      "row": 19,
+      "metrics": {}
+    },
+    {
+      "row": 20,
+      "metrics": {}
+    },
+    {
+      "row": 21,
+      "metrics": {}
+    },
+    {
+      "row": 22,
+      "metrics": {}
+    },
+    {
+      "row": 23,
+      "metrics": {}
+    },
+    {
+      "row": 24,
+      "metrics": {}
+    },
+    {
+      "row": 25,
+      "metrics": {}
+    },
+    {
+      "row": 26,
+      "metrics": {}
+    },
+    {
+      "row": 27,
+      "metrics": {}
+    },
+    {
+      "row": 28,
+      "metrics": {}
+    },
+    {
+      "row": 29,
+      "metrics": {}
+    },
+    {
+      "row": 30,
+      "metrics": {}
+    },
+    {
+      "row": 31,
+      "metrics": {}
+    },
+    {
+      "row": 32,
+      "metrics": {}
+    },
+    {
+      "row": 33,
+      "metrics": {}
+    },
+    {
+      "row": 34,
+      "metrics": {}
+    },
+    {
+      "row": 35,
+      "metrics": {}
+    },
+    {
+      "row": 36,
+      "metrics": {}
+    },
+    {
+      "row": 37,
+      "metrics": {}
+    },
+    {
+      "row": 38,
+      "metrics": {}
+    },
+    {
+      "row": 39,
+      "metrics": {}
+    },
+    {
+      "row": 40,
+      "metrics": {}
+    },
+    {
+      "row": 41,
+      "metrics": {}
+    },
+    {
+      "row": 42,
+      "metrics": {}
+    },
+    {
+      "row": 43,
+      "metrics": {}
+    },
+    {
+      "row": 44,
+      "metrics": {}
+    },
+    {
+      "row": 45,
+      "metrics": {}
+    },
+    {
+      "row": 46,
+      "metrics": {}
+    },
+    {
+      "row": 47,
+      "metrics": {}
+    },
+    {
+      "row": 48,
+      "metrics": {}
+    },
+    {
+      "row": 49,
+      "metrics": {}
+    },
+    {
+      "row": 50,
+      "metrics": {}
+    },
+    {
+      "row": 51,
+      "metrics": {}
+    },
+    {
+      "row": 52,
+      "metrics": {}
+    },
+    {
+      "row": 53,
+      "metrics": {}
+    },
+    {
+      "row": 54,
+      "metrics": {}
+    },
+    {
+      "row": 55,
+      "metrics": {}
+    },
+    {
+      "row": 56,
+      "metrics": {}
+    },
+    {
+      "row": 57,
+      "metrics": {}
+    },
+    {
+      "row": 58,
+      "metrics": {}
+    },
+    {
+      "row": 59,
+      "metrics": {}
+    },
+    {
+      "row": 60,
+      "metrics": {}
+    },
+    {
+      "row": 61,
+      "metrics": {}
+    },
+    {
+      "row": 62,
+      "metrics": {}
+    },
+    {
+      "row": 63,
+      "metrics": {}
+    },
+    {
+      "row": 64,
+      "metrics": {}
+    },
+    {
+      "row": 65,
+      "metrics": {}
+    },
+    {
+      "row": 66,
+      "metrics": {}
+    },
+    {
+      "row": 67,
+      "metrics": {}
+    },
+    {
+      "row": 68,
+      "metrics": {}
+    },
+    {
+      "row": 69,
+      "metrics": {}
+    },
+    {
+      "row": 70,
+      "metrics": {}
+    },
+    {
+      "row": 71,
+      "metrics": {}
+    },
+    {
+      "row": 72,
+      "metrics": {}
+    },
+    {
+      "row": 73,
+      "metrics": {}
+    },
+    {
+      "row": 74,
+      "metrics": {}
+    },
+    {
+      "row": 75,
+      "metrics": {}
+    },
+    {
+      "row": 76,
+      "metrics": {}
+    },
+    {
+      "row": 77,
+      "metrics": {}
+    },
+    {
+      "row": 78,
+      "metrics": {}
+    },
+    {
+      "row": 79,
+      "metrics": {}
+    },
+    {
+      "row": 80,
+      "metrics": {}
+    },
+    {
+      "row": 81,
+      "metrics": {}
+    },
+    {
+      "row": 82,
+      "metrics": {}
+    },
+    {
+      "row": 83,
+      "metrics": {}
+    },
+    {
+      "row": 84,
+      "metrics": {}
+    },
+    {
+      "row": 85,
+      "metrics": {}
+    },
+    {
+      "row": 86,
+      "metrics": {}
+    },
+    {
+      "row": 87,
+      "metrics": {}
+    },
+    {
+      "row": 88,
+      "metrics": {}
+    },
+    {
+      "row": 89,
+      "metrics": {}
+    },
+    {
+      "row": 90,
+      "metrics": {}
+    },
+    {
+      "row": 91,
+      "metrics": {}
+    },
+    {
+      "row": 92,
+      "metrics": {}
+    },
+    {
+      "row": 93,
+      "metrics": {}
+    },
+    {
+      "row": 94,
+      "metrics": {}
+    },
+    {
+      "row": 95,
+      "metrics": {}
+    },
+    {
+      "row": 96,
+      "metrics": {}
+    },
+    {
+      "row": 97,
+      "metrics": {}
+    },
+    {
+      "row": 98,
+      "metrics": {}
+    },
+    {
+      "row": 99,
+      "metrics": {}
+    },
+    {
+      "row": 100,
+      "metrics": {}
+    },
+    {
+      "row": 101,
+      "metrics": {}
+    },
+    {
+      "row": 102,
+      "metrics": {}
+    },
+    {
+      "row": 103,
+      "metrics": {}
+    },
+    {
+      "row": 104,
+      "metrics": {}
+    },
+    {
+      "row": 105,
+      "metrics": {}
+    },
+    {
+      "row": 106,
+      "metrics": {}
+    },
+    {
+      "row": 107,
+      "metrics": {}
+    },
+    {
+      "row": 108,
+      "metrics": {}
+    },
+    {
+      "row": 109,
+      "metrics": {}
+    },
+    {
+      "row": 110,
+      "metrics": {}
+    },
+    {
+      "row": 111,
+      "metrics": {}
+    },
+    {
+      "row": 112,
+      "metrics": {}
+    },
+    {
+      "row": 113,
+      "metrics": {}
+    },
+    {
+      "row": 114,
+      "metrics": {}
+    },
+    {
+      "row": 115,
+      "metrics": {}
+    },
+    {
+      "row": 116,
+      "metrics": {}
+    },
+    {
+      "row": 117,
+      "metrics": {}
+    },
+    {
+      "row": 118,
+      "metrics": {}
+    },
+    {
+      "row": 119,
+      "metrics": {}
+    },
+    {
+      "row": 120,
+      "metrics": {}
+    },
+    {
+      "row": 121,
+      "metrics": {}
+    },
+    {
+      "row": 122,
+      "metrics": {}
+    },
+    {
+      "row": 123,
+      "metrics": {}
+    },
+    {
+      "row": 124,
+      "metrics": {}
+    },
+    {
+      "row": 125,
+      "metrics": {}
+    },
+    {
+      "row": 126,
+      "metrics": {}
+    },
+    {
+      "row": 127,
+      "metrics": {}
+    }
+  ],
+  "differences": []
+}

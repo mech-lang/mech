@@ -1,0 +1,45 @@
+{
+  "schema": "mech.related-post-gen.offline-verification-receipt.v1",
+  "status": "passed",
+  "command": [
+    "python3",
+    "benchmarks/related-post-gen/integration/managed-dense-storage-20261112/verify.py"
+  ],
+  "exit": 0,
+  "seconds": 6.647801876068115,
+  "result": {
+    "verified_records": 7260,
+    "unique_blobs": 3958,
+    "compressed_bytes": 21639419,
+    "required_IR338_base": "b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164",
+    "required_IR340_source": "1ef5985a9c58fd2857bdf8eedc06a2b7b50ef622",
+    "full_source_inventory_entries": 2818,
+    "literal_includes": 164,
+    "source_overlay_files": 10,
+    "primary_exact_outputs": 1271,
+    "resource_exact_outputs": 273,
+    "confirmation_exact_outputs": 351,
+    "new_timed_resource_exact_outputs": 1895,
+    "separate_qualification_exact_outputs": 384,
+    "adapters_qualified": 12,
+    "focused_passes": 33,
+    "broad_passed": 1084,
+    "broad_failures": 16,
+    "all_broad_failures_inherited": true,
+    "managed_IR334_still_selected": true,
+    "IR340_U32_same_source_parent_gain_confirmed": true,
+    "fastest_Rust_target_met": false,
+    "native_executions_by_verifier": 0
+  },
+  "stderr": "",
+  "pins": {
+    "verify.py": "4e428925602a8488b88709fd3e7a86e6e816af35748538d20a7fcec2e1662752",
+    "assemble.py": "a4b164e9b838e94ee992b70964953a98724d68db50e6fdfa6d0d3398022d0caa",
+    "report.json": "c9efbc31a004f4e3069b4f4f8b172ca4aed6beb3c1a4380bf677626afe86c8b7",
+    "records.json": "e345f0011a747c87cda139864242f226bd29784505c8fdda38c673fabeb0ff83",
+    "README.md": "d4247bb82cc720cfa2eedde7660e6249412c9f86ec8529b3203182dd3879f235",
+    "omitted-binaries.json": "bf0bc1f8dfa423815a54d81ea836e5a3d061e15881a508851fbdce1169863212",
+    "verifier-development.json": "b38d78eceea8bbb906aad9e4391724f395dd98475b9ca42069ca980a52c23da4"
+  },
+  "native_executions": 0
+}

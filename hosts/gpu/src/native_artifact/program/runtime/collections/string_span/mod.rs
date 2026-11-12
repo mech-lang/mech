@@ -105,7 +105,7 @@ impl State {
     ) -> Result<u64, Error> {
         add(
             add(self.query_scalar_nodes, self.string_span_nodes)?,
-            self.string_map_nodes,
+            add(self.string_map_nodes, self.class_nodes())?,
         )
     }
 
