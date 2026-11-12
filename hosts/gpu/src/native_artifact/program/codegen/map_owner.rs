@@ -2,7 +2,7 @@
 //! provide storage only; source blocks still choose successors and compute values.
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::control::plan::CodePlan;
-use crate::native_artifact::compiler::{backend, offset};
+use crate::native_artifact::compiler::{backend, offset, primitive};
 use crate::native_artifact::program::codegen::hooks::Hooks;
 use crate::native_artifact::program::prepare::map_owner as layout;
 #[cfg(feature = "canonical-native-program-runtime")]
@@ -24,6 +24,76 @@ fn load(
     Ok(b.ins()
         .load(types::I64, MemFlags::new(), base, offset(word)?))
 }
+// Only a freshly derived total immutable guard circuit reaches this emitter.
+// These private SSA values never define source locals or commit source visits.
+fn dictionary_guard(
+    b: &mut FunctionBuilder<'_>,
+    locals: Value,
+    guard: &crate::native_artifact::program::prepare::generic_dictionary::Guard,
+    error: Block,
+) -> Result<Value, NativeCompileError> {
+    use crate::native_artifact::program::prepare::generic_dictionary::{
+        GuardAction, GuardCondition,
+    };
+    let mut values = std::collections::BTreeMap::new();
+    for &leaf in &guard.leaves {
+        values.insert(leaf.get(), load(b, locals, leaf.get() as usize)?);
+    }
+    for action in &guard.actions {
+        let (output, value) = match action {
+            GuardAction::Copy { source, output } => (
+                *output,
+                *values
+                    .get(&source.get())
+                    .ok_or_else(|| backend("dictionary guard source absent"))?,
+            ),
+            GuardAction::Primitive {
+                op,
+                operands,
+                output,
+            } => {
+                let args = operands
+                    .iter()
+                    .map(|v| {
+                        values
+                            .get(&v.get())
+                            .copied()
+                            .ok_or_else(|| backend("dictionary guard operand absent"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                (*output, primitive(b, *op, &args, error))
+            }
+        };
+        values.insert(output.get(), value);
+    }
+    let mut ready = b.ins().iconst(types::I8, 1);
+    for condition in &guard.conditions {
+        let read = |v: mech_engine::native_artifact::NativeMatchValue| {
+            values
+                .get(&v.get())
+                .copied()
+                .ok_or_else(|| backend("dictionary guard branch value absent"))
+        };
+        let selected = match *condition {
+            GuardCondition::Bool { condition, yes } => {
+                let value = read(condition)?;
+                b.ins()
+                    .icmp_imm(if yes { IntCC::NotEqual } else { IntCC::Equal }, value, 0)
+            }
+            GuardCondition::Equal { left, right, yes } => {
+                let (left, right) = (read(left)?, read(right)?);
+                b.ins().icmp(
+                    if yes { IntCC::Equal } else { IntCC::NotEqual },
+                    left,
+                    right,
+                )
+            }
+        };
+        ready = b.ins().band(ready, selected);
+    }
+    Ok(ready)
+}
+
 fn store(
     b: &mut FunctionBuilder<'_>,
     base: Value,
@@ -482,13 +552,32 @@ pub(in crate::native_artifact) fn emit(
             let count = b.ins().iconst(types::I64, count as i64);
             [token, hooks.arguments, count]
         };
-        let operation =
-            if dictionary_views && program.metadata().generic_dictionary.exit(site).is_some() {
+        let dictionary = dictionary_views
+            .then(|| program.metadata().generic_dictionary.exit(site))
+            .flatten();
+        if let Some(guard) = dictionary.and_then(|region| region.guard.as_ref()) {
+            let eligible = dictionary_guard(b, locals, guard, error)?;
+            let deferred = b.create_block();
+            let canonical = b.create_block();
+            let joined = b.create_block();
+            b.ins().brif(eligible, deferred, &[], canonical, &[]);
+            b.switch_to_block(deferred);
+            hooks.call(b, site, GlobalHelper::MapDictionaryEnd, args, error);
+            b.ins().jump(joined, &[]);
+            b.switch_to_block(canonical);
+            // A bypass never installs a virtual dictionary. Canonical output
+            // admission/materialization remains at the original producer exit.
+            hooks.call(b, site, GlobalHelper::MapOwnerEnd, args, error);
+            b.ins().jump(joined, &[]);
+            b.switch_to_block(joined);
+        } else {
+            let operation = if dictionary.is_some() {
                 GlobalHelper::MapDictionaryEnd
             } else {
                 GlobalHelper::MapOwnerEnd
             };
-        hooks.call(b, site, operation, args, error);
+            hooks.call(b, site, operation, args, error);
+        }
         let token = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, flag, token)?;
         // Canonical publication returns zero; private publication returns the

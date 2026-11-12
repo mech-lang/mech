@@ -27,6 +27,7 @@ pub(in crate::native_artifact) fn emit_entry(
     error: Block,
     word_chunks: bool,
     classified: bool,
+    output_width: u8,
 ) -> Result<(), NativeCompileError> {
     let zero = b.ins().iconst(types::I64, 0);
     let classes = b.ins().iconst(types::I64, i64::from(classified));
@@ -60,6 +61,7 @@ pub(in crate::native_artifact) fn emit_entry(
         true,
         word_chunks,
         classified,
+        output_width,
     );
     for (block, status) in [(complete, COMPLETE), (declined, COLD), (missing, MISSING)] {
         b.switch_to_block(block);
@@ -159,6 +161,9 @@ fn hash_chunk(
 /// otherwise the finite physical allowance in frame.fuel/comparison is reduced
 /// per query. Neither mode consumes producer, Map, or Collection logical fees.
 /// All exits store the exact completed query count and remaining allowance.
+// Output width comes only from the independently derived sealed source region.
+// A failed checked cast declines this private physical attempt. No source visit,
+// logical body fee or public value is committed before ordinary replay.
 pub(in crate::native_artifact) fn emit(
     b: &mut FunctionBuilder<'_>,
     frame: Value,
@@ -170,7 +175,15 @@ pub(in crate::native_artifact) fn emit(
     physical_order: bool,
     word_chunks: bool,
     classified: bool,
+    output_width: u8,
 ) {
+    let output_type = match output_width {
+        1 => types::I8,
+        2 => types::I16,
+        4 => types::I32,
+        8 => types::I64,
+        _ => unreachable!("sealed String lookup output width"),
+    };
     let cold = b.create_block();
     let done = b.create_block();
     let missing_key = b.create_block();
@@ -492,8 +505,16 @@ pub(in crate::native_artifact) fn emit(
     b.switch_to_block(hit);
     let slot = b.use_var(slot_address);
     let value = get(b, slot, offset_of!(Slot, value));
+    if output_width < 8 {
+        let maximum = (1u64 << (u32::from(output_width) * 8)) - 1;
+        let valid = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedLessThanOrEqual, value, maximum as i64);
+        require(b, valid, cold);
+    }
     let at = b.use_var(cursor);
     let offset = b.ins().imul_imm(at, 8);
+    let output_offset = b.ins().imul_imm(at, i64::from(output_width));
     let destination = if let Some(classes) = classes {
         let scatter = b.create_block();
         let normal = b.create_block();
@@ -507,18 +528,23 @@ pub(in crate::native_artifact) fn emit(
             .ins()
             .icmp(IntCC::UnsignedLessThan, row, output_count.unwrap());
         require(b, valid, cold);
-        let row_offset = b.ins().imul_imm(row, 8);
+        let row_offset = b.ins().imul_imm(row, i64::from(output_width));
         let pointer = b.ins().iadd(output, row_offset);
         b.ins().jump(joined, &[pointer.into()]);
         b.switch_to_block(normal);
-        let pointer = b.ins().iadd(output, offset);
+        let pointer = b.ins().iadd(output, output_offset);
         b.ins().jump(joined, &[pointer.into()]);
         b.switch_to_block(joined);
         b.block_params(joined)[0]
     } else {
-        b.ins().iadd(output, offset)
+        b.ins().iadd(output, output_offset)
     };
-    put(b, destination, 0, value);
+    let value = if output_width < 8 {
+        b.ins().ireduce(output_type, value)
+    } else {
+        value
+    };
+    b.ins().store(MemFlags::new(), value, destination, 0);
     b.ins().jump(commit, &[]);
     b.switch_to_block(commit);
     let at = b.use_var(cursor);
@@ -549,11 +575,12 @@ pub(in crate::native_artifact) fn emit(
         let first = get(b, pointer, 0);
         let valid = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, first, row);
         require(b, valid, cold);
-        let first_offset = b.ins().imul_imm(first, 8);
+        let first_offset = b.ins().imul_imm(first, i64::from(output_width));
         let pointer = b.ins().iadd(output, first_offset);
-        let value = get(b, pointer, 0);
-        let destination = b.ins().iadd(output, offset);
-        put(b, destination, 0, value);
+        let value = b.ins().load(output_type, MemFlags::new(), pointer, 0);
+        let output_offset = b.ins().imul_imm(row, i64::from(output_width));
+        let destination = b.ins().iadd(output, output_offset);
+        b.ins().store(MemFlags::new(), value, destination, 0);
         b.def_var(left, row);
         b.ins().jump(head, &[]);
     } else {

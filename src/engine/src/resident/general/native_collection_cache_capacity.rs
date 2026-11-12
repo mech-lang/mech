@@ -5,6 +5,14 @@ use super::{
 use crate::resident::budget::NativeLibraryWorkBudget;
 use mech_core::{ManagedMemoryBudget, MemoryBudgetLimits, MemoryRuntimeError, SchemaTable, Value};
 
+pub(super) fn metadata_work(inputs: usize) -> Option<u64> {
+    let ports = u64::try_from(inputs.checked_add(1)?).ok()?;
+    (core::mem::size_of::<Value>() as u64)
+        .checked_mul(ports)?
+        .checked_mul(8)?
+        .checked_add(1024)
+}
+
 /// Metadata is charged before reading the fixed current input/shape tapes.
 /// The returned bound grants only cache coexistence; all maintained call facts,
 /// selector checks, work limits and atomic kernel publication still execute.
@@ -20,15 +28,7 @@ pub(super) fn admits(
     additional_bytes: u64,
     additional_nodes: u64,
 ) -> Result<bool, InvokeError> {
-    let ports = inputs
-        .len()
-        .checked_add(1)
-        .ok_or(InvokeError::InvalidInput)?;
-    let metadata = (core::mem::size_of::<Value>() as u64)
-        .checked_mul(ports as u64)
-        .and_then(|n| n.checked_mul(8))
-        .and_then(|n| n.checked_add(1024))
-        .ok_or(InvokeError::InvalidInput)?;
+    let metadata = metadata_work(inputs.len()).ok_or(InvokeError::InvalidInput)?;
     work.charge(metadata, 0)?;
     let memory = work.memory_budget();
     let Some(bound) = headroom::current_call_bound(template, schemas, inputs, output, &memory)

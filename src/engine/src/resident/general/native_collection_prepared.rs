@@ -803,6 +803,72 @@ impl NativePreparedLibraryCall {
         self.binding_work
     }
 
+    /// Pure fixed metadata-work envelope for a sealed read-only String/U64
+    /// access replay, not work credit, a call permit or a payload bound. The
+    /// caller proves the current source visit and, for RecordFieldAccess, the
+    /// immutable selector naming this exact field. This checks that field's
+    /// schema, so aggregate_access needs no whole-schema closure. Other leaf
+    /// families and arithmetic overflow decline before any optional spending.
+    #[cfg(feature = "sequence_buffers")]
+    pub fn selected_string_map_replay_metadata_work_bound(
+        &self,
+        record_ordinal: Option<usize>,
+    ) -> Option<u64> {
+        use crate::native_artifact::NativeCollectionPrimitive as Primitive;
+        use crate::resident::budget::native_turn_plan_cache::NativeTurnPlanCache;
+        let refinements = match (self.template.primitive(), record_ordinal) {
+            (Primitive::MapKeyAccess, None) if self.supports_borrowed_record_map_read() => {
+                // Parameter-free Map: String search admission, then mutation
+                // admission. No aggregate source/target closure is required.
+                2
+            }
+            (Primitive::RecordFieldAccess, Some(ordinal))
+                if self.supports_borrowed_record_map_projection() =>
+            {
+                let mech_core::SchemaBody::Record(fields) = self.template.inputs()[0].body() else {
+                    return None;
+                };
+                if &fields.get(ordinal)?.schema != self.template.output().body() {
+                    return None;
+                }
+                // At most one aggregate admission plus final mutation
+                // admission. Exact selected field equality above also rules
+                // out the expensive schema-closing branch.
+                2
+            }
+            _ => return None,
+        };
+        let inputs = self.template.inputs().len();
+        let capacity = super::cache_capacity::metadata_work(inputs)?;
+        let binding_owner = (core::mem::size_of::<CachedBinding>() as u64)
+            .checked_mul(8)?
+            .checked_add(256)?;
+        let plan_owner = NativeTurnPlanCache::construction_owner_bytes_for_inputs(inputs)?
+            .checked_mul(8)?
+            .checked_add(256)?;
+        // binding_bytes bounds both the ordinary invocation metadata and its
+        // descriptor-only component for these unchanged selected binders.
+        // Add both warm probe AND full miss: warm geometry can miss, and cold
+        // or cache-denied calls instead pay at most the same full envelope.
+        let plan = NativeTurnPlanCache::probe_work_for_ports(inputs, 1, self.binding_bytes)?
+            .checked_add(self.binding_bytes)?;
+        let refine = NativeTurnPlanCache::refinement_work_bound(self.binding_bytes)?
+            .checked_mul(refinements)?;
+        self.lookup_work
+            .checked_add(capacity.checked_mul(2)?)? // both capacity probes
+            .checked_add(512)? // unbounded optional-cache decision alternative
+            .checked_add(self.binding_work)?
+            .checked_add(binding_owner)?
+            .checked_add(super::invocation::plan_cache_guard_work()?)?
+            .checked_add(self.binding_bytes)? // cold plan-cache construction
+            .checked_add(plan_owner)?
+            .checked_add(plan)?
+            .checked_add(refine)?
+            .checked_add(NativeTurnPlanCache::selected_access_data_work_bound(
+                inputs,
+            )?)
+    }
+
     /// Constant-size selected range semantics for a certified native source
     /// strategy, NOT a kernel invocation or a materialized Matrix. The caller
     /// prepays binding_work and reserves binding_metadata_bytes on the SAME

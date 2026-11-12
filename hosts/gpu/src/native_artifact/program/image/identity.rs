@@ -505,7 +505,11 @@ fn selected_template(
 // their actual spans; all original logical managed envelopes stay in force.
 // IR334 commits proved frame-footprint observations atomically on the same
 // scoped worker account; aggregate misses preserve the ordered visitor.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 334;
+// IR335 lowers sealed checked unsigned lookup yields into their final typed
+// private output; a miss commits no logical body work before ordinary replay.
+// IR336 selects canonical or deferred publication at the original producer exit
+// using a freshly proved total guard circuit; bypasses keep canonical ownership.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 336;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -751,7 +755,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 334;
 // private-node accounting; refused loans keep the ordinary census path.
 // Work125 funds the same source-site alias checks and ordered matching
 // retirements at numeric-tree first writes; existing leaves keep their prices.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 126;
+// Work127 funds the additional native prediction at its original exit visit.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 127;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

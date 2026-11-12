@@ -544,3 +544,238 @@ fn borrowed_contains_uses_one_bool_byte_at_exact_temporary_boundary() {
         }
     }
 }
+
+fn restored_replay_calls(calls: &[NativePreparedLibraryCall]) -> Vec<NativePreparedLibraryCall> {
+    struct Row<'a>(&'a NativePreparedLibraryCall);
+    impl serde::Serialize for Row<'_> {
+        fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+            self.0.serialize_build_owned_binding(serializer)
+        }
+    }
+    let catalog = catalog();
+    calls
+        .iter()
+        .map(|call| {
+            let row = serde_json::to_string(&Row(call)).unwrap();
+            // SAFETY: the exact prepared call's row/template, current canonical
+            // schemas and the same intrinsic catalog are all retained here.
+            unsafe {
+                NativePreparedLibraryCall::from_build_owned_plan_binding_record_with_descriptors(
+                    crate::native_artifact::BuildOwnedImageRecord::Json(&row),
+                    call.template.clone(),
+                    call.schemas.clone(),
+                    &catalog,
+                    &mut super::super::NativeDescriptorTemplatePool::default(),
+                )
+            }
+            .unwrap()
+        })
+        .collect()
+}
+
+fn check_replay_metadata_cache_paths(
+    call: &NativePreparedLibraryCall,
+    ordinal: Option<usize>,
+    inputs: &[Option<Value>],
+    memory: &ManagedMemoryBudget,
+) {
+    use super::super::{NativePlanCacheState, NativePreparedLibraryCallCache};
+    let mut policy = limits();
+    policy.max_temporary_bytes = Some(16 << 20);
+    let baseline = (memory.used_bytes(), memory.retained_nodes());
+    let work = NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, memory).unwrap();
+    let before_bound = (memory.used_bytes(), memory.retained_nodes());
+    let fixed = call
+        .selected_string_map_replay_metadata_work_bound(ordinal)
+        .unwrap();
+    assert_eq!(work.used(), (0, 0), "the bound must not spend work");
+    assert_eq!(before_bound, (memory.used_bytes(), memory.retained_nodes()));
+    let mut expected = None;
+    call.invoke_current(inputs, &mut expected, policy, &work)
+        .unwrap();
+    assert!(
+        work.used().0 <= fixed,
+        "tiny payload still pays complete binding metadata"
+    );
+    let expected = expected.unwrap().canonical_data_draft().unwrap();
+    let mut cache = NativePreparedLibraryCallCache::default();
+    for warm in [false, true] {
+        let before = work.used();
+        let mut output = None;
+        call.invoke_current_cached(&mut cache, inputs, &mut output, policy, &work)
+            .unwrap();
+        assert_eq!(
+            output.as_ref().unwrap().canonical_data_draft().unwrap(),
+            expected
+        );
+        assert!(work.used().0 - before.0 <= fixed, "warm={warm}: {fixed}");
+        assert!(
+            matches!(
+                cache.binding.as_ref().unwrap().plans,
+                NativePlanCacheState::Cached(_)
+            ),
+            "exercise a genuine admitted native turn-plan cache"
+        );
+        drop(output);
+    }
+    // Discover the ordinary call's actual capacity boundary while a warmed
+    // cache stays live. Capacity is an observation, never a work refill.
+    let held = (memory.used_bytes(), memory.retained_nodes());
+    let available = memory.limit_bytes() - held.0;
+    let trial = |allowance| {
+        let padding = memory.reserve_capacity(available - allowance).unwrap();
+        let mut output = None;
+        let result = call.invoke_current(inputs, &mut output, policy, &work);
+        drop((output, padding));
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), held);
+        result.is_ok()
+    };
+    let (mut low, mut high) = (0, available);
+    assert!(trial(high));
+    while low < high {
+        let mid = low + (high - low) / 2;
+        if trial(mid) {
+            high = mid
+        } else {
+            low = mid + 1
+        }
+    }
+    assert!(low > 0 && trial(low) && !trial(low - 1));
+    // An already warm complete-ceiling cache does not evict on a later
+    // mandatory scope denial. Retain that exact error/publication behavior.
+    let before = work.used();
+    let padding = memory.reserve_capacity(available).unwrap();
+    let mut output = None;
+    assert!(
+        call.invoke_current_cached(&mut cache, inputs, &mut output, policy, &work)
+            .is_err()
+    );
+    assert!(output.is_none());
+    assert!(cache.binding.is_some());
+    assert!(work.used().0 - before.0 <= fixed);
+    drop((output, padding));
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), held);
+    drop(cache);
+    let mut cache = NativePreparedLibraryCallCache::default();
+    let before = work.used();
+    let remaining = memory.limit_bytes() - memory.used_bytes();
+    let padding = memory.reserve_capacity(remaining - low).unwrap();
+    let mut output = None;
+    call.invoke_current_cached(&mut cache, inputs, &mut output, policy, &work)
+        .unwrap();
+    assert_eq!(
+        output.as_ref().unwrap().canonical_data_draft().unwrap(),
+        expected
+    );
+    assert!(
+        cache.binding.is_none(),
+        "exercise cold optional-cache capacity refusal"
+    );
+    assert!(work.used().0 - before.0 <= fixed);
+    drop((output, padding, cache, work));
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
+}
+
+#[test]
+fn selected_string_map_replay_fixed_work_covers_cold_warm_and_resource_denied_caches() {
+    for artifact in variants() {
+        let originals = calls(&artifact);
+        let restored = restored_replay_calls(&originals);
+        for calls in [&originals, &restored] {
+            let memory = ManagedMemoryBudget::new(64 << 20);
+            let (root, selector, key) = values(&artifact, calls, &memory, 17, "é");
+            let project = calls
+                .iter()
+                .find(|c| c.supports_borrowed_record_map_projection())
+                .unwrap();
+            let read = calls
+                .iter()
+                .find(|c| c.template.primitive() == Primitive::MapKeyAccess)
+                .unwrap();
+            let contains = calls
+                .iter()
+                .find(|c| c.template.primitive() == Primitive::MapContainsKey)
+                .unwrap();
+            assert_eq!(
+                contains.selected_string_map_replay_metadata_work_bound(None),
+                None
+            );
+            assert_eq!(
+                read.selected_string_map_replay_metadata_work_bound(Some(0)),
+                None
+            );
+            assert_eq!(
+                project.selected_string_map_replay_metadata_work_bound(None),
+                None
+            );
+            assert_eq!(
+                project.selected_string_map_replay_metadata_work_bound(Some(usize::MAX)),
+                None
+            );
+            let wrong = 1 - ordinal(project);
+            assert_eq!(
+                project.selected_string_map_replay_metadata_work_bound(Some(wrong)),
+                None
+            );
+            let projected_inputs = [Some(root), Some(selector)];
+            check_replay_metadata_cache_paths(
+                project,
+                Some(ordinal(project)),
+                &projected_inputs,
+                &memory,
+            );
+            let work = NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &memory).unwrap();
+            let mut map = None;
+            project
+                .invoke_current(&projected_inputs, &mut map, limits(), &work)
+                .unwrap();
+            let read_inputs = [map, Some(key)];
+            check_replay_metadata_cache_paths(read, None, &read_inputs, &memory);
+            drop((read_inputs, projected_inputs, work));
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+        }
+    }
+}
+
+#[test]
+fn selected_string_map_replay_bound_preserves_ordinary_exact_work_and_retry() {
+    for artifact in variants() {
+        let calls = calls(&artifact);
+        let memory = ManagedMemoryBudget::new(64 << 20);
+        let (root, selector, _) = values(&artifact, &calls, &memory, 17, "é");
+        let project = calls
+            .iter()
+            .find(|c| c.supports_borrowed_record_map_projection())
+            .unwrap();
+        let inputs = [Some(root), Some(selector)];
+        let measured = NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &memory).unwrap();
+        let mut expected = None;
+        project
+            .invoke_current(&inputs, &mut expected, limits(), &measured)
+            .unwrap();
+        let exact = measured.used();
+        assert!(exact.0 > project.binding_work());
+        for cap in [exact.0 - 1, exact.0, exact.0] {
+            let work = NativeLibraryWorkBudget::new(cap, exact.1, &memory).unwrap();
+            let before = (memory.used_bytes(), memory.retained_nodes());
+            let mut output = None;
+            let result = project.invoke_current(&inputs, &mut output, limits(), &work);
+            if cap < exact.0 {
+                assert!(result.is_err());
+                assert!(output.is_none());
+            } else {
+                result.unwrap();
+                assert_eq!(work.used(), exact);
+                assert_eq!(
+                    output.as_ref().unwrap().canonical_data_draft().unwrap(),
+                    expected.as_ref().unwrap().canonical_data_draft().unwrap()
+                );
+            }
+            drop(output);
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), before);
+            drop(work);
+        }
+        drop((expected, inputs, measured));
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+}
