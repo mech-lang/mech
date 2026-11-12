@@ -1,6 +1,24 @@
 # Current compression scoreboard
 
-The current retained compression image was measured before the #990 integration. The merged compiler has separate qualification pending.
+**22/81 cases faster than Roc (27.16%)** in the fresh matched campaign. Goal 100%.
+
+The merged executable is faster than libdeflate on 3/81 and faster than both on 0/81. In the same campaign R355 is faster than Roc on 47/81 and libdeflate on 7/81. The merged executable takes 1.427894× R355's time across the 81 cases.
+
+| Input | R355 / Roc | Merged / Roc | R355 / libdeflate | Merged / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| eight-literals | 0.190937× | 0.185935× | 2.326859× | 2.265909× |
+| prefix-natural-4096 | 0.895152× | 0.933876× | 1.505256× | 1.570372× |
+| prefix-natural-8192 | 1.057780× | 1.106123× | 1.306889× | 1.366617× |
+| prefix-random-16384 | 0.998373× | 1.153022× | 2.646997× | 3.057019× |
+| reymont-prefix-32769 | 1.187474× | 1.248135× | 1.080860× | 1.136075× |
+| prefix-natural-131072 | 1.205143× | 1.301038× | 0.960539× | 1.036971× |
+| prefix-natural-262144 | 1.214042× | 1.277660× | 0.986414× | 1.038104× |
+| prefix-natural-1048576 | 1.210550× | 1.282665× | 0.974787× | 1.032857× |
+| prefix-repeated-1048576 | 0.649217× | 1.608525× | 1.021393× | 2.530643× |
+
+[Merged compiler qualification, comparison and profiles](native-compression-integration-baseline.md).
+
+## Historical R355 measured comparison
 
 **47/81 cases faster than Roc (58.02%)** in the primary cohort. Goal 100%.
 
