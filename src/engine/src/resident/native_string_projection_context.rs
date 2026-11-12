@@ -124,6 +124,7 @@ impl<'a> NativeProjectionIndexContext<'a> {
     /// Only a completely funded original prefix may skip its intermediate
     /// checks. Include this projection's prior demand before the same scoped
     /// account checks; every declined preview leaves all observations intact.
+    #[cfg(feature = "sequence_buffers")]
     pub(in crate::resident) fn try_charge_prefix(&self, compute: u64, comparison: u64) -> bool {
         self.check(compute, comparison, 0, 0).is_ok()
             && self.work.try_charge_scoped_prefix(compute, comparison)
