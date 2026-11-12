@@ -427,18 +427,13 @@ pub(in crate::native_artifact) fn load_word(
         8 => types::I64,
         _ => unreachable!(),
     };
-    let value = b.ins().load(
+    super::numeric_words::load_unsigned_word(
+        b,
         ty,
         super::numeric_words::guarded_load_flags(options).with_endianness(Endianness::Little),
         address,
         0,
-    );
-    let value = if width < 8 {
-        b.ins().uextend(types::I64, value)
-    } else {
-        value
-    };
-    value
+    )
 }
 
 #[cfg(test)]

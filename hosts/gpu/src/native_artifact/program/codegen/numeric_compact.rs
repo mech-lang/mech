@@ -577,13 +577,15 @@ pub(in crate::native_artifact) fn emit(
                                 .push((site, snapshot.site, snapshot.word));
                             value
                         } else {
-                            let value = b.ins().load(ty, MemFlags::new(), address, 0);
+                            let value = super::numeric_words::load_unsigned_word(
+                                b,
+                                ty,
+                                MemFlags::new(),
+                                address,
+                                0,
+                            );
                             report.typed_loads.push((site, width));
-                            if width < 8 {
-                                b.ins().uextend(types::I64, value)
-                            } else {
-                                value
-                            }
+                            value
                         };
                         words.write(b, *output as usize, value);
 

@@ -3206,6 +3206,19 @@
 
 ;;; Rules for `brif` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Consume only a complete, bounded, single-use ICMP conjunction. Its pure
+;; preflight declines unknown/raw Boolean words, phis, floats and shared values
+;; before any machine instruction is emitted. The flags producer keeps the
+;; entire CMP/CCMP sequence atomic with its consuming branch.
+(type ComparisonChain (primitive ComparisonChain))
+(decl pure partial icmp_conjunction (Value) ComparisonChain)
+(extern constructor icmp_conjunction icmp_conjunction)
+(decl emit_icmp_conjunction_branch (ComparisonChain MachLabel MachLabel) Unit)
+(extern constructor emit_icmp_conjunction_branch emit_icmp_conjunction_branch)
+(rule 3 (lower_branch (brif value _ _) (two_targets taken not_taken))
+      (if-let chain (icmp_conjunction value))
+      (emit_icmp_conjunction_branch chain taken not_taken))
+
 ;; A vector truth observed only by a branch needs no canonical scalar Boolean.
 ;; Pairwise unsigned maxima preserve whether any of the 128 bits is nonzero.
 ;; Keep the separate value-producing lowering for Boolean storage/other uses.

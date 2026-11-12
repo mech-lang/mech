@@ -1,7 +1,7 @@
 //! Actual parent/child admissions, current roots, finite funding and recovery.
 use super::*;
-mod narrow_numeric_tree;
 mod checked_increment;
+mod narrow_numeric_tree;
 use crate::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;
@@ -63,6 +63,7 @@ mod ordered_reduction_terminal;
 mod pack;
 mod phase_descendants;
 mod physical_exits;
+mod producer_element_ranges;
 mod projection_elements;
 mod read_packs;
 mod record_lookup;

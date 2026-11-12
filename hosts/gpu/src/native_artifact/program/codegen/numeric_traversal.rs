@@ -12,6 +12,16 @@ use mech_engine::native_artifact::{
 use std::collections::BTreeSet;
 #[path = "numeric_checked_updates.rs"]
 mod checked_updates;
+#[path = "producer_element_ranges.rs"]
+mod producer_element_ranges;
+
+pub(super) fn producer_reads(
+    code: CodePlan<'_>,
+    numeric: &Numeric,
+    controls: &crate::native_artifact::codegen::options::CompilationControls,
+) -> BTreeSet<(usize, usize, u32)> {
+    producer_element_ranges::derive(code, numeric, controls)
+}
 
 pub(super) fn derive(
     code: CodePlan<'_>,

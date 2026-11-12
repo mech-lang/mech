@@ -179,14 +179,13 @@ fn emit(
     let at = b.use_var(cursor);
     let displacement = b.ins().imul_imm(at, i64::from(region.input_width));
     let address = b.ins().iadd(input, displacement);
-    let raw = b
-        .ins()
-        .load(integer(region.input_width), MemFlags::new(), address, 0);
-    let word = if region.input_width == 8 {
-        raw
-    } else {
-        b.ins().uextend(types::I64, raw)
-    };
+    let word = super::numeric_words::load_unsigned_word(
+        b,
+        integer(region.input_width),
+        MemFlags::new(),
+        address,
+        0,
+    );
     let mut words = captures.clone();
     words.insert(region.element, word);
     for &site in &region.steps {

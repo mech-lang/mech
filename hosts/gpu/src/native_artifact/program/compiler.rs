@@ -945,7 +945,11 @@ pub fn emit_minimal_numeric_object_for_diagnostic(
         let function = module
             .declare_function(&symbol, Linkage::Export, &signature)
             .map_err(backend)?;
+        let mut bit_counts =
+            crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
         let cleanup = cfg_cleanup::optimize(&controls, &mut context, module.isa())?;
+        bit_counts +=
+            crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
         let calls = context
             .func
             .layout
@@ -964,7 +968,7 @@ pub fn emit_minimal_numeric_object_for_diagnostic(
         let compiled = context
             .compiled_code()
             .ok_or_else(|| backend("minimal numeric function lacks machine code"))?;
-        functions.push(serde_json::json!({"header":site,"symbol":symbol,"input_words":numeric_minimal::input_words(proof,region.tail.carrier().get())?,"output_words":numeric_minimal::output_words(proof)?,"arrays":proof.arrays,"scalar_words":proof.scalar_words,"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"cleanup":cleanup,"calls":calls}));
+        functions.push(serde_json::json!({"header":site,"symbol":symbol,"input_words":numeric_minimal::input_words(proof,region.tail.carrier().get())?,"output_words":numeric_minimal::output_words(proof)?,"arrays":proof.arrays,"scalar_words":proof.scalar_words,"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"cleanup":cleanup,"calls":calls,"bit_counts":bit_counts}));
     }
     let metadata = serde_json::json!({"contract":"Diagnostic typed computation, exact ordinary accounting/publication/recovery omitted; not NoLimits or a qualified Program entry.","shared_semantic_plan":true,"shared_scalar_array_emitter_and_backend":true,"source_names_not_used_for_selection":true,"functions":functions,"numeric_reports":reports,"codegen_flags":PROGRAM_CODEGEN_FLAGS});
     Ok((module.finish().emit().map_err(backend)?, metadata))

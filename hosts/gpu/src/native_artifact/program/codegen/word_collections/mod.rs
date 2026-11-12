@@ -130,12 +130,14 @@ fn define_with_captures<M: Module>(
                     let displacement = b.ins().imul_imm(index, i64::from(region.input_width));
                     let address = b.ins().iadd(source, displacement);
                     let ty = memory_type(region.input_width);
-                    let word = b.ins().load(ty, MemFlags::new(), address, 0);
-                    let word = if ty == types::I64 {
-                        word
-                    } else {
-                        b.ins().uextend(types::I64, word)
-                    };
+                    let word =
+                        crate::native_artifact::program::codegen::numeric_words::load_unsigned_word(
+                            &mut b,
+                            ty,
+                            MemFlags::new(),
+                            address,
+                            0,
+                        );
                     words.write(&mut b, region.element as usize, word);
                 }
                 Action::CollectionPush { .. } => {

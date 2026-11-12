@@ -141,6 +141,9 @@ pub(in crate::native_artifact) struct ProgramMetadata {
 pub(in crate::native_artifact) struct PreparedNativeProgram {
     metadata: ProgramMetadata,
     complete_frontiers: Box<[NativeTextLineRetentionFrontier]>,
+    // Compiler-only source facts belong to this exact immutable Plan owner.
+    // Never serialized or moved into runtime ProgramMetadata.
+    producer_element_reads: std::cell::OnceCell<std::collections::BTreeSet<(usize, u32)>>,
 }
 impl PreparedNativeProgram {
     pub(in crate::native_artifact) fn prepare(
@@ -512,11 +515,19 @@ impl PreparedNativeProgram {
         Ok(Self {
             metadata,
             complete_frontiers: line_retention_frontiers.into_boxed_slice(),
+            producer_element_reads: std::cell::OnceCell::new(),
         })
     }
 
     pub(in crate::native_artifact) fn plan(&self) -> &NativeProgramArtifactPlan {
         &self.metadata.plan
+    }
+    pub(in crate::native_artifact) fn producer_element_reads(
+        &self,
+        derive: impl FnOnce(&NativeProgramArtifactPlan) -> std::collections::BTreeSet<(usize, u32)>,
+    ) -> &std::collections::BTreeSet<(usize, u32)> {
+        self.producer_element_reads
+            .get_or_init(|| derive(self.plan()))
     }
     pub(in crate::native_artifact) fn metadata(&self) -> &ProgramMetadata {
         &self.metadata
