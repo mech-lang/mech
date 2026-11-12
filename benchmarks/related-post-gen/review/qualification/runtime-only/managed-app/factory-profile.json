@@ -1,0 +1,13 @@
+{
+  "factory_declarations": [],
+  "kernel_operations": [],
+  "missing_linkage_operations": [],
+  "mode": "artifact-selected",
+  "required_core_value_features": [
+    "u64"
+  ],
+  "required_engine_features": [],
+  "schema": "mech.canonical-linked-factory-profile.v1",
+  "selection_basis": "native-image-libraries",
+  "selective_conversions": true
+}

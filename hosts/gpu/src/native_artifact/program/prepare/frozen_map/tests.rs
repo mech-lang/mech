@@ -69,6 +69,7 @@ fn parts(
         &owners,
         &plan.facts().buffer_frames(),
         &[],
+        &Default::default(),
     )
     .unwrap();
     (plan, owners, closed)

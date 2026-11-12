@@ -2,10 +2,11 @@
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::common::{aggregates, ssa_words::Words};
 use crate::native_artifact::codegen::control::plan::CodePlan;
+use crate::native_artifact::codegen::options::{OptimizationOptions, OptimizationPass};
 use crate::native_artifact::compiler::backend;
-use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation};
+use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation, Proof};
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{InstBuilder, Value, types};
+use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
     NativeBufferFrameOperation as Frame, NativeIterationAction as Action,
@@ -13,6 +14,68 @@ use mech_engine::native_artifact::{
     NativeMatchTerminator as Branch,
 };
 use std::collections::BTreeSet;
+
+/// The entry witness validates these exact dimensions before lending a view.
+/// Replacements preserve its shape; an append changes its logical length and
+/// must never use this certificate, even if an earlier schema was fixed.
+pub(super) fn fixed_length(code: CodePlan<'_>, proof: &Proof, array: usize) -> Option<u64> {
+    let array = proof.arrays.get(array)?;
+    if array.appends {
+        return None;
+    }
+    let Action::LibraryCall { template, .. } = code.blocks().get(array.witness)?.action() else {
+        return None;
+    };
+    let mech_core::SchemaBody::Matrix { dimensions, .. } = template.inputs().first()?.body() else {
+        return None;
+    };
+    if dimensions.len() != 2 {
+        return None;
+    }
+    dimensions.iter().try_fold(1u64, |size, dimension| {
+        let mech_core::DimensionExpr::Constant(value) = dimension else {
+            return None;
+        };
+        size.checked_mul(*value)
+    })
+}
+
+/// Only for a packed cell load AFTER the original logical bounds check (or
+/// its current-window proof) and the row-major address translation. Entry
+/// validated the exact typed slice and dimensions and retains its owner for
+/// this synchronous loan. Packed reads independently check their whole window.
+/// Thus this access cannot fault at this point. It is still dependent on
+/// control and mutable memory: no readonly, can_move, alignment or alias claim.
+pub(super) fn guarded_load_flags(options: OptimizationOptions) -> MemFlags {
+    if options.enabled(OptimizationPass::GuardedNumericLoads) {
+        MemFlags::new().with_notrap()
+    } else {
+        MemFlags::new()
+    }
+}
+
+/// Read one admitted unsigned packed cell directly into its canonical word.
+/// `ty` is the validated physical access type, not the result type. An I64
+/// result from ULoad8/16/32 still reads exactly one, two, or four bytes.
+/// Keeping extension in the memory operation avoids a separate narrow SSA
+/// value whose pure extension may move across source blocks before lowering.
+/// Address/selector proofs and every memory flag remain the caller's authority.
+pub(in crate::native_artifact) fn load_unsigned_word(
+    b: &mut FunctionBuilder<'_>,
+    ty: cranelift_codegen::ir::Type,
+    flags: MemFlags,
+    address: Value,
+    offset: i32,
+) -> Value {
+    match ty {
+        types::I8 => b.ins().uload8(types::I64, flags, address, offset),
+        types::I16 => b.ins().uload16(types::I64, flags, address, offset),
+        types::I32 => b.ins().uload32(flags, address, offset),
+        types::I64 => b.ins().load(types::I64, flags, address, offset),
+        _ => unreachable!("unsigned word load requires a validated physical width"),
+    }
+}
+
 pub(super) fn source_slots(
     code: CodePlan<'_>,
     sites: impl IntoIterator<Item = usize>,
@@ -117,11 +180,10 @@ pub(super) fn frame_word_moves(
     let CodePlan::Program(program) = code else {
         return Err(backend("numeric frame lacks managed plan"));
     };
-    let fields = |value| {
+    let recipe = |value| {
         recipes
             .iter()
             .find(|f| f.value == value)
-            .map(|f| f.fields.as_slice())
             .ok_or_else(|| backend("numeric frame lost exact scalar fields"))
     };
     let operation = program
@@ -131,40 +193,83 @@ pub(super) fn frame_word_moves(
         .ok_or_else(|| backend("numeric frame lost fields"))?
         .operation();
     let assignments = match operation {
+        Frame::EnumPack { .. } | Frame::Observe { .. } => {
+            return Err(backend("tagged frame outside numeric word emitter"));
+        }
         Frame::Pack { output } => {
             let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
                 return Err(backend("numeric pack lost operands"));
             };
-            fields(output.get())?
-                .iter()
-                .zip(operands)
-                .filter_map(|(field, operand)| {
-                    field.map(|field| (shadow + field, operand.get() as usize))
-                })
-                .collect()
+            let mut copied = Vec::new();
+            for (ordinal, operand) in operands.iter().enumerate() {
+                let target = recipe(output.get())?
+                    .field_slots(ordinal)
+                    .collect::<Vec<_>>();
+                if target.is_empty() {
+                    continue;
+                }
+                if code.kind(*operand).is_some() {
+                    if target.len() != 1 {
+                        return Err(backend("numeric scalar pack span differs"));
+                    }
+                    copied.push((shadow + target[0], operand.get() as usize));
+                } else {
+                    let source = recipe(operand.get())?.scalar_slots().collect::<Vec<_>>();
+                    if source.len() != target.len() {
+                        return Err(backend("numeric composite pack span differs"));
+                    }
+                    copied.extend(
+                        source
+                            .into_iter()
+                            .zip(target)
+                            .map(|(from, to)| (shadow + to, shadow + from)),
+                    );
+                }
+            }
+            copied
         }
-        Frame::Copy { source, output } => fields(source.get())?
-            .iter()
-            .zip(fields(output.get())?)
-            .filter_map(|(from, to)| from.zip(*to))
+        Frame::Copy { source, output } => recipe(source.get())?
+            .scalar_slots()
+            .zip(recipe(output.get())?.scalar_slots())
             .map(|(from, to)| (shadow + to, shadow + from))
             .collect(),
         Frame::Project {
             source,
             ordinal,
             output,
-        } => fields(source.get())?[*ordinal]
-            .map(|field| (output.get() as usize, shadow + field))
-            .into_iter()
-            .collect(),
+        } => {
+            if let Some(field) = recipe(source.get())?.fields[*ordinal] {
+                vec![(output.get() as usize, shadow + field)]
+            } else {
+                let source = recipe(source.get())?
+                    .field_slots(*ordinal)
+                    .collect::<Vec<_>>();
+                if source.is_empty() {
+                    return Ok(FrameWordMoves {
+                        assignments: Vec::new(),
+                        parallel: true,
+                    });
+                }
+                let target = recipe(output.get())?.scalar_slots().collect::<Vec<_>>();
+                if source.len() != target.len() {
+                    return Err(backend("numeric composite projection span differs"));
+                }
+                source
+                    .into_iter()
+                    .zip(target)
+                    .map(|(from, to)| (shadow + to, shadow + from))
+                    .collect()
+            }
+        }
     };
+    // Composite spans may overlap. Match the existing read-all/write-all
+    // emission, and expose that ordering to current-traversal proofs.
     Ok(FrameWordMoves {
         assignments,
-        parallel: matches!(operation, Frame::Copy { .. }),
+        parallel: true,
     })
 }
 
-/// Preserve the original Pack/Project and overlapping Copy emission order.
 pub(super) fn frame_words(
     b: &mut FunctionBuilder<'_>,
     words: &Words,
@@ -174,36 +279,26 @@ pub(super) fn frame_words(
     recipes: &[FrameWords],
 ) -> Result<(), NativeCompileError> {
     let moves = frame_word_moves(shadow, code, site, recipes)?;
-    if moves.parallel {
-        // Copy must read every old scalar before writing any next-state lane.
-        let copied = moves
-            .assignments
-            .into_iter()
-            .map(|(to, from)| (to, words.read(b, from)))
-            .collect::<Vec<_>>();
-        for (to, value) in copied {
-            words.write(b, to, value);
-        }
-    } else {
-        for (to, from) in moves.assignments {
-            let value = words.read(b, from);
-            words.write(b, to, value);
-        }
+    let copied = moves
+        .assignments
+        .into_iter()
+        .map(|(to, from)| (to, words.read(b, from)))
+        .collect::<Vec<_>>();
+    for (to, value) in copied {
+        words.write(b, to, value);
     }
     Ok(())
 }
 
-/// Canonical linear selection is column-major over row-major physical storage.
-/// Call only after the admitted unsigned view and one-based bounds check.
-pub(super) fn linear_address(
+/// Map an admitted zero-based logical ordinal into canonical matrix backing.
+/// The original one-based bounds check must precede this shared operation.
+pub(in crate::native_artifact) fn linear_ordinal(
     b: &mut FunctionBuilder<'_>,
     ordinal: Value,
     rows: Value,
     columns: Value,
-    width: u8,
     schema: &mech_core::SchemaBody,
-    base: impl FnOnce(&mut FunctionBuilder<'_>) -> Value,
-) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
+) -> Value {
     // The same entry witness that lends this view has already checked the
     // current owner's exact schema and dimensions. A unit dimension makes
     // column-major source order identical to row-major backing order. Derive
@@ -211,7 +306,7 @@ pub(super) fn linear_address(
     let vector = matches!(schema, mech_core::SchemaBody::Matrix { dimensions, .. }
         if dimensions.len() == 2 && dimensions.iter().any(|dimension|
             matches!(dimension, mech_core::DimensionExpr::Constant(1))));
-    let physical = if vector {
+    if vector {
         ordinal
     } else {
         // Generic schemas can still carry a current row or column vector.
@@ -237,7 +332,34 @@ pub(super) fn linear_address(
         b.ins().jump(done, &[physical.into()]);
         b.switch_to_block(done);
         b.block_params(done)[0]
-    };
+    }
+}
+
+/// Canonical linear selection is column-major over row-major physical storage.
+/// Call only after the admitted unsigned view and one-based bounds check.
+pub(super) fn linear_address(
+    b: &mut FunctionBuilder<'_>,
+    ordinal: Value,
+    rows: Value,
+    columns: Value,
+    width: u8,
+    schema: &mech_core::SchemaBody,
+    base: impl FnOnce(&mut FunctionBuilder<'_>) -> Value,
+) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
+    let physical = linear_ordinal(b, ordinal, rows, columns, schema);
+    element_address(b, physical, width, base)
+}
+
+/// Address an already translated physical element ordinal. A guarded vector
+/// entry may supply its logical ordinal directly: for either unit dimension,
+/// canonical source order and backing order are identical. Bounds still precede
+/// this operation, and packed element width remains independent of geometry.
+pub(super) fn element_address(
+    b: &mut FunctionBuilder<'_>,
+    physical: Value,
+    width: u8,
+    base: impl FnOnce(&mut FunctionBuilder<'_>) -> Value,
+) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
     let at = b.ins().imul_imm(physical, i64::from(width));
     let base = base(b);
     let address = b.ins().iadd(base, at);
@@ -254,3 +376,7 @@ pub(super) fn linear_address(
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "numeric_address_tests.rs"]
 mod tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "numeric_unsigned_load_tests.rs"]
+mod unsigned_load_tests;

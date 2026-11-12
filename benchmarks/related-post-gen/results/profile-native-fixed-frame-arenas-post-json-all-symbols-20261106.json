@@ -1,0 +1,1146 @@
+{
+  "schema": "mech.related-post-gen.post-json-all-symbol-observations.v1",
+  "compiler": "5925a2b3a4fd4dfcca7ada541e37a69d514171f8",
+  "all2000_invocations_exact": true,
+  "profiled_timings_excluded": true,
+  "rows": {
+    "unchanged": {
+      "records": 4084,
+      "all_records_resolved_in_same_live_process": true,
+      "observed_post_json_epochs": 1000,
+      "phase_range": [
+        1,
+        1999
+      ],
+      "record_bytes": 56,
+      "raw_sha256": "d1743c619c8601734028d4c2d9932cad77b5c157222e5af96b5cf57f2bec9295",
+      "observation_categories": {
+        "system_wait_position": 1889,
+        "other_executable_code": 368,
+        "root_native": 161,
+        "outlined_numeric_native": 1303,
+        "other_emitted_native": 190,
+        "other_system_code": 62,
+        "system_allocator": 63,
+        "system_thread_management": 45,
+        "unresolved_external": 3
+      },
+      "top_symbols": [
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__ulock_wait",
+          "demangled": "__ulock_wait",
+          "observations": 1881
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1471",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1471",
+          "observations": 639
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "demangled": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "observations": 190
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1",
+          "demangled": "_mech_canonical_program_entry_v1",
+          "observations": 161
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_233",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_233",
+          "observations": 153
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_818",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_818",
+          "observations": 134
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_589",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_589",
+          "observations": 125
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1273",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1273",
+          "observations": 54
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_476",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_476",
+          "observations": 52
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+          "demangled": "mech_gpu::native_artifact::program::runtime::collections::data::element",
+          "observations": 47
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_101",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_101",
+          "observations": 44
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1372",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1372",
+          "observations": 42
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_free",
+          "demangled": "_xzm_free",
+          "observations": 34
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1160",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1160",
+          "observations": 27
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          "demangled": "<mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+          "observations": 23
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_11memory_plan5error15MemoryPlanErrorNCINvMs_NtNtNtCsflnRBjSKmRu_11mech_engine8resident7general4liveNtB1Y_13InputDataMemo7measureNCINvB1Y_14footprint_implNtNtNtNtB20_23native_collection_calls10invocation11measurement22NativeMeasurementCheckEs1_0E0EB24_",
+          "demangled": "mech_core::snapshot::encoding::visit_sequence_work::<mech_core::memory_plan::error::MemoryPlanError, <mech_engine::resident::general::live::InputDataMemo>::measure<mech_engine::resident::general::live::footprint_impl<mech_engine::resident::general::native_collection_calls::invocation::measurement::NativeMeasurementCheck>::{closure#3}>::{closure#0}>",
+          "observations": 21
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "mach_vm_reclaim_update_kernel_accounting_trap",
+          "demangled": "mach_vm_reclaim_update_kernel_accounting_trap",
+          "observations": 20
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+          "demangled": "<mech_core::snapshot::sequence::SequenceStorage>::view",
+          "observations": 19
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1206",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1206",
+          "observations": 17
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 16
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+          "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::encoding::ValueFootprintError>",
+          "observations": 14
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_688",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_688",
+          "observations": 13
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers11lock_escrow",
+          "demangled": "mech_engine::resident::budget::workers::lock_escrow",
+          "observations": 12
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact6memory18NativeTypedStorageINtNtB4_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueEEEBN_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::memory::NativeTypedStorage<core::option::Option<mech_core::snapshot::validation::Value>>>",
+          "observations": 10
+        },
+        {
+          "image": "/usr/lib/system/libsystem_platform.dylib",
+          "symbol": "_platform_memmove",
+          "demangled": "_platform_memmove",
+          "observations": 10
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__bsdthread_terminate",
+          "demangled": "__bsdthread_terminate",
+          "observations": 9
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_utf8_read",
+          "observations": 9
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "mach_absolute_time",
+          "demangled": "mach_absolute_time",
+          "observations": 8
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "pthread_mutex_unlock",
+          "demangled": "pthread_mutex_unlock",
+          "observations": 8
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "_kernelrpc_mach_vm_deallocate_trap",
+          "demangled": "_kernelrpc_mach_vm_deallocate_trap",
+          "observations": 7
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding27retained_sequence_footprint",
+          "demangled": "mech_core::snapshot::encoding::retained_sequence_footprint",
+          "observations": 7
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__bsdthread_create",
+          "demangled": "__bsdthread_create",
+          "observations": 7
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers17next_after_native",
+          "demangled": "mech_engine::resident::budget::workers::next_after_native",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_xzone_malloc",
+          "demangled": "_xzm_xzone_malloc",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__psynch_mutexwait",
+          "demangled": "__psynch_mutexwait",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_xzone_malloc_tiny",
+          "demangled": "_xzm_xzone_malloc_tiny",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "pthread_mutex_trylock",
+          "demangled": "pthread_mutex_trylock",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "_pthread_create",
+          "demangled": "_pthread_create",
+          "observations": 6
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime7session14CallCacheEntryEBQ_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::session::CallCacheEntry>",
+          "observations": 6
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMs0_NtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "observations": 5
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtB4_5State14push_row_block",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::push_row_block",
+          "observations": 5
+        },
+        {
+          "image": "/usr/lib/system/libsystem_platform.dylib",
+          "symbol": "_platform_memset",
+          "demangled": "_platform_memset",
+          "observations": 5
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_3zip3ZipINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner8PostViewEINtB1g_11ChunksExactyEENCNvB1F_3run0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2L_8for_each4callNtB1F_7RelatedNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB4b_3VecB3O_E14extend_trustedBN_E0E0EB1F_",
+          "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::Related, <alloc::vec::Vec<runner::Related>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}>>::{closure#0}>::{closure#0}>",
+          "observations": 5
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvCsg2Tlac8ZPZa_6runner3run",
+          "demangled": "runner::run",
+          "observations": 5
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "_pthread_tsd_cleanup",
+          "demangled": "_pthread_tsd_cleanup",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNCNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB7_5Value24into_memory_budget_inners3_0Bb_",
+          "demangled": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner::{closure#5}",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+          "demangled": "<<mech_core::snapshot::validation::FrozenSnapshotStorage>::unlink_budget_registration::{closure#0} as core::ops::function::FnOnce<(&mut core::option::Option<alloc::sync::Arc<mech_core::snapshot::validation::SnapshotBudgetRegistration>>,)>>::call_once",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvYNCNKNvNtNtCsflnRBjSKmRu_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+          "demangled": "<mech_engine::resident::budget::CONTROL_WORK_CONTEXT::{K#0}::{closure#0} as core::ops::function::FnOnce<(core::option::Option<&mut core::option::Option<mech_engine::resident::budget::ControlWorkContext>>,)>>::call_once",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtNtB7_10validation5Value18retained_footprint",
+          "demangled": "<mech_core::snapshot::validation::Value>::retained_footprint",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RINvMs3_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB6_18FrozenSnapshotData19with_budget_importsINtNtCsgDHHaSskbIF_4core6result6ResultINtNtB1I_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtB6_21FrozenSnapshotStorageEENtNtNtBa_14memory_runtime5error18MemoryRuntimeErrorENCNvMs7_B6_NtB6_5Value24into_memory_budget_inners8_0EBa_",
+          "demangled": "<mech_core::snapshot::validation::FrozenSnapshotData>::with_budget_imports::<core::result::Result<core::option::Option<alloc::sync::Arc<mech_core::snapshot::validation::FrozenSnapshotStorage>>, mech_core::memory_runtime::error::MemoryRuntimeError>, <mech_core::snapshot::validation::Value>::into_memory_budget_inner::{closure#10}>",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner4PostEENCNvB1R_10post_viewss_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2H_8for_each4callNtB1R_8PostViewNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB48_3VecB3K_E14extend_trustedBN_E0E0EB1R_",
+          "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::PostView, <alloc::vec::Vec<runner::PostView>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}>>::{closure#0}>::{closure#0}>",
+          "observations": 4
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_malloc_zone_malloc",
+          "demangled": "_malloc_zone_malloc",
+          "observations": 4
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_free",
+          "demangled": "_free",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape21evaluate_body_extents",
+          "demangled": "mech_core::schema::shape::evaluate_body_extents",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames4pack",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::pack",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime7session13CallCacheLaneEBQ_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvNtNtCsflnRBjSKmRu_11mech_engine14memory_planner4turn24refresh_turn_allocations",
+          "demangled": "mech_engine::memory_planner::turn::refresh_turn_allocations",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::retire",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_522",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_522",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+          "demangled": "<mech_core::snapshot::validation::Value>::memory_budget_retained_bytes",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          "demangled": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "observations": 2
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "xzm_malloc",
+          "demangled": "xzm_malloc",
+          "observations": 2
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMs0_NtNtCsflnRBjSKmRu_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          "demangled": "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+          "observations": 2
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvNtNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime10invocation8parallel9admission9supported",
+          "demangled": "mech_gpu::native_artifact::program::runtime::invocation::parallel::admission::supported",
+          "observations": 2
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "pthread_mutex_lock",
+          "demangled": "pthread_mutex_lock",
+          "observations": 2
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMs0_NtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime10invocation8parallelNtB7_10Invocation15parallel_helper",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::parallel_helper",
+          "observations": 2
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RNvMs5_NtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3map5entryINtB5_5EntryNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model15MemoryPlanPointTyyEE10or_defaultCsflnRBjSKmRu_11mech_engine",
+          "demangled": "<alloc::collections::btree::map::entry::Entry<mech_core::memory_plan::model::MemoryPlanPoint, (u64, u64)>>::or_default",
+          "observations": 2
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/unchanged/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvBW_20observe_control_work0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<mech_engine::resident::budget::observe_control_work::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 2
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__munmap",
+          "demangled": "__munmap",
+          "observations": 2
+        }
+      ],
+      "external_positions_with_own_executable_lr": [
+        [
+          "__RNvCsg2Tlac8ZPZa_6runner3run",
+          9
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix4sync5mutexNtB2_5Mutex8try_lock",
+          6
+        ],
+        [
+          "__RNvNtNtNtNtNtCsflnRBjSKmRu_11mech_engine8resident7general23native_collection_calls8prepared12word_updates4copy",
+          6
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          5
+        ],
+        [
+          "__RNvNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix14stack_overflow3imp12drop_handler",
+          4
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvBW_20observe_control_work0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          3
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix4sync5mutexNtB2_5Mutex4lock",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtCsfBfheTzTBUt_9mech_core6schema10SchemaBodyEBK_",
+          2
+        ],
+        [
+          "__RNvMs_NtCsgKscDXrlV49_5alloc5boxedINtB4_3BoxINtNtB6_4sync8ArcInnerNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation21FrozenSnapshotStorageEE10try_new_inB18_",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8function14specialization9BoundCallECsflnRBjSKmRu_11mech_engine",
+          2
+        ],
+        [
+          "__RINvXNvMNtCsgKscDXrlV49_5alloc5sliceSp9to_vec_inNtNtCsfBfheTzTBUt_9mech_core9dimension29DimensionParameterDeclarationNtB3_10ConvertVec6to_vecNtNtB8_5alloc6GlobalEBO_",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECs7I8DOwrMu8O_8mech_gpu",
+          1
+        ],
+        [
+          "__RNvMs1_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model25PhysicalStorageDescriptorE21try_clone_from_ref_inBO_",
+          1
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtCsflnRBjSKmRu_11mech_engine8resident7general23native_collection_calls20NativeCollectionCallEBO_",
+          1
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model14CallMemoryPlanECsflnRBjSKmRu_11mech_engine",
+          1
+        ],
+        [
+          "__RNvXs50_NtNtCsfBfheTzTBUt_9mech_core11memory_plan5modelNtB6_14CallMemoryPlanNtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+          1
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+          1
+        ],
+        [
+          "__RNvXNtNtCsgKscDXrlV49_5alloc3vec14spec_from_iterINtB4_3VecNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model17MemoryObjectOwnerEINtB2_12SpecFromIterBU_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtB2t_6filter6FilterINtNtNtB2x_5slice4iter4IterNtBW_14AllocationPlanENCNvNtNtCsflnRBjSKmRu_11mech_engine14memory_planner4turn18derive_turn_memorys6_0ENCB4o_s7_0EE9from_iterB4u_",
+          1
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation25prepared_snapshot_storage",
+          1
+        ],
+        [
+          "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          1
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core11memory_plan6derive17plan_value_layout",
+          1
+        ],
+        [
+          "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation15finalized_valueNtNtNtB6_6schema5shape13ShapeInstanceEB6_",
+          1
+        ],
+        [
+          "__RNvXs_NtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB6_3VecNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model22CurrentMemoryFootprintEINtB4_18SpecFromIterNestedB13_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtNtB2S_3ops5range5RangejENCNvNtNtCsflnRBjSKmRu_11mech_engine14memory_planner4turn26apply_observed_turn_demands2_0EE9from_iterB48_",
+          1
+        ],
+        [
+          "__RNvMs6_NtCsgKscDXrlV49_5alloc2rcINtB5_2RcNtNtNtCsfBfheTzTBUt_9mech_core14memory_runtime10allocation23FixedHostArenaAuthorityE9drop_slowCsflnRBjSKmRu_11mech_engine",
+          1
+        ],
+        [
+          "__RNvMs_NtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtNtB6_4data15CollectedValues10append_row",
+          1
+        ],
+        [
+          "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsflnRBjSKmRu_11mech_engine",
+          1
+        ],
+        [
+          "__RINvNtNtCsgirOGyZpP7g_3std6thread9lifecycle15spawn_uncheckedNCNCNvMs0_NtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime10invocation8parallelNtB18_10Invocation12run_parallelsc_0s0_0INtNtCsgDHHaSskbIF_4core6result6ResultNtB16_7ReceiptNtB1a_27NativeProgramExecutionErrorEEB1g_",
+          1
+        ],
+        [
+          "__RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtNtCsfBfheTzTBUt_9mech_core11type_system8resolved21KindPredicateEvidenceENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneBO_",
+          1
+        ],
+        [
+          "__RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtNtCsfBfheTzTBUt_9mech_core11type_system14resolved_value23ResolvedValueDescriptorENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCsflnRBjSKmRu_11mech_engine",
+          1
+        ]
+      ]
+    },
+    "compact": {
+      "records": 4297,
+      "all_records_resolved_in_same_live_process": true,
+      "observed_post_json_epochs": 1000,
+      "phase_range": [
+        1,
+        1999
+      ],
+      "record_bytes": 56,
+      "raw_sha256": "ab766b63f9242a844be3ad6431d6a27fbc11f0449f41601c7855823040deb12d",
+      "observation_categories": {
+        "system_wait_position": 1966,
+        "other_executable_code": 387,
+        "other_emitted_native": 153,
+        "root_native": 183,
+        "other_system_code": 63,
+        "outlined_numeric_native": 1418,
+        "system_allocator": 76,
+        "system_thread_management": 39,
+        "unresolved_external": 12
+      },
+      "top_symbols": [
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__ulock_wait",
+          "demangled": "__ulock_wait",
+          "observations": 1958
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1455",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1455",
+          "observations": 731
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_813",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_813",
+          "observations": 194
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1",
+          "demangled": "_mech_canonical_program_entry_v1",
+          "observations": 183
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "demangled": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "observations": 153
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_239",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_239",
+          "observations": 142
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_589",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_589",
+          "observations": 91
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_476",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_476",
+          "observations": 79
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1257",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1257",
+          "observations": 46
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1356",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1356",
+          "observations": 39
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          "demangled": "<mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+          "observations": 38
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+          "demangled": "mech_gpu::native_artifact::program::runtime::collections::data::element",
+          "observations": 36
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_free",
+          "demangled": "_xzm_free",
+          "observations": 36
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_101",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_101",
+          "observations": 32
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1190",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1190",
+          "observations": 24
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1144",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1144",
+          "observations": 24
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+          "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::encoding::ValueFootprintError>",
+          "observations": 20
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_11memory_plan5error15MemoryPlanErrorNCINvMs_NtNtNtCsflnRBjSKmRu_11mech_engine8resident7general4liveNtB1Y_13InputDataMemo7measureNCINvB1Y_14footprint_implNtNtNtNtB20_23native_collection_calls10invocation11measurement22NativeMeasurementCheckEs1_0E0EB24_",
+          "demangled": "mech_core::snapshot::encoding::visit_sequence_work::<mech_core::memory_plan::error::MemoryPlanError, <mech_engine::resident::general::live::InputDataMemo>::measure<mech_engine::resident::general::live::footprint_impl<mech_engine::resident::general::native_collection_calls::invocation::measurement::NativeMeasurementCheck>::{closure#3}>::{closure#0}>",
+          "observations": 20
+        },
+        {
+          "image": "/usr/lib/system/libsystem_platform.dylib",
+          "symbol": "_platform_memmove",
+          "demangled": "_platform_memmove",
+          "observations": 18
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 16
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers11lock_escrow",
+          "demangled": "mech_engine::resident::budget::workers::lock_escrow",
+          "observations": 16
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "mach_vm_reclaim_update_kernel_accounting_trap",
+          "demangled": "mach_vm_reclaim_update_kernel_accounting_trap",
+          "observations": 16
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+          "demangled": "<mech_core::snapshot::sequence::SequenceStorage>::view",
+          "observations": 15
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_688",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_688",
+          "observations": 11
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_free",
+          "demangled": "_free",
+          "observations": 11
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__bsdthread_terminate",
+          "demangled": "__bsdthread_terminate",
+          "observations": 11
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "pthread_mutex_trylock",
+          "demangled": "pthread_mutex_trylock",
+          "observations": 10
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_utf8_read",
+          "observations": 10
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding27retained_sequence_footprint",
+          "demangled": "mech_core::snapshot::encoding::retained_sequence_footprint",
+          "observations": 10
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_3zip3ZipINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner8PostViewEINtB1g_11ChunksExactyEENCNvB1F_3run0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2L_8for_each4callNtB1F_7RelatedNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB4b_3VecB3O_E14extend_trustedBN_E0E0EB1F_",
+          "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::Related, <alloc::vec::Vec<runner::Related>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}>>::{closure#0}>::{closure#0}>",
+          "observations": 9
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "-",
+          "demangled": "-",
+          "observations": 9
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 8
+        },
+        {
+          "image": "/usr/lib/system/libsystem_platform.dylib",
+          "symbol": "_platform_memset",
+          "demangled": "_platform_memset",
+          "observations": 8
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_xzone_malloc",
+          "demangled": "_xzm_xzone_malloc",
+          "observations": 7
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_xzm_xzone_malloc_tiny",
+          "demangled": "_xzm_xzone_malloc_tiny",
+          "observations": 6
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact6memory18NativeTypedStorageINtNtB4_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueEEEBN_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::memory::NativeTypedStorage<core::option::Option<mech_core::snapshot::validation::Value>>>",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "xzm_malloc",
+          "demangled": "xzm_malloc",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__bsdthread_create",
+          "demangled": "__bsdthread_create",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "pthread_mutex_unlock",
+          "demangled": "pthread_mutex_unlock",
+          "observations": 6
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "_kernelrpc_mach_vm_deallocate_trap",
+          "demangled": "_kernelrpc_mach_vm_deallocate_trap",
+          "observations": 5
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "_malloc_zone_malloc",
+          "demangled": "_malloc_zone_malloc",
+          "observations": 5
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "_mech_canonical_program_entry_v1_numeric_522",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_522",
+          "observations": 5
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime11collections9utf8_read5fixedNtNtNtB6_4maps9utf8_read4CellEBc_",
+          "demangled": "mech_gpu::native_artifact::program::runtime::collections::utf8_read::fixed::<mech_gpu::native_artifact::program::runtime::maps::utf8_read::Cell>",
+          "observations": 5
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          "demangled": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime7session14CallCacheEntryEBQ_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::session::CallCacheEntry>",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+          "demangled": "<<mech_core::snapshot::validation::FrozenSnapshotStorage>::unlink_budget_registration::{closure#0} as core::ops::function::FnOnce<(&mut core::option::Option<alloc::sync::Arc<mech_core::snapshot::validation::SnapshotBudgetRegistration>>,)>>::call_once",
+          "observations": 4
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__psynch_mutexwait",
+          "demangled": "__psynch_mutexwait",
+          "observations": 4
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__ulock_wait2",
+          "demangled": "__ulock_wait2",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtB4_5State14push_row_block",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::push_row_block",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner4PostEENCNvB1R_10post_viewss_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2H_8for_each4callNtB1R_8PostViewNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB48_3VecB3K_E14extend_trustedBN_E0E0EB1R_",
+          "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::PostView, <alloc::vec::Vec<runner::PostView>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}>>::{closure#0}>::{closure#0}>",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMs0_NtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers17next_after_native",
+          "demangled": "mech_engine::resident::budget::workers::next_after_native",
+          "observations": 4
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "mach_absolute_time",
+          "demangled": "mach_absolute_time",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvYNCNKNvNtNtCsflnRBjSKmRu_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+          "demangled": "<mech_engine::resident::budget::CONTROL_WORK_CONTEXT::{K#0}::{closure#0} as core::ops::function::FnOnce<(core::option::Option<&mut core::option::Option<mech_engine::resident::budget::ControlWorkContext>>,)>>::call_once",
+          "observations": 4
+        },
+        {
+          "image": "/usr/lib/system/libsystem_platform.dylib",
+          "symbol": "__bzero",
+          "demangled": "__bzero",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime10invocation9histogramNtB4_10Invocation16histogram_helper",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::histogram_helper",
+          "observations": 4
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvNtNtCsflnRBjSKmRu_11mech_engine14memory_planner4turn24refresh_turn_allocations",
+          "demangled": "mech_engine::memory_planner::turn::refresh_turn_allocations",
+          "observations": 3
+        },
+        {
+          "image": "/usr/lib/system/libsystem_kernel.dylib",
+          "symbol": "__munmap",
+          "demangled": "__munmap",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMs0_NtNtCsflnRBjSKmRu_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          "demangled": "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+          "demangled": "mech_core::schema::shape::evaluate_dimension",
+          "observations": 3
+        },
+        {
+          "image": "/usr/lib/system/libsystem_malloc.dylib",
+          "symbol": "-",
+          "demangled": "-",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+          "demangled": "<mech_core::snapshot::validation::Value>::memory_budget_retained_bytes",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMs0_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime6budgetNtB5_19ManagedMemoryBudget16reserve_capacity",
+          "demangled": "<mech_core::memory_runtime::budget::ManagedMemoryBudget>::reserve_capacity",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation23SnapshotBudgetOwnershipEBM_",
+          "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::validation::SnapshotBudgetOwnership>",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvCsg2Tlac8ZPZa_6runner3run",
+          "demangled": "runner::run",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMs3_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime10allocationINtB5_18FixedHostArenaPlanINtNtCsgDHHaSskbIF_4core6option6OptionNtNtNtB9_8snapshot10validation5ValueEE11materializeCs7I8DOwrMu8O_8mech_gpu",
+          "demangled": "<mech_core::memory_runtime::allocation::FixedHostArenaPlan<core::option::Option<mech_core::snapshot::validation::Value>>>::materialize",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMNtNtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime4maps5owner9map_callsNtNtB8_10invocation10Invocation17call_retained_map",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::call_retained_map",
+          "observations": 3
+        },
+        {
+          "image": "/usr/lib/system/libsystem_pthread.dylib",
+          "symbol": "_pthread_tsd_cleanup",
+          "demangled": "_pthread_tsd_cleanup",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RNvMs_NtNtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime10invocation4tailNtB6_10Invocation15end_closed_tail",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::end_closed_tail",
+          "observations": 3
+        },
+        {
+          "image": "/private/tmp/mech-related-native-fixed-frame-arenas-post-json-pc-profile-20261106-v1/compact/runner-pc",
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtCsfBfheTzTBUt_9mech_core9kind_expr8KindExprECsflnRBjSKmRu_11mech_engine",
+          "demangled": "core::ptr::drop_in_place::<mech_core::kind_expr::KindExpr>",
+          "observations": 3
+        }
+      ],
+      "external_positions_with_own_executable_lr": [
+        [
+          "__RNvCsg2Tlac8ZPZa_6runner3run",
+          20
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix4sync5mutexNtB2_5Mutex8try_lock",
+          10
+        ],
+        [
+          "__RNvNtNtNtNtNtCsflnRBjSKmRu_11mech_engine8resident7general23native_collection_calls8prepared12word_updates4copy",
+          4
+        ],
+        [
+          "__RNvNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix14stack_overflow3imp12drop_handler",
+          3
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core11type_system8resolved12ResolvedTypeECsflnRBjSKmRu_11mech_engine",
+          3
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          3
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+          3
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation23SnapshotBudgetOwnershipEBM_",
+          2
+        ],
+        [
+          "__RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtCsfBfheTzTBUt_9mech_core9dimension13DimensionExprENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCsflnRBjSKmRu_11mech_engine",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtCsfBfheTzTBUt_9mech_core6schema10SchemaBodyECsflnRBjSKmRu_11mech_engine",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+          2
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core11memory_plan6derive16plan_call_memory",
+          2
+        ],
+        [
+          "__RNvXs5_NtNtCsflnRBjSKmRu_11mech_engine14memory_planner4turnNtB5_14TurnMemoryPlanNtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+          2
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix4sync5mutexNtB2_5Mutex4lock",
+          2
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvBW_20observe_control_work0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECs7I8DOwrMu8O_8mech_gpu",
+          2
+        ],
+        [
+          "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs7I8DOwrMu8O_8mech_gpu",
+          2
+        ],
+        [
+          "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growB7_",
+          2
+        ],
+        [
+          "__RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtNtCsfBfheTzTBUt_9mech_core18operation_contract11declaration16OutputPortPolicyENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCsflnRBjSKmRu_11mech_engine",
+          2
+        ],
+        [
+          "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation15finalized_valueNtNtNtB6_6schema5shape13ShapeInstanceEB6_",
+          1
+        ],
+        [
+          "__RNvMs1_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model25PhysicalStorageDescriptorE21try_clone_from_ref_inBO_",
+          1
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtCsgKscDXrlV49_5alloc5boxed3BoxSNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model14PortMemoryPlanEECsflnRBjSKmRu_11mech_engine",
+          1
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core11type_system14resolved_value31shape_for_declared_lower_bounds",
+          1
+        ],
+        [
+          "__RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtCsfBfheTzTBUt_9mech_core9dimension18DimensionParameterENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneBM_",
+          1
+        ],
+        [
+          "__RNvMs0_NtNtNtCsgirOGyZpP7g_3std3sys6thread4unixNtB5_6Thread4join",
+          1
+        ],
+        [
+          "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core6schema8encodingNtB6_6Schema15canonical_bytes",
+          1
+        ],
+        [
+          "__RINvMs_NtNtNtNtCs7I8DOwrMu8O_8mech_gpu15native_artifact7program7runtime7sessionNtB5_8Prepared3runNCNvMNtB9_6linkedNtB1C_21LinkedProgramArtifact13evaluate_into0EBd_",
+          1
+        ],
+        [
+          "__RNvXs_NtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB6_3VecNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model14MemoryLifetimeEINtB4_18SpecFromIterNestedB13_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtNtB2K_5slice4iter4IterNtB15_25PhysicalStorageDescriptorENCNvNtB17_6derive16plan_call_memorys7_0EE9from_iterB19_",
+          1
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8function14specialization9BoundCallECsflnRBjSKmRu_11mech_engine",
+          1
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core11type_system14resolved_value23ResolvedValueDescriptorECsflnRBjSKmRu_11mech_engine",
+          1
+        ]
+      ]
+    }
+  },
+  "limitations": [
+    "These are statistical current-PC observations, not CPU-time shares or dynamic instruction counts. Waiting threads can retain a wait PC while consuming no CPU.",
+    "A single odd epoch must surround each accepted register observation; sampling across a phase boundary is discarded.",
+    "JSON decoding, output verification and teardown occur outside the gate. Restored program and original JSON text are reused.",
+    "System names are resolved after sampling in the same live process; executable-local names use the exact profiled Mach-O."
+  ]
+}

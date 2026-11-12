@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v7/build.json",
+    "--source",
+    "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/managed-app/src/main.rs",
+    "--out",
+    "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/managed-app/runner-standard",
+    "--bundle",
+    "/private/tmp/mech-related-native-boolean-implication-freshness-runtime-check-20261106-v2/managed-app/audit-bundle",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 1.0857798329088837,
+  "stdout": "{\"seconds\": 0.5257145410869271, \"exit\": 0}\n",
+  "stderr": "",
+  "compiler_source_sha256": "4440e23b8e0f7b778341e0ac9a1d6927463b1324767fd72df46a033ebab8305d"
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-scalar-home-retirement-runners-20261107-v1/comparison-config.json",
+    "--out",
+    "/private/tmp/mech-related-scalar-home-retirement-runners-20261107-v1/metrics",
+    "--variant",
+    "mech-ir241-original-4",
+    "--variant",
+    "mech-ir241-reuse-4"
+  ],
+  "exit": 0,
+  "seconds": 8.103825040860102,
+  "stdout": "{\"variant\": \"mech-ir241-original-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-ir241-reuse-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n",
+  "stderr": ""
+}

@@ -1,0 +1,70 @@
+{
+  "rows": 5,
+  "all_nontiming_fields_equal_IR240": true,
+  "all_semantic_nontiming_fields_equal_IR240": true,
+  "semantic_differences": [],
+  "all_field_differences": [],
+  "physical_allocator_measurements": [
+    {
+      "row": 0,
+      "metrics": {}
+    },
+    {
+      "row": 1,
+      "metrics": {
+        "requested_bytes": {
+          "before": 23989468,
+          "after": 23989468,
+          "delta": 0
+        },
+        "allocation_requests": {
+          "before": 3569,
+          "after": 3569,
+          "delta": 0
+        }
+      }
+    },
+    {
+      "row": 2,
+      "metrics": {
+        "requested_bytes": {
+          "before": 23977116,
+          "after": 23977116,
+          "delta": 0
+        },
+        "allocation_requests": {
+          "before": 3376,
+          "after": 3376,
+          "delta": 0
+        }
+      }
+    },
+    {
+      "row": 3,
+      "metrics": {
+        "requested_bytes": {
+          "before": 23977116,
+          "after": 23977116,
+          "delta": 0
+        },
+        "allocation_requests": {
+          "before": 3376,
+          "after": 3376,
+          "delta": 0
+        }
+      }
+    },
+    {
+      "row": 4,
+      "metrics": {}
+    }
+  ],
+  "physical_field_names": [
+    "allocation_requests",
+    "allocation_requests_per_100",
+    "requested_bytes",
+    "requested_bytes_per_100"
+  ],
+  "allocation_requests_never_regress": true,
+  "requested_bytes_never_regress": true
+}

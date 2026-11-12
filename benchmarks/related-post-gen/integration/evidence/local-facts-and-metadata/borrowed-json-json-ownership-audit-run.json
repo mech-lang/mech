@@ -1,0 +1,40 @@
+{
+  "exit": 0,
+  "seconds": 0.02171300002373755,
+  "rows": [
+    {
+      "borrowed": 2,
+      "case": "plain",
+      "owned": 0,
+      "owned_value_equal": true
+    },
+    {
+      "borrowed": 0,
+      "case": "escaped",
+      "owned": 2,
+      "owned_value_equal": true
+    },
+    {
+      "borrowed": 1,
+      "case": "mixed",
+      "owned": 1,
+      "owned_value_equal": true
+    },
+    {
+      "borrowed": 1,
+      "case": "surrogate",
+      "owned": 1,
+      "owned_value_equal": true
+    },
+    {
+      "case": "bad_escape",
+      "same_error": "invalid escape at line 1 column 11"
+    },
+    {
+      "case": "unpaired_surrogate",
+      "same_error": "unexpected end of hex escape at line 1 column 16"
+    }
+  ],
+  "stdout": "{\"borrowed\":2,\"case\":\"plain\",\"owned\":0,\"owned_value_equal\":true}\n{\"borrowed\":0,\"case\":\"escaped\",\"owned\":2,\"owned_value_equal\":true}\n{\"borrowed\":1,\"case\":\"mixed\",\"owned\":1,\"owned_value_equal\":true}\n{\"borrowed\":1,\"case\":\"surrogate\",\"owned\":1,\"owned_value_equal\":true}\n{\"case\":\"bad_escape\",\"same_error\":\"invalid escape at line 1 column 11\"}\n{\"case\":\"unpaired_surrogate\",\"same_error\":\"unexpected end of hex escape at line 1 column 16\"}\n",
+  "stderr": ""
+}

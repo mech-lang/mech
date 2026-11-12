@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-owned-shape-metadata-tests-20261107-v1/mech_gpu-tests",
+    "child_funding",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 11.880284458165988
+}

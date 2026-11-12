@@ -966,6 +966,8 @@ fn emit_body(
                             b,
                             &words,
                             code,
+                            index,
+                            controls.options(),
                             block.terminator(),
                             fail_at,
                             |next| {
@@ -990,6 +992,8 @@ fn emit_body(
                 b,
                 &words,
                 code,
+                index,
+                controls.options(),
                 block.terminator(),
                 fail_at,
                 original_target,

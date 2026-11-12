@@ -92,6 +92,25 @@ impl Prepayment {
         })
     }
 
+    /// Diagnostic computation contract: retain actual enum/window safety and
+    /// complete-operation proof, without introducing visit accounting state.
+    pub fn native_gate(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        words: &Words,
+        valid: Value,
+        selected: Block,
+        checked: Block,
+    ) {
+        let c = self.completion.candidate();
+        let tag = words.read(b, c.tag);
+        let active = b.ins().icmp_imm(IntCC::Equal, tag, c.active as i64);
+        let terminal = b.ins().icmp_imm(IntCC::Equal, tag, c.terminal as i64);
+        let known = b.ins().bor(active, terminal);
+        let enough = b.ins().band(valid, known);
+        b.ins().brif(enough, selected, &[], checked, &[]);
+    }
+
     /// Overflow or insufficient current funding declines to the original header.
     /// All fallible source operations were proved total for this activation.
     pub fn gate(

@@ -1,0 +1,54 @@
+{
+  "kind": "fresh-git",
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-compact-native-development-20261111/benchmarks/related-post-gen/integration/u16-host-source-20261112/verify-fresh-git.py"
+  ],
+  "started_utc": "2026-11-12T11:44:27.659226+00:00",
+  "finished_utc": "2026-11-12T11:44:49.124526+00:00",
+  "exit": 0,
+  "seconds": 21.465224458137527,
+  "pinned_inputs": {
+    "report.json": "e93fabdebb2670a45fd02a919928158476172f11cff619dd3df7b86397672955",
+    "records.json": "7e1a213cb8a751e829d2c7ac39d35c5ad3b9e0a40d7e673061048316b6310b59",
+    "records-01.zip": "80856953e3f4d2a0d52421827c7c67b07aa5c33a80aa385897391b3765d56778",
+    "records-02.zip": "fe8bc8d838ae5931a80adc3cc1953e28460c0b5b8478f360ee52b8d7812410be",
+    "verify-fresh-git.py": "46f750f17e178c31bc4674acae9078ae8ae51a4c19a72f54d316fe2c733e6a92"
+  },
+  "native_executions": 0,
+  "result": {
+    "status": "passed",
+    "isolated_real_Git_objects": true,
+    "synthetic_commit_aliases": false,
+    "required_published_commits": [
+      "7a6686c6790b0d8e0a282a5619bb884f8ffe08d0"
+    ],
+    "imported_objects": 4036,
+    "imported_object_types": {
+      "blob": 3010,
+      "tree": 1025,
+      "commit": 1
+    },
+    "native_executions": 0,
+    "verification": {
+      "status": "passed",
+      "verified_records": 34532,
+      "unique_blobs": 15555,
+      "archive_shards": 2,
+      "compressed_bytes": 78415608,
+      "timed_resource_exact_outputs": 5063,
+      "qualification_exact_outputs": 3040,
+      "qualified_adapters": 95,
+      "managed_work_labels": 22,
+      "reconstructed_compiler_snapshots": 9,
+      "vendor_files": 246,
+      "literal_includes": 164,
+      "focused355_distinct_passed": 79,
+      "broad355_passed": 1108,
+      "inherited_failure_names_matched": 16,
+      "exact355_test_backend_V3": true,
+      "fixed_benchmark_goal_met": true,
+      "native_executions_by_verifier": 0
+    }
+  }
+}

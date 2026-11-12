@@ -719,7 +719,30 @@ impl Value {
         self,
         reservation: &mut crate::ManagedMemoryReservation,
     ) -> crate::MemoryRuntimeResult<Self> {
-        self.into_memory_budget_inner(reservation, true)
+        self.into_memory_budget_inner(reservation, true, None)
+    }
+
+    /// Measures and admits this immutable value with one ownership traversal.
+    /// The checked byte/node witness stays private to this consumed value;
+    /// capacity, allocation failures and same-account alias reuse follow the
+    /// same rules as separate quotation and `into_memory_budget`.
+    pub fn admit_into_memory_budget(
+        mut self,
+        budget: &crate::ManagedMemoryBudget,
+    ) -> crate::MemoryRuntimeResult<Self> {
+        if self.memory_budget_retained_bytes(budget).is_some() {
+            return Ok(self);
+        }
+        if let Some(schemas) = &self.schemas
+            && let Some(owner) = self.root.data.budget_import(budget, schemas, &self.shape)
+        {
+            self.root = owner;
+            return Ok(self);
+        }
+        let witness = self.memory_budget_ownership_witness()?;
+        let required = self.unshared_memory_budget_admission_for_required(budget, witness.0)?;
+        let mut reservation = budget.reserve_capacity(required)?;
+        self.into_memory_budget_inner(&mut reservation, true, Some(witness))
     }
 
     /// Uses separately admitted wrapper ownership instead of searching for an
@@ -732,13 +755,14 @@ impl Value {
         self,
         reservation: &mut crate::ManagedMemoryReservation,
     ) -> crate::MemoryRuntimeResult<Self> {
-        self.into_memory_budget_inner(reservation, false)
+        self.into_memory_budget_inner(reservation, false, None)
     }
 
     fn into_memory_budget_inner(
         mut self,
         reservation: &mut crate::ManagedMemoryReservation,
         reuse_existing: bool,
+        checked_witness: Option<(u64, u64)>,
     ) -> crate::MemoryRuntimeResult<Self> {
         let budget = reservation.budget();
         // Exact same account AND retained schema owner: no registry lookup,
@@ -767,7 +791,10 @@ impl Value {
             self.root = owner;
             return Ok(self);
         }
-        let (retained_bytes, retained_nodes) = self.memory_budget_ownership_witness()?;
+        let (retained_bytes, retained_nodes) = match checked_witness {
+            Some(witness) => witness,
+            None => self.memory_budget_ownership_witness()?,
+        };
         let admitted_bytes =
             self.unshared_memory_budget_admission_for_required(&budget, retained_bytes)?;
         if admitted_bytes > reservation.capacity_bytes() {
@@ -3862,6 +3889,28 @@ pub(super) fn finalize_value(
     )
 }
 
+// A valid closed leaf has no path-dependent validation. Delay allocating its
+// diagnostic child until the ordinary recursive/malformed case actually needs
+// it. Both successful cases use exactly the same canonical scalar construction
+// and String allocation authority as finalize_data below.
+fn finalize_map_item(
+    schema: &SchemaBody,
+    draft: ValueDataDraft,
+    shape: &ShapeInstance,
+    context: &SnapshotValidationContext<'_>,
+    path: impl FnOnce() -> SnapshotPath,
+) -> Result<ValueData, SnapshotValueError> {
+    match (schema, draft) {
+        (SchemaBody::String, ValueDataDraft::String(value)) => {
+            Ok(ValueData::String(context.try_boxed_str(value)?))
+        }
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), ValueDataDraft::U64(value)) => {
+            Ok(ValueData::U64(value))
+        }
+        (schema, draft) => finalize_data(schema, draft, shape, context, &path()),
+    }
+}
+
 pub(super) fn finalize_data(
     schema: &SchemaBody,
     draft: ValueDataDraft,
@@ -4160,26 +4209,26 @@ pub(super) fn finalize_data(
                     });
                 }
                 let mut items = entry.items.into_vec().into_iter();
-                let key_data = finalize_data(
+                let key_data = finalize_map_item(
                     key,
                     items.next().expect("validated map key exists"),
                     shape,
                     context,
-                    &path.child(SnapshotPathSegment::MapKey(index as u64)),
+                    || path.child(SnapshotPathSegment::MapKey(index as u64)),
                 )?;
-                let value_data = finalize_data(
+                let value_data = finalize_map_item(
                     value,
                     items.next().expect("validated map value exists"),
                     shape,
                     context,
-                    &path.child(SnapshotPathSegment::MapValue(index as u64)),
+                    || path.child(SnapshotPathSegment::MapValue(index as u64)),
                 )?;
-                super::relations::insert_map_entry(
+                super::relations::insert_map_entry_with_path(
                     key,
                     &mut finalized,
                     key_data,
                     value_data,
-                    &path.child(SnapshotPathSegment::MapKey(index as u64)),
+                    || path.child(SnapshotPathSegment::MapKey(index as u64)),
                     context.canonicalization_budget,
                 )?;
             }
@@ -6249,3 +6298,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "lazy_map_path_tests.rs"]
+mod lazy_map_path_tests;

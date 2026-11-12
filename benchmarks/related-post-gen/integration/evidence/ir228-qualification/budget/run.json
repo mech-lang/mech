@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/budget/build-and-check.py"
+  ],
+  "exit": 0,
+  "seconds": 15.345935250166804,
+  "stdout": "{\"case\": \"work\", \"validated\": true}\n{\"case\": \"transport\", \"validated\": true}\n{\"case\": \"stack\", \"validated\": true}\n{\"case\": \"output_bytes\", \"validated\": true}\n{\"case\": \"output_elements\", \"validated\": true}\n{\"case\": \"temporary\", \"validated\": true}\n{\"case\": \"nodes\", \"validated\": true}\n{\"case\": \"comparison\", \"validated\": true}\n{\"case\": \"success\", \"validated\": true}\n",
+  "stderr": ""
+}

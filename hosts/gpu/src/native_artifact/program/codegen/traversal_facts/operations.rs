@@ -106,8 +106,19 @@ pub(super) fn scalar(
                         terms.intern(Expr::Wrapping(arithmetic, *a, *b))?
                     }
                 }
-                Op::U64Add | Op::U64Sub => {
-                    let op = if *op == Op::U64Add {
+                Op::U8Add
+                | Op::U16Add
+                | Op::U32Add
+                | Op::U16Sub
+                | Op::U32Sub
+                | Op::U64Add
+                | Op::U64Sub => {
+                    // Facts describe the successful continuation of the source
+                    // operation. A checked narrow result is the same exact
+                    // mathematical sum/difference in our U64 fact domain.
+                    // This does not prove that a later narrow operation fits:
+                    // flow's arithmetic-guard removal remains U64-only.
+                    let op = if matches!(op, Op::U8Add | Op::U16Add | Op::U32Add | Op::U64Add) {
                         Arithmetic::Add
                     } else {
                         Arithmetic::Sub
@@ -142,6 +153,12 @@ pub(super) fn scalar(
                 Op::BoolNot if terms.boolean(*args.first()?) => {
                     terms.intern(Expr::Not(*args.first()?))?
                 }
+                Op::U64WrappingMul => {
+                    use crate::native_artifact::program::prepare::word_collections::bounds::Range;
+                    let bound = Range(0, state.upper(terms, args[0]))
+                        .wrapping_mul(Range(0, state.upper(terms, args[1])));
+                    terms.intern(Expr::Bounded(site, output.get() as usize, bound.1))?
+                }
                 Op::U64BitAnd => {
                     use crate::native_artifact::program::prepare::word_collections::bounds::Range;
                     let bound = Range(0, state.upper(terms, args[0]))
@@ -168,6 +185,9 @@ pub(super) fn scalar(
                 }
                 _ => terms.intern(Expr::Definition(site, output.get() as usize))?,
             };
+            terms
+                .changes
+                .record(value, write_changes::Value::Scalar(*op, args.clone()));
             if let Some(recording) = &mut terms.recording {
                 recording.record(value, Node::Scalar(*op, args));
             }

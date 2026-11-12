@@ -81,7 +81,7 @@ impl Resolver<'_> {
         active.remove(&atom);
         result
     }
-    fn at(&self, site: usize, value: u32, field: Option<usize>) -> Option<Atom> {
+    pub(super) fn at(&self, site: usize, value: u32, field: Option<usize>) -> Option<Atom> {
         if let Some(action) = self.aggregates.action(site) {
             match (action, field) {
                 (Aggregate::Pack { output, words }, Some(f)) if output.get() == value => {

@@ -36,9 +36,15 @@ impl Worker<'_> {
             // ledger, even if this worker already owns the shared mutex.
             let next = checked_local_control_account_work(&self.account, compute, comparison)?;
             let shared = self.shared;
-            let state = self.guard.get_or_insert_with(|| lock_escrow(shared));
-            let shared_next = state.direct_next(compute, comparison)?;
+            let state = self.guard.take().unwrap_or_else(|| lock_escrow(shared));
+            let (mut state, shared_next) = next_after_native(
+                state,
+                compute,
+                comparison,
+                self.account.reserved.compute == 0 && self.account.reserved.comparison == 0,
+            )?;
             state.used = shared_next;
+            self.guard = Some(state);
             self.account.used = next;
             self.charges += 1;
             self.work = self.work.saturating_add(compute).saturating_add(comparison);

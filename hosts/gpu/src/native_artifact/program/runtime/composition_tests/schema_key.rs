@@ -154,7 +154,9 @@ fn composition_uses_current_schema_key_account_and_bits_on_every_visit() {
                     Some(match field.lane() {
                         Lane::Managed { .. } => (Some(&array_value), 0),
                         Lane::Scalar { .. } => (None, 7),
-                        Lane::Composite { .. } => panic!("only current leaves are requested"),
+                        Lane::Composite { .. } | Lane::Tagged { .. } => {
+                            panic!("only current leaves are requested")
+                        }
                     })
                 },
                 None,

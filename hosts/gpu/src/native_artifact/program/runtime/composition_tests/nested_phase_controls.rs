@@ -138,7 +138,7 @@ fn nested_numeric_phase_images_cannot_grant_membership_storage_or_debits() {
                 serde_json::json!(0),
             ),
             (
-                "/descriptor/closed_tails/regions/0/numeric/arrays/0/field",
+                "/descriptor/closed_tails/regions/0/numeric/arrays/0/root",
                 serde_json::json!(99999),
             ),
         ] {

@@ -1,0 +1,18 @@
+from pathlib import Path
+import json,subprocess,time,hashlib,datetime,os
+P=Path(__file__).parent
+R=Path('/Users/cim310/mech-lang/mech/benchmarks/related-post-gen')
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+c=['xcrun','clang','-std=c11','-O2','-c',str(P/'sampler.c'),'-o',str(P/'sampler.o')];x=subprocess.run(c,capture_output=True,text=True);(P/'sampler-build.json').write_text(json.dumps(dict(command=c,exit=x.returncode,stdout=x.stdout,stderr=x.stderr),indent=2)+'\n');assert x.returncode==0,x.stderr
+for name in ['selected-ir242','candidate-ir245']:
+ p=P/name;d=json.loads((p/'build-command.json').read_text());t=time.monotonic();x=subprocess.run(d['command'],capture_output=True,text=True,env={**os.environ,'RUSTC_BOOTSTRAP':'1'});d.update(exit=x.returncode,seconds=time.monotonic()-t,stdout=x.stdout,stderr=x.stderr,source_sha256=sha(p/'runner.rs'),sampler_source_sha256=sha(P/'sampler.c'),sampler_object_sha256=sha(P/'sampler.o'));(p/'build.json').write_text(json.dumps(d,indent=2)+'\n');assert x.returncode==0,x.stderr
+ c=['python3',str(R/'audit-native-link.py'),'--object',str(p/'build/object.o'),'--executable',str(p/'runner-sampler'),'--output',str(p/'native-link-audit.json')];x=subprocess.run(c,capture_output=True,text=True);assert x.returncode==0,x.stderr
+input=Path('/private/tmp/mech-related-current-input-fixtures-20261107/posts.json');oracle=Path('/private/tmp/mech-related-frozen-native-composition-latency-20261105-v1/related_posts_rust.json')
+for name in ['selected-ir242','candidate-ir245']:
+ p=P/name;c=[str(p/'runner-sampler'),str(p/'build/source.mec'),str(input),str(p/'output.json'),'1500'];t=time.monotonic()
+ with (p/'stdout.log').open('w')as out,(p/'stderr.log').open('w')as err:x=subprocess.run(c,stdout=out,stderr=err,timeout=120)
+ rows=[json.loads(l)for l in (p/'stdout.log').read_text().splitlines()if l.startswith('{')];stats=json.loads((p/'output.json.sampler.json').read_text())if(p/'output.json.sampler.json').exists()else None
+ d=dict(created_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),command=c,exit=x.returncode,diagnostic_wall_seconds=time.monotonic()-t,iterations=len(rows),expected_iterations=1500,every_iteration_indices_equal_rust=x.returncode==0 and len(rows)==1500,first_and_last_full_json_checked_inside_host=x.returncode==0,final_json_exact_rust=x.returncode==0 and json.loads((p/'output.json').read_text())==json.loads(oracle.read_text()),sampler_stats=stats,input_sha256=sha(input),oracle_sha256=sha(oracle),source_sha256=sha(p/'build/source.mec'),executable_sha256=sha(p/'runner-sampler'),profile_timings_excluded=True,jitter_seed=0x990245,interval_min_ns=250000,interval_max_ns=1500000,scope='Main-thread wall-clock snapshots inside continuous post-JSON only. Descriptor restored once; each iteration has fresh decoded-equivalent owned posts, independent account, moved native inputs, output and complete cleanup. Worker stacks omitted; waiting and sampler disturbance retained. Not an all-thread CPU-time share or fresh-process latency.')
+ (p/'run.json').write_text(json.dumps(d,indent=2)+'\n');print(name,'exit',x.returncode,'iterations',len(rows),'samples',stats['records']if stats else None,flush=True);assert x.returncode==0 and d['final_json_exact_rust']and len(rows)==1500,(p/'stderr.log').read_text()
+ for args,target in [(['/opt/homebrew/opt/llvm/bin/llvm-nm','--numeric-sort','--defined-only','--demangle',str(p/'runner-sampler')],'nm.demangled.txt'),(['/opt/homebrew/opt/llvm/bin/llvm-nm','--numeric-sort','--defined-only',str(p/'runner-sampler')],'nm.txt')]:
+  q=subprocess.run(args,capture_output=True,text=True);assert q.returncode==0,q.stderr;(p/target).write_text(q.stdout)

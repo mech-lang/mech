@@ -3432,11 +3432,35 @@ fn bind_snapshot_numeric_binary(
     {
         use super::native_semantics::NativeScalarOp;
         let narrow = match (output_element, arithmetic) {
+            (SchemaBody::UnsignedInteger(IntegerWidth::W16), SemanticArithmetic::Add) => {
+                Some(NativeScalarOp::U16Add)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W16), SemanticArithmetic::Subtract) => {
+                Some(NativeScalarOp::U16Sub)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W16), SemanticArithmetic::Multiply) => {
+                Some(NativeScalarOp::U16Mul)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W16), SemanticArithmetic::Divide) => {
+                Some(NativeScalarOp::U16Div)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W16), SemanticArithmetic::Remainder) => {
+                Some(NativeScalarOp::U16Rem)
+            }
             (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Add) => {
                 Some(NativeScalarOp::U32Add)
             }
             (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Subtract) => {
                 Some(NativeScalarOp::U32Sub)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Multiply) => {
+                Some(NativeScalarOp::U32Mul)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Divide) => {
+                Some(NativeScalarOp::U32Div)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Remainder) => {
+                Some(NativeScalarOp::U32Rem)
             }
             (SchemaBody::UnsignedInteger(IntegerWidth::W8), SemanticArithmetic::Add) => {
                 Some(NativeScalarOp::U8Add)

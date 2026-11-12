@@ -328,6 +328,36 @@ impl Value {
         schemas: &SchemaTable,
     ) -> Result<ValueFootprint, ValueFootprintError> {
         let schema = self.validate_against(schemas)?;
+        if let SchemaBody::Matrix { element, .. } = schema.body()
+            && element.as_ref() == &SchemaBody::String
+            && let ValueData::Matrix(matrix) = self.data()
+            && let SequenceStorage::String(strings) = &matrix.elements
+        {
+            // Finalized packed strings own exact boxed payloads. Their one
+            // checked length sum determines both encoded and retained sizes;
+            // no second encoding or retained-payload traversal is necessary.
+            let payload = strings.iter().try_fold(0_u64, |total, text| {
+                total
+                    .checked_add(
+                        u64::try_from(text.len())
+                            .map_err(|_| ValueFootprintError::ArithmeticOverflow)?,
+                    )
+                    .ok_or(ValueFootprintError::ArithmeticOverflow)
+            })?;
+            let mut footprint = prospective_string_value_footprint(
+                self.shape().parameter_values().len(),
+                true,
+                u64::try_from(strings.len())
+                    .map_err(|_| ValueFootprintError::ArithmeticOverflow)?,
+                payload,
+            )?;
+            // The former encoding-length sink saturates in usize before its
+            // checked conversion to u64, including on 32-bit hosts.
+            footprint.encoded_bytes = footprint
+                .encoded_bytes
+                .min(u64::try_from(usize::MAX).unwrap_or(u64::MAX));
+            return Ok(footprint);
+        }
         let encoded_bytes = u64::try_from(canonical_data_payload_len(schema.body(), self.data()))
             .map_err(|_| ValueFootprintError::ArithmeticOverflow)?;
         let data = retained_data_footprint(schema.body(), self.data())?;
@@ -1447,6 +1477,112 @@ mod tests {
     use crate::snapshot::SnapshotValidationContext;
     use crate::{SchemaDraft, SchemaTableBuilder, ValueCell, ValueDataDraft, ValueDraft};
     use std::rc::Rc;
+
+    #[test]
+    fn packed_string_root_footprint_matches_generic_bytes_nodes_and_admission() {
+        use crate::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, ManagedMemoryBudget,
+        };
+        for parameterized in [false, true] {
+            for count in [0, 1, 3, 257] {
+                let parameter = DimensionParameterId::new(0);
+                let mut builder = SchemaTableBuilder::new();
+                let handle = builder
+                    .insert(
+                        SchemaDraft {
+                            body: SchemaBody::Matrix {
+                                element: Box::new(SchemaBody::String),
+                                dimensions: [
+                                    DimensionExpr::Constant(1),
+                                    if parameterized {
+                                        DimensionExpr::Parameter(parameter)
+                                    } else {
+                                        DimensionExpr::Constant(count as u64)
+                                    },
+                                ]
+                                .into(),
+                            },
+                            dimension_parameters: if parameterized {
+                                vec![DimensionParameterDeclaration {
+                                    id: parameter,
+                                    origin: DimensionParameterOrigin::Explicit,
+                                    lifetime: DimensionLifetime::Activation,
+                                    lower_bound: DimensionExpr::Constant(0),
+                                    upper_bound: None,
+                                }]
+                                .into_boxed_slice()
+                            } else {
+                                Box::new([])
+                            },
+                        }
+                        .finalize()
+                        .unwrap(),
+                    )
+                    .unwrap();
+                let built = builder.finish().unwrap();
+                let id = built.resolve(handle).unwrap();
+                let schemas = std::sync::Arc::new(built.table);
+                let shape_values = if parameterized {
+                    vec![count as u64]
+                } else {
+                    vec![]
+                };
+                let strings = ["", "A\0B\r\n", "é🧑‍🚀", &"long".repeat(4096)]
+                    .into_iter()
+                    .cycle()
+                    .take(count)
+                    .map(|s| ValueDataDraft::String(s.into()))
+                    .collect::<Vec<_>>();
+                let raw = ValueDraft {
+                    schema: id,
+                    shape_values: shape_values.into_boxed_slice(),
+                    data: ValueDataDraft::Matrix(strings.into_boxed_slice()),
+                }
+                .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+                .unwrap();
+                // The original independent schema-directed encoder and
+                // retained-data traversal remain the reference here.
+                let data =
+                    canonical_data_retained_footprint(schemas.get(id).unwrap().body(), raw.data())
+                        .unwrap();
+                let expected = ValueFootprint {
+                    encoded_bytes: data.encoded_bytes,
+                    retained_bytes: core::mem::size_of::<Value>() as u64
+                        + raw.shape().parameter_values().len() as u64 * 8
+                        + data.retained_bytes,
+                    node_count: data.node_count + 1,
+                };
+                assert_eq!(raw.retained_footprint(&schemas).unwrap(), expected);
+                let budget = ManagedMemoryBudget::new(100_000_000);
+                let bytes = raw.memory_budget_admission_bytes(&budget).unwrap();
+                let node_short = budget.with_limits(bytes, expected.node_count - 1);
+                assert!(raw.clone().admit_into_memory_budget(&node_short).is_err());
+                assert_eq!(
+                    (budget.used_bytes(), budget.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+                let short = ManagedMemoryBudget::new(bytes - 1);
+                assert!(raw.clone().admit_into_memory_budget(&short).is_err());
+                assert_eq!(
+                    (short.used_bytes(), short.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+                let exact = budget.with_limits(bytes, expected.node_count);
+                let admitted = raw.admit_into_memory_budget(&exact).unwrap();
+                assert_eq!(
+                    (budget.used_bytes(), budget.retained_snapshot_nodes()),
+                    (bytes, expected.node_count)
+                );
+                assert_eq!(admitted.retained_footprint(&schemas).unwrap(), expected);
+                drop(admitted);
+                assert_eq!(
+                    (budget.used_bytes(), budget.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
 
     fn bool_value(value: bool) -> (Value, SchemaTable) {
         let schema = SchemaDraft {

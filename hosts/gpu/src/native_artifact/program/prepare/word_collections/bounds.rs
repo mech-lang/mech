@@ -9,7 +9,16 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(in crate::native_artifact) struct Range(pub u64, pub u64);
 impl Range {
     pub(in crate::native_artifact) fn bit_and(self, other: Self) -> Self {
+        if self.0 == self.1 && other.0 == other.1 {
+            let value = self.0 & other.0;
+            return Self(value, value);
+        }
         Self(0, self.1.min(other.1))
+    }
+    pub(in crate::native_artifact) fn wrapping_mul(self, other: Self) -> Self {
+        // If the entire interval fits, no product wraps. Otherwise retain the
+        // full unsigned range; saturated upper MAX is valid for every residue.
+        Self(0, self.1.saturating_mul(other.1))
     }
     pub(super) fn kind(kind: Kind) -> Option<Self> {
         Some(Self(
@@ -97,11 +106,11 @@ impl State {
                 {
                     args[0]
                 }
-                U64Add | U32Add | U8Add => Range(
+                U64Add | U16Add | U32Add | U8Add => Range(
                     args[0].0.checked_add(args[1].0)?,
                     args[0].1.checked_add(args[1].1)?,
                 ),
-                U64Sub | U32Sub
+                U64Sub | U16Sub | U32Sub
                     if args[0].0 >= args[1].1
                         || self.ge.contains(&(inputs[0].get(), inputs[1].get())) =>
                 {
@@ -118,8 +127,9 @@ impl State {
                 U64Rem if args[1].0 != 0 => Range(0, args[0].1.min(args[1].1 - 1)),
                 BoolAnd | BoolOr | BoolXor | BoolNot => Range(0, 1),
                 U64BitAnd => args[0].bit_and(args[1]),
+                U64WrappingMul => args[0].wrapping_mul(args[1]),
                 U64BitOr | U64BitXor | U64BitNot | U64ShlWrap | U64ShrWrap | U64WrappingAdd
-                | U64WrappingSub | U64WrappingMul => Range(0, u64::MAX),
+                | U64WrappingSub => Range(0, u64::MAX),
                 U64Clz | U64Ctz => Range(0, 64),
                 _ => return None,
             }

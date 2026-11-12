@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/compiler-decoded.rs",
+    "--out",
+    "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/compiler-decoded"
+  ],
+  "exit": 0,
+  "seconds": 4.268544000107795,
+  "stdout": "{\"seconds\": 3.3905007080174983, \"exit\": 0}\n",
+  "stderr": ""
+}

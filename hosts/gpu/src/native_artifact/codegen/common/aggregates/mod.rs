@@ -11,8 +11,23 @@ use mech_engine::native_artifact::{
 };
 use std::collections::BTreeSet;
 
+/// Compiler storage geometry only. No runtime permission is carried here.
+pub(in crate::native_artifact) trait AggregateLayout {
+    fn slot(&self, value: NativeMatchValue) -> Option<(usize, usize)>;
+}
+impl<T: AggregateLayout + ?Sized> AggregateLayout for &T {
+    fn slot(&self, value: NativeMatchValue) -> Option<(usize, usize)> {
+        T::slot(*self, value)
+    }
+}
+impl AggregateLayout for NativeScalarAggregates {
+    fn slot(&self, value: NativeMatchValue) -> Option<(usize, usize)> {
+        NativeScalarAggregates::slot(self, value)
+    }
+}
+
 pub(in crate::native_artifact) fn field(
-    layout: &NativeScalarAggregates,
+    layout: &impl AggregateLayout,
     value: NativeMatchValue,
     index: usize,
 ) -> Option<usize> {
@@ -20,7 +35,7 @@ pub(in crate::native_artifact) fn field(
     (index < count).then(|| base + index)
 }
 fn at(
-    layout: &NativeScalarAggregates,
+    layout: &impl AggregateLayout,
     value: NativeMatchValue,
     index: usize,
 ) -> Result<LocalWord, NativeCompileError> {
@@ -65,7 +80,7 @@ impl GuardPolicy for CheckedGuards {
 pub(in crate::native_artifact) fn emit<W: WordAccess, G: GuardPolicy>(
     b: &mut FunctionBuilder<'_>,
     words: &mut W,
-    layout: &NativeScalarAggregates,
+    layout: &impl AggregateLayout,
     action: &Action,
     error: Block,
     guards: &mut G,

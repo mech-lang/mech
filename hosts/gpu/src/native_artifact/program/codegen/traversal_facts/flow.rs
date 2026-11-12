@@ -19,6 +19,16 @@ pub(in crate::native_artifact::program::codegen) enum Step<'a> {
         index: u32,
         output: usize,
     },
+    /// The numeric adapter supplies only U64 cells. The successful source
+    /// read/add must dominate this exact write. Only an adapter's proved
+    /// independent logical values may retain reads across this replacement.
+    Write {
+        array: usize,
+        index: u32,
+        incoming: u32,
+        width: u8,
+        preserved_arrays: Vec<usize>,
+    },
     /// Successful checked replacement preserves shape and immutable scalar
     /// snapshots. This domain exports no array-content equality facts. The
     /// write itself remains fallible and supplies no completion authority.
@@ -55,7 +65,9 @@ pub(in crate::native_artifact::program::codegen) fn with_windows<'a>(
         &[],
         None,
         &Queries::new(),
-        step,
+        &[],
+        false,
+        &step,
     )
 }
 
@@ -64,9 +76,22 @@ pub(in crate::native_artifact::program::codegen) fn with_checks<'a>(
     scope: &Scope,
     slots: &BTreeSet<usize>,
     checks: &Queries,
+    floors: &[(usize, u64)],
     step: impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
-    analyze(code, scope, slots, None, &[], &[], None, checks, step)
+    analyze(
+        code,
+        scope,
+        slots,
+        None,
+        &[],
+        &[],
+        None,
+        checks,
+        floors,
+        false,
+        &step,
+    )
 }
 
 pub(in crate::native_artifact::program::codegen) fn with_captured_windows<'a>(
@@ -85,7 +110,9 @@ pub(in crate::native_artifact::program::codegen) fn with_captured_windows<'a>(
         captures,
         None,
         &Queries::new(),
-        step,
+        &[],
+        false,
+        &step,
     )?;
     proof
         .flat_arrays
@@ -113,7 +140,32 @@ pub(in crate::native_artifact::program::codegen) fn with_completion<'a>(
         &[],
         Some(completion),
         &Queries::new(),
-        step,
+        &[],
+        false,
+        &step,
+    )
+}
+
+pub(in crate::native_artifact::program::codegen) fn with_reused_reads<'a>(
+    code: CodePlan<'_>,
+    scope: &Scope,
+    slots: &BTreeSet<usize>,
+    checks: &Queries,
+    floors: &[(usize, u64)],
+    step: impl Fn(usize) -> Option<Step<'a>>,
+) -> Option<Proof> {
+    analyze(
+        code,
+        scope,
+        slots,
+        None,
+        &[],
+        &[],
+        None,
+        checks,
+        floors,
+        true,
+        &step,
     )
 }
 
@@ -126,10 +178,12 @@ fn analyze<'a>(
     captures: &[CapturedWindow],
     completion: Option<completion::Candidate>,
     checks: &Queries,
-    step: impl Fn(usize) -> Option<Step<'a>>,
+    floors: &[(usize, u64)],
+    reuse: bool,
+    step: &impl Fn(usize) -> Option<Step<'a>>,
 ) -> Option<Proof> {
     let ordered = scope.order(code)?;
-    let (mut terms, partitions) = entry::states(
+    let (mut terms, mut partitions) = entry::states(
         code,
         &ordered,
         slots,
@@ -139,6 +193,23 @@ fn analyze<'a>(
         completion.as_ref(),
         &step,
     )?;
+    if reuse {
+        for state in &mut partitions {
+            state.snapshots = Some(BTreeMap::new());
+        }
+    }
+    // These facts have a separate current-phase runtime guard. This domain
+    // never walks through append; only its nondecreasing lower bound is seeded
+    // afresh. No old length equality, scalar snapshot or pointer is carried.
+    for &(array, minimum) in floors {
+        let length = terms.intern(Expr::ArrayLength(array))?;
+        let minimum = terms.constant(minimum)?;
+        for state in &mut partitions {
+            if !state.assume(&terms, Relation::Le, minimum, length)? {
+                return None;
+            }
+        }
+    }
     let candidate = completion.clone();
     let mut completion = completion.map(completion::Collector::new);
     let mut incoming: BTreeMap<usize, Vec<Option<State>>> = ordered
@@ -160,11 +231,39 @@ fn analyze<'a>(
         }
         written.extend(current);
     }
-    // A gate is checked once at activation. A capture changed on a latch
-    // cannot inherit that gate on later visits, even if its home is reused.
-    if windows.iter().any(|window| written.contains(&window.count)) {
+    // Prove recurrence independently of the proposed windows. An unchanged
+    // value may be copied through its carrier; a changed value cannot inherit
+    // the activation's gate. The recursive analysis has no windows, so depth
+    // is bounded at two and its joins cover all ordinary reachable backedges.
+    let ordinary_unchanged = if windows.is_empty() {
+        None
+    } else {
+        Some(
+            analyze(
+                code,
+                scope,
+                slots,
+                tag,
+                &[],
+                &[],
+                None,
+                &Queries::new(),
+                &[],
+                false,
+                step,
+            )?
+            .unchanged_at_latch,
+        )
+    };
+    if windows.iter().any(|window| {
+        written.contains(&window.count)
+            && !ordinary_unchanged
+                .as_ref()
+                .is_some_and(|words| words.contains(&window.count))
+    }) {
         return None;
     }
+    let mut unchanged_at_latch: Option<BTreeSet<usize>> = None;
     for site in ordered {
         let mut states = incoming.remove(&site)?;
         if states.iter().all(Option::is_none) {
@@ -209,6 +308,9 @@ fn analyze<'a>(
                 }
             }
             Step::Scalar(action) => {
+                for (word, snapshot) in read_reuse::operands(&states, &terms, action) {
+                    proof.reused_operands.insert((site, word), snapshot);
+                }
                 if !captures.is_empty()
                     && let Scalar::Primitive { op, operands, .. } = action
                     && let Some((relation, reverse)) = comparison(*op)
@@ -247,8 +349,7 @@ fn analyze<'a>(
                             &terms,
                             state.read(operands[0].get() as usize)?,
                             state.read(operands[1].get() as usize)?,
-                        ) && !written.contains(&window.count)
-                        {
+                        ) {
                             proof.windows.insert(window);
                         }
                     }
@@ -295,6 +396,7 @@ fn analyze<'a>(
                     }
                 }
                 for state in states.iter_mut().flatten() {
+                    state.snapshot_inputs(site, action);
                     scalar(state, &mut terms, site, action)?;
                 }
             }
@@ -306,6 +408,7 @@ fn analyze<'a>(
             Step::Define(output) => {
                 let value = terms.intern(Expr::Definition(site, output))?;
                 for state in states.iter_mut().flatten() {
+                    state.checked_reads.clear();
                     state.words.insert(output, value);
                 }
             }
@@ -320,7 +423,23 @@ fn analyze<'a>(
                 index,
                 output,
             } => {
+                if let Some(snapshot) = read_reuse::find(&states, &terms, array, index) {
+                    proof.reused_reads.insert(site, snapshot);
+                }
                 let length = terms.intern(Expr::ArrayLength(array))?;
+                // An implicit one-based read has the same interval obligation
+                // as an explicit base<length comparison. Discover candidates
+                // only from its checked mathematical index; the selected
+                // version still needs a fresh gate and this visit's k<count.
+                for state in states.iter().flatten() {
+                    if let Some(base) = state
+                        .read(index as usize)
+                        .and_then(|index| super::windows::read_base(&terms, index))
+                        && let Some(window) = state.discover_window(&terms, base, length)
+                    {
+                        proof.windows.insert(window);
+                    }
+                }
                 if states.iter().flatten().all(|state| {
                     state
                         .read(index as usize)
@@ -330,6 +449,14 @@ fn analyze<'a>(
                 }
                 let value = terms.intern(Expr::Definition(site, output))?;
                 for state in states.iter_mut().flatten() {
+                    terms.changes.record(
+                        value,
+                        write_changes::Value::Read {
+                            array,
+                            index: state.read(index as usize)?,
+                            version: state.content_version,
+                        },
+                    );
                     if let Some(recording) = &mut terms.recording {
                         recording.record(
                             value,
@@ -339,16 +466,91 @@ fn analyze<'a>(
                             },
                         );
                     }
+                    state.remember_read(array, state.read(index as usize)?, site, output, value)?;
                     state.words.insert(output, value);
+                    state.snapshot(site, output);
                 }
             }
-            Step::Replace | Step::Keep => {}
+            Step::Write {
+                array,
+                index,
+                incoming,
+                preserved_arrays,
+                width,
+            } => {
+                let candidate = states
+                    .iter()
+                    .flatten()
+                    .next()
+                    .and_then(|state| state.checked_increment(&terms, array, index, incoming));
+                if let Some(candidate) = candidate
+                    && states.iter().flatten().all(|state| {
+                        state.checked_increment(&terms, array, index, incoming) == Some(candidate)
+                    })
+                {
+                    proof.increment_writes.insert(site, candidate);
+                }
+                let length = terms.intern(Expr::ArrayLength(array))?;
+                if states.iter().flatten().all(|state| {
+                    state
+                        .read(index as usize)
+                        .is_some_and(|index| state.readable(&terms, index, length))
+                }) {
+                    proof.writes.insert((site, array, index));
+                }
+                if states.iter().flatten().all(|state| {
+                    state
+                        .read(index as usize)
+                        .zip(state.read(incoming as usize))
+                        .is_some_and(|(index, incoming)| {
+                            state.changes(&terms, array, index, incoming, width)
+                        })
+                }) {
+                    proof
+                        .changed_writes
+                        .insert((site, array, index, incoming, width));
+                }
+                for state in states.iter_mut().flatten() {
+                    state.preserve_reads(&preserved_arrays);
+                    state.content_version = write_changes::Version::Write(site);
+                }
+            }
+            Step::Replace | Step::Keep => {
+                for state in states.iter_mut().flatten() {
+                    state.checked_reads.clear();
+                    if matches!(step(site)?, Step::Replace) {
+                        state.content_version = write_changes::Version::Write(site);
+                    }
+                }
+            }
         }
         // A child initialize action has just assigned its current arguments.
         // Query this visit's transferred state without admitting the child or
         // carrying any facts across its body/return edge.
         if let Some(checks) = checks.get(&site) {
             for &check in checks {
+                let word = match check {
+                    Check::Addition { word, .. } | Check::Fits { count: word, .. } => Some(word),
+                    Check::Le(Operand::Word(word), _) => Some(word),
+                    _ => None,
+                };
+                if let Some(word) = word {
+                    let upper = states
+                        .iter()
+                        .flatten()
+                        .map(|state| {
+                            state
+                                .read(word)
+                                .map_or(u64::MAX, |value| state.upper(&terms, value))
+                        })
+                        .max()
+                        .unwrap_or(u64::MAX);
+                    proof
+                        .query_upper
+                        .entry((site, word))
+                        .and_modify(|old| *old = (*old).max(upper))
+                        .or_insert(upper);
+                }
                 if states
                     .iter()
                     .flatten()
@@ -363,6 +565,20 @@ fn analyze<'a>(
             terms.recording = Some(recording);
         }
         if site == scope.latch {
+            for state in states.iter().flatten() {
+                let unchanged = state
+                    .words
+                    .iter()
+                    .filter_map(|(&word, &value)| {
+                        (terms.terms[value] == Expr::Initial(word)).then_some(word)
+                    })
+                    .collect::<BTreeSet<_>>();
+                if let Some(words) = &mut unchanged_at_latch {
+                    words.retain(|word| unchanged.contains(word));
+                } else {
+                    unchanged_at_latch = Some(unchanged);
+                }
+            }
             continue;
         }
         let successors = scope::successors(block.terminator())?;
@@ -440,6 +656,13 @@ fn analyze<'a>(
             proof.successors.insert(site, reached[0]);
         }
     }
+    proof.unchanged_at_latch = unchanged_at_latch.unwrap_or_default();
+    let unchanged = ordinary_unchanged
+        .as_ref()
+        .unwrap_or(&proof.unchanged_at_latch);
+    proof
+        .windows
+        .retain(|window| !written.contains(&window.count) || unchanged.contains(&window.count));
     proof.completed = completion.and_then(completion::Collector::finish);
     if proof.completed.is_some()
         && let Some(recording) = terms.recording.take()

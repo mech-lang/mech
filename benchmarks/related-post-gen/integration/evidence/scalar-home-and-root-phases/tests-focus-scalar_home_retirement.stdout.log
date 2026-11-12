@@ -1,0 +1,7 @@
+
+running 2 tests
+test native_artifact::program::runtime::composition_tests::numeric_tree::numeric_tree_scalar_home_retirement_keeps_cold_writes_reports_errors_and_retry ... ok
+test native_artifact::program::runtime::composition_tests::numeric_tree::numeric_tree_scalar_home_retirement_keeps_finite_fuel_publication_and_reentry ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 861 filtered out; finished in 1.16s
+

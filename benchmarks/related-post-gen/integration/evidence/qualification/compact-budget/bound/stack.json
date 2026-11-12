@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/compact-budget/bound/runner-budget",
+    "/private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/compact-budget/bound/build/source.mec",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "/private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/compact-budget/bound/stack-output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.026636499911546707,
+  "stdout": "{\"budget_case\":\"stack\",\"error\":\"Base(StackLimit { required: 1536, limit: 0 })\",\"output_unpublished\":true,\"retained_bytes\":0,\"retained_nodes\":0}\n",
+  "stderr": ""
+}

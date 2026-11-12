@@ -1,0 +1,34 @@
+{
+  "schema": "mech.related-post-gen.processing-allocation-gap.v1",
+  "compiler": "c34338953b316c48d78c2f7f0c2ef0ae19bd6f29",
+  "profile": "profile-native-borrowed-frame-metadata-post-json-allocations-20261106.json",
+  "requests": 4848,
+  "requested_bytes": 8384366,
+  "fastest_rust_requests": 57,
+  "fastest_rust_requested_bytes": 6803175,
+  "allocation_request_ratio": 85.05263157894737,
+  "requested_byte_ratio": 1.2324195688042716,
+  "exclusive_partition": {
+    "root_canonical_library_calls": 2303,
+    "worker_setup": 1215,
+    "other_worker_work": 107,
+    "root_setup": 305,
+    "other_root_work": 918
+  },
+  "interpretation": "Most extra requests are small general runtime metadata, type copies, memory planning and worker-frame ownership allocations. The requested-byte gap is much smaller than the request-count gap. Inclusive profile rows overlap; only the stated exclusive partition sums to the total.",
+  "next_action": "IR223 direct fixed typed native transport arena allocation, preserving full admission and ownership; then reduce canonical call metadata copies and invariant memory planning.",
+  "latest": {
+    "compiler": "5925a2b3a4fd4dfcca7ada541e37a69d514171f8",
+    "report": "compiler-native-fixed-frame-arenas-candidate-20261106.json",
+    "requests": 3858,
+    "requested_bytes": 8043926,
+    "rust_variant": "rust-mech-control-u8-ids-u32-instrumented",
+    "rust_requests": 58,
+    "rust_requested_bytes": 6825713,
+    "request_ratio": 66.51724137931035,
+    "requested_byte_ratio": 1.1784741022659464,
+    "processing_median_seconds": 0.003140833,
+    "processing_over_fastest_rust": 1.9013744986757473,
+    "selected_overall_speed": false
+  }
+}

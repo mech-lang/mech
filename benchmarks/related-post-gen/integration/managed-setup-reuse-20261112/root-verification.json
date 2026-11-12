@@ -1,0 +1,41 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-compact-native-development-20261111/benchmarks/related-post-gen/integration/managed-setup-reuse-20261112/verify.py"
+  ],
+  "exit": 0,
+  "seconds": 18.252465249970555,
+  "stdout": "{\n  \"verified_records\": 6229,\n  \"unique_blobs\": 3085,\n  \"compressed_bytes\": 17731768,\n  \"base_IR336_source_commit\": \"4b6133f85ae85f858bfe29f8cc871aada58a77bb\",\n  \"IR337_source_inventory_entries\": 2816,\n  \"IR338_source_inventory_entries\": 2817,\n  \"literal_include_entries\": 164,\n  \"source_overlay_files\": 13,\n  \"primary_exact_outputs\": 1209,\n  \"resource_exact_outputs\": 259,\n  \"new_timed_exact_outputs\": 1468,\n  \"managed_qualifications\": 4,\n  \"edges_per_variant\": 31,\n  \"prior_compact_resource_qualification_executions\": 96,\n  \"focused_passes\": 50,\n  \"compact_typed_passes\": 1,\n  \"broad_passed\": 1079,\n  \"broad_failures\": 16,\n  \"all_broad_failures_inherited\": true,\n  \"managed_IR334_still_selected\": true,\n  \"new_managed_gain_established\": false,\n  \"fastest_Rust_target_met\": false,\n  \"native_executions_by_verifier\": 0\n}\n",
+  "stderr": "",
+  "pins": {
+    "verify.py": "80d36fc8b5025adae4358643ce7b071154ee3da89d836616e518c88164334701",
+    "records.json": "eefa42329193df287e2d52f0f78460dc8f06879d76e0dc8b12d435d3f26d70e7",
+    "report.json": "6672822d9036a75f132e8e82329b90082b01537de339d23eab2e0547054645a6"
+  },
+  "native_executions": 0,
+  "result": {
+    "verified_records": 6229,
+    "unique_blobs": 3085,
+    "compressed_bytes": 17731768,
+    "base_IR336_source_commit": "4b6133f85ae85f858bfe29f8cc871aada58a77bb",
+    "IR337_source_inventory_entries": 2816,
+    "IR338_source_inventory_entries": 2817,
+    "literal_include_entries": 164,
+    "source_overlay_files": 13,
+    "primary_exact_outputs": 1209,
+    "resource_exact_outputs": 259,
+    "new_timed_exact_outputs": 1468,
+    "managed_qualifications": 4,
+    "edges_per_variant": 31,
+    "prior_compact_resource_qualification_executions": 96,
+    "focused_passes": 50,
+    "compact_typed_passes": 1,
+    "broad_passed": 1079,
+    "broad_failures": 16,
+    "all_broad_failures_inherited": true,
+    "managed_IR334_still_selected": true,
+    "new_managed_gain_established": false,
+    "fastest_Rust_target_met": false,
+    "native_executions_by_verifier": 0
+  }
+}

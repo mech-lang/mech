@@ -28,18 +28,18 @@ fn native_argument_bank_numeric_words_do_not_inflate_managed_values() {
             let descriptor = restored_descriptor.as_ref().unwrap_or(jit.descriptor());
             let metadata = descriptor.metadata();
             assert!(metadata.compositions.parents.iter().all(|parent| {
-                parent.iteration != metadata.closed_tails.regions[0].iteration
-                    && parent
-                        .segments
-                        .iter()
-                        .all(|piece| piece.prepaid_region.is_none())
+                parent
+                    .segments
+                    .iter()
+                    .all(|piece| piece.prepaid_region.is_none())
             }));
             assert_eq!(
                 metadata
                     .closed_tails
                     .regions
                     .iter()
-                    .filter(|r| r.numeric.as_ref().is_some_and(|p| p.phase.is_some()))
+                    .filter(|r| r.tail.parent().is_none()
+                        && r.numeric.as_ref().is_some_and(|p| p.phase.is_some()))
                     .count(),
                 1
             );
@@ -54,6 +54,7 @@ fn native_argument_bank_numeric_words_do_not_inflate_managed_values() {
                 .max()
                 .unwrap();
             assert!(metadata.max_library_inputs > maximum_values);
+            let maximum_values = maximum_values.max(metadata.compositions.argument_values());
             assert_eq!(metadata.max_call_values, maximum_values);
             let memory = mode.memory_budget();
             let prepared = Prepared::new(descriptor, mode.execution(), &memory).unwrap();
@@ -65,6 +66,10 @@ fn native_argument_bank_numeric_words_do_not_inflate_managed_values() {
             assert_eq!(
                 prepared.state.as_ref().unwrap().call_inputs.funded_len(),
                 metadata.max_library_inputs
+            );
+            assert_eq!(
+                prepared.state.as_ref().unwrap().call_inputs.physical_len(),
+                maximum_values
             );
             drop(prepared);
             assert_eq!(
@@ -79,10 +84,11 @@ fn native_argument_bank_numeric_words_do_not_inflate_managed_values() {
 fn native_argument_bank_retains_full_admission_and_rejects_invalid_geometry() {
     use crate::native_artifact::program::runtime::call_inputs::CallInputs;
     let memory = ManagedMemoryBudget::new(64 << 20);
-    for (funded, values) in [(0, 0), (75, 9), (239, 36)] {
+    for (funded, values) in [(0, 0), (75, 0), (75, 9), (239, 36), (626, 13)] {
         let bytes = NativeTypedStorage::<Option<Value>>::admission_bytes(funded).unwrap();
         let bank = CallInputs::new(funded, values, 64 << 20, &memory).unwrap();
         assert_eq!(bank.values().len(), values);
+        assert_eq!(bank.physical_len(), values);
         assert_eq!(bank.funded_len(), funded);
         assert_eq!(memory.used_bytes(), bytes);
         drop(bank);
@@ -90,6 +96,17 @@ fn native_argument_bank_retains_full_admission_and_rejects_invalid_geometry() {
         if bytes > 0 {
             let tight = memory.with_limits(bytes - 1, u64::MAX);
             assert!(CallInputs::new(funded, values, 64 << 20, &tight).is_err());
+            assert_eq!(memory.used_bytes(), 0);
+        }
+        let raw_bytes = (funded * core::mem::size_of::<Option<Value>>()) as u64;
+        if raw_bytes > 0 {
+            assert!(matches!(
+                CallInputs::new(funded, values, raw_bytes - 1, &memory),
+                Err(NativeProgramExecutionError::Base(NativeExecutionError::TransportLimit {
+                    required,
+                    limit,
+                })) if required == raw_bytes && limit == raw_bytes - 1
+            ));
             assert_eq!(memory.used_bytes(), 0);
         }
     }

@@ -121,8 +121,8 @@ pub(in crate::native_artifact) fn define_functions<M: Module>(
             // the original emitter and use the original current arguments.
             ordinary[region.tail.exit() as usize] = Some(done);
             emitted = readonly_numeric::emit_entry(
-                controls, &mut b, args[0], args[1], code, closed, site, &hooks, &ordinary, error,
-                contract, report,
+                controls, &mut b, args[0], args[1], zero, None, false, code, closed, site, &hooks,
+                &ordinary, error, contract, report,
             )?;
             b.ins().return_(&[zero, zero]);
             b.switch_to_block(done);

@@ -8,6 +8,11 @@ mod abi;
 mod application;
 #[cfg(feature = "canonical-native-benchmark-policy-runtime")]
 mod benchmark_policy;
+#[cfg(any(
+    feature = "canonical-native-program",
+    feature = "canonical-native-program-runtime"
+))]
+pub mod compact_runtime;
 #[cfg(feature = "canonical-native")]
 mod compiler;
 mod identity;
@@ -91,6 +96,8 @@ mod iteration_runtime;
 mod program;
 
 #[cfg(feature = "canonical-native-program-runtime")]
+pub use crate::native_artifact::program::compiled_module::NativeProgramModule;
+#[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::program::linked::LinkedProgramArtifact;
 
 pub use crate::native_artifact::iteration_abi::{NativeIterationDescriptor, NativeIterationVisit};
@@ -118,19 +125,31 @@ pub use crate::native_artifact::program::application::{
 };
 #[cfg(feature = "canonical-native-program")]
 pub use crate::native_artifact::program::application::{
-    generate_linked_program_application, generate_linked_program_application_with_limits,
+    generate_linked_llvm_program_application_with_limits, generate_linked_program_application,
+    generate_linked_program_application_with_limits,
 };
 #[cfg(feature = "canonical-native-program")]
 pub use crate::native_artifact::program::compiler::{
-    JitProgramArtifact, NativeProgramObject, emit_program_object, emit_program_object_with_limits,
+    JitProgramArtifact, NativeProgramObject, compact_native_layout_for_diagnostic,
+    emit_compact_closed_object_for_diagnostic,
+    emit_compact_closed_object_with_phase_observer_for_diagnostic,
+    emit_minimal_numeric_object_for_diagnostic, emit_program_llvm_ir,
+    emit_program_llvm_ir_with_limits, emit_program_llvm_object_with_limits, emit_program_object,
+    emit_program_object_with_limits,
 };
 #[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::program::image::NativeProgramDescriptor;
+#[cfg(feature = "canonical-native-program-runtime")]
+pub use crate::native_artifact::program::image::binding::{
+    NATIVE_PROGRAM_IMAGE_BINDING_BYTES, NativeProgramImageBinding,
+};
 #[cfg(feature = "canonical-native-program-runtime")]
 pub use crate::native_artifact::program::image::identity::{
     NATIVE_PROGRAM_LINK_IDENTITY_BYTES, NATIVE_PROGRAM_TYPED_IR_VERSION,
     NATIVE_PROGRAM_WORK_POLICY_VERSION, NativeProgramObjectIdentity,
 };
+#[cfg(feature = "canonical-native-program")]
+pub use crate::native_artifact::program::llvm_backend::NativeLlvmToolchain;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub use crate::native_artifact::program::runtime::NativeProgramExecutionSession;
 #[cfg(feature = "canonical-native-program-runtime")]

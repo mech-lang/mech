@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-integration-old-object-20261106-v1/222/probe"
+  ],
+  "exit": 0,
+  "seconds": 0.46029683388769627,
+  "stdout": "{\"compiled_module_rejected\":\"canonical native object binding: compiled module descriptor could not be restored\",\"object_bound_rejected\":\"canonical native object binding: program descriptor differs from its checked Object image\",\"old_entry_never_invoked\":true,\"old_typed_ir\":222}\n",
+  "stderr": ""
+}

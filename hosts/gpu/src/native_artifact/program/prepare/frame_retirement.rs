@@ -4,19 +4,22 @@ use mech_engine::native_artifact::{
 };
 use std::ops::Range;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) enum Operation {
     Scalars(Range<usize>),
     Managed(usize),
 }
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Recipe")]
 struct Recipe {
     work: u64,
     operations: Range<usize>,
 }
-/// Pure derived descriptor data, never serialized or supplied by a caller.
-/// Liveness remains authoritative in the existing action/lexical inventories.
-#[derive(Debug, Default)]
+/// Immutable compiler-derived data. Independent images rederive this inventory;
+/// a genuine bound Object may restore it. Runtime liveness checks still apply.
+#[derive(Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.FrameRetirements")]
 pub(in crate::native_artifact) struct FrameRetirements {
     recipes: Box<[Option<Recipe>]>,
     operations: Box<[Operation]>,
@@ -99,6 +102,22 @@ fn flatten(
                 count = count
                     .checked_add(flatten(layout, children, operations)?)
                     .ok_or("frame field count overflows")?;
+            }
+            Lane::Tagged { tag, .. } => {
+                // Every variant has a disjoint bank. Inactive owners are
+                // normally empty, but retirement clears the complete recipe.
+                let start = tag.checked_mul(2).ok_or("frame tag index overflows")?;
+                let end = start.checked_add(2).ok_or("frame tag end overflows")?;
+                if tag >= layout.scalar_fields() {
+                    return Err("frame tag retirement exceeds bank");
+                }
+                operations.push(Operation::Scalars(start..end));
+                let children = layout
+                    .children(*field)
+                    .ok_or("frame variant span missing")?;
+                count = count
+                    .checked_add(flatten(layout, children, operations)?)
+                    .ok_or("frame variant count overflows")?;
             }
         }
     }

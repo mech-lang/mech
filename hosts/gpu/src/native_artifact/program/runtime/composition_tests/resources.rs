@@ -19,6 +19,15 @@ pub(super) fn finite_boundaries(
     source: &str,
     make_inputs: impl Fn(&ProgramArtifact, &ManagedMemoryBudget) -> Vec<Value>,
 ) {
+    super::super::maps::string::with_fixed_publication_hash_seed(|| {
+        fixed_hash_boundaries(source, make_inputs)
+    });
+}
+
+fn fixed_hash_boundaries(
+    source: &str,
+    make_inputs: impl Fn(&ProgramArtifact, &ManagedMemoryBudget) -> Vec<Value>,
+) {
     for artifact in artifacts(source) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();

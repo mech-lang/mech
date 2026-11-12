@@ -112,8 +112,18 @@ struct PlannedHostArenaAuthority {
     claimed: Cell<bool>,
 }
 
+// A closed fixed-slot plan needs no mutable region registry, interval map,
+// transaction table or publication graph. The owner remains the sole physical
+// authority and keeps the same full shared-account admission until destruction.
+struct FixedHostArenaAuthority {
+    block: HostBlock,
+    _charge: super::ManagedMemoryCharge,
+    claimed: Cell<bool>,
+}
+
 enum PlannedHostArenaAllocatorKind {
     Arena(Rc<PlannedHostArenaAuthority>),
+    Fixed(Rc<FixedHostArenaAuthority>),
     Empty { alignment: usize },
 }
 
@@ -137,6 +147,11 @@ impl core::fmt::Debug for PlannedHostArenaAllocator {
                 .debug_struct("PlannedHostArenaAllocator")
                 .field("bytes", &0)
                 .field("alignment", alignment)
+                .finish(),
+            PlannedHostArenaAllocatorKind::Fixed(authority) => formatter
+                .debug_struct("FixedHostArenaAllocator")
+                .field("bytes", &authority.block.bytes())
+                .field("alignment", &authority.block.alignment())
                 .finish(),
         }
     }
@@ -192,6 +207,25 @@ impl PlannedHostArenaAllocator {
 unsafe impl Allocator for PlannedHostArenaAllocator {
     fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
         match &self.kind {
+            PlannedHostArenaAllocatorKind::Fixed(authority) => {
+                if layout.size() != authority.block.bytes()
+                    || layout.align() > authority.block.alignment()
+                    || authority.claimed.replace(true)
+                {
+                    return Err(AllocError);
+                }
+                let pointer = if layout.size() == 0 {
+                    // A zero-length physical prefix can retain a nonzero
+                    // logical claim. Its aligned sentinel is never dereferenced.
+                    NonNull::new(layout.align() as *mut u8).ok_or(AllocError)?
+                } else {
+                    authority.block.pointer().ok_or(AllocError)?
+                };
+                Ok(NonNull::slice_from_raw_parts(
+                    pointer,
+                    authority.block.bytes(),
+                ))
+            }
             PlannedHostArenaAllocatorKind::Arena(authority) => {
                 if layout.size() != authority.bytes
                     || layout.align() > authority.alignment
@@ -216,6 +250,17 @@ unsafe impl Allocator for PlannedHostArenaAllocator {
 
     unsafe fn deallocate(&self, pointer: NonNull<u8>, layout: Layout) {
         match &self.kind {
+            PlannedHostArenaAllocatorKind::Fixed(authority) => {
+                if layout.size() != 0 {
+                    debug_assert_eq!(Some(pointer), authority.block.pointer());
+                } else {
+                    debug_assert!(authority.block.pointer().is_none());
+                }
+                debug_assert_eq!(layout.size(), authority.block.bytes());
+                debug_assert!(layout.align() <= authority.block.alignment());
+                // Elements are destroyed by the projected Box first. The sole
+                // owner then releases its HostBlock and shared budget claim.
+            }
             PlannedHostArenaAllocatorKind::Arena(authority) => {
                 debug_assert_eq!(pointer, authority.pointer);
                 debug_assert_eq!(layout.size(), authority.bytes);
@@ -241,6 +286,101 @@ mod planned_arena_element_sealed {
 pub trait PlannedArenaElement: planned_arena_element_sealed::Sealed + Default + 'static {
     #[doc(hidden)]
     fn supports_planned_slot(slot: crate::PlannedSlotKind) -> bool;
+}
+
+/// A compiler-known, single-object contiguous Host arena with a closed element
+/// type. This is an allocation plan, not value, source-site or visit authority.
+/// It cannot be resized, aliased, published through a generic domain, or used to
+/// reinterpret another Rust element type. Each realization has a fresh opaque
+/// identity and independently admits its complete backing on the caller's account.
+pub struct FixedHostArenaPlan<T: PlannedArenaElement> {
+    count: usize,
+    bytes: u64,
+    _element: core::marker::PhantomData<fn() -> T>,
+}
+
+impl<T: PlannedArenaElement> FixedHostArenaPlan<T> {
+    pub fn new(count: usize, slot: crate::PlannedSlotKind) -> MemoryRuntimeResult<Self> {
+        if !T::supports_planned_slot(slot) {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: None,
+                size: 0,
+                alignment: core::mem::align_of::<T>() as u32,
+                reason: "fixed arena element differs from its planned slot",
+            });
+        }
+        let layout = Layout::array::<T>(count).map_err(|_| MemoryRuntimeError::InvalidLayout {
+            object: None,
+            size: u64::MAX,
+            alignment: core::mem::align_of::<T>() as u32,
+            reason: "fixed arena element count overflows",
+        })?;
+        Ok(Self {
+            count,
+            bytes: layout.size() as u64,
+            _element: core::marker::PhantomData,
+        })
+    }
+
+    pub const fn capacity_bytes(&self) -> u64 {
+        self.bytes
+    }
+
+    /// Keep the existing initialization-coverage admission envelope even though
+    /// this closed plan initializes its complete typed backing in one pass.
+    /// No quota is relaxed when the dynamic interval registry is eliminated.
+    pub fn admission_bytes(&self) -> MemoryRuntimeResult<u64> {
+        super::MemoryDomain::host_arena_admission_bytes(self.bytes)
+    }
+
+    pub fn materialize(
+        &self,
+        budget: &super::ManagedMemoryBudget,
+    ) -> MemoryRuntimeResult<(PlannedArenaProjection<T>, super::MemoryDomainId)> {
+        self.materialize_prefix(self.count, budget)
+    }
+
+    /// Realize only a typed physical prefix while retaining this plan's full
+    /// logical admission claim. The prefix has no access to omitted elements,
+    /// cannot grow, and holds the complete claim until its last owner retires.
+    /// This changes storage work, never the caller's finite resource envelope.
+    pub fn materialize_prefix(
+        &self,
+        physical_count: usize,
+        budget: &super::ManagedMemoryBudget,
+    ) -> MemoryRuntimeResult<(PlannedArenaProjection<T>, super::MemoryDomainId)> {
+        if physical_count > self.count {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: None,
+                size: self.bytes,
+                alignment: core::mem::align_of::<T>() as u32,
+                reason: "physical arena prefix exceeds its logical plan",
+            });
+        }
+        let identity = super::MemoryDomainId::issue()?;
+        if self.count == 0 {
+            return PlannedArenaProjection::empty().map(|values| (values, identity));
+        }
+        let charge = budget.reserve(self.admission_bytes()?)?;
+        // The original plan validated Layout::array<T>(self.count), and the
+        // prefix bound above makes this product no larger than self.bytes.
+        let physical_bytes = (physical_count * core::mem::size_of::<T>()) as u64;
+        let block = HostBlock::allocate(
+            Some(MemoryObjectId::new(0)),
+            physical_bytes,
+            core::mem::align_of::<T>() as u32,
+            MemorySpace::Host,
+        )?;
+        let allocator = PlannedHostArenaAllocator {
+            kind: PlannedHostArenaAllocatorKind::Fixed(Rc::new(FixedHostArenaAuthority {
+                block,
+                _charge: charge,
+                claimed: Cell::new(false),
+            })),
+        };
+        PlannedArenaProjection::initialize(physical_count, allocator, Some(MemoryObjectId::new(0)))
+            .map(|values| (values, identity))
+    }
 }
 
 impl planned_arena_element_sealed::Sealed for u8 {}

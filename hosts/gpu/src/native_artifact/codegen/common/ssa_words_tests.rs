@@ -29,6 +29,8 @@ fn ssa_home_spills_and_reloads_keep_the_boundary_memory_region() {
             b.def_var(variable, initial);
             let words = Words {
                 variables: BTreeMap::from([(3, (variable, flags))]),
+                native_extent_slots: BTreeMap::new(),
+                native_extent_values: RefCell::new(BTreeMap::new()),
             };
             let updated = b.ins().iadd_imm(initial, 1);
             words.write(&mut b, 3, updated);

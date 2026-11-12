@@ -1,0 +1,2092 @@
+{
+  "schema": "mech.related-post-gen.fuel-derived-debits-post-json-native-pc-profile.v1",
+  "rows": {
+    "unchanged": {
+      "compiler": "96682c2679e05065731fa4978428a6baa0aec2fb",
+      "source": "/private/tmp/mech-related-native-fuel-derived-debits-runners-20261106-v2/after-4/build/source.mec",
+      "source_sha256": "618c5dd28399e04aeb4ada3037ee2dfacd6df84c526f776f1aaa632871bb1736",
+      "profiled_timings_excluded": true,
+      "all1000_index_arrays_and_final_rust_output_exact": true,
+      "sampler": {
+        "records": 4069,
+        "record_bytes": 56,
+        "image_base": 4309630976,
+        "capacity": 60000,
+        "scans": 1604,
+        "attempts": 4167,
+        "suspended": 0,
+        "resumed": 0,
+        "states": 4074,
+        "stopped": 0,
+        "suspend_failures": 0,
+        "state_failures": 93,
+        "resume_terminated": 0,
+        "full": 0,
+        "first_ns": 1301011211264000,
+        "last_ns": 1301015182910000,
+        "last_phase_epoch": 2000,
+        "phase_changed": 4,
+        "post_json_only": true
+      },
+      "post_json_phase_gate": {
+        "all_records_within_one_odd_epoch": true,
+        "observed_epochs": 1000,
+        "total_epochs": 1000
+      },
+      "top_symbol_observations": [
+        [
+          "_mech_canonical_program_entry_v1_numeric_1471",
+          717
+        ],
+        [
+          "_mech_canonical_program_entry_v1_utf8_histogram",
+          184
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_233",
+          156
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_818",
+          138
+        ],
+        [
+          "_mech_canonical_program_entry_v1",
+          127
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_589",
+          116
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_476",
+          63
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_101",
+          52
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1273",
+          50
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1372",
+          42
+        ],
+        [
+          "__RNvNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+          41
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1206",
+          20
+        ],
+        [
+          "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          19
+        ],
+        [
+          "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+          16
+        ],
+        [
+          "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers11lock_escrow",
+          15
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1160",
+          15
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_688",
+          14
+        ],
+        [
+          "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_11memory_plan5error15MemoryPlanErrorNCINvMs_NtNtNtCsflnRBjSKmRu_11mech_engine8resident7general4liveNtB1Y_13InputDataMemo7measureNCINvB1Y_14footprint_implNtNtNtNtB20_23native_collection_calls10invocation11measurement22NativeMeasurementCheckEs1_0E0EB24_",
+          13
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtB4_5State14push_row_block",
+          12
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact6memory18NativeTypedStorageINtNtB4_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueEEEBN_",
+          10
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read",
+          9
+        ],
+        [
+          "__RNvNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          9
+        ],
+        [
+          "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers17next_after_native",
+          7
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+          7
+        ],
+        [
+          "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner4PostEENCNvB1R_10post_viewss_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2H_8for_each4callNtB1R_8PostViewNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB48_3VecB3K_E14extend_trustedBN_E0E0EB1R_",
+          5
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding27retained_sequence_footprint",
+          5
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          5
+        ],
+        [
+          "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_3zip3ZipINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner8PostViewEINtB1g_11ChunksExactyEENCNvB1F_3run0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2L_8for_each4callNtB1F_7RelatedNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB4b_3VecB3O_E14extend_trustedBN_E0E0EB1F_",
+          5
+        ],
+        [
+          "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+          5
+        ],
+        [
+          "__RNvMs3_NtNtCsa14KvJzMIc9_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          5
+        ],
+        [
+          "__RINvNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections9utf8_read5fixedNtNtNtB6_4maps9utf8_read4CellEBc_",
+          4
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation9histogramNtB4_10Invocation16histogram_helper",
+          4
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          4
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime7session14CallCacheEntryEBQ_",
+          3
+        ],
+        [
+          "__RNvMs1_NtNtCsa14KvJzMIc9_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+          3
+        ],
+        [
+          "__RNvNtNtCsflnRBjSKmRu_11mech_engine14memory_planner7program17place_allocations",
+          3
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          3
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+          3
+        ],
+        [
+          "__RNvMs3_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime10allocationINtB5_18FixedHostArenaPlanINtNtCsgDHHaSskbIF_4core6option6OptionNtNtNtB9_8snapshot10validation5ValueEE11materializeCsa14KvJzMIc9_8mech_gpu",
+          3
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation27synchronize_numeric_carrier",
+          2
+        ],
+        [
+          "__RNvMs_NtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime4maps6stringNtB4_14OwnedStringMap6insertBe_",
+          2
+        ],
+        [
+          "__RNvMs0_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime6budgetNtB5_19ManagedMemoryBudget16reserve_capacity",
+          2
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultTNtNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation23private_unsigned_matrix21PrivateUnsignedMatrixbENtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCINvMNtNtB5r_8prepared12word_updatesNtB6X_25NativePreparedLibraryCall28unsigned_matrix_replace_withB3I_NCNvB6U_31unsigned_matrix_replace_private0E0E0IB36_B35_NtNtNtB3Q_8function8resident19ResidentKernelErrorEEB10_",
+          2
+        ],
+        [
+          "__RNvMs_NtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime7session13CallCacheLaneEBQ_",
+          2
+        ],
+        [
+          "__RNvXs6_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime6budgetNtB5_24ManagedMemoryReservationNtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4drop",
+          2
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtCsfBfheTzTBUt_9mech_core9kind_expr8KindExprECsflnRBjSKmRu_11mech_engine",
+          2
+        ],
+        [
+          "__RNvMs0_NtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          2
+        ],
+        [
+          "__RNvCsg2Tlac8ZPZa_6runner3run",
+          2
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvBW_20observe_control_work0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          2
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape21evaluate_body_extents",
+          2
+        ],
+        [
+          "__RNvXNtCsfBfheTzTBUt_9mech_core9kind_exprNtB2_8KindExprNtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+          2
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+          2
+        ],
+        [
+          "__RNvMs0_NtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation8parallelNtB7_10Invocation15parallel_helper",
+          2
+        ],
+        [
+          "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          2
+        ],
+        [
+          "__RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model13MemoryArenaIdyE6insertB1d_",
+          2
+        ],
+        [
+          "__RNvNtNtCsflnRBjSKmRu_11mech_engine14memory_planner4turn15scope_turn_call",
+          2
+        ],
+        [
+          "__RNCNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB7_5Value24into_memory_budget_inners3_0Bb_",
+          2
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema8encoding18encode_schema_body",
+          2
+        ]
+      ],
+      "native_function_observations": {
+        "_mech_canonical_program_entry_v1_numeric_818": 138,
+        "_mech_canonical_program_entry_v1_utf8_histogram": 184,
+        "_mech_canonical_program_entry_v1_numeric_233": 156,
+        "_mech_canonical_program_entry_v1": 127,
+        "_mech_canonical_program_entry_v1_numeric_1471": 717,
+        "_mech_canonical_program_entry_v1_numeric_589": 116,
+        "_mech_canonical_program_entry_v1_numeric_688": 14,
+        "_mech_canonical_program_entry_v1_numeric_476": 63,
+        "_mech_canonical_program_entry_v1_numeric_1273": 50,
+        "_mech_canonical_program_entry_v1_numeric_1372": 42,
+        "_mech_canonical_program_entry_v1_numeric_101": 52,
+        "_mech_canonical_program_entry_v1_numeric_1160": 15,
+        "_mech_canonical_program_entry_v1_numeric_1206": 20,
+        "_mech_canonical_program_entry_v1_numeric_522": 1
+      },
+      "native_pc_offsets": {
+        "_mech_canonical_program_entry_v1_numeric_818": {
+          "4184": 2,
+          "9272": 1,
+          "5244": 2,
+          "6244": 5,
+          "5360": 10,
+          "9316": 2,
+          "8524": 1,
+          "4292": 3,
+          "4280": 1,
+          "3416": 1,
+          "2484": 1,
+          "5228": 1,
+          "3480": 2,
+          "1396": 3,
+          "4372": 8,
+          "4328": 1,
+          "4344": 2,
+          "5332": 1,
+          "8528": 1,
+          "9328": 2,
+          "6256": 3,
+          "5156": 3,
+          "2636": 4,
+          "8464": 1,
+          "5248": 1,
+          "5300": 3,
+          "3432": 1,
+          "6216": 8,
+          "5180": 5,
+          "1948": 1,
+          "8304": 6,
+          "8360": 1,
+          "760": 1,
+          "10292": 3,
+          "7264": 2,
+          "4340": 1,
+          "10128": 1,
+          "6196": 2,
+          "9192": 2,
+          "10224": 1,
+          "8480": 3,
+          "4360": 1,
+          "2488": 1,
+          "788": 1,
+          "6752": 1,
+          "748": 1,
+          "4308": 1,
+          "5304": 2,
+          "9212": 3,
+          "10252": 2,
+          "8332": 1,
+          "3316": 1,
+          "3436": 1,
+          "1972": 1,
+          "4220": 1,
+          "6768": 1,
+          "5288": 1,
+          "3424": 1,
+          "8400": 1,
+          "9416": 1,
+          "8600": 1,
+          "9252": 1,
+          "8504": 1,
+          "8376": 1,
+          "8496": 1,
+          "7260": 1,
+          "1920": 1,
+          "4368": 1,
+          "8448": 1,
+          "7252": 1,
+          "3348": 1,
+          "9376": 1
+        },
+        "_mech_canonical_program_entry_v1_utf8_histogram": {
+          "544": 4,
+          "996": 9,
+          "372": 9,
+          "744": 10,
+          "332": 7,
+          "632": 11,
+          "592": 13,
+          "608": 1,
+          "660": 6,
+          "272": 9,
+          "344": 9,
+          "792": 5,
+          "772": 13,
+          "984": 2,
+          "524": 5,
+          "336": 19,
+          "888": 2,
+          "800": 8,
+          "388": 2,
+          "612": 11,
+          "512": 2,
+          "784": 5,
+          "392": 5,
+          "412": 4,
+          "492": 7,
+          "900": 1,
+          "556": 1,
+          "936": 1,
+          "684": 1,
+          "396": 2
+        },
+        "_mech_canonical_program_entry_v1_numeric_233": {
+          "4964": 1,
+          "3740": 1,
+          "5916": 3,
+          "1620": 2,
+          "6724": 1,
+          "3688": 1,
+          "4456": 3,
+          "6624": 2,
+          "3772": 2,
+          "5952": 2,
+          "4452": 2,
+          "5824": 4,
+          "5984": 4,
+          "2960": 1,
+          "3784": 18,
+          "5976": 7,
+          "5936": 1,
+          "4508": 2,
+          "5904": 1,
+          "2232": 4,
+          "6584": 3,
+          "6048": 4,
+          "4464": 1,
+          "3592": 5,
+          "5876": 8,
+          "4476": 2,
+          "2964": 7,
+          "6560": 1,
+          "4524": 4,
+          "2804": 2,
+          "7392": 2,
+          "7368": 1,
+          "3696": 4,
+          "6032": 3,
+          "6684": 1,
+          "2932": 3,
+          "2916": 1,
+          "3712": 2,
+          "628": 2,
+          "1660": 1,
+          "2920": 2,
+          "7408": 2,
+          "3756": 2,
+          "3584": 1,
+          "5852": 2,
+          "2212": 1,
+          "5960": 2,
+          "6564": 4,
+          "4980": 2,
+          "3776": 1,
+          "2904": 1,
+          "6672": 1,
+          "2104": 1,
+          "3668": 1,
+          "2188": 1,
+          "5396": 1,
+          "2832": 2,
+          "2896": 1,
+          "6636": 1,
+          "7452": 1,
+          "7116": 1,
+          "5932": 2,
+          "2184": 1,
+          "3672": 1,
+          "7356": 1,
+          "1148": 1
+        },
+        "_mech_canonical_program_entry_v1": {
+          "6368": 7,
+          "6060": 32,
+          "373088": 14,
+          "6220": 1,
+          "334120": 4,
+          "6172": 1,
+          "6256": 2,
+          "6076": 1,
+          "132816": 8,
+          "6068": 24,
+          "5996": 3,
+          "6168": 7,
+          "6292": 3,
+          "6188": 3,
+          "344472": 1,
+          "6116": 8,
+          "6240": 1,
+          "343496": 3,
+          "6300": 1,
+          "6104": 1,
+          "6284": 1,
+          "6204": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1471": {
+          "17192": 56,
+          "6172": 9,
+          "8784": 12,
+          "20252": 5,
+          "13172": 9,
+          "10788": 7,
+          "10616": 2,
+          "7636": 13,
+          "5472": 2,
+          "17296": 13,
+          "10660": 2,
+          "10316": 5,
+          "9552": 41,
+          "9508": 4,
+          "10424": 2,
+          "10332": 1,
+          "10620": 2,
+          "15332": 3,
+          "1516": 1,
+          "15240": 8,
+          "15252": 2,
+          "10504": 3,
+          "17168": 57,
+          "10696": 4,
+          "20204": 2,
+          "8844": 27,
+          "9520": 11,
+          "4452": 8,
+          "17520": 13,
+          "12136": 3,
+          "15300": 2,
+          "17376": 26,
+          "17616": 2,
+          "15360": 26,
+          "10528": 4,
+          "7584": 1,
+          "12120": 5,
+          "17164": 6,
+          "8804": 4,
+          "10672": 3,
+          "13108": 4,
+          "13132": 6,
+          "16424": 11,
+          "10688": 4,
+          "17480": 3,
+          "6864": 6,
+          "10680": 2,
+          "7640": 8,
+          "10540": 17,
+          "10700": 10,
+          "4448": 3,
+          "15292": 3,
+          "3072": 1,
+          "12176": 11,
+          "17292": 1,
+          "17280": 15,
+          "17388": 13,
+          "15344": 2,
+          "17424": 2,
+          "13856": 6,
+          "7588": 2,
+          "3064": 3,
+          "15352": 2,
+          "10544": 7,
+          "17364": 4,
+          "5428": 5,
+          "5440": 12,
+          "14532": 2,
+          "17516": 8,
+          "4376": 2,
+          "10532": 3,
+          "15280": 2,
+          "12172": 2,
+          "17268": 4,
+          "17524": 2,
+          "17200": 10,
+          "7632": 3,
+          "10744": 2,
+          "17288": 2,
+          "16436": 1,
+          "7592": 1,
+          "10416": 2,
+          "10652": 2,
+          "10624": 2,
+          "3720": 2,
+          "15288": 1,
+          "10692": 1,
+          "15340": 5,
+          "17384": 3,
+          "5488": 8,
+          "16456": 3,
+          "10500": 1,
+          "7552": 2,
+          "17320": 2,
+          "9564": 2,
+          "10604": 1,
+          "15244": 2,
+          "17380": 2,
+          "7620": 1,
+          "2340": 1,
+          "10704": 1,
+          "7568": 1,
+          "20208": 1,
+          "10584": 5,
+          "8832": 1,
+          "10360": 1,
+          "7628": 2,
+          "13188": 1,
+          "17224": 8,
+          "13840": 2,
+          "1508": 1,
+          "20424": 1,
+          "17448": 1,
+          "15236": 1,
+          "17488": 1,
+          "17372": 1,
+          "10320": 1,
+          "17272": 2,
+          "17156": 1,
+          "10288": 2,
+          "10432": 3,
+          "4440": 1,
+          "17144": 2,
+          "10684": 1,
+          "10336": 1,
+          "2432": 1,
+          "5492": 3,
+          "20428": 1,
+          "4408": 1,
+          "7624": 1,
+          "10520": 1,
+          "20432": 1,
+          "17636": 1,
+          "7604": 1,
+          "17348": 1,
+          "7616": 1,
+          "19400": 1,
+          "17496": 1,
+          "10780": 1,
+          "7596": 1,
+          "13848": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_589": {
+          "1800": 5,
+          "1092": 3,
+          "2748": 11,
+          "3020": 7,
+          "3552": 8,
+          "3768": 9,
+          "2116": 7,
+          "3348": 5,
+          "1444": 13,
+          "2428": 17,
+          "724": 3,
+          "2788": 5,
+          "3324": 5,
+          "1840": 12,
+          "376": 1,
+          "1440": 2,
+          "3604": 1,
+          "784": 1,
+          "1832": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_688": {
+          "1964": 2,
+          "1724": 1,
+          "400": 2,
+          "1212": 2,
+          "676": 2,
+          "1980": 2,
+          "2064": 1,
+          "1216": 1,
+          "740": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_476": {
+          "688": 5,
+          "1240": 9,
+          "244": 21,
+          "1336": 4,
+          "884": 8,
+          "1116": 6,
+          "660": 8,
+          "472": 2
+        },
+        "_mech_canonical_program_entry_v1_numeric_1273": {
+          "3020": 3,
+          "3768": 4,
+          "3348": 1,
+          "1092": 2,
+          "3560": 3,
+          "1800": 4,
+          "2116": 3,
+          "724": 1,
+          "1444": 5,
+          "1832": 1,
+          "376": 3,
+          "1840": 6,
+          "3324": 4,
+          "2428": 1,
+          "784": 1,
+          "2748": 3,
+          "1440": 2,
+          "3552": 2,
+          "3604": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1372": {
+          "1840": 7,
+          "2180": 8,
+          "1872": 6,
+          "1476": 8,
+          "1856": 2,
+          "2612": 3,
+          "1472": 2,
+          "2440": 2,
+          "1060": 1,
+          "396": 2,
+          "1104": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_101": {
+          "2404": 5,
+          "2656": 4,
+          "2388": 8,
+          "2372": 7,
+          "1492": 1,
+          "3500": 9,
+          "2020": 7,
+          "1744": 1,
+          "1400": 2,
+          "1460": 1,
+          "3180": 1,
+          "2916": 1,
+          "1180": 1,
+          "3156": 1,
+          "892": 1,
+          "3260": 1,
+          "1964": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1160": {
+          "244": 7,
+          "472": 2,
+          "884": 2,
+          "688": 2,
+          "1240": 2
+        },
+        "_mech_canonical_program_entry_v1_numeric_1206": {
+          "836": 5,
+          "460": 7,
+          "248": 5,
+          "716": 3
+        },
+        "_mech_canonical_program_entry_v1_numeric_522": {
+          "836": 1
+        }
+      },
+      "limitations": [
+        "Register observations are statistical samples, not executed instruction counts or CPU-time shares.",
+        "Restored program and original JSON text are reused. Every epoch begins after JSON decoding and ends after RelatedPosts materialization, matching the continuous post-JSON boundary. Verification and teardown occur with the gate closed.",
+        "Every timed value from this profiler is excluded from comparative latency."
+      ],
+      "demangled_top_symbol_observations": [
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1471",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1471",
+          "observations": 717
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "demangled": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "observations": 184
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_233",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_233",
+          "observations": 156
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_818",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_818",
+          "observations": 138
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1",
+          "demangled": "_mech_canonical_program_entry_v1",
+          "observations": 127
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_589",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_589",
+          "observations": 116
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_476",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_476",
+          "observations": 63
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_101",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_101",
+          "observations": 52
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1273",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1273",
+          "observations": 50
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1372",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1372",
+          "observations": 42
+        },
+        {
+          "symbol": "__RNvNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+          "demangled": "mech_gpu::native_artifact::program::runtime::collections::data::element",
+          "observations": 41
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1206",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1206",
+          "observations": 20
+        },
+        {
+          "symbol": "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          "demangled": "<mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+          "observations": 19
+        },
+        {
+          "symbol": "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+          "demangled": "<mech_core::snapshot::sequence::SequenceStorage>::view",
+          "observations": 16
+        },
+        {
+          "symbol": "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers11lock_escrow",
+          "demangled": "mech_engine::resident::budget::workers::lock_escrow",
+          "observations": 15
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1160",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1160",
+          "observations": 15
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_688",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_688",
+          "observations": 14
+        },
+        {
+          "symbol": "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_11memory_plan5error15MemoryPlanErrorNCINvMs_NtNtNtCsflnRBjSKmRu_11mech_engine8resident7general4liveNtB1Y_13InputDataMemo7measureNCINvB1Y_14footprint_implNtNtNtNtB20_23native_collection_calls10invocation11measurement22NativeMeasurementCheckEs1_0E0EB24_",
+          "demangled": "mech_core::snapshot::encoding::visit_sequence_work::<mech_core::memory_plan::error::MemoryPlanError, <mech_engine::resident::general::live::InputDataMemo>::measure<mech_engine::resident::general::live::footprint_impl<mech_engine::resident::general::native_collection_calls::invocation::measurement::NativeMeasurementCheck>::{closure#3}>::{closure#0}>",
+          "observations": 13
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtB4_5State14push_row_block",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::push_row_block",
+          "observations": 12
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact6memory18NativeTypedStorageINtNtB4_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueEEEBN_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::memory::NativeTypedStorage<core::option::Option<mech_core::snapshot::validation::Value>>>",
+          "observations": 10
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_utf8_read",
+          "observations": 9
+        },
+        {
+          "symbol": "__RNvNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          "demangled": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "observations": 9
+        },
+        {
+          "symbol": "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers17next_after_native",
+          "demangled": "mech_engine::resident::budget::workers::next_after_native",
+          "observations": 7
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+          "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::encoding::ValueFootprintError>",
+          "observations": 7
+        },
+        {
+          "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner4PostEENCNvB1R_10post_viewss_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2H_8for_each4callNtB1R_8PostViewNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB48_3VecB3K_E14extend_trustedBN_E0E0EB1R_",
+          "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::PostView, <alloc::vec::Vec<runner::PostView>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}>>::{closure#0}>::{closure#0}>",
+          "observations": 5
+        },
+        {
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding27retained_sequence_footprint",
+          "demangled": "mech_core::snapshot::encoding::retained_sequence_footprint",
+          "observations": 5
+        },
+        {
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 5
+        },
+        {
+          "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_3zip3ZipINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner8PostViewEINtB1g_11ChunksExactyEENCNvB1F_3run0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2L_8for_each4callNtB1F_7RelatedNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB4b_3VecB3O_E14extend_trustedBN_E0E0EB1F_",
+          "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::Related, <alloc::vec::Vec<runner::Related>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}>>::{closure#0}>::{closure#0}>",
+          "observations": 5
+        },
+        {
+          "symbol": "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+          "demangled": "<<mech_core::snapshot::validation::FrozenSnapshotStorage>::unlink_budget_registration::{closure#0} as core::ops::function::FnOnce<(&mut core::option::Option<alloc::sync::Arc<mech_core::snapshot::validation::SnapshotBudgetRegistration>>,)>>::call_once",
+          "observations": 5
+        },
+        {
+          "symbol": "__RNvMs3_NtNtCsa14KvJzMIc9_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          "demangled": "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+          "observations": 5
+        },
+        {
+          "symbol": "__RINvNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections9utf8_read5fixedNtNtNtB6_4maps9utf8_read4CellEBc_",
+          "demangled": "mech_gpu::native_artifact::program::runtime::collections::utf8_read::fixed::<mech_gpu::native_artifact::program::runtime::maps::utf8_read::Cell>",
+          "observations": 4
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation9histogramNtB4_10Invocation16histogram_helper",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::histogram_helper",
+          "observations": 4
+        },
+        {
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 4
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime7session14CallCacheEntryEBQ_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::session::CallCacheEntry>",
+          "observations": 3
+        },
+        {
+          "symbol": "__RNvMs1_NtNtCsa14KvJzMIc9_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+          "demangled": "<mech_gpu::native_artifact::values::NativeValueArena>::retire_current",
+          "observations": 3
+        },
+        {
+          "symbol": "__RNvNtNtCsflnRBjSKmRu_11mech_engine14memory_planner7program17place_allocations",
+          "demangled": "mech_engine::memory_planner::program::place_allocations",
+          "observations": 3
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+          "observations": 3
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+          "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::validation::SnapshotBudgetRegistration>",
+          "observations": 3
+        },
+        {
+          "symbol": "__RNvMs3_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime10allocationINtB5_18FixedHostArenaPlanINtNtCsgDHHaSskbIF_4core6option6OptionNtNtNtB9_8snapshot10validation5ValueEE11materializeCsa14KvJzMIc9_8mech_gpu",
+          "demangled": "<mech_core::memory_runtime::allocation::FixedHostArenaPlan<core::option::Option<mech_core::snapshot::validation::Value>>>::materialize",
+          "observations": 3
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation27synchronize_numeric_carrier",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::synchronize_numeric_carrier",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs_NtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime4maps6stringNtB4_14OwnedStringMap6insertBe_",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::maps::string::OwnedStringMap>::insert",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs0_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime6budgetNtB5_19ManagedMemoryBudget16reserve_capacity",
+          "demangled": "<mech_core::memory_runtime::budget::ManagedMemoryBudget>::reserve_capacity",
+          "observations": 2
+        },
+        {
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultTNtNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation23private_unsigned_matrix21PrivateUnsignedMatrixbENtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCINvMNtNtB5r_8prepared12word_updatesNtB6X_25NativePreparedLibraryCall28unsigned_matrix_replace_withB3I_NCNvB6U_31unsigned_matrix_replace_private0E0E0IB36_B35_NtNtNtB3Q_8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<(mech_core::snapshot::validation::private_unsigned_matrix::PrivateUnsignedMatrix, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace_with<mech_core::snapshot::validation::private_unsigned_matrix::PrivateUnsignedMatrix, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace_private::{closure#0}>::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<(mech_core::snapshot::validation::private_unsigned_matrix::PrivateUnsignedMatrix, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs_NtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::retire",
+          "observations": 2
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime7session13CallCacheLaneEBQ_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvXs6_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime6budgetNtB5_24ManagedMemoryReservationNtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4drop",
+          "demangled": "<mech_core::memory_runtime::budget::ManagedMemoryReservation as core::ops::drop::Drop>::drop",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+          "observations": 2
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtCsfBfheTzTBUt_9mech_core9kind_expr8KindExprECsflnRBjSKmRu_11mech_engine",
+          "demangled": "core::ptr::drop_in_place::<mech_core::kind_expr::KindExpr>",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs0_NtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvCsg2Tlac8ZPZa_6runner3run",
+          "demangled": "runner::run",
+          "observations": 2
+        },
+        {
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvBW_20observe_control_work0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<mech_engine::resident::budget::observe_control_work::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape21evaluate_body_extents",
+          "demangled": "mech_core::schema::shape::evaluate_body_extents",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvXNtCsfBfheTzTBUt_9mech_core9kind_exprNtB2_8KindExprNtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+          "demangled": "<mech_core::kind_expr::KindExpr as core::clone::Clone>::clone",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+          "demangled": "mech_core::schema::shape::evaluate_dimension",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs0_NtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation8parallelNtB7_10Invocation15parallel_helper",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::parallel_helper",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          "demangled": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model13MemoryArenaIdyE6insertB1d_",
+          "demangled": "<alloc::collections::btree::map::BTreeMap<mech_core::memory_plan::model::MemoryArenaId, u64>>::insert",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvNtNtCsflnRBjSKmRu_11mech_engine14memory_planner4turn15scope_turn_call",
+          "demangled": "mech_engine::memory_planner::turn::scope_turn_call",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNCNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB7_5Value24into_memory_budget_inners3_0Bb_",
+          "demangled": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner::{closure#5}",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema8encoding18encode_schema_body",
+          "demangled": "mech_core::schema::encoding::encode_schema_body",
+          "observations": 2
+        }
+      ],
+      "executable_sha256": "91bf433ea010b9f1ebd4568ff96a2371108157013c4abd390382052f751d69f8"
+    },
+    "compact": {
+      "compiler": "96682c2679e05065731fa4978428a6baa0aec2fb",
+      "source": "/private/tmp/mech-related-native-fuel-derived-debits-runners-20261106-v2/compact-4/build/source.mec",
+      "source_sha256": "86c064828f10fb9cf8ff2f1daf630a50eea98c646f87bab9041344cd988688b1",
+      "profiled_timings_excluded": true,
+      "all1000_index_arrays_and_final_rust_output_exact": true,
+      "sampler": {
+        "records": 4117,
+        "record_bytes": 56,
+        "image_base": 4339154944,
+        "capacity": 60000,
+        "scans": 1647,
+        "attempts": 4271,
+        "suspended": 0,
+        "resumed": 0,
+        "states": 4120,
+        "stopped": 0,
+        "suspend_failures": 0,
+        "state_failures": 151,
+        "resume_terminated": 0,
+        "full": 0,
+        "first_ns": 1301016923574000,
+        "last_ns": 1301020985523000,
+        "last_phase_epoch": 2000,
+        "phase_changed": 2,
+        "post_json_only": true
+      },
+      "post_json_phase_gate": {
+        "all_records_within_one_odd_epoch": true,
+        "observed_epochs": 1000,
+        "total_epochs": 1000
+      },
+      "top_symbol_observations": [
+        [
+          "_mech_canonical_program_entry_v1_numeric_1455",
+          628
+        ],
+        [
+          "_mech_canonical_program_entry_v1_utf8_histogram",
+          192
+        ],
+        [
+          "_mech_canonical_program_entry_v1",
+          186
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_589",
+          139
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_239",
+          136
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_813",
+          119
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_476",
+          61
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1356",
+          53
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_101",
+          44
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1257",
+          38
+        ],
+        [
+          "__RNvNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+          37
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1190",
+          28
+        ],
+        [
+          "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          24
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1144",
+          22
+        ],
+        [
+          "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers11lock_escrow",
+          18
+        ],
+        [
+          "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_11memory_plan5error15MemoryPlanErrorNCINvMs_NtNtNtCsflnRBjSKmRu_11mech_engine8resident7general4liveNtB1Y_13InputDataMemo7measureNCINvB1Y_14footprint_implNtNtNtNtB20_23native_collection_calls10invocation11measurement22NativeMeasurementCheckEs1_0E0EB24_",
+          17
+        ],
+        [
+          "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+          15
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_688",
+          14
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+          12
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact6memory18NativeTypedStorageINtNtB4_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueEEEBN_",
+          11
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding27retained_sequence_footprint",
+          9
+        ],
+        [
+          "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers17next_after_native",
+          7
+        ],
+        [
+          "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_3zip3ZipINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner8PostViewEINtB1g_11ChunksExactyEENCNvB1F_3run0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2L_8for_each4callNtB1F_7RelatedNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB4b_3VecB3O_E14extend_trustedBN_E0E0EB1F_",
+          7
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          6
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_522",
+          6
+        ],
+        [
+          "__RNvMs3_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime10allocationINtB5_18FixedHostArenaPlanINtNtCsgDHHaSskbIF_4core6option6OptionNtNtNtB9_8snapshot10validation5ValueEE11materializeCsa14KvJzMIc9_8mech_gpu",
+          6
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtB4_5State14push_row_block",
+          6
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read",
+          4
+        ],
+        [
+          "__RNvMs0_NtNtCsflnRBjSKmRu_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          4
+        ],
+        [
+          "__RNvNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          4
+        ],
+        [
+          "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+          4
+        ],
+        [
+          "__RNvMsa_NtNtCsflnRBjSKmRu_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter21charge_retained_nodes",
+          3
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape21evaluate_body_extents",
+          3
+        ],
+        [
+          "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+          3
+        ],
+        [
+          "__RNvMs0_NtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          3
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime7session13CallCacheLaneEBQ_",
+          3
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          3
+        ],
+        [
+          "__RNvYNCNKNvNtNtCsflnRBjSKmRu_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+          3
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact17iteration_runtime11ControlViewNtNtBL_13iteration_abi25NativeIterationDescriptorEEBN_",
+          2
+        ],
+        [
+          "__RNvMNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collectionsNtB2_5State6helper",
+          2
+        ],
+        [
+          "__RNvMs0_NtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+          2
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+          2
+        ],
+        [
+          "__RNCNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB7_5Value24into_memory_budget_inners3_0Bb_",
+          2
+        ],
+        [
+          "__RNvMsa_NtNtCsflnRBjSKmRu_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter19charge_compute_work",
+          2
+        ],
+        [
+          "__RNvMs0_NtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation8parallelNtB7_10Invocation15parallel_helper",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECsa14KvJzMIc9_8mech_gpu",
+          2
+        ],
+        [
+          "__RNvMs0_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime6budgetNtB5_19ManagedMemoryBudget16reserve_capacity",
+          2
+        ],
+        [
+          "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner4PostEENCNvB1R_10post_viewss_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2H_8for_each4callNtB1R_8PostViewNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB48_3VecB3K_E14extend_trustedBN_E0E0EB1R_",
+          2
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          2
+        ],
+        [
+          "__RNvMs1_NtNtCsa14KvJzMIc9_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+          2
+        ],
+        [
+          "__RNvXs6_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime6budgetNtB5_24ManagedMemoryReservationNtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4drop",
+          2
+        ],
+        [
+          "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          2
+        ],
+        [
+          "__RNvMs0_NtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections11string_spanNtB7_5State22validate_span_boundary",
+          2
+        ],
+        [
+          "__RNvMNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7prepare8parallelNtB2_6Region8contains",
+          2
+        ],
+        [
+          "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation9histogramNtB4_10Invocation16histogram_helper",
+          2
+        ],
+        [
+          "__RNvMs_NtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation12continuationNtB6_10Invocation23arm_parent_continuation",
+          2
+        ],
+        [
+          "__RNvNtNtCsflnRBjSKmRu_11mech_engine10intrinsics16sequence_buffers19geometry_for_header",
+          2
+        ],
+        [
+          "__RNvMs3_NtNtCsa14KvJzMIc9_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          2
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot9relations28compare_key_data_with_budget",
+          2
+        ],
+        [
+          "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_8function8resident19ResidentKernelErrorNCNvNtNtCsflnRBjSKmRu_11mech_engine8resident6budget48measure_proven_borrowed_canonical_data_footprints_0EB21_",
+          1
+        ]
+      ],
+      "native_function_observations": {
+        "_mech_canonical_program_entry_v1_numeric_239": 136,
+        "_mech_canonical_program_entry_v1_numeric_1356": 53,
+        "_mech_canonical_program_entry_v1_numeric_1190": 28,
+        "_mech_canonical_program_entry_v1_utf8_histogram": 192,
+        "_mech_canonical_program_entry_v1_numeric_476": 61,
+        "_mech_canonical_program_entry_v1_numeric_1455": 628,
+        "_mech_canonical_program_entry_v1": 186,
+        "_mech_canonical_program_entry_v1_numeric_813": 119,
+        "_mech_canonical_program_entry_v1_numeric_1144": 22,
+        "_mech_canonical_program_entry_v1_numeric_589": 139,
+        "_mech_canonical_program_entry_v1_numeric_1257": 38,
+        "_mech_canonical_program_entry_v1_numeric_101": 44,
+        "_mech_canonical_program_entry_v1_numeric_522": 6,
+        "_mech_canonical_program_entry_v1_numeric_688": 14
+      },
+      "native_pc_offsets": {
+        "_mech_canonical_program_entry_v1_numeric_239": {
+          "3748": 2,
+          "6540": 4,
+          "3592": 6,
+          "4488": 4,
+          "2184": 3,
+          "2180": 1,
+          "5840": 10,
+          "4436": 8,
+          "4456": 7,
+          "5908": 6,
+          "2960": 5,
+          "6548": 4,
+          "5936": 4,
+          "4500": 3,
+          "3776": 12,
+          "3756": 1,
+          "3676": 2,
+          "2932": 2,
+          "5820": 8,
+          "2836": 2,
+          "2920": 1,
+          "5372": 1,
+          "7460": 3,
+          "4944": 2,
+          "2224": 3,
+          "6668": 1,
+          "2100": 1,
+          "3700": 3,
+          "5880": 3,
+          "2220": 1,
+          "3696": 2,
+          "7420": 4,
+          "6656": 1,
+          "5928": 1,
+          "7364": 1,
+          "3720": 1,
+          "3600": 3,
+          "1632": 1,
+          "6608": 1,
+          "6568": 3,
+          "5900": 1,
+          "4928": 1,
+          "5956": 1,
+          "5932": 1,
+          "2948": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1356": {
+          "716": 1,
+          "1472": 7,
+          "1476": 6,
+          "1840": 9,
+          "720": 1,
+          "2180": 6,
+          "1384": 2,
+          "1060": 5,
+          "780": 2,
+          "1872": 6,
+          "396": 1,
+          "2612": 2,
+          "2584": 3,
+          "1104": 1,
+          "1856": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1190": {
+          "248": 10,
+          "460": 3,
+          "836": 6,
+          "716": 8,
+          "256": 1
+        },
+        "_mech_canonical_program_entry_v1_utf8_histogram": {
+          "336": 23,
+          "772": 15,
+          "744": 9,
+          "612": 12,
+          "344": 9,
+          "792": 5,
+          "800": 16,
+          "544": 9,
+          "328": 1,
+          "996": 12,
+          "592": 12,
+          "492": 4,
+          "332": 7,
+          "632": 10,
+          "524": 4,
+          "272": 6,
+          "392": 7,
+          "660": 3,
+          "396": 3,
+          "388": 1,
+          "556": 5,
+          "604": 2,
+          "412": 5,
+          "784": 4,
+          "536": 1,
+          "900": 1,
+          "372": 5,
+          "608": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_476": {
+          "1240": 11,
+          "884": 7,
+          "472": 6,
+          "244": 12,
+          "1116": 9,
+          "660": 9,
+          "688": 4,
+          "1336": 3
+        },
+        "_mech_canonical_program_entry_v1_numeric_1455": {
+          "17376": 26,
+          "17168": 47,
+          "17280": 9,
+          "9520": 11,
+          "10616": 3,
+          "10584": 2,
+          "15360": 20,
+          "10452": 7,
+          "10496": 1,
+          "10700": 12,
+          "10620": 2,
+          "5440": 6,
+          "10544": 6,
+          "7636": 8,
+          "9552": 49,
+          "17192": 50,
+          "17296": 7,
+          "20432": 2,
+          "17388": 12,
+          "10416": 2,
+          "8844": 15,
+          "10532": 3,
+          "17224": 8,
+          "7584": 2,
+          "17480": 5,
+          "2340": 3,
+          "15340": 4,
+          "17364": 1,
+          "8784": 6,
+          "20208": 4,
+          "17516": 7,
+          "10684": 4,
+          "10656": 1,
+          "13108": 4,
+          "15344": 1,
+          "6176": 1,
+          "10540": 13,
+          "10500": 2,
+          "15236": 1,
+          "4444": 1,
+          "17424": 6,
+          "10624": 3,
+          "17384": 2,
+          "10688": 3,
+          "9508": 4,
+          "17520": 18,
+          "5488": 3,
+          "7640": 6,
+          "12176": 10,
+          "16424": 12,
+          "10696": 4,
+          "10788": 2,
+          "12144": 1,
+          "15280": 4,
+          "11456": 5,
+          "8804": 2,
+          "10360": 3,
+          "7632": 2,
+          "10596": 2,
+          "17164": 9,
+          "12148": 1,
+          "10336": 2,
+          "7568": 3,
+          "12136": 3,
+          "10808": 1,
+          "18960": 2,
+          "10528": 2,
+          "6184": 1,
+          "6172": 6,
+          "7588": 1,
+          "15292": 2,
+          "7600": 1,
+          "5436": 1,
+          "17200": 8,
+          "13856": 2,
+          "10408": 1,
+          "15348": 1,
+          "17288": 1,
+          "16436": 1,
+          "10672": 1,
+          "18072": 2,
+          "13172": 8,
+          "7620": 2,
+          "7572": 1,
+          "6864": 3,
+          "10316": 4,
+          "10632": 1,
+          "13132": 5,
+          "10504": 3,
+          "10744": 1,
+          "5428": 5,
+          "15324": 1,
+          "7552": 1,
+          "15240": 3,
+          "4448": 3,
+          "10492": 1,
+          "10648": 2,
+          "14532": 2,
+          "17612": 2,
+          "12120": 4,
+          "6848": 1,
+          "10516": 2,
+          "7548": 2,
+          "4452": 3,
+          "19400": 1,
+          "13840": 2,
+          "7628": 1,
+          "3064": 1,
+          "7604": 1,
+          "1512": 1,
+          "10288": 2,
+          "7576": 1,
+          "5492": 2,
+          "17320": 3,
+          "15332": 3,
+          "20368": 1,
+          "8800": 1,
+          "7608": 1,
+          "20252": 1,
+          "20324": 1,
+          "17504": 1,
+          "17144": 3,
+          "17380": 2,
+          "20424": 1,
+          "15352": 1,
+          "15300": 1,
+          "6188": 1,
+          "1480": 2,
+          "7612": 2,
+          "20164": 1,
+          "16456": 2,
+          "17276": 1,
+          "20204": 1,
+          "10680": 1,
+          "10424": 1,
+          "19864": 1,
+          "17456": 1,
+          "7556": 1,
+          "10664": 1,
+          "7592": 1,
+          "10432": 1,
+          "17272": 1,
+          "17432": 1,
+          "3052": 1,
+          "15244": 1,
+          "15296": 1,
+          "4376": 1
+        },
+        "_mech_canonical_program_entry_v1": {
+          "424056": 1,
+          "6092": 43,
+          "132536": 8,
+          "98204": 5,
+          "6100": 39,
+          "6200": 14,
+          "370644": 13,
+          "331708": 8,
+          "6148": 10,
+          "341068": 3,
+          "6284": 2,
+          "6248": 2,
+          "6028": 5,
+          "6204": 6,
+          "98184": 7,
+          "6272": 5,
+          "6288": 5,
+          "6136": 2,
+          "6220": 1,
+          "6324": 2,
+          "6108": 1,
+          "340328": 1,
+          "6400": 2,
+          "6252": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_813": {
+          "5368": 6,
+          "8496": 2,
+          "5284": 1,
+          "9384": 2,
+          "5340": 2,
+          "6272": 3,
+          "6772": 3,
+          "9372": 1,
+          "3436": 9,
+          "4172": 1,
+          "6224": 4,
+          "5252": 1,
+          "9432": 1,
+          "5176": 3,
+          "2584": 1,
+          "9268": 1,
+          "8308": 1,
+          "4208": 2,
+          "4360": 11,
+          "5296": 2,
+          "10308": 1,
+          "2608": 3,
+          "8384": 2,
+          "9248": 4,
+          "10156": 1,
+          "5156": 2,
+          "8540": 2,
+          "1984": 1,
+          "5324": 1,
+          "9328": 4,
+          "8304": 3,
+          "8512": 2,
+          "7276": 3,
+          "6244": 1,
+          "5244": 1,
+          "3292": 1,
+          "6284": 1,
+          "10288": 1,
+          "2544": 1,
+          "4332": 1,
+          "3320": 2,
+          "10260": 1,
+          "10096": 2,
+          "6788": 2,
+          "8476": 2,
+          "8420": 1,
+          "8380": 1,
+          "8324": 1,
+          "4328": 1,
+          "8640": 1,
+          "5352": 1,
+          "8400": 1,
+          "2580": 2,
+          "4320": 1,
+          "8316": 1,
+          "3444": 1,
+          "2600": 1,
+          "8532": 1,
+          "10232": 1,
+          "10300": 1,
+          "9472": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1144": {
+          "244": 5,
+          "1116": 5,
+          "1240": 4,
+          "472": 4,
+          "884": 2,
+          "688": 1,
+          "1336": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_589": {
+          "1800": 10,
+          "1840": 15,
+          "2748": 9,
+          "1444": 20,
+          "3768": 4,
+          "3348": 10,
+          "2116": 11,
+          "3324": 11,
+          "3552": 13,
+          "1440": 1,
+          "3604": 1,
+          "724": 2,
+          "2788": 10,
+          "3020": 5,
+          "1092": 5,
+          "2428": 5,
+          "376": 2,
+          "1436": 1,
+          "3560": 3,
+          "3308": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1257": {
+          "2428": 2,
+          "2788": 2,
+          "3768": 4,
+          "1840": 7,
+          "1440": 2,
+          "1444": 2,
+          "2748": 3,
+          "724": 1,
+          "3020": 2,
+          "1800": 1,
+          "3560": 1,
+          "3324": 3,
+          "1092": 2,
+          "3604": 1,
+          "3308": 1,
+          "2116": 3,
+          "3552": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_101": {
+          "2372": 6,
+          "2404": 7,
+          "2020": 1,
+          "3500": 3,
+          "2388": 4,
+          "2656": 10,
+          "1180": 1,
+          "1464": 1,
+          "2680": 1,
+          "1972": 2,
+          "1744": 1,
+          "1460": 4,
+          "2908": 1,
+          "1964": 1,
+          "1148": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_522": {
+          "460": 1,
+          "248": 1,
+          "836": 2,
+          "256": 1,
+          "716": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_688": {
+          "1724": 1,
+          "676": 3,
+          "1212": 1,
+          "740": 2,
+          "2064": 1,
+          "1964": 2,
+          "976": 2,
+          "1520": 2
+        }
+      },
+      "limitations": [
+        "Register observations are statistical samples, not executed instruction counts or CPU-time shares.",
+        "Restored program and original JSON text are reused. Every epoch begins after JSON decoding and ends after RelatedPosts materialization, matching the continuous post-JSON boundary. Verification and teardown occur with the gate closed.",
+        "Every timed value from this profiler is excluded from comparative latency."
+      ],
+      "demangled_top_symbol_observations": [
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1455",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1455",
+          "observations": 628
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "demangled": "_mech_canonical_program_entry_v1_utf8_histogram",
+          "observations": 192
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1",
+          "demangled": "_mech_canonical_program_entry_v1",
+          "observations": 186
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_589",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_589",
+          "observations": 139
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_239",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_239",
+          "observations": 136
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_813",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_813",
+          "observations": 119
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_476",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_476",
+          "observations": 61
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1356",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1356",
+          "observations": 53
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_101",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_101",
+          "observations": 44
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1257",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1257",
+          "observations": 38
+        },
+        {
+          "symbol": "__RNvNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+          "demangled": "mech_gpu::native_artifact::program::runtime::collections::data::element",
+          "observations": 37
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1190",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1190",
+          "observations": 28
+        },
+        {
+          "symbol": "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          "demangled": "<mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+          "observations": 24
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_1144",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_1144",
+          "observations": 22
+        },
+        {
+          "symbol": "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers11lock_escrow",
+          "demangled": "mech_engine::resident::budget::workers::lock_escrow",
+          "observations": 18
+        },
+        {
+          "symbol": "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_11memory_plan5error15MemoryPlanErrorNCINvMs_NtNtNtCsflnRBjSKmRu_11mech_engine8resident7general4liveNtB1Y_13InputDataMemo7measureNCINvB1Y_14footprint_implNtNtNtNtB20_23native_collection_calls10invocation11measurement22NativeMeasurementCheckEs1_0E0EB24_",
+          "demangled": "mech_core::snapshot::encoding::visit_sequence_work::<mech_core::memory_plan::error::MemoryPlanError, <mech_engine::resident::general::live::InputDataMemo>::measure<mech_engine::resident::general::live::footprint_impl<mech_engine::resident::general::native_collection_calls::invocation::measurement::NativeMeasurementCheck>::{closure#3}>::{closure#0}>",
+          "observations": 17
+        },
+        {
+          "symbol": "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+          "demangled": "<mech_core::snapshot::sequence::SequenceStorage>::view",
+          "observations": 15
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_688",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_688",
+          "observations": 14
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+          "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::encoding::ValueFootprintError>",
+          "observations": 12
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact6memory18NativeTypedStorageINtNtB4_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueEEEBN_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::memory::NativeTypedStorage<core::option::Option<mech_core::snapshot::validation::Value>>>",
+          "observations": 11
+        },
+        {
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding27retained_sequence_footprint",
+          "demangled": "mech_core::snapshot::encoding::retained_sequence_footprint",
+          "observations": 9
+        },
+        {
+          "symbol": "__RNvNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget7workers17next_after_native",
+          "demangled": "mech_engine::resident::budget::workers::next_after_native",
+          "observations": 7
+        },
+        {
+          "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_3zip3ZipINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner8PostViewEINtB1g_11ChunksExactyEENCNvB1F_3run0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2L_8for_each4callNtB1F_7RelatedNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB4b_3VecB3O_E14extend_trustedBN_E0E0EB1F_",
+          "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::Related, <alloc::vec::Vec<runner::Related>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}>>::{closure#0}>::{closure#0}>",
+          "observations": 7
+        },
+        {
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 6
+        },
+        {
+          "symbol": "_mech_canonical_program_entry_v1_numeric_522",
+          "demangled": "_mech_canonical_program_entry_v1_numeric_522",
+          "observations": 6
+        },
+        {
+          "symbol": "__RNvMs3_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime10allocationINtB5_18FixedHostArenaPlanINtNtCsgDHHaSskbIF_4core6option6OptionNtNtNtB9_8snapshot10validation5ValueEE11materializeCsa14KvJzMIc9_8mech_gpu",
+          "demangled": "<mech_core::memory_runtime::allocation::FixedHostArenaPlan<core::option::Option<mech_core::snapshot::validation::Value>>>::materialize",
+          "observations": 6
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtB4_5State14push_row_block",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::push_row_block",
+          "observations": 6
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_utf8_read",
+          "observations": 4
+        },
+        {
+          "symbol": "__RNvMs0_NtNtCsflnRBjSKmRu_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          "demangled": "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+          "observations": 4
+        },
+        {
+          "symbol": "__RNvNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          "demangled": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "observations": 4
+        },
+        {
+          "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+          "demangled": "<mech_core::snapshot::validation::Value>::memory_budget_retained_bytes",
+          "observations": 4
+        },
+        {
+          "symbol": "__RNvMsa_NtNtCsflnRBjSKmRu_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter21charge_retained_nodes",
+          "demangled": "<mech_engine::resident::budget::ResidentBudgetMeter>::charge_retained_nodes",
+          "observations": 3
+        },
+        {
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape21evaluate_body_extents",
+          "demangled": "mech_core::schema::shape::evaluate_body_extents",
+          "observations": 3
+        },
+        {
+          "symbol": "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+          "demangled": "<<mech_core::snapshot::validation::FrozenSnapshotStorage>::unlink_budget_registration::{closure#0} as core::ops::function::FnOnce<(&mut core::option::Option<alloc::sync::Arc<mech_core::snapshot::validation::SnapshotBudgetRegistration>>,)>>::call_once",
+          "observations": 3
+        },
+        {
+          "symbol": "__RNvMs0_NtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "observations": 3
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime7session13CallCacheLaneEBQ_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>",
+          "observations": 3
+        },
+        {
+          "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCsflnRBjSKmRu_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "observations": 3
+        },
+        {
+          "symbol": "__RNvYNCNKNvNtNtCsflnRBjSKmRu_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+          "demangled": "<mech_engine::resident::budget::CONTROL_WORK_CONTEXT::{K#0}::{closure#0} as core::ops::function::FnOnce<(core::option::Option<&mut core::option::Option<mech_engine::resident::budget::ControlWorkContext>>,)>>::call_once",
+          "observations": 3
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact17iteration_runtime11ControlViewNtNtBL_13iteration_abi25NativeIterationDescriptorEEBN_",
+          "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::iteration_abi::NativeIterationDescriptor>>",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collectionsNtB2_5State6helper",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::helper",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs0_NtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+          "demangled": "mech_core::schema::shape::evaluate_dimension",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNCNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB7_5Value24into_memory_budget_inners3_0Bb_",
+          "demangled": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner::{closure#5}",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMsa_NtNtCsflnRBjSKmRu_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter19charge_compute_work",
+          "demangled": "<mech_engine::resident::budget::ResidentBudgetMeter>::charge_compute_work",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs0_NtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation8parallelNtB7_10Invocation15parallel_helper",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::parallel_helper",
+          "observations": 2
+        },
+        {
+          "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECsa14KvJzMIc9_8mech_gpu",
+          "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::validation::Value>",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs0_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime6budgetNtB5_19ManagedMemoryBudget16reserve_capacity",
+          "demangled": "<mech_core::memory_runtime::budget::ManagedMemoryBudget>::reserve_capacity",
+          "observations": 2
+        },
+        {
+          "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner4PostEENCNvB1R_10post_viewss_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2H_8for_each4callNtB1R_8PostViewNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB48_3VecB3K_E14extend_trustedBN_E0E0EB1R_",
+          "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::PostView, <alloc::vec::Vec<runner::PostView>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}>>::{closure#0}>::{closure#0}>",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs1_NtNtCsa14KvJzMIc9_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+          "demangled": "<mech_gpu::native_artifact::values::NativeValueArena>::retire_current",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvXs6_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime6budgetNtB5_24ManagedMemoryReservationNtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4drop",
+          "demangled": "<mech_core::memory_runtime::budget::ManagedMemoryReservation as core::ops::drop::Drop>::drop",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          "demangled": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs0_NtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime11collections11string_spanNtB7_5State22validate_span_boundary",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::validate_span_boundary",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7prepare8parallelNtB2_6Region8contains",
+          "demangled": "<mech_gpu::native_artifact::program::prepare::parallel::Region>::contains",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMNtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation9histogramNtB4_10Invocation16histogram_helper",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::histogram_helper",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs_NtNtNtNtNtCsa14KvJzMIc9_8mech_gpu15native_artifact7program7runtime10invocation12continuationNtB6_10Invocation23arm_parent_continuation",
+          "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::arm_parent_continuation",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvNtNtCsflnRBjSKmRu_11mech_engine10intrinsics16sequence_buffers19geometry_for_header",
+          "demangled": "mech_engine::intrinsics::sequence_buffers::geometry_for_header",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvMs3_NtNtCsa14KvJzMIc9_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          "demangled": "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+          "observations": 2
+        },
+        {
+          "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot9relations28compare_key_data_with_budget",
+          "demangled": "mech_core::snapshot::relations::compare_key_data_with_budget",
+          "observations": 2
+        },
+        {
+          "symbol": "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_8function8resident19ResidentKernelErrorNCNvNtNtCsflnRBjSKmRu_11mech_engine8resident6budget48measure_proven_borrowed_canonical_data_footprints_0EB21_",
+          "demangled": "mech_core::snapshot::encoding::visit_sequence_work::<mech_core::function::resident::ResidentKernelError, mech_engine::resident::budget::measure_proven_borrowed_canonical_data_footprint::{closure#1}>",
+          "observations": 1
+        }
+      ],
+      "executable_sha256": "e55acbdd665fda144e24f761c9ed4dcf3f2a2c14deb3b7f3314306bfb1940b9c"
+    }
+  }
+}

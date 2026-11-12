@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-deflate-reduction-integration-tests-20261106-v1/mech_gpu-tests",
+    "named_managed_fields_decline",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 0.12597150006331503
+}

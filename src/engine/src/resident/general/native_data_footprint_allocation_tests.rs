@@ -26,8 +26,16 @@ fn oversized_memo_slots_fail_before_initialization_without_publication_or_refund
             + core::mem::size_of::<mech_core::ManagedNodeReservation>()
             + 3 * core::mem::size_of::<u64>()) as u64;
         let owner = NativeTurnPlanCache::construction_owner_bytes(call.memory_plan()).unwrap();
-        let construction_work =
-            guard_bytes * 8 + 256 + call.invocation_metadata_bytes + owner * 8 + 256;
+        // Work policy 101 pays the current-capacity inspection before attempting
+        // optional plan construction, including when construction later fails.
+        let capacity_work =
+            core::mem::size_of::<Value>() as u64 * (inputs.len() as u64 + 1) * 8 + 1024;
+        let construction_work = capacity_work
+            + guard_bytes * 8
+            + 256
+            + call.invocation_metadata_bytes
+            + owner * 8
+            + 256;
         let before = work.used();
         let (result, observed) =
             NativeTurnPlanCache::with_data_slot_allocation_extra(1, &memory, || {
@@ -62,7 +70,7 @@ fn oversized_memo_slots_fail_before_initialization_without_publication_or_refund
         assert_eq!(
             charged,
             (before.0 + construction_work, before.1),
-            "both actual prepaid construction/retirement debits survive failure"
+            "paid capacity inspection and actual prepaid construction/retirement debits survive failure"
         );
 
         // A new external invocation can recover on the SAME unchanged account.

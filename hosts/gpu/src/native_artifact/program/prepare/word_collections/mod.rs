@@ -13,7 +13,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(in crate::native_artifact) mod bounds;
 
 #[derive(Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Region")]
 pub(in crate::native_artifact) struct Region {
     pub collection: u32,
     pub iteration: u32,

@@ -1,0 +1,8 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/qualify-loaders.py"
+  ],
+  "exit": 0,
+  "seconds": 167.61296149995178
+}

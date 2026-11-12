@@ -1,0 +1,65 @@
+{
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline"
+  ],
+  "cwd": "/private/tmp/mech-related-streaming-histogram-rust-controls-20261105-v1/streaming",
+  "exit": 0,
+  "seconds": 7.553929082816467,
+  "stdout": "",
+  "stderr": "   Compiling proc-macro2 v1.0.76\n   Compiling unicode-ident v1.0.12\n   Compiling version_check v0.9.4\n   Compiling serde v1.0.195\n   Compiling zerocopy v0.7.32\n   Compiling cfg-if v1.0.0\n   Compiling once_cell v1.19.0\n   Compiling serde_json v1.0.111\n   Compiling ryu v1.0.16\n   Compiling allocator-api2 v0.2.16\n   Compiling itoa v1.0.10\n   Compiling ahash v0.8.7\n   Compiling quote v1.0.35\n   Compiling syn v2.0.48\n   Compiling hashbrown v0.14.3\n   Compiling serde_derive v1.0.195\n   Compiling rust_mech v0.1.0 (/private/tmp/mech-related-streaming-histogram-rust-controls-20261105-v1/streaming)\n    Finished `release` profile [optimized] target(s) in 7.53s\n",
+  "source": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/experiments/rust-mech-control-streaming-histogram.rs",
+  "source_sha256": "67c69a3af848e6ee86835ae96943acb119d8f44be0dec97e85a63392723737b3",
+  "executable": "/private/tmp/mech-related-streaming-histogram-rust-controls-20261105-v1/streaming/target/release/rust_mech",
+  "executable_sha256": "3d5c21d057f64f906f73316763cc8447b11c01081fc2181a7157b73f7146dac2",
+  "cargo_toml_sha256": "cbf0b4d57dccc03c0381b22d94e19c1c683c37d9bac2c8d307fdb2ee5553d8e6",
+  "cargo_lock_sha256": "a8517c07292871376a1f1b04a63fe10673d0a6b1ed6a4d3480667787b728f44a",
+  "rustc": "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+  "rustflags": [],
+  "fingerprint": {
+    "rustc": 1651193014320533483,
+    "features": "[]",
+    "declared_features": "[]",
+    "target": 18319810836431288534,
+    "profile": 4407880305180816330,
+    "path": 4942398508502643691,
+    "deps": [
+      [
+        3512962588211806647,
+        "serde_json",
+        false,
+        5435883525860529090
+      ],
+      [
+        12103388986327057793,
+        "hashbrown",
+        false,
+        1677654203463337730
+      ],
+      [
+        15853342468277354288,
+        "serde",
+        false,
+        16878210487295148251
+      ]
+    ],
+    "local": [
+      {
+        "CheckDepInfo": {
+          "dep_info": "release/.fingerprint/rust_mech-8d6d84ac36b13551/dep-bin-rust_mech",
+          "checksum": false
+        }
+      }
+    ],
+    "rustflags": [],
+    "config": 8247474407144887393,
+    "compile_kind": 0
+  },
+  "calculation_boundary": "post_json_including_setup",
+  "checked_release_arithmetic": true,
+  "mech_resource_accounting": false,
+  "algorithm_change": "stream borrowed-key histogram, sort distinct entries only"
+}

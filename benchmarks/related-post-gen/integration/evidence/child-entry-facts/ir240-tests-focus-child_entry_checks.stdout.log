@@ -1,0 +1,20 @@
+
+running 3 tests
+test native_artifact::program::runtime::composition_tests::child_entry_checks::numeric_child_entry_checks_keep_views_overflow_publication_aliases_and_recovery ... ok
+test native_artifact::program::runtime::composition_tests::child_entry_checks::numeric_child_entry_checks_preserve_exact_finite_prefixes_and_retry ... {"dimension":"control","exact_selected_fragments":20,"minimum":32068422,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":20045594,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2654991,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":6688,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":57984,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":20,"minimum":32068422,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":0,"minimum":20045594,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":0,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":0,"minimum":2654991,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":0,"minimum":6688,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":0,"minimum":57984,"witness":"composition-finite-boundary","zero_spending":false}
+ok
+test native_artifact::program::runtime::composition_tests::child_entry_checks::numeric_child_entry_checks_use_checked_current_arguments_and_keep_full_windows ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 857 filtered out; finished in 4.44s
+

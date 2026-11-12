@@ -1,0 +1,283 @@
+{
+  "schema": "mech.related-post-gen.local-host-build.v1",
+  "compiler_build": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/build.json",
+  "compiler_build_sha256": "7ff3bb5364801f4647904af39b6f60c20e7b48d40cf31ebe7e7a25d08d6fff5f",
+  "compiler_source_sha256": "34fab362ddaa5301a1932109ccdfac14ae71668a49347e85f82c3a52b3c4f413",
+  "source_path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/runner.rs",
+  "source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "--edition=2024",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "embed-bitcode=no",
+    "-C",
+    "debug-assertions=off",
+    "-C",
+    "overflow-checks=off",
+    "-C",
+    "strip=debuginfo",
+    "-L",
+    "dependency=/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-local-facts-integration-opt-20261107-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v7",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v6",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v5",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-deflate-exhaustion-proof-integration-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-reduction-terminal-transition-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-deflate-affine-read-integration-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-deflate-reduction-integration-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v15",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v14",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v13",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v12",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v11",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v10",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v9",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v8",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v7",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v6",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v5",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fuel-derived-debits-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fuel-derived-debits-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-frozen-type-descriptors-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-frozen-type-descriptors-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-frame-metadata-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-frame-metadata-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-frame-metadata-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-projected-debits-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-projected-debits-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-arithmetic-ranges-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-early-identities-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-constant-conditions-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-zero-append-frontiers-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-zero-append-frontiers-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-zero-append-frontiers-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-numeric-collections-opt-20261106-v6",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-u32-arithmetic-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-frozen-uniform-layouts-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-shared-template-tables-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-shared-template-tables-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-shared-template-tables-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-opt-20261105-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-adaptive-prepaid-histogram-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v5",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-borrowed-planning-context-control-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-retained-deps",
+    "--extern",
+    "mech_core=/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_core.rlib",
+    "--extern",
+    "mech_engine=/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_engine.rlib",
+    "--extern",
+    "mech_syntax=/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_syntax.rlib",
+    "--extern",
+    "mech_gpu=/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_gpu.rlib",
+    "--extern",
+    "mech_stdlib=/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_stdlib.rlib",
+    "--extern",
+    "serde=/private/tmp/mech-related-retained-deps/libserde-53e30a58b8778b4f.rlib",
+    "--extern",
+    "serde_json=/private/tmp/mech-related-retained-deps/libserde_json-e0f8af30c3327a5b.rlib",
+    "--cfg",
+    "linked",
+    "-C",
+    "link-arg=/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/object.o",
+    "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/runner.rs",
+    "-o",
+    "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/runner-aot"
+  ],
+  "libraries": {
+    "mech_core": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_core.rlib",
+      "sha256": "f6cc0adf8f3c989eb8800eccb6adfc18c7be879879f0a7287e08aae2add99c8b"
+    },
+    "mech_syntax": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_syntax.rlib",
+      "sha256": "eb8ceb7fe59e9c7c8ee8ba40d86c1a7013d4b4ccf7ad32ccbd66b92b051a6f34"
+    },
+    "mech_bytecode": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_bytecode.rlib",
+      "sha256": "b9ea150516a3d2d85a66e629f5b35d83f04b58230a0ce50b8288052a502b84d4"
+    },
+    "mech_engine": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_engine.rlib",
+      "sha256": "d00cf5160c242ca061fb1008aa7f4b0bfd7019a5e11ca781900a96afb24e576e"
+    },
+    "mech_compute": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_compute.rlib",
+      "sha256": "72a5a0515cfe67eeeb9c283f78eb86a8b05ddec522676bdac184b5d4a43676f9"
+    },
+    "mech_math": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_math.rlib",
+      "sha256": "13544d8efb85d00ef0acdc6b918692d5772b1dce8b6b8cd1d52f8158da3e8b91"
+    },
+    "mech_compare": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_compare.rlib",
+      "sha256": "fc2ccb0006fa8ea62e5c56b1e287f52bbc78b3aeec05a2412b2f1536404575f8"
+    },
+    "mech_logic": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_logic.rlib",
+      "sha256": "00381af6c79ceae87b5a35dd1d6a06fe379ba6756c13f3d34f4f97dd734ec1ef"
+    },
+    "mech_range": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_range.rlib",
+      "sha256": "57cb699e7a6a2611fa087c9e1c2bd8e84bb6ffcf73a5b9c93a2a53719e60f756"
+    },
+    "mech_stdlib": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_stdlib.rlib",
+      "sha256": "f8215c3990dc4e6c614a04e80ff739ba943f64e08097a94ef210cb311b17b5b1"
+    },
+    "mech_runtime": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_runtime.rlib",
+      "sha256": "05f9dbad8c9198978ee93e9ad91f7a2731f0b0d2a982c02f3921957c03c7e9ba"
+    },
+    "mech_gpu": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/libmech_gpu.rlib",
+      "sha256": "399db3d7c6b5b771b63c3138ec6e0c713499d897923f9fd2c71b5cbfcd38bc57"
+    },
+    "serde": {
+      "path": "/private/tmp/mech-related-retained-deps/libserde-53e30a58b8778b4f.rlib",
+      "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998"
+    },
+    "serde_json": {
+      "path": "/private/tmp/mech-related-retained-deps/libserde_json-e0f8af30c3327a5b.rlib",
+      "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b"
+    }
+  },
+  "bundle": {
+    "source.mec": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/source.mec",
+      "sha256": "5754c0c5e47067358c0e70ba7dafb8e754302b15634d0ac2d60891b74e042327"
+    },
+    "artifact.mecb": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/artifact.mecb",
+      "sha256": "8ce9cd4d4032a81b2934a9c9fd8657606dc4f95b6d136baac13bdff2149b6f63"
+    },
+    "object.o": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/object.o",
+      "sha256": "dbe3a0eddac0f3bc0d8a66b7395559dd2e5df5cd2a4dfde22969aa19c7e25381"
+    },
+    "descriptor.json": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/descriptor.json",
+      "sha256": "5721b6b3376a840f5c7165bf46fbfe7ce1b1adf4c20c9d8561e50aee43c39e4f"
+    },
+    "linked.rs": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/linked.rs",
+      "sha256": "df6fdf8f1589118d935d22b18434a9f4c8b3395085585c6683226ef314d0cc3a"
+    },
+    "metadata.json": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/metadata.json",
+      "sha256": "06e93b7353496e1d1f59aa4563d7aeda6d511b1a44869599b9605eeb13aaaffc"
+    },
+    "frame-summary.json": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/frame-summary.json",
+      "sha256": "f7db4079514d12082aafdabe5dc65e2699e3897787ca5cdda07c0d097fc4091c"
+    },
+    "image-binding.bin": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/image-binding.bin",
+      "sha256": "c0301830fbfd368552d0bedeb8d96997f8ce8dfe6decb1cc9a11dc4656f576bb"
+    },
+    "catalog.rs": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/catalog.rs",
+      "sha256": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a"
+    },
+    "catalog-profile.json": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/catalog-profile.json",
+      "sha256": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c"
+    },
+    "native-metadata.bin": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/native-metadata.bin",
+      "sha256": "ef8e6edfda1f3839c79498dfbd8ae5b8f32ffa171529a712939a617c042a26be"
+    },
+    "native-metadata-binding.bin": {
+      "path": "/private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/native-metadata-binding.bin",
+      "sha256": "92c92c05facdd67e6be2cc199ccd5108a053f9a30c6dd3b9c38333238f1ee091"
+    }
+  },
+  "seconds": 1.555721500189975,
+  "exit": 0,
+  "stdout": "",
+  "stderr": "warning: static `LINKED_IDENTITY` is never used\n --> /private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/linked.rs:2:124\n  |\n2 | ...7d28b18299b7a547f51e5f77aa7aa6995c003219ba6f437\"] static LINKED_IDENTITY:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTI...\n  |                                                             ^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/linked.rs:3:146\n  |\n3 | ...aa7aa6995c003219ba6f437_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA` is never used\n --> /private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/linked.rs:4:143\n  |\n4 | ...77aa7aa6995c003219ba6f437_native_metadata_v1\"] static LINKED_NATIVE_METADATA:[u8;5057467];\n  |                                                          ^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA_BINDING` is never used\n --> /private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/linked.rs:5:151\n  |\n5 | ...003219ba6f437_native_metadata_binding_v1\"] static LINKED_NATIVE_METADATA_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMA...\n  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: function `linked_entry` is never used\n --> /private/tmp/mech-related-canonical-schema-sinks-runners-20261107-v1/compact-8/build/linked.rs:6:52\n  |\n6 |  #[link_name=\"mech_canonical_program_entry_v1\"] fn linked_entry(frame:*mut std::ffi::c_void)->u64;\n  |                                                    ^^^^^^^^^^^^\n\nwarning: 5 warnings emitted\n\n",
+  "allocator": "Rust default system allocator",
+  "executable_sha256": "97463d56bda0f4a7e924e7c4923d0980b12f3e2bb6342940a6ac52954ae3b285"
+}

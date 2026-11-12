@@ -1,0 +1,7 @@
+{
+  "base": "9bc388302a9877d6f2319a4b22e3958281c21fe5",
+  "compiler": "5925a2b3a4fd4dfcca7ada541e37a69d514171f8",
+  "patch_sha256": "5620e211351714412cb4c0bfc0bfe2a6068ad64daf9ae222b39b04ee05fd764c",
+  "resulting_tree": "e8e24aac36c04c8fa82738af50efb0ec44a08305",
+  "exact": true
+}

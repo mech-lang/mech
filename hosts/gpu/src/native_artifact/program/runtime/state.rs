@@ -20,6 +20,8 @@ pub(in crate::native_artifact::program::runtime) struct RuntimeStats {
     pub(in crate::native_artifact::program::runtime) parallel_batches: u64,
     pub(in crate::native_artifact::program::runtime) parallel_tasks: u64,
     pub(in crate::native_artifact::program::runtime) parallel_peak_workers: u64,
+    pub(in crate::native_artifact::program::runtime) parallel_numeric_regions: u64,
+    pub(in crate::native_artifact::program::runtime) parallel_numeric_work: u64,
 }
 pub(in crate::native_artifact::program::runtime) struct ExecutionState<'plan> {
     // Owners retire before the arena; backing storage retires before claims.

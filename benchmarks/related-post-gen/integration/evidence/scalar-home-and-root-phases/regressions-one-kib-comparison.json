@@ -1,0 +1,76 @@
+{
+  "rows": 5,
+  "all_nontiming_fields_equal_IR240": true,
+  "all_semantic_nontiming_fields_equal_IR240": true,
+  "semantic_differences": [],
+  "all_field_differences": [],
+  "physical_allocator_measurements": [
+    {
+      "row": 0,
+      "metrics": {}
+    },
+    {
+      "row": 1,
+      "metrics": {
+        "requested_bytes": {
+          "before": 23989468,
+          "after": 23989468,
+          "delta": 0
+        },
+        "allocation_requests": {
+          "before": 3569,
+          "after": 3569,
+          "delta": 0
+        }
+      }
+    },
+    {
+      "row": 2,
+      "metrics": {
+        "requested_bytes": {
+          "before": 23977116,
+          "after": 23977116,
+          "delta": 0
+        },
+        "allocation_requests": {
+          "before": 3376,
+          "after": 3376,
+          "delta": 0
+        }
+      }
+    },
+    {
+      "row": 3,
+      "metrics": {
+        "requested_bytes": {
+          "before": 23977116,
+          "after": 23977116,
+          "delta": 0
+        },
+        "allocation_requests": {
+          "before": 3376,
+          "after": 3376,
+          "delta": 0
+        }
+      }
+    },
+    {
+      "row": 4,
+      "metrics": {}
+    }
+  ],
+  "physical_field_names": [
+    "allocation_requests",
+    "allocation_requests_per_100",
+    "requested_bytes",
+    "requested_bytes_per_100"
+  ],
+  "allocation_requests_never_regress": true,
+  "requested_bytes_never_regress": true,
+  "actual_parent_compiler": "deebf08df690e37ddf763635d70fd25aaf0bedb4",
+  "before_receipt": "/private/tmp/mech-related-child-entry-facts-integration-regressions-20261107-v1/one-kib-run.json",
+  "before_receipt_sha256": "4cc3a0df4ef085c47cf81fb2cbd252f230e8792c57eb17241f9071c4f40bc890",
+  "after_receipt": "/private/tmp/mech-related-scalar-home-retirement-regressions-20261107-v1/one-kib-run.json",
+  "after_receipt_sha256": "5b326185f9184f1dbdfc56097e370984b3d1635f0dcb3169b7b54b1c3c0498d3",
+  "initial_recipe_used_IR238_parent_but_all_nontiming_rows_proven_identical_to_IR240": true
+}

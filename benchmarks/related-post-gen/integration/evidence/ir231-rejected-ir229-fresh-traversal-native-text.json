@@ -1,0 +1,9 @@
+{
+  "complete_native_text_byte_identical": true,
+  "before_sha256": "ae0b5beea02780359a826dce7ac2c2888a696a31acf84d06e9591f654c77739e",
+  "after_sha256": "ae0b5beea02780359a826dce7ac2c2888a696a31acf84d06e9591f654c77739e",
+  "after_fresh_words_in_query": 464,
+  "after_total_fresh_words": 3879,
+  "status": "hypothesis_refuted_for_this_workload",
+  "performance_gain_claim": false
+}

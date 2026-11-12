@@ -1,0 +1,32 @@
+{
+  "status": "qualified_measured_unselected_whole_process_regression",
+  "identity": "IR228/work115/ABI41/image9",
+  "scalar_cases_exact_all_nontiming": 128,
+  "compression_output_identical": true,
+  "compression_probe_exit": 0,
+  "comparison": "IR225",
+  "changed_compression_fields": [
+    "work",
+    "comparison_work",
+    "visits",
+    "transport_bytes",
+    "allocation_requests",
+    "requested_bytes"
+  ],
+  "compression_difference_receipt": "evidence/current-control-one-kib-comparison.json",
+  "timing_claim": true,
+  "selected_speed_compiler": "c3a6925108ad3523f4e29022b66f1c17b92c9878",
+  "next": "Investigate native-tree state/bounds lowering and constructor/runtime overhead. Do not attribute unchanged kernel code to the new DEFLATE reduction pass.",
+  "compression_all_nontiming_fields_equal_IR226": true,
+  "production_disabled_pass_all_nontiming_fields_equal": true,
+  "same_compiler_funded_activations": {
+    "disabled": 0,
+    "enabled": 4700
+  },
+  "audit": "evidence/funding-audit-audit-summary.json",
+  "performance": "evidence/ir228-screen-report.json",
+  "current_control_baseline": "IR227",
+  "current_scalar_rows_exact": 128,
+  "current_compression_rows_exact": 5,
+  "current_funding_ablation": "Inherited IR227 ablation; funding code unchanged."
+}

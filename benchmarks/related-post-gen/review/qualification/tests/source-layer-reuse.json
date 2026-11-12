@@ -1,0 +1,6 @@
+{
+  "core_passes": 391,
+  "engine_passes": 289,
+  "first11_library_hashes_flags_and_source_components_exact": true,
+  "only_v2_change": "GPU MemoryDomain reference is qualified inside the conditional admission helper, eliminating an unused scalar-runtime import"
+}

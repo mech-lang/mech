@@ -12,7 +12,15 @@ use cranelift_codegen::ir::{
 use cranelift_frontend::FunctionBuilder;
 use std::collections::BTreeSet;
 
+enum InputSource {
+    Canonical(usize),
+    Argument(usize),
+    Scalar(usize),
+    Zero,
+}
+
 pub(super) struct Recipe {
+    sources: Vec<InputSource>,
     inputs: Vec<usize>,
     outputs: Vec<usize>,
 }
@@ -62,7 +70,37 @@ impl Recipe {
             .filter(|slot| !constants.contains(slot))
             .filter(|slot| !(shadow..shadow + proof.words).contains(slot) || entry.contains(slot))
             .copied()
-            .collect();
+            .collect::<Vec<_>>();
+        let sources = inputs
+            .iter()
+            .map(|&slot| {
+                if !(shadow..shadow + proof.words).contains(&slot) {
+                    return Ok(InputSource::Canonical(slot));
+                }
+                let relative = slot - shadow;
+                if let Some(binding) = proof
+                    .scalar_inputs
+                    .iter()
+                    .chain(&proof.scalar_captures)
+                    .find(|b| b.word == relative)
+                {
+                    return binding
+                        .physical
+                        .checked_mul(2)
+                        .map(InputSource::Scalar)
+                        .ok_or_else(|| backend("numeric packet scalar offset overflows"));
+                }
+                let metadata = proof.arrays.iter().enumerate().any(|(array, _)| {
+                    (proof.view(array)..proof.view(array) + 4).contains(&relative)
+                        || proof.capacity(array) == Some(relative)
+                });
+                Ok(if metadata {
+                    InputSource::Argument(2 + relative)
+                } else {
+                    InputSource::Zero
+                })
+            })
+            .collect::<Result<Vec<_>, NativeCompileError>>()?;
         let outputs = readonly_numeric::snapshots::live_words(
             code,
             region,
@@ -73,7 +111,11 @@ impl Recipe {
         )?
         .into_iter()
         .collect();
-        Ok(Some(Self { inputs, outputs }))
+        Ok(Some(Self {
+            sources,
+            inputs,
+            outputs,
+        }))
     }
     pub fn input_words(&self) -> usize {
         self.inputs.len()
@@ -153,10 +195,30 @@ impl Recipe {
         };
         let input = packet(self.inputs.len())?;
         let output = packet(self.outputs.len())?;
-        for (at, &slot) in self.inputs.iter().enumerate() {
-            let value = b
-                .ins()
-                .load(types::I64, MemFlags::new(), locals, offset(slot)?);
+        let bank = self
+            .sources
+            .iter()
+            .any(|source| matches!(source, InputSource::Scalar(_)))
+            .then(|| {
+                b.ins()
+                    .load(types::I64, MemFlags::new(), hooks.arguments, 16)
+            });
+        for (at, source) in self.sources.iter().enumerate() {
+            let value = match *source {
+                InputSource::Canonical(slot) => {
+                    b.ins()
+                        .load(types::I64, MemFlags::new(), locals, offset(slot)?)
+                }
+                InputSource::Argument(slot) => {
+                    b.ins()
+                        .load(types::I64, MemFlags::new(), hooks.arguments, offset(slot)?)
+                }
+                InputSource::Scalar(slot) => {
+                    b.ins()
+                        .load(types::I64, MemFlags::new(), bank.unwrap(), offset(slot)?)
+                }
+                InputSource::Zero => b.ins().iconst(types::I64, 0),
+            };
             b.ins().stack_store(value, input, offset(at)?);
         }
         let mut arguments = hooks.numeric_outline_arguments(frame, locals).to_vec();

@@ -3,7 +3,7 @@ use crate::native_artifact::codegen::common::{
     ssa_words::Words, terminators::emit_source_terminator,
 };
 use crate::native_artifact::codegen::control::plan::CodePlan;
-use crate::native_artifact::compiler::{backend, primitive};
+use crate::native_artifact::compiler::{backend, offset, primitive};
 use crate::native_artifact::program::prepare::word_collections::Region;
 use crate::native_artifact::{NativeCompileError, abi::STATUS_OK};
 use cranelift_codegen::ir::condcodes::IntCC;
@@ -19,6 +19,27 @@ pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     code: CodePlan<'_>,
     region: &Region,
+    options: crate::native_artifact::codegen::options::OptimizationOptions,
+) -> Result<(FuncId, u64, u64), NativeCompileError> {
+    define_with_captures(module, code, region, false, options)
+}
+
+/// The same proved computation with a dense immutable capture boundary.
+/// No source-numbered local bank is required by this private caller.
+pub(in crate::native_artifact) fn define_compact<M: Module>(
+    module: &mut M,
+    code: CodePlan<'_>,
+    region: &Region,
+) -> Result<(FuncId, u64, u64), NativeCompileError> {
+    define_with_captures(module, code, region, true, Default::default())
+}
+
+fn define_with_captures<M: Module>(
+    module: &mut M,
+    code: CodePlan<'_>,
+    region: &Region,
+    dense: bool,
+    options: crate::native_artifact::codegen::options::OptimizationOptions,
 ) -> Result<(FuncId, u64, u64), NativeCompileError> {
     let mut signature = module.make_signature();
     // Immutable scalar homes, immutable source, private sink, count.
@@ -26,7 +47,11 @@ pub(in crate::native_artifact) fn define<M: Module>(
     signature.returns.push(AbiParam::new(types::I64));
     let function = module
         .declare_function(
-            &format!("mech_word_collection_{}", region.collection),
+            &format!(
+                "mech_{}word_collection_{}",
+                if dense { "compact_" } else { "" },
+                region.collection
+            ),
             Linkage::Local,
             &signature,
         )
@@ -58,11 +83,20 @@ pub(in crate::native_artifact) fn define<M: Module>(
                 .map(|&v| v as usize)
                 .collect::<BTreeSet<_>>(),
             |b, slot| {
-                Ok(if region.captures.binary_search(&(slot as u32)).is_ok() {
-                    None
-                } else {
-                    Some(b.ins().iconst(types::I64, 0))
-                })
+                Ok(
+                    if let Ok(at) = region.captures.binary_search(&(slot as u32)) {
+                        if dense {
+                            Some(
+                                b.ins()
+                                    .load(types::I64, MemFlags::new(), locals, offset(at)?),
+                            )
+                        } else {
+                            None
+                        }
+                    } else {
+                        Some(b.ins().iconst(types::I64, 0))
+                    },
+                )
             },
         )?;
         let blocks = region
@@ -96,12 +130,14 @@ pub(in crate::native_artifact) fn define<M: Module>(
                     let displacement = b.ins().imul_imm(index, i64::from(region.input_width));
                     let address = b.ins().iadd(source, displacement);
                     let ty = memory_type(region.input_width);
-                    let word = b.ins().load(ty, MemFlags::new(), address, 0);
-                    let word = if ty == types::I64 {
-                        word
-                    } else {
-                        b.ins().uextend(types::I64, word)
-                    };
+                    let word =
+                        crate::native_artifact::program::codegen::numeric_words::load_unsigned_word(
+                            &mut b,
+                            ty,
+                            MemFlags::new(),
+                            address,
+                            0,
+                        );
                     words.write(&mut b, region.element as usize, word);
                 }
                 Action::CollectionPush { .. } => {
@@ -140,9 +176,16 @@ pub(in crate::native_artifact) fn define<M: Module>(
                 }
                 _ => return Err(backend("word collection escaped its scalar proof")),
             }
-            emit_source_terminator(&mut b, &words, code, block.terminator(), failed, |target| {
-                blocks[&target]
-            });
+            emit_source_terminator(
+                &mut b,
+                &words,
+                code,
+                site as usize,
+                options,
+                block.terminator(),
+                failed,
+                |target| blocks[&target],
+            );
         }
         b.switch_to_block(done);
         let status = b.ins().iconst(types::I64, STATUS_OK as i64);

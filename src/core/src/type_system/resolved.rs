@@ -16,6 +16,10 @@ use crate::{
     ShapeInstance,
 };
 
+#[cfg(feature = "serde")]
+#[path = "resolved_image.rs"]
+mod image;
+
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, string::String, vec::Vec};
 #[cfg(not(feature = "no_std"))]
@@ -59,6 +63,12 @@ impl PartialEq for ResolvedType {
 impl Eq for ResolvedType {}
 
 impl ResolvedType {
+    /// Compare the complete normalized type and predicate evidence. Ordinary
+    /// type equality deliberately omits evidence and cannot validate an image.
+    pub fn has_same_normalized_evidence(&self, other: &Self) -> bool {
+        self == other && self.predicate_evidence == other.predicate_evidence
+    }
+
     pub fn new(
         kind: KindExpr,
         dimension_parameters: Box<[DimensionParameterDeclaration]>,

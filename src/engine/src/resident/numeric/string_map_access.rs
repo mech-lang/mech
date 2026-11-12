@@ -111,7 +111,7 @@ pub(super) fn find_with_compare(
         .ok_or(ResidentKernelError::InvalidInput)
 }
 
-pub(super) fn find_optional_with_compare(
+pub(in crate::resident) fn find_optional_with_compare(
     map: &MapValue,
     candidate_work: u64,
     meter: &mut impl Budget,

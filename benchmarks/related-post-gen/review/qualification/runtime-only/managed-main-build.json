@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v2/build.json",
+    "--source",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/managed-app/src/main.rs",
+    "--out",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/managed-app/runner-standard",
+    "--bundle",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/managed-app/audit-bundle",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 0.892015874851495,
+  "stdout": "{\"seconds\": 0.3963967498857528, \"exit\": 0}\n",
+  "stderr": "",
+  "compiler_source_sha256": "53760658d965069f5650976a1e433af5dfa001b095ddc406bdb59910e3bb4fc8"
+}

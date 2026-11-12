@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-phase-attribution-after-opt-20261107-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-scalar-home-phase-profile-20261107-v1/after/runner.rs",
+    "--out",
+    "/private/tmp/mech-related-scalar-home-phase-profile-20261107-v1/after/runner-aot",
+    "--bundle",
+    "/private/tmp/mech-related-scalar-home-phase-profile-20261107-v1/after/build",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 1.5503893750719726,
+  "stdout": "warning: static `LINKED_IDENTITY` is never used\n --> /private/tmp/mech-related-scalar-home-phase-profile-20261107-v1/after/build/linked.rs:2:124\n  |\n2 | ...e23f7f47e5923cf83b7c8de8403b5242fc8f3a69187e5c0\"] static LINKED_IDENTITY:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTI...\n  |                                                             ^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-scalar-home-phase-profile-20261107-v1/after/build/linked.rs:3:146\n  |\n3 | ...403b5242fc8f3a69187e5c0_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA` is never used\n --> /private/tmp/mech-related-scalar-home-phase-profile-20261107-v1/after/build/linked.rs:4:143\n  |\n4 | ...e8403b5242fc8f3a69187e5c0_native_metadata_v1\"] static LINKED_NATIVE_METADATA:[u8;4913076];\n  |                                                          ^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA_BINDING` is never used\n --> /private/tmp/mech-related-scalar-home-phase-profile-20261107-v1/after/build/linked.rs:5:151\n  |\n5 | ...8f3a69187e5c0_native_metadata_binding_v1\"] static LINKED_NATIVE_METADATA_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMA...\n  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: function `linked_entry` is never used\n --> /private/tmp/mech-related-scalar-home-phase-profile-20261107-v1/after/build/linked.rs:6:52\n  |\n6 |  #[link_name=\"mech_canonical_program_entry_v1\"] fn linked_entry(frame:*mut std::ffi::c_void)->u64;\n  |                                                    ^^^^^^^^^^^^\n\nwarning: 5 warnings emitted\n\n{\"seconds\": 1.043489082949236, \"exit\": 0}\n",
+  "stderr": ""
+}

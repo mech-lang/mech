@@ -1,0 +1,9 @@
+{
+  "base_source": "/private/tmp/mech-related-conjoined-window-integration-runners-20261107-v1/reuse-4/build/source.mec",
+  "base_source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+  "source_sha256": "90982772edb1507182d309f0b2738be9d9a9f19953c3794ad267c3fa492cac1b",
+  "workers": 4,
+  "eligibility": "Existing vocabulary3..64 and strictly increasing unique rows at most8 tags; exact selected CSR fallback retained.",
+  "bounds": "ID<=63; ordered b>=1,c>=2,d>=3. Largest quartet product63*62*61*60=14295960 fitsU32; rank is widened before unchanged indexes.",
+  "timing": "The byte conversion remains inside continuous post-JSON setup and processing."
+}

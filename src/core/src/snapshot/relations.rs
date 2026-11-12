@@ -712,6 +712,19 @@ pub(super) fn insert_map_entry(
     path: &SnapshotPath,
     budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<(), SnapshotValueError> {
+    insert_map_entry_with_path(schema, entries, key, value, || path.clone(), budget)
+}
+
+// Successful insertion needs no diagnostic path. The closure is evaluated only
+// at the same duplicate-key error that previously cloned the supplied path.
+pub(super) fn insert_map_entry_with_path(
+    schema: &SchemaBody,
+    entries: &mut Vec<MapEntryValue>,
+    key: ValueData,
+    value: ValueData,
+    path: impl FnOnce() -> SnapshotPath,
+    budget: Option<&SnapshotCanonicalizationBudget>,
+) -> Result<(), SnapshotValueError> {
     let key = CanonicalKeyValue {
         data: normalized_key_data(schema, key)?,
     };
@@ -722,7 +735,7 @@ pub(super) fn insert_map_entry(
                 return Ok(());
             }
             Ordering::Equal => {
-                return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path.clone() });
+                return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path() });
             }
             Ordering::Greater => {}
         }
@@ -732,7 +745,7 @@ pub(super) fn insert_map_entry(
         match compare_key_data_with_budget(schema, existing.key().data(), key.data(), budget)? {
             Ordering::Less => {}
             Ordering::Equal => {
-                return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path.clone() });
+                return Err(SnapshotValueError::DuplicateCanonicalKeyV1 { path: path() });
             }
             Ordering::Greater => {
                 insertion = index;

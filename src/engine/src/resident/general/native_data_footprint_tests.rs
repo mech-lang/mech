@@ -9,7 +9,7 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
-pub(super) fn variants() -> [ProgramArtifact; 2] {
+pub(in crate::resident::general::native_collection_calls) fn variants() -> [ProgramArtifact; 2] {
     let source = "words := input<[string]>\nwords[position<u64>]\n";
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x44415441), Revision(0), source).unwrap(),
@@ -292,3 +292,6 @@ mod boundary_tests;
 
 #[path = "native_data_footprint_allocation_tests.rs"]
 mod allocation_tests;
+
+#[path = "native_data_footprint_maximum_tests.rs"]
+pub(in crate::resident::general::native_collection_calls) mod maximum_tests;

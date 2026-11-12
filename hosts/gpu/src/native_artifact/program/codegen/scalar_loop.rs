@@ -30,6 +30,28 @@ use std::collections::BTreeSet;
 
 const MAX_WORDS: usize = 192;
 
+/// Reserve callback-free capture emission before any initializer loan is
+/// emitted. A declined word/graph/budget proof must keep ordinary admission.
+pub(in crate::native_artifact) fn select_captures(
+    controls: &CompilationControls,
+    code: CodePlan<'_>,
+    closed: &Layout,
+    aggregates: &NativeScalarAggregates,
+    borrowed: &program_borrowed_layout::Layout,
+) {
+    if !controls.enabled(OptimizationPass::ScalarLoops) {
+        return;
+    }
+    for (id, region) in closed.regions.iter().enumerate() {
+        if region.captures.is_some()
+            && slots(code, closed, id, aggregates, borrowed).is_some()
+            && tag_threading::derive_scalar(code, closed, id, aggregates, borrowed).is_some()
+        {
+            controls.reserve_scalar_capture(region.tail.header() as usize);
+        }
+    }
+}
+
 fn slots(
     code: CodePlan<'_>,
     closed: &Layout,
@@ -42,6 +64,10 @@ fn slots(
         return None;
     }
     let mut words = BTreeSet::from_iter(region.words..region.words + 3);
+    if let Some(captures) = &region.captures {
+        let shadow = region.shadow?;
+        words.extend(shadow..shadow + captures.words());
+    }
     if let Some(borrow) = region.borrowed {
         let layout = &borrowed.regions[borrow];
         words.extend(layout.ready..layout.end);
@@ -76,6 +102,19 @@ fn slots(
                 }
                 _ => {}
             }
+        } else if let Some(action) = region
+            .captures
+            .as_ref()
+            .and_then(|proof| proof.action(site))
+        {
+            words.insert(action.output() as usize);
+            if let crate::native_artifact::program::prepare::captured_numeric::Operation::Read {
+                index,
+                ..
+            } = action
+            {
+                words.insert(*index as usize);
+            }
         } else {
             match code.blocks()[site].action() {
                 Action::Scalar(Scalar::None) => {}
@@ -92,7 +131,8 @@ fn slots(
             }
         }
         match code.blocks()[site].terminator() {
-            Term::TailHeader { .. } | Term::Scalar(Branch::Jump(_) | Branch::Reject) => {}
+            Term::TailHeader { .. }
+            | Term::Scalar(Branch::Jump(_) | Branch::Reject | Branch::IntegrityFailure) => {}
             Term::Scalar(Branch::Branch { condition, .. }) => {
                 words.insert(condition.get() as usize);
             }
@@ -198,7 +238,11 @@ pub(in crate::native_artifact) fn emit_entry(
     let region = &closed.regions[id];
     if region.tail.header() as usize != site
         || region.map.is_some()
-        || !controls.scalar_region_available()
+        || if region.captures.is_some() {
+            !controls.scalar_capture_selected(site)
+        } else {
+            !controls.scalar_region_available()
+        }
     {
         return Ok(());
     }
@@ -250,6 +294,7 @@ pub(in crate::native_artifact) fn emit_entry(
     let exit = b.create_block();
     let bailout = b.create_block();
     let failed = b.create_block();
+    let mut boundaries = BTreeSet::from([exit, bailout, failed]);
     b.append_block_param(failed, types::I64);
     b.set_cold_block(failed);
     let blocks = graph
@@ -268,6 +313,7 @@ pub(in crate::native_artifact) fn emit_entry(
         let fail_at = b.create_block();
         b.append_block_param(fail_at, types::I64);
         b.set_cold_block(fail_at);
+        boundaries.insert(fail_at);
         b.switch_to_block(blocks[ordinal]);
         let before = b.func.dfg.num_insts();
         if index == site {
@@ -340,6 +386,28 @@ pub(in crate::native_artifact) fn emit_entry(
                 hooks,
                 error,
             )?;
+        } else if let Some((proof, action)) = region
+            .captures
+            .as_ref()
+            .and_then(|proof| proof.action(index).map(|action| (proof, action)))
+        {
+            if let Some(cold) = super::captured_numeric::emit(
+                controls.options(),
+                b,
+                frame,
+                locals,
+                &words,
+                code,
+                closed,
+                id,
+                proof,
+                action,
+                index,
+                hooks,
+                error,
+            )? {
+                boundaries.insert(cold);
+            }
         } else if let Action::Scalar(action) = code.blocks()[index].action() {
             if !prefix_count_action(b, &words, prefix, facts, index, action, fail_at)? {
                 scalar_action(b, &words, action, fail_at);
@@ -366,6 +434,8 @@ pub(in crate::native_artifact) fn emit_entry(
                     b,
                     &words,
                     code,
+                    index,
+                    controls.options(),
                     code.blocks()[index].terminator(),
                     fail_at,
                     |next| {
@@ -383,6 +453,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 b,
                 &words,
                 code,
+                index,
+                controls.options(),
                 code.blocks()[index].terminator(),
                 fail_at,
                 |_| unreachable!(),
@@ -418,7 +490,61 @@ pub(in crate::native_artifact) fn emit_entry(
             "scalar SSA boundaries exceed original fixed envelope",
         ));
     }
-    controls.emitted_scalar_region();
+    if region.captures.is_none() {
+        controls.emitted_scalar_region();
+    }
+    if let Some(proof) = &region.captures {
+        let cfg = cranelift_codegen::flowgraph::ControlFlowGraph::with_function(b.func);
+        let mut seen = BTreeSet::new();
+        let mut pending = vec![blocks[0]];
+        let mut helpers = 0;
+        while let Some(block) = pending.pop() {
+            if boundaries.contains(&block) || !seen.insert(block) {
+                continue;
+            }
+            helpers += b
+                .func
+                .layout
+                .block_insts(block)
+                .filter(|inst| b.func.dfg.insts[*inst].opcode().is_call())
+                .count();
+            pending.extend(cfg.succ_iter(block));
+        }
+        if helpers != 0 {
+            return Err(backend(
+                "captured numeric funded body contains a general call",
+            ));
+        }
+        use crate::native_artifact::program::prepare::captured_numeric::Operation;
+        report
+            .captured_numeric_loops
+            .push(super::captured_numeric::Report {
+                header: site,
+                captures: proof
+                    .captures
+                    .iter()
+                    .map(|capture| (capture.value, capture.width))
+                    .collect(),
+                typed_loads: proof
+                    .actions
+                    .iter()
+                    .filter_map(|(site, action)| match action {
+                        Operation::Read { capture, .. } => {
+                            Some((*site, proof.captures[*capture].width))
+                        }
+                        _ => None,
+                    })
+                    .collect(),
+                length_sites: proof
+                    .actions
+                    .iter()
+                    .filter_map(|(site, action)| {
+                        matches!(action, Operation::Length { .. }).then_some(*site)
+                    })
+                    .collect(),
+                successful_backedge_helpers: helpers,
+            });
+    }
     report.scalar_loops.push(ScalarLoop {
         header: site,
         carrier_word: graph.carrier_word,

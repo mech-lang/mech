@@ -1,0 +1,17 @@
+
+running 4 tests
+test native_artifact::program::runtime::composition_tests::phase_descendants::descendant_cold_routes_restore_child_markers_and_charge_current_source_work ... ok
+test native_artifact::program::runtime::composition_tests::phase_descendants::descendant_reads_keep_current_owners_errors_publication_and_retry ... ok
+test native_artifact::program::runtime::composition_tests::phase_descendants::ordinary_phase_descendant_pieces_keep_their_full_source_price ... ok
+test native_artifact::program::runtime::composition_tests::phase_descendants::tracked_grandchild_fuel_handoffs_keep_active_edges_and_failure_recovery ... grandchild-fuel restored=false header=false completed=false markers=[(0, 1, None, Some(1), 7)] returned=[]
+grandchild-fuel restored=false header=true completed=false markers=[(0, 2, None, Some(2), 7)] returned=[(2, 1)]
+grandchild-fuel restored=true header=false completed=false markers=[(0, 1, None, Some(1), 7)] returned=[]
+grandchild-fuel restored=true header=true completed=false markers=[(0, 2, None, Some(2), 7)] returned=[(2, 1)]
+grandchild-fuel restored=false header=false completed=false markers=[(0, 1, None, Some(1), 7)] returned=[]
+grandchild-fuel restored=false header=true completed=false markers=[(0, 2, None, Some(2), 7)] returned=[(2, 1)]
+grandchild-fuel restored=true header=false completed=false markers=[(0, 1, None, Some(1), 7)] returned=[]
+grandchild-fuel restored=true header=true completed=false markers=[(0, 2, None, Some(2), 7)] returned=[(2, 1)]
+ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 856 filtered out; finished in 1.69s
+

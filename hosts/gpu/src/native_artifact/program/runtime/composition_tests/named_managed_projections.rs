@@ -81,12 +81,7 @@ fn named_managed_fields_stay_native_with_fresh_arguments_and_recovery() {
     let mut expected_work = [None; 5];
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
-        let jit = JitProgramArtifact::compile_with_limits(
-            &artifact,
-            &mech_stdlib::source_catalog(),
-            mode.compilation(),
-        )
-        .unwrap();
+        let jit = compile_parent_pieces(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let fields = selected_named_fields(&jit);
         for restored in [false, true] {
             let memory = mode.memory_budget();
@@ -190,12 +185,7 @@ fn named_managed_fields_keep_lexical_errors_unselected_paths_and_publication() {
     for assert_first in [false, true] {
         for artifact in artifacts(&controlled_source(assert_first)) {
             let mode = NativeProgramLimitMode::NoLimits;
-            let jit = JitProgramArtifact::compile_with_limits(
-                &artifact,
-                &mech_stdlib::source_catalog(),
-                mode.compilation(),
-            )
-            .unwrap();
+            let jit = compile_parent_pieces(&artifact, &mech_stdlib::source_catalog()).unwrap();
             selected_named_fields(&jit);
             for restored in [false, true] {
                 let memory = mode.memory_budget();

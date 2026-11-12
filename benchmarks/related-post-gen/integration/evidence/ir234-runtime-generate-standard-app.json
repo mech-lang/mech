@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runtime-check-20261106-v1/generate-standard-app",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-compiler-20261106",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runtime-check-20261106-v1/managed-app"
+  ],
+  "exit": 0,
+  "seconds": 1.34125329204835,
+  "stdout": "generated\n",
+  "stderr": "",
+  "compiler_source_sha256": "2612a00ee8c19b975943d78ecd52dc889e11dc6899c4f11a46fc6ab8b8963329"
+}

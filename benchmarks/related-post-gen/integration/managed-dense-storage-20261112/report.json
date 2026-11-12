@@ -1,0 +1,1119 @@
+{
+  "schema": "mech.related-post-gen.managed-dense-storage-evidence.v1",
+  "required_published_IR338_base": "b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164",
+  "required_published_IR340_source": "1ef5985a9c58fd2857bdf8eedc06a2b7b50ef622",
+  "optional_historical_IR338_source": "6f7e0458e088cf7e50c97ebfe2d15e7bca02b22f",
+  "IR": 340,
+  "work_policy": 127,
+  "ABI": 42,
+  "image": 11,
+  "managed_selected": "IR334 scoped-frame",
+  "new_selected_latency_checkpoint": false,
+  "same_source_U32_gain_confirmed": true,
+  "wide_gain_established": false,
+  "fastest_Rust_target_met": false,
+  "whole_process_is_acceptance_gate": false,
+  "new_timed_resource_exact_outputs": 1895,
+  "qualification_exact_outputs_separate": 384,
+  "primary": {
+    "record": "first-dense-worker/latency.json",
+    "paired": "first-dense-worker/paired-comparisons.json",
+    "rounds": 31,
+    "variants": 41,
+    "exact_outputs": 1271,
+    "seed": 202611121041,
+    "bootstrap_seed": 202611121042,
+    "current_fastest_Rust": {
+      "variant": "rust-ordered-mask-tables256-fresh4",
+      "median_seconds": 0.0012373339999999999,
+      "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+      "eligible_variants": [
+        "rust",
+        "rust-mech-control-streaming",
+        "rust-mech-control-u32-casts",
+        "rust-mech-control-u8-ids-u32",
+        "rust-ordered-scan-only",
+        "rust-ordered-ordered",
+        "rust-ordered-mask-reuse",
+        "rust-ordered-ordered-mask",
+        "rust-ordered-ordered-mask-tables",
+        "rust-apple-m3",
+        "rust-mech-control-streaming-apple-m3",
+        "rust-mech-control-u32-casts-apple-m3",
+        "rust-mech-control-u8-ids-u32-apple-m3",
+        "rust-ordered-scan-only-apple-m3",
+        "rust-ordered-ordered-apple-m3",
+        "rust-ordered-mask-reuse-apple-m3",
+        "rust-ordered-ordered-mask-apple-m3",
+        "rust-ordered-ordered-mask-tables-apple-m3",
+        "rust-ordered-mask-tables256",
+        "rust-ordered-mask-tables256-apple-m3",
+        "rust-ordered-mask-tables256-fresh4",
+        "rust-ordered-mask-tables256-fresh4-apple-m3"
+      ]
+    },
+    "rows": [
+      {
+        "variant": "rust-ordered-mask-tables256",
+        "post_json_ms": 1.54125,
+        "times_current_fastest_Rust": 1.2456216349021365,
+        "whole_process_ms": 30.154459178447723,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 435056,
+        "whole_process_peak_resident_bytes": 6078464
+      },
+      {
+        "variant": "mech-managed-host-v2-4",
+        "post_json_ms": 1.614833,
+        "times_current_fastest_Rust": 1.3050906222572078,
+        "whole_process_ms": 54.223916959017515,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 17065168,
+        "whole_process_peak_resident_bytes": 27754496
+      },
+      {
+        "variant": "rust-ordered-mask-tables256-fresh4",
+        "post_json_ms": 1.237334,
+        "times_current_fastest_Rust": 1.0,
+        "whole_process_ms": 31.60099987871945,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 435520,
+        "whole_process_peak_resident_bytes": 6160384
+      },
+      {
+        "variant": "mech-managed-retire-overlap",
+        "post_json_ms": 1.4512500000000002,
+        "times_current_fastest_Rust": 1.1728846051268293,
+        "whole_process_ms": 55.11224991641939,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 17108464,
+        "whole_process_peak_resident_bytes": 27230208
+      },
+      {
+        "variant": "mech-ir320-compact-native-4",
+        "post_json_ms": 1.346292,
+        "times_current_fastest_Rust": 1.088058681002866,
+        "whole_process_ms": 34.623082960024476,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 914816,
+        "whole_process_peak_resident_bytes": 5750784
+      },
+      {
+        "variant": "mech-managed-scoped-frame",
+        "post_json_ms": 1.440834,
+        "times_current_fastest_Rust": 1.164466506214167,
+        "whole_process_ms": 55.124583188444376,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 17095936,
+        "whole_process_peak_resident_bytes": 27017216
+      },
+      {
+        "variant": "mech-managed-typed-fixed-byte",
+        "post_json_ms": 1.536667,
+        "times_current_fastest_Rust": 1.241917703708134,
+        "whole_process_ms": 61.21362512931228,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 18159088,
+        "whole_process_peak_resident_bytes": 30179328
+      },
+      {
+        "variant": "mech-managed-guarded-owner-wide",
+        "post_json_ms": 1.453334,
+        "times_current_fastest_Rust": 1.1745688714607374,
+        "whole_process_ms": 54.498499957844615,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 17219232,
+        "whole_process_peak_resident_bytes": 27131904
+      },
+      {
+        "variant": "mech-managed-guarded-owner-byte",
+        "post_json_ms": 1.474625,
+        "times_current_fastest_Rust": 1.191776028137916,
+        "whole_process_ms": 60.91054109856486,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 18177552,
+        "whole_process_peak_resident_bytes": 30507008
+      },
+      {
+        "variant": "mech-managed-key-u32-probe",
+        "post_json_ms": 1.473709,
+        "times_current_fastest_Rust": 1.1910357268126472,
+        "whole_process_ms": 60.640875017270446,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 18210576,
+        "whole_process_peak_resident_bytes": 30228480
+      },
+      {
+        "variant": "mech-ir336-compact-maintained-wide-4",
+        "post_json_ms": 1.296291,
+        "times_current_fastest_Rust": 1.0476484118273643,
+        "whole_process_ms": 34.151459112763405,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 896368,
+        "whole_process_peak_resident_bytes": 5636096
+      },
+      {
+        "variant": "mech-ir336-compact-direct-byte-4",
+        "post_json_ms": 1.280875,
+        "times_current_fastest_Rust": 1.0351893668160739,
+        "whole_process_ms": 34.24554108642042,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 929616,
+        "whole_process_peak_resident_bytes": 5865472
+      },
+      {
+        "variant": "mech-ir336-compact-key-u32-4",
+        "post_json_ms": 1.262125,
+        "times_current_fastest_Rust": 1.0200358189462184,
+        "whole_process_ms": 33.25891704298556,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 929616,
+        "whole_process_peak_resident_bytes": 5472256
+      },
+      {
+        "variant": "mech-managed-static-replay-byte",
+        "post_json_ms": 1.486334,
+        "times_current_fastest_Rust": 1.2012391157116835,
+        "whole_process_ms": 61.50225014425814,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 18179248,
+        "whole_process_peak_resident_bytes": 30621696
+      },
+      {
+        "variant": "mech-managed-static-replay-u32",
+        "post_json_ms": 1.454458,
+        "times_current_fastest_Rust": 1.1754772761437091,
+        "whole_process_ms": 60.68624998442829,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 18195760,
+        "whole_process_peak_resident_bytes": 30310400
+      },
+      {
+        "variant": "mech-managed-owned-capture-wide",
+        "post_json_ms": 1.4487079999999999,
+        "times_current_fastest_Rust": 1.1708301881302867,
+        "whole_process_ms": 54.37262519262731,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 17217024,
+        "whole_process_peak_resident_bytes": 27361280
+      },
+      {
+        "variant": "mech-managed-owned-capture-u32",
+        "post_json_ms": 1.471625,
+        "times_current_fastest_Rust": 1.1893514604787392,
+        "whole_process_ms": 60.956292087212205,
+        "code_bytes": null,
+        "stack_bytes": null,
+        "executable_file_bytes": 18208368,
+        "whole_process_peak_resident_bytes": 30294016
+      },
+      {
+        "variant": "mech-managed-dense-worker-wide",
+        "post_json_ms": 1.4494580000000001,
+        "times_current_fastest_Rust": 1.171436330045081,
+        "whole_process_ms": 54.466583067551255,
+        "code_bytes": 1021740,
+        "stack_bytes": 1568,
+        "executable_file_bytes": 17219824,
+        "whole_process_peak_resident_bytes": 27099136
+      },
+      {
+        "variant": "mech-managed-dense-worker-u32",
+        "post_json_ms": 1.43625,
+        "times_current_fastest_Rust": 1.1607617668309447,
+        "whole_process_ms": 61.69624999165535,
+        "code_bytes": 1149636,
+        "stack_bytes": 1680,
+        "executable_file_bytes": 18194656,
+        "whole_process_peak_resident_bytes": 30015488
+      }
+    ],
+    "managed_work_qualifications": {
+      "mech-managed-host-v2-4": {
+        "record": "control-qualifications/mech-managed-host-v2-4/qualify-5000.json",
+        "sha256": "33c4c7f10e88dd6f0f5f11ec02eb63f778ff35bbaed3b894f27609ae6294a2bc",
+        "work": 36864870728,
+        "parallel_numeric_work": 24547911858,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-retire-overlap": {
+        "record": "control-qualifications/mech-managed-retire-overlap/qualify-5000.json",
+        "sha256": "b8d2406f969b31b78364588b530b39d09c8f78c212b095f6d2f37dd3854fa4bc",
+        "work": 36864870728,
+        "parallel_numeric_work": 24547911858,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-scoped-frame": {
+        "record": "control-qualifications/mech-managed-scoped-frame/qualify-5000.json",
+        "sha256": "5563120bf594b061de18a21d6e6ce7b5b8910f3ee7a2fd7080d852a33444b157",
+        "work": 36864870728,
+        "parallel_numeric_work": 24547911858,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-typed-fixed-byte": {
+        "record": "control-qualifications/mech-managed-typed-fixed-byte/qualify-5000.json",
+        "sha256": "e176c78351c33f5c631b2cd393084fdae5b0d871eb7c03968fa73bf324c1052d",
+        "work": 36997602022,
+        "parallel_numeric_work": 24547911858,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": false
+      },
+      "mech-managed-guarded-owner-wide": {
+        "record": "control-qualifications/mech-managed-guarded-owner-wide/qualify-5000.json",
+        "sha256": "82c9f13b3ffacf1fc783080967874331c9452cd15f90bb3f618d3da40929fdb8",
+        "work": 36864870920,
+        "parallel_numeric_work": 24547911858,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-guarded-owner-byte": {
+        "record": "control-qualifications/mech-managed-guarded-owner-byte/qualify-5000.json",
+        "sha256": "7c43e4a490cb43b56c1c2da1a0a29abb5169955e4518f271334cc9a613392997",
+        "work": 37025278893,
+        "parallel_numeric_work": 24547911858,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-key-u32-probe": {
+        "record": "control-qualifications/mech-managed-key-u32-probe/qualify-5000.json",
+        "sha256": "66d611848f4281505fb4fecb5c838ea4d5b329801e305177ddcda682fc334138",
+        "work": 37134118305,
+        "parallel_numeric_work": 24618013850,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-static-replay-byte": {
+        "record": "control-qualifications/mech-managed-static-replay-byte/qualify-5000.json",
+        "sha256": "875c72e3bd3c4758e859974005a602f6bbb999da345566923fee5582db779710",
+        "work": 37025278893,
+        "parallel_numeric_work": 24547911858,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-static-replay-u32": {
+        "record": "control-qualifications/mech-managed-static-replay-u32/qualify-5000.json",
+        "sha256": "9e4b9ece067ee3f81b5435831764dce93f5e07e6b12a946805b2c6022eb8d0f3",
+        "work": 37134118305,
+        "parallel_numeric_work": 24618013850,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-owned-capture-wide": {
+        "record": "control-qualifications/mech-managed-owned-capture-wide/qualify-5000.json",
+        "sha256": "7afc87ae5409bdeac0187b2ebe21f88355ca37ce745dad5446a9462bef7d29a4",
+        "work": 36864870920,
+        "parallel_numeric_work": 24547911858,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-owned-capture-u32": {
+        "record": "control-qualifications/mech-managed-owned-capture-u32/qualify-5000.json",
+        "sha256": "a1e32729382d541c6e479e86480a9875a34470eba4a5d0d527206a9e184a99e5",
+        "work": 37134118305,
+        "parallel_numeric_work": 24618013850,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-dense-worker-wide": {
+        "record": "control-qualifications/mech-managed-dense-worker-wide/qualify-5000.json",
+        "sha256": "061bd68f34d723330ee35d74290ceb17958709f7c71173a3e4fe75e39797ee3a",
+        "work": 36864870920,
+        "parallel_numeric_work": 24547911858,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      },
+      "mech-managed-dense-worker-u32": {
+        "record": "control-qualifications/mech-managed-dense-worker-u32/qualify-5000.json",
+        "sha256": "18cf01d359f448a3453c13e5929067b507b1b8b13056cb8cafb82ddf7cdd1cd6",
+        "work": 37134118305,
+        "parallel_numeric_work": 24618013850,
+        "parallel_numeric_regions": 8,
+        "exact_total_required": true
+      }
+    }
+  },
+  "resources": {
+    "record": "new-managed-resources/resources-dense-first/report.json",
+    "plan": "new-managed-resources/resources-dense-first/plan.json",
+    "rounds": 7,
+    "variants": 39,
+    "exact_outputs": 273,
+    "seed": 202611121044,
+    "rows": [
+      {
+        "variant": "rust-ordered-mask-tables256-fresh4-instrumented",
+        "instructions_retired": 18183912,
+        "cycles": 6626380,
+        "allocation_requests": 78,
+        "requested_allocation_bytes": 7026975,
+        "peak_additional_live_requested_heap_bytes": 5721694,
+        "whole_process_peak_resident_bytes": 6193152
+      },
+      {
+        "variant": "rust-ordered-mask-tables256-fresh4-apple-m3-instrumented",
+        "instructions_retired": 18193533,
+        "cycles": 6654604,
+        "allocation_requests": 78,
+        "requested_allocation_bytes": 7026975,
+        "peak_additional_live_requested_heap_bytes": 5721694,
+        "whole_process_peak_resident_bytes": 6209536
+      },
+      {
+        "variant": "mech-managed-host-v2-4-instrumented",
+        "instructions_retired": 31515275,
+        "cycles": 9972961,
+        "allocation_requests": 735,
+        "requested_allocation_bytes": 7036985,
+        "peak_additional_live_requested_heap_bytes": 4871859,
+        "whole_process_peak_resident_bytes": 27148288
+      },
+      {
+        "variant": "mech-managed-scoped-frame-instrumented",
+        "instructions_retired": 29670133,
+        "cycles": 8856723,
+        "allocation_requests": 725,
+        "requested_allocation_bytes": 6376193,
+        "peak_additional_live_requested_heap_bytes": 4211067,
+        "whole_process_peak_resident_bytes": 26034176
+      },
+      {
+        "variant": "mech-managed-guarded-owner-wide-instrumented",
+        "instructions_retired": 29698563,
+        "cycles": 9112635,
+        "allocation_requests": 725,
+        "requested_allocation_bytes": 6376209,
+        "peak_additional_live_requested_heap_bytes": 4211067,
+        "whole_process_peak_resident_bytes": 26427392
+      },
+      {
+        "variant": "mech-managed-guarded-owner-byte-instrumented",
+        "instructions_retired": 29781476,
+        "cycles": 9324249,
+        "allocation_requests": 725,
+        "requested_allocation_bytes": 6404707,
+        "peak_additional_live_requested_heap_bytes": 4397235,
+        "whole_process_peak_resident_bytes": 29835264
+      },
+      {
+        "variant": "mech-managed-key-u32-probe-instrumented",
+        "instructions_retired": 29563625,
+        "cycles": 9164338,
+        "allocation_requests": 725,
+        "requested_allocation_bytes": 5502843,
+        "peak_additional_live_requested_heap_bytes": 3495371,
+        "whole_process_peak_resident_bytes": 29622272
+      },
+      {
+        "variant": "mech-managed-static-replay-byte-instrumented",
+        "instructions_retired": 29779986,
+        "cycles": 9104004,
+        "allocation_requests": 725,
+        "requested_allocation_bytes": 6404707,
+        "peak_additional_live_requested_heap_bytes": 4397235,
+        "whole_process_peak_resident_bytes": 29523968
+      },
+      {
+        "variant": "mech-managed-static-replay-u32-instrumented",
+        "instructions_retired": 29491003,
+        "cycles": 9072397,
+        "allocation_requests": 725,
+        "requested_allocation_bytes": 5502843,
+        "peak_additional_live_requested_heap_bytes": 3495371,
+        "whole_process_peak_resident_bytes": 29704192
+      },
+      {
+        "variant": "mech-managed-owned-capture-wide-instrumented",
+        "instructions_retired": 29661989,
+        "cycles": 8964733,
+        "allocation_requests": 725,
+        "requested_allocation_bytes": 6376209,
+        "peak_additional_live_requested_heap_bytes": 4211067,
+        "whole_process_peak_resident_bytes": 26132480
+      },
+      {
+        "variant": "mech-managed-owned-capture-u32-instrumented",
+        "instructions_retired": 29541761,
+        "cycles": 9029472,
+        "allocation_requests": 725,
+        "requested_allocation_bytes": 5502843,
+        "peak_additional_live_requested_heap_bytes": 3495371,
+        "whole_process_peak_resident_bytes": 29605888
+      },
+      {
+        "variant": "mech-managed-dense-worker-wide-instrumented",
+        "instructions_retired": 29669944,
+        "cycles": 8893326,
+        "allocation_requests": 725,
+        "requested_allocation_bytes": 6084753,
+        "peak_additional_live_requested_heap_bytes": 3919611,
+        "whole_process_peak_resident_bytes": 26247168
+      },
+      {
+        "variant": "mech-managed-dense-worker-u32-instrumented",
+        "instructions_retired": 29388349,
+        "cycles": 9156819,
+        "allocation_requests": 725,
+        "requested_allocation_bytes": 5198427,
+        "peak_additional_live_requested_heap_bytes": 3190955,
+        "whole_process_peak_resident_bytes": 29016064
+      },
+      {
+        "variant": "mech-ir336-compact-maintained-wide-4-instrumented",
+        "instructions_retired": 30001784,
+        "cycles": 7712653,
+        "allocation_requests": 71,
+        "requested_allocation_bytes": 3926240,
+        "peak_additional_live_requested_heap_bytes": 2997872,
+        "whole_process_peak_resident_bytes": 5685248
+      },
+      {
+        "variant": "mech-ir336-compact-direct-byte-4-instrumented",
+        "instructions_retired": 30075247,
+        "cycles": 7623554,
+        "allocation_requests": 71,
+        "requested_allocation_bytes": 3768474,
+        "peak_additional_live_requested_heap_bytes": 2997872,
+        "whole_process_peak_resident_bytes": 5881856
+      },
+      {
+        "variant": "mech-ir336-compact-key-u32-4-instrumented",
+        "instructions_retired": 30154842,
+        "cycles": 7589380,
+        "allocation_requests": 71,
+        "requested_allocation_bytes": 2855586,
+        "peak_additional_live_requested_heap_bytes": 2084984,
+        "whole_process_peak_resident_bytes": 5505024
+      }
+    ],
+    "instrumented_latency_selection_forbidden": true,
+    "compact_contract": "Separate compact/unmetered contract; checked arithmetic/indexing; native payload counters retained separately from tracked Rust heap/RSS."
+  },
+  "confirmation": {
+    "record": "independent-managed-dense-u32-prepared/report.json",
+    "plan": "independent-managed-dense-u32-prepared/plan.json",
+    "rounds": 13,
+    "variants": 27,
+    "exact_outputs": 351,
+    "seed": 202611121043,
+    "candidate": "mech-managed-dense-worker-u32",
+    "control": "mech-managed-scoped-frame",
+    "extra_control": "mech-managed-owned-capture-u32",
+    "references": {
+      "original_20_serial_Rust": {
+        "variant": "rust-ordered-mask-tables256",
+        "eligible_variants": [
+          "rust",
+          "rust-mech-control-streaming",
+          "rust-mech-control-u32-casts",
+          "rust-mech-control-u8-ids-u32",
+          "rust-ordered-scan-only",
+          "rust-ordered-ordered",
+          "rust-ordered-mask-reuse",
+          "rust-ordered-ordered-mask",
+          "rust-ordered-ordered-mask-tables",
+          "rust-apple-m3",
+          "rust-mech-control-streaming-apple-m3",
+          "rust-mech-control-u32-casts-apple-m3",
+          "rust-mech-control-u8-ids-u32-apple-m3",
+          "rust-ordered-scan-only-apple-m3",
+          "rust-ordered-ordered-apple-m3",
+          "rust-ordered-mask-reuse-apple-m3",
+          "rust-ordered-ordered-mask-apple-m3",
+          "rust-ordered-ordered-mask-tables-apple-m3",
+          "rust-ordered-mask-tables256",
+          "rust-ordered-mask-tables256-apple-m3"
+        ],
+        "median_seconds": 0.001474
+      },
+      "current_22_eligible_Rust": {
+        "variant": "rust-ordered-mask-tables256-fresh4",
+        "eligible_variants": [
+          "rust",
+          "rust-mech-control-streaming",
+          "rust-mech-control-u32-casts",
+          "rust-mech-control-u8-ids-u32",
+          "rust-ordered-scan-only",
+          "rust-ordered-ordered",
+          "rust-ordered-mask-reuse",
+          "rust-ordered-ordered-mask",
+          "rust-ordered-ordered-mask-tables",
+          "rust-apple-m3",
+          "rust-mech-control-streaming-apple-m3",
+          "rust-mech-control-u32-casts-apple-m3",
+          "rust-mech-control-u8-ids-u32-apple-m3",
+          "rust-ordered-scan-only-apple-m3",
+          "rust-ordered-ordered-apple-m3",
+          "rust-ordered-mask-reuse-apple-m3",
+          "rust-ordered-ordered-mask-apple-m3",
+          "rust-ordered-ordered-mask-tables-apple-m3",
+          "rust-ordered-mask-tables256",
+          "rust-ordered-mask-tables256-apple-m3",
+          "rust-ordered-mask-tables256-fresh4",
+          "rust-ordered-mask-tables256-fresh4-apple-m3"
+        ],
+        "median_seconds": 0.0011895
+      },
+      "whole_process_all_24_Rust": {
+        "variant": "rust-ordered-ordered",
+        "eligible_variants": [
+          "rust",
+          "rust-preinitialized",
+          "rust-mech-control-streaming",
+          "rust-mech-control-u32-casts",
+          "rust-mech-control-u8-ids-u32",
+          "rust-ordered-scan-only",
+          "rust-ordered-ordered",
+          "rust-ordered-mask-reuse",
+          "rust-ordered-ordered-mask",
+          "rust-ordered-ordered-mask-tables",
+          "rust-apple-m3",
+          "rust-preinitialized-apple-m3",
+          "rust-mech-control-streaming-apple-m3",
+          "rust-mech-control-u32-casts-apple-m3",
+          "rust-mech-control-u8-ids-u32-apple-m3",
+          "rust-ordered-scan-only-apple-m3",
+          "rust-ordered-ordered-apple-m3",
+          "rust-ordered-mask-reuse-apple-m3",
+          "rust-ordered-ordered-mask-apple-m3",
+          "rust-ordered-ordered-mask-tables-apple-m3",
+          "rust-ordered-mask-tables256",
+          "rust-ordered-mask-tables256-apple-m3",
+          "rust-ordered-mask-tables256-fresh4",
+          "rust-ordered-mask-tables256-fresh4-apple-m3"
+        ],
+        "median_seconds": 0.016965292
+      }
+    },
+    "candidate_summary": {
+      "samples": 13,
+      "exact_outputs": 13,
+      "median_whole_process_seconds": 0.046435916,
+      "post_json_eligible": true,
+      "median_post_json_seconds": 0.001420375,
+      "whole_process_over_fastest_Rust": 2.737112688658704,
+      "post_json_over_original_20_serial_Rust": 0.9636194029850745,
+      "post_json_over_current_22_eligible_Rust": 1.1940941572089112
+    },
+    "paired": [
+      {
+        "reference": "mech-managed-scoped-frame",
+        "pairs": 13,
+        "candidate_faster_pairs": 8,
+        "paired_percent_changes": [
+          -12.351854286167097,
+          -3.243228574917534,
+          0.7440749586624884,
+          10.321730426727328,
+          1.0625522721689817,
+          -19.85206894145559,
+          -0.860937091004288,
+          0.35291851117928985,
+          -1.6909671296695739,
+          1.9405522990788349,
+          -2.5995310464611343,
+          -0.40916166018880595,
+          -0.7511573063149757
+        ],
+        "median_paired_percent_change": -0.7511573063149757,
+        "bootstrap_95_interval_percent": [
+          -2.5995310464611343,
+          0.7440749586624884
+        ],
+        "bootstrap_seed": 202611121044,
+        "bootstrap_draws": 10000,
+        "scope": "paired per-round post-JSON ratios; bootstrap is diagnostic, no observation removed"
+      },
+      {
+        "reference": "mech-managed-owned-capture-u32",
+        "pairs": 13,
+        "candidate_faster_pairs": 11,
+        "paired_percent_changes": [
+          3.2595834663088796,
+          -2.768783638320782,
+          -1.7881066086655184,
+          8.401342523967603,
+          -3.8988679534796344,
+          -2.606014108306587,
+          -2.20907134865308,
+          -1.1526978886089112,
+          -3.1312205993265785,
+          -1.2325931566121273,
+          -6.494554578602618,
+          -3.4615155439793543,
+          -1.8315334773218228
+        ],
+        "median_paired_percent_change": -2.20907134865308,
+        "bootstrap_95_interval_percent": [
+          -3.1312205993265785,
+          -1.2325931566121273
+        ],
+        "bootstrap_seed": 202611121045,
+        "bootstrap_draws": 10000,
+        "scope": "paired per-round post-JSON ratios; bootstrap is diagnostic, no observation removed"
+      },
+      {
+        "reference": "rust-ordered-mask-tables256",
+        "pairs": 13,
+        "candidate_faster_pairs": 12,
+        "paired_percent_changes": [
+          -2.903421610270407,
+          -13.914329662872948,
+          -6.626766573557374,
+          4.289824620859095,
+          -5.133571448857676,
+          -17.293505948876643,
+          -3.9992348549266032,
+          -1.9675537352912609,
+          -3.054279394248771,
+          -2.142740841248314,
+          -3.8162492290319094,
+          -4.391938639021298,
+          -2.149996142145416
+        ],
+        "median_paired_percent_change": -3.8162492290319094,
+        "bootstrap_95_interval_percent": [
+          -5.133571448857676,
+          -2.149996142145416
+        ],
+        "bootstrap_seed": 202611121046,
+        "bootstrap_draws": 10000,
+        "scope": "paired per-round post-JSON ratios; bootstrap is diagnostic, no observation removed"
+      },
+      {
+        "reference": "rust-ordered-mask-tables256-fresh4",
+        "pairs": 13,
+        "candidate_faster_pairs": 0,
+        "paired_percent_changes": [
+          5.9822451189675,
+          10.443905731370906,
+          14.450171649167798,
+          29.3540142917192,
+          18.169436189783085,
+          21.502081381641357,
+          18.20568902293884,
+          20.041532130421015,
+          21.702445797287197,
+          21.517775905644477,
+          16.1722981259405,
+          17.89578807995764,
+          19.943033656249586
+        ],
+        "median_paired_percent_change": 18.20568902293884,
+        "bootstrap_95_interval_percent": [
+          16.1722981259405,
+          21.502081381641357
+        ],
+        "bootstrap_seed": 202611121047,
+        "bootstrap_draws": 10000,
+        "scope": "paired per-round post-JSON ratios; bootstrap is diagnostic, no observation removed"
+      }
+    ],
+    "same_machine_independent_orchestration": true
+  },
+  "observed_histograms": {
+    "primary": {
+      "mech-managed-key-u32-probe": {
+        "total_work": {
+          "37134118305": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-scoped-frame": {
+        "total_work": {
+          "36864870728": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-typed-fixed-byte": {
+        "total_work": {
+          "36997600654": 1,
+          "36997601862": 1,
+          "36997601222": 1,
+          "36997601638": 1,
+          "36997602766": 1,
+          "36997602070": 1,
+          "36997601230": 1,
+          "36997600838": 1,
+          "36997600934": 1,
+          "36997601806": 2,
+          "36997600574": 1,
+          "36997601366": 1,
+          "36997600478": 1,
+          "36997602278": 1,
+          "36997602638": 1,
+          "36997600910": 1,
+          "36997600894": 1,
+          "36997600982": 1,
+          "36997602934": 1,
+          "36997601198": 1,
+          "36997602462": 1,
+          "36997600246": 1,
+          "36997602646": 1,
+          "36997600358": 1,
+          "36997601958": 1,
+          "36997602094": 1,
+          "36997599558": 1,
+          "36997601854": 1,
+          "36997601478": 1,
+          "36997600238": 1
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-guarded-owner-wide": {
+        "total_work": {
+          "36864870920": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-owned-capture-wide": {
+        "total_work": {
+          "36864870920": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-dense-worker-u32": {
+        "total_work": {
+          "37134118305": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-guarded-owner-byte": {
+        "total_work": {
+          "37025278893": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-static-replay-u32": {
+        "total_work": {
+          "37134118305": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-retire-overlap": {
+        "total_work": {
+          "36864870728": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-owned-capture-u32": {
+        "total_work": {
+          "37134118305": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-host-v2-4": {
+        "total_work": {
+          "36864870728": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      },
+      "mech-managed-static-replay-byte": {
+        "total_work": {
+          "37025278893": 31
+        },
+        "peak_workers": {
+          "4": 30,
+          "3": 1
+        }
+      },
+      "mech-managed-dense-worker-wide": {
+        "total_work": {
+          "36864870920": 31
+        },
+        "peak_workers": {
+          "4": 31
+        }
+      }
+    },
+    "resources": {
+      "mech-managed-dense-worker-u32": {
+        "total_work": {
+          "37134118305": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      },
+      "mech-managed-owned-capture-wide": {
+        "total_work": {
+          "36864870920": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      },
+      "mech-managed-guarded-owner-byte": {
+        "total_work": {
+          "37025278893": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      },
+      "mech-managed-host-v2-4": {
+        "total_work": {
+          "36864870728": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      },
+      "mech-managed-scoped-frame": {
+        "total_work": {
+          "36864870728": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      },
+      "mech-managed-static-replay-u32": {
+        "total_work": {
+          "37134118305": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      },
+      "mech-managed-static-replay-byte": {
+        "total_work": {
+          "37025278893": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      },
+      "mech-managed-guarded-owner-wide": {
+        "total_work": {
+          "36864870920": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      },
+      "mech-managed-owned-capture-u32": {
+        "total_work": {
+          "37134118305": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      },
+      "mech-managed-key-u32-probe": {
+        "total_work": {
+          "37134118305": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      },
+      "mech-managed-dense-worker-wide": {
+        "total_work": {
+          "36864870920": 7
+        },
+        "peak_workers": {
+          "4": 7
+        }
+      }
+    },
+    "confirmation": {
+      "mech-managed-owned-capture-u32": {
+        "total_work": {
+          "37134118305": 13
+        },
+        "peak_workers": {
+          "4": 13
+        }
+      },
+      "mech-managed-scoped-frame": {
+        "total_work": {
+          "36864870728": 13
+        },
+        "peak_workers": {
+          "4": 13
+        }
+      },
+      "mech-managed-dense-worker-u32": {
+        "total_work": {
+          "37134118305": 13
+        },
+        "peak_workers": {
+          "4": 13
+        }
+      }
+    }
+  },
+  "historical_IR335_total_work_variation": "Unattributed total-work variation in the retained unselected IR335 typed-fixed-byte control only; numeric worker bill remains exact. No samples removed or total-work constancy claimed for that control.",
+  "source_closure": {
+    "base_inventory": "owned-capture-compiler-v1/source-inventory.json",
+    "base_files": 2817,
+    "inventory_overrides": {
+      "dense-worker-compiler-v1": {
+        "hosts/gpu/src/native_artifact/values/mod.rs": "9d351b39f3c7d847e727d0a746ea2cfe4902424ab0427c7ea521935889057944",
+        "hosts/gpu/src/native_artifact/values/tests.rs": "21264d6c2ef87c9f26081ffc89b7c5cd238578fdb1c4b802c36fbe61fa774ccb",
+        "hosts/gpu/src/native_artifact/values/dense_tests.rs": "69181c3bb9e0880661b8fac401be2c15692249e981980a81b447c4271f5cf873",
+        "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "2776806c254a07648b2553609a5c2e7d99a42bd9a32ab4e285bb85d9e329ada8",
+        "hosts/gpu/src/native_artifact/program/prepare/worker_values.rs": "97dd4f616c15d7f839e1c67cb98822b2c16640e3b22beb740bc9cc3e647c3e1d",
+        "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "1a0fd20b5e4f3a3d049dffee861926041ffad4006b5f6b855541d9af608c7d7e",
+        "hosts/gpu/src/native_artifact/program/runtime/session/worker_constant_owners.rs": "d871496b44688808d7c761f5d542ef73728dba6055e442d9c2e7b3974845b36c",
+        "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": "53fb5c46f50731b442d132702e408c9b8c3072e33254b5291efeef980fffb0d6",
+        "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/tests/numeric_tests.rs": "7b4c4f58c0d73cf1f302eb5bedbdfaf911ccc802c9a431603c68e3144796f6bf"
+      },
+      "dense-worker-compiler-v2": {
+        "hosts/gpu/src/native_artifact/values/mod.rs": "9d351b39f3c7d847e727d0a746ea2cfe4902424ab0427c7ea521935889057944",
+        "hosts/gpu/src/native_artifact/values/tests.rs": "21264d6c2ef87c9f26081ffc89b7c5cd238578fdb1c4b802c36fbe61fa774ccb",
+        "hosts/gpu/src/native_artifact/values/dense_tests.rs": "69181c3bb9e0880661b8fac401be2c15692249e981980a81b447c4271f5cf873",
+        "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "2776806c254a07648b2553609a5c2e7d99a42bd9a32ab4e285bb85d9e329ada8",
+        "hosts/gpu/src/native_artifact/program/prepare/worker_values.rs": "97dd4f616c15d7f839e1c67cb98822b2c16640e3b22beb740bc9cc3e647c3e1d",
+        "hosts/gpu/src/native_artifact/program/image/identity.rs": "35f8b4a98d19318c260b0339e4a6cb87f0157dc6570fe9f17e5f3db1ea8f454a",
+        "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "1a0fd20b5e4f3a3d049dffee861926041ffad4006b5f6b855541d9af608c7d7e",
+        "hosts/gpu/src/native_artifact/program/runtime/session/worker_constant_owners.rs": "d871496b44688808d7c761f5d542ef73728dba6055e442d9c2e7b3974845b36c",
+        "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": "53fb5c46f50731b442d132702e408c9b8c3072e33254b5291efeef980fffb0d6",
+        "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/tests/numeric_tests.rs": "7b4c4f58c0d73cf1f302eb5bedbdfaf911ccc802c9a431603c68e3144796f6bf"
+      },
+      "dense-worker-fixture-v3": {
+        "hosts/gpu/src/native_artifact/values/mod.rs": "9d351b39f3c7d847e727d0a746ea2cfe4902424ab0427c7ea521935889057944",
+        "hosts/gpu/src/native_artifact/values/tests.rs": "21264d6c2ef87c9f26081ffc89b7c5cd238578fdb1c4b802c36fbe61fa774ccb",
+        "hosts/gpu/src/native_artifact/values/dense_tests.rs": "69181c3bb9e0880661b8fac401be2c15692249e981980a81b447c4271f5cf873",
+        "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "2776806c254a07648b2553609a5c2e7d99a42bd9a32ab4e285bb85d9e329ada8",
+        "hosts/gpu/src/native_artifact/program/prepare/worker_values.rs": "97dd4f616c15d7f839e1c67cb98822b2c16640e3b22beb740bc9cc3e647c3e1d",
+        "hosts/gpu/src/native_artifact/program/image/identity.rs": "35f8b4a98d19318c260b0339e4a6cb87f0157dc6570fe9f17e5f3db1ea8f454a",
+        "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "1a0fd20b5e4f3a3d049dffee861926041ffad4006b5f6b855541d9af608c7d7e",
+        "hosts/gpu/src/native_artifact/program/runtime/session/dense_external_inventory_tests.rs": "071030950222671f52519150231b963e08eebffa4a5113fec4cc90f34e45bded",
+        "hosts/gpu/src/native_artifact/program/runtime/session/worker_constant_owners.rs": "d871496b44688808d7c761f5d542ef73728dba6055e442d9c2e7b3974845b36c",
+        "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": "33134ed4697ba81e608469a33e97357cc8759f1612f8443989ab684836336c93",
+        "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/tests/numeric_tests.rs": "7b4c4f58c0d73cf1f302eb5bedbdfaf911ccc802c9a431603c68e3144796f6bf"
+      },
+      "dense-worker-fixture-v4": {
+        "hosts/gpu/src/native_artifact/values/mod.rs": "9d351b39f3c7d847e727d0a746ea2cfe4902424ab0427c7ea521935889057944",
+        "hosts/gpu/src/native_artifact/values/tests.rs": "21264d6c2ef87c9f26081ffc89b7c5cd238578fdb1c4b802c36fbe61fa774ccb",
+        "hosts/gpu/src/native_artifact/values/dense_tests.rs": "69181c3bb9e0880661b8fac401be2c15692249e981980a81b447c4271f5cf873",
+        "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "2776806c254a07648b2553609a5c2e7d99a42bd9a32ab4e285bb85d9e329ada8",
+        "hosts/gpu/src/native_artifact/program/prepare/worker_values.rs": "97dd4f616c15d7f839e1c67cb98822b2c16640e3b22beb740bc9cc3e647c3e1d",
+        "hosts/gpu/src/native_artifact/program/image/identity.rs": "35f8b4a98d19318c260b0339e4a6cb87f0157dc6570fe9f17e5f3db1ea8f454a",
+        "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "1a0fd20b5e4f3a3d049dffee861926041ffad4006b5f6b855541d9af608c7d7e",
+        "hosts/gpu/src/native_artifact/program/runtime/session/dense_external_inventory_tests.rs": "eba7271e4f06b14b423684291f29b3ab850bde360db4a9bb6e58bacb981f5034",
+        "hosts/gpu/src/native_artifact/program/runtime/session/worker_constant_owners.rs": "d871496b44688808d7c761f5d542ef73728dba6055e442d9c2e7b3974845b36c",
+        "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": "33134ed4697ba81e608469a33e97357cc8759f1612f8443989ab684836336c93",
+        "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/tests/numeric_tests.rs": "7b4c4f58c0d73cf1f302eb5bedbdfaf911ccc802c9a431603c68e3144796f6bf"
+      }
+    },
+    "final_files": 2818,
+    "overlay": {
+      "hosts/gpu/src/native_artifact/values/mod.rs": "9d351b39f3c7d847e727d0a746ea2cfe4902424ab0427c7ea521935889057944",
+      "hosts/gpu/src/native_artifact/values/tests.rs": "21264d6c2ef87c9f26081ffc89b7c5cd238578fdb1c4b802c36fbe61fa774ccb",
+      "hosts/gpu/src/native_artifact/values/dense_tests.rs": "69181c3bb9e0880661b8fac401be2c15692249e981980a81b447c4271f5cf873",
+      "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "2776806c254a07648b2553609a5c2e7d99a42bd9a32ab4e285bb85d9e329ada8",
+      "hosts/gpu/src/native_artifact/program/prepare/worker_values.rs": "97dd4f616c15d7f839e1c67cb98822b2c16640e3b22beb740bc9cc3e647c3e1d",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs": "35f8b4a98d19318c260b0339e4a6cb87f0157dc6570fe9f17e5f3db1ea8f454a",
+      "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "1a0fd20b5e4f3a3d049dffee861926041ffad4006b5f6b855541d9af608c7d7e",
+      "hosts/gpu/src/native_artifact/program/runtime/session/worker_constant_owners.rs": "d871496b44688808d7c761f5d542ef73728dba6055e442d9c2e7b3974845b36c",
+      "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": "53fb5c46f50731b442d132702e408c9b8c3072e33254b5291efeef980fffb0d6",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/tests/numeric_tests.rs": "7b4c4f58c0d73cf1f302eb5bedbdfaf911ccc802c9a431603c68e3144796f6bf"
+    },
+    "patch": "measured-source/IR338-to-IR340.patch",
+    "overlay_record": "measured-source/overlay.json",
+    "literal_includes": 164
+  },
+  "qualification": {
+    "complete": "dense-worker-preparation/complete.json",
+    "audit": "dense-worker-preparation/qualification-audit.json",
+    "exact_outputs": 384,
+    "forms": [
+      "original",
+      "decoded",
+      "restored"
+    ],
+    "adapters": [
+      "ordinary",
+      "metrics"
+    ],
+    "sources": [
+      "wide",
+      "u32"
+    ],
+    "full_posts": 5000,
+    "edge_cases": 31,
+    "focused": "dense-worker-fixture-v3/focused-contracts.json",
+    "focused_passed": 33,
+    "broad": "dense-worker-fixture-v3/broad-native-tests.json",
+    "broad_attribution": "dense-worker-fixture-v3/broad-native-failure-attribution.json",
+    "baseline_broad": "owned-capture-compiler-v1/broad-native-tests.json",
+    "broad_counts": {
+      "passed": 1084,
+      "failed": 16,
+      "ignored": 12,
+      "filtered": 35
+    },
+    "all_16_failures_inherited": true,
+    "positive_wide": "dense-worker-fixture-v3/positive-storage-receipts.json",
+    "positive_u32": "dense-worker-fixture-v4/positive-u32-storage-receipt.json"
+  },
+  "physical_storage": {
+    "wide": {
+      "full_funded_slots": 2420,
+      "logical_prefix": 1341,
+      "dense_slots": 329,
+      "banks_bytes": 23688,
+      "map_bytes": 5364,
+      "map_record_bytes": 24,
+      "four_worker_bank_saving_bytes": 291456
+    },
+    "u32": {
+      "full_funded_slots": 2840,
+      "logical_prefix": 1388,
+      "dense_slots": 331,
+      "banks_bytes": 23832,
+      "map_bytes": 5552,
+      "map_record_bytes": 24,
+      "four_worker_bank_saving_bytes": 304416
+    }
+  },
+  "retention": {
+    "executables_and_libraries": "Recorded by immutable build/link/hash receipts; omitted large binaries",
+    "source": "Complete frozen inventories plus minimal override bytes over required published IR338 base alias",
+    "all_observations_retained": true,
+    "native_executions_by_assembler": 0,
+    "prior_packet": "managed-setup-reuse-20261112; unchanged"
+  }
+}

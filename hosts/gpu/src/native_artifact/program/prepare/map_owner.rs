@@ -26,10 +26,14 @@ pub(in crate::native_artifact) fn extra_work(
             .slot(layout.regions()[index].tail().carrier())
             .ok_or("map owner initial slot missing")?
             .1;
-    } else if layout.call_region(site).is_some()
-        || layout.exit(site).is_some()
-        || layout.span_site(site).is_some()
-    {
+    } else if let Some(index) = layout.exit(site) {
+        words = layout
+            .aggregates()
+            .slot(layout.regions()[index].tail().returned())
+            .ok_or("map owner returned slot missing")?
+            .1
+            .max(4);
+    } else if layout.call_region(site).is_some() || layout.span_site(site).is_some() {
         words = 4;
     } else if layout.action_region(site).is_some() {
         let action = layout
@@ -71,11 +75,17 @@ pub(in crate::native_artifact) fn initial_words(layout: &Layout) -> usize {
         .regions()
         .iter()
         .map(|region| {
-            layout
+            let carrier = layout
                 .aggregates()
                 .slot(region.tail().carrier())
                 .expect("proved carrier slot")
-                .1
+                .1;
+            let returned = layout
+                .aggregates()
+                .slot(region.tail().returned())
+                .expect("proved returned slot")
+                .1;
+            carrier.max(returned)
         })
         .max()
         .unwrap_or(0)

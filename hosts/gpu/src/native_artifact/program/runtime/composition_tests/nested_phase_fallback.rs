@@ -108,7 +108,17 @@ fn nested_numeric_phase_envelope_overflow_declines_before_source_checks() {
                 } else {
                     observe::run(&jit, &args, &mut published, mode.execution(), &memory)
                 };
-                assert_eq!(counts.phases, 1);
+                let root_header = jit
+                    .descriptor()
+                    .metadata()
+                    .closed_tails
+                    .regions
+                    .iter()
+                    .find(|region| region.tail.parent().is_none())
+                    .unwrap()
+                    .tail
+                    .initialize();
+                assert_eq!(counts.phase_sites.get(&u64::from(root_header)), Some(&1));
                 assert!(
                     counts
                         .phase_settlements

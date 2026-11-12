@@ -1,0 +1,28 @@
+
+running 3 tests
+test native_artifact::program::runtime::composition_tests::virtual_retirement::private_segment_cleanup_is_rederived_and_cannot_be_supplied_as_image_authority ... ok
+test native_artifact::program::runtime::composition_tests::virtual_retirement::private_segment_cleanup_keeps_finite_denial_prefixes_and_retry ... {"dimension":"control","exact_selected_fragments":16,"minimum":197491776,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":16,"minimum":21536576,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":16,"minimum":17,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"memory","exact_selected_fragments":16,"minimum":2155599,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":16,"minimum":5983,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":16,"minimum":17992,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":16,"minimum":197491776,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":16,"minimum":21536576,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":16,"minimum":17,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"memory","exact_selected_fragments":16,"minimum":2155599,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":16,"minimum":5983,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":16,"minimum":17992,"witness":"composition-finite-boundary","zero_spending":false}
+ok
+test native_artifact::program::runtime::composition_tests::virtual_retirement::private_segment_temporaries_keep_prices_publication_errors_and_retry_without_retirement ... virtual-retirement-work=197475444 physical=0 omitted=3
+virtual-retirement-work=197491776 physical=0 omitted=6
+virtual-retirement-work=197475444 physical=0 omitted=9
+virtual-retirement-work=197491776 physical=0 omitted=12
+virtual-retirement-work=197475444 physical=0 omitted=15
+virtual-retirement-work=197491776 physical=0 omitted=18
+virtual-retirement-work=197475444 physical=0 omitted=21
+virtual-retirement-work=197491776 physical=0 omitted=24
+ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 840 filtered out; finished in 0.57s
+

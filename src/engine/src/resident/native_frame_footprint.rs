@@ -3,7 +3,7 @@
 use super::{
     BORROWED_FOOTPRINT_METADATA_WORK, BorrowedFootprintSchemaProof, ResidentBudgetMeter,
     borrowed_footprint_schema_supported, measure_native_scalar_frame_footprint,
-    projected_canonical_value_footprint, shallow_borrowed_footprint_schema_proof,
+    projected_canonical_value_footprint, shallow_borrowed_footprint_schema_entry_proof,
 };
 use crate::native_artifact::{NativeScalarKind as Kind, NativeScalarValue as Scalar};
 use mech_core::{
@@ -28,8 +28,20 @@ enum Layout {
 }
 
 impl PreparedNativeFrameFootprint {
+    #[cfg(test)]
     pub(crate) fn derive(schema: &Schema) -> Option<Self> {
-        let proof = shallow_borrowed_footprint_schema_proof(schema)?;
+        let proof = super::shallow_borrowed_footprint_schema_proof(schema)?;
+        Self::derive_inner(schema, proof)
+    }
+
+    pub(crate) fn derive_from_entry(entry: &mech_core::SchemaEntry) -> Option<Self> {
+        Self::derive_inner(
+            entry.schema(),
+            shallow_borrowed_footprint_schema_entry_proof(entry)?,
+        )
+    }
+
+    fn derive_inner(schema: &Schema, proof: BorrowedFootprintSchemaProof) -> Option<Self> {
         let mut meter = ResidentBudgetMeter::for_closed_analysis(u64::MAX, u64::MAX);
         let layout = if let Some(kind) = Kind::from_schema_body(schema.body()) {
             if !schema.dimension_parameters().is_empty() {
@@ -231,7 +243,23 @@ mod tests {
                 let built = builder.finish().unwrap();
                 let id = built.resolve(handle).unwrap();
                 let table = Arc::new(built.table);
-                let recipe = PreparedNativeFrameFootprint::derive(table.get(id).unwrap()).unwrap();
+                let recipe =
+                    PreparedNativeFrameFootprint::derive_from_entry(table.entry(id).unwrap())
+                        .unwrap();
+                let independently_derived =
+                    PreparedNativeFrameFootprint::derive(table.get(id).unwrap()).unwrap();
+                let mut foreign = SchemaTableBuilder::new();
+                foreign
+                    .insert(
+                        SchemaDraft {
+                            body: SchemaBody::Bool,
+                            dimension_parameters: Box::new([]),
+                        }
+                        .finalize()
+                        .unwrap(),
+                    )
+                    .unwrap();
+                let foreign = foreign.finish().unwrap().table;
                 assert_eq!(recipe.word(0), None);
                 for (rows, columns, capacity) in [
                     (0u64, 7u64, 17usize),
@@ -264,6 +292,11 @@ mod tests {
                         Some((footprint, ordinary.accumulated.compute_work()))
                     );
                     assert_eq!(recipe.value(&alias, &table), recipe.value(&value, &table));
+                    assert_eq!(
+                        recipe.value(&value, &table),
+                        independently_derived.value(&value, &table)
+                    );
+                    assert_eq!(recipe.value(&value, &foreign), None);
                     assert_eq!(footprint.node_count, ordinary.accumulated.retained_nodes());
                     assert!(footprint.retained_bytes >= capacity as u64 * (W::$width as u64 / 8));
                     assert!(value.shares_frozen_storage(&alias));

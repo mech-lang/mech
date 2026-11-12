@@ -4,7 +4,7 @@
 use super::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Child")]
 pub(in crate::native_artifact) struct Child {
     pub iteration: u32,
     pub initialize: usize,

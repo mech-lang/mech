@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-conjoined-window-integration-runtime-check-20261107-v1/generate-standard-app",
+    "/private/tmp/mech-related-conjoined-window-integration-compiler-20261107",
+    "/private/tmp/mech-related-conjoined-window-integration-runtime-check-20261107-v1/managed-app"
+  ],
+  "exit": 0,
+  "seconds": 1.1882359578739852,
+  "stdout": "generated\n",
+  "stderr": "",
+  "compiler_source_sha256": "86d973f572e30f0ceb6e1b486505452c2b91443973de0187f5cefe954f96a3b4"
+}

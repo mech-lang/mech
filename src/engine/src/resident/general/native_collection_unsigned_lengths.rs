@@ -10,6 +10,19 @@ use crate::{
 use mech_core::{IntegerWidth, MemoryBudgetLimits, ResourceDemand, SchemaBody, Value, ValueData};
 
 impl NativePreparedLibraryCall {
+    /// Cardinality depends on the validated matrix header, not its element
+    /// representation. The genuine selected primitive supplies the semantics.
+    pub fn supports_matrix_length(&self) -> bool {
+        let [source] = self.template.inputs() else {
+            return false;
+        };
+        matches!(source.body(), SchemaBody::Matrix { dimensions, .. }
+            if dimensions.len() == 2)
+            && self.template.primitive() == Primitive::SequenceLength
+            && self.template.output().body() == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+            && self.template.output().dimension_parameters().is_empty()
+    }
+
     pub fn supports_unsigned_matrix_length(&self) -> bool {
         let [source] = self.template.inputs() else {
             return false;
@@ -17,9 +30,7 @@ impl NativePreparedLibraryCall {
         matches!(source.body(), SchemaBody::Matrix { element, dimensions }
             if dimensions.len() == 2 && matches!(element.as_ref(),
                 SchemaBody::UnsignedInteger(IntegerWidth::W8 | IntegerWidth::W16 | IntegerWidth::W32 | IntegerWidth::W64)))
-            && self.template.primitive() == Primitive::SequenceLength
-            && self.template.output().body() == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
-            && self.template.output().dimension_parameters().is_empty()
+            && self.supports_matrix_length()
     }
 
     /// The caller establishes the exact current visit and supplies its owner
@@ -29,10 +40,27 @@ impl NativePreparedLibraryCall {
         source: &Value,
         limits: MemoryBudgetLimits,
         work: &NativeLibraryWorkBudget,
-        mut coexistence: ResourceDemand,
+        coexistence: ResourceDemand,
     ) -> Result<u64, InvokeError> {
         finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
         if !self.supports_unsigned_matrix_length() {
+            return Err(InvokeError::InvalidInput);
+        }
+        self.matrix_length(source, limits, work, coexistence)
+    }
+
+    /// Return one native scalar word without constructing a general call or
+    /// walking/copying elements. Validation, account/coexistence, finite call
+    /// caps and the maintained checked cardinality operation remain in force.
+    pub fn matrix_length(
+        &self,
+        source: &Value,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        mut coexistence: ResourceDemand,
+    ) -> Result<u64, InvokeError> {
+        finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
+        if !self.supports_matrix_length() {
             return Err(InvokeError::InvalidInput);
         }
         work.with_call_limits(

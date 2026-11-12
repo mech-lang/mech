@@ -1,0 +1,17 @@
+{
+  "verified_records": 13035,
+  "unique_blobs": 3467,
+  "compressed_bytes": 18639730,
+  "verified_source_commit": "f361f91f298b87ebb9bee880930951fdf79b0d5f",
+  "production_source_files": 2813,
+  "primary_exact_outputs": 2697,
+  "confirmation_exact_outputs": 351,
+  "resource_exact_outputs": 203,
+  "qualification_edges": 31,
+  "focused_GPU_passed": 129,
+  "core_passed": 399,
+  "managed_primary_ms": 1.450125,
+  "times_current_fastest_Rust": 1.1952400576962705,
+  "managed_target_met": false,
+  "incremental_storage_latency_gain_established": false
+}

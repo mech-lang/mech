@@ -2,14 +2,14 @@
 use serde::{
     Deserialize, Deserializer,
     de::{
-        DeserializeOwned, DeserializeSeed, EnumAccess, MapAccess, SeqAccess, VariantAccess,
-        Visitor, value::StringDeserializer,
+        DeserializeSeed, EnumAccess, MapAccess, SeqAccess, VariantAccess, Visitor,
+        value::StringDeserializer,
     },
 };
 use serde_json::{Error, value::RawValue};
 use std::collections::BTreeMap;
 
-pub(crate) fn decode<T: DeserializeOwned>(bytes: &[u8]) -> Result<T, String> {
+pub(crate) fn decode<'de, T: Deserialize<'de>>(bytes: &'de [u8]) -> Result<T, String> {
     let raw: &RawValue = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
     <T as Deserialize>::deserialize(Canonical { raw, depth: 0 }).map_err(|e| e.to_string())
 }
@@ -90,9 +90,12 @@ impl<'de> Deserializer<'de> for Canonical<'de> {
     }
     fn deserialize_newtype_struct<V: Visitor<'de>>(
         self,
-        _: &'static str,
+        name: &'static str,
         visitor: V,
     ) -> Result<V::Value, Error> {
+        if name == crate::native_artifact::build_image::RAW_RECORD {
+            return visitor.visit_borrowed_str(self.raw.get());
+        }
         visitor.visit_newtype_struct(self)
     }
     fn deserialize_seq<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Error> {

@@ -39,7 +39,7 @@ mod workers;
 #[cfg(feature = "native-artifact")]
 pub use workers::{
     NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics,
-    NativeWorkerWorkLoan,
+    NativeWorkerNativeFuel, NativeWorkerWorkLoan,
 };
 
 #[path = "word_draft_expansion.rs"]
@@ -621,6 +621,24 @@ impl NativeLibraryWorkBudget {
         Ok(execute())
     }
 
+    /// Eligibility for a suspended selected-call result. An enclosing call's
+    /// relative cap cannot be exported past its guard, so such producers keep
+    /// their ordinary immediate canonical route. This observes no new credit.
+    #[cfg(feature = "sequence_buffers")]
+    pub fn has_active_call_limit(&self) -> Result<bool, ResidentKernelError> {
+        CONTROL_WORK_CONTEXT.with(|context| {
+            if context
+                .active
+                .borrow()
+                .as_ref()
+                .is_some_and(|account| !std::rc::Rc::ptr_eq(account, &self.account))
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Ok(context.limits.get().is_some())
+        })
+    }
+
     /// A call may impose a tighter relative allowance on this same account.
     /// Leaving a call restores its enclosing cap, never spent work. Nested
     /// scopes cannot exceed either the enclosing call or invocation allowance.
@@ -941,7 +959,11 @@ fn checked_control_account_work_at_limits(
     let next = checked_local_control_account_work_at_limits(account, compute, comparison, limits)?;
     #[cfg(feature = "native-artifact")]
     if let Some(worker) = &account.worker {
-        worker.preview(compute, comparison)?;
+        worker.preview(
+            compute,
+            comparison,
+            account.reserved.compute == 0 && account.reserved.comparison == 0,
+        )?;
     }
     Ok(next)
 }
@@ -971,7 +993,11 @@ fn charge_control_account_at_limits(
     if let Some(worker) = &account.worker {
         // Local call caps were checked first. Both shared dimensions commit
         // together before the infallible local-counter assignment.
-        worker.charge(compute, comparison)?;
+        worker.charge(
+            compute,
+            comparison,
+            account.reserved.compute == 0 && account.reserved.comparison == 0,
+        )?;
     }
     account.used = next;
     Ok(())
@@ -1022,6 +1048,64 @@ pub(crate) fn observe_control_work(demand: ResourceDemand) -> Result<(), Residen
         scope.observed.comparison = scope.observed.comparison.max(demand.work.comparison);
         Ok(())
     })
+}
+
+// An exact prepared footprint may replace its original successful visitor.
+// A denied aggregate is eligibility only: leave every accepted-work counter,
+// observer and caller meter unchanged so the original ordered visitor retries.
+#[cfg(feature = "native-artifact")]
+fn try_observe_native_projection_prefix(identity: u64, demand: ResourceDemand) -> bool {
+    CONTROL_WORK_CONTEXT.with(|context| {
+        let active = context.active.borrow();
+        let mut scopes = context.scope.borrow_mut();
+        let Some(scope) = scopes.as_mut() else {
+            return false;
+        };
+        if !active
+            .as_ref()
+            .is_some_and(|account| std::rc::Rc::ptr_eq(account, &scope.total))
+        {
+            return false;
+        }
+        let mut account = scope.total.borrow_mut();
+        if account.identity != identity {
+            return false;
+        }
+        let compute = demand.work.compute.saturating_sub(scope.observed.compute);
+        let comparison = demand
+            .work
+            .comparison
+            .saturating_sub(scope.observed.comparison);
+        let Ok(next) = checked_local_control_account_work_at_limits(
+            &account,
+            compute,
+            comparison,
+            context.limits.get(),
+        ) else {
+            return false;
+        };
+        if let Some(worker) = &account.worker {
+            // An optional aggregate blocked by a peer's native reservation
+            // must decline, not wait before its original incremental debit.
+            // The existing worker entry checks/commits both shared dimensions
+            // under one escrow lock, even for a zero work delta/sealed group.
+            if worker.charge(compute, comparison, false).is_err() {
+                return false;
+            }
+        }
+        account.used = next;
+        scope.observed.compute = scope.observed.compute.max(demand.work.compute);
+        scope.observed.comparison = scope.observed.comparison.max(demand.work.comparison);
+        #[cfg(test)]
+        NATIVE_PROJECTION_PREFIX_COMMITS.with(|count| count.set(count.get() + 1));
+        true
+    })
+}
+
+#[cfg(all(test, feature = "native-artifact"))]
+thread_local! {
+    static BEFORE_NATIVE_PROJECTION_PREFIX_COMMIT: std::cell::RefCell<Option<Box<dyn FnOnce()>>> = const { std::cell::RefCell::new(None) };
+    static NATIVE_PROJECTION_PREFIX_COMMITS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
 #[cfg(all(test, feature = "native-artifact"))]
@@ -2593,12 +2677,32 @@ pub(crate) struct BorrowedFootprintSchemaProof {
     supported: bool,
 }
 
-/// A bounded binding-time proof for the common scalar/packed-matrix layouts.
-/// It inspects at most two schema variants, allocates nothing and grants no
-/// concrete value footprint. Other schemas retain the metered recursive proof.
+/// A binding-time proof for common scalar/packed-matrix layouts. The layout
+/// check is shallow; schemas outside a finalized table still derive their key
+/// normally. This grants no concrete value footprint or admission.
 pub(crate) fn shallow_borrowed_footprint_schema_proof(
     schema: &mech_core::Schema,
 ) -> Option<BorrowedFootprintSchemaProof> {
+    shallow_borrowed_footprint_schema_supported(schema).then(|| BorrowedFootprintSchemaProof {
+        key: schema.key(),
+        supported: true,
+    })
+}
+
+/// The same bounded proof using the finalized entry's actual stored key.
+/// No caller-supplied key or serialized supported flag can enter this path.
+pub(crate) fn shallow_borrowed_footprint_schema_entry_proof(
+    entry: &mech_core::SchemaEntry,
+) -> Option<BorrowedFootprintSchemaProof> {
+    shallow_borrowed_footprint_schema_supported(entry.schema()).then_some(
+        BorrowedFootprintSchemaProof {
+            key: entry.key(),
+            supported: true,
+        },
+    )
+}
+
+fn shallow_borrowed_footprint_schema_supported(schema: &mech_core::Schema) -> bool {
     let scalar = |body: &SchemaBody| {
         matches!(
             body,
@@ -2614,12 +2718,8 @@ pub(crate) fn shallow_borrowed_footprint_schema_proof(
                 | SchemaBody::Atom(_)
         )
     };
-    let supported = scalar(schema.body())
-        || matches!(schema.body(), SchemaBody::Matrix { element, .. } if scalar(element));
-    supported.then_some(BorrowedFootprintSchemaProof {
-        key: schema.key(),
-        supported,
-    })
+    scalar(schema.body())
+        || matches!(schema.body(), SchemaBody::Matrix { element, .. } if scalar(element))
 }
 
 fn borrowed_footprint_schema_supported(
@@ -2768,6 +2868,24 @@ pub(crate) fn measure_borrowed_canonical_value_footprint(
 ) -> Result<ValueFootprint, ResidentKernelError> {
     let mut proof = None;
     measure_borrowed_canonical_value_footprint_with_proof(meter, value, schemas, &mut proof)
+}
+
+/// Same logical footprint/debits as a closed canonical child Value, without
+/// allocating a wrapper. The caller must prove that this immutable component
+/// belongs to its current admitted root and exact selected output schema.
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+pub(crate) fn measure_borrowed_canonical_component_footprint(
+    meter: &mut ResidentBudgetMeter,
+    body: &SchemaBody,
+    data: &ValueData,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
+    if !borrowed_footprint_schema_supported(meter, body, 0)? {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    meter.charge_retained_nodes(1)?;
+    let data = measure_proven_borrowed_canonical_data_footprint(meter, body, data, true)?;
+    projected_canonical_value_footprint(data, 0)
 }
 
 /// The snapshot-access source alone may reuse a complete DATA-only summary
@@ -2970,12 +3088,58 @@ impl ResidentBudgetMeter {
 
     /// An exact, bounded metadata-only recipe may combine successful debits.
     /// Rejected previews spend nothing and require the original ordered visitor.
-    /// Shared-worker scopes never qualify, preserving their incremental loans.
+    /// A native projection commits its exact current-account prefix in one
+    /// step; a shared denial retains the original visitor and paid error prefix.
     pub(super) fn try_charge_borrowed_footprint(
         &mut self,
         work: u64,
         nodes: u64,
     ) -> Result<bool, ResidentKernelError> {
+        #[cfg(feature = "native-artifact")]
+        if self.analysis_allowance.is_none()
+            && let Some((limits, identity)) = self.native_projection_limits
+        {
+            let mut next = self.accumulated;
+            let Some(compute) = next.compute_work().checked_add(work) else {
+                return Ok(false);
+            };
+            let Some(retained) = next.retained_nodes().checked_add(nodes) else {
+                return Ok(false);
+            };
+            if next.set_compute_work(compute).is_err() {
+                return Ok(false);
+            }
+            next.set_retained_nodes(retained);
+            if mech_core::first_call_memory_budget_violation(
+                mech_core::MemoryObjectOwner::DirectCallPort {
+                    call: 0,
+                    direction: mech_core::PortDirection::Input,
+                    port: 0,
+                },
+                next.demand,
+                0,
+                0,
+                limits,
+            )
+            .is_some()
+            {
+                return Ok(false);
+            }
+            #[cfg(test)]
+            BEFORE_NATIVE_PROJECTION_PREFIX_COMMIT.with(|hook| {
+                let execute = hook.borrow_mut().take();
+                if let Some(execute) = execute {
+                    execute();
+                }
+            });
+            if !try_observe_native_projection_prefix(identity, next.demand) {
+                return Ok(false);
+            }
+            // Account and observer committed together. No callback or fallible
+            // operation separates their success from this local assignment.
+            self.accumulated = next;
+            return Ok(true);
+        }
         let Some(next) = self.preview_compute_and_nodes(work, nodes) else {
             return Ok(false);
         };
@@ -4434,3 +4598,7 @@ mod native_projection_meter_tests;
 #[cfg(all(test, feature = "native-artifact"))]
 #[path = "native_compute_debit_tests.rs"]
 mod native_compute_debit_tests;
+
+#[cfg(all(test, feature = "native-artifact"))]
+#[path = "native_projection_prefix_tests.rs"]
+mod native_projection_prefix_tests;

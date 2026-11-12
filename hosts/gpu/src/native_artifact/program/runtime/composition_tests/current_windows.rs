@@ -4,6 +4,401 @@ use crate::native_artifact::codegen::options::OptimizationPass;
 
 const SOURCE: &str = include_str!("../../../../../tests/fixtures/native/numeric-array-windows.mec");
 
+fn forward_sources() -> [(String, usize); 2] {
+    let forward = SOURCE.replace(
+        "reverse := bits/wrapping-sub(sequence/length(nodes), at)",
+        "reverse := at",
+    );
+    assert_ne!(forward, SOURCE);
+    let single = forward.replace(
+        "node := ((reverse < sequence/length(nodes))? | true => nodes[bits/wrapping-add(reverse, 1u64)] | false => 0u64)",
+        "node := 0u64",
+    );
+    assert_ne!(single, forward);
+    [(forward, 2), (single, 1)]
+}
+
+fn direct_forward_sources() -> [(String, usize); 2] {
+    forward_sources().map(|(source, views)| {
+        let direct = source
+            .replace("at := bits/wrapping-add(k, 3u64)", "at := k")
+            .replace(
+                "value := ((at < sequence/length(costs))? | true => costs[bits/wrapping-add(at, 1u64)] | false => 0u32)",
+                "value := costs[at + 1u64]",
+            )
+            .replace(
+                "node := ((reverse < sequence/length(nodes))? | true => nodes[bits/wrapping-add(reverse, 1u64)] | false => 0u64)",
+                "node := nodes[reverse + 1u64]",
+            );
+        assert_ne!(direct, source);
+        (direct, views)
+    })
+}
+
+fn changing_bound(source: &str) -> String {
+    source
+        .replace(
+            ":Try(k<u64>, best<u32>, item<u64>)",
+            ":Try(k<u64>, best<u32>, item<u64>, remaining<u64>)",
+        )
+        .replace(":Try(start, best, item)", ":Try(start, best, item, stop)")
+        .replace(":Try(k, best, item)", ":Try(k, best, item, remaining)")
+        .replace(
+            "| k < stop ->",
+            "| k >= 8u64 -> :Done(k, best, item)\n    | k < remaining ->",
+        )
+        .replace(
+            ":Try(k + 1u64, next-best, next-item)",
+            ":Try(k + 1u64, next-best, next-item, remaining + 2u64)",
+        )
+}
+
+fn discarded_bound_sources() -> [(String, usize); 2] {
+    direct_forward_sources().map(|(source, views)| {
+        let carried = changing_bound(&source)
+            .replace("    | k >= 8u64 -> :Done(k, best, item)\n", "")
+            .replace("remaining + 2u64", "remaining");
+        (carried, views)
+    })
+}
+
+fn carried_forward_sources() -> [(String, usize); 2] {
+    discarded_bound_sources().map(|(source, views)| {
+        let carried = source
+            .replace(
+                ":Done(k<u64>, best<u32>, item<u64>)",
+                ":Done(k<u64>, best<u32>, item<u64>, remaining<u64>)",
+            )
+            .replace(":Done(k, best, item)", ":Done(k, best, item, remaining)");
+        (carried, views)
+    })
+}
+
+#[test]
+fn numeric_forward_windows_preserve_bounds_through_invariant_carrier_copies() {
+    for (source, views) in carried_forward_sources() {
+        for artifact in artifacts(&source) {
+            let object = crate::native_artifact::emit_program_object_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                NativeProgramLimitMode::NoLimits.compilation(),
+            )
+            .unwrap();
+            let metadata = object.metadata();
+            assert!(
+                [
+                    "compiled_readonly_numeric_loops",
+                    "compiled_numeric_write_loops"
+                ]
+                .into_iter()
+                .flat_map(|key| metadata[key].as_array().unwrap())
+                .flat_map(|region| region["guarded_loop_windows"].as_array().unwrap())
+                .any(|window| window["read_sites"].as_array().unwrap().len() >= views),
+                "an unchanged bound copied through the carrier must retain its gate"
+            );
+        }
+    }
+    // Dropping the bound from a terminal payload does not preserve its raw
+    // home on every backedge. Until active-variant recurrence is proved, keep
+    // this shape on the checked route rather than granting a copied-word fact.
+    for (source, _) in discarded_bound_sources() {
+        for artifact in artifacts(&source) {
+            let object = crate::native_artifact::emit_program_object_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                NativeProgramLimitMode::NoLimits.compilation(),
+            )
+            .unwrap();
+            let metadata = object.metadata();
+            for region in [
+                "compiled_readonly_numeric_loops",
+                "compiled_numeric_write_loops",
+            ]
+            .into_iter()
+            .flat_map(|key| metadata[key].as_array().unwrap())
+            {
+                assert!(
+                    region["guarded_loop_windows"]
+                        .as_array()
+                        .unwrap()
+                        .is_empty()
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn numeric_forward_windows_discover_implicit_one_based_reads() {
+    for (source, views) in direct_forward_sources() {
+        for artifact in artifacts(&source) {
+            let object = crate::native_artifact::emit_program_object_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                NativeProgramLimitMode::NoLimits.compilation(),
+            )
+            .unwrap();
+            let metadata = object.metadata();
+            assert!(
+                [
+                    "compiled_readonly_numeric_loops",
+                    "compiled_numeric_write_loops"
+                ]
+                .into_iter()
+                .flat_map(|key| metadata[key].as_array().unwrap())
+                .flat_map(|region| region["guarded_loop_windows"].as_array().unwrap())
+                .any(|window| window["read_sites"].as_array().unwrap().len() >= views),
+                "implicit reads must receive a real current window"
+            );
+        }
+        let changing = changing_bound(&source);
+        for artifact in artifacts(&changing) {
+            let object = crate::native_artifact::emit_program_object_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                NativeProgramLimitMode::NoLimits.compilation(),
+            )
+            .unwrap();
+            let metadata = object.metadata();
+            for region in [
+                "compiled_readonly_numeric_loops",
+                "compiled_numeric_write_loops",
+            ]
+            .into_iter()
+            .flat_map(|key| metadata[key].as_array().unwrap())
+            {
+                assert!(
+                    region["guarded_loop_windows"]
+                        .as_array()
+                        .unwrap()
+                        .is_empty()
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn numeric_forward_windows_require_new_current_proofs_and_refuse_changing_bounds() {
+    for (source, views) in forward_sources() {
+        for artifact in artifacts(&source) {
+            let object = crate::native_artifact::emit_program_object_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                NativeProgramLimitMode::NoLimits.compilation(),
+            )
+            .unwrap();
+            let metadata = object.metadata();
+            if views == 1 {
+                assert!(
+                    metadata["readonly_numeric_regions"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|region| {
+                            region["proof"]["arrays"]
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .any(|array| {
+                                    array["witness"].as_u64() == Some(usize::MAX as u64)
+                                        && array["width"].as_u64() == Some(0)
+                                        && array["writable"].as_bool() == Some(false)
+                                        && array["appends"].as_bool() == Some(false)
+                                })
+                        }),
+                    "the unused retained owner must remain opaque without content permissions"
+                );
+            }
+            let windows = [
+                "compiled_readonly_numeric_loops",
+                "compiled_numeric_write_loops",
+            ]
+            .into_iter()
+            .flat_map(|key| metadata[key].as_array().unwrap())
+            .flat_map(|region| region["guarded_loop_windows"].as_array().unwrap())
+            .collect::<Vec<_>>();
+            assert!(
+                windows.iter().any(|window| {
+                    let distinct = window["views"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|v| v.as_u64().unwrap())
+                        .collect::<std::collections::BTreeSet<_>>();
+                    distinct.len() == views
+                        && window["source_successors"].as_array().unwrap().len() >= 2
+                        && window["read_sites"].as_array().unwrap().len() >= views
+                }),
+                "forward source needs a real activation-current window: {windows:?}"
+            );
+        }
+        let changing = changing_bound(&source);
+        assert_ne!(changing, source);
+        for artifact in artifacts(&changing) {
+            let object = crate::native_artifact::emit_program_object_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                NativeProgramLimitMode::NoLimits.compilation(),
+            )
+            .unwrap();
+            let metadata = object.metadata();
+            for region in [
+                "compiled_readonly_numeric_loops",
+                "compiled_numeric_write_loops",
+            ]
+            .into_iter()
+            .flat_map(|key| metadata[key].as_array().unwrap())
+            {
+                assert!(
+                    region["guarded_loop_windows"]
+                        .as_array()
+                        .unwrap()
+                        .is_empty(),
+                    "a changing bound cannot inherit an entry window: {region}"
+                );
+            }
+        }
+    }
+    let opaque = SOURCE
+        .replace("value := ((at < sequence/length(costs))? | true => costs[bits/wrapping-add(at, 1u64)] | false => 0u32)", "value := 0u32")
+        .replace("node := ((reverse < sequence/length(nodes))? | true => nodes[bits/wrapping-add(reverse, 1u64)] | false => 0u64)", "node := 0u64");
+    assert_ne!(opaque, SOURCE);
+    for artifact in artifacts(&opaque) {
+        let object = crate::native_artifact::emit_program_object_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let metadata = object.metadata();
+        assert!(
+            metadata["compiled_readonly_numeric_loops"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            metadata["compiled_numeric_write_loops"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            !metadata["compiled_scalar_loops"]
+                .as_array()
+                .unwrap()
+                .is_empty(),
+            "a purely opaque flat carrier keeps its direct scalar loop"
+        );
+    }
+}
+
+#[test]
+fn numeric_forward_windows_keep_zero_trip_errors_aliases_publication_and_recovery() {
+    let mode = NativeProgramLimitMode::NoLimits;
+    for (source, _) in forward_sources()
+        .into_iter()
+        .chain(direct_forward_sources())
+        .chain(carried_forward_sources())
+        .chain(discarded_bound_sources())
+    {
+        for artifact in artifacts(&source) {
+            let ordinary = JitProgramArtifact::compile_for_test(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                OptimizationPass::ScalarLoops,
+            )
+            .unwrap();
+            let native = JitProgramArtifact::compile_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                mode.compilation(),
+            )
+            .unwrap();
+            for restored in [false, true] {
+                let memory = mode.memory_budget();
+                let mut actual = vec![None; artifact.outputs().len()];
+                let mut expected = actual.clone();
+                for (size, start, stop, seed, fault) in [
+                    (300, 0, 256, u32::MAX, u64::MAX),
+                    (300, 0, 3, u32::MAX, 1),
+                    (0, 0, 3, 0, u64::MAX),
+                    (2, 0, 4, u32::MAX, u64::MAX),
+                    (300, 1, 5, 0, u64::MAX),
+                    (0, u64::MAX, u64::MAX, 23, u64::MAX),
+                    (300, u64::MAX - 1, u64::MAX, 0, 0),
+                    (300, 0, 3, u32::MAX, 1),
+                    (300, 0, 8, u32::MAX, u64::MAX),
+                ] {
+                    let args = arguments(&artifact, &memory, size, start, stop, seed, fault);
+                    let aliases = args.clone();
+                    let before = contents(&args);
+                    let prior = actual.clone();
+                    let held = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let run = |jit: &JitProgramArtifact, output: &mut [Option<Value>]| {
+                        if restored {
+                            observe::run_restored(jit, &args, output, mode.execution(), &memory)
+                        } else {
+                            observe::run(jit, &args, output, mode.execution(), &memory)
+                        }
+                    };
+                    let (reference, _) = run(&ordinary, &mut expected);
+                    let (result, _) = run(&native, &mut actual);
+                    if fault == 1 {
+                        assert!(reference.is_err(), "the source division must still fail");
+                    }
+                    match (reference, result) {
+                        (Err(reference), Err(result)) => {
+                            assert_eq!(format!("{result:?}"), format!("{reference:?}"));
+                            read_packs::unchanged_publication(&actual, &prior);
+                            assert_eq!(
+                                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                                held
+                            );
+                        }
+                        (Ok(_), Ok(_)) => {
+                            let values = |output: &[Option<Value>]| {
+                                contents(
+                                    &output
+                                        .iter()
+                                        .map(|v| v.as_ref().unwrap().clone())
+                                        .collect::<Vec<_>>(),
+                                )
+                            };
+                            assert_eq!(values(&actual), values(&expected));
+                        }
+                        (reference, result) => {
+                            panic!("source/native mismatch: {reference:?}, {result:?}")
+                        }
+                    }
+                    assert_eq!(contents(&args), before);
+                    assert_eq!(contents(&aliases), before);
+                }
+                drop((actual, expected));
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn numeric_forward_windows_keep_every_finite_boundary_and_retry() {
+    for (source, _) in forward_sources()
+        .into_iter()
+        .chain(direct_forward_sources())
+        .chain(carried_forward_sources())
+        .chain(discarded_bound_sources())
+    {
+        resources::finite_boundaries(&source, |artifact, memory| {
+            arguments(artifact, memory, 300, 0, 3, u32::MAX, u64::MAX)
+        });
+    }
+}
+
 pub(super) fn arguments(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,

@@ -1,0 +1,16 @@
+
+running 3 tests
+test native_artifact::program::codegen::tag_threading::tests::invalid_remainder_and_noncanonical_boolean_words_stay_conservative ... ok
+test native_artifact::program::runtime::composition_tests::canonical_boolean_edges::canonical_boolean_branches_preserve_exact_work_errors_aliases_and_retry ... ok
+test native_artifact::program::runtime::composition_tests::canonical_boolean_proofs::canonical_boolean_literal_proofs_cover_copies_joins_and_refuse_raw_or_mixed_inputs ... canonical-boolean-proof true_first=false mixed=false raw_inputs=1 copies=2 joins=2 rejected_joins=0
+canonical-boolean-proof true_first=false mixed=false raw_inputs=1 copies=2 joins=2 rejected_joins=0
+canonical-boolean-proof true_first=false mixed=true raw_inputs=1 copies=0 joins=0 rejected_joins=2
+canonical-boolean-proof true_first=false mixed=true raw_inputs=1 copies=0 joins=0 rejected_joins=2
+canonical-boolean-proof true_first=true mixed=false raw_inputs=1 copies=2 joins=2 rejected_joins=0
+canonical-boolean-proof true_first=true mixed=false raw_inputs=1 copies=2 joins=2 rejected_joins=0
+canonical-boolean-proof true_first=true mixed=true raw_inputs=1 copies=0 joins=0 rejected_joins=2
+canonical-boolean-proof true_first=true mixed=true raw_inputs=1 copies=0 joins=0 rejected_joins=2
+ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 842 filtered out; finished in 1.88s
+

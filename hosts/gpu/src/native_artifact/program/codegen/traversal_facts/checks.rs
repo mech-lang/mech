@@ -67,6 +67,13 @@ impl Check {
             } => {
                 let length = terms.intern(Expr::ArrayLength(array))?;
                 let mut end = state.read(count)?;
+                let mut upper = u128::from(state.upper(terms, end)) + u128::from(extra);
+                if let Some(base) = base {
+                    upper += u128::from(state.upper(terms, state.read(base)?));
+                }
+                if upper <= u128::from(state.lower(terms, length)) {
+                    return Some(true);
+                }
                 if extra != 0 {
                     let addend = terms.constant(extra)?;
                     if !state.safe(terms, Arithmetic::Add, end, addend) {

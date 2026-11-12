@@ -3481,7 +3481,10 @@ struct SemanticBuilder {
     resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
     active_fsms: Vec<String>,
-    active_recursive_outputs: Vec<(String, SchemaDraft, usize)>,
+    // A callable frame belongs to the comprehension where it was entered.
+    // Its own recursion may stay in that body, but cannot jump out of a new
+    // element invocation nested inside it.
+    active_recursive_outputs: Vec<(String, SchemaDraft, usize, usize)>,
     activation_owned_states: BTreeSet<u32>,
     ordinary_written_states: BTreeSet<u32>,
     activation_assignment_depth: usize,

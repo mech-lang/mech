@@ -139,6 +139,24 @@ fn native_numeric_addresses_follow_independent_column_order() {
 }
 
 #[test]
+fn guarded_numeric_load_flags_keep_memory_and_control_dependence() {
+    use super::guarded_load_flags;
+    use crate::native_artifact::codegen::options::{OptimizationOptions, OptimizationPass};
+    let flags = guarded_load_flags(OptimizationOptions::default());
+    assert!(flags.notrap());
+    assert!(!flags.readonly());
+    assert!(!flags.can_move());
+    assert!(!flags.aligned());
+    assert_eq!(flags.alias_region(), None);
+    assert_eq!(
+        guarded_load_flags(OptimizationOptions::without(
+            OptimizationPass::GuardedNumericLoads
+        )),
+        cranelift_codegen::ir::MemFlags::new()
+    );
+}
+
+#[test]
 fn unit_dimension_addresses_emit_no_division_and_keep_general_geometry() {
     for width in [1, 2, 4, 8] {
         for (dimensions, vector) in [
