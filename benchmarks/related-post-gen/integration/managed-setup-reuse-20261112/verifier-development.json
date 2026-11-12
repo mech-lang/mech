@@ -1,0 +1,16 @@
+{
+  "initial_offline_verifier_exit": 1,
+  "initial_failure": "Copied prior verifier required peak concurrent workers exactly4. Retained primary has three valid scheduled peaks below4, all with four launched tasks.",
+  "correct_contract": "Four launched fresh managed tasks, one batch, peak concurrency1..4; exact numeric worker bill per compiler/source qualification; exact total work for every managed variant except the explicitly retained unattributed historical IR335 control variation.",
+  "observations_changed": false,
+  "executions_rerun": 0,
+  "samples_removed": 0,
+  "offline_assembly_diagnostic": {
+    "failure": "Requested exact per-variant total-work check exposed variable IR335 historical control bills, while all other managed controls and all new candidates match their qualification totals exactly.",
+    "treatment": "Retain unattributed total-work histogram and qualification comparator for IR335; enforce its exact numeric worker bill and strict exact total-work checks for every other managed implementation.",
+    "native_executions": 0,
+    "observations_changed": false,
+    "stderr": "Traceback (most recent call last):\n  File \"assemble.py\", line 216, in <module>\n    assert value[\"work\"] == managed_work_qualifications[name][\"work\"]\nAssertionError\n"
+  },
+  "initial_offline_verifier_stderr": "Traceback (most recent call last):\n  File \"verify.py\", line 153, in <module>\n    value = elapsed(variants[name], row[\"stdout\"])\n  File \"verify.py\", line 92, in elapsed\n    assert values[0][\"parallel_peak_workers\"] == 4\nAssertionError\n"
+}
