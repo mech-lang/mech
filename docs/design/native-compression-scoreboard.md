@@ -2,6 +2,26 @@
 
 **46/81 cases faster than Roc (56.79%)** in the primary cohort. Goal 100%.
 
+The matched R349 campaign counts 46/81 faster than Roc (56.79%), 4/81 faster than libdeflate and 0/81 faster than both. Roc is faster than libdeflate in 17/81.
+
+Natural 256 KiB measures 0.997587× libdeflate in this cohort. The nearest remaining libdeflate case is prefix-natural-1048576 at 1.005035× libdeflate and 1.247016× Roc. The nearest remaining case where Roc is faster is reymont-prefix-32769 at 1.218744× Roc and 1.107388× libdeflate.
+
+| Input | R343 / Roc | Retained image / Roc | R343 / libdeflate | Retained image / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| eight-literals | 0.185115× | 0.184827× | 2.327744× | 2.324117× |
+| prefix-natural-262144 | 1.234200× | 1.233386× | 0.998245× | 0.997587× |
+| prefix-random-16384 | 1.060554× | 1.016502× | 2.866315× | 2.747258× |
+| prefix-natural-1048576 | 1.250452× | 1.247016× | 1.007804× | 1.005035× |
+| prefix-natural-131072 | 1.234496× | 1.226914× | 1.016277× | 1.010035× |
+| prefix-natural-65537 | 1.226916× | 1.222624× | 1.029471× | 1.025870× |
+| reymont-prefix-32769 | 1.223099× | 1.218744× | 1.111344× | 1.107388× |
+
+[R349 qualification, profiling and paired measurement evidence](native-current-array-length-floors.md).
+
+## Historical R344 measured comparison
+
+**46/81 cases faster than Roc (56.79%)** in the primary cohort. Goal 100%.
+
 The matched R344 campaign counts 46/81 faster than Roc (56.79%), 3/81 faster than libdeflate and 0/81 faster than both. Roc is faster than libdeflate in 17/81.
 
 The nearest remaining libdeflate case is prefix-natural-262144 at 1.006703× libdeflate and 1.241978× Roc. The nearest remaining case where Roc is faster is reymont-prefix-32769 at 1.221637× Roc and 1.118748× libdeflate.
