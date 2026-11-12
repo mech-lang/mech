@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import statistics
+import subprocess
 
 D = Path(__file__).resolve().parent
 ROOT = D.parents[3]
@@ -138,12 +139,33 @@ assert contracts['exit'] == 0 and contracts['passed'] == 589
 assert contracts['all583_prior_names_retained'] and not contracts['missing']
 assert read('format-check-v31.json')['exit'] == 0
 inventory = read('compiler-v31/source-inventory.json')
-for name, expected in inventory['files'].items():
-    assert digest((ROOT / name).read_bytes()) == expected, name
+# This packet describes a completed historical compiler build. Subsequent
+# compiler work must not invalidate its evidence or be represented as measured.
+source_commit = report['compiler_source_commit']
+requests = sorted(inventory['files'])
+batch = subprocess.run(
+    ['git', 'cat-file', '--batch'], cwd=ROOT,
+    input=''.join(f'{source_commit}:{name}\n' for name in requests).encode(),
+    capture_output=True, check=True,
+).stdout
+offset = 0
+for name in requests:
+    end = batch.index(b'\n', offset)
+    header = batch[offset:end].split()
+    assert len(header) == 3 and header[1] == b'blob', (name, header)
+    length = int(header[2])
+    offset = end + 1
+    data = batch[offset:offset + length]
+    assert digest(data) == inventory['files'][name], name
+    offset += length
+    assert batch[offset:offset + 1] == b'\n', name
+    offset += 1
+assert offset == len(batch)
 
 print(json.dumps(dict(
     verified_records=count,
-    verified_current_source_files=len(inventory['files']),
+    verified_pinned_source_files=len(inventory['files']),
+    compiler_source_commit=source_commit,
     exact_retained_cohort_outputs=all_exact,
     final_contracts=contracts['passed'],
     post_json_ms=medians[candidate] * 1000,
