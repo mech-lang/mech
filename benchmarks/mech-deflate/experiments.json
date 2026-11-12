@@ -69680,6 +69680,457 @@
         }
       },
       "complete_goal": false
+    },
+    "344": {
+      "campaign_round": 344,
+      "git_parent": "f33d8c1b0e92208b0592964339dc5dabdc78069d",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ebc837def6d5c878cb3ecdeadd0e3f078a3f12e4",
+      "retained_compiler": "R343",
+      "retained_source_packet_round": 343,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Retain the immutable offset map after matched startup measurements.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "09050b3c9c76d315b2ee91e4b17be454e9972e32a82f1721e0d832272d1d5d19",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/composed_reads.rs": {
+            "before": "a1ad7eec73361cc1b1fb6717ac43934a1e882545f2d36286aa2647b706a2e959",
+            "after": "28d58d93df49cbb46d03d0829d40a9013dc4d08a7cee3f5bcb1780a0c5803df3"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "d5764a10ac6c7de5e7f30319b8f36e1417a6fbab0723e6bf5d8f4082fbd50f69",
+            "after": "8791c90b5b3a252efca619d9cf35174486b044a609e7a020d6a6870dec8d6a3a"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/immutable_arrays.rs": {
+            "before": "88db8c5210989987da588cc15360a91215c1df4d725895c50c22da5a57b3c029",
+            "after": "b7c424d82f43f02e7825838256eb8920fb35ab2170ed5c8c2e0c322e34113a4e"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "242dca92551020713e191ad377dd24f75a9afe0c1c6635eae076efb2a44e4f9d",
+            "after": "211c7e6bd249ac6e155cb024ae22c35921fe26e4b5aa2a4812d70599ead76853"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phases.rs": {
+            "before": "eb40445a9af9370dd375bdf453022bfe0a33deaced46ee86fb6e5af68d298f57",
+            "after": "7cdb93f67bc37c16ea5c15bcc0b7bd8c58876c93db2c8650bd4b7a2931c1d49a"
+          }
+        },
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "shared_timing_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "pinned_source_bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "original_decoded_object_sha256": "81a8c384df1ac5ffde825061bb4d1171fa9895371866f2f796cf62f9dcd58d97",
+        "worker_sha256": "285b6321f2c3196b23bf9d276c23f368615072fbc471806a1c9cd587feb79a57"
+      },
+      "summary": {
+        "round": 344,
+        "candidate_compiler_round": 343,
+        "published_parent": "f33d8c1b0e92208b0592964339dc5dabdc78069d",
+        "measured_parent": "ebc837def6d5c878cb3ecdeadd0e3f078a3f12e4",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 343,
+        "retained_runtime_packet_round": 272,
+        "selected_mode": "immutable-offset-map",
+        "source_program_changed": false,
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "all81_paired_after_over_before": 0.9932738297823205,
+        "primary_cohort_geomeans": {
+          "primary-a": 0.9929362322624403,
+          "primary-b": 0.9936115420850857
+        },
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "cohort_block_gate_misses": [],
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 46,
+          "after_count": 46,
+          "denominator": 81,
+          "before_percent": 56.79012345679013,
+          "after_percent": 56.79012345679013,
+          "change_percentage_points": 0.0
+        },
+        "matched_wins": {
+          "roc": {
+            "mech-r333": 46,
+            "mech-candidate": 46
+          },
+          "libdeflate": {
+            "mech-r333": 3,
+            "mech-candidate": 3
+          },
+          "both": {
+            "mech-r333": 0,
+            "mech-candidate": 0
+          }
+        },
+        "matched_crossings": {
+          "roc": {
+            "below": [],
+            "above": []
+          },
+          "libdeflate": {
+            "below": [],
+            "above": []
+          }
+        },
+        "roc_faster_than_libdeflate": 17,
+        "heap_families_identical": true,
+        "heap_mismatches": [],
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 0.971627100999864,
+            "primary_cohorts": {
+              "primary-a": 0.9727913864444168,
+              "primary-b": 0.9704642090304338
+            },
+            "primary_block_medians": {
+              "primary-a": 0.973385789210114,
+              "primary-b": 0.9721988779612512
+            },
+            "matched": 0.9733523183297266
+          },
+          "prefix-natural-32769": {
+            "primary": 0.972460668580335,
+            "primary_cohorts": {
+              "primary-a": 0.9717025877236495,
+              "primary-b": 0.9732193408593267
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9722714266248808,
+              "primary-b": 0.9737042204470995
+            },
+            "matched": 0.9727622148140059
+          },
+          "prefix-natural-33027": {
+            "primary": 0.9702445351801225,
+            "primary_cohorts": {
+              "primary-a": 0.9699827433499194,
+              "primary-b": 0.9705063976661832
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9701385611469343,
+              "primary-b": 0.969804206011475
+            },
+            "matched": 0.9729864546141994
+          },
+          "prefix-natural-32768": {
+            "primary": 0.9714066780000028,
+            "primary_cohorts": {
+              "primary-a": 0.9714405922137862,
+              "primary-b": 0.9713727649702074
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9719134945335569,
+              "primary-b": 0.9730640337219569
+            },
+            "matched": 0.9758731819152028
+          },
+          "heldout-window-32768": {
+            "primary": 0.9726649615894079,
+            "primary_cohorts": {
+              "primary-a": 0.9723317104705199,
+              "primary-b": 0.9729983269247787
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9733592738482617,
+              "primary-b": 0.9730207217270385
+            },
+            "matched": 0.9732571382991317
+          },
+          "heldout-window-32767": {
+            "primary": 0.9702724160044015,
+            "primary_cohorts": {
+              "primary-a": 0.9708058821357932,
+              "primary-b": 0.9697392430172096
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9734359920957094,
+              "primary-b": 0.9713792479315025
+            },
+            "matched": 0.9728812226671957
+          },
+          "prefix-natural-65537": {
+            "primary": 0.9696293160225221,
+            "primary_cohorts": {
+              "primary-a": 0.9697821366854017,
+              "primary-b": 0.9694765194414998
+            },
+            "primary_block_medians": {
+              "primary-a": 0.969405078196872,
+              "primary-b": 0.9689020984762516
+            },
+            "matched": 0.9698991276064752
+          },
+          "prefix-natural-32767": {
+            "primary": 0.971614095835543,
+            "primary_cohorts": {
+              "primary-a": 0.9714057637819217,
+              "primary-b": 0.9718224725689946
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9706561945423051,
+              "primary-b": 0.972244821265262
+            },
+            "matched": 0.9722239226426629
+          },
+          "prefix-natural-65535": {
+            "primary": 0.9673038880339025,
+            "primary_cohorts": {
+              "primary-a": 0.9696342692498506,
+              "primary-b": 0.9649791075653538
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9671102718913851,
+              "primary-b": 0.9654869491128809
+            },
+            "matched": 0.9660817315165129
+          },
+          "prefix-natural-131072": {
+            "primary": 0.9666409708248234,
+            "primary_cohorts": {
+              "primary-a": 0.9631458098701904,
+              "primary-b": 0.9701488153731277
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9708634945954198,
+              "primary-b": 0.9702694833930945
+            },
+            "matched": 0.9671278776943142
+          },
+          "prefix-natural-65536": {
+            "primary": 0.9692849710917618,
+            "primary_cohorts": {
+              "primary-a": 0.9718767863201347,
+              "primary-b": 0.9667000677541477
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9685630141493912,
+              "primary-b": 0.9653701132815485
+            },
+            "matched": 0.9672847842160227
+          },
+          "prefix-natural-262144": {
+            "primary": 0.9696082338332899,
+            "primary_cohorts": {
+              "primary-a": 0.9693820688286158,
+              "primary-b": 0.9698344516041653
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9685179092804159,
+              "primary-b": 0.9707494227022733
+            },
+            "matched": 0.9744862593153004
+          },
+          "prefix-natural-1048576": {
+            "primary": 0.9743308679169922,
+            "primary_cohorts": {
+              "primary-a": 0.9734243306666477,
+              "primary-b": 0.9752382494135305
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9739602335025596,
+              "primary-b": 0.974047776816604
+            },
+            "matched": 0.9757932245176347
+          },
+          "heldout-slides-65537": {
+            "primary": 0.9739062382890729,
+            "primary_cohorts": {
+              "primary-a": 0.9738602170647743,
+              "primary-b": 0.9739522616881734
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9736892922915021,
+              "primary-b": 0.9744851274249163
+            },
+            "matched": 0.9736161477135546
+          },
+          "one-stored": {
+            "primary": 1.0081238266459547,
+            "primary_cohorts": {
+              "primary-a": 1.0146409504808065,
+              "primary-b": 1.0016485628435197
+            },
+            "primary_block_medians": {
+              "primary-a": 1.020880587922699,
+              "primary-b": 1.005160024462338
+            },
+            "matched": 1.0286448520151037
+          },
+          "empty": {
+            "primary": 1.0111585127748544,
+            "primary_cohorts": {
+              "primary-a": 1.0256383541918535,
+              "primary-b": 0.9968830960525876
+            },
+            "primary_block_medians": {
+              "primary-a": 1.0231593935840522,
+              "primary-b": 0.9912022665347232
+            },
+            "matched": 1.0385698823399394
+          },
+          "seven-stored-prefix": {
+            "primary": 1.0249568049823854,
+            "primary_cohorts": {
+              "primary-a": 1.021110619944069,
+              "primary-b": 1.028817477324095
+            },
+            "primary_block_medians": {
+              "primary-a": 1.022063023019046,
+              "primary-b": 1.0066527861622048
+            },
+            "matched": 1.001262207706516
+          }
+        },
+        "priority_geomeans": {
+          "primary": 0.9783959061279478,
+          "matched": 0.9807351570827091
+        },
+        "retention_witnesses": [
+          "reymont-prefix-32769",
+          "prefix-natural-262144"
+        ],
+        "retention_witnesses_improved": true,
+        "highest_paired_ratio": {
+          "case": "seven-stored-prefix",
+          "ratio": 1.0249568049823854
+        },
+        "highest_matched_ratio": {
+          "case": "empty",
+          "ratio": 1.0385698823399394
+        },
+        "primary_frontier": [
+          "prefix-random-16384",
+          "prefix-natural-8192",
+          "prefix-natural-16384",
+          "reymont-prefix-16384",
+          "prefix-natural-33027",
+          "reymont-prefix-32769",
+          "heldout-window-32767",
+          "heldout-window-32768"
+        ],
+        "matched_libdeflate_frontier": [
+          "prefix-natural-262144",
+          "prefix-natural-1048576",
+          "prefix-natural-131072",
+          "prefix-natural-65537",
+          "prefix-natural-65535",
+          "prefix-natural-65536",
+          "heldout-slides-65537",
+          "prefix-natural-32767"
+        ],
+        "dual_peer_frontier": [
+          "reymont-prefix-32769",
+          "heldout-window-32768",
+          "prefix-natural-32769",
+          "heldout-window-32767",
+          "prefix-natural-32767",
+          "prefix-natural-65537",
+          "prefix-natural-32768",
+          "prefix-natural-65536"
+        ],
+        "primary_timed_calls": 368496,
+        "matched_timed_calls": 245664
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "81a8c384df1ac5ffde825061bb4d1171fa9895371866f2f796cf62f9dcd58d97",
+            "metadata.json": "34b6d5112740a617aae5126dc34e73f616776f62109955d59142bbe751874793"
+          },
+          "decoded": {
+            "object.o": "81a8c384df1ac5ffde825061bb4d1171fa9895371866f2f796cf62f9dcd58d97",
+            "metadata.json": "34b6d5112740a617aae5126dc34e73f616776f62109955d59142bbe751874793"
+          }
+        },
+        "worker_sha256": "285b6321f2c3196b23bf9d276c23f368615072fbc471806a1c9cd587feb79a57",
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "warnings_as_errors": true,
+        "linked_native_offset_results": 262144,
+        "exhaustive_symbolic_offsets": 65536,
+        "cfg_tests": 53,
+        "literal_view_tests": 4,
+        "previous_compiler_packet_round": 343
+      },
+      "report": "docs/design/native-shared-benchmark-metadata.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r344-shared-benchmark-metadata-8232c7808111.tar.gz",
+        "bytes": 15745944,
+        "sha256": "8232c78081111da1f1207bfb1550d61f37d7ce503fc6487c4677d9e842efa5b5",
+        "files": 1203,
+        "reports_replayed": 18,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "6cab02bda5fcccc46ac2ba7e26549c62f24897fb6b9e65a86692ec501ba35e39",
+            "pilot-counters.json": "8d809d0ab8778dd0286e8be886e9a8d03330938c8fe696a4b1b144139e015146",
+            "result-decision.json": "37aab3f3dfe3caaec61be80702bd7a7b325ba1b269df3438bc27e0ae61589d01",
+            "screen-result.json": "b0133648c3cfb23a2e692a280c698295c5743fbc1bd9e89658dd4bfe086751d4",
+            "screen-disposition.json": "cf8e8f7e68b27a5d5ee13a8eae3365cc577b0bbcb80bc6bc8de9185586726842",
+            "candidate-profile-summary.json": "9d173e99f035940c9df71c77add0f4d62c31ae7f374fb5264fd7da5cbeb44db7",
+            "screen-report.md": "297c9850dd24d9468011ce8f030c202ef18f14efcdb091e018564f09c89f4df7",
+            "diagnostic-report.md": "870177deb8d609af1f604c10c3c67131907857eb3e813de71c1fe0da240efc99",
+            "metadata-crossover-replay.json": "1ac13f0d13e6cd446c7451a3af0e44f7cbef4cca10de5c441e124ed355388412",
+            "primary-results.json": "0fa9fda4afe91a71cef03186d890f8ccbeb811987331c39c17abe8e263966cba",
+            "counter-results.json": "6421bfcb5df9a6a5cf67b3f4b86184b1090c2238db3598ee3602b643def2a065",
+            "full-heap-match.json": "58d672368e864c9e864c27327a95252233f2e5322e5e768bd746921371f0d424",
+            "library-results.json": "8a71bf39f77dff5c031de4d4a9911051957db6a52d8d5ff330fad85c0610fcc8",
+            "dual-peer-frontier.json": "14ab6e249b4a31501d0f6fb20f7880de7bfef018f13df288f579137942d040fb",
+            "scoreboard-metrics.json": "cb9d64c10c8e75fa6d62afb5c44823e3c7fb736a59d3cc15566d2e2567ce49db",
+            "scoreboard-current.md": "45e2090de90d6e5f6aee94e7215ef0260a268e9d4369f72b5859afdde92c074e",
+            "full-candidate-profile-summary.json": "d41fe481a696f27012ea1fa1a21d547c7bcd499357a7bc0a9cfe15e1d1014e6f",
+            "empty-gate-layout.json": "c10a8a24ad84b089e55ac7b03b4b43867f3341016eb1ce616af037db38d10921"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",

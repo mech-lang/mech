@@ -1,5 +1,24 @@
 # Current compression scoreboard
 
+**46/81 cases faster than Roc (56.79%)** in the primary cohort. Goal 100%.
+
+The matched R344 campaign counts 46/81 faster than Roc (56.79%), 3/81 faster than libdeflate and 0/81 faster than both. Roc is faster than libdeflate in 17/81.
+
+The nearest remaining libdeflate case is prefix-natural-262144 at 1.006703× libdeflate and 1.241978× Roc. The nearest remaining case where Roc is faster is reymont-prefix-32769 at 1.221637× Roc and 1.118748× libdeflate.
+
+| Input | R333 / Roc | Retained image / Roc | R333 / libdeflate | Retained image / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| eight-literals | 0.182455× | 0.182337× | 2.329816× | 2.328317× |
+| prefix-random-16384 | 1.066922× | 1.060161× | 2.895325× | 2.876978× |
+| prefix-natural-262144 | 1.274495× | 1.241978× | 1.033060× | 1.006703× |
+| prefix-natural-1048576 | 1.283349× | 1.252283× | 1.035016× | 1.009961× |
+| prefix-natural-131072 | 1.274992× | 1.233081× | 1.047524× | 1.013090× |
+| reymont-prefix-32769 | 1.255082× | 1.221637× | 1.149376× | 1.118748× |
+
+[R344 qualification, profiling and paired measurement evidence](native-shared-benchmark-metadata.md).
+
+## Historical R333 measured comparison
+
 **46/81 cases faster than Roc (56.79%).** Goal 100%.
 R333 composes the two read-only cost lookups. Paired elapsed changes -0.551% across all 81. The pooled and block timing gates pass 81/81 and 81/81. The matched libdeflate cohort has 3 faster cases.
 
