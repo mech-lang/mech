@@ -52,14 +52,9 @@ fn worker_constant_owners_only_import_uncaptured_reads_in_original_decoded_and_r
             );
             let memory = mode.memory_budget();
             let parent = Prepared::new(descriptor, mode.execution(), &memory).unwrap();
-            let worker = Prepared::new_with_budget(
-                descriptor,
-                mode.execution(),
-                &memory,
-                None,
-                Some(&region.owned_constants),
-            )
-            .unwrap();
+            let worker =
+                Prepared::new_with_budget(descriptor, mode.execution(), &memory, None, Some(0))
+                    .unwrap();
             for (index, constant) in constants.iter().enumerate() {
                 for (prepared, live) in [
                     (&parent, metadata.constant_bytes[index] != 0),
@@ -272,6 +267,176 @@ fn worker_constant_owners_keep_parallel_results_cold_errors_failed_publication_a
                 ),
                 (0, 0, 0)
             );
+        }
+    }
+}
+
+#[test]
+fn numeric_related_workers_use_physical_prefixes_with_full_admission_and_checked_handles() {
+    let related =
+        include_str!("../../../../../../../benchmarks/related-post-gen/mech/related_optimized.mec");
+    for artifact in artifacts(related) {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let restored = super::super::tests::restore_admitted_helper_descriptor(&jit);
+        for descriptor in [jit.descriptor(), &restored] {
+            let metadata = descriptor.metadata();
+            assert_eq!(
+                metadata.parallel.regions.len(),
+                1,
+                "actual related source must outline its worker"
+            );
+            let physical = metadata.worker_value_prefixes[0];
+            let full = metadata.types.len();
+            assert!(
+                physical > 0 && physical < full,
+                "actual related source must positively select compact owner backing"
+            );
+            let mode = NativeProgramLimitMode::NoLimits;
+            let memory = mode.memory_budget();
+            let worker =
+                Prepared::new_with_budget(descriptor, mode.execution(), &memory, None, Some(0))
+                    .unwrap();
+            assert_eq!(
+                worker.state.as_ref().unwrap().arena.test_physical_slots(),
+                (physical, physical, physical)
+            );
+            drop(worker);
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+            let types = &metadata.types;
+            let bytes = NativeTypedStorage::<Option<Value>>::admission_bytes(full).unwrap()
+                + NativeWordStorage::admission_bytes(full).unwrap();
+            let setup = full as u64 * 24 + 256;
+            let raw_bytes = (full * (core::mem::size_of::<Option<Value>>() + 8)) as u64;
+            for count in [0, physical, full] {
+                let exact = memory.with_limits(bytes, 0);
+                let mut work = NativeWorkMeter::new(u64::MAX).unwrap();
+                let arena =
+                    NativeValueArena::new_with_prefix(types, count, raw_bytes, &exact, &mut work)
+                        .unwrap();
+                assert_eq!(arena.test_physical_slots(), (count, count, count));
+                assert_eq!(work.used(), setup);
+                assert_eq!((memory.used_bytes(), memory.retained_nodes()), (bytes, 0));
+                drop(arena);
+                let short = memory.with_limits(bytes - 1, 0);
+                let mut work = NativeWorkMeter::new(u64::MAX).unwrap();
+                assert!(
+                    NativeValueArena::new_with_prefix(types, count, raw_bytes, &short, &mut work)
+                        .is_err()
+                );
+                assert_eq!(work.used(), setup);
+                assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+                let mut work = NativeWorkMeter::new(setup - 1).unwrap();
+                assert!(
+                    NativeValueArena::new_with_prefix(types, count, raw_bytes, &exact, &mut work)
+                        .is_err()
+                );
+                assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+                let mut work = NativeWorkMeter::new(u64::MAX).unwrap();
+                assert!(
+                    matches!(NativeValueArena::new_with_prefix(types,count,raw_bytes-1,&exact,&mut work),Err(NativeValueError::Base(NativeExecutionError::TransportLimit {required,..})) if required==raw_bytes)
+                );
+                assert_eq!(work.used(), 0);
+            }
+            let mut work = NativeWorkMeter::new(u64::MAX).unwrap();
+            assert!(matches!(
+                NativeValueArena::new_with_prefix(types, full + 1, raw_bytes, &memory, &mut work),
+                Err(NativeValueError::InvalidSlot)
+            ));
+            assert_eq!((memory.used_bytes(), work.used()), (0, 0));
+            let mut arena =
+                NativeValueArena::new_with_prefix(types, physical, raw_bytes, &memory, &mut work)
+                    .unwrap();
+            let slot = metadata
+                .plan
+                .values()
+                .iter()
+                .take(physical)
+                .position(|ty| {
+                    ty.scalar_kind() == Some(mech_engine::native_artifact::NativeScalarKind::U64)
+                })
+                .unwrap() as u32;
+            let raw = ValueDraft {
+                schema: metadata.plan.values()[slot as usize].schema(),
+                shape_values: Box::new([]),
+                data: ValueDataDraft::U64(17),
+            }
+            .finalize(&SnapshotValidationContext::with_shared_schemas(
+                &metadata.schemas,
+            ))
+            .unwrap();
+            let value = raw.clone().admit_into_memory_budget(&memory).unwrap();
+            let alias = value.clone();
+            let first = arena.put(slot, &value, &mut work).unwrap();
+            assert!(arena.put(slot, &raw, &mut work).is_err());
+            assert_eq!(
+                arena
+                    .get(first, &mut work)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::U64(17)
+            );
+            let second = arena.put(slot, &alias, &mut work).unwrap();
+            assert!(matches!(
+                arena.get(first, &mut work),
+                Err(NativeValueError::StaleHandle)
+            ));
+            assert!(matches!(
+                arena.put(physical as u32, &alias, &mut work),
+                Err(NativeValueError::InvalidSlot)
+            ));
+            assert!(
+                arena
+                    .get(second, &mut work)
+                    .unwrap()
+                    .shares_frozen_storage(&alias)
+            );
+            arena.retire_current(slot, &mut work).unwrap();
+            assert!(matches!(
+                arena.get(second, &mut work),
+                Err(NativeValueError::StaleHandle)
+            ));
+            let retry = arena.put(slot, &alias, &mut work).unwrap();
+            assert!(
+                arena
+                    .get(retry, &mut work)
+                    .unwrap()
+                    .shares_frozen_storage(&alias)
+            );
+            drop((arena, value, alias, raw));
+            assert_eq!(
+                (
+                    memory.used_bytes(),
+                    memory.retained_nodes(),
+                    memory.retained_snapshot_nodes()
+                ),
+                (0, 0, 0)
+            );
+        }
+    }
+}
+
+#[test]
+fn unsupported_worker_projection_categories_keep_full_arena_and_no_image_permission() {
+    for artifact in artifacts(&source()) {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let restored = super::super::tests::restore_admitted_helper_descriptor(&jit);
+        for descriptor in [jit.descriptor(), &restored] {
+            let metadata = descriptor.metadata();
+            assert!(!metadata.parallel.regions.is_empty());
+            assert!(
+                metadata
+                    .worker_value_prefixes
+                    .iter()
+                    .all(|&prefix| prefix == metadata.types.len())
+            );
+            let image = descriptor.encode_build_owned_image().unwrap();
+            let mut wire: serde_json::Value = serde_json::from_slice(&image).unwrap();
+            assert!(wire["descriptor"].get("worker_value_prefixes").is_none());
+            wire["descriptor"]["worker_value_prefixes"] = serde_json::json!([0]);
+            assert!(super::super::tests::rejects_malformed_helper_image(
+                &serde_json::to_vec(&wire).unwrap()
+            ));
         }
     }
 }

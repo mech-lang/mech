@@ -20,6 +20,7 @@ pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod constant_owners;
 pub(in crate::native_artifact) mod frame_retirement;
 pub(in crate::native_artifact) mod numeric_phase;
+pub(in crate::native_artifact) mod worker_values;
 
 /// Canonical arguments are source operands or parent-piece owner pins. Numeric
 /// SSA/reconciliation words never install managed owners in this bank.
@@ -125,6 +126,8 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) fixed_key_loops: fixed_key_loops::Layout,
     pub(in crate::native_artifact) map_admission: native::program::prepare::map_admission::Layout,
     pub(in crate::native_artifact) parallel: native::program::prepare::parallel::Layout,
+    // Pure nonserialized storage inventory; rebuilt on every image path.
+    pub(in crate::native_artifact) worker_value_prefixes: Box<[usize]>,
     pub(in crate::native_artifact) borrowed_strings: native::program::prepare::borrowed::Layout,
     pub(in crate::native_artifact) closed_tails: native::program::prepare::tail::Layout,
     pub(in crate::native_artifact) selected_joins: native::program::prepare::selected_join::Layout,
@@ -452,7 +455,7 @@ impl PreparedNativeProgram {
         );
         let call_cache = call_cache::Layout::derive(&plan, &calls)?;
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
-        let metadata = ProgramMetadata {
+        let mut metadata = ProgramMetadata {
             plan,
             schemas: Arc::new(artifact.schemas().clone()),
             calls,
@@ -490,12 +493,14 @@ impl PreparedNativeProgram {
             fixed_key_loops,
             map_admission,
             parallel,
+            worker_value_prefixes: Box::new([]),
             borrowed_strings,
             closed_tails,
             selected_joins,
             line_matrices,
             prefix,
         };
+        metadata.worker_value_prefixes = worker_values::derive(&metadata)?;
         Ok(Self {
             metadata,
             complete_frontiers: line_retention_frontiers.into_boxed_slice(),

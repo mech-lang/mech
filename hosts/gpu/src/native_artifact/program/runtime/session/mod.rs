@@ -42,6 +42,8 @@ mod prefix_window_tests;
 mod worker_constant_owners;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
+mod immutable_retirement_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
 mod output_retirement_tests;
 
 /// Validate and fund retirement of the caller's existing output roots before
@@ -585,8 +587,19 @@ impl<'a> Prepared<'a> {
         limits: NativeProgramExecutionLimits,
         memory: &ManagedMemoryBudget,
         worker_budget: Option<NativeLibraryWorkBudget>,
-        worker_constants: Option<&[u32]>,
+        worker_region: Option<usize>,
     ) -> Result<Self, NativeProgramExecutionError> {
+        let worker_constants = worker_region
+            .map(|region| {
+                descriptor
+                    .metadata()
+                    .parallel
+                    .regions
+                    .get(region)
+                    .map(|region| region.owned_constants.as_ref())
+                    .ok_or_else(|| invalid("worker setup region outside descriptor"))
+            })
+            .transpose()?;
         let plan = &descriptor.metadata().plan;
         if plan.activation_boundary().is_none() {
             return Err(invalid(
@@ -657,19 +670,37 @@ impl<'a> Prepared<'a> {
         let fixed_nodes = memory.reserve_nodes(
             crate::native_artifact::program::runtime::invocation::caller_geometry::fixed_nodes()?,
         )?;
-        let mut storage =
-            NativeWordStorage::new(words, limits.execution.max_transport_bytes, Some(memory))?;
-        // The exact table occupies the disjoint final lane of this SAME
-        // admitted typed arena; no new runtime plan or unowned metadata pool.
-        // Initialization was prepaid above; fund its copy before touching it.
+        let retirement_words = descriptor.metadata().retirements.words().len();
+        let physical_words = words
+            .checked_sub(retirement_words)
+            .ok_or_else(|| invalid("retirement suffix exceeds transport"))?;
+        let storage = NativeWordStorage::new_compact(
+            words,
+            physical_words,
+            limits.execution.max_transport_bytes,
+            memory,
+        )?;
+        // The descriptor owns this exact immutable table for every entry.
+        // Omit only its physical copy; retain the complete transport claim,
+        // logical initialization price and original table-copy work floor.
         work.charge(
             NativeExecutionPhase::Setup,
             amount(descriptor.metadata().retirements.words().len(), 16, 128)?,
         )?;
-        storage.values_mut()[words - descriptor.metadata().retirements.words().len()..]
-            .copy_from_slice(descriptor.metadata().retirements.words());
-        let mut arena = NativeValueArena::new(
+        let physical = worker_region
+            .map(|region| {
+                descriptor
+                    .metadata()
+                    .worker_value_prefixes
+                    .get(region)
+                    .copied()
+                    .ok_or_else(|| invalid("worker arena prefix inventory absent"))
+            })
+            .transpose()?
+            .unwrap_or(descriptor.metadata().types.len());
+        let mut arena = NativeValueArena::new_with_prefix(
             &descriptor.metadata().types,
+            physical,
             limits.execution.max_transport_bytes,
             memory,
             &mut work,
@@ -805,7 +836,7 @@ impl<'a> Prepared<'a> {
             limits,
             memory,
             Some(library),
-            Some(&region.owned_constants),
+            Some(worker.region),
         )?;
         let locals_start = descriptor.metadata().plan.transport_input_count();
         let state = prepared.state.as_mut().unwrap();
@@ -1273,17 +1304,22 @@ impl<'a> Prepared<'a> {
         let (progress_words, rest) = rest.split_at_mut(self.progress);
         let (output_words, rest) = rest.split_at_mut(plan.transport_output_count());
         let (result, rest) = rest.split_at_mut(1);
-        let (arguments, retirements) =
+        let (arguments, omitted) =
             rest.split_at_mut(descriptor.metadata().max_library_inputs.max(1));
+        debug_assert!(
+            omitted.is_empty(),
+            "mutable transport has no metadata suffix"
+        );
         let input_pointer = input_words.as_ptr();
         let local_pointer = values.as_mut_ptr();
         let output_pointer = output_words.as_mut_ptr();
         let result_pointer = result.as_mut_ptr();
         let argument_pointer = arguments.as_mut_ptr();
         let mut context = Invocation {
-            // Native frame pointers/capacities name only the earlier lanes.
-            // This immutable final lane is private to the checked callback.
-            retirements,
+            // The descriptor outlives this synchronous entry and its scoped
+            // workers. Native frame pointers/capacities name only mutable lanes;
+            // retirement consumers borrow the exact immutable descriptor table.
+            retirements: descriptor.metadata().retirements.words(),
             descriptor,
             progress: progress_words,
             state: &mut state,
