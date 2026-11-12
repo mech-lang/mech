@@ -421,11 +421,7 @@ impl NativeLibraryWorkBudget {
     /// A miss is eligibility only: the caller must run its original ordered
     /// debits, preserving their error and spent prefix. Worker credit can
     /// change concurrently, so it always keeps that incremental path.
-    #[cfg(any(
-        feature = "pure_text",
-        feature = "map_ops",
-        feature = "sequence_buffers"
-    ))]
+    #[cfg(feature = "sequence_buffers")]
     pub(in crate::resident) fn try_charge_scoped_prefix(
         &self,
         compute: u64,
@@ -2722,6 +2718,7 @@ pub(crate) fn shallow_borrowed_footprint_schema_proof(
 
 /// The same bounded proof using the finalized entry's actual stored key.
 /// No caller-supplied key or serialized supported flag can enter this path.
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
 pub(crate) fn shallow_borrowed_footprint_schema_entry_proof(
     entry: &mech_core::SchemaEntry,
 ) -> Option<BorrowedFootprintSchemaProof> {
