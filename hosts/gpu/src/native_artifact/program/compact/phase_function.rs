@@ -1,10 +1,19 @@
 //! Compile the same checked numeric plan under an explicit entry contract.
 use super::*;
+use cfg_cleanup::composed_reads::{Admission, Capture, DenseTables, Literal, View};
+
+pub(super) struct Composed {
+    pub function: FuncId,
+    pub admission: Admission,
+    pub summary: serde_json::Value,
+}
+
 pub(super) struct Compiled {
     pub function: FuncId,
     pub entry_bounds: Vec<(usize, u64, bool)>,
     pub summary: serde_json::Value,
     pub code: Vec<u8>,
+    pub composed: Option<Composed>,
 }
 pub(super) fn define<M: Module>(
     module: &mut M,
@@ -17,6 +26,8 @@ pub(super) fn define<M: Module>(
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
+    literal_views: &BTreeMap<usize, Literal>,
+    dense_tables: &mut DenseTables,
     suffix: &str,
 ) -> Result<Compiled, NativeCompileError> {
     let code = CodePlan::Program(prepared);
@@ -254,6 +265,84 @@ pub(super) fn define<M: Module>(
     }
     // Late forwarding may expose a complete idiom without crossing a phase.
     bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
+    let mut composed = None;
+    if let Some(contract) = no_growth
+        && !literal_views.is_empty()
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let word_at = |word| packet.iter().position(|&at| at == word);
+        let views = proof
+            .arrays
+            .iter()
+            .enumerate()
+            .filter_map(|(array, definition)| {
+                if definition.writable || definition.appends {
+                    return None;
+                }
+                let pointer_word = word_at(proof.view(array))?;
+                let length_word = word_at(proof.view(array) + 1)?;
+                Some(View {
+                    array,
+                    pointer_word,
+                    length_word,
+                    width: definition.width,
+                    literal: literal_views.get(&array).cloned(),
+                })
+            })
+            .collect::<Vec<_>>();
+        if let Some(countdown_word) = word_at(contract.countdown)
+            && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+        {
+            let mut candidate = module.make_context();
+            candidate.func = context.func.clone();
+            let capture = Capture {
+                packet_loads: &loads,
+                views: &views,
+                header: word_loops.machine_header,
+                countdown_word,
+            };
+            if let Some(admission) = cfg_cleanup::compose_readonly_lookups(
+                &controls,
+                &mut candidate,
+                module,
+                dense_tables,
+                &capture,
+            )? {
+                let name = format!("{symbol}_composed");
+                let id = module
+                    .declare_function(&name, Linkage::Local, &signature)
+                    .map_err(backend)?;
+                let inspect_path = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
+                    .map(std::path::PathBuf::from)
+                    .filter(|path| path.file_stem().is_some_and(|stem| stem == name.as_str()));
+                if let Some(path) = &inspect_path {
+                    std::fs::write(path, candidate.func.display().to_string()).map_err(backend)?;
+                    candidate.set_disasm(true);
+                }
+                module
+                    .define_function(id, &mut candidate)
+                    .map_err(backend)?;
+                let machine = candidate
+                    .compiled_code()
+                    .ok_or_else(|| backend("composed phase lacks code"))?;
+                if let Some(path) = inspect_path {
+                    let vcode = machine
+                        .vcode
+                        .as_ref()
+                        .ok_or_else(|| backend("composed VCode was not emitted"))?;
+                    std::fs::write(path.with_extension("vcode"), vcode).map_err(backend)?;
+                }
+                composed = Some(Composed {
+                    function: id,
+                    admission,
+                    summary: serde_json::json!({"symbol":name,"admission":admission,
+                        "code_bytes":machine.code_info().total_size,
+                        "stack_bytes":compiled_stack_bytes(&machine.buffer)?,
+                        "scratch_bytes":if admission.immutable_code_bytes.is_some() { 0 } else { admission.cells_per_bank * 8 }}),
+                });
+            }
+        }
+    }
     if let Some(path) = std::env::var_os("MECH_INSPECT_PHASE_CLIF") {
         let path = std::path::PathBuf::from(path);
         if path.file_stem().is_some_and(|name| name == symbol.as_str()) {
@@ -330,5 +419,6 @@ pub(super) fn define<M: Module>(
         entry_bounds,
         summary,
         code: compiled.buffer.data().to_vec(),
+        composed,
     })
 }

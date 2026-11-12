@@ -149,3 +149,36 @@ fn cfg_cleanup_uses_actual_widths_and_declines_phi_signed_vector_float_and_deep_
         assert_eq!(facts.condition(value), Some(truth), "{value}");
     }
 }
+
+#[test]
+fn selected_fact_peels_only_low_bit_of_an_integer_comparison() {
+    let mut function = cranelift_codegen::ir::Function::new();
+    function.signature.params.push(AbiParam::new(types::I8));
+    let mut frontend = FunctionBuilderContext::new();
+    let (input, comparison, selected, lossy, raw) = {
+        let mut b = FunctionBuilder::new(&mut function, &mut frontend);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let input = b.block_params(entry)[0];
+        let comparison = b.ins().icmp_imm(IntCC::UnsignedLessThan, input, 8);
+        let selected = b.ins().band_imm(comparison, 1);
+        let lossy = b.ins().band_imm(comparison, 2);
+        let raw = b.ins().band_imm(input, 1);
+        b.ins().return_(&[]);
+        b.seal_all_blocks();
+        b.finalize();
+        (input, comparison, selected, lossy, raw)
+    };
+    for (truth, expected) in [(true, Range(0, 7)), (false, Range(8, 255))] {
+        let mut known = BTreeMap::new();
+        assert!(condition::assume(&function, selected, truth, &mut known));
+        assert_eq!(known.get(&input), Some(&expected));
+    }
+    for (word, truth) in [(lossy, false), (raw, true), (raw, false)] {
+        let mut known = BTreeMap::new();
+        assert!(condition::assume(&function, word, truth, &mut known));
+        assert!(!known.contains_key(&comparison));
+        assert!(!known.contains_key(&input));
+    }
+}
