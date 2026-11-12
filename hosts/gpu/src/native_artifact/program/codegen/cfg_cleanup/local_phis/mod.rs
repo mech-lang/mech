@@ -7,6 +7,8 @@ use cranelift_codegen::flowgraph::ControlFlowGraph;
 use cranelift_codegen::ir::{Block, BlockCall, Function, Value, ValueDef};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
+pub(super) mod equal_arguments;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Fact {
     Bottom,

@@ -1,5 +1,26 @@
 # Current compression scoreboard
 
+The branch cleanup after equal join arguments was qualified on top of the reverse cursor. The complete 81-case comparison takes **0.994529×** the paired control time.
+
+| Peer result | Mech wins |
+| --- | ---: |
+| Faster than Roc | **47/81 (58.0%)** |
+| Faster than libdeflate | 17/81 (21.0%) |
+| Faster than both | 8/81 |
+| Faster than either | 56/81 (69.1%) |
+
+| Input | Mech/Roc | Mech/libdeflate |
+| --- | ---: | ---: |
+| Natural 8 KiB | 1.030752× | 1.278943× |
+| Repeated 65,537 bytes | 0.568488× | 1.004584× |
+| Periodic 1 MiB | 0.586191× | 0.992506× |
+| Repeated 64 KiB | 0.563809× | 0.998941× |
+| Repeated 1 MiB | 0.597743× | 0.939300× |
+
+[Branch proof, combined qualification, and full matched results](native-equal-join-branch-qualification.md).
+
+## Reverse cursor comparison
+
 The reverse cursor comparison ran all 81 level-12 cases against its direct selected-read control. Both 1.05 timing gates passed. Paired elapsed was **0.996594× control** across the suite.
 
 | Peer result | Mech wins |

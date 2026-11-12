@@ -230,3 +230,95 @@ fn local_phi_preheader_preserves_updates_alternate_body_entries_effects_and_retr
         }
     }
 }
+
+#[test]
+fn equal_current_arguments_fold_only_the_proved_branch() {
+    use crate::native_artifact::codegen::options::{CompilationControls, OptimizationOptions};
+    use cranelift_codegen::ir::{AbiParam, InstBuilder, condcodes::IntCC};
+    use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
+
+    type Join = unsafe extern "C" fn(u64, u64, u64) -> u64;
+    for equal in [true, false] {
+        let mut module = cranelift_jit::JITModule::new(
+            cranelift_jit::JITBuilder::with_flags(
+                &[("opt_level", "speed"), ("regalloc_checker", "true")],
+                default_libcall_names(),
+            )
+            .unwrap(),
+        );
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+        context.func.signature.returns = vec![AbiParam::new(types::I64)];
+        let mut builder = FunctionBuilderContext::new();
+        let unreachable;
+        {
+            let mut b = FunctionBuilder::new(&mut context.func, &mut builder);
+            let entry = b.create_block();
+            let corridor = b.create_block();
+            let join = b.create_block();
+            let different = b.create_block();
+            let done = b.create_block();
+            unreachable = different;
+            b.append_block_params_for_function_params(entry);
+            for block in [corridor, join] {
+                b.append_block_param(block, types::I64);
+                b.append_block_param(block, types::I64);
+            }
+            b.switch_to_block(entry);
+            let [a, c, flag] = b.block_params(entry).try_into().unwrap();
+            let right = if equal { c } else { a };
+            b.ins().brif(
+                flag,
+                join,
+                &[a.into(), a.into()],
+                corridor,
+                &[c.into(), right.into()],
+            );
+            b.switch_to_block(corridor);
+            let [left, right] = b.block_params(corridor).try_into().unwrap();
+            b.ins().jump(join, &[left.into(), right.into()]);
+            b.switch_to_block(join);
+            let [left, right] = b.block_params(join).try_into().unwrap();
+            let greater = b.ins().icmp(IntCC::UnsignedGreaterThan, left, right);
+            let greater = b.ins().band_imm(greater, 1);
+            b.ins().brif(greater, different, &[], done, &[]);
+            b.switch_to_block(different);
+            let sentinel = b.ins().iconst(types::I64, -17);
+            b.ins().return_(&[sentinel]);
+            b.switch_to_block(done);
+            let delta = b.ins().isub(left, right);
+            b.ins().return_(&[delta]);
+            b.seal_all_blocks();
+            b.finalize();
+        }
+        let controls = CompilationControls::new(OptimizationOptions::default());
+        let removed =
+            super::super::coalesce_equal_join_arguments(&controls, &mut context, module.isa())
+                .unwrap();
+        assert_eq!(removed, usize::from(equal));
+        assert_eq!(context.func.layout.is_block_inserted(unreachable), !equal);
+        let id = module
+            .declare_function("current_join", Linkage::Local, &context.func.signature)
+            .unwrap();
+        module.define_function(id, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        // SAFETY: The live finalized module owns this exact C signature.
+        let call =
+            unsafe { core::mem::transmute::<*const u8, Join>(module.get_finalized_function(id)) };
+        for a in [0, 1, u64::MAX] {
+            for c in [0, 1, u64::MAX] {
+                for flag in [0, 1, u64::MAX] {
+                    let expected = if equal || flag != 0 {
+                        0
+                    } else if c > a {
+                        u64::MAX - 16
+                    } else {
+                        c.wrapping_sub(a)
+                    };
+                    // SAFETY: The admitted entry reads only its integer inputs.
+                    assert_eq!(unsafe { call(a, c, flag) }, expected);
+                }
+            }
+        }
+    }
+}
