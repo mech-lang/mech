@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-compact-native-development-20261111/benchmarks/related-post-gen/integration/typed-native-storage-20261112/verify.py"
+  ],
+  "exit": 0,
+  "seconds": 4.724361832952127,
+  "stdout": "{\n  \"verified_records\": 7839,\n  \"unique_blobs\": 4083,\n  \"compressed_bytes\": 13866778,\n  \"measured_source_commit\": \"4b6133f85ae85f858bfe29f8cc871aada58a77bb\",\n  \"source_inventory_entries\": 2814,\n  \"literal_include_entries\": 164,\n  \"primary_exact_outputs\": 1085,\n  \"independent_exact_outputs\": 351,\n  \"resource_exact_outputs\": 224,\n  \"managed_qualifications\": 4,\n  \"compact_original_decoded_qualifications\": 6,\n  \"edges_per_variant\": 31,\n  \"compact_resource_qualification_executions\": 96,\n  \"managed_IR334_still_selected\": true,\n  \"compact_U32_gain_confirmed\": true,\n  \"fastest_Rust_target_met\": false,\n  \"native_executions_by_verifier\": 0\n}\n",
+  "stderr": ""
+}
