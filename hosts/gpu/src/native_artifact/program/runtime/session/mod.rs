@@ -888,7 +888,9 @@ impl<'a> Prepared<'a> {
                     {
                         return Err(invalid("worker managed capture type"));
                     }
-                    state.arena.put(slot, &value, &mut state.control.work)?;
+                    state
+                        .arena
+                        .put_owned_worker_capture(slot, value, &mut state.control.work)?;
                 }
                 crate::native_artifact::program::runtime::invocation::parallel::Capture::Frame(
                     slot,

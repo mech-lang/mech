@@ -646,3 +646,7 @@ fn generation_exhaustion_cannot_replace_or_remove_the_live_value() {
     );
     assert!(arena.get(handle, &mut work).is_ok());
 }
+
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "owned_capture_tests.rs"]
+mod owned_capture_tests;

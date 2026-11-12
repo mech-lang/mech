@@ -1894,3 +1894,6 @@ result
         }
     }
 }
+
+#[path = "utf8_reads_replay_cache.rs"]
+mod replay_cache;

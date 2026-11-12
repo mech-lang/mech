@@ -19,7 +19,7 @@ const MAX_REGIONS: usize = 256;
 /// separately checked whole-loop physical preflight allowance.
 pub(in crate::native_artifact) const HEADER_WORK: u64 = 4096;
 
-#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.Region")]
 pub(in crate::native_artifact) struct Region {
     pub collection: u32,
@@ -42,7 +42,60 @@ pub(in crate::native_artifact) struct Region {
     pub output_width: u8,
     pub push_site: u32,
     pub output: u32,
+    // Pure compiled-descriptor cache, never wire authority. Hydrated only after
+    // final calls, visit prices and admission groups exist, including restore.
+    #[serde(skip)]
+    replay_facts: Option<ReplayFacts>,
 }
+
+/// Static part of the unchanged optional replay allowance. It is not paid
+/// credit, an owner, a source visit or a library admission permit. Inline in
+/// the existing Region allocation; execution never copies or allocates it.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::native_artifact) struct ReplayFacts {
+    pub traversal_base: u64,
+    pub probe_base: u64,
+}
+impl ReplayFacts {
+    pub fn traversal(&self, map_call: u64, payload: u64, retirement: u64) -> Option<u64> {
+        self.traversal_base
+            .checked_add(map_call)?
+            .checked_add(payload.checked_mul(128)?)?
+            .checked_add(retirement)
+    }
+    pub fn probe(&self, setup: u64) -> Option<u64> {
+        self.probe_base.checked_add(setup)
+    }
+}
+impl Region {
+    pub fn replay_facts(&self) -> Option<ReplayFacts> {
+        self.replay_facts
+    }
+}
+// Equality here is equality of the immutable source proof, also used when an
+// independent image is checked. The nonserialized derived cache is neither
+// part of that proof nor accepted from an image; each path rehydrates it.
+impl PartialEq for Region {
+    fn eq(&self, other: &Self) -> bool {
+        self.collection == other.collection
+            && self.iteration == other.iteration
+            && self.header == other.header
+            && self.exit == other.exit
+            && self.source == other.source
+            && self.classification_site == other.classification_site
+            && self.map_root == other.map_root
+            && self.map_ordinal == other.map_ordinal
+            && self.element_site == other.element_site
+            && self.project_site == other.project_site
+            && self.read_site == other.read_site
+            && self.conversion_site == other.conversion_site
+            && self.output_width == other.output_width
+            && self.push_site == other.push_site
+            && self.output == other.output
+    }
+}
+impl Eq for Region {}
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
@@ -131,6 +184,171 @@ impl Layout {
         self.regions.get(self.headers.get(site).copied().flatten()?)
     }
 }
+
+/// Populate an immutable cache from this exact fully prepared metadata. All
+/// serialized/source-only Layout::derive results start without cached facts.
+/// One pass maps each lexical iteration through the existing header inventory;
+/// no second lookup allocation or per-invocation metadata walk is introduced.
+pub(in crate::native_artifact) fn derive_replay_facts(
+    metadata: &mut super::ProgramMetadata,
+) -> Result<(), &'static str> {
+    let layout = &mut metadata.utf8_reads;
+    // Vec spare capacity is physical too. Keep complete stride and cache-byte
+    // extents checked; these are compiled descriptor/proof allocations, outside
+    // invocation managed claims just like the containing existing Region Vec.
+    layout
+        .regions
+        .capacity()
+        .checked_mul(core::mem::size_of::<Region>())
+        .ok_or("UTF8 region allocation extent overflows")?;
+    layout
+        .regions
+        .capacity()
+        .checked_mul(core::mem::size_of::<Option<ReplayFacts>>())
+        .ok_or("UTF8 replay cache extent overflows")?;
+    for region in &mut layout.regions {
+        region.replay_facts = None;
+    }
+    if !layout
+        .regions
+        .iter()
+        .any(|region| region.conversion_site.is_some())
+    {
+        return Ok(());
+    }
+    let plan = &metadata.plan;
+    let bases = (|| {
+        let inventory = u64::try_from(plan.values().len())
+            .ok()?
+            .checked_add(u64::try_from(plan.blocks().len()).ok()?)?
+            .checked_add(u64::try_from(plan.iterations().len()).ok()?)?
+            .checked_add(u64::try_from(plan.collections().len()).ok()?)?;
+        let traversal_base = inventory.checked_mul(8192)?.checked_add(65536)?;
+        let probe_base = metadata
+            .scalar_bytes
+            .checked_add(metadata.observation_schema_bytes)?
+            .checked_mul(128)?
+            .checked_add(traversal_base)?;
+        Some(ReplayFacts {
+            traversal_base,
+            probe_base,
+        })
+    })();
+    let Some(bases) = bases else {
+        return Ok(());
+    };
+    for region in &mut layout.regions {
+        if region.conversion_site.is_some() {
+            region.replay_facts = Some(bases);
+        }
+    }
+    for (site, block) in plan.blocks().iter().enumerate() {
+        let Some(iteration) = block.iteration() else {
+            continue;
+        };
+        let header = plan
+            .iterations()
+            .get(iteration as usize)
+            .ok_or("UTF8 replay iteration outside plan")?
+            .as_ref()
+            .header();
+        let Some(index) = layout.headers.get(header as usize).copied().flatten() else {
+            continue;
+        };
+        let region = layout
+            .regions
+            .get_mut(index)
+            .ok_or("UTF8 replay header outside regions")?;
+        if region.iteration != iteration {
+            return Err("UTF8 replay header iteration differs");
+        }
+        let Some(mut cached) = region.replay_facts else {
+            continue;
+        };
+        region.replay_facts = (|| {
+            cached.traversal_base = cached
+                .traversal_base
+                .checked_add(metadata.visits.get(site)?.work)?;
+            if let Some(group) = metadata.map_admission.group(site) {
+                cached.traversal_base = cached.traversal_base.checked_add(group.work)?;
+            }
+            if let Action::LibraryCall { template, .. } = block.action() {
+                let ordinal = if Some(site as u32) == region.project_site {
+                    region.map_ordinal
+                } else if site == region.read_site as usize {
+                    None
+                } else {
+                    return None;
+                };
+                let call = metadata.calls.get(site)?.as_ref()?;
+                if call.template() != template {
+                    return None;
+                }
+                cached.traversal_base = cached
+                    .traversal_base
+                    .checked_add(call.selected_string_map_replay_metadata_work_bound(ordinal)?)?
+                    .checked_add(256 + 256)?;
+            }
+            Some(cached)
+        })();
+    }
+    Ok(())
+}
+
+/// Independent copy of the previous runtime static scan for exact equivalence
+/// tests. It deliberately retains separate visit/library sums and checked order.
+#[cfg(all(test, feature = "canonical-native-program"))]
+pub(in crate::native_artifact) fn reference_replay_facts(
+    metadata: &super::ProgramMetadata,
+    region: &Region,
+) -> Option<ReplayFacts> {
+    let mut visits = 0u64;
+    let mut library_metadata_work = 0u64;
+    for (site, block) in metadata.plan.blocks().iter().enumerate() {
+        if block.iteration() == Some(region.iteration) {
+            visits = visits.checked_add(metadata.visits.get(site)?.work)?;
+            if let Some(group) = metadata.map_admission.group(site) {
+                visits = visits.checked_add(group.work)?;
+            }
+            if let Action::LibraryCall { template, .. } = block.action() {
+                let ordinal = if Some(site as u32) == region.project_site {
+                    region.map_ordinal
+                } else if site == region.read_site as usize {
+                    None
+                } else {
+                    return None;
+                };
+                let call = metadata.calls.get(site)?.as_ref()?;
+                if call.template() != template {
+                    return None;
+                }
+                library_metadata_work = library_metadata_work
+                    .checked_add(call.selected_string_map_replay_metadata_work_bound(ordinal)?)?
+                    .checked_add(256 + 256)?;
+            }
+        }
+    }
+    let inventory = (metadata.plan.values().len() as u64)
+        .checked_add(metadata.plan.blocks().len() as u64)?
+        .checked_add(metadata.plan.iterations().len() as u64)?
+        .checked_add(metadata.plan.collections().len() as u64)?;
+    Some(ReplayFacts {
+        traversal_base: visits
+            .checked_add(library_metadata_work)?
+            .checked_add(inventory.checked_mul(8192)?)?
+            .checked_add(65536)?,
+        probe_base: metadata
+            .scalar_bytes
+            .checked_add(metadata.observation_schema_bytes)?
+            .checked_mul(128)?
+            .checked_add(inventory.checked_mul(8192)?)?
+            .checked_add(65536)?,
+    })
+}
+
+#[cfg(test)]
+#[path = "utf8_reads_replay_tests.rs"]
+mod replay_tests;
 
 fn matrix(body: &SchemaBody, expected: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Matrix { element, dimensions }
@@ -435,6 +653,7 @@ fn derive_body(
         output_width,
         push_site: collection.push(),
         output: collection.output().get(),
+        replay_facts: None,
     }))
 }
 

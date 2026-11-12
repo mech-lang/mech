@@ -909,6 +909,8 @@ fn decode_inner<
         identity: w.identity,
         machine_backend: w.machine_backend,
     };
+    native::program::prepare::utf8_reads::derive_replay_facts(&mut descriptor.metadata)
+        .map_err(str::to_owned)?;
     descriptor.metadata.worker_value_prefixes =
         native::program::prepare::worker_values::derive(&descriptor.metadata)?;
     if !OBJECT_BOUND {
